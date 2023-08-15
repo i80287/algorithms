@@ -1,0 +1,199 @@
+
+#include <algorithm>
+#include <cassert>
+#include <chrono>
+#include <cstdint>
+#include <cstdlib>
+#include <cstring>
+#include <exception>
+#include <iostream>
+#include <memory>
+#include <random>
+#include <stdexcept>
+#include <type_traits>
+#include <utility>
+
+#include "HeapSort.hpp"
+#include "ShellSort.hpp"
+
+namespace arrays_tools {
+
+    template <typename T>
+    requires std::is_arithmetic_v<T>
+    constexpr void FillArray(T* begin, T* end, T left_border, T right_border) {
+        if (left_border > right_border) {
+            std::swap(left_border, right_border);
+        }
+
+        std::mt19937 mrs_rnd_engine(std::random_device{}());
+        std::uniform_int_distribution<T> dist(left_border, right_border);
+        std::generate(begin, end, [&dist, &mrs_rnd_engine] {
+            return dist(mrs_rnd_engine);
+        });
+    }
+
+    template <typename T>
+    requires std::is_arithmetic_v<T>
+    void CheckSortedArray(const T* array, size_t length) noexcept(false) {
+        for (const T* it = array + 1, *end = array + length; it < end; ++it) {
+            if (*(it - 1) > *it) {
+                throw std::range_error("array was not sorted correctly");
+            }
+        }
+    }
+
+} // namespace arrays_tools
+
+namespace measure_tools {
+    constexpr size_t MEASURE_LIMIT = 16;
+
+    template <typename T>
+    requires std::is_arithmetic_v<T>
+    uint64_t MeasureQSort(const T* original_array, T* buffer, size_t length) {
+        uint64_t total_time = 0;
+
+        for (size_t i = 0; i != MEASURE_LIMIT; ++i) {
+            std::memcpy(buffer, original_array, length * sizeof(T));
+
+            auto start = std::chrono::steady_clock::now();
+            qsort(buffer, length, sizeof(T), [](const void* first, const void* second) -> int {
+                T a = *static_cast<const T*>(first);
+                T b = *static_cast<const T*>(second);
+                return (a != b) - ((a < b) << 1);
+            });
+            auto end = std::chrono::steady_clock::now();
+            std::chrono::nanoseconds delta = end - start;
+            total_time += delta.count();
+
+            arrays_tools::CheckSortedArray(buffer, length);
+        }
+
+        uint64_t res = total_time / MEASURE_LIMIT;
+        std::cout << "::qsort quick sort average nanoseconds: " << res << '\n';
+        return res;
+    }
+
+    template <typename T>
+    requires std::is_arithmetic_v<T>
+    uint64_t MeasureHeapSort(const T* original_array, T* buffer, size_t length) {
+        uint64_t total_time = 0;
+
+        for (size_t i = 0; i != MEASURE_LIMIT; ++i) {
+            std::memcpy(buffer, original_array, length * sizeof(T));
+
+            auto start = std::chrono::steady_clock::now();
+            heap_sort(&buffer[0], length);
+            auto end = std::chrono::steady_clock::now();
+            std::chrono::nanoseconds delta = end - start;
+            total_time += delta.count();
+
+            arrays_tools::CheckSortedArray(buffer, length);
+        }
+
+        uint64_t res = total_time / MEASURE_LIMIT;
+        std::cout << "::heap_sort heap sort average nanoseconds: " << res << '\n';
+        return res;
+    }
+
+    template <typename T>
+    requires std::is_arithmetic_v<T>
+    uint64_t MeasureStdSort(const T* original_array, T* buffer, size_t length) {
+        uint64_t total_time = 0;
+
+        for (size_t i = 0; i != MEASURE_LIMIT; ++i) {
+            std::memcpy(buffer, original_array, length * sizeof(T));
+
+            auto start = std::chrono::steady_clock::now();
+            std::sort(&buffer[0], &buffer[length]);
+            auto end = std::chrono::steady_clock::now();
+            std::chrono::nanoseconds delta = end - start;
+            total_time += delta.count();
+
+            arrays_tools::CheckSortedArray(buffer, length);
+        }
+
+        uint64_t res = total_time / MEASURE_LIMIT;
+        std::cout << "std::sort intro sort average nanoseconds: " << res << '\n';
+        return res;
+    }
+
+    template <typename T>
+    requires std::is_arithmetic_v<T>
+    uint64_t MeasureShellSort(const T* original_array, T* buffer, size_t length) {
+        uint64_t total_time = 0;
+
+        for (size_t i = 0; i != MEASURE_LIMIT; ++i) {
+            std::memcpy(buffer, original_array, length * sizeof(T));
+
+            auto start = std::chrono::steady_clock::now();
+            shell_sort(&buffer[0], length);
+            auto end = std::chrono::steady_clock::now();
+            std::chrono::nanoseconds delta = end - start;
+            total_time += delta.count();
+
+            arrays_tools::CheckSortedArray(buffer, length);
+        }
+
+        uint64_t res = total_time / MEASURE_LIMIT;
+        std::cout << "::shell_sort Shell sort average nanoseconds: " << res << '\n';
+        return res;
+    }
+
+} // namespace measure_tools
+
+int main(void) {
+    using T = int64_t;
+    const size_t length = 2e5;
+
+    std::unique_ptr<T[]> array = std::make_unique<T[]>(length);
+    std::unique_ptr<T[]> buffer_for_sorting = std::make_unique<T[]>(length);
+
+    arrays_tools::FillArray<T>(&array[0], &array[length], -65536, 65536);
+    uint64_t qsort_time = 0;
+    uint64_t std_algo_sort_time = 0;
+    uint64_t inplace_heap_sort_time = 0;
+    uint64_t shell_sort_time = 0;
+
+    // count of sort algorithms
+    constexpr size_t K = 4; 
+    constexpr size_t TOTAL_TESTS = 8 * K;
+    for (size_t i = 0; i != TOTAL_TESTS; ++i) {
+        std::cout << "\n\nTest " << i + 1 << '\n';
+        switch (i % K) {
+        case 0:
+            qsort_time += measure_tools::MeasureQSort(array.get(), buffer_for_sorting.get(), length);
+            std_algo_sort_time += measure_tools::MeasureStdSort(array.get(), buffer_for_sorting.get(), length);
+            inplace_heap_sort_time += measure_tools::MeasureHeapSort(array.get(), buffer_for_sorting.get(), length);
+            shell_sort_time += measure_tools::MeasureShellSort(array.get(), buffer_for_sorting.get(), length);
+            break;
+        case 1:
+            shell_sort_time += measure_tools::MeasureShellSort(array.get(), buffer_for_sorting.get(), length);
+            qsort_time += measure_tools::MeasureQSort(array.get(), buffer_for_sorting.get(), length);
+            std_algo_sort_time += measure_tools::MeasureStdSort(array.get(), buffer_for_sorting.get(), length);
+            inplace_heap_sort_time += measure_tools::MeasureHeapSort(array.get(), buffer_for_sorting.get(), length);
+            break;
+        case 2:
+            inplace_heap_sort_time += measure_tools::MeasureHeapSort(array.get(), buffer_for_sorting.get(), length);
+            shell_sort_time += measure_tools::MeasureShellSort(array.get(), buffer_for_sorting.get(), length);
+            qsort_time += measure_tools::MeasureQSort(array.get(), buffer_for_sorting.get(), length);
+            std_algo_sort_time += measure_tools::MeasureStdSort(array.get(), buffer_for_sorting.get(), length);
+            break;
+        case 3:
+            static_assert(K == 4, "add more test cases");
+            std_algo_sort_time += measure_tools::MeasureStdSort(array.get(), buffer_for_sorting.get(), length);
+            inplace_heap_sort_time += measure_tools::MeasureHeapSort(array.get(), buffer_for_sorting.get(), length);
+            shell_sort_time += measure_tools::MeasureShellSort(array.get(), buffer_for_sorting.get(), length);
+            qsort_time += measure_tools::MeasureQSort(array.get(), buffer_for_sorting.get(), length);
+            break;
+        }
+    }
+
+    std::cout
+        << "\nResults:"
+        << "\n::qsort quick sort average nanoseconds:      " << qsort_time / TOTAL_TESTS
+        << "\nstd::sort intro sort average nanoseconds:    " << std_algo_sort_time / TOTAL_TESTS
+        << "\n::heap_sort heap sort average nanoseconds:   " << inplace_heap_sort_time / TOTAL_TESTS
+        << "\n::shell_sort Shell sort average nanoseconds: " << shell_sort_time / TOTAL_TESTS;
+}
+
+// g++ main.cpp -std=c++2b -fconcepts-diagnostics-depth=200 -O3 -march=native -Wall -Wextra -Wpedantic -Werror -Wunused --pedantic-errors -Wconversion -Warith-conversion -Wshadow -Warray-bounds=2 -ftree-vrp -Wnull-dereference -Wcast-align=strict
