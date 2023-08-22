@@ -2,9 +2,9 @@
 #include <x86intrin.h>
 #include <iostream>
 
-uint32_t nearest_bin_pow_ge(uint64_t n) {
+uint64_t nearest_bin_pow_ge(uint64_t n) {
     // __lzcnt64 can be used with -mlzcnt flag
-    return 1u << static_cast<uint32_t>(64 - __builtin_clzll(n) - ((n & (n - 1)) == 0));
+    return 1ull << static_cast<uint32_t>(64 - __builtin_clzll(n) - ((n & (n - 1)) == 0));
 }
 
 int main() {
