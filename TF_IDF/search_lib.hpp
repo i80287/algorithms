@@ -1,6 +1,6 @@
-#include <cstdint>
-#include <string_view>
-#include <vector>
+#include <cstdint>     // uint64_t
+#include <string_view> // std::string_view
+#include <vector>      // std::vector
 
 namespace search_lib {
     using std::string_view;

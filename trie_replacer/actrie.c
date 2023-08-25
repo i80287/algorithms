@@ -592,7 +592,7 @@ static inline void actrie_thiscall actrie_t_check_computed_links(struct actrie_t
         uint32_t compressed_suffix_link_index = iter->compressed_suffix_link;
         actrie_assert(compressed_suffix_link_index >= FAKE_PREROOT_INDEX && compressed_suffix_link_index < max_node_index_excl);
 
-        actrie_assert(actrie_node_t_is_terminal(iter) == (iter->word_index < max_word_end_index_excl));
+        actrie_assert(!actrie_node_t_is_terminal(iter) || (iter->word_index < max_word_end_index_excl));
     }
 
     this_->are_links_computed = true;

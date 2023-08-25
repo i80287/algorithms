@@ -1,9 +1,9 @@
-#include <cstdio>
-#include <fstream>
-#include <iostream>
-#include <string>
+#include <chrono>         // std::chrono
+#include <cstdio>         // std::FILE, std::fopen, std::fclose
+#include <iostream>       // std::cin, std::cout
+#include <string>         // std::string
 
-#include "search_lib.hpp"
+#include "search_lib.hpp" // search_lib::Search
 
 using namespace std::literals::string_view_literals;
 
@@ -54,13 +54,17 @@ void test2() {
 
     text.shrink_to_fit();
 
-    constexpr auto query = "london londinium lunden lundenburg"sv;
-    constexpr size_t result_size = 512;
+    constexpr auto query = "london city borough burg"sv;
+    constexpr size_t result_size = 32;
 
+    auto start = std::chrono::steady_clock::now();
     auto res = search_lib::Search(text, query, result_size);
-    std::cout << "Test 2\nText len: " << text.length() << "\nFound lines: " << res.size() << '\n';
+    auto end = std::chrono::steady_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+
+    std::cout << "Test 2\nText length: " << text.length() << "\nFound " << res.size() << " lines in " << duration << ":\n\n";
     for (auto line : res) {
-        std::cout << line << "\n\n";
+        std::cout << line << '\n';
     }
 }
 

@@ -1,13 +1,17 @@
-#include <algorithm>
-#include <cassert>
-#include <cctype>
-#include <cmath>
-#include <cstring>
-#include <ranges>
-#include <string>
-#include <unordered_set>
+#include <algorithm>      // std::stable_sort
+#include <cassert>        // assert
+#include <cctype>         // std::isupper, std::isalpha, std::tolower
+#include <cmath>          // std::log
+#include <cstdint>        // size_t, uint64_t
+#include <cstring>        // strcasecmp, _stricmp
+#include <ranges>         // std::ranges
+#include <string>         // std::string
+#include <string_view>    // std::string_view
+#include <unordered_map>  // std::unordered_map
+#include <unordered_set>  // std::unordered_multiset
+#include <vector>         // std::vector
 
-#include "search_lib.hpp"
+#include "search_lib.hpp" // search_lib::Search
 
 namespace search_lib {
     struct StringViewHasherAndComparer {
@@ -158,7 +162,7 @@ namespace search_lib {
         for (string_view query_word : query_words) {
             size_t count = 0;
             for (const auto& line : text_lines) {
-                count += line.Words.count(query_word);
+                count += line.Words.contains(query_word);
             }
 
             double word_idf_log = count != 0 ? total_lines_log - std::log(static_cast<double>(count)) : 0;
@@ -191,9 +195,10 @@ namespace search_lib {
         std::vector<string_view> result_lines;
         result_lines.reserve(result_size);
         for (const LineInfo& line : text_lines) {
-            if (line.Score > 0) {
+            if (result_size-- != 0 && line.Score > 0) {
                 result_lines.push_back(line.Line);
-            } else {
+            }
+            else {
                 break;
             }
         }
