@@ -154,6 +154,8 @@ public:
         static_assert(!IsInAlphabet(Delimeter));
         assert(!IsReady());
 
+        ReservePlaceForPatterns(strings_count);
+
         while (strings_count--) {
             uint32_t string_length = 0;
             uint32_t current_node_index = ROOT_INDEX;
@@ -224,6 +226,8 @@ public:
     void ReadPatternsFromCppStdin(size_t strings_count) {
         static_assert(!IsInAlphabet(Delimeter));
         assert(!IsReady());
+
+        ReservePlaceForPatterns(strings_count);
 
         while (strings_count--) {
             uint32_t string_length = 0;
@@ -712,25 +716,42 @@ void test2() {
 }
 
 void test3() {
-    ACTrieADS::ACTrie<'A', 'z'> t;
-    std::cout << "Input 2 patterns\n> " << std::flush;
-    t.ReadPatternsFromCppStdin(2);
+    ACTrieADS::ACTrie<'-', 'z', true> t;
+    std::cout << "Input patterns count\n> " << std::flush;
+    size_t strings_count = 0;
+    std::cin >> strings_count;
+    if (std::cin.fail()) {
+        std::cout << "An error occured while reading unsigned interger\n";
+        return;
+    }
+
+    std::cin.get(); // Skip '\n'
+
+    std::cout << "Input " << strings_count << " patterns\n> " << std::flush;
+    t.ReadPatternsFromCppStdin(strings_count);
     t.ComputeLinks();
 
     std::cout << "Input text\n> " << std::flush;
     std::string s;
-    std::cin >> s;
+    std::getline(std::cin, s);
     t.RunText(std::string_view(s),
-        [](std::string_view found_word, size_t start_index_in_original_text) {
-            std::cout << "Word " << found_word << " from " << start_index_in_original_text << " to " << start_index_in_original_text + found_word.size() << '\n';
+        [](std::string_view found_word, [[maybe_unused]] size_t start_index_in_original_text) {
+            // std::cout << "Word " << found_word << " from " << start_index_in_original_text << " to " << start_index_in_original_text + found_word.size() << '\n';
+            std::cout << '\"' << found_word << "\", ";
         });
+    t.RunText(std::string_view(s),
+        []([[maybe_unused]] std::string_view found_word, size_t start_index_in_original_text) {
+            // std::cout << "Word " << found_word << " from " << start_index_in_original_text << " to " << start_index_in_original_text + found_word.size() << '\n';
+            std::cout << start_index_in_original_text << ", ";
+        });
+
     std::cout << std::endl;
 }
 
 int main(void) {
-    test0();
-    test1();
-    test2();
-    // test3();
+    //test0();
+    //test1();
+    //test2();
+    test3();
     return 0;
 }
