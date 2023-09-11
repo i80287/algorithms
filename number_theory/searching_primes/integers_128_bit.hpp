@@ -45,7 +45,7 @@ template <typename T>
 requires std::is_unsigned_v<T>
 static constexpr int32_t count_trailing_zeros(T n) noexcept {
     if (n == 0) {
-        return sizeof(T);
+        return sizeof(T) * 8;
     }
 
     if constexpr (std::is_same_v<T, uint128_t>) {
