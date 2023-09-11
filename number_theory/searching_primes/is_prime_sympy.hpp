@@ -498,7 +498,10 @@ static constexpr bool IsStrongSelfridgePRP(uint64_t n) noexcept {
     }
 }
 
-/// Realization taken from the sympy and gmpy2 C source code (IsStrongPRP(uint64_t, uint64_t) and IsStrongSelfridgePRP(uint64_t))
+/// @brief Realization taken from the sympy and gmpy2 C source code (IsStrongPRP(uint64_t, uint64_t) and IsStrongSelfridgePRP(uint64_t))
+///        complexity - O(log(n) ^ 2 * log(log(n)))
+/// @param n number to test
+/// @return true if is is prime and false otherwise
 static constexpr bool IsPrime(uint64_t n) noexcept {
     switch (n) {
     case 1:

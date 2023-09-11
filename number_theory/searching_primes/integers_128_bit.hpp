@@ -44,22 +44,18 @@ inline constexpr int128_t abs(int128_t x) noexcept {
 template <typename T>
 requires std::is_unsigned_v<T>
 static constexpr int32_t count_trailing_zeros(T n) noexcept {
+    if (n == 0) {
+        return sizeof(T);
+    }
+
     if constexpr (std::is_same_v<T, uint128_t>) {
-        uint64_t high_or_low = static_cast<uint64_t>(n); // low
-
-        if (high_or_low == 0)
-        {// low part of n consist of zeros.
-            if ((high_or_low = static_cast<uint64_t>(n >> 64)) != 0)
-            {// high part of n does not consist of zeros.
-                return __builtin_ctzll(high_or_low) + 64;
-            }
-
-            // else n is equal to 0.
-            return 128;
+        uint64_t low = static_cast<uint64_t>(n);
+        if (low != 0) {
+            return __builtin_ctzll(low);
         }
 
-        // low part of n does not consist of zeros.
-        return __builtin_ctzll(high_or_low);
+        uint64_t high = static_cast<uint64_t>(n >> 64);
+        return __builtin_ctzll(high) + 64;
     }
     else if constexpr (std::is_same_v<T, unsigned long long>) {
         return __builtin_ctzll(n);
@@ -74,7 +70,7 @@ static constexpr int32_t count_trailing_zeros(T n) noexcept {
     }
     else {
         static_assert(std::is_same_v<T, bool>, "unknown unsigned integer in int32_t std::count_trailing_zeros(T)");
-        return !n; // n ? 0 : 1;
+        return 0;
     }
 }
 
