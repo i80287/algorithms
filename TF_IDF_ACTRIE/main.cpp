@@ -43,12 +43,13 @@ void test2() {
     }
 
     std::string text;
-    text.reserve(1 << 20);
-
-    constexpr int BUFFER_SIZE = 8192;
-    char buffer[BUFFER_SIZE] = {};
-    while (fgets(buffer, BUFFER_SIZE, file) != nullptr) {
-        text += buffer;
+    {
+        text.reserve(1 << 20);
+        constexpr int BUFFER_SIZE = 8192;
+        char buffer[BUFFER_SIZE] = {};
+        while (fgets(buffer, BUFFER_SIZE, file) != nullptr) {
+            text += buffer;
+        }
     }
 
     if (std::fclose(file)) {
@@ -60,11 +61,9 @@ void test2() {
     constexpr auto query = "london city borough burg"sv;
     constexpr size_t result_size = 32;
 
-    auto start = std::chrono::steady_clock::now();
-
-    auto res = search_lib::Search(text, query, result_size);
-
-    auto end = std::chrono::steady_clock::now();
+    auto start = std::chrono::high_resolution_clock::now();
+    std::vector<std::string_view> res = search_lib::Search(text, query, result_size);
+    auto end = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
 
     std::cout << "Test 2\nText length: " << text.length() << "\nFound " << res.size() << " lines in " << duration << ":\n\n";

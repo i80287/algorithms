@@ -112,7 +112,7 @@ namespace search_lib {
 
         std::stable_sort(lines_score.begin(),
             lines_score.end(),
-            [](const auto& p1, const auto& p2) -> bool {
+            [](const auto& p1, const auto& p2) constexpr noexcept -> bool {
                 return p1.first >= p2.first;
             });
 

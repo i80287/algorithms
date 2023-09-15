@@ -11,21 +11,6 @@
 
 namespace ACTrieADS {
 
-template <typename callback>
-concept ACTrieFindCallback = requires (callback func, std::string_view found_word, size_t start_index_in_original_text) {
-    func(found_word, start_index_in_original_text);
-};
-
-template <typename callback>
-concept QueryWordCallbackConcept = requires (callback func, size_t line_number, size_t query_word_index) {
-    func(line_number, query_word_index);
-};
-
-template <typename callback>
-concept NewLineCallbackConcept = requires (callback func, size_t line_number, size_t words_on_current_line, size_t line_start_index, size_t line_end_index) {
-    func(line_number, words_on_current_line, line_start_index, line_end_index);
-};
-
 template <uint8_t ALPHABET_START = 'a', uint8_t ALPHABET_END = 'z', bool IsCaseInsensetive = false>
 class ACTrie final {
     static_assert('\0' < ALPHABET_START && ALPHABET_START < ALPHABET_END && ALPHABET_END < CHAR_MAX);
@@ -268,7 +253,9 @@ public:
     }
 
     template <typename FindCallback>
-    requires ACTrieFindCallback<FindCallback>
+    requires requires (FindCallback func, std::string_view found_word, size_t start_index_in_original_text) {
+        func(found_word, start_index_in_original_text);
+    }
     void RunText(std::string_view text, FindCallback find_callback) const {
         assert(IsReady());
 
@@ -317,7 +304,12 @@ public:
     }
 
     template <bool IsExactWordsMatching = true, char LinesDelimeter = '\n', typename QueryWordCallback, typename NewLineCallback>
-    requires QueryWordCallbackConcept<QueryWordCallback> && NewLineCallbackConcept<NewLineCallback>
+    requires requires (QueryWordCallback func, size_t line_number, size_t query_word_index) {
+        func(line_number, query_word_index);
+    }
+    && requires (NewLineCallback func, size_t line_number, size_t words_on_current_line, size_t line_start_index, size_t line_end_index) {
+        func(line_number, words_on_current_line, line_start_index, line_end_index);
+    }
     size_t RunTextCountLines(std::string_view text, QueryWordCallback find_callback, NewLineCallback line_callback) const {
         static_assert(!IsInAlphabet(LinesDelimeter));
         assert(IsReady());
@@ -434,7 +426,9 @@ private:
     }
 
     static inline constexpr char ToLower(char c) noexcept {
-        return static_cast<char>(c | ('a' - 'A') * IsUpper(c));
+        // return static_cast<char>(c | ('a' - 'A') * IsUpper(c));
+        static_assert('a' - 'A' == (1 << 5));
+        return static_cast<char>(c | (IsUpper(c) << 5));
     }
 
     static_assert(ToLower('\0') == '\0');
@@ -449,7 +443,9 @@ private:
     }
 
     static inline constexpr int ToLower(int c) noexcept {
-        return c | ('a' - 'A') * IsUpper(c);
+        // return c | ('a' - 'A') * IsUpper(c);
+        static_assert('a' - 'A' == (1 << 5));
+        return c | (IsUpper(c) << 5);
     }
 
     static_assert(ToLower(0) == 0);
