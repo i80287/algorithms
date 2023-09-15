@@ -17,12 +17,12 @@ class ACTrie final {
 
     // Default value = 'z' - 'a' + 1 = 26
     static constexpr uint8_t ALPHABET_LENGTH = ALPHABET_END - ALPHABET_START + 1;
-    static constexpr size_t DEFAULT_VECTORS_CAPACITY = 16;
 
     static constexpr size_t NULL_NODE_INDEX = 0;
     static constexpr size_t FAKE_PREROOT_INDEX = 1;
     static constexpr size_t ROOT_INDEX = 2;
     static constexpr size_t DEFAULT_NODES_COUNT = 3; // null node; fake preroot node; root node
+    static constexpr size_t DEFAULT_VECTORS_CAPACITY = DEFAULT_NODES_COUNT * 2;
 
     static_assert(std::max(NULL_NODE_INDEX, std::max(FAKE_PREROOT_INDEX, ROOT_INDEX)) < DEFAULT_NODES_COUNT);
 
@@ -33,21 +33,18 @@ class ACTrie final {
         uint32_t edges[ALPHABET_LENGTH];
 
         // Index in array of nodes
-        uint32_t suffix_link;
+        uint32_t suffix_link = NULL_NODE_INDEX;
 
         // Index in array of nodes
-        uint32_t compressed_suffix_link; 
+        uint32_t compressed_suffix_link = NULL_NODE_INDEX;
 
         /* 
         * Index of the word in the ac trie which ends on this
         * MISSING_SENTIEL if node is not terminal
         */
-        uint32_t word_index;
+        uint32_t word_index = MISSING_SENTIEL;
 
-        constexpr ACTNode() noexcept
-            : suffix_link{NULL_NODE_INDEX},
-            compressed_suffix_link{NULL_NODE_INDEX},
-            word_index{MISSING_SENTIEL} {
+        constexpr ACTNode() noexcept {
             std::memset(edges, static_cast<int>(NULL_NODE_INDEX), sizeof(edges));
         }
 
@@ -61,8 +58,9 @@ class ACTrie final {
     mutable bool are_links_computed_ = false;
 
 public:
-    constexpr ACTrie() : nodes_(DEFAULT_NODES_COUNT), words_lengths_() {
+    constexpr ACTrie() : nodes_{}, words_lengths_() {
         nodes_.reserve(DEFAULT_VECTORS_CAPACITY);
+        nodes_.resize(DEFAULT_NODES_COUNT);
         words_lengths_.reserve(DEFAULT_VECTORS_CAPACITY);
 
         /*
@@ -457,16 +455,18 @@ private:
 
 #ifndef NDEBUG
     inline void CheckComputedLinks() const {
-        auto iter = nodes_.begin();
+        typename std::vector<ACTNode>::const_iterator iter = nodes_.begin();
 
         uint32_t max_node_index_excl = static_cast<uint32_t>(nodes_.size());
         assert(max_node_index_excl >= DEFAULT_NODES_COUNT);
         uint32_t max_word_end_index_excl = static_cast<uint32_t>(words_lengths_.size());
 
+        // Check just for existing
         static_assert(NULL_NODE_INDEX == NULL_NODE_INDEX, "current impl of CheckComputedLinks() relies on NULL_NODE_INDEX");
+
         // Skip null node
         ++iter;
-        // Now iter points on fake preroot node
+        // Now iter points to fake preroot node
         // fake preroot node does not have suffix_link_index and compressed_suffix_link
         // all children point to root
         for (uint32_t child_index : iter->edges) {
@@ -474,7 +474,7 @@ private:
         }
 
         ++iter;
-        // Now iter points on the root node
+        // Now iter points to the root node
         for (auto iter_end = nodes_.end(); iter != iter_end; ++iter) {
             static_assert(NULL_NODE_INDEX < FAKE_PREROOT_INDEX);
 

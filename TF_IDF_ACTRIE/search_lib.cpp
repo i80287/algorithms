@@ -61,14 +61,14 @@ namespace search_lib {
         std::vector<LineInfo> query_words_on_lines;
 
         size_t total_lines = act.RunTextCountLines<IsExactWordsMatching>(text,
-            [&query_words_on_lines](size_t line_number, size_t query_word_index) {
+            [&query_words_on_lines](size_t line_number, size_t query_word_index) constexpr {
                 if (query_words_on_lines.empty() || query_words_on_lines.back().line_number != line_number) {
                     query_words_on_lines.emplace_back().line_number = line_number;
                 }
 
                 ++query_words_on_lines.back().query_words_indexes[query_word_index];
             },
-            [&query_words_on_lines](size_t line_number, size_t words_on_current_line, size_t line_start_index, size_t line_end_index) noexcept {
+            [&query_words_on_lines](size_t line_number, size_t words_on_current_line, size_t line_start_index, size_t line_end_index) constexpr noexcept {
                 if (query_words_on_lines.empty()) {
                     return;
                 }
@@ -87,7 +87,7 @@ namespace search_lib {
         double total_lines_log = std::log(total_lines);
         for (size_t query_word_index = 0; query_word_index < query_words_count; ++query_word_index) {
             size_t count = 0;
-            for (const auto& line_info : query_words_on_lines) {
+            for (const LineInfo& line_info : query_words_on_lines) {
                 count += line_info.query_words_indexes.contains(query_word_index);
             }
 
@@ -99,7 +99,7 @@ namespace search_lib {
         lines_score.reserve(query_words_on_lines.size());
 
         size_t line_index = 0;
-        for (const auto& line_info : query_words_on_lines) {
+        for (const LineInfo& line_info : query_words_on_lines) {
             double line_score = 0;
             double words_count = static_cast<double>(line_info.words_count);
             for (auto &&[query_word_index, word_count] : line_info.query_words_indexes) {
@@ -112,7 +112,7 @@ namespace search_lib {
 
         std::stable_sort(lines_score.begin(),
             lines_score.end(),
-            [](const auto& p1, const auto& p2) constexpr noexcept -> bool {
+            [](const std::pair<double, size_t>& p1, const auto& p2) constexpr noexcept -> bool {
                 return p1.first >= p2.first;
             });
 
