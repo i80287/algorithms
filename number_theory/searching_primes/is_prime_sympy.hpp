@@ -503,21 +503,12 @@ static constexpr bool IsStrongSelfridgePRP(uint64_t n) noexcept {
 /// @param n number to test
 /// @return true if is is prime and false otherwise
 static constexpr bool IsPrime(uint64_t n) noexcept {
-    switch (n) {
-    case 1:
-        return false;
-    case 2:
-    case 3:
-    case 5:
-        return true;
-    }
-
     if ((n % 2 == 0) || (n % 3 == 0) || (n % 5 == 0)){
-        return false;
+        return n == 2 || n == 3 || n == 5;
     }
 
     if (n < 49) {
-        return true;
+        return n != 1;
     }
 
     if ((n %  7) == 0 || (n % 11) == 0 || (n % 13) == 0 || (n % 17) == 0 ||
