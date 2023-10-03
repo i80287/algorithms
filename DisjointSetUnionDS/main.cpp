@@ -150,6 +150,7 @@ struct WeightedDSUTreeNode {
     int64_t weight_;
 };
 
+/// @brief See also class DisjointSetUnion and https://youtu.be/MmemGjxsZTc?si=NHMBw-KJmxeXvkNA
 class WeightedDisjointSetUnion : DSUMethodsBase<WeightedDSUTreeNode> {
 public:
     WeightedDSUTreeNode* nodes_ = nullptr;
