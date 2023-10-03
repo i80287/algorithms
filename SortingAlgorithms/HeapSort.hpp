@@ -45,7 +45,7 @@ template <typename T>
 requires std::is_arithmetic_v<T>
 constexpr
 #endif
-inline void heap_sort(T* arr, size_t length) noexcept {
+inline void HeapSort(T* arr, size_t length) noexcept {
     if (length <= 1)
     {// (length & ~((size_t)1)) == 0
         return;
@@ -133,7 +133,7 @@ template <typename T, typename SizeType>
 requires std::is_arithmetic_v<T> && std::is_integral_v<SizeType>
 constexpr
 #endif
-inline void heap_sort(T* arr, size_t length, SizeType* indexes) noexcept {
+inline void HeapSort(T* arr, size_t length, SizeType* indexes) noexcept {
     if (length <= 1)
     {// (length & ~((size_t)1)) == 0
         return;
