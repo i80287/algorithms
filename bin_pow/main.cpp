@@ -23,11 +23,11 @@ static constexpr uint64_t bin_pow_slow_recursion(uint64_t n, uint32_t p, uint64_
 static constexpr uint64_t bin_pow(uint64_t n, uint64_t p) noexcept {
     uint64_t res = 1;
     do {
-        if (p & 1) { /* p % 2 != 0 */
+        if (p & 1) {
             res *= n;
         }
         n *= n;
-        p >>= 1; // /= 2
+        p >>= 1;
     } while(p);
 
     return res;
@@ -36,11 +36,11 @@ static constexpr uint64_t bin_pow(uint64_t n, uint64_t p) noexcept {
 static constexpr uint64_t bin_pow(uint64_t n, uint64_t p, uint64_t mod) noexcept {
     uint64_t res = 1;
     do {
-        if (p & 1) { /* p % 2 != 0 */
+        if (p & 1) {
             res = (res * n) % mod;
         }
         n = (n * n) % mod;
-        p >>= 1; // /= 2
+        p >>= 1;
     } while(p);
 
     return res;

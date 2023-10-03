@@ -43,7 +43,7 @@ inline constexpr int128_t abs(int128_t x) noexcept {
 /// @return trailing zeros count (128 for n = 0)
 template <typename T>
 requires std::is_unsigned_v<T>
-static constexpr int32_t count_trailing_zeros(T n) noexcept {
+static inline constexpr int32_t count_trailing_zeros(T n) noexcept {
     if (n == 0) {
         return sizeof(T) * 8;
     }
