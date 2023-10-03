@@ -5,17 +5,12 @@
 #include <cstdint>
 
 static constexpr bool IsPrimeSlow(uint64_t n) noexcept {
-	switch(n) {
-		case 0:
-		case 1:
-			return false;
-		case 2:
-		case 3:
-			return true;
+	if (n == 1) {
+		return false;
 	}
 
 	if (n % 2 == 0 || n % 3 == 0) {
-		return false;
+		return n == 2 || n == 3;
 	}
 
 	uint64_t root = static_cast<uint64_t>(std::sqrt(n));
