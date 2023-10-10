@@ -43,7 +43,9 @@ inline constexpr int128_t abs(int128_t x) noexcept {
 /// @param n 
 /// @return trailing zeros count (128 for n = 0)
 template <typename T>
+#if __cplusplus >= 202002L
 requires is_unsigned_v<T>
+#endif
 static inline constexpr int32_t count_trailing_zeros(T n) noexcept {
     if (n == 0) {
         return sizeof(T) * 8;
@@ -80,31 +82,42 @@ consteval
 #else
 inline static constexpr
 #endif
-uint32_t digits_count(__uint128_t number) noexcept {
+uint32_t digits_count(uint128_t number) noexcept {
     uint32_t cnt = 0;
-    while (number) {
+    do {
         number /= 10;
         cnt++;
-    }
+    } while (number);
 
     return cnt;
 }
 
-inline std::ostream& operator<<(std::ostream& out, __uint128_t number) {
+static_assert(digits_count(0) == 1);
+static_assert(digits_count(1) == 1);
+static_assert(digits_count(9) == 1);
+static_assert(digits_count(10) == 2);
+static_assert(digits_count(99) == 2);
+static_assert(digits_count(100) == 3);
+
+inline std::ostream& operator<<(std::ostream& out, uint128_t number) {
     // 340282366920938463463374607431768211455 == 2^128 - 1
     // strlen("340282366920938463463374607431768211455") == 39;
     constexpr size_t max_number_digits_count = 39;
-    static_assert(digits_count(static_cast<__uint128_t>(-1)) == max_number_digits_count);
+    static_assert(digits_count(static_cast<uint128_t>(-1)) == max_number_digits_count);
 
     char digits[max_number_digits_count + 1];
     digits[max_number_digits_count] = '\0';
     char* ptr = &digits[max_number_digits_count];
+#if __GNUC__
     size_t length = 0;
+#endif
     do {
         auto r = number / 10;
         auto q = number - r * 10;
         *--ptr = static_cast<char>('0' + static_cast<uint64_t>(q));
+#if __GNUC__
         length++;
+#endif
         number = r;
     } while (number);
 
@@ -116,6 +129,43 @@ inline std::ostream& operator<<(std::ostream& out, __uint128_t number) {
     return out;
 }
 
+inline int put_u128(uint128_t number) noexcept {
+    // 340282366920938463463374607431768211455 == 2^128 - 1
+    // strlen("340282366920938463463374607431768211455") == 39;
+    constexpr size_t max_number_digits_count = 39;
+    static_assert(digits_count(static_cast<uint128_t>(-1)) == max_number_digits_count);
+
+    char digits[max_number_digits_count + 1];
+    digits[max_number_digits_count] = '\0';
+    char* ptr = &digits[max_number_digits_count];
+    do {
+        auto r = number / 10;
+        auto q = number - r * 10;
+        *--ptr = static_cast<char>('0' + static_cast<uint64_t>(q));
+        number = r;
+    } while (number);
+    return fputs(ptr, stdout);
+}
+
+inline int put_u128_newline(uint128_t number) noexcept {
+    // 340282366920938463463374607431768211455 == 2^128 - 1
+    // strlen("340282366920938463463374607431768211455") == 39;
+    constexpr size_t max_number_digits_count = 39;
+    static_assert(digits_count(static_cast<uint128_t>(-1)) == max_number_digits_count);
+
+    char digits[max_number_digits_count + 1];
+    digits[max_number_digits_count] = '\0';
+    char* ptr = &digits[max_number_digits_count];
+    do {
+        auto r = number / 10;
+        auto q = number - r * 10;
+        *--ptr = static_cast<char>('0' + static_cast<uint64_t>(q));
+        number = r;
+    } while (number);
+    return puts(ptr);
+}
+
 };
 
 #endif // !_INTEGERS_128_BIT_
+
