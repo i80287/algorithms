@@ -9,12 +9,11 @@
 #include <initializer_list>
 #include <vector>
 
-class Permutation final {
+class Permutation {
 public:
-    constexpr Permutation() : elems_{} {
-    }
+    inline constexpr Permutation() noexcept(noexcept(std::vector<uint32_t>{})) = default;
 
-    constexpr explicit Permutation(size_t length) : elems_(length) {
+    inline constexpr explicit Permutation(size_t length) : elems_(length) {
         uint32_t i = 0;
         for (uint32_t& elem : elems_) {
             elem = ++i;
@@ -23,33 +22,32 @@ public:
         assert(i == Size());
     }
 
-    constexpr explicit Permutation(const std::vector<uint32_t>& elems) noexcept(false) : elems_{elems} {
+    inline constexpr explicit Permutation(const std::vector<uint32_t>& elems) noexcept(false) : elems_{elems} {
         CheckElems(elems.begin(), elems.end());
     }
 
-    constexpr explicit Permutation(std::initializer_list<uint32_t> elems) noexcept(false) : elems_{elems} {
+    inline constexpr explicit Permutation(std::initializer_list<uint32_t> elems) noexcept(false) : elems_{elems} {
         CheckElems(elems.begin(), elems.end());
     }
 
-    constexpr size_t Size() const noexcept {
+    inline constexpr size_t Size() const noexcept {
         return elems_.size();
     }
 
-    constexpr bool CheckNumber(size_t i) const noexcept {
+    inline constexpr bool CheckNumber(size_t i) const noexcept {
         return i - 1 < Size();
     }
 
-    Permutation& Swap(uint32_t i, uint32_t j) noexcept(false) {
+    inline constexpr Permutation& Swap(uint32_t i, uint32_t j) noexcept(false) {
         if (!CheckNumber(i) || !CheckNumber(j)) {
             throw std::out_of_range(__PRETTY_FUNCTION__);
         }
 
         std::swap(elems_[i - 1], elems_[j - 1]);
-
         return *this;
     }
 
-    constexpr uint32_t& operator[](size_t number) noexcept(false) {
+    inline constexpr uint32_t& operator[](size_t number) noexcept(false) {
         if (!CheckNumber(number)) {
             throw std::out_of_range(__PRETTY_FUNCTION__);
         }
@@ -57,7 +55,7 @@ public:
         return elems_[number - 1];
     }
 
-    constexpr uint32_t operator[](size_t number) const noexcept(false) {
+    inline constexpr uint32_t operator[](size_t number) const noexcept(false) {
         if (!CheckNumber(number)) {
             throw std::out_of_range(__PRETTY_FUNCTION__);
         }
@@ -65,7 +63,7 @@ public:
         return elems_[number - 1];
     }
 
-    inline std::string ToString() const {
+    std::string ToString() const {
         size_t n = elems_.size();
         if (n == 0) {
             return "/ \\\n\\ /";
@@ -141,7 +139,7 @@ public:
         return out;
     }
 
-private:
+protected:
     template <class Iterator>
     constexpr void CheckElems(Iterator begin, Iterator end) noexcept(false) {
         for (; begin != end; ++begin) {
@@ -155,7 +153,7 @@ private:
 };
 
 namespace std {
-    string to_string(const Permutation& permutation) {
+    inline string to_string(const Permutation& permutation) {
         return permutation.ToString();
     }
 }
