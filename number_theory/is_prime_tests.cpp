@@ -1,4 +1,3 @@
-#include <cassert>
 #include <cstdint>  // uint64_t, size_t
 #include <iterator> // std::size
 #include <random>   // std::mt19937_64, std::uniform_int_distribution

@@ -1,3 +1,14 @@
+/*
+ *
+ * Small chunk of methods (like abs, std::ostream <<, put_u128) and
+ * template instantiations (like std::is_unsigned, std::make_signed)
+ * for 128 bit width integers typedefed as uint128_t and int128_t.
+ * 
+ * This file is targeted for the g++ compiler. If your compiler supports
+ * 128 bit integers but typedefes them differently from g++ (__uint128_t and __int128_t),
+ * then you should change typedefs in the begining of this file.
+ */
+
 #ifndef _INTEGERS_128_BIT_
 #define _INTEGERS_128_BIT_ 1
 
