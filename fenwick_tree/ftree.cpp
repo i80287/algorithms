@@ -12,11 +12,11 @@ template <class ValueType = int64_t>
 class BITree {
     static_assert(std::is_arithmetic_v<ValueType>);
 public:
-    inline constexpr explicit BITree(const std::vector<ValueType>& elements) : sums_(elements.size()) {
+    inline explicit BITree(const std::vector<ValueType>& elements) : sums_(elements.size()) {
         RecalculateSums(elements.data());
     }
 
-    inline constexpr BITree(std::initializer_list<ValueType> elements) : sums_(elements.size()) {
+    inline BITree(std::initializer_list<ValueType> elements) : sums_(elements.size()) {
         RecalculateSums(elements.begin());
     }
 
@@ -24,7 +24,7 @@ public:
         for (size_t i = 0, n = Size(); i < n; ++i)
         {
             ValueType sum = ValueType(0);
-            for (size_t j = __AndOpInternal(i); j <= i; ++j)
+            for (size_t j = i & (i + 1); j <= i; ++j)
             {
                 sum += begin_it_or_ptr[j];
             }
@@ -38,7 +38,7 @@ public:
     /// @return Preffix sum of elements on [0..pos]
     inline constexpr ValueType PrefixSum(size_t pos) const noexcept {
         ValueType ans = ValueType(0);
-        for (size_t i = pos; i != static_cast<size_t>(-1); i = __AndOpInternal(i) - 1) {
+        for (size_t i = pos; i != static_cast<size_t>(-1); i = (i & (i + 1)) - 1) {
             ans += sums_[i];
         }
 
@@ -61,7 +61,7 @@ public:
     }
 
     inline constexpr void AddAt(size_t pos, ValueType value) noexcept {
-        for (size_t i = pos, n = sums_.size(); i < n; i = __OrOpInternal(i)) {
+        for (size_t i = pos, n = sums_.size(); i < n; i = i | (i + 1)) {
             sums_[i] += value;
         }
     }
@@ -72,14 +72,6 @@ public:
 
     inline constexpr size_t Size() const noexcept {
         return sums_.size();
-    }
-private:
-    inline static constexpr size_t __AndOpInternal(size_t i) noexcept {
-        return i & (i + 1);
-    }
-
-    inline static constexpr size_t __OrOpInternal(size_t i) noexcept {
-        return i | (i + 1);
     }
 
     // sums_[i] = sum of a[j] where j in [i & (i + 1); i]
