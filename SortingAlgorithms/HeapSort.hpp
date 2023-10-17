@@ -12,11 +12,11 @@ requires std::is_arithmetic_v<T>
 constexpr
 #endif
 static inline void heapify(T* arr, size_t length) noexcept {
-    for (size_t i = (length >> 1) - 1; i != static_cast<size_t>(-1); --i) {
-        size_t parent_index = i;
+    for (size_t i = (length >> 1); i != 0; ) {
+        size_t parent_index = --i;
         T elem = arr[parent_index];
         
-        size_t son_index = (parent_index << 1) + 1;
+        size_t son_index = (parent_index << 1) | 1;
         T son = arr[son_index];
         if (son_index + 1 < length && son < arr[son_index + 1]) {
             son = arr[++son_index];
@@ -27,7 +27,7 @@ static inline void heapify(T* arr, size_t length) noexcept {
             arr[son_index] = elem;
             
             parent_index = son_index;
-            son_index = (parent_index << 1) + 1;
+            son_index = (parent_index << 1) | 1;
             if (son_index >= length) {
                 break;
             }
@@ -69,12 +69,12 @@ inline void HeapSort(T* arr, size_t length) noexcept {
             son_index = 2;
         }
 
-        while (sifting_elem < son) {
+        while (sifting_elem < son) {            
             arr[parent_index] = son;
             arr[son_index] = sifting_elem;
             
             parent_index = son_index;
-            son_index = (son_index << 1) + 1;
+            son_index = (son_index << 1) | 1;
             if (son_index >= i) {
                 break;
             }
@@ -98,11 +98,11 @@ requires std::is_arithmetic_v<T> && std::is_integral_v<SizeType>
 constexpr
 #endif
 static inline void heapify(T* arr, size_t length, SizeType* indexes) noexcept {
-    for (size_t i = (length >> 1) - 1; i != static_cast<size_t>(-1); --i) {
-        size_t parent_index = i;
+    for (size_t i = (length >> 1); i != 0; ) {
+        size_t parent_index = --i;
         T elem = arr[parent_index];
         
-        size_t son_index = (parent_index << 1) + 1;
+        size_t son_index = (parent_index << 1) | 1;
         T son = arr[son_index];
         if (son_index + 1 < length && son < arr[son_index + 1]) {
             son = arr[++son_index];
@@ -115,7 +115,7 @@ static inline void heapify(T* arr, size_t length, SizeType* indexes) noexcept {
             std::swap(indexes[parent_index], indexes[son_index]);
             
             parent_index = son_index;
-            son_index = (parent_index << 1) + 1;
+            son_index = (parent_index << 1) | 1;
             if (son_index >= length) {
                 break;
             }
@@ -166,7 +166,7 @@ inline void HeapSort(T* arr, size_t length, SizeType* indexes) noexcept {
             std::swap(indexes[parent_index], indexes[son_index]);
             
             parent_index = son_index;
-            son_index = (son_index << 1) + 1;
+            son_index = (son_index << 1) | 1;
             if (son_index >= i) {
                 break;
             }
@@ -190,10 +190,10 @@ inline void HeapSort(T* arr, size_t length, SizeType* indexes) noexcept {
 
 template <class Iterator, class Comparator>
 static inline void Heapify(Iterator begin, size_t length, Comparator comparator) {
-    for (size_t i = (length >> 1) - 1; i != static_cast<size_t>(-1); --i) {
-        size_t parent_index = i;
+    for (size_t i = (length >> 1); i != 0; ) {
+        size_t parent_index = --i;
 
-        size_t son_index = (parent_index << 1) + 1;
+        size_t son_index = (parent_index << 1) | 1;
         if (son_index + 1 < length && comparator(*(begin + son_index), *(begin + son_index + 1))) {
             ++son_index;
         }
@@ -202,7 +202,7 @@ static inline void Heapify(Iterator begin, size_t length, Comparator comparator)
             std::swap(*(begin + parent_index), *(begin + son_index));
 
             parent_index = son_index;
-            son_index = (parent_index << 1) + 1;
+            son_index = (parent_index << 1) | 1;
             if (son_index >= length) {
                 break;
             }
@@ -237,7 +237,7 @@ void HeapSort(Iterator begin, Iterator end, Comparator comparator = Comparator()
             std::swap(*(begin + parent_index), *(begin + son_index));
 
             parent_index = son_index;
-            son_index = (son_index << 1) + 1;
+            son_index = (son_index << 1) | 1;
             if (son_index >= i) {
                 break;
             }
