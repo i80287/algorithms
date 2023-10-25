@@ -52,14 +52,14 @@ inline constexpr int128_t abs(int128_t x) noexcept {
 
 /// @brief Count trailing zeros for n
 /// @param n 
-/// @return trailing zeros count (128 for n = 0)
+/// @return trailing zeros count (sizeof(n) * 8 for n = 0)
 template <typename T>
 #if __cplusplus >= 202002L
 requires is_unsigned_v<T>
 #endif
 static inline constexpr int32_t count_trailing_zeros(T n) noexcept {
     if (n == 0) {
-        return sizeof(T) * 8;
+        return sizeof(n) * 8;
     }
 
     if constexpr (is_same_v<T, uint128_t>) {
@@ -87,6 +87,45 @@ static inline constexpr int32_t count_trailing_zeros(T n) noexcept {
         return 0;
     }
 }
+
+/// @brief Count leading zeros for n
+/// @param n 
+/// @return leading zeros count (sizeof(n) * 8 for n = 0)
+template <typename T>
+#if __cplusplus >= 202002L
+requires is_unsigned_v<T>
+#endif
+static inline constexpr int32_t count_leading_zeros(T n) noexcept {
+    if (n == 0) {
+        return sizeof(n) * 8;
+    }
+
+    if constexpr (is_same_v<T, uint128_t>) {
+        uint64_t hi = static_cast<uint64_t>(n >> 64);
+        if (hi != 0) {
+            return __builtin_clzll(hi);
+        }
+
+        uint64_t low = static_cast<uint64_t>(n);
+        return 64 + __builtin_clzll(low);
+    }
+    else if constexpr (is_same_v<T, unsigned long long>) {
+        return __builtin_clzll(n);
+    }
+    else if constexpr (is_same_v<T, unsigned long>) {
+        return __builtin_clzl(n);
+    }
+    else if constexpr (is_same_v<T, unsigned int>
+        || is_same_v<T, unsigned short>
+        || is_same_v<T, unsigned char>) {
+        return __builtin_clz(n);
+    }
+    else {
+        static_assert(is_same_v<T, bool>, "unknown unsigned integer in int32_t count_trailing_zeros(T)");
+        return 0;
+    }
+}
+
 
 #if defined(__cpp_consteval) && __cpp_consteval >= 201811L
 consteval
@@ -119,20 +158,17 @@ inline std::ostream& operator<<(std::ostream& out, uint128_t number) {
     char digits[max_number_digits_count + 1];
     digits[max_number_digits_count] = '\0';
     char* ptr = &digits[max_number_digits_count];
-#if __GNUC__
     size_t length = 0;
-#endif
     do {
         auto r = number / 10;
         auto q = number - r * 10;
         *--ptr = static_cast<char>('0' + static_cast<uint64_t>(q));
-#if __GNUC__
         length++;
-#endif
         number = r;
     } while (number);
 
-#if __GNUC__
+
+#if __GNUC__ && !defined(__clang__)
     __ostream_insert(out, ptr, length);
 #else
     out << std::string_view(ptr, length);
@@ -174,6 +210,24 @@ inline int put_u128_newline(uint128_t number) noexcept {
         number = r;
     } while (number);
     return puts(ptr);
+}
+
+string to_string(uint128_t number) {
+    // See functions above
+    constexpr size_t max_number_digits_count = 39;
+    char digits[max_number_digits_count + 1];
+    digits[max_number_digits_count] = '\0';
+    char* ptr = &digits[max_number_digits_count];
+    size_t length = 0;
+    do {
+        auto r = number / 10;
+        auto q = number - r * 10;
+        *--ptr = static_cast<char>('0' + static_cast<uint64_t>(q));
+        length++;
+        number = r;
+    } while (number);
+
+    return std::string(ptr, length);
 }
 
 };
