@@ -172,6 +172,7 @@ struct LongInt {
     }
 
     inline LongInt& operator=(const LongInt& other) {
+        operator delete(nums_);
         nums_ = nullptr;
         size_ = other.size_;
         capacity_ = other.capacity_;
@@ -192,7 +193,11 @@ struct LongInt {
         other.capacity_ = 0;
     }
 
-    inline constexpr LongInt& operator=(LongInt&& other) noexcept {
+#if __cplusplus >= 202302L
+    constexpr
+#endif
+    inline LongInt& operator=(LongInt&& other) noexcept {
+        operator delete(nums_);
         nums_ = other.nums_;
         size_ = other.size_;
         capacity_ = other.capacity_;
@@ -200,6 +205,15 @@ struct LongInt {
         other.size_ = 0;
         other.capacity_ = 0;
         return *this;
+    }
+
+#if __cplusplus >= 202302L
+    constexpr
+#endif
+    inline void Swap(LongInt& other) noexcept {
+        std::swap(nums_, other.nums_);
+        std::swap(size_, other.size_);
+        std::swap(capacity_, other.capacity_);
     }
 
 #if __cplusplus >= 202302L
@@ -338,7 +352,7 @@ struct LongInt {
             capacity_ = uint32_t(m + k);
         }
         else {
-            size_t n = 2 * std::NearestTwoPowGreaterEqual(m + k);
+            size_t n = 2 * std::nearest_2_pow_greater_equal(m + k);
             complex* p1;
             if (likely(n <= 262144)) {
                 complex* p = p1 = static_cast<complex*>(operator new(n * sizeof(complex)));
@@ -571,10 +585,7 @@ struct LongInt {
     }
 
 #if _INTEGERS_128_BIT_
-#if __cplusplus >= 202302L
-    constexpr
-#endif
-    inline bool operator==(uint128_t n) const noexcept {
+    constexpr bool operator==(uint128_t n) const noexcept {
         if (size_ < 0) {
             return false;
         }
@@ -762,6 +773,38 @@ struct LongInt {
         return uint32_t(carry);
     }
 
+    constexpr LongInt& operator>>=(uint32_t shift) noexcept {
+        size_t size = USize();
+        uint32_t uints_move = shift >> 5;
+        if (uints_move >= size) {
+            size_ = 0;
+            return *this;
+        }
+
+        if (uints_move != 0) {
+            memmove(nums_, nums_ + uints_move, (size - uints_move) * sizeof(uint32_t));
+            size -= uints_move;
+        }
+
+        shift &= 0b11111;
+        uint32_t* nums_iter = nums_;
+        uint32_t* nums_iter_end = nums_iter + ssize_t(size) - 1;
+        for (; nums_iter != nums_iter_end; ++nums_iter) {
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+            *nums_iter = uint32_t(*reinterpret_cast<uint64_t*>(nums_iter) >> shift);
+#else
+            uint32_t hi = *(nums_iter + 1);
+            uint32_t low = *nums_iter;
+            uint32_t mask = (1 << shift) - 1;
+            *nums_iter = ((hi & mask) << (32 - shift)) | (low >> shift);
+#endif
+        }
+
+        *nums_iter_end >>= shift;
+        size_ = size_ >= 0 ? int32_t(size) : -int32_t(size);
+        return *this;
+    }
+
     constexpr operator bool() noexcept {
         return size_ != 0;
     }
@@ -800,7 +843,7 @@ struct LongInt {
         const char* str_iter = s.begin();
         const char* str_end = s.end();
         int32_t sign = 1;
-        while (str_iter != str_end && !std::IsDigit(*str_iter)) {
+        while (str_iter != str_end && !std::is_digit(*str_iter)) {
             sign = 1 - (int32_t(*str_iter == '-') << 1);
             ++str_iter;
         }
@@ -936,7 +979,7 @@ struct LongInt {
     }
 
     void ToString(std::string& ans) const {
-        constexpr uint32_t digits_per_word = std::BaseTenDigits(uint64_t(uint32_t(-1)));
+        constexpr uint32_t digits_per_word = std::base_10_digits(uint64_t(uint32_t(-1)));
         size_t usize = USize();
         size_t max_number_len = (size_ <= 0) + digits_per_word * usize;
         char* digits = static_cast<char*>(operator new(max_number_len + 1));
@@ -988,7 +1031,7 @@ struct LongInt {
                 break;
             }
             default: {
-                constexpr uint32_t digits_per_word = std::BaseTenDigits(uint64_t(uint32_t(-1)));
+                constexpr uint32_t digits_per_word = std::base_10_digits(uint64_t(uint32_t(-1)));
                 size_t usize = n.USize();
                 size_t max_number_len = digits_per_word * usize;
                 char* digits = static_cast<char*>(operator new(max_number_len + 1));
@@ -1087,6 +1130,19 @@ protected:
         capacity_ = new_capacity;
     }
 };
+
+namespace std {
+#if __cplusplus >= 202302L
+    constexpr
+#endif
+    inline void swap(LongInt& n, LongInt& m) noexcept {
+        n.Swap(m);
+    }
+
+    inline string to_string(const LongInt& n) {
+        return n.ToString();
+    }
+}
 
 #include <chrono>
 
@@ -1526,14 +1582,68 @@ void TestToString() {
     }
 }
 
+void TestBitShifts() {
+    constexpr uint32_t k = 4096;
+    LongInt n;
+    n.Reserve(4);
+    for (uint32_t i = 0; i <= k; i++) {
+        for (uint32_t shift = 0; shift <= 31; shift++) {
+            n = i;
+            n >>= shift;
+            assert(n == (i >> shift));
+        }
+        for (uint32_t j = 0; j <= 16; j++) {
+            n = i;
+            n >>= 32 + j;
+            assert(n == 0);
+        }
+    }
+
+    for (uint128_t i = uint128_t(-1) - k; i != 0; i++) {
+        for (uint32_t shift = 0; shift <= 127; shift++) {
+            n = i;
+            n >>= shift;
+            if (n != (i >> shift)) {
+                cout << i << '\n' << n << '\n' << shift;
+                return;
+            }
+            assert(n == (i >> shift));
+        }
+        for (uint32_t j = 0; j <= 16; j++) {
+            n = i;
+            n >>= 128 + j;
+            assert(n == 0);
+        }
+    }
+
+    // 1 << 255
+    n.FromString("57896044618658097711785492504343953926634992332820282019728792003956564819968");
+    LongInt m;
+    m.Reserve(uint32_t(n.USize()));
+    for (uint32_t shift = 0; shift <= 127; shift++) {
+        m = n;
+        m >>= (255 - shift);
+        assert(m == uint128_t(1) << shift);
+    }
+}
+
 int main() {
-    TestOperatorEqualsInt();
-    TestLongIntMult();
-    TestUIntMult();
-    TestUIntAdd();
-    TestFromString();
-    TestToString();
+    // TestOperatorEqualsInt();
+    // TestLongIntMult();
+    // TestUIntMult();
+    // TestUIntAdd();
+    // TestFromString();
+    // TestToString();
+    // TestBitShifts();
+    std::ios::sync_with_stdio(false);
+    cin.tie(nullptr);
+    LongInt n1;
+    LongInt n2;
+    cin >> n1 >> n2;
+    n1 *= n2;
+    cout << n1;
+    cout.flush();
     return 0;
 }
 
-// g++ -std=c++2b -Wall -Wextra -Wpedantic -Werror -Wunused --pedantic-error -Wconversion -Wshadow -Wnull-dereference -Warith-conversion -Wcast-align=strict -Warray-bounds=2 -Ofast -march=native .\LongInt.cpp -o LongInt.exe
+// g++ -std=c++2b -Wall -Wextra -Wpedantic -Werror -Wunused --pedantic-error -Wconversion -Wshadow -Wnull-dereference -Warith-conversion -Wcast-align -Warray-bounds=2 -Ofast -march=native .\LongInt.cpp -o LongInt.exe
