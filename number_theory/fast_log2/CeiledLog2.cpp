@@ -1,7 +1,7 @@
 #include <cstdio>
 #include <cstdint>
 
-#pragma GCC optimize("unroll-loops")
+// #pragma GCC optimize("unroll-loops")
 
 uint32_t ceiled_log2(uint64_t x) {
     static const uint64_t t[6] = {

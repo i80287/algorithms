@@ -1,5 +1,5 @@
 #include <cstdint>
-#include <iostream>
+#include <cstdio>
 
 // Taken from https://stackoverflow.com/questions/25892665/performance-of-log10-function-returning-an-int
 
@@ -27,9 +27,29 @@ inline uint32_t log10_floor(uint32_t x) {
 }
 
 int main() {
-    std::cout << "Floor log10(10) = " << log10_floor(10) << '\n'; // 2
-    std::cout << "Floor log10(99) = " << log10_floor(99) << '\n'; // 2
-    std::cout << "Floor log10(100) = " << log10_floor(100) << '\n'; // 3
-    std::cout << "Floor log10(101) = " << log10_floor(101) << '\n'; // 3
+    /*
+     * Floor log10(1) = 1  
+     * Floor log10(9) = 1  
+     * Floor log10(10) = 2 
+     * Floor log10(11) = 2 
+     * Floor log10(99) = 2 
+     * Floor log10(100) = 3
+     * Floor log10(101) = 3
+     */
+    printf(
+        "Floor log10(1) = %u\n"
+        "Floor log10(9) = %u\n"
+        "Floor log10(10) = %u\n"
+        "Floor log10(11) = %u\n"
+        "Floor log10(99) = %u\n"
+        "Floor log10(100) = %u\n"
+        "Floor log10(101) = %u\n",
+        log10_floor(1),
+        log10_floor(9),
+        log10_floor(10),
+        log10_floor(11),
+        log10_floor(99),
+        log10_floor(100),
+        log10_floor(101));
     return 0;
 }
