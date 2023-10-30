@@ -34,6 +34,41 @@ static constexpr T bin_pow(T n, uint64_t p) noexcept {
     return res;
 }
 
+template <typename T>
+static constexpr T bin_pow(T n, uint32_t p) noexcept {
+    T res = 1;
+    while (true) {
+        if (p & 1) {
+            res *= n;
+        }
+        p >>= 1;
+        if (p == 0) {
+            break;
+        }
+        n *= n;        
+    }
+
+    return res;
+}
+
+template <typename T>
+static constexpr T bin_pow(T n, int32_t p) noexcept {
+    const bool inv = p < 0;
+    T res = 1;
+    while (true) {
+        if (p & 1) {
+            res *= n;
+        }
+        p /= 2;
+        if (p == 0) {
+            break;
+        }
+        n *= n;        
+    }
+
+    return inv ? 1 / res : res;
+}
+
 static constexpr uint64_t bin_pow(uint64_t n, uint64_t p, uint64_t mod) noexcept {
     uint64_t res = 1;
     do {
@@ -49,7 +84,7 @@ static constexpr uint64_t bin_pow(uint64_t n, uint64_t p, uint64_t mod) noexcept
 
 int main() {
     printf("%llu\n", bin_pow_slow_recursion(3, 19)); // 1162261467
-    printf("%llu\n", bin_pow(3ull, 19)); // 1162261467
+    printf("%llu\n", bin_pow(3ull, 19u)); // 1162261467
     printf("%llu\n", bin_pow_slow_recursion(3, 19, 1e9 + 7)); // 162261460
     printf("%llu\n", bin_pow(3, 19, 1e9 + 7)); // 162261460
     return (0);
