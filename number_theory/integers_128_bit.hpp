@@ -255,7 +255,7 @@ static_assert(base_10_len(uint128_t(100)) == 3);
 static_assert(base_10_len(uint128_t(101)) == 3);
 static_assert(base_10_len(uint128_t(-1)) == 39);
 
-inline std::ostream& operator<<(std::ostream& out, uint128_t number) {
+inline ostream& operator<<(ostream& out, uint128_t number) {
     // 340282366920938463463374607431768211455 == 2^128 - 1
     // strlen("340282366920938463463374607431768211455") == 39;
     constexpr size_t max_number_digits_count = 39;
@@ -276,7 +276,7 @@ inline std::ostream& operator<<(std::ostream& out, uint128_t number) {
 #if __GNUC__ && !defined(__clang__)
     __ostream_insert(out, ptr, length);
 #else
-    out << std::string_view(ptr, length);
+    out << string_view(ptr, length);
 #endif
     return out;
 }
@@ -332,7 +332,7 @@ inline string to_string(uint128_t number) {
         length++;
         number = r;
     } while (number);
-    return std::string(ptr, length);
+    return string(ptr, length);
 }
 
 static constexpr uint128_t gcd(uint128_t a, uint128_t b) noexcept {
@@ -362,7 +362,7 @@ static constexpr uint128_t gcd(uint64_t a, int128_t b) noexcept {
     a_ = b_;        // Now a_ < 2^64
     b_ = temp % b_; // And still b_ < 2^64
 
-    return std::gcd(uint64_t(a_), uint64_t(b_));
+    return gcd(uint64_t(a_), uint64_t(b_));
 }
 
 static_assert(gcd(uint64_t(2), int128_t(4)) == 2);
