@@ -4,26 +4,26 @@
 
 #include "integers_128_bit.hpp"
 
-template <typename T>
-requires std::is_unsigned_v<T>
-static constexpr T GCD(T a, T b) noexcept {
-    if constexpr (std::is_same_v<T, uint128_t>) {
-        uint128_t temp = 0;
-        while (b) {
-            temp = a;
-            a = b;
-            b = temp % b;
+/// @brief Calculate (n ^ p) % mod
+/// @param n
+/// @param p
+/// @param mod
+/// @return (n ^ p) % mod
+static constexpr uint32_t BinPowMod(uint32_t n, uint32_t p, uint32_t mod) noexcept {
+    uint64_t res = 1;
+    uint64_t wdn_n = n;
+    while (true) {
+        if (p & 1) {
+            res = (res * wdn_n) % mod;
         }
-
-        return a;
+        p >>= 1;
+        if (p == 0) {
+            break;
+        }
+        wdn_n = (wdn_n * wdn_n) % mod;
     }
-    else {
-        return std::gcd(a, b);   
-    }
-}
 
-static constexpr uint128_t GCD(uint64_t a, int128_t b) noexcept {
-    return GCD(static_cast<uint128_t>(a), static_cast<uint128_t>(b >= 0 ? b : -b));
+    return static_cast<uint32_t>(res);
 }
 
 /// @brief Calculate (n ^ p) % mod
@@ -32,21 +32,17 @@ static constexpr uint128_t GCD(uint64_t a, int128_t b) noexcept {
 /// @param mod
 /// @return (n ^ p) % mod
 static constexpr uint64_t BinPowMod(uint64_t n, uint64_t p, uint64_t mod) noexcept {
-    if (mod == 0) {
-        return 0;
-    }
-
-    uint128_t res = 1;
-    uint128_t wdn_n = n % mod;
-
-    do {
-        if (p & 1) { /* p % 2 != 0 */
-            res = (res * wdn_n) % mod;
+    uint64_t res = 1;
+    while (true) {
+        if (p & 1) {
+            res = uint64_t((uint128_t(res) * uint128_t(n)) % mod);
         }
-
-        wdn_n = (wdn_n * wdn_n) % mod;
-        p >>= 1; // /= 2
-    } while(p);
+        p >>= 1;
+        if (p == 0) {
+            break;
+        }
+        n = uint64_t((uint128_t(n) * uint128_t(n)) % mod);
+    }
 
     return static_cast<uint64_t>(res);
 }
@@ -56,18 +52,22 @@ static constexpr uint64_t BinPowMod(uint64_t n, uint64_t p, uint64_t mod) noexce
 /// @param r r value to find.
 /// @return s.
 template <typename T>
+#if __cplusplus >= 202002L
 requires std::is_unsigned_v<T>
+#endif
 static constexpr T FindRS(T n, int32_t &r) noexcept {
     r = std::count_trailing_zeros(n);
     return n >> r;
 }
 
 template <typename Uint>
+#if __cplusplus >= 202002L
 requires std::is_unsigned_v<Uint>
+#endif
 static constexpr int32_t JacobiSymbolUi(Uint a, Uint n) noexcept {
     int32_t t = 1;
     if (n % 2 == 0) {
-        if (n == 0) {
+        if (unlikely(n == 0)) {
             return a == 1;
         }
 
@@ -123,7 +123,9 @@ static constexpr int32_t JacobiSymbolUi(Uint a, Uint n) noexcept {
 }
 
 template <typename Sint>
+#if __cplusplus >= 202002L
 requires std::is_signed_v<Sint>
+#endif
 static constexpr int32_t JacobiSymbolSi(Sint a, Sint n) noexcept {
     bool carry = n < 0;
     if (carry) {
@@ -133,7 +135,7 @@ static constexpr int32_t JacobiSymbolSi(Sint a, Sint n) noexcept {
 
     int32_t t = 1;
     if (n % 2 == 0) {
-        if (n == 0) {
+        if (unlikely(n == 0)) {
             return a == 1 || a == -1;
         }
 
@@ -151,7 +153,7 @@ static constexpr int32_t JacobiSymbolSi(Sint a, Sint n) noexcept {
             case 5:
                 // a === +-3 (mod 8)
                 // t = (-1) ^ p
-                t -= (static_cast<int32_t>(p % 2 != 0) << 1);
+                t -= static_cast<int32_t>(static_cast<uint32_t>(p % 2 != 0) << 1);
                 break;
             case 1:
             case 7:
@@ -193,11 +195,17 @@ static constexpr int32_t JacobiSymbolSi(Sint a, Sint n) noexcept {
 /// @param n 
 /// @return Jacobi symbol (-1, 0 or 1)
 template <typename IntegerT1, typename IntegerT2>
+#if __cplusplus >= 202002L
 requires std::is_integral_v<IntegerT1> && std::is_integral_v<IntegerT2>
+#endif
 static constexpr int32_t JacobiSymbol(IntegerT1 a, IntegerT2 n) noexcept {
+#if __cplusplus >= 202002L
     using T1 = std::remove_cvref_t<IntegerT1>;
     using T2 = std::remove_cvref_t<IntegerT2>;
-
+#else
+    using T1 = IntegerT1;
+    using T2 = IntegerT2;
+#endif
     static_assert(sizeof(T1) == sizeof(T2)
         && !std::is_same_v<T1, bool>
         && !std::is_same_v<T2, bool>);
@@ -226,8 +234,26 @@ static constexpr int32_t JacobiSymbol(IntegerT1 a, IntegerT2 n) noexcept {
 }
 
 static constexpr bool IsPerfectSquare(uint64_t n) noexcept {
-    uint64_t root = static_cast<uint64_t>(std::sqrt(n));
-    return root * root == n;
+    /*
+     * +------------+-----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+
+     * | n mod 16   |  1  |  2 |  3 |  4 |  5 |  6 |  7 |  8 |  9 | 10 | 11 | 12 | 13 | 14 | 15 |
+     * +------------+-----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+
+     * | n*n mod 16 |  1  |  4 |  9 |  0 |  9 |  4 |  1 |  0 |  1 |  4 |  9 |  0 |  9 |  4 |  1 |
+     * +------------+-----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+
+     * 
+     * If we peek mod 32, then we should check only for n & 31 in { 0, 1, 4, 9, 16, 17, 25 }
+     */
+    switch (n & 15) {
+        case 0:
+        case 1:
+        case 4:
+        case 9: {
+            uint64_t root = static_cast<uint64_t>(std::sqrt(n));
+            return root * root == n;
+        }
+        default:
+            return false;
+    }
 }
 
 /* *********************************************************************************************
@@ -236,20 +262,20 @@ static constexpr bool IsPerfectSquare(uint64_t n) noexcept {
  * either a^s == 1 mod n, or a^((2^t)*s) == -1 mod n, for some integer t, with 0 <= t < r.
  * *********************************************************************************************/
 static constexpr bool IsStrongPRP(uint64_t n, uint64_t a) noexcept {
-    if (a < 2) {
+    if (unlikely(a < 2)) {
         // throw std::domain_error("bool IsStrongPRP(uint64_t, uint64_t) requires 'a' greater than or equal to 2");
         return false;
     }
 
-    if (n == 1) {
+    if (unlikely(n == 1)) {
         return false;
     }
 
-    if ((n & 1) == 0) {
+    if (unlikely(n % 2 == 0)) {
         return n == 2;
     }
 
-    if (GCD(n, a) != 1) {
+    if (unlikely(std::gcd(n, a) != 1)) {
         // throw std::domain_error("bool IsStrongPRP(uint64_t, uint64_t) requires gcd(n,a) == 1");
         return false;
     }
@@ -282,12 +308,6 @@ static constexpr bool IsStrongPRP(uint64_t n, uint64_t a) noexcept {
     return false;
 }
 
-constexpr int32_t SizeInBaseTwo(uint64_t n) noexcept {
-    // " | 1" operation does not affect the answer for all numbers except n = 0
-    // for n = 0 answer is 1
-    return 64 - __builtin_clzll(n | 1);
-}
-
 /* *********************************************************************************************
  * mpz_stronglucas_prp:
  * A "strong Lucas probable prime" with parameters (P,Q) is a composite n = (2^r)*s+(D/n), where
@@ -297,22 +317,22 @@ constexpr int32_t SizeInBaseTwo(uint64_t n) noexcept {
 static constexpr bool IsStrongLucasPRP(uint64_t n, uint32_t p, int32_t q) noexcept {
     /* Check if p*p - 4*q == 0. */
     int64_t d = static_cast<int64_t>(p) * p - static_cast<int64_t>(q) * 4;
-    if (d == 0) {
-        // throw std::domain_error("Invalid values for p,q in bool IsStrongLucasPRP(uint64_t, uint64_t, uint64_t)");
+    if (unlikely(d == 0)) {
+        // throw std::domain_error("Invalid values for p,q in bool IsStrongLucasPRP(uint64_t, uint32_t, int32_t)");
         return false;
     }
 
-    if (n == 1) {
+    if (unlikely(n == 1)) {
         return false;
     }
 
-    if ((n & 1) == 0) {
+    if (unlikely(n % 2 == 0)) {
         return n == 2;
     }
 
-    uint128_t res = GCD(n, 2 * q * static_cast<int128_t>(d));
-    if (res != n && res != 1) {
-        // throw std::domain_error("is_strong_lucas_prp() requires gcd(n, 2 * q * (p * p - 4 * q)) == 1");
+    uint128_t res = std::gcd(n, 2 * q * static_cast<int128_t>(d));
+    if (unlikely(res != n && res != 1)) {
+        // throw std::domain_error("IsStrongLucasPRP(uint64_t, uint32_t, int32_t) requires gcd(n, 2 * q * (p * p - 4 * q)) == 1");
         return false;
     }
 
@@ -328,38 +348,37 @@ static constexpr bool IsStrongLucasPRP(uint64_t n, uint32_t p, int32_t q) noexce
     uint128_t vh = p;
     uint128_t ql = 1;
     uint128_t qh = 1;
-    const uint128_t widen_n = n;
-    const uint64_t widen_q = static_cast<uint64_t>(q >= 0 ? q : n + q);
-
-    for (int32_t j = SizeInBaseTwo(s) - 1; j >= 1; j--) {
+    const uint64_t widen_q = static_cast<uint64_t>(q >= 0 ? q : (n - static_cast<uint64_t>(-q)) % n);
+    // n >= 3 => n - 1 >= 2 => n - 1 >= 1 => s >= 1 => base_2_digits(s) >= 1
+    for (uint32_t j = std::base_2_digits(s) - 1; j != 0; j--) {
         /* ql = ql*qh (mod n) */
-        ql = ((ql * qh) % widen_n);
+        ql = ((ql * qh) % n);
         if (s & (1ull << j)) {
             /* qh = ql*q */
-            qh = ((ql * widen_q) % widen_n);
+            qh = ((ql * widen_q) % n);
 
             /* uh = uh*vh (mod n) */
-            uh = ((uh * vh) % widen_n);
+            uh = ((uh * vh) % n);
 
             /* vl = vh*vl - p*ql (mod n) */
             uint128_t vh_vl = vh * vl;
             uint128_t p_ql = p * ql;
             vl = vh_vl - p_ql;
             if (vh_vl < p_ql) {
-                vl += widen_n * ((p_ql - vh_vl + widen_n - 1) / widen_n);
+                vl += n * ((p_ql - vh_vl + n - 1) / n);
             }
 
-            vl = (vl % widen_n);
+            vl = (vl % n);
 
             /* vh = vh*vh - 2*qh (mod n) */
             uint128_t vh_vh = vh * vh;
             uint128_t qh_2 = 2 * qh;
             vh = vh_vh - qh_2;
             if (vh_vh < qh_2) {
-                vh += widen_n * ((qh_2 - vh_vh + widen_n - 1) / widen_n);
+                vh += n * ((qh_2 - vh_vh + n - 1) / n);
             }
 
-            vh = (vh % widen_n);
+            vh = (vh % n);
         }
         else {
             /* qh = ql */
@@ -369,60 +388,60 @@ static constexpr bool IsStrongLucasPRP(uint64_t n, uint32_t p, int32_t q) noexce
             uint128_t uh_vl = uh * vl;
             uh = uh_vl - ql;
             if (uh_vl < ql) {
-                uh += widen_n * ((ql - uh_vl + widen_n - 1) / widen_n);
+                uh += n * ((ql - uh_vl + n - 1) / n);
             }
 
-            uh = (uh % widen_n);
+            uh = (uh % n);
 
             /* vh = vh*vl - p*ql (mod n) */
             uint128_t vh_vl = vh * vl;
             uint128_t p_ql = p * ql;
             vh = vh_vl - p_ql;
             if (vh_vl < p_ql) {
-                vh += widen_n * ((p_ql - vh_vl + widen_n - 1) / widen_n);
+                vh += n * ((p_ql - vh_vl + n - 1) / n);
             }
 
-            vh = (vh % widen_n);
+            vh = (vh % n);
 
             /* vl = vl*vl - 2*ql (mod n) */
             uint128_t vl_vl = vl * vl;
             uint128_t ql_2 = 2 * ql;
             vl = vl_vl - ql_2;
             if (vl_vl < ql_2) {
-                vl += widen_n * ((ql_2 - vl_vl + widen_n - 1) / widen_n);
+                vl += n * ((ql_2 - vl_vl + n - 1) / n);
             }
 
-            vl = (vl % widen_n);
+            vl = (vl % n);
         }
     }
 
     /* ql = ql*qh */
-    ql = ((ql * qh) % widen_n);
+    ql = ((ql * qh) % n);
 
     /* qh = ql*q */
-    qh = ((ql * widen_q) % widen_n);
+    qh = ((ql * widen_q) % n);
 
     /* uh = uh*vl - ql (mod n) */
     uint128_t uh_vl = uh * vl;
     uh = uh_vl - ql;
     if (uh_vl < ql) {
-        uh += widen_n * ((ql - uh_vl + widen_n - 1) / widen_n);
+        uh += n * ((ql - uh_vl + n - 1) / n);
     }
 
-    uh = (uh % widen_n);
+    uh = (uh % n);
 
     /* vl = vh*vl - p*ql (mod n) */
     uint128_t vh_vl = vh * vl;
     uint128_t p_ql = p * ql;
     vl = vh_vl - p_ql;
     if (vh_vl < p_ql) {
-        vl += widen_n * ((p_ql - vh_vl + widen_n - 1) / widen_n);
+        vl += n * ((p_ql - vh_vl + n - 1) / n);
     }
 
-    vl = (vl % widen_n);
+    vl = (vl % n);
 
     /* ql = ql*qh */
-    ql = ((ql * qh) % widen_n);
+    ql = ((ql * qh) % n);
 
     /* uh contains LucasU_s and vl contains LucasV_s */
     if (uh == 0 || vl == 0) {
@@ -436,12 +455,12 @@ static constexpr bool IsStrongLucasPRP(uint64_t n, uint32_t p, int32_t q) noexce
         auto ql_2 = 2 * ql;
         vl = vl_vl - ql_2;
         if (vl_vl < ql_2) {
-            vl += widen_n * ((ql_2 - vl_vl + widen_n - 1) / widen_n);
+            vl += n * ((ql_2 - vl_vl + n - 1) / n);
         }
-        vl = vl % widen_n;
+        vl = vl % n;
 
         /* ql = ql*ql (mod n) */
-        ql = (ql * ql) % widen_n;
+        ql = (ql * ql) % n;
 
         if (vl == 0) {
             return true;
@@ -459,11 +478,11 @@ static constexpr bool IsStrongLucasPRP(uint64_t n, uint32_t p, int32_t q) noexce
  * Make sure n is not a perfect square, otherwise the search for D will only stop when D=n.
  * **********************************************************************************************************/
 static constexpr bool IsStrongSelfridgePRP(uint64_t n) noexcept {
-    if (n == 1) {
+    if (unlikely(n == 1)) {
         return false;
     }
     
-    if (n % 2 == 0) {
+    if (unlikely(n % 2 == 0)) {
         return n == 2;
     }
 
@@ -486,7 +505,7 @@ static constexpr bool IsStrongSelfridgePRP(uint64_t n) noexcept {
                 d += (d > 0) ? 2 : -2;
                 d = -d;
 
-                if (d >= MAX_D) {
+                if (unlikely(d >= MAX_D)) {
                     // throw std::domain_error("Appropriate value for D cannot be found in bool IsStrongSelfridgePRP(uint64_t)");
                     return false;
                 }
@@ -501,12 +520,13 @@ static constexpr bool IsStrongSelfridgePRP(uint64_t n) noexcept {
 /// @brief Realization taken from the sympy and gmpy2 C source code (IsStrongPRP(uint64_t, uint64_t) and IsStrongSelfridgePRP(uint64_t))
 ///        complexity - O(log(n) ^ 2 * log(log(n)))
 /// @param n number to test
-/// @return true if is is prime and false otherwise
+/// @return true if n is prime and false otherwise
 static constexpr bool IsPrime(uint64_t n) noexcept {
     if ((n % 2 == 0) || (n % 3 == 0) || (n % 5 == 0)){
         return n == 2 || n == 3 || n == 5;
     }
 
+    // 7 * 7
     if (n < 49) {
         return n != 1;
     }
@@ -517,12 +537,13 @@ static constexpr bool IsPrime(uint64_t n) noexcept {
         return false;
     }
 
+    // 53 * 53
     if (n < 2809) {
         return true;
     }
 
     if (n < 31417) {
-        if (BinPowMod(2, n, n) != 2) {
+        if (BinPowMod(2, uint32_t(n), uint32_t(n)) != 2) {
             return false;
         }
 

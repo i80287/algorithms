@@ -20,6 +20,26 @@
 typedef __uint128_t uint128_t;
 typedef __int128_t int128_t;
 
+#if defined(__GNUC__)
+#if defined(likely)
+#undef likely
+#endif
+#define likely(x)   __builtin_expect(!!(x), 1)
+#if defined(unlikely)
+#undef unlikely
+#endif
+#define unlikely(x) __builtin_expect(!!(x), 0)
+#else
+#if defined(likely)
+#undef likely
+#endif
+#define likely(x)
+#if defined(unlikely)
+#undef unlikely
+#endif
+#define unlikely(x)
+#endif
+
 namespace std {
 
 template<>
@@ -58,7 +78,7 @@ template <typename T>
 requires is_unsigned_v<T>
 #endif
 static inline constexpr int32_t count_trailing_zeros(T n) noexcept {
-    if (n == 0) {
+    if (unlikely(n == 0)) {
         return sizeof(n) * 8;
     }
 
@@ -96,7 +116,7 @@ template <typename T>
 requires is_unsigned_v<T>
 #endif
 static constexpr int32_t count_leading_zeros(T n) noexcept {
-    if (n == 0) {
+    if (unlikely(n == 0)) {
         return sizeof(n) * 8;
     }
 
@@ -184,13 +204,12 @@ constexpr uint32_t base_10_digits(uint64_t n) noexcept {
     return ans;
 }
 
-constexpr uint32_t base_10_digits(uint128_t number) noexcept {
+constexpr uint32_t base_10_digits(uint128_t n) noexcept {
     uint32_t cnt = 0;
     do {
-        number /= 10;
+        n /= 10;
         cnt++;
-    } while (number);
-
+    } while (n != 0);
     return cnt;
 }
 

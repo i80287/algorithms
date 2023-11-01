@@ -12,9 +12,6 @@
 
 #include "integers_128_bit.hpp"
 
-#define likely(x)   __builtin_expect(!!(x), 1)
-#define unlikely(x) __builtin_expect(!!(x), 0)
-
 using f64 = double;
 using f128 = long double;
 using std::vector;
@@ -309,7 +306,7 @@ struct LongInt {
         else {
             k_ptr = other.nums_;
             m_ptr = nums_;
-            size_t tmp = m; // let compiler decide wether it is faster the 3 xor
+            size_t tmp = m; // let compiler decide whether it is faster the 3 xor
             m = k;
             k = tmp;
         }

@@ -21,7 +21,9 @@
 /// @param b b value
 /// @return {u, v, gcd(a, b)}
 template <typename IntType>
+#if __cplusplus >= 202002L
 requires std::is_integral_v<IntType>
+#endif
 static constexpr std::tuple<int64_t, int64_t, int64_t> ExtendedEuclidAlgorithm(IntType a, IntType b) noexcept {
     int64_t u_previous = a != 0;
     int64_t u_current = 0;
@@ -30,8 +32,7 @@ static constexpr std::tuple<int64_t, int64_t, int64_t> ExtendedEuclidAlgorithm(I
 
     IntType r_previous = a;
     IntType r_current = b;
-    while (r_current != 0)
-    {
+    while (r_current != 0) {
         int64_t q_current = static_cast<int64_t>(r_previous / r_current);
         IntType r_next = r_previous % r_current;
 
@@ -47,11 +48,12 @@ static constexpr std::tuple<int64_t, int64_t, int64_t> ExtendedEuclidAlgorithm(I
         v_current = v_next;
     }
 
-    if (r_previous < 0)
-    {
-        u_previous = -u_previous;
-        v_previous = -v_previous;
-        r_previous = -r_previous;
+    if constexpr (!std::is_unsigned_v<IntType>) {
+        if (r_previous < 0) {
+            u_previous = -u_previous;
+            v_previous = -v_previous;
+            r_previous = -r_previous;
+        }
     }
 
     return {u_previous, v_previous, r_previous};
@@ -60,8 +62,8 @@ static constexpr std::tuple<int64_t, int64_t, int64_t> ExtendedEuclidAlgorithm(I
 /// @brief Finds such integer u and v so that `a * u + b * v = gcd(a, b)`
 /// Solves a * x === c (mod m)
 /// Roots exist <=> c % gcd(a, m) == 0
-/// If roots exists, then exactly gcd(a, m) will be returned
-/// Works in O(log(min(a, m))
+/// If roots exists, then exactly gcd(a, m) roots will be returned
+/// Works in O(log(min(a, m)) + gcd(a, m))
 /// @param a 
 /// @param c 
 /// @param m 
@@ -250,18 +252,17 @@ static constexpr std::tuple<int64_t, int64_t, int64_t> ExtendedEuclidAlgorithm(I
     std::cout << "All " << __PRETTY_FUNCTION__ << " tests passed\n";
 }
 
-[[maybe_unused]] static void ConsoleTests()
-{
+[[maybe_unused]] static void ConsoleTests() {
     uint64_t a = 0;
-    std::cout << "Unsigned integral a = ";
+    std::cout << "Unsigned integer a = ";
     std::cin >> a;
 
     int64_t c = 0;
-    std::cout << "Signed integral c = ";
+    std::cout << "Signed integer c = ";
     std::cin >> c;
 
     uint32_t m = 0;
-    std::cout << "Unsigned integral m = ";
+    std::cout << "Unsigned integer m = ";
     std::cin >> m;
     if (std::cin.fail()) {
         std::cout << "Input failed\n";

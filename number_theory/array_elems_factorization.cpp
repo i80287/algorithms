@@ -12,19 +12,30 @@ int main() {
     for (uint32_t i = n; i != 0; i--) {
         uint32_t a = 0;
         std::cin >> a;
-        const uint32_t a_initial = a;
-        for (uint32_t d = 2; d * d <= a_initial; d++) {
+
+        if (a % 2 == 0) { // we dont need to optimize it like (k & 1) == 0, compiler will do it anyway
+            if (a == 0) {
+                continue;
+            }
+
+            // k = s * 2^pow_of_2, where s is odd
+            uint32_t pow_of_2 = uint32_t(__builtin_ctz(a));
+            a >>= pow_of_2;
+            divisors[2] += pow_of_2;
+        }
+
+        for (uint32_t d = 3; d * d <= a; d += 2) {
             if (a % d == 0) {
-                uint32_t prime_div_power = 0;
+                uint32_t pow_of_d = 0;
                 do {
-                    prime_div_power++;
+                    pow_of_d++;
                     a /= d;
                 } while (a % d == 0);
-                divisors[d] += prime_div_power;
+                divisors[d] += pow_of_d;
             }
         }
 
-        if (a > 1) {
+        if (a != 1) {
             divisors[a]++;
         }
     }

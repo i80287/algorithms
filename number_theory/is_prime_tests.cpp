@@ -30,7 +30,72 @@ static constexpr bool binsearch_contains(const uint64_t (&nums)[N], uint64_t val
     return false;
 }
 
-static inline void TestKnownPrimes() noexcept {
+static inline void TestSmallPrimes() noexcept {
+    for (uint64_t n = 0; n < 32768; n++) {
+        if (IsPrimeSlow(n) != IsPrime(n)) {
+            printf("Error bool IsPrime(uint64_t) at number = %llu\n", n);
+        }
+    }
+}
+
+static inline void TestMidPrimes() noexcept {
+    constexpr uint64_t primes[] = {
+        1000000000000000009ull,
+        1000000000000000003ull,
+        999999999999999989ull,
+        999999999999999967ull,
+        999999999999999877ull,
+        999999999999999863ull,
+        999999999999999829ull,
+        999999999999999749ull,
+        999999999999999737ull,
+        999999999999999709ull,
+        999999999999999637ull,
+        999999999999999631ull,
+        999999999999999613ull,
+        999999999999999601ull,
+        999999999999999569ull,
+        999999999999999539ull,
+        999999999999999529ull,
+        999999999999999503ull,
+        999999999999999487ull,
+        999999999999999463ull,
+        999999999999999443ull,
+        999999999999999419ull,
+        999999999999999409ull,
+        999999999999999371ull,
+        999999999999999359ull,
+        999999999999999331ull,
+        999999999999999283ull,
+        999999999999999161ull,
+        999999999999999157ull,
+        999999999999999121ull,
+        999999999999999079ull,
+        999999999999999073ull,
+        999999999999999023ull,
+        999999999999998989ull,
+        999999999999998939ull,
+        999999999999998929ull,
+        999999999999998927ull,
+        999999999999998867ull,
+        999999999999998759ull,
+        999999999999998743ull
+    };
+    constexpr size_t N = std::size(primes);
+
+    static_assert(binsearch_contains(primes, primes[0]));
+    static_assert(binsearch_contains(primes, primes[N / 2]));
+    static_assert(binsearch_contains(primes, primes[N - 1]));
+
+    for (uint64_t n = primes[N - 1]; n <= primes[0]; n += 2) {
+        bool is_prime = IsPrime(n);
+        if (is_prime != binsearch_contains(primes, n)) {
+            printf("Error bool IsPrime(uint64_t) at number = %llu\n", n);
+        }
+    }
+}
+
+static inline void TestLargestU64Primes() noexcept {
     constexpr uint64_t primes[] = {
         18446744073709551557ull,
         18446744073709551533ull,
@@ -827,18 +892,16 @@ static inline void TestKnownPrimes() noexcept {
         18446744073709515409ull,
         18446744073709515329ull,
         18446744073709515301ull,
-        1000000000000000009ull,
-        1000000000000000003ull,
-        999999999999999989ull
     };
     constexpr size_t N = std::size(primes);
 
     static_assert(binsearch_contains(primes, primes[0]));
+    static_assert(binsearch_contains(primes, primes[N / 2]));
     static_assert(binsearch_contains(primes, primes[N - 1]));
 
-    for (uint64_t n = primes[N - 4]; n <= primes[0]; n++) {
-        bool is_prime = binsearch_contains(primes, n);
-        if (IsPrime(n) != is_prime) {
+    for (uint64_t n = primes[N - 1]; n <= primes[0]; n += 2) {
+        bool is_prime = IsPrime(n);
+        if (is_prime != binsearch_contains(primes, n)) {
             printf("Error bool IsPrime(uint64_t) at number = %llu\n", n);
         }
     }
@@ -857,6 +920,8 @@ static inline void TestRandomPrimes() {
 }
 
 int main() {
-    TestKnownPrimes();
+    TestSmallPrimes();
+    TestMidPrimes();
+    TestLargestU64Primes();
     TestRandomPrimes();
 }
