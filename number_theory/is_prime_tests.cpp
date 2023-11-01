@@ -1,13 +1,14 @@
 #include <cstdint>  // uint64_t, size_t
 #include <iterator> // std::size
 #include <random>   // std::mt19937_64, std::uniform_int_distribution
+#include <cstdio>   // printf
 
 #include "is_prime_slow.hpp"
 #include "is_prime_sympy.hpp"
 
 template <size_t N>
 static constexpr bool binsearch_contains(const uint64_t (&nums)[N], uint64_t value) noexcept {
-    static_assert(N >= 2);
+    static_assert(N >= 1);
     if (value > nums[0] || nums[N - 1] > value) {
         return false;
     }
@@ -31,7 +32,7 @@ static constexpr bool binsearch_contains(const uint64_t (&nums)[N], uint64_t val
 }
 
 static inline void TestSmallPrimes() noexcept {
-    for (uint64_t n = 0; n < 32768; n++) {
+    for (uint64_t n = 0; n < 65536; n++) {
         if (IsPrimeSlow(n) != IsPrime(n)) {
             printf("Error bool IsPrime(uint64_t) at number = %llu\n", n);
         }

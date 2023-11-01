@@ -522,31 +522,27 @@ static constexpr bool IsStrongSelfridgePRP(uint64_t n) noexcept {
 /// @param n number to test
 /// @return true if n is prime and false otherwise
 static constexpr bool IsPrime(uint64_t n) noexcept {
-    if ((n % 2 == 0) || (n % 3 == 0) || (n % 5 == 0)){
-        return n == 2 || n == 3 || n == 5;
+    if (n % 2 == 0) {
+        return n == 2;
     }
-
-    // 7 * 7
-    if (n < 49) {
+    if (n % 3 == 0) {
+        return n == 3;
+    }
+    if (n % 5 == 0) {
+        return n == 5;
+    }
+    if (n < 7 * 7) {
         return n != 1;
     }
-
     if ((n %  7) == 0 || (n % 11) == 0 || (n % 13) == 0 || (n % 17) == 0 ||
         (n % 19) == 0 || (n % 23) == 0 || (n % 29) == 0 || (n % 31) == 0 ||
         (n % 37) == 0 || (n % 41) == 0 || (n % 43) == 0 || (n % 47) == 0) {
         return false;
     }
-
-    // 53 * 53
-    if (n < 2809) {
+    if (n < 53 * 53) {
         return true;
     }
-
     if (n < 31417) {
-        if (BinPowMod(2, uint32_t(n), uint32_t(n)) != 2) {
-            return false;
-        }
-
         switch(n) {
             case 7957:
             case 8321:
@@ -556,7 +552,7 @@ static constexpr bool IsPrime(uint64_t n) noexcept {
             case 23377:
                 return false;
             default:
-                return true;
+                return BinPowMod(2, uint32_t(n), uint32_t(n)) == 2;
         }
     }
 
