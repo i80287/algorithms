@@ -1,5 +1,5 @@
 /*
- * Small chunk of functions (like abs, std::ostream::operator<<, put_u128) and
+ * Small chunk of functions (like std::ostream::operator<<, put_u128) and
  * template instantiations (like std::is_unsigned, std::make_signed)
  * for 128 bit width integers typedefed as uint128_t and int128_t.
  * 
@@ -63,10 +63,6 @@ struct is_signed<int128_t> {
 static_assert(is_unsigned_v<uint128_t>);
 static_assert(is_signed_v<int128_t>);
 static_assert(is_same_v<make_unsigned_t<int128_t>, uint128_t>);
-
-constexpr int128_t abs(int128_t x) noexcept {
-    return x >= 0 ? x : -x;
-}
 
 /// @brief Count trailing zeros for n
 /// @param n 
@@ -225,6 +221,7 @@ constexpr uint32_t base_10_len(T value) noexcept {
 	}
 }
 
+#if __cplusplus >= 202002L
 // static_assert(base_10_digits(0u) == 1);
 // static_assert(base_10_digits(1u) == 1);
 // static_assert(base_10_digits(9u) == 1);
@@ -254,6 +251,7 @@ static_assert(base_10_len(uint128_t(99)) == 2);
 static_assert(base_10_len(uint128_t(100)) == 3);
 static_assert(base_10_len(uint128_t(101)) == 3);
 static_assert(base_10_len(uint128_t(-1)) == 39);
+#endif
 
 inline ostream& operator<<(ostream& out, uint128_t number) {
     // 340282366920938463463374607431768211455 == 2^128 - 1
@@ -334,46 +332,6 @@ inline string to_string(uint128_t number) {
     } while (number);
     return string(ptr, length);
 }
-
-static constexpr uint128_t gcd(uint128_t a, uint128_t b) noexcept {
-    uint128_t temp = 0;
-    while (b != 0) {
-        temp = a;
-        a = b;
-        b = temp % b;
-    }
-
-    return a;
-}
-
-static constexpr uint128_t gcd(uint64_t a, int128_t b) noexcept {
-    uint128_t b_ = static_cast<uint128_t>(b >= 0 ? b : -b);
-    if (unlikely(b == 0)) {
-        return a;
-    }
-
-    uint128_t a_ = b_;
-    b_ = a % b_;    // Now b_ < 2^64
-    if (b_ == 0) {
-        return a_;
-    }
-
-    uint128_t temp = a_;
-    a_ = b_;        // Now a_ < 2^64
-    b_ = temp % b_; // And still b_ < 2^64
-
-    return gcd(uint64_t(a_), uint64_t(b_));
-}
-
-static_assert(gcd(uint64_t(2), int128_t(4)) == 2);
-static_assert(gcd(uint64_t(2), int128_t(-4)) == 2);
-static_assert(gcd(uint64_t(3), int128_t(7)) == 1);
-static_assert(gcd(uint64_t(3), int128_t(-7)) == 1);
-static_assert(gcd(uint64_t(3), int128_t(18446744073709551557ull) * 3) == 3);
-static_assert(gcd(uint64_t(3), int128_t(18446744073709551557ull) * (-3)) == 3);
-static_assert(gcd(uint64_t(1000000000000000009ull), int128_t(1000000000000000009ll) * 1000000000000000009ll) == 1000000000000000009ull);
-static_assert(gcd(uint64_t(0), int128_t(1000000000000000009ll) * 1000000000000000009ll) == uint128_t(1000000000000000009ll) * 1000000000000000009ull);
-static_assert(gcd(uint64_t(18446744073709551557ull), int128_t(0)) == 18446744073709551557ull);
 
 };
 

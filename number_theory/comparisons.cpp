@@ -9,8 +9,9 @@
 #include <utility>
 #include <vector>
 
-/// @brief Finds such integer u and v so that `a * u + b * v = gcd(a, b)`
-/// gcd(a, b) >= 0
+/// @brief
+/// Finds such integer u and v so that `a * u + b * v = gcd(a, b)`
+/// let gcd(a, b) >= 0
 /// if a == 0 => u == 0 && v == 1 && (a * u + b * v = b = gcd(0, b))
 /// if b == 0 => u == 1 && v == 0 && (a * u + b * v = a = gcd(a, 0))
 /// if a != 0 => - |a| <= v <= |a|
@@ -24,7 +25,7 @@ template <typename IntType>
 #if __cplusplus >= 202002L
 requires std::is_integral_v<IntType>
 #endif
-static constexpr std::tuple<int64_t, int64_t, int64_t> ExtendedEuclidAlgorithm(IntType a, IntType b) noexcept {
+constexpr std::tuple<int64_t, int64_t, int64_t> ExtendedEuclidAlgorithm(IntType a, IntType b) noexcept {
     int64_t u_previous = a != 0;
     int64_t u_current = 0;
     int64_t v_previous = 0;
@@ -56,10 +57,10 @@ static constexpr std::tuple<int64_t, int64_t, int64_t> ExtendedEuclidAlgorithm(I
         }
     }
 
-    return {u_previous, v_previous, r_previous};
+    return {u_previous, v_previous, static_cast<int64_t>(r_previous)};
 }
 
-/// @brief Finds such integer u and v so that `a * u + b * v = gcd(a, b)`
+/// @brief
 /// Solves a * x === c (mod m)
 /// Roots exist <=> c % gcd(a, m) == 0
 /// If roots exists, then exactly gcd(a, m) roots will be returned
@@ -67,10 +68,10 @@ static constexpr std::tuple<int64_t, int64_t, int64_t> ExtendedEuclidAlgorithm(I
 /// @param a 
 /// @param c 
 /// @param m 
-/// @return vector or roots such that 0 <= x_{0} < x_{1} < ... < x_{gcd(a, m)-1} < m
-[[maybe_unused]] static std::vector<uint32_t> Solve(uint64_t a, int64_t c, uint32_t m) {
+/// @return vector or gcd(a, m) roots such that 0 <= x_{0} < x_{1} < ... < x_{gcd(a, m)-1} < m, x_{0} < m / gcd(a, m), x_{i + 1} = x_{i} + m / gcd(a, m)
+std::vector<uint32_t> SolveCompAllRoots(uint64_t a, int64_t c, uint32_t m) {
     uint32_t d = static_cast<uint32_t>(std::gcd(a, m));
-    if (a == 0 || m == 0 || c % static_cast<int64_t>(d) != 0) {
+    if (m == 0 || c % static_cast<int64_t>(d) != 0) {
         return {};
     }
 
@@ -89,10 +90,9 @@ static constexpr std::tuple<int64_t, int64_t, int64_t> ExtendedEuclidAlgorithm(I
     int64_t signed_m_ = int64_t(m_);
     uint64_t unsigned_c_ = uint64_t((c_ % signed_m_) + signed_m_) % m_;
     // x0 = u_ * c_
-
     // now 0 <= unsigned_u_ < m_ && 0 <= unsigned_c_ < m_ =>
     // => unsigned_u_ * unsigned_c_ wont cause overflow (since m_ <= m < 2^32)
-    uint32_t x0 = uint32_t(uint64_t(((unsigned_u_ * unsigned_c_) % signed_m_) + signed_m_) % m_);
+    uint32_t x0 = uint32_t((unsigned_u_ * unsigned_c_) % m_);
 
     std::vector<uint32_t> solutions(d);
     for (uint32_t& solution_i : solutions) {
@@ -102,6 +102,70 @@ static constexpr std::tuple<int64_t, int64_t, int64_t> ExtendedEuclidAlgorithm(I
     }
 
     return solutions;
+}
+
+
+/// @brief
+/// Solves a * x === c (mod m)
+/// Roots exist <=> c % gcd(a, m) == 0
+/// If roots exists, then exactly 1 root will be returned, it will be the least of all roots (see SolveCompAllRoots)
+/// Works in O(log(min(a, m))
+/// @param a 
+/// @param c 
+/// @param m 
+/// @return if roots exists, returns root x_{0} such that 0 <= x_{0} < m / gcd(a, m). Otherwise, returns (uint32_t)-1 
+constexpr uint32_t SolveComp(uint64_t a, int64_t c, uint32_t m) noexcept {
+    uint32_t d = static_cast<uint32_t>(std::gcd(a, m));
+    if (m == 0 || c % static_cast<int64_t>(d) != 0) {
+        return uint32_t(-1);
+    }
+
+    /*
+     * Solves a_ * x === c_ (mod m_) as gcd(a_, m_) == 1
+     */
+    uint64_t a_ = a / d;
+    uint32_t m_ = m / d;
+    // a_ * u_ + m_ * v_ == 1
+    int64_t u_ = std::get<0>(ExtendedEuclidAlgorithm<uint64_t>(a_, m_));
+    uint64_t unsigned_u_ = uint64_t(u_ + (m_ * (u_ < 0)));
+
+    // a_ * (u_ * c_) + m_ * (v_ * c_) == c_
+    // a * (u_ * c_) + m * (v_ * c_) == c
+    int64_t c_ = c / int64_t(d);
+    int64_t signed_m_ = int64_t(m_);
+    uint64_t unsigned_c_ = uint64_t((c_ % signed_m_) + signed_m_) % m_;
+    // x0 = u_ * c_
+    // now 0 <= unsigned_u_ < m_ && 0 <= unsigned_c_ < m_ =>
+    // => unsigned_u_ * unsigned_c_ wont cause overflow (since m_ <= m < 2^32)
+    return uint32_t((unsigned_u_ * unsigned_c_) % m_);
+}
+
+/*
+ * Solution finder for
+ * 2^k * x ≡ c (mod m),
+ * where GCD(c, m) = 1 && m ≡ 1 (mod 2)
+ * Works in O(k)
+ * 
+ * In practice, this algorithm works faster than SolveComp if a == 2^k
+ * 
+ * The algorithm can be modified by checking:
+ * if c % 4 = 1, then if m % 4 = 3, c += m, else c -= m
+ * or
+ * if c % 4 = 3, then if m % 4 = 3, c -= m, else c += m
+ * then
+ * k -= 2, c /= 4
+ */
+constexpr uint64_t SolveCompBin(uint64_t k, uint64_t c, uint64_t m) noexcept {
+    while (k != 0) {
+        if (c & 1) {
+            c += m;
+        }
+
+        c >>= 1;
+        --k;
+    }
+
+    return c;
 }
 
 [[maybe_unused]] static void MultiThreadTestsWithUnsigned() {
@@ -233,7 +297,7 @@ static constexpr std::tuple<int64_t, int64_t, int64_t> ExtendedEuclidAlgorithm(I
         uint32_t m = rnd_32();
         uint64_t mod2 = ((c % static_cast<int64_t>(m)) + static_cast<int64_t>(m)) % m;
         a %= m;
-        auto res = Solve(a, c, m);
+        auto res = SolveCompAllRoots(a, c, m);
         for (auto x : res) {
             if (x >= m) {
                 std::cout << "Solution " << x << " overflow\n";
@@ -249,7 +313,7 @@ static constexpr std::tuple<int64_t, int64_t, int64_t> ExtendedEuclidAlgorithm(I
         }
     }
 
-    std::cout << "All " << __PRETTY_FUNCTION__ << " tests passed\n";
+    std::cout << "All " << TOTAL_TESTS << " tests in " << __PRETTY_FUNCTION__ << " passed\n";
 }
 
 [[maybe_unused]] static void ConsoleTests() {
@@ -269,7 +333,7 @@ static constexpr std::tuple<int64_t, int64_t, int64_t> ExtendedEuclidAlgorithm(I
         return;
     }
 
-    auto solutions = Solve(a, c, m);
+    auto solutions = SolveCompAllRoots(a, c, m);
     if (!solutions.empty()) {
         std::cout << "Solutions of a * x === c (mod m):\n";
         a %= m;
@@ -297,4 +361,4 @@ int main() {
     MultiThreadTestsWithSigned();
 }
 
-// g++ comp.cpp -std=c++2b -Ofast -march=native -fconcepts-diagnostics-depth=200 -Wconversion -Warith-conversion -Wshadow -Warray-bounds=2 -ftree-vrp -Wnull-dereference -Wall -Wextra -Wpedantic -Werror --pedantic-errors -o comp.exe
+// g++ comparisons.cpp -std=c++2b -Ofast -march=native -fconcepts-diagnostics-depth=200 -Wconversion -Warith-conversion -Wshadow -Warray-bounds=2 -ftree-vrp -Wnull-dereference -Wall -Wextra -Wpedantic -Werror --pedantic-errors -o comparisons.exe
