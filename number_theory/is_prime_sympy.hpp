@@ -308,3 +308,52 @@ static constexpr bool IsPrime(uint64_t n) noexcept {
 
     return IsStrongPRP(n, 2) && IsStrongSelfridgePRP(n);
 }
+
+/// @brief Funny realization that works in log(n)
+/// @param m 
+/// @return true if n is prime and false otherwise
+static constexpr bool IsPrimeSmallN(uint16_t m) noexcept {
+    uint32_t n = m;
+    if (n % 2 == 0) {
+        return n == 2;
+    }
+    if (n % 3 == 0) {
+        return n == 3;
+    }
+    if (n % 5 == 0) {
+        return n == 5;
+    }
+    if (n < 7 * 7) {
+        return n != 1;
+    }
+    if ((n %  7) == 0 || (n % 11) == 0 || (n % 13) == 0 || (n % 17) == 0 ||
+        (n % 19) == 0 || (n % 23) == 0 || (n % 29) == 0 || (n % 31) == 0 ||
+        (n % 37) == 0 || (n % 41) == 0 || (n % 43) == 0 || (n % 47) == 0) {
+        return false;
+    }
+    if (n < 53 * 53) {
+        return true;
+    }
+    if (n % 53 == 0 || n % 59 == 0) {
+        return false;
+    }
+    switch(n) {
+        case 7957:
+        case 18721:
+        case 19951:
+        case 23377:
+        case 31417:
+        case 31609:
+        case 31621:
+        case 35333:
+        case 42799:
+        case 49141:
+        case 49981:
+        case 60701:
+        case 60787:
+        case 65281:
+            return false;
+        default:
+            return BinPowMod(2, n - 1, n) == 1;
+    }
+}
