@@ -1,6 +1,8 @@
 #if !defined(_MATH_UTILS_HPP_)
 #define _MATH_UTILS_HPP_ 1
 
+// #pragma GCC target("lzcnt") // optionally for a bit faster log2 (lzcnt instead of bsr may be used)
+
 #include "integers_128_bit.hpp"
 
 namespace std {
@@ -130,6 +132,27 @@ static constexpr bool IsPerfectSquare(uint64_t n) noexcept {
         default:
             return false;
     }
+}
+
+inline uint32_t log2_floor(uint64_t n) noexcept {
+    // " | 1" does not affect ans for all n >= 1.
+    return static_cast<uint32_t>(63 ^ __builtin_clzll(n | 1));
+}
+
+inline uint32_t log2_ceil(uint64_t n) noexcept {
+    return log2_floor(n) + ((n & (n - 1)) != 0);
+}
+
+inline uint32_t log2_floor(uint128_t n) noexcept {
+    // " | 1" does not affect ans for all n >= 1.
+    uint64_t hi = static_cast<uint64_t>(n >> 64);
+    return static_cast<uint32_t>(hi != 0
+        ? (127 ^ __builtin_clzll(hi))
+        : (63 ^ __builtin_clzll(static_cast<uint64_t>(n) | 1)));
+}
+
+inline uint32_t log2_ceil(uint128_t n) noexcept {
+    return log2_floor(n) + ((n & (n - 1)) != 0);
 }
 
 #endif // !_MATH_UTILS_HPP_
