@@ -302,7 +302,7 @@ static constexpr bool IsPrime(uint64_t n) noexcept {
             case 23377:
                 return false;
             default:
-                return BinPowMod(2, uint32_t(n), uint32_t(n)) == 2;
+                return BinPowMod(2, uint32_t(n - 1), uint32_t(n)) == 1;
         }
     }
 
