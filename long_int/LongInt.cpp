@@ -12,6 +12,226 @@
 
 #include "integers_128_bit.hpp"
 
+#include <new>
+
+namespace LongIntAllocator {
+
+// #define DEBUG_LI_ALLOC_PRINTING
+
+enum PageCapacity {
+    SMALL = 32 * sizeof(uint32_t),
+    MIDDLE = 256 * sizeof(uint32_t)
+};
+
+struct SmallPage {
+    SmallPage* next;
+    char memory[PageCapacity::SMALL];
+};
+
+struct MiddlePage {
+    MiddlePage* next;
+    char memory[PageCapacity::MIDDLE];
+};
+
+inline constexpr size_t PAGE_MEMORY_OFFSET_IN_BYTES = sizeof(void*);
+
+inline constexpr size_t TOTAL_SMALL_PAGES = 8;
+inline constexpr size_t TOTAL_MIDDLE_PAGES = 8;
+
+static SmallPage first_small_page[TOTAL_SMALL_PAGES] = {};
+static MiddlePage first_middle_page[TOTAL_MIDDLE_PAGES] = {};
+
+static SmallPage* free_small_pages_head = nullptr;
+static MiddlePage* free_middle_pages_head = nullptr;
+
+#ifdef DEBUG_LI_ALLOC_PRINTING
+static size_t total_small_pages_used = 0;
+static int32_t current_small_pages_used = 0;
+static int32_t max_small_pages_used = -(1 << 30);
+static size_t total_middle_pages_used = 0;
+static int32_t current_middle_pages_used = 0;
+static int32_t max_middle_pages_used = -(1 << 30);
+static ssize_t bytes_allocated = 0;
+static int32_t malloc_free_count = 0;
+#endif
+
+static inline void __InitSmallPages() noexcept {
+    SmallPage* p = first_small_page;
+    free_small_pages_head = p;
+    for (const SmallPage* last_page = p + TOTAL_SMALL_PAGES - 1; p != last_page; ) {
+        SmallPage* p_next = p + 1;
+        p->next = p_next;
+        p = p_next;
+    }
+    p->next = nullptr;
+}
+
+static inline void __InitMiddlePages() noexcept {
+    MiddlePage* p = first_middle_page;
+    free_middle_pages_head = p;
+    for (const MiddlePage* p_iter_end = p + TOTAL_MIDDLE_PAGES - 1; p != p_iter_end; ) {
+        MiddlePage* p_next = p + 1;
+        p->next = p_next;
+        p = p_next;
+    }
+    p->next = nullptr;
+}
+
+__attribute__((constructor))
+static void __InitPages() noexcept {
+    __InitSmallPages();
+    __InitMiddlePages();
+#ifdef DEBUG_LI_ALLOC_PRINTING
+    printf("[INIT] Inited pages in %s\n", __PRETTY_FUNCTION__);
+#endif
+}
+
+__attribute__((destructor))
+static void __DeinitPages() noexcept {
+    free_small_pages_head = nullptr;
+    free_middle_pages_head = nullptr;
+#ifdef DEBUG_LI_ALLOC_PRINTING
+    printf("[DEINIT] Deinited pages in %s\n"
+           "[SMALL]:\n"
+           "    total pages rented: %zu\n"
+           "    max pages allocated per one time: %d\n"
+           "    current pages allocated: %d\n"
+           "[MIDDLE]:\n"
+           "    total pages rented: %zu\n"
+           "    max pages allocated per one time: %d\n"
+           "    current pages allocated: %d\n"
+           "[MALLOC]:\n"
+           "    total current bytes allocated: %zd\n"
+           "    malloc calls - free calls: %d\n",
+        __PRETTY_FUNCTION__,
+        total_small_pages_used,
+        max_small_pages_used,
+        current_small_pages_used,
+        total_middle_pages_used,
+        max_middle_pages_used,
+        current_middle_pages_used,
+        bytes_allocated,
+        malloc_free_count);
+#endif
+}
+
+void* Allocate(size_t size) noexcept(false) {
+    if (size <= PageCapacity::SMALL && free_small_pages_head != nullptr) {
+        SmallPage* p = free_small_pages_head;
+#ifdef DEBUG_LI_ALLOC_PRINTING
+        current_small_pages_used++;
+        if (current_small_pages_used > max_small_pages_used) { max_small_pages_used = current_small_pages_used; }
+        total_small_pages_used++;
+#endif
+        free_small_pages_head = free_small_pages_head->next;
+        return static_cast<void*>(reinterpret_cast<char*>(p) + PAGE_MEMORY_OFFSET_IN_BYTES);
+    }
+
+    if (size <= PageCapacity::MIDDLE && free_middle_pages_head != nullptr) {
+        MiddlePage* p = free_middle_pages_head;
+#ifdef DEBUG_LI_ALLOC_PRINTING
+        current_middle_pages_used++;
+        if (current_middle_pages_used > max_middle_pages_used) { max_middle_pages_used = current_middle_pages_used; }
+        total_middle_pages_used++;
+#endif
+        free_middle_pages_head = free_middle_pages_head->next;
+        return static_cast<void*>(reinterpret_cast<char*>(p) + PAGE_MEMORY_OFFSET_IN_BYTES);
+    }
+
+    void* p = malloc(size);
+#ifdef DEBUG_LI_ALLOC_PRINTING
+    bytes_allocated += static_cast<ssize_t>(size);
+    malloc_free_count++;
+#endif
+    if (__builtin_expect(p == nullptr, 0)) {
+        throw std::bad_alloc();
+    }
+    return p;
+}
+
+template <size_t size>
+inline void* AllocateExact() noexcept(false) {
+    static_assert(size > 0);
+    if (size <= PageCapacity::SMALL && free_small_pages_head != nullptr) {
+#ifdef DEBUG_LI_ALLOC_PRINTING
+        current_small_pages_used++;
+        if (current_small_pages_used > max_small_pages_used) { max_small_pages_used = current_small_pages_used; }
+        total_small_pages_used++;
+#endif
+        SmallPage* p = free_small_pages_head;
+        free_small_pages_head = free_small_pages_head->next;
+        return static_cast<void*>(reinterpret_cast<char*>(p) + PAGE_MEMORY_OFFSET_IN_BYTES);
+    }
+    else if (size <= PageCapacity::MIDDLE && free_middle_pages_head != nullptr) {
+#ifdef DEBUG_LI_ALLOC_PRINTING
+        current_middle_pages_used++;
+        if (current_middle_pages_used > max_middle_pages_used) { max_middle_pages_used = current_middle_pages_used; }
+        total_middle_pages_used++;
+#endif
+        MiddlePage* p = free_middle_pages_head;
+        free_middle_pages_head = free_middle_pages_head->next;
+        return static_cast<void*>(reinterpret_cast<char*>(p) + PAGE_MEMORY_OFFSET_IN_BYTES);
+    }
+    else {
+        void* p = malloc(size);
+#ifdef DEBUG_LI_ALLOC_PRINTING
+        bytes_allocated += static_cast<ssize_t>(size);
+        malloc_free_count++;
+#endif
+        if (__builtin_expect(p == nullptr, 0)) {
+            throw std::bad_alloc();
+        }
+        return p;
+    }
+}
+
+static inline bool IsSmallPage(const char* offset_memory) noexcept {
+    const char* fsp = reinterpret_cast<const char*>(&first_small_page[0]);
+    return static_cast<size_t>(offset_memory - fsp) < TOTAL_SMALL_PAGES * sizeof(SmallPage);
+}
+
+static inline bool IsMiddlePage(const char* offset_memory) noexcept {
+    const char* fmp = reinterpret_cast<const char*>(&first_middle_page[0]);
+    return static_cast<size_t>(offset_memory - fmp) < TOTAL_MIDDLE_PAGES * sizeof(MiddlePage);
+}
+
+void Deallocate(void* memory) noexcept {
+    if (unlikely(memory == nullptr)) {
+        return;
+    }
+
+    char* p = static_cast<char*>(memory) - PAGE_MEMORY_OFFSET_IN_BYTES;
+    if (IsSmallPage(p)) {
+#ifdef DEBUG_LI_ALLOC_PRINTING
+        current_small_pages_used--;
+#endif
+        SmallPage* page = reinterpret_cast<SmallPage*>(p);
+        page->next = free_small_pages_head;
+        free_small_pages_head = page;
+        return;
+    }
+
+    if (IsMiddlePage(p)) {
+#ifdef DEBUG_LI_ALLOC_PRINTING
+        current_middle_pages_used--;
+#endif
+        MiddlePage* page = reinterpret_cast<MiddlePage*>(p);
+        page->next = free_middle_pages_head;
+        free_middle_pages_head = page;
+        return;
+    }
+#ifdef DEBUG_LI_ALLOC_PRINTING
+    malloc_free_count--;
+#endif
+    free(memory);
+}
+
+#ifdef DEBUG_LI_ALLOC_PRINTING
+#undef DEBUG_LI_ALLOC_PRINTING
+#endif
+
+}
+
 using f64 = double;
 using f128 = long double;
 using std::vector;
@@ -126,7 +346,7 @@ struct LongInt {
     constexpr
 #endif
     inline LongInt(uint64_t n) : size_(0), capacity_(2) {
-        nums_ = static_cast<uint32_t*>(operator new(2 * sizeof(uint32_t)));
+        nums_ = static_cast<uint32_t*>(LongIntAllocator::AllocateExact<2 * sizeof(uint32_t)>());
         size_ += n != 0;
         nums_[0] = uint32_t(n);
         n >>= 32;
@@ -139,7 +359,7 @@ struct LongInt {
     constexpr
 #endif
     inline LongInt(uint128_t n) : size_(0), capacity_{4} {
-        nums_ = static_cast<uint32_t*>(operator new(4 * sizeof(uint32_t)));
+        nums_ = static_cast<uint32_t*>(LongIntAllocator::AllocateExact<4 * sizeof(uint32_t)>());
         size_ += n != 0;
         nums_[0] = uint32_t(n);
         n >>= 32;
@@ -160,7 +380,7 @@ struct LongInt {
 
     inline LongInt(const LongInt& other) : nums_(nullptr), size_(other.size_), capacity_(other.capacity_) {
         if (capacity_ != 0) {
-            nums_ = static_cast<uint32_t*>(operator new(capacity_ * sizeof(uint32_t)));
+            nums_ = static_cast<uint32_t*>(LongIntAllocator::Allocate(capacity_ * sizeof(uint32_t)));
             size_t bsz = USize() * sizeof(uint32_t);
             if (bsz != 0) {
                 memcpy(nums_, other.nums_, bsz);
@@ -169,12 +389,12 @@ struct LongInt {
     }
 
     inline LongInt& operator=(const LongInt& other) {
-        operator delete(nums_);
+        LongIntAllocator::Deallocate(nums_);
         nums_ = nullptr;
         size_ = other.size_;
         capacity_ = other.capacity_;
         if (capacity_ != 0) {
-            nums_ = static_cast<uint32_t*>(operator new(capacity_ * sizeof(uint32_t)));
+            nums_ = static_cast<uint32_t*>(LongIntAllocator::Allocate(capacity_ * sizeof(uint32_t)));
             size_t bsz = USize() * sizeof(uint32_t);
             if (bsz != 0) {
                 memcpy(nums_, other.nums_, bsz);
@@ -194,7 +414,7 @@ struct LongInt {
     constexpr
 #endif
     inline LongInt& operator=(LongInt&& other) noexcept {
-        operator delete(nums_);
+        LongIntAllocator::Deallocate(nums_);
         nums_ = other.nums_;
         size_ = other.size_;
         capacity_ = other.capacity_;
@@ -218,7 +438,7 @@ struct LongInt {
 #endif
     inline LongInt& operator=(int32_t n) {
         if (capacity_ == 0) {
-            nums_ = static_cast<uint32_t*>(operator new(2 * sizeof(uint32_t)));
+            nums_ = static_cast<uint32_t*>(LongIntAllocator::Allocate(2 * sizeof(uint32_t)));
             capacity_ = 2;
         }
         size_ = int32_t(n > 0) - int32_t(n < 0);
@@ -231,7 +451,7 @@ struct LongInt {
 #endif
     inline LongInt& operator=(uint32_t n) {
         if (capacity_ == 0) {
-            nums_ = static_cast<uint32_t*>(operator new(2 * sizeof(uint32_t)));
+            nums_ = static_cast<uint32_t*>(LongIntAllocator::Allocate(2 * sizeof(uint32_t)));
             capacity_ = 2;
         }
 
@@ -256,8 +476,8 @@ struct LongInt {
     inline LongInt& operator=(uint64_t n) {
         // size_ = ((64 - std::count_leading_zeros(n)) + 31) / 32;
         if (capacity_ < 2) {
-            operator delete(nums_);
-            nums_ = static_cast<uint32_t*>(operator new(2 * sizeof(uint32_t)));
+            LongIntAllocator::Deallocate(nums_);
+            nums_ = static_cast<uint32_t*>(LongIntAllocator::AllocateExact<2 * sizeof(uint32_t)>());
             capacity_ = 2;
         }
 
@@ -275,8 +495,8 @@ struct LongInt {
     inline LongInt& operator=(uint128_t n) {
         size_ = ((128 - std::count_leading_zeros(n)) + 31) / 32;
         if (capacity_ < 4) {
-            operator delete(nums_);
-            nums_ = static_cast<uint32_t*>(operator new(4 * sizeof(uint32_t)));
+            LongIntAllocator::Deallocate(nums_);
+            nums_ = static_cast<uint32_t*>(LongIntAllocator::AllocateExact<4 * sizeof(uint32_t)>());
             capacity_ = 4;
         }
 
@@ -317,7 +537,7 @@ struct LongInt {
         }
 
         if ((m <= 16) | (m * k <= 1024)) {
-            ans = static_cast<uint32_t*>(operator new((m + k) * sizeof(uint32_t)));
+            ans = static_cast<uint32_t*>(LongIntAllocator::Allocate((m + k) * sizeof(uint32_t)));
             memset(ans, 0, (m + k) * sizeof(uint32_t));
             for (size_t j = 0; j < m; j++) {
                 uint64_t b_j = m_ptr[j];
@@ -352,7 +572,7 @@ struct LongInt {
             size_t n = 2 * std::nearest_2_pow_greater_equal(m + k);
             complex* p1;
             if (likely(n <= 262144)) {
-                complex* p = p1 = static_cast<complex*>(operator new(n * sizeof(complex)));
+                complex* p = p1 = static_cast<complex*>(LongIntAllocator::Allocate(n * sizeof(complex)));
                 for (size_t i = 0; i < m; i++) {
                     uint32_t m_value = m_ptr[i];
                     uint32_t k_value = k_ptr[i];
@@ -372,7 +592,7 @@ struct LongInt {
             }
             else {
                 n *= 2;
-                complex* p = p1 = static_cast<complex*>(operator new(n * sizeof(complex)));
+                complex* p = p1 = static_cast<complex*>(LongIntAllocator::Allocate(n * sizeof(complex)));
                 for (size_t i = 0; i < m; i++) {
                     uint32_t m_value = m_ptr[i];
                     uint32_t k_value = k_ptr[i];
@@ -434,7 +654,7 @@ struct LongInt {
             * = (P(w^j) + conj(P(w^{n - j}))) * (P(w^j) - conj(P(w^{n - j}))) / (4 * i) =
             * = (P(w^j) + conj(P(w^{n - j}))) * (P(w^j) - conj(P(w^{n - j}))) / (4 * i) =
             */
-            complex* p2 = static_cast<complex*>(operator new(n * sizeof(complex)));
+            complex* p2 = static_cast<complex*>(LongIntAllocator::Allocate(n * sizeof(complex)));
             complex one_quat_i = complex(0, -0.25); // 1 / (4 * i) == -i / 4
             for (size_t j = 0; j < n; j++) {
                 size_t n_j = (n - j) & (n - 1); // <=> mod n because n is power of two
@@ -463,8 +683,8 @@ struct LongInt {
                 ans = reinterpret_cast<uint32_t*>(p1);
             }
             else {
-                operator delete(p1);
-                ans = static_cast<uint32_t*>(operator new((m + k) * sizeof(uint32_t)));
+                LongIntAllocator::Deallocate(p1);
+                ans = static_cast<uint32_t*>(LongIntAllocator::Allocate((m + k) * sizeof(uint32_t)));
                 complex* p = p2;
                 uint64_t carry = 0;
                 for (uint32_t* ans_p = ans, *ans_p_end = ans_p + (m + k);
@@ -484,9 +704,11 @@ struct LongInt {
                 assert(carry == 0);
                 capacity_ = uint32_t(m + k);
             }
+
+            LongIntAllocator::Deallocate(p2);
         }
 
-        operator delete(nums_);
+        LongIntAllocator::Deallocate(nums_);
         nums_ = ans;
         int32_t sz = int32_t(m + k);
         int32_t sign_product = size_ ^ other.size_;
@@ -677,7 +899,7 @@ struct LongInt {
     LongInt& operator+=(uint32_t x) {
         if (size_ == 0) {
             if (capacity_ == 0) {
-                nums_ = static_cast<uint32_t*>(operator new(2 * sizeof(uint32_t)));
+                nums_ = static_cast<uint32_t*>(LongIntAllocator::AllocateExact<2 * sizeof(uint32_t)>());
                 capacity_ = 2;
             }
 
@@ -704,7 +926,7 @@ struct LongInt {
 
         if (carry != 0) {
             if (unlikely(usize == capacity_)) {
-                GrowNotZeroCapacity();
+                GrowCapacity();
             }
 
             assert(usize < capacity_);
@@ -788,7 +1010,8 @@ struct LongInt {
         uint32_t* nums_iter_end = nums_iter + ssize_t(size) - 1;
         for (; nums_iter != nums_iter_end; ++nums_iter) {
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
-            *nums_iter = uint32_t(*reinterpret_cast<uint64_t*>(nums_iter) >> shift);
+            // *nums_iter = uint32_t(*reinterpret_cast<uint64_t*>(nums_iter) >> shift);
+            *nums_iter = uint32_t(((*nums_iter) | (uint64_t(*(nums_iter + 1)) << 32)) >> shift);
 #else
             uint32_t hi = *(nums_iter + 1);
             uint32_t low = *nums_iter;
@@ -856,8 +1079,8 @@ struct LongInt {
 
         uint32_t new_capacity = uint32_t(str_end - str_iter + 8) / 9;
         if (new_capacity > capacity_) {
-            operator delete(nums_);
-            nums_ = static_cast<uint32_t*>(operator new(new_capacity * sizeof(uint32_t)));
+            LongIntAllocator::Deallocate(nums_);
+            nums_ = static_cast<uint32_t*>(LongIntAllocator::Allocate(new_capacity * sizeof(uint32_t)));
             capacity_ = new_capacity;
         }
 
@@ -909,7 +1132,7 @@ struct LongInt {
             // carry1 == 0
             if (carry != 0) {
                 if (unlikely(usize == capacity_)) {
-                    GrowNotZeroCapacity();
+                    GrowCapacity();
                 }
 
                 assert(usize < capacity_);
@@ -954,7 +1177,7 @@ struct LongInt {
 
             if (carry != 0) {
                 if (unlikely(usize == capacity_)) {
-                    GrowNotZeroCapacity();
+                    GrowCapacity();
                 }
 
                 assert(usize < capacity_);
@@ -985,7 +1208,7 @@ struct LongInt {
         size_t length = 0;
         if (size_ < 0) { *--ptr = '-'; length++; }
 
-        uint32_t* nums_copy = static_cast<uint32_t*>(operator new(usize * sizeof(uint32_t)));
+        uint32_t* nums_copy = static_cast<uint32_t*>(LongIntAllocator::Allocate(usize * sizeof(uint32_t)));
         memcpy(nums_copy, nums_, usize * sizeof(uint32_t));
         do {
             uint64_t carry = 0;
@@ -1004,7 +1227,7 @@ struct LongInt {
             *--ptr = char('0' + carry);
             length++;
         } while (usize != 0);
-        operator delete(nums_copy);
+        LongIntAllocator::Deallocate(nums_copy);
 
         ans = std::string(ptr, length);
         operator delete(digits);
@@ -1035,7 +1258,7 @@ struct LongInt {
                 digits[max_number_len] = '\0';
                 char* ptr = digits + max_number_len;
                 size_t length = 0;
-                uint32_t* nums_copy = static_cast<uint32_t*>(operator new(usize * sizeof(uint32_t)));
+                uint32_t* nums_copy = static_cast<uint32_t*>(LongIntAllocator::Allocate(usize * sizeof(uint32_t)));
                 memcpy(nums_copy, n.nums_, usize * sizeof(uint32_t));
                 do {
                     uint64_t carry = 0;
@@ -1054,7 +1277,7 @@ struct LongInt {
                     *--ptr = char('0' + carry);
                     length++;
                 } while (usize != 0);
-                operator delete(nums_copy);
+                LongIntAllocator::Deallocate(nums_copy);
 #if __GNUC__ && !defined(__clang__)
                 __ostream_insert(out, ptr, length);
 #else
@@ -1077,12 +1300,12 @@ struct LongInt {
 
     inline void Reserve(uint32_t capacity) {
         if (capacity > capacity_) {
-            uint32_t* new_nums = static_cast<uint32_t*>(operator new(capacity * sizeof(uint32_t)));
+            uint32_t* new_nums = static_cast<uint32_t*>(LongIntAllocator::Allocate(capacity * sizeof(uint32_t)));
             size_t bsz = USize() * sizeof(uint32_t);
             if (bsz != 0) {
                 memcpy(new_nums, nums_, bsz);
             }
-            operator delete(nums_);
+            LongIntAllocator::Deallocate(nums_);
             nums_ = new_nums;
             capacity_ = capacity;
         }
@@ -1092,37 +1315,21 @@ struct LongInt {
     constexpr
 #endif
     inline ~LongInt() {
-        operator delete(nums_);
+        LongIntAllocator::Deallocate(nums_);
         nums_ = nullptr;
         size_ = 0;
         capacity_ = 0;
     }
 protected:
-    __attribute__((__noinline__)) void GrowNotZeroCapacity() {
-        assert(capacity_ != 0);
-        uint32_t new_capacity = capacity_ * 2;
-        uint32_t* new_nums = static_cast<uint32_t*>(operator new(new_capacity * sizeof(uint32_t)));
-        size_t sz = USize() * sizeof(uint32_t);
-        if (sz != 0) {
-            memcpy(new_nums, nums_, sz);
-        }
-
-        operator delete(nums_);
-        nums_ = new_nums;
-        capacity_ = new_capacity;
-    }
-
     __attribute__((__noinline__)) void GrowCapacity() {
-        // uint32_t new_capacity = capacity_ * 2;
-        // new_capacity += (new_capacity == 0) << 1;
-        uint32_t new_capacity = std::max(capacity_ * 2, 2u);
-        uint32_t* new_nums = static_cast<uint32_t*>(operator new(new_capacity * sizeof(uint32_t)));
+        uint32_t new_capacity = (capacity_ * 2) | (capacity_ == 0);
+        uint32_t* new_nums = static_cast<uint32_t*>(LongIntAllocator::Allocate(new_capacity * sizeof(uint32_t)));
         size_t sz = USize() * sizeof(uint32_t);
         if (sz != 0) {
             memcpy(new_nums, nums_, sz);
         }
 
-        operator delete(nums_);
+        LongIntAllocator::Deallocate(nums_);
         nums_ = new_nums;
         capacity_ = new_capacity;
     }
@@ -1580,6 +1787,7 @@ void TestToString() {
 }
 
 void TestBitShifts() {
+    puts(__PRETTY_FUNCTION__);
     constexpr uint32_t k = 4096;
     LongInt n;
     n.Reserve(4);
@@ -1625,22 +1833,23 @@ void TestBitShifts() {
 }
 
 int main() {
-    // TestOperatorEqualsInt();
-    // TestLongIntMult();
-    // TestUIntMult();
-    // TestUIntAdd();
-    // TestFromString();
-    // TestToString();
-    // TestBitShifts();
-    std::ios::sync_with_stdio(false);
-    cin.tie(nullptr);
-    LongInt n1;
-    LongInt n2;
-    cin >> n1 >> n2;
-    n1 *= n2;
-    cout << n1;
-    cout.flush();
-    return 0;
+    TestOperatorEqualsInt();
+    TestLongIntMult();
+    TestUIntMult();
+    TestUIntAdd();
+    TestFromString();
+    TestToString();
+    TestBitShifts();
+
+    // std::ios::sync_with_stdio(false);
+    // cin.tie(nullptr);
+    // LongInt n1;
+    // LongInt n2;
+    // cin >> n1 >> n2;
+    // n1 *= n2;
+    // cout << n1;
+    // cout.flush();
+    // return 0;
 }
 
 // g++ -std=c++2b -Wall -Wextra -Wpedantic -Werror -Wunused --pedantic-error -Wconversion -Wshadow -Wnull-dereference -Warith-conversion -Wcast-align -Warray-bounds=2 -Ofast -march=native .\LongInt.cpp -o LongInt.exe

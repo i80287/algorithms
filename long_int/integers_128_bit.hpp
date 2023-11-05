@@ -30,14 +30,12 @@ typedef __int128_t int128_t;
 #endif
 #define unlikely(x) __builtin_expect(!!(x), 0)
 #else
-#if defined(likely)
-#undef likely
+#if !defined(likely)
+#define likely(x)   (!!(x))
 #endif
-#define likely(x)
-#if defined(unlikely)
-#undef unlikely
+#if !defined(unlikely)
+#define unlikely(x) (!!(x))
 #endif
-#define unlikely(x)
 #endif
 
 namespace std {
