@@ -1003,6 +1003,7 @@ struct LongInt {
         if (uints_move != 0) {
             memmove(nums_, nums_ + uints_move, (size - uints_move) * sizeof(uint32_t));
             size -= uints_move;
+            size_ = size_ >= 0 ? int32_t(size) : -int32_t(size);
         }
 
         shift &= 0b11111;
@@ -1021,7 +1022,6 @@ struct LongInt {
         }
 
         *nums_iter_end >>= shift;
-        size_ = size_ >= 0 ? int32_t(size) : -int32_t(size);
         return *this;
     }
 
