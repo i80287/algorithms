@@ -39,22 +39,21 @@ static void merge(T arr_iter, size_t left, size_t mid, size_t right) {
     }
 }
 
-// основной метод сортировки
 template <typename T>
-static void mergeSort(T arr_iter, size_t left, size_t right) {
-    if (left < right) {
-        size_t mid = left + (right - left) / 2;
-
-        mergeSort(arr_iter, left, mid);
-        mergeSort(arr_iter, mid + 1, right);
-
-        merge(arr_iter, left, mid, right);
+static void mergeSort(T arr_iter, size_t l, size_t r) {
+    size_t m = (l + r) / 2;
+    if (l < m) {
+        mergeSort(arr_iter, l, m);
     }
+    if (m + 1 < r) {
+        mergeSort(arr_iter, m + 1, r);
+    }
+    merge(arr_iter, l, m, r);
 }
 
 template <typename T>
 static inline void MergeSort(T arr_iter, size_t length) {
-    if (length != 0) {
+    if (length >= 2) {
         mergeSort(arr_iter, 0, length - 1);
     }
 }
