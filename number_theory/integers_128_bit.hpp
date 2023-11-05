@@ -257,7 +257,9 @@ inline ostream& operator<<(ostream& out, uint128_t number) {
     // 340282366920938463463374607431768211455 == 2^128 - 1
     // strlen("340282366920938463463374607431768211455") == 39;
     constexpr size_t max_number_digits_count = 39;
+#if __cplusplus >= 202002L
     static_assert(base_10_len(static_cast<uint128_t>(-1)) == max_number_digits_count);
+#endif
 
     char digits[max_number_digits_count + 1];
     digits[max_number_digits_count] = '\0';
@@ -283,8 +285,9 @@ inline int put_u128(uint128_t number) noexcept {
     // 340282366920938463463374607431768211455 == 2^128 - 1
     // strlen("340282366920938463463374607431768211455") == 39;
     constexpr size_t max_number_digits_count = 39;
+#if __cplusplus >= 202002L
     static_assert(base_10_len(static_cast<uint128_t>(-1)) == max_number_digits_count);
-
+#endif
     char digits[max_number_digits_count + 1];
     digits[max_number_digits_count] = '\0';
     char* ptr = &digits[max_number_digits_count];
@@ -301,7 +304,9 @@ inline int put_u128_newline(uint128_t number) noexcept {
     // 340282366920938463463374607431768211455 == 2^128 - 1
     // strlen("340282366920938463463374607431768211455") == 39;
     constexpr size_t max_number_digits_count = 39;
+#if __cplusplus >= 202002L
     static_assert(base_10_len(static_cast<uint128_t>(-1)) == max_number_digits_count);
+#endif
     char digits[max_number_digits_count + 1];
     digits[max_number_digits_count] = '\0';
     char* ptr = &digits[max_number_digits_count];
@@ -318,7 +323,9 @@ inline string to_string(uint128_t number) {
     // 340282366920938463463374607431768211455 == 2^128 - 1
     // strlen("340282366920938463463374607431768211455") == 39;
     constexpr size_t max_number_digits_count = 39;
+#if __cplusplus >= 202002L
     static_assert(base_10_len(static_cast<uint128_t>(-1)) == max_number_digits_count);
+#endif
     char digits[max_number_digits_count + 1];
     digits[max_number_digits_count] = '\0';
     char* ptr = &digits[max_number_digits_count];

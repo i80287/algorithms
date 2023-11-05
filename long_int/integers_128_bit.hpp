@@ -1,5 +1,5 @@
 /*
- * Small chunk of functions (like abs, std::ostream::operator<<, put_u128) and
+ * Small chunk of functions (like std::ostream::operator<<, put_u128) and
  * template instantiations (like std::is_unsigned, std::make_signed)
  * for 128 bit width integers typedefed as uint128_t and int128_t.
  * 
@@ -20,7 +20,7 @@
 typedef __uint128_t uint128_t;
 typedef __int128_t int128_t;
 
-#if defined(__GNUC__)
+#if defined(__GNUC__) && __GNUC__
 #if defined(likely)
 #undef likely
 #endif
@@ -64,10 +64,6 @@ static_assert(is_unsigned_v<uint128_t>);
 static_assert(is_signed_v<int128_t>);
 static_assert(is_same_v<make_unsigned_t<int128_t>, uint128_t>);
 
-constexpr int128_t abs(int128_t x) noexcept {
-    return x >= 0 ? x : -x;
-}
-
 /// @brief Count trailing zeros for n
 /// @param n 
 /// @return trailing zeros count (sizeof(n) * 8 for n = 0)
@@ -75,7 +71,7 @@ template <typename T>
 #if __cplusplus >= 202002L
 requires is_unsigned_v<T>
 #endif
-static inline constexpr int32_t count_trailing_zeros(T n) noexcept {
+static constexpr int32_t count_trailing_zeros(T n) noexcept {
     if (unlikely(n == 0)) {
         return sizeof(n) * 8;
     }
@@ -193,24 +189,39 @@ inline uint32_t base_10_digits(uint32_t n) noexcept {
     return digits + ((n | 1) >= ten_to_the[digits]);
 }
 
-constexpr uint32_t base_10_digits(uint64_t n) noexcept {
-    uint32_t ans = 0;
-    do {
-        n /= 10;
-        ans++;
-    } while (n != 0);
-    return ans;
+/// @brief Realization taken from the gcc libstdc++ __to_chars_len
+/// @tparam T 
+/// @param value 
+/// @return 
+template<typename T>
+#if __cplusplus >= 202002L
+requires is_unsigned_v<T>
+#endif
+constexpr uint32_t base_10_len(T value) noexcept {
+    uint32_t n = 1;
+    const uint32_t base = 10;
+    const uint32_t b2 = base * base;
+    const uint32_t b3 = b2 * base;
+    const uint32_t b4 = b3 * base;
+    for (;;) {
+        if (value < base) {
+            return n;
+        }
+        if (value < b2) {
+            return n + 1;
+        }
+        if (value < b3) {
+            return n + 2;
+        }
+        if (value < b4) {
+            return n + 3;
+        }
+        value /= b4;
+        n += 4;
+	}
 }
 
-constexpr uint32_t base_10_digits(uint128_t n) noexcept {
-    uint32_t cnt = 0;
-    do {
-        n /= 10;
-        cnt++;
-    } while (n != 0);
-    return cnt;
-}
-
+#if __cplusplus >= 202002L
 // static_assert(base_10_digits(0u) == 1);
 // static_assert(base_10_digits(1u) == 1);
 // static_assert(base_10_digits(9u) == 1);
@@ -221,31 +232,34 @@ constexpr uint32_t base_10_digits(uint128_t n) noexcept {
 // static_assert(base_10_digits(101u) == 3);
 // static_assert(base_10_digits(uint32_t(-1)) == 10);
 
-static_assert(base_10_digits(0ull) == 1);
-static_assert(base_10_digits(1ull) == 1);
-static_assert(base_10_digits(9ull) == 1);
-static_assert(base_10_digits(10ull) == 2);
-static_assert(base_10_digits(11ull) == 2);
-static_assert(base_10_digits(99ull) == 2);
-static_assert(base_10_digits(100ull) == 3);
-static_assert(base_10_digits(101ull) == 3);
-static_assert(base_10_digits(uint64_t(-1)) == 20);
+static_assert(base_10_len(0ull) == 1);
+static_assert(base_10_len(1ull) == 1);
+static_assert(base_10_len(9ull) == 1);
+static_assert(base_10_len(10ull) == 2);
+static_assert(base_10_len(11ull) == 2);
+static_assert(base_10_len(99ull) == 2);
+static_assert(base_10_len(100ull) == 3);
+static_assert(base_10_len(101ull) == 3);
+static_assert(base_10_len(uint64_t(-1)) == 20);
 
-static_assert(base_10_digits(uint128_t(0)) == 1);
-static_assert(base_10_digits(uint128_t(1)) == 1);
-static_assert(base_10_digits(uint128_t(9)) == 1);
-static_assert(base_10_digits(uint128_t(10)) == 2);
-static_assert(base_10_digits(uint128_t(11)) == 2);
-static_assert(base_10_digits(uint128_t(99)) == 2);
-static_assert(base_10_digits(uint128_t(100)) == 3);
-static_assert(base_10_digits(uint128_t(101)) == 3);
-static_assert(base_10_digits(uint128_t(-1)) == 39);
+static_assert(base_10_len(uint128_t(0)) == 1);
+static_assert(base_10_len(uint128_t(1)) == 1);
+static_assert(base_10_len(uint128_t(9)) == 1);
+static_assert(base_10_len(uint128_t(10)) == 2);
+static_assert(base_10_len(uint128_t(11)) == 2);
+static_assert(base_10_len(uint128_t(99)) == 2);
+static_assert(base_10_len(uint128_t(100)) == 3);
+static_assert(base_10_len(uint128_t(101)) == 3);
+static_assert(base_10_len(uint128_t(-1)) == 39);
+#endif
 
-inline std::ostream& operator<<(std::ostream& out, uint128_t number) {
+inline ostream& operator<<(ostream& out, uint128_t number) {
     // 340282366920938463463374607431768211455 == 2^128 - 1
     // strlen("340282366920938463463374607431768211455") == 39;
     constexpr size_t max_number_digits_count = 39;
-    static_assert(base_10_digits(static_cast<uint128_t>(-1)) == max_number_digits_count);
+#if __cplusplus >= 202002L
+    static_assert(base_10_len(static_cast<uint128_t>(-1)) == max_number_digits_count);
+#endif
 
     char digits[max_number_digits_count + 1];
     digits[max_number_digits_count] = '\0';
@@ -253,7 +267,7 @@ inline std::ostream& operator<<(std::ostream& out, uint128_t number) {
     size_t length = 0;
     do {
         auto r = number / 10;
-        auto q = number - r * 10;
+        auto q = number % 10; // let compiler optimize it like "- r * 10" or whatever (maybe / 10 and % 10 will be calculated at once for uint128_t too)
         *--ptr = static_cast<char>('0' + static_cast<uint64_t>(q));
         length++;
         number = r;
@@ -262,7 +276,7 @@ inline std::ostream& operator<<(std::ostream& out, uint128_t number) {
 #if __GNUC__ && !defined(__clang__)
     __ostream_insert(out, ptr, length);
 #else
-    out << std::string_view(ptr, length);
+    out << string_view(ptr, length);
 #endif
     return out;
 }
@@ -271,14 +285,15 @@ inline int put_u128(uint128_t number) noexcept {
     // 340282366920938463463374607431768211455 == 2^128 - 1
     // strlen("340282366920938463463374607431768211455") == 39;
     constexpr size_t max_number_digits_count = 39;
-    static_assert(base_10_digits(static_cast<uint128_t>(-1)) == max_number_digits_count);
-
+#if __cplusplus >= 202002L
+    static_assert(base_10_len(static_cast<uint128_t>(-1)) == max_number_digits_count);
+#endif
     char digits[max_number_digits_count + 1];
     digits[max_number_digits_count] = '\0';
     char* ptr = &digits[max_number_digits_count];
     do {
         auto r = number / 10;
-        auto q = number - r * 10;
+        auto q = number % 10; // let compiler optimize it like "- r * 10" or whatever (maybe / 10 and % 10 will be calculated at once for uint128_t too)
         *--ptr = static_cast<char>('0' + static_cast<uint64_t>(q));
         number = r;
     } while (number);
@@ -289,14 +304,15 @@ inline int put_u128_newline(uint128_t number) noexcept {
     // 340282366920938463463374607431768211455 == 2^128 - 1
     // strlen("340282366920938463463374607431768211455") == 39;
     constexpr size_t max_number_digits_count = 39;
-    static_assert(base_10_digits(static_cast<uint128_t>(-1)) == max_number_digits_count);
-
+#if __cplusplus >= 202002L
+    static_assert(base_10_len(static_cast<uint128_t>(-1)) == max_number_digits_count);
+#endif
     char digits[max_number_digits_count + 1];
     digits[max_number_digits_count] = '\0';
     char* ptr = &digits[max_number_digits_count];
     do {
         auto r = number / 10;
-        auto q = number - r * 10;
+        auto q = number % 10; // let compiler optimize it like "- r * 10" or whatever (maybe / 10 and % 10 will be calculated at once for uint128_t too)
         *--ptr = static_cast<char>('0' + static_cast<uint64_t>(q));
         number = r;
     } while (number);
@@ -304,21 +320,24 @@ inline int put_u128_newline(uint128_t number) noexcept {
 }
 
 inline string to_string(uint128_t number) {
-    // See functions above
+    // 340282366920938463463374607431768211455 == 2^128 - 1
+    // strlen("340282366920938463463374607431768211455") == 39;
     constexpr size_t max_number_digits_count = 39;
+#if __cplusplus >= 202002L
+    static_assert(base_10_len(static_cast<uint128_t>(-1)) == max_number_digits_count);
+#endif
     char digits[max_number_digits_count + 1];
     digits[max_number_digits_count] = '\0';
     char* ptr = &digits[max_number_digits_count];
     size_t length = 0;
     do {
         auto r = number / 10;
-        auto q = number - r * 10;
+        auto q = number % 10; // let compiler optimize it like "- r * 10" or whatever (maybe / 10 and % 10 will be calculated at once for uint128_t too)
         *--ptr = static_cast<char>('0' + static_cast<uint64_t>(q));
         length++;
         number = r;
     } while (number);
-
-    return std::string(ptr, length);
+    return string(ptr, length);
 }
 
 };

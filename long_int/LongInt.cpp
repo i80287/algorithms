@@ -1199,7 +1199,7 @@ struct LongInt {
     }
 
     void ToString(std::string& ans) const {
-        constexpr uint32_t digits_per_word = std::base_10_digits(uint64_t(uint32_t(-1)));
+        constexpr uint32_t digits_per_word = std::base_10_len(uint32_t(-1));
         size_t usize = USize();
         size_t max_number_len = (size_ <= 0) + digits_per_word * usize;
         char* digits = static_cast<char*>(operator new(max_number_len + 1));
@@ -1251,7 +1251,7 @@ struct LongInt {
                 break;
             }
             default: {
-                constexpr uint32_t digits_per_word = std::base_10_digits(uint64_t(uint32_t(-1)));
+                constexpr uint32_t digits_per_word = std::base_10_len(uint32_t(-1));
                 size_t usize = n.USize();
                 size_t max_number_len = digits_per_word * usize;
                 char* digits = static_cast<char*>(operator new(max_number_len + 1));
@@ -1512,7 +1512,8 @@ void TestLongIntMult() {
         auto start = chrono::high_resolution_clock::now();
         n1 *= n1;
         auto end = chrono::high_resolution_clock::now();
-        printf("Multiplied 1000000 digit numbers in %llu ms\n",
+        printf("Multiplied %zu digit numbers in %llu ms\n",
+            k,
             uint64_t(chrono::duration_cast<chrono::milliseconds>(end - start).count()));
     }
     string ans(2 * k, '\0');
