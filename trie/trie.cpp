@@ -16,13 +16,14 @@ concept ACTrieFindCallback = requires (callback func, std::string_view found_wor
     func(found_word, start_index_in_original_text);
 };
 
-template <uint8_t ALPHABET_START = 'A', uint8_t ALPHABET_END = 'z', bool IsCaseInsensetive = false>
-class ACTrie final {
-    static_assert('\0' < ALPHABET_START && ALPHABET_START < ALPHABET_END && ALPHABET_END < CHAR_MAX);
+template <uint8_t ALPHABET_START, uint8_t ALPHABET_END, bool IsCaseInsensetive>
+class ACTrieBase {
+protected:
+    static_assert('\0' < ALPHABET_START && ALPHABET_START < ALPHABET_END && ALPHABET_END <= CHAR_MAX);
 
     // Default value = 'z' - 'a' + 1 = 26
     static constexpr uint8_t ALPHABET_LENGTH = ALPHABET_END - ALPHABET_START + 1;
-    static constexpr size_t DEFAULT_VECTORS_CAPACITY = 16;
+    static constexpr size_t DEFAULT_NODES_CAPACITY = 16;
 
     static constexpr size_t NULL_NODE_INDEX = 0;
     static constexpr size_t FAKE_PREROOT_INDEX = 1;
@@ -49,7 +50,12 @@ class ACTrie final {
         */
         uint32_t word_index;
 
-        constexpr ACTNode() noexcept
+#if defined(_GLIBCXX20_CONSTEXPR)
+_GLIBCXX20_CONSTEXPR
+#else
+inline
+#endif
+        ACTNode() noexcept
             : suffix_link{NULL_NODE_INDEX},
             compressed_suffix_link{NULL_NODE_INDEX},
             word_index{MISSING_SENTIEL} {
@@ -66,237 +72,18 @@ class ACTrie final {
     mutable bool are_links_computed_ = false;
 
 public:
-    constexpr ACTrie() : nodes_(DEFAULT_NODES_COUNT), words_lengths_() {
-        nodes_.reserve(DEFAULT_VECTORS_CAPACITY);
-        words_lengths_.reserve(DEFAULT_VECTORS_CAPACITY);
+    inline ACTrieBase() : nodes_(DEFAULT_NODES_COUNT) {
+        nodes_.reserve(DEFAULT_NODES_CAPACITY);
 
         /*
          * link(root) = fake_vertex;
          * For all chars from the alphabet: fake_vertex ---char--> root
          */
-
         nodes_[ROOT_INDEX].suffix_link = FAKE_PREROOT_INDEX;
         nodes_[ROOT_INDEX].compressed_suffix_link = ROOT_INDEX;
 
         for (uint32_t& edge : nodes_[FAKE_PREROOT_INDEX].edges) {
             edge = ROOT_INDEX;
-        }
-    }
-
-    constexpr void ReservePlaceForPatterns(size_t patterns_capacity) {
-        words_lengths_.reserve(patterns_capacity);
-    }
-
-    void AddPattern(std::string_view pattern) {
-        assert(!IsReady());
-
-        uint32_t current_node_index = ROOT_INDEX;
-        const char* pattern_iter = pattern.begin();
-        const char* const pattern_end = pattern.end();
-
-        for (; pattern_iter != pattern_end; ++pattern_iter) {
-            char sigma;
-            if constexpr (IsCaseInsensetive) {
-                sigma = ToLower(*pattern_iter);
-            }
-            else {
-                sigma = *pattern_iter;
-            }
-
-            if (!IsInAlphabet(sigma)) {
-                assert(!"char in pattern is not in alphabet!!!");
-                continue;
-            }
-
-            uint32_t next_node_index = nodes_[current_node_index].edges[CharToEdgeIndex(sigma)];
-            if (next_node_index != NULL_NODE_INDEX) {
-                current_node_index = next_node_index;
-            }
-            else {
-                break;
-            }
-        }
-
-        size_t lasted_max_length = static_cast<size_t>(pattern_end - pattern_iter);
-        nodes_.reserve(nodes_.size() + lasted_max_length);
-
-        /*
-         * Inserts substring [i..length - 1] of pattern if i < length (<=> i != length)
-         * If i == length, then for cycle will no execute
-         */
-        for (; pattern_iter != pattern_end; ++pattern_iter) {
-            char sigma;
-            if constexpr (IsCaseInsensetive) {
-                sigma = ToLower(*pattern_iter);
-            }
-            else {
-                sigma = *pattern_iter;
-            }
-
-            if (!IsInAlphabet(sigma)) {
-                assert(!"char in pattern is not in alphabet!!!");
-                continue;
-            }
-
-            uint32_t new_node_index = static_cast<uint32_t>(nodes_.size());
-            nodes_.emplace_back();
-            nodes_[current_node_index].edges[CharToEdgeIndex(sigma)] = new_node_index;
-            current_node_index = new_node_index;
-        }
-
-        uint32_t word_index = static_cast<uint32_t>(words_lengths_.size());
-        nodes_[current_node_index].word_index = word_index;
-        words_lengths_.push_back(static_cast<uint32_t>(pattern.size()));
-    }
-
-    template <char Delimeter = '\n'>
-    void ReadPatternsFromCStdin(size_t strings_count) {
-        static_assert(!IsInAlphabet(Delimeter));
-        assert(!IsReady());
-
-        ReservePlaceForPatterns(strings_count);
-
-        while (strings_count--) {
-            uint32_t string_length = 0;
-            uint32_t current_node_index = ROOT_INDEX;
-
-            int sigma;
-            while (true) {
-                if constexpr (IsCaseInsensetive) {
-                    sigma = ToLower(std::getchar());
-                }
-                else {
-                    sigma = std::getchar();
-                }
-
-                if (!IsInAlphabet(sigma)) {
-                    if ((sigma == Delimeter) | (sigma == EOF)) {
-                        break;
-                    }
-
-                    assert(!"char in pattern is not in alphabet!!!");
-                    continue;
-                }
-
-                string_length++;
-                uint32_t next_node_index = nodes_[current_node_index].edges[CharToEdgeIndex(sigma)];
-                if (next_node_index != NULL_NODE_INDEX) {
-                    current_node_index = next_node_index;
-                }
-                else {
-                    next_node_index = nodes_.size();
-                    nodes_.emplace_back();
-                    nodes_[current_node_index].edges[CharToEdgeIndex(sigma)] = next_node_index;
-                    current_node_index = next_node_index;
-
-                    while (true) {
-                        if constexpr (IsCaseInsensetive) {
-                            sigma = ToLower(std::getchar());
-                        }
-                        else {
-                            sigma = std::getchar();
-                        }
-
-                        if (!IsInAlphabet(sigma)) {
-                            if ((sigma == Delimeter) | (sigma == EOF)) {
-                                break;
-                            }
-
-                            assert(!"char in pattern is not in alphabet!!!");
-                            continue;
-                        }
-
-                        string_length++;
-                        next_node_index = nodes_.size();
-                        nodes_.emplace_back();
-                        nodes_[current_node_index].edges[CharToEdgeIndex(sigma)] = next_node_index;
-                        current_node_index = next_node_index;
-                    }
-
-                    uint32_t word_index = static_cast<uint32_t>(words_lengths_.size());
-                    nodes_[current_node_index].word_index = word_index;
-                    words_lengths_.push_back(string_length);
-                    break;
-                }
-            }
-        }
-    }
-
-    template <char Delimeter = '\n'>
-    void ReadPatternsFromCppStdin(size_t strings_count) {
-        static_assert(!IsInAlphabet(Delimeter));
-        assert(!IsReady());
-
-        ReservePlaceForPatterns(strings_count);
-
-        while (strings_count--) {
-            uint32_t string_length = 0;
-            uint32_t current_node_index = ROOT_INDEX;
-
-            int sigma;
-            while (true) {
-                if constexpr (IsCaseInsensetive) {
-                    sigma = ToLower(std::cin.get());
-                }
-                else {
-                    sigma = std::cin.get();
-                }
-
-                if (!IsInAlphabet(sigma)) {
-                    if ((sigma == Delimeter) | (sigma == std::char_traits<char>::eof())) {
-                        break;
-                    }
-
-                    assert(!"char in pattern is not in alphabet!!!");
-                    continue;
-                }
-
-                string_length++;
-                uint32_t next_node_index = nodes_[current_node_index].edges[CharToEdgeIndex(sigma)];
-                if (next_node_index != NULL_NODE_INDEX) {
-                    current_node_index = next_node_index;
-                }
-                else {
-                    next_node_index = static_cast<uint32_t>(nodes_.size());
-                    nodes_.emplace_back();
-                    nodes_[current_node_index].edges[CharToEdgeIndex(sigma)] = next_node_index;
-                    current_node_index = next_node_index;
-
-                    while (true) {
-                        if constexpr (IsCaseInsensetive) {
-                            sigma = ToLower(std::cin.get());
-                        }
-                        else {
-                            sigma = std::cin.get();
-                        }
-
-                        if (!IsInAlphabet(sigma)) {
-                            if ((sigma == Delimeter) | (sigma == std::char_traits<char>::eof())) {
-                                break;
-                            }
-
-                            assert(!"char in pattern is not in alphabet!!!");
-                            continue;
-                        }
-
-                        if (!IsInAlphabet(sigma)) {
-                            assert(!"char in pattern is not in alphabet!!!");
-                            continue;
-                        }
-
-                        string_length++;
-                        next_node_index = static_cast<uint32_t>(nodes_.size());
-                        nodes_.emplace_back();
-                        nodes_[current_node_index].edges[CharToEdgeIndex(sigma)] = next_node_index;
-                        current_node_index = next_node_index;
-                    }
-
-                    uint32_t word_index = static_cast<uint32_t>(words_lengths_.size());
-                    nodes_[current_node_index].word_index = word_index;
-                    words_lengths_.push_back(string_length);
-                    break;
-                }
-            }
         }
     }
 
@@ -400,11 +187,21 @@ public:
         return are_links_computed_;
     }
 
-    constexpr size_t NodesSize() const noexcept {
+#if defined(_GLIBCXX20_CONSTEXPR)
+_GLIBCXX20_CONSTEXPR
+#else
+inline
+#endif
+    size_t NodesSize() const noexcept {
         return nodes_.size();
     }
 
-    constexpr size_t PatternsSize() const noexcept {
+#if defined(_GLIBCXX20_CONSTEXPR)
+_GLIBCXX20_CONSTEXPR
+#else
+inline
+#endif
+    size_t PatternsSize() const noexcept {
         return words_lengths_.size();
     }
 
@@ -420,12 +217,9 @@ public:
         uint32_t current_node_index = ROOT_INDEX;
         size_t i = 0;
         for (auto iter = text.begin(), end = text.end(); iter != end; ++iter, ++i) {
-            char sigma;
+            int32_t sigma = int32_t(uint8_t(*iter));
             if constexpr (IsCaseInsensetive) {
-                sigma = ToLower(*iter);
-            }
-            else {
-                sigma = *iter;
+                sigma = ToLower(sigma);
             }
 
             if (!IsInAlphabet(sigma)) {
@@ -457,17 +251,17 @@ public:
         }
     }
 
-private:
-    static inline constexpr size_t CharToEdgeIndex(char c) noexcept {
+protected:
+    static constexpr size_t CharToEdgeIndex(char c) noexcept {
         return static_cast<size_t>(static_cast<uint8_t>(c)) - ALPHABET_START;
     }
 
-    static inline constexpr size_t CharToEdgeIndex(int c) noexcept {
-        return static_cast<size_t>(static_cast<uint8_t>(c)) - ALPHABET_START;
+    static constexpr size_t CharToEdgeIndex(int32_t c) noexcept {
+        return static_cast<size_t>(c) - ALPHABET_START;
     }
 
-    static inline constexpr bool IsInAlphabet(char c) noexcept {
-        return static_cast<uint32_t>(c) - ALPHABET_START <= ALPHABET_END - ALPHABET_START;
+    static constexpr bool IsInAlphabet(char c) noexcept {
+        return static_cast<uint32_t>(static_cast<uint8_t>(c)) - ALPHABET_START <= ALPHABET_END - ALPHABET_START;
     }
 
     static_assert(IsInAlphabet(static_cast<char>(ALPHABET_START)));
@@ -475,21 +269,21 @@ private:
     static_assert(IsInAlphabet(static_cast<char>(ALPHABET_END)));
     static_assert(!IsInAlphabet(static_cast<char>(ALPHABET_END + 1)));
 
-    static inline constexpr bool IsInAlphabet(int c) noexcept {
+    static constexpr bool IsInAlphabet(int32_t c) noexcept {
         return static_cast<uint32_t>(c) - ALPHABET_START <= ALPHABET_END - ALPHABET_START;
     }
 
-    static_assert(IsInAlphabet(static_cast<int>(ALPHABET_START)));
-    static_assert(!IsInAlphabet(static_cast<int>(ALPHABET_START - 1)));
-    static_assert(IsInAlphabet(static_cast<int>(ALPHABET_END)));
-    static_assert(!IsInAlphabet(static_cast<int>(ALPHABET_END + 1)));
+    static_assert(IsInAlphabet(static_cast<int32_t>(ALPHABET_START)));
+    static_assert(!IsInAlphabet(static_cast<int32_t>(ALPHABET_START - 1)));
+    static_assert(IsInAlphabet(static_cast<int32_t>(ALPHABET_END)));
+    static_assert(!IsInAlphabet(static_cast<int32_t>(ALPHABET_END + 1)));
 
-    static inline constexpr bool IsUpper(char c) noexcept {
+    static constexpr bool IsUpper(char c) noexcept {
         return static_cast<uint32_t>(c) - 'A' <= 'Z' - 'A';
     }
 
-    static inline constexpr char ToLower(char c) noexcept {
-        return static_cast<char>(c | ('a' - 'A') * IsUpper(c));
+    static constexpr char ToLower(char c) noexcept {
+        return static_cast<char>(uint8_t(c) | ('a' - 'A') * IsUpper(c));
     }
 
     static_assert(ToLower('\0') == '\0');
@@ -499,27 +293,27 @@ private:
     static_assert(ToLower('Z') == 'z');
     static_assert(ToLower('~') == '~');
 
-    static inline constexpr bool IsUpper(int c) noexcept {
+    static constexpr bool IsUpper(int32_t c) noexcept {
         return static_cast<uint32_t>(c) - 'A' <= 'Z' - 'A';
     }
 
-    static inline constexpr int ToLower(int c) noexcept {
+    static constexpr int32_t ToLower(int32_t c) noexcept {
         return c | ('a' - 'A') * IsUpper(c);
     }
 
     static_assert(ToLower(0) == 0);
-    static_assert(ToLower(static_cast<int>('a')) == 'a');
-    static_assert(ToLower(static_cast<int>('z')) == 'z');
-    static_assert(ToLower(static_cast<int>('A')) == 'a');
-    static_assert(ToLower(static_cast<int>('Z')) == 'z');
-    static_assert(ToLower(static_cast<int>('~')) == '~');
+    static_assert(ToLower(static_cast<int32_t>('a')) == 'a');
+    static_assert(ToLower(static_cast<int32_t>('z')) == 'z');
+    static_assert(ToLower(static_cast<int32_t>('A')) == 'a');
+    static_assert(ToLower(static_cast<int32_t>('Z')) == 'z');
+    static_assert(ToLower(static_cast<int32_t>('~')) == '~');
 
 #ifndef NDEBUG
     inline void CheckComputedLinks() const {
         auto iter = nodes_.begin();
 
-        uint32_t max_node_index_excl = static_cast<uint32_t>(nodes_.size());
-        assert(max_node_index_excl >= DEFAULT_NODES_COUNT);
+        uint32_t max_node_index_excluding = static_cast<uint32_t>(nodes_.size());
+        assert(max_node_index_excluding >= DEFAULT_NODES_COUNT);
         uint32_t max_word_end_index_excl = static_cast<uint32_t>(words_lengths_.size());
 
         static_assert(NULL_NODE_INDEX == NULL_NODE_INDEX, "current impl of CheckComputedLinks() relies on NULL_NODE_INDEX");
@@ -538,14 +332,14 @@ private:
             static_assert(NULL_NODE_INDEX < FAKE_PREROOT_INDEX);
 
             for (uint32_t child_index : iter->edges) {
-                assert(child_index >= FAKE_PREROOT_INDEX && child_index < max_node_index_excl);
+                assert(child_index >= FAKE_PREROOT_INDEX && child_index < max_node_index_excluding);
             }
 
             uint32_t suffix_link_index = iter->suffix_link;
-            assert(suffix_link_index >= FAKE_PREROOT_INDEX && suffix_link_index < max_node_index_excl);
+            assert(suffix_link_index >= FAKE_PREROOT_INDEX && suffix_link_index < max_node_index_excluding);
 
             uint32_t compressed_suffix_link_index = iter->compressed_suffix_link;
-            assert(compressed_suffix_link_index >= FAKE_PREROOT_INDEX && compressed_suffix_link_index < max_node_index_excl);
+            assert(compressed_suffix_link_index >= FAKE_PREROOT_INDEX && compressed_suffix_link_index < max_node_index_excluding);
 
             assert(!iter->IsTerminal() || (iter->word_index < max_word_end_index_excl));
         }
@@ -555,8 +349,460 @@ private:
 #endif
 };
 
+template <uint8_t ALPHABET_START = 'A', uint8_t ALPHABET_END = 'z', bool IsCaseInsensetive = false>
+class ACTrie final : public ACTrieBase<ALPHABET_START, ALPHABET_END, IsCaseInsensetive> {
+    using base = ACTrieBase<ALPHABET_START, ALPHABET_END, IsCaseInsensetive>;
+public:
+#if defined(_GLIBCXX20_CONSTEXPR)
+_GLIBCXX20_CONSTEXPR
+#else
+inline
+#endif
+    void ReservePlaceForPatterns(size_t patterns_capacity) {
+        this->words_lengths_.reserve(patterns_capacity);
+    }
+
+    void AddPattern(std::string_view pattern) {
+        assert(!this->IsReady());
+
+        uint32_t current_node_index = this->ROOT_INDEX;
+        const unsigned char* pattern_iter = reinterpret_cast<const unsigned char*>(pattern.begin());
+        const unsigned char* pattern_end = reinterpret_cast<const unsigned char*>(pattern.end());
+
+        for (; pattern_iter != pattern_end; ++pattern_iter) {
+            int32_t sigma = int32_t(*pattern_iter);
+            if constexpr (IsCaseInsensetive) {
+                sigma = base::ToLower(sigma);
+            }
+
+            if (!base::IsInAlphabet(sigma)) {
+                assert(!"char in pattern is not in alphabet!!!");
+                continue;
+            }
+
+            uint32_t next_node_index = this->nodes_[current_node_index].edges[base::CharToEdgeIndex(sigma)];
+            if (next_node_index != base::NULL_NODE_INDEX) {
+                current_node_index = next_node_index;
+            }
+            else {
+                break;
+            }
+        }
+
+        size_t lasted_max_length = static_cast<size_t>(pattern_end - pattern_iter);
+        this->nodes_.reserve(this->nodes_.size() + lasted_max_length);
+
+        /*
+         * Inserts substring [i..length - 1] of pattern if i < length (<=> i != length)
+         * If i == length, then for cycle will no execute
+         */
+        for (; pattern_iter != pattern_end; ++pattern_iter) {
+            int32_t sigma = int32_t(*pattern_iter);
+            if constexpr (IsCaseInsensetive) {
+                sigma = base::ToLower(sigma);
+            }
+
+            if (!base::IsInAlphabet(sigma)) {
+                assert(!"char in pattern is not in alphabet!!!");
+                continue;
+            }
+
+            uint32_t new_node_index = static_cast<uint32_t>(this->nodes_.size());
+            this->nodes_.emplace_back();
+            this->nodes_[current_node_index].edges[base::CharToEdgeIndex(sigma)] = new_node_index;
+            current_node_index = new_node_index;
+        }
+
+        uint32_t word_index = static_cast<uint32_t>(this->words_lengths_.size());
+        this->nodes_[current_node_index].word_index = word_index;
+        this->words_lengths_.push_back(static_cast<uint32_t>(pattern.size()));
+    }
+
+    template <char Delimeter = '\n'>
+    void ReadPatternsFromCStdin(size_t strings_count) {
+        static_assert(!base::IsInAlphabet(Delimeter));
+        assert(!base::IsReady());
+
+        ReservePlaceForPatterns(strings_count);
+
+        while (strings_count--) {
+            uint32_t string_length = 0;
+            uint32_t current_node_index = base::ROOT_INDEX;
+
+            int sigma;
+            while (true) {
+                if constexpr (IsCaseInsensetive) {
+                    sigma = base::ToLower(std::getchar());
+                }
+                else {
+                    sigma = std::getchar();
+                }
+
+                if (!base::IsInAlphabet(sigma)) {
+                    if ((sigma == Delimeter) | (sigma == EOF)) {
+                        break;
+                    }
+
+                    assert(!"char in pattern is not in alphabet!!!");
+                    continue;
+                }
+
+                string_length++;
+                uint32_t next_node_index = this->nodes_[current_node_index].edges[base::CharToEdgeIndex(sigma)];
+                if (next_node_index != base::NULL_NODE_INDEX) {
+                    current_node_index = next_node_index;
+                }
+                else {
+                    next_node_index = this->nodes_.size();
+                    this->nodes_.emplace_back();
+                    this->nodes_[current_node_index].edges[base::CharToEdgeIndex(sigma)] = next_node_index;
+                    current_node_index = next_node_index;
+
+                    while (true) {
+                        if constexpr (IsCaseInsensetive) {
+                            sigma = base::ToLower(std::getchar());
+                        }
+                        else {
+                            sigma = std::getchar();
+                        }
+
+                        if (!base::IsInAlphabet(sigma)) {
+                            if ((sigma == Delimeter) | (sigma == EOF)) {
+                                break;
+                            }
+
+                            assert(!"char in pattern is not in alphabet!!!");
+                            continue;
+                        }
+
+                        string_length++;
+                        next_node_index = this->nodes_.size();
+                        this->nodes_.emplace_back();
+                        this->nodes_[current_node_index].edges[base::CharToEdgeIndex(sigma)] = next_node_index;
+                        current_node_index = next_node_index;
+                    }
+
+                    uint32_t word_index = static_cast<uint32_t>(this->words_lengths_.size());
+                    this->nodes_[current_node_index].word_index = word_index;
+                    this->words_lengths_.push_back(string_length);
+                    break;
+                }
+            }
+        }
+    }
+
+    template <char Delimeter = '\n'>
+    void ReadPatternsFromCppStdin(size_t strings_count) {
+        static_assert(!base::IsInAlphabet(Delimeter));
+        assert(!base::IsReady());
+
+        ReservePlaceForPatterns(strings_count);
+
+        while (strings_count--) {
+            uint32_t string_length = 0;
+            uint32_t current_node_index = base::ROOT_INDEX;
+
+            int sigma;
+            while (true) {
+                if constexpr (IsCaseInsensetive) {
+                    sigma = base::ToLower(std::cin.get());
+                }
+                else {
+                    sigma = std::cin.get();
+                }
+
+                if (!base::IsInAlphabet(sigma)) {
+                    if ((sigma == Delimeter) | (sigma == std::char_traits<char>::eof())) {
+                        break;
+                    }
+
+                    assert(!"char in pattern is not in alphabet!!!");
+                    continue;
+                }
+
+                string_length++;
+                uint32_t next_node_index = this->nodes_[current_node_index].edges[base::CharToEdgeIndex(sigma)];
+                if (next_node_index != base::NULL_NODE_INDEX) {
+                    current_node_index = next_node_index;
+                }
+                else {
+                    next_node_index = static_cast<uint32_t>(this->nodes_.size());
+                    this->nodes_.emplace_back();
+                    this->nodes_[current_node_index].edges[base::CharToEdgeIndex(sigma)] = next_node_index;
+                    current_node_index = next_node_index;
+
+                    while (true) {
+                        if constexpr (IsCaseInsensetive) {
+                            sigma = base::ToLower(std::cin.get());
+                        }
+                        else {
+                            sigma = std::cin.get();
+                        }
+
+                        if (!base::IsInAlphabet(sigma)) {
+                            if ((sigma == Delimeter) | (sigma == std::char_traits<char>::eof())) {
+                                break;
+                            }
+
+                            assert(!"char in pattern is not in alphabet!!!");
+                            continue;
+                        }
+
+                        if (!base::IsInAlphabet(sigma)) {
+                            assert(!"char in pattern is not in alphabet!!!");
+                            continue;
+                        }
+
+                        string_length++;
+                        next_node_index = static_cast<uint32_t>(this->nodes_.size());
+                        this->nodes_.emplace_back();
+                        this->nodes_[current_node_index].edges[base::CharToEdgeIndex(sigma)] = next_node_index;
+                        current_node_index = next_node_index;
+                    }
+
+                    uint32_t word_index = static_cast<uint32_t>(this->words_lengths_.size());
+                    this->nodes_[current_node_index].word_index = word_index;
+                    this->words_lengths_.push_back(string_length);
+                    break;
+                }
+            }
+        }
+    }
+};
+
+template <uint8_t ALPHABET_START = 'A', uint8_t ALPHABET_END = 'z', bool IsCaseInsensetive = false>
+class ReplacingACTrie final : public ACTrieBase<ALPHABET_START, ALPHABET_END, IsCaseInsensetive> {
+    using base = ACTrieBase<ALPHABET_START, ALPHABET_END, IsCaseInsensetive>;
+    std::vector<std::string> words_replacements_;
+public:
+#if defined(_GLIBCXX20_CONSTEXPR)
+_GLIBCXX20_CONSTEXPR
+#else
+inline
+#endif
+    void ReservePlaceForPatterns(size_t patterns_capacity) {
+        this->words_lengths_.reserve(patterns_capacity);
+        words_replacements_.reserve(patterns_capacity);
+    }
+
+    void AddPatternWithReplacements(std::string_view pattern, std::string_view replacement) {
+        assert(!this->IsReady());
+
+        uint32_t current_node_index = this->ROOT_INDEX;
+        const unsigned char* pattern_iter = reinterpret_cast<const unsigned char*>(pattern.begin());
+        const unsigned char* pattern_end = reinterpret_cast<const unsigned char*>(pattern.end());
+
+        for (; pattern_iter != pattern_end; ++pattern_iter) {
+            int32_t sigma = int32_t(*pattern_iter);
+            if constexpr (IsCaseInsensetive) {
+                sigma = base::ToLower(sigma);
+            }
+
+            if (!base::IsInAlphabet(sigma)) {
+                assert(!"char in pattern is not in alphabet!!!");
+                continue;
+            }
+
+            uint32_t next_node_index = this->nodes_[current_node_index].edges[base::CharToEdgeIndex(sigma)];
+            if (next_node_index != base::NULL_NODE_INDEX) {
+                current_node_index = next_node_index;
+            }
+            else {
+                break;
+            }
+        }
+
+        size_t lasted_max_length = static_cast<size_t>(pattern_end - pattern_iter);
+        this->nodes_.reserve(this->nodes_.size() + lasted_max_length);
+
+        /*
+         * Inserts substring [i..length - 1] of pattern if i < length (<=> i != length)
+         * If i == length, then for cycle will no execute
+         */
+        for (; pattern_iter != pattern_end; ++pattern_iter) {
+            int32_t sigma = int32_t(*pattern_iter);
+            if constexpr (IsCaseInsensetive) {
+                sigma = base::ToLower(sigma);
+            }
+
+            if (!base::IsInAlphabet(sigma)) {
+                assert(!"char in pattern is not in alphabet!!!");
+                continue;
+            }
+
+            uint32_t new_node_index = static_cast<uint32_t>(this->nodes_.size());
+            this->nodes_.emplace_back();
+            this->nodes_[current_node_index].edges[base::CharToEdgeIndex(sigma)] = new_node_index;
+            current_node_index = new_node_index;
+        }
+
+        uint32_t word_index = static_cast<uint32_t>(this->words_lengths_.size());
+        this->nodes_[current_node_index].word_index = word_index;
+        this->words_lengths_.push_back(static_cast<uint32_t>(pattern.size()));
+        words_replacements_.emplace_back(replacement);
+    }
+
+    void ReplaceAllOccurances(std::string& text) const {
+        assert(this->IsReady());
+
+        struct replacement_info_t {
+            uint32_t word_l_index_in_text;
+            uint32_t word_index;
+        };
+
+        std::vector<replacement_info_t> stack;
+        size_t length = text.size();
+        size_t new_length = length;
+        uint32_t current_node_index = base::ROOT_INDEX;
+        for (char* c_string = text.data(), * current_c_string = c_string, * iter = current_c_string; ; ++iter) {
+            int32_t c = int32_t(uint8_t(*iter));
+            if (c == '\0') {
+                break;
+            }
+
+            if constexpr (IsCaseInsensetive) {
+                c = base::ToLower(c);
+            }
+
+            if (!base::IsInAlphabet(c)) {
+                current_node_index = base::ROOT_INDEX;
+                continue;
+            }
+
+            current_node_index = this->nodes_[current_node_index].edges[base::CharToEdgeIndex(c)];
+            assert(current_node_index != base::NULL_NODE_INDEX);
+
+            const typename base::ACTNode& current_node = this->nodes_[current_node_index];
+            bool current_node_is_terminal = current_node.IsTerminal();
+            size_t compressed_suffix_link = current_node.compressed_suffix_link;
+
+            if (current_node_is_terminal | (compressed_suffix_link != base::ROOT_INDEX)) {
+                assert(current_node_is_terminal || this->nodes_[compressed_suffix_link].IsTerminal());
+                uint32_t word_index = current_node_is_terminal ? current_node.word_index : this->nodes_[compressed_suffix_link].word_index;
+
+                assert(word_index < this->words_lengths_.size());
+                uint32_t r_index_in_current_substring = static_cast<uint32_t>(iter - current_c_string);
+                uint32_t word_length = this->words_lengths_[word_index];
+                // Matched pattern is current_c_string[l; r]
+                uint32_t l_index_in_current_substring = r_index_in_current_substring + 1 - word_length;
+                size_t replacement_length = words_replacements_[word_index].size();
+
+                if (stack.empty() & (word_length == replacement_length)) {
+                    char* dst_address = current_c_string + l_index_in_current_substring;
+                    assert(c_string <= dst_address && dst_address + word_length <= c_string + length);
+                    memcpy(dst_address, words_replacements_[word_index].c_str(), word_length);
+                }
+                else {
+                    uint32_t word_l_index_in_text = static_cast<uint32_t>(current_c_string + l_index_in_current_substring - c_string);
+                    stack.emplace_back(word_l_index_in_text, word_index);
+                    new_length += (replacement_length - word_length);
+                }
+
+                current_c_string = iter + 1;
+                current_node_index = base::ROOT_INDEX;
+            }
+        }
+
+        if (length == new_length) {
+            return;
+        }
+        size_t right_offset = 0;
+        if (new_length > length) {
+            text.resize(new_length);
+        }
+
+        char* c_string = text.data();
+        for (const replacement_info_t* stack_iter_end = stack.data() - 1, * stack_iter = stack_iter_end + stack.size();
+            stack_iter != stack_iter_end; --stack_iter) {
+            uint32_t word_index = stack_iter->word_index;
+            uint32_t word_l_index_in_text = stack_iter->word_l_index_in_text;
+            uint32_t word_length = this->words_lengths_[word_index];
+            size_t moved_part_length = length - (word_l_index_in_text + word_length);
+
+            char*       dst_address = c_string + (new_length - right_offset - moved_part_length);
+            const char* src_address = c_string + word_l_index_in_text + word_length;
+
+            if (dst_address != src_address) {
+                // If pattern length != replacement length, worth checking
+                assert(c_string <= dst_address && dst_address + moved_part_length <= c_string + std::max(new_length, length));
+                assert(c_string <= src_address && src_address + moved_part_length <= c_string + std::max(new_length, length));
+                memmove(dst_address, src_address, moved_part_length);            
+            }
+
+            size_t replacement_length = words_replacements_[word_index].size();
+            dst_address -= replacement_length;
+
+            assert(c_string <= dst_address && dst_address + replacement_length <= c_string + std::max(new_length, length));
+            memcpy(dst_address, words_replacements_[word_index].c_str(), replacement_length);
+
+            length = word_l_index_in_text;
+            right_offset += moved_part_length + replacement_length;
+        }
+
+        if (new_length < text.size()) {
+            text.resize(new_length);
+        }
+    }
+    
+    void ReplaceFirstOccurance(std::string& text) const {
+        uint32_t current_node_index = base::ROOT_INDEX;
+        for (const char* iter = text.c_str(); ; ++iter) {
+            int32_t c = int32_t(uint8_t(*iter));
+            if (c == '\0') {
+                break;
+            }
+
+            if constexpr (IsCaseInsensetive) {
+                c = base::ToLower(c);
+            }
+
+            if (!base::IsInAlphabet(c)) {
+                current_node_index = base::ROOT_INDEX;
+                continue;
+            }
+
+            current_node_index = this->nodes_[current_node_index].edges[base::CharToEdgeIndex(c)];
+            assert(current_node_index != base::NULL_NODE_INDEX);
+            const typename base::ACTNode& current_node = this->nodes_[current_node_index];
+            bool current_node_is_terminal = current_node.IsTerminal();
+            size_t compressed_suffix_link = current_node.compressed_suffix_link;
+
+            if (current_node_is_terminal | (compressed_suffix_link != base::ROOT_INDEX)) {
+                uint32_t word_index;
+                if (current_node_is_terminal) {
+                    word_index = current_node.word_index;
+                }
+                else {
+                    assert(this->nodes_[compressed_suffix_link].IsTerminal());
+                    word_index = this->nodes_[compressed_suffix_link].word_index;
+                }
+
+                assert(word_index < this->words_lengths_.size());
+                uint32_t word_length = this->words_lengths_[word_index];
+                uint32_t r_index_in_current_substring = static_cast<uint32_t>(iter - text.c_str());
+
+                // Matched pattern is text[l; r]
+                uint32_t l = r_index_in_current_substring + 1 - word_length;
+                size_t replacement_length = words_replacements_[word_index].size();
+
+                if (replacement_length != word_length) {
+                    // In both cases: replacement_length > word_length || replacement_length < word_length code is the same
+                    text.resize(text.size() - word_length + replacement_length);
+                    memmove(text.data() + l + replacement_length,
+                        text.c_str() + r_index_in_current_substring + 1,
+                        text.size() - 1 - r_index_in_current_substring);
+                }
+
+                memcpy(text.data() + l, words_replacements_[word_index].c_str(), replacement_length);
+                break;
+            }
+        }
+    }
+};
+
 } // namespace ACTrieADS
 
+namespace actrie_tests {
 
 template <size_t PatternsSize>
 bool run_tests(const char* (&patterns)[PatternsSize], const char* text, const std::vector<std::pair<std::string_view, size_t>>& expected_occurances) {
@@ -748,10 +994,363 @@ void test3() {
     std::cout << std::endl;
 }
 
-int main(void) {
-    //test0();
-    //test1();
-    //test2();
-    test3();
+}
+
+namespace replacing_actrie_tests {
+
+template <size_t PatternsSize>
+void run_test(const char* (&patterns_with_replacements)[PatternsSize][2], std::string& input_text, std::string_view expected, bool replace_all_occurances, uint32_t test_number) {
+    ACTrieADS::ReplacingACTrie<'-', '}', true> t;
+    t.ReservePlaceForPatterns(PatternsSize);
+
+    for (size_t i = 0; i < PatternsSize; i++) {
+        t.AddPatternWithReplacements(patterns_with_replacements[i][0], patterns_with_replacements[i][1]);
+    }
+
+    bool result = true;
+    if (t.PatternsSize() != PatternsSize) {
+        result = false;
+        goto cleanup;
+    }
+
+    t.ComputeLinks();
+    if (!t.IsReady()) {
+        result = false;
+        goto cleanup;
+    }
+
+    for (size_t i = 0; i < PatternsSize; i++) {
+        if (!t.ContainsPattern(patterns_with_replacements[i][0])) {
+            result = false;
+            goto cleanup;
+        }
+    }
+
+    if (replace_all_occurances) {
+        t.ReplaceAllOccurances(input_text);
+    }
+    else {
+        t.ReplaceFirstOccurance(input_text);
+    }
+    result &= input_text == expected;
+cleanup:
+    printf((result ? "test %u passed\n" : "test %u not passed\n"), test_number);
+}
+
+[[maybe_unused]] static void test0() {
+    const char* patterns_with_replacements[][2] = {
+        { "ab", "cd" },
+        { "ba", "dc" },
+        { "aa", "cc" },
+        { "bb", "dd" },
+        { "fasb", "xfasbx" },
+    };
+    std::string input_text = "ababcdacafaasbfasbabcc";
+    const char exptected[] = "cdcdcdacafccsbxfasbxcdcc";
+    run_test(patterns_with_replacements, input_text, exptected, true, 0);
+}
+
+[[maybe_unused]] static void test1() {
+    const char* patterns_with_replacements[][2] = {
+        {"ab", "cd"},
+        {"ba", "dc"},
+        {"aa", "cc"},
+        {"bb", "dd"},
+        {"xfasbx", "fasb"},
+    };
+    std::string input_text = "ababcdacafaasbxfasbxabcc";
+    const char exptected[] = "cdcdcdacafccsbfasbcdcc";
+    run_test(patterns_with_replacements, input_text, exptected, true, 1);
+}
+
+[[maybe_unused]] static void test2() {
+    const char* patterns_with_replacements[][2] = {
+        {"LM", "0000"},
+        {"GHI", "111111"},
+        {"BCD", "2222222"},
+        {"nop", "3333"},
+        {"jk", "44444"}
+    };
+    std::string input_text = "ABCDEFGHIJKLMNOP";
+    const char exptected[] = "A2222222EF1111114444400003333";
+    run_test(patterns_with_replacements, input_text, exptected, true, 2);
+}
+
+[[maybe_unused]] static void test3() {
+    const char* patterns_with_replacements[][2] = {
+        {"AB", "111111111111111111111111"},
+        {"CD", "cd"},
+        {"EF", "ef"},
+        {"JK", "jk"},
+        {"NO", "no"}
+    };
+    std::string input_text = "ABCDEFGHIJKLMNOP";
+    const char expected[]  = "111111111111111111111111cdefGHIjkLMnoP";
+    run_test(patterns_with_replacements, input_text, expected, true, 3);
+}
+
+[[maybe_unused]] static void test4() {
+    const char* patterns_with_replacements[][2] = {
+        {"AB", "ab"},
+        {"CD", "cd"},
+        {"EF", "ef"},
+        {"JK", "jk"},
+        {"NO", "111111111111111111111111"}
+    };
+    std::string input_text = "ABCDEFGHIJKLMNOP";
+    const char expected[]  = "abcdefGHIjkLM111111111111111111111111P";
+    run_test(patterns_with_replacements, input_text, expected, true, 4);
+}
+
+[[maybe_unused]] static void test5() {
+    const char* patterns_with_replacements[][2] = {
+        {"AB", "ab"},
+        {"CD", "cd"},
+        {"EF", "111111111111111111111111"},
+        {"JK", "jk"},
+        {"NO", "no"}
+    };
+    std::string input_text = "ABCDEFGHIJKLMNOP";
+    const char expected[]  = "abcd111111111111111111111111GHIjkLMnoP";
+    run_test(patterns_with_replacements, input_text, expected, true, 5);
+}
+
+[[maybe_unused]] static void test6() {
+    const char* patterns_with_replacements[][2] = {
+        {"kernel", "Kewnel"},
+        {"linux", "Linuwu"},
+        {"debian", "Debinyan"},
+        {"ubuntu", "Uwuntu"},
+        {"windows", "WinyandOwOws"}
+    };
+    std::string input_text = "linux kernel; debian os; ubuntu os; windows os";
+    const char expected[]  = "Linuwu Kewnel; Debinyan os; Uwuntu os; WinyandOwOws os";
+    run_test(patterns_with_replacements, input_text, expected, true, 6);
+}
+
+[[maybe_unused]] static void test7() {
+    const char* patterns_with_replacements[][2] = {
+        {"brew-cask", "bwew-cawsk"},
+        {"brew-cellar", "bwew-cewwaw"},
+        {"emerge", "emewge"},
+        {"flatpak", "fwatpakkies"},
+        {"pacman", "pacnyan"},
+        {"port", "powt"},
+        {"rpm", "rawrpm"},
+        {"snap", "snyap"},
+        {"zypper", "zyppew"},
+
+        {"lenovo", "LenOwO"},
+        {"cpu", "CPUwU"},
+        {"core", "Cowe"},
+        {"gpu", "GPUwU"},
+        {"graphics", "Gwaphics"},
+        {"corporation", "COwOpowation"},
+        {"nvidia", "NyaVIDIA"},
+        {"mobile", "Mwobile"},
+        {"intel", "Inteww"},
+        {"radeon", "Radenyan"},
+        {"geforce", "GeFOwOce"},
+        {"raspberry", "Nyasberry"},
+        {"broadcom", "Bwoadcom"},
+        {"motorola", "MotOwOwa"},
+        {"proliant", "ProLinyant"},
+        {"poweredge", "POwOwEdge"},
+        {"apple", "Nyapple"},
+        {"electronic", "ElectrOwOnic"},
+        {"processor", "Pwocessow"},
+        {"microsoft", "MicOwOsoft"},
+        {"ryzen", "Wyzen"},
+        {"advanced", "Adwanced"},
+        {"micro", "Micwo"},
+        {"devices", "Dewices"},
+        {"inc.", "Nyanc."},
+        {"lucienne", "Lucienyan"},
+        {"tuxedo", "TUWUXEDO"},
+        {"aura", "Uwura"},
+
+        {"linux", "linuwu"},
+        {"alpine", "Nyalpine"},
+        {"amogos", "AmogOwOS"},
+        {"android", "Nyandroid"},
+        {"arch", "Nyarch Linuwu"},
+
+        {"arcolinux", "ArcOwO Linuwu"},
+
+        {"artix", "Nyartix Linuwu"},
+        {"debian", "Debinyan"},
+
+        {"devuan", "Devunyan"},
+
+        {"deepin", "Dewepyn"},
+        {"endeavouros", "endeavOwO"},
+        {"fedora", "Fedowa"},
+        {"femboyos", "FemboyOWOS"},
+        {"gentoo", "GentOwO"},
+        {"gnu", "gnUwU"},
+        {"guix", "gnUwU gUwUix"},
+        {"linuxmint", "LinUWU Miwint"},
+        {"manjaro", "Myanjawo"},
+        {"manjaro-arm", "Myanjawo AWM"},
+        {"neon", "KDE NeOwOn"},
+        {"nixos", "nixOwOs"},
+        {"opensuse-leap", "OwOpenSUSE Leap"},
+        {"opensuse-tumbleweed", "OwOpenSUSE Tumbleweed"},
+        {"pop", "PopOwOS"},
+        {"raspbian", "RaspNyan"},
+        {"rocky", "Wocky Linuwu"},
+        {"slackware", "Swackwawe"},
+        {"solus", "sOwOlus"},
+        {"ubuntu", "Uwuntu"},
+        {"void", "OwOid"},
+        {"xerolinux", "xuwulinux"},
+
+        // BSD
+        {"freebsd", "FweeBSD"},
+        {"openbsd", "OwOpenBSD"},
+
+        // Apple family
+        {"macos", "macOwOS"},
+        {"ios", "iOwOS"},
+
+        // Windows
+        {"windows", "WinyandOwOws"},
+    };
+    std::string input_text = "windows freebsd rocky; neon linux; fedora; pop os; solus; amogos; void; ryzen and intel processor";
+    const char expected[]  = "WinyandOwOws FweeBSD Wocky Linuwu; KDE NeOwOn linuwu; Fedowa; PopOwOS os; sOwOlus; AmogOwOS; OwOid; Wyzen and Inteww Pwocessow";
+    run_test(patterns_with_replacements, input_text, expected, true, 7);
+}
+
+[[maybe_unused]] static void test8() {
+    const char* patterns_with_replacements[][2] = {
+        {"brew-cask", "bwew-cawsk"},
+        {"brew-cellar", "bwew-cewwaw"},
+        {"emerge", "emewge"},
+        {"flatpak", "fwatpakkies"},
+        {"pacman", "pacnyan"},
+        {"port", "powt"},
+        {"rpm", "rawrpm"},
+        {"snap", "snyap"},
+        {"zypper", "zyppew"},
+
+        {"lenovo", "LenOwO"},
+        {"cpu", "CPUwU"},
+        {"core", "Cowe"},
+        {"gpu", "GPUwU"},
+        {"graphics", "Gwaphics"},
+        {"corporation", "COwOpowation"},
+        {"nvidia", "NyaVIDIA"},
+        {"mobile", "Mwobile"},
+        {"intel", "Inteww"},
+        {"radeon", "Radenyan"},
+        {"geforce", "GeFOwOce"},
+        {"raspberry", "Nyasberry"},
+        {"broadcom", "Bwoadcom"},
+        {"motorola", "MotOwOwa"},
+        {"proliant", "ProLinyant"},
+        {"poweredge", "POwOwEdge"},
+        {"apple", "Nyapple"},
+        {"electronic", "ElectrOwOnic"},
+        {"processor", "Pwocessow"},
+        {"microsoft", "MicOwOsoft"},
+        {"ryzen", "Wyzen"},
+        {"advanced", "Adwanced"},
+        {"micro", "Micwo"},
+        {"devices", "Dewices"},
+        {"inc.", "Nyanc."},
+        {"lucienne", "Lucienyan"},
+        {"tuxedo", "TUWUXEDO"},
+        {"aura", "Uwura"},
+
+        {"linux", "linuwu"},
+        {"alpine", "Nyalpine"},
+        {"amogos", "AmogOwOS"},
+        {"android", "Nyandroid"},
+        {"arch", "Nyarch Linuwu"},
+
+        {"arcolinux", "ArcOwO Linuwu"},
+
+        {"artix", "Nyartix Linuwu"},
+        {"debian", "Debinyan"},
+
+        {"devuan", "Devunyan"},
+
+        {"deepin", "Dewepyn"},
+        {"endeavouros", "endeavOwO"},
+        {"fedora", "Fedowa"},
+        {"femboyos", "FemboyOWOS"},
+        {"gentoo", "GentOwO"},
+        {"gnu", "gnUwU"},
+        {"guix", "gnUwU gUwUix"},
+        {"linuxmint", "LinUWU Miwint"},
+        {"manjaro", "Myanjawo"},
+        {"manjaro-arm", "Myanjawo AWM"},
+        {"neon", "KDE NeOwOn"},
+        {"nixos", "nixOwOs"},
+        {"opensuse-leap", "OwOpenSUSE Leap"},
+        {"opensuse-tumbleweed", "OwOpenSUSE Tumbleweed"},
+        {"pop", "PopOwOS"},
+        {"raspbian", "RaspNyan"},
+        {"rocky", "Wocky Linuwu"},
+        {"slackware", "Swackwawe"},
+        {"solus", "sOwOlus"},
+        {"ubuntu", "Uwuntu"},
+        {"void", "OwOid"},
+        {"xerolinux", "xuwulinux"},
+
+        // BSD
+        {"freebsd", "FweeBSD"},
+        {"openbsd", "OwOpenBSD"},
+
+        // Apple family
+        {"macos", "macOwOS"},
+        {"ios", "iOwOS"},
+
+        // Windows
+        {"windows", "WinyandOwOws"},
+    };
+    std::string input_text = "windows freebsd rocky; neon linux; fedora; pop os; solus; amogos; void; ryzen and intel processor";
+    const char expected[]  = "WinyandOwOws FweeBSD Wocky Linuwu; KDE NeOwOn linuwu; Fedowa; PopOwOS os; sOwOlus; AmogOwOS; OwOid; Wyzen and Inteww Pwocessow";
+    run_test(patterns_with_replacements, input_text, expected, true, 8);
+}
+
+[[maybe_unused]] static void test9() {
+    const char* patterns_with_replacements[][2] = {
+        { "abc", "def" },
+        { "ghi", "jkz" },
+    };
+    std::string input_text = "Abghciashjdhwdjahwdjhabdabanabwc";
+    const char expected[]  = "Abghciashjdhwdjahwdjhabdabanabwc";
+    run_test(patterns_with_replacements, input_text, expected, true, 9);
+}
+
+[[maybe_unused]] static void test10() {
+    const char* patterns_with_replacements[][2] = {
+        { "abc", "def" },
+        { "ghi", "jkz" },
+    };
+    std::string input_text = "Qghiabcabcghiabc";
+    const char expected[]  = "Qjkzabcabcghiabc";
+    run_test(patterns_with_replacements, input_text, expected, false, 10);
+}
+
+}
+
+int main() {
+    actrie_tests::test0();
+    actrie_tests::test1();
+    actrie_tests::test2();
+
+    replacing_actrie_tests::test0();
+    replacing_actrie_tests::test1();
+    replacing_actrie_tests::test2();
+    replacing_actrie_tests::test3();
+    replacing_actrie_tests::test4();
+    replacing_actrie_tests::test5();
+    replacing_actrie_tests::test6();
+    replacing_actrie_tests::test7();
+    replacing_actrie_tests::test8();
+    replacing_actrie_tests::test9();
+    replacing_actrie_tests::test10();
     return 0;
 }
