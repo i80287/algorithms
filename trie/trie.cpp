@@ -11,59 +11,52 @@
 
 namespace ACTrieADS {
 
-template <typename callback>
-concept ACTrieFindCallback = requires (callback func, std::string_view found_word, size_t start_index_in_original_text) {
-    func(found_word, start_index_in_original_text);
-};
+#if __cplusplus >= 202002L
+#define cpp20_constexpr constexpr
+#else
+#define cpp20_constexpr
+#endif
 
-template <uint8_t ALPHABET_START, uint8_t ALPHABET_END, bool IsCaseInsensetive>
+template <uint8_t kAlphabetStart, uint8_t kAlphabetEnd, bool kIsCaseInsensetive>
 class ACTrieBase {
 protected:
-    static_assert('\0' < ALPHABET_START && ALPHABET_START < ALPHABET_END && ALPHABET_END <= CHAR_MAX);
+    static_assert('\0' < kAlphabetStart && kAlphabetStart < kAlphabetEnd && kAlphabetEnd <= SCHAR_MAX);
 
     // Default value = 'z' - 'a' + 1 = 26
-    static constexpr uint8_t ALPHABET_LENGTH = ALPHABET_END - ALPHABET_START + 1;
-    static constexpr size_t DEFAULT_NODES_CAPACITY = 16;
+    static constexpr uint8_t kAlphabetLength = kAlphabetEnd - kAlphabetStart + 1;
+    static constexpr size_t kDefaultNodesCapacity = 16;
 
-    static constexpr size_t NULL_NODE_INDEX = 0;
-    static constexpr size_t FAKE_PREROOT_INDEX = 1;
-    static constexpr size_t ROOT_INDEX = 2;
-    static constexpr size_t DEFAULT_NODES_COUNT = 3; // null node; fake preroot node; root node
+    static constexpr size_t kNullNodeIndex = 0;
+    static constexpr size_t kFakePreRootIndex = 1;
+    static constexpr size_t kRootIndex = 2;
+    static constexpr size_t kDefaultNodesCount = 3; // null node; fake preroot node; root node
 
-    static_assert(std::max(NULL_NODE_INDEX, std::max(FAKE_PREROOT_INDEX, ROOT_INDEX)) < DEFAULT_NODES_COUNT);
+    static_assert(std::max(kNullNodeIndex, std::max(kFakePreRootIndex, kRootIndex)) < kDefaultNodesCount);
 
     struct ACTNode {
-        static constexpr uint32_t MISSING_SENTIEL = static_cast<uint32_t>(-1);
+        static constexpr uint32_t kMissingSentiel = static_cast<uint32_t>(-1);
 
         // Indexes in array of nodes
-        uint32_t edges[ALPHABET_LENGTH];
+        uint32_t edges[kAlphabetLength];
 
         // Index in array of nodes
-        uint32_t suffix_link;
+        uint32_t suffix_link = kNullNodeIndex;
 
         // Index in array of nodes
-        uint32_t compressed_suffix_link; 
+        uint32_t compressed_suffix_link = kNullNodeIndex; 
 
         /* 
         * Index of the word in the ac trie which ends on this
-        * MISSING_SENTIEL if node is not terminal
+        * kMissingSentiel if node is not terminal
         */
-        uint32_t word_index;
+        uint32_t word_index = kMissingSentiel;
 
-#if defined(_GLIBCXX20_CONSTEXPR)
-_GLIBCXX20_CONSTEXPR
-#else
-inline
-#endif
-        ACTNode() noexcept
-            : suffix_link{NULL_NODE_INDEX},
-            compressed_suffix_link{NULL_NODE_INDEX},
-            word_index{MISSING_SENTIEL} {
-            std::memset(edges, static_cast<int>(NULL_NODE_INDEX), sizeof(edges));
+        ACTNode() noexcept {
+            std::memset(edges, static_cast<int>(kNullNodeIndex), sizeof(edges));
         }
 
         constexpr bool IsTerminal() const noexcept {
-            return word_index != MISSING_SENTIEL;
+            return word_index != kMissingSentiel;
         }
     };
 
@@ -72,18 +65,18 @@ inline
     mutable bool are_links_computed_ = false;
 
 public:
-    inline ACTrieBase() : nodes_(DEFAULT_NODES_COUNT) {
-        nodes_.reserve(DEFAULT_NODES_CAPACITY);
+    inline ACTrieBase() : nodes_(kDefaultNodesCount) {
+        nodes_.reserve(kDefaultNodesCapacity);
 
         /*
          * link(root) = fake_vertex;
          * For all chars from the alphabet: fake_vertex ---char--> root
          */
-        nodes_[ROOT_INDEX].suffix_link = FAKE_PREROOT_INDEX;
-        nodes_[ROOT_INDEX].compressed_suffix_link = ROOT_INDEX;
+        nodes_[kRootIndex].suffix_link = kFakePreRootIndex;
+        nodes_[kRootIndex].compressed_suffix_link = kRootIndex;
 
-        for (uint32_t& edge : nodes_[FAKE_PREROOT_INDEX].edges) {
-            edge = ROOT_INDEX;
+        for (uint32_t& edge : nodes_[kFakePreRootIndex].edges) {
+            edge = kRootIndex;
         }
     }
 
@@ -91,9 +84,9 @@ public:
      * Aho–Corasick deterministic finite-state machine is built on the ordinal trie.
      */
     constexpr bool ContainsPattern(std::string_view pattern) const noexcept {
-        uint32_t current_node_index = ROOT_INDEX;
+        uint32_t current_node_index = kRootIndex;
         for (char sigma : pattern) {
-            if constexpr (IsCaseInsensetive) {
+            if constexpr (kIsCaseInsensetive) {
                 sigma = ToLower(sigma);
             }
 
@@ -102,7 +95,7 @@ public:
             }
 
             uint32_t next_node_index = nodes_[current_node_index].edges[CharToEdgeIndex(sigma)];
-            if (next_node_index != NULL_NODE_INDEX) {
+            if (next_node_index != kNullNodeIndex) {
                 current_node_index = next_node_index;
             }
             else {
@@ -133,7 +126,7 @@ public:
 
         // Run BFS through all nodes.
         std::deque<uint32_t> bfs_queue;
-        bfs_queue.push_back(ROOT_INDEX);
+        bfs_queue.push_back(kRootIndex);
 
         do {
             uint32_t vertex_index = bfs_queue.front();
@@ -143,29 +136,29 @@ public:
             uint32_t* vertex_edges = nodes_[vertex_index].edges;
             uint32_t vertex_suffix_link = nodes_[vertex_index].suffix_link;
 
-            assert(vertex_suffix_link != NULL_NODE_INDEX);
+            assert(vertex_suffix_link != kNullNodeIndex);
             // to((link(v), sigma)) === nodes[vertex.suffix_link].edges[sigma]
             const uint32_t* vertex_suffix_link_edges = nodes_[vertex_suffix_link].edges;
 
             // For each char (sigma) in the Alphabet vertex_edges[sigma] is the child such: v --sigma--> child
-            for (size_t sigma = 0; sigma != ALPHABET_LENGTH; ++sigma) {
+            for (size_t sigma = 0; sigma != kAlphabetLength; ++sigma) {
                 uint32_t child_link_v_index = vertex_suffix_link_edges[sigma];
-                assert(child_link_v_index != NULL_NODE_INDEX);
+                assert(child_link_v_index != kNullNodeIndex);
 
                 // child = to(v, sigma)
                 uint32_t child_index = vertex_edges[sigma];
 
                 // to((v, sigma)) = to((v, sigma)) if (v, sigma) in the rng(to) else to((link(v), sigma))
                 // rng(to) is a range of function 'to'
-                if (child_index != NULL_NODE_INDEX) {
+                if (child_index != kNullNodeIndex) {
                     // link(to(v, sigma)) = to((link(v), sigma)) if (v, sigma) in the rng(to)
                     nodes_[child_index].suffix_link = child_link_v_index;
 
-                    assert(nodes_[child_link_v_index].compressed_suffix_link != NULL_NODE_INDEX);
+                    assert(nodes_[child_link_v_index].compressed_suffix_link != kNullNodeIndex);
 
                     // comp(v) = link(v) if link(v) is terminal or root else comp(link(v))
                     nodes_[child_index].compressed_suffix_link =
-                        ((!nodes_[child_link_v_index].IsTerminal()) & (child_link_v_index != ROOT_INDEX))
+                        ((!nodes_[child_link_v_index].IsTerminal()) & (child_link_v_index != kRootIndex))
                         ? nodes_[child_link_v_index].compressed_suffix_link
                         : child_link_v_index;
 
@@ -187,26 +180,20 @@ public:
         return are_links_computed_;
     }
 
-#if defined(_GLIBCXX20_CONSTEXPR)
-_GLIBCXX20_CONSTEXPR
-#else
-inline
-#endif
-    size_t NodesSize() const noexcept {
+    cpp20_constexpr size_t NodesSize() const noexcept {
         return nodes_.size();
     }
 
-#if defined(_GLIBCXX20_CONSTEXPR)
-_GLIBCXX20_CONSTEXPR
-#else
-inline
-#endif
-    size_t PatternsSize() const noexcept {
+    cpp20_constexpr size_t PatternsSize() const noexcept {
         return words_lengths_.size();
     }
 
     template <typename FindCallback>
-    requires ACTrieFindCallback<FindCallback>
+#if __cplusplus >= 202002L
+    requires requires (FindCallback func, std::string_view found_word, size_t start_index_in_original_text) {
+        func(found_word, start_index_in_original_text);
+    }
+#endif
     void RunText(std::string_view text, FindCallback find_callback) const {
         assert(IsReady());
 
@@ -214,21 +201,21 @@ inline
             assert(find_callback != nullptr);
         }
 
-        uint32_t current_node_index = ROOT_INDEX;
+        uint32_t current_node_index = kRootIndex;
         size_t i = 0;
         for (auto iter = text.begin(), end = text.end(); iter != end; ++iter, ++i) {
             int32_t sigma = int32_t(uint8_t(*iter));
-            if constexpr (IsCaseInsensetive) {
+            if constexpr (kIsCaseInsensetive) {
                 sigma = ToLower(sigma);
             }
 
             if (!IsInAlphabet(sigma)) {
-                current_node_index = ROOT_INDEX;
+                current_node_index = kRootIndex;
                 continue;
             }
 
             current_node_index = nodes_[current_node_index].edges[CharToEdgeIndex(sigma)];
-            assert(current_node_index != NULL_NODE_INDEX);
+            assert(current_node_index != kNullNodeIndex);
             if (nodes_[current_node_index].IsTerminal()) {
                 uint32_t word_index = nodes_[current_node_index].word_index;
                 assert(word_index < words_lengths_.size());
@@ -239,9 +226,9 @@ inline
 
             // Jump up through compressed suffix links
             for (uint32_t tmp_node_index = nodes_[current_node_index].compressed_suffix_link;
-                tmp_node_index != ROOT_INDEX;
+                tmp_node_index != kRootIndex;
                 tmp_node_index = nodes_[tmp_node_index].compressed_suffix_link) {
-                assert(tmp_node_index != NULL_NODE_INDEX && nodes_[tmp_node_index].IsTerminal());
+                assert(tmp_node_index != kNullNodeIndex && nodes_[tmp_node_index].IsTerminal());
                 size_t word_index = nodes_[tmp_node_index].word_index;
                 assert(word_index < words_lengths_.size());
                 size_t word_length = words_lengths_[word_index];
@@ -253,55 +240,67 @@ inline
 
 protected:
     static constexpr size_t CharToEdgeIndex(char c) noexcept {
-        return static_cast<size_t>(static_cast<uint8_t>(c)) - ALPHABET_START;
+        return static_cast<size_t>(static_cast<uint8_t>(c)) - kAlphabetStart;
     }
 
     static constexpr size_t CharToEdgeIndex(int32_t c) noexcept {
-        return static_cast<size_t>(c) - ALPHABET_START;
+        return static_cast<size_t>(c) - kAlphabetStart;
     }
 
     static constexpr bool IsInAlphabet(char c) noexcept {
-        return static_cast<uint32_t>(static_cast<uint8_t>(c)) - ALPHABET_START <= ALPHABET_END - ALPHABET_START;
+        return static_cast<uint32_t>(static_cast<uint8_t>(c)) - kAlphabetStart <= kAlphabetEnd - kAlphabetStart;
     }
 
-    static_assert(IsInAlphabet(static_cast<char>(ALPHABET_START)));
-    static_assert(!IsInAlphabet(static_cast<char>(ALPHABET_START - 1)));
-    static_assert(IsInAlphabet(static_cast<char>(ALPHABET_END)));
-    static_assert(!IsInAlphabet(static_cast<char>(ALPHABET_END + 1)));
+    static_assert(IsInAlphabet(static_cast<char>(kAlphabetStart)));
+    static_assert(!IsInAlphabet(static_cast<char>(kAlphabetStart - 1)));
+    static_assert(IsInAlphabet(static_cast<char>(kAlphabetEnd)));
+    static_assert(!IsInAlphabet(static_cast<char>(kAlphabetEnd + 1)));
 
     static constexpr bool IsInAlphabet(int32_t c) noexcept {
-        return static_cast<uint32_t>(c) - ALPHABET_START <= ALPHABET_END - ALPHABET_START;
+        return static_cast<uint32_t>(c) - kAlphabetStart <= kAlphabetEnd - kAlphabetStart;
     }
 
-    static_assert(IsInAlphabet(static_cast<int32_t>(ALPHABET_START)));
-    static_assert(!IsInAlphabet(static_cast<int32_t>(ALPHABET_START - 1)));
-    static_assert(IsInAlphabet(static_cast<int32_t>(ALPHABET_END)));
-    static_assert(!IsInAlphabet(static_cast<int32_t>(ALPHABET_END + 1)));
+    static_assert(IsInAlphabet(static_cast<int32_t>(kAlphabetStart)));
+    static_assert(!IsInAlphabet(static_cast<int32_t>(kAlphabetStart - 1)));
+    static_assert(IsInAlphabet(static_cast<int32_t>(kAlphabetEnd)));
+    static_assert(!IsInAlphabet(static_cast<int32_t>(kAlphabetEnd + 1)));
 
     static constexpr bool IsUpper(char c) noexcept {
         return static_cast<uint32_t>(c) - 'A' <= 'Z' - 'A';
     }
 
     static constexpr char ToLower(char c) noexcept {
-        return static_cast<char>(uint8_t(c) | ('a' - 'A') * IsUpper(c));
+        if constexpr ((('a' - 'A') & ('a' - 'A' - 1)) == 0) {
+            return static_cast<char>(uint8_t(c) | IsUpper(c) * ('a' - 'A'));
+        }
+        else {
+            return static_cast<char>(uint8_t(c) | (-(uint32_t)IsUpper(c) & ('a' - 'A')));
+        }
     }
 
+#if defined(__GNUC__) && !defined(__clang__)
     static_assert(ToLower('\0') == '\0');
     static_assert(ToLower('a') == 'a');
     static_assert(ToLower('z') == 'z');
     static_assert(ToLower('A') == 'a');
     static_assert(ToLower('Z') == 'z');
     static_assert(ToLower('~') == '~');
+#endif
 
     static constexpr bool IsUpper(int32_t c) noexcept {
         return static_cast<uint32_t>(c) - 'A' <= 'Z' - 'A';
     }
 
     static constexpr int32_t ToLower(int32_t c) noexcept {
-        return c | ('a' - 'A') * IsUpper(c);
+        if constexpr ((('a' - 'A') & ('a' - 'A' - 1)) == 0) {
+            return c | int32_t(('a' - 'A') * IsUpper(c));
+        }
+        else {
+            return c | int32_t(('a' - 'A') & -(uint32_t)IsUpper(c));
+        }
     }
 
-    static_assert(ToLower(0) == 0);
+    static_assert(ToLower(static_cast<int32_t>('\0')) == 0);
     static_assert(ToLower(static_cast<int32_t>('a')) == 'a');
     static_assert(ToLower(static_cast<int32_t>('z')) == 'z');
     static_assert(ToLower(static_cast<int32_t>('A')) == 'a');
@@ -313,33 +312,33 @@ protected:
         auto iter = nodes_.begin();
 
         uint32_t max_node_index_excluding = static_cast<uint32_t>(nodes_.size());
-        assert(max_node_index_excluding >= DEFAULT_NODES_COUNT);
+        assert(max_node_index_excluding >= kDefaultNodesCount);
         uint32_t max_word_end_index_excl = static_cast<uint32_t>(words_lengths_.size());
 
-        static_assert(NULL_NODE_INDEX == NULL_NODE_INDEX, "current impl of CheckComputedLinks() relies on NULL_NODE_INDEX");
+        static_assert(kNullNodeIndex == kNullNodeIndex, "Current impl of CheckComputedLinks() relies on kNullNodeIndex");
         // Skip null node
         ++iter;
         // Now iter points on fake preroot node
         // fake preroot node does not have suffix_link_index and compressed_suffix_link
         // all children point to root
         for (uint32_t child_index : iter->edges) {
-            assert(child_index == ROOT_INDEX);
+            assert(child_index == kRootIndex);
         }
 
         ++iter;
         // Now iter points on the root node
         for (auto iter_end = nodes_.end(); iter != iter_end; ++iter) {
-            static_assert(NULL_NODE_INDEX < FAKE_PREROOT_INDEX);
+            static_assert(kNullNodeIndex < kFakePreRootIndex);
 
             for (uint32_t child_index : iter->edges) {
-                assert(child_index >= FAKE_PREROOT_INDEX && child_index < max_node_index_excluding);
+                assert(child_index >= kFakePreRootIndex && child_index < max_node_index_excluding);
             }
 
             uint32_t suffix_link_index = iter->suffix_link;
-            assert(suffix_link_index >= FAKE_PREROOT_INDEX && suffix_link_index < max_node_index_excluding);
+            assert(suffix_link_index >= kFakePreRootIndex && suffix_link_index < max_node_index_excluding);
 
             uint32_t compressed_suffix_link_index = iter->compressed_suffix_link;
-            assert(compressed_suffix_link_index >= FAKE_PREROOT_INDEX && compressed_suffix_link_index < max_node_index_excluding);
+            assert(compressed_suffix_link_index >= kFakePreRootIndex && compressed_suffix_link_index < max_node_index_excluding);
 
             assert(!iter->IsTerminal() || (iter->word_index < max_word_end_index_excl));
         }
@@ -349,39 +348,34 @@ protected:
 #endif
 };
 
-template <uint8_t ALPHABET_START = 'A', uint8_t ALPHABET_END = 'z', bool IsCaseInsensetive = false>
-class ACTrie final : public ACTrieBase<ALPHABET_START, ALPHABET_END, IsCaseInsensetive> {
-    using base = ACTrieBase<ALPHABET_START, ALPHABET_END, IsCaseInsensetive>;
+template <uint8_t kAlphabetStart = 'A', uint8_t kAlphabetEnd = 'z', bool kIsCaseInsensetive = false>
+class ACTrie final : public ACTrieBase<kAlphabetStart, kAlphabetEnd, kIsCaseInsensetive> {
+    using base = ACTrieBase<kAlphabetStart, kAlphabetEnd, kIsCaseInsensetive>;
 public:
-#if defined(_GLIBCXX20_CONSTEXPR)
-_GLIBCXX20_CONSTEXPR
-#else
-inline
-#endif
-    void ReservePlaceForPatterns(size_t patterns_capacity) {
+    cpp20_constexpr void ReservePlaceForPatterns(size_t patterns_capacity) {
         this->words_lengths_.reserve(patterns_capacity);
     }
 
     void AddPattern(std::string_view pattern) {
         assert(!this->IsReady());
 
-        uint32_t current_node_index = this->ROOT_INDEX;
+        uint32_t current_node_index = this->kRootIndex;
         const unsigned char* pattern_iter = reinterpret_cast<const unsigned char*>(pattern.begin());
         const unsigned char* pattern_end = reinterpret_cast<const unsigned char*>(pattern.end());
 
         for (; pattern_iter != pattern_end; ++pattern_iter) {
             int32_t sigma = int32_t(*pattern_iter);
-            if constexpr (IsCaseInsensetive) {
+            if constexpr (kIsCaseInsensetive) {
                 sigma = base::ToLower(sigma);
             }
 
             if (!base::IsInAlphabet(sigma)) {
-                assert(!"char in pattern is not in alphabet!!!");
+                assert(false && "ACTrie::AddPattern(std::string_view): char in pattern is not in the alphabet");
                 continue;
             }
 
             uint32_t next_node_index = this->nodes_[current_node_index].edges[base::CharToEdgeIndex(sigma)];
-            if (next_node_index != base::NULL_NODE_INDEX) {
+            if (next_node_index != base::kNullNodeIndex) {
                 current_node_index = next_node_index;
             }
             else {
@@ -398,12 +392,12 @@ inline
          */
         for (; pattern_iter != pattern_end; ++pattern_iter) {
             int32_t sigma = int32_t(*pattern_iter);
-            if constexpr (IsCaseInsensetive) {
+            if constexpr (kIsCaseInsensetive) {
                 sigma = base::ToLower(sigma);
             }
 
             if (!base::IsInAlphabet(sigma)) {
-                assert(!"char in pattern is not in alphabet!!!");
+                assert(false && "char in pattern is not in alphabet!!!");
                 continue;
             }
 
@@ -427,29 +421,26 @@ inline
 
         while (strings_count--) {
             uint32_t string_length = 0;
-            uint32_t current_node_index = base::ROOT_INDEX;
+            uint32_t current_node_index = base::kRootIndex;
 
-            int sigma;
-            while (true) {
-                if constexpr (IsCaseInsensetive) {
-                    sigma = base::ToLower(std::getchar());
-                }
-                else {
-                    sigma = std::getchar();
+            for (int sigma;;) {
+                sigma = std::getchar();
+                if constexpr (kIsCaseInsensetive) {
+                    sigma = base::ToLower(sigma);
                 }
 
                 if (!base::IsInAlphabet(sigma)) {
-                    if ((sigma == Delimeter) | (sigma == EOF)) {
+                    if (sigma == Delimeter || sigma == EOF) {
                         break;
                     }
 
-                    assert(!"char in pattern is not in alphabet!!!");
+                    assert(false && "char in pattern is not in alphabet!!!");
                     continue;
                 }
 
                 string_length++;
                 uint32_t next_node_index = this->nodes_[current_node_index].edges[base::CharToEdgeIndex(sigma)];
-                if (next_node_index != base::NULL_NODE_INDEX) {
+                if (next_node_index != base::kNullNodeIndex) {
                     current_node_index = next_node_index;
                 }
                 else {
@@ -459,19 +450,17 @@ inline
                     current_node_index = next_node_index;
 
                     while (true) {
-                        if constexpr (IsCaseInsensetive) {
-                            sigma = base::ToLower(std::getchar());
-                        }
-                        else {
-                            sigma = std::getchar();
+                        sigma = std::getchar();
+                        if constexpr (kIsCaseInsensetive) {
+                            sigma = base::ToLower(sigma);
                         }
 
                         if (!base::IsInAlphabet(sigma)) {
-                            if ((sigma == Delimeter) | (sigma == EOF)) {
+                            if (sigma == Delimeter || sigma == EOF) {
                                 break;
                             }
 
-                            assert(!"char in pattern is not in alphabet!!!");
+                            assert(false && "char in pattern is not in alphabet!!!");
                             continue;
                         }
 
@@ -500,29 +489,26 @@ inline
 
         while (strings_count--) {
             uint32_t string_length = 0;
-            uint32_t current_node_index = base::ROOT_INDEX;
+            uint32_t current_node_index = base::kRootIndex;
 
-            int sigma;
-            while (true) {
-                if constexpr (IsCaseInsensetive) {
-                    sigma = base::ToLower(std::cin.get());
-                }
-                else {
-                    sigma = std::cin.get();
+            for (int sigma;;) {
+                sigma = std::cin.get();
+                if constexpr (kIsCaseInsensetive) {
+                    sigma = base::ToLower(sigma);
                 }
 
                 if (!base::IsInAlphabet(sigma)) {
-                    if ((sigma == Delimeter) | (sigma == std::char_traits<char>::eof())) {
+                    if (sigma == Delimeter || sigma == std::char_traits<char>::eof()) {
                         break;
                     }
 
-                    assert(!"char in pattern is not in alphabet!!!");
+                    assert(false && "char in pattern is not in alphabet!!!");
                     continue;
                 }
 
                 string_length++;
                 uint32_t next_node_index = this->nodes_[current_node_index].edges[base::CharToEdgeIndex(sigma)];
-                if (next_node_index != base::NULL_NODE_INDEX) {
+                if (next_node_index != base::kNullNodeIndex) {
                     current_node_index = next_node_index;
                 }
                 else {
@@ -532,11 +518,9 @@ inline
                     current_node_index = next_node_index;
 
                     while (true) {
-                        if constexpr (IsCaseInsensetive) {
-                            sigma = base::ToLower(std::cin.get());
-                        }
-                        else {
-                            sigma = std::cin.get();
+                        sigma = std::cin.get();
+                        if constexpr (kIsCaseInsensetive) {
+                            sigma = base::ToLower(sigma);
                         }
 
                         if (!base::IsInAlphabet(sigma)) {
@@ -544,12 +528,12 @@ inline
                                 break;
                             }
 
-                            assert(!"char in pattern is not in alphabet!!!");
+                            assert(false && "char in pattern is not in alphabet!!!");
                             continue;
                         }
 
                         if (!base::IsInAlphabet(sigma)) {
-                            assert(!"char in pattern is not in alphabet!!!");
+                            assert(false && "char in pattern is not in alphabet!!!");
                             continue;
                         }
 
@@ -570,17 +554,12 @@ inline
     }
 };
 
-template <uint8_t ALPHABET_START = 'A', uint8_t ALPHABET_END = 'z', bool IsCaseInsensetive = false>
-class ReplacingACTrie final : public ACTrieBase<ALPHABET_START, ALPHABET_END, IsCaseInsensetive> {
-    using base = ACTrieBase<ALPHABET_START, ALPHABET_END, IsCaseInsensetive>;
+template <uint8_t kAlphabetStart = 'A', uint8_t kAlphabetEnd = 'z', bool kIsCaseInsensetive = false>
+class ReplacingACTrie final : public ACTrieBase<kAlphabetStart, kAlphabetEnd, kIsCaseInsensetive> {
+    using base = ACTrieBase<kAlphabetStart, kAlphabetEnd, kIsCaseInsensetive>;
     std::vector<std::string> words_replacements_;
 public:
-#if defined(_GLIBCXX20_CONSTEXPR)
-_GLIBCXX20_CONSTEXPR
-#else
-inline
-#endif
-    void ReservePlaceForPatterns(size_t patterns_capacity) {
+    cpp20_constexpr void ReservePlaceForPatterns(size_t patterns_capacity) {
         this->words_lengths_.reserve(patterns_capacity);
         words_replacements_.reserve(patterns_capacity);
     }
@@ -588,23 +567,23 @@ inline
     void AddPatternWithReplacements(std::string_view pattern, std::string_view replacement) {
         assert(!this->IsReady());
 
-        uint32_t current_node_index = this->ROOT_INDEX;
+        uint32_t current_node_index = this->kRootIndex;
         const unsigned char* pattern_iter = reinterpret_cast<const unsigned char*>(pattern.begin());
         const unsigned char* pattern_end = reinterpret_cast<const unsigned char*>(pattern.end());
 
         for (; pattern_iter != pattern_end; ++pattern_iter) {
             int32_t sigma = int32_t(*pattern_iter);
-            if constexpr (IsCaseInsensetive) {
+            if constexpr (kIsCaseInsensetive) {
                 sigma = base::ToLower(sigma);
             }
 
             if (!base::IsInAlphabet(sigma)) {
-                assert(!"char in pattern is not in alphabet!!!");
+                assert(false && "char in pattern is not in alphabet!!!");
                 continue;
             }
 
             uint32_t next_node_index = this->nodes_[current_node_index].edges[base::CharToEdgeIndex(sigma)];
-            if (next_node_index != base::NULL_NODE_INDEX) {
+            if (next_node_index != base::kNullNodeIndex) {
                 current_node_index = next_node_index;
             }
             else {
@@ -621,12 +600,12 @@ inline
          */
         for (; pattern_iter != pattern_end; ++pattern_iter) {
             int32_t sigma = int32_t(*pattern_iter);
-            if constexpr (IsCaseInsensetive) {
+            if constexpr (kIsCaseInsensetive) {
                 sigma = base::ToLower(sigma);
             }
 
             if (!base::IsInAlphabet(sigma)) {
-                assert(!"char in pattern is not in alphabet!!!");
+                assert(false && "char in pattern is not in alphabet!!!");
                 continue;
             }
 
@@ -653,30 +632,30 @@ inline
         std::vector<replacement_info_t> stack;
         size_t length = text.size();
         size_t new_length = length;
-        uint32_t current_node_index = base::ROOT_INDEX;
+        uint32_t current_node_index = base::kRootIndex;
         for (char* c_string = text.data(), * current_c_string = c_string, * iter = current_c_string; ; ++iter) {
             int32_t c = int32_t(uint8_t(*iter));
             if (c == '\0') {
                 break;
             }
 
-            if constexpr (IsCaseInsensetive) {
+            if constexpr (kIsCaseInsensetive) {
                 c = base::ToLower(c);
             }
 
             if (!base::IsInAlphabet(c)) {
-                current_node_index = base::ROOT_INDEX;
+                current_node_index = base::kRootIndex;
                 continue;
             }
 
             current_node_index = this->nodes_[current_node_index].edges[base::CharToEdgeIndex(c)];
-            assert(current_node_index != base::NULL_NODE_INDEX);
+            assert(current_node_index != base::kNullNodeIndex);
 
             const typename base::ACTNode& current_node = this->nodes_[current_node_index];
             bool current_node_is_terminal = current_node.IsTerminal();
             size_t compressed_suffix_link = current_node.compressed_suffix_link;
 
-            if (current_node_is_terminal | (compressed_suffix_link != base::ROOT_INDEX)) {
+            if (current_node_is_terminal | (compressed_suffix_link != base::kRootIndex)) {
                 assert(current_node_is_terminal || this->nodes_[compressed_suffix_link].IsTerminal());
                 uint32_t word_index = current_node_is_terminal ? current_node.word_index : this->nodes_[compressed_suffix_link].word_index;
 
@@ -699,7 +678,7 @@ inline
                 }
 
                 current_c_string = iter + 1;
-                current_node_index = base::ROOT_INDEX;
+                current_node_index = base::kRootIndex;
             }
         }
 
@@ -745,29 +724,29 @@ inline
     }
     
     void ReplaceFirstOccurance(std::string& text) const {
-        uint32_t current_node_index = base::ROOT_INDEX;
+        uint32_t current_node_index = base::kRootIndex;
         for (const char* iter = text.c_str(); ; ++iter) {
             int32_t c = int32_t(uint8_t(*iter));
             if (c == '\0') {
                 break;
             }
 
-            if constexpr (IsCaseInsensetive) {
+            if constexpr (kIsCaseInsensetive) {
                 c = base::ToLower(c);
             }
 
             if (!base::IsInAlphabet(c)) {
-                current_node_index = base::ROOT_INDEX;
+                current_node_index = base::kRootIndex;
                 continue;
             }
 
             current_node_index = this->nodes_[current_node_index].edges[base::CharToEdgeIndex(c)];
-            assert(current_node_index != base::NULL_NODE_INDEX);
+            assert(current_node_index != base::kNullNodeIndex);
             const typename base::ACTNode& current_node = this->nodes_[current_node_index];
             bool current_node_is_terminal = current_node.IsTerminal();
             size_t compressed_suffix_link = current_node.compressed_suffix_link;
 
-            if (current_node_is_terminal | (compressed_suffix_link != base::ROOT_INDEX)) {
+            if (current_node_is_terminal | (compressed_suffix_link != base::kRootIndex)) {
                 uint32_t word_index;
                 if (current_node_is_terminal) {
                     word_index = current_node.word_index;
@@ -821,14 +800,13 @@ bool run_tests(const char* (&patterns)[PatternsSize], const char* text, const st
         return false;
     }
 
-    std::vector<std::pair<std::string_view, size_t>> found_occurances;
-    found_occurances.reserve(expected_occurances.size());
-
     t.ComputeLinks();
     if (!t.IsReady()) {
         return false;
     }
 
+    std::vector<std::pair<std::string_view, size_t>> found_occurances;
+    found_occurances.reserve(expected_occurances.size());
     t.RunText(text,
         [&found_occurances](std::string_view found_word, size_t start_index_in_original_text) {
             found_occurances.emplace_back(found_word, start_index_in_original_text);
