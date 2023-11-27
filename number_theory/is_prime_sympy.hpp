@@ -32,14 +32,14 @@ static constexpr bool IsStrongPRP(uint64_t n, uint64_t a) noexcept {
 
     const auto n_minus_1 = n - 1;
     /* Find s and r satisfying: n - 1 = s * (2^r), s odd */
-    int32_t r = 0; uint64_t s = FindRS(n_minus_1, r);
+    int32_t r = 0; uint64_t s = math_utils::find_rs(n_minus_1, r);
 
     // n - 1 >= 2 => r >= 1
 
     /* Check a^((2^t)*s) mod n for 0 <= t < r */
 
     // Init test = ((a^s) mod n)
-    uint64_t test = BinPowMod(a, s, n);
+    uint64_t test = math_utils::bin_pow_mod(a, s, n);
     if (test == 1 || test == n_minus_1) {
         return true;
     }
@@ -90,7 +90,7 @@ static constexpr bool IsStrongLucasPRP(uint64_t n, uint32_t p, int32_t q) noexce
     uint64_t nmj = n - JacobiSymbol(d, n);
 
     /* Find s and r satisfying: nmj = (2 ^ r) * s, s odd */
-    int32_t r = 0; uint64_t s = FindRS(nmj, r);
+    int32_t r = 0; uint64_t s = math_utils::find_rs(nmj, r);
 
     /* make sure U_s == 0 mod n or V_((2^t)*s) == 0 mod n, for some t, 0 <= t < r */
     uint128_t uh = 1;
@@ -100,7 +100,7 @@ static constexpr bool IsStrongLucasPRP(uint64_t n, uint32_t p, int32_t q) noexce
     uint128_t qh = 1;
     const uint64_t widen_q = static_cast<uint64_t>(q >= 0 ? q : (n - static_cast<uint64_t>(-q)) % n);
     // n >= 3 => n - 1 >= 2 => n - 1 >= 1 => s >= 1 => base_2_digits(s) >= 1
-    for (uint32_t j = std::base_2_digits(s) - 1; j != 0; j--) {
+    for (uint32_t j = math_utils::base_2_digits(s) - 1; j != 0; j--) {
         /* ql = ql*qh (mod n) */
         ql = ((ql * qh) % n);
         if (s & (1ull << j)) {
@@ -248,7 +248,7 @@ static constexpr bool IsStrongSelfridgePRP(uint64_t n) noexcept {
                 return static_cast<uint64_t>(std::abs(d)) == n && n != 9;
             case 1:
                 /* if we get to the 5th d, make sure we aren't dealing with a square... */
-                if (d == 13 && IsPerfectSquare(n)) {
+                if (d == 13 && math_utils::is_perfect_square(n)) {
                     return false;
                 }
 
@@ -302,7 +302,7 @@ static constexpr bool IsPrime(uint64_t n) noexcept {
             case 23377:
                 return false;
             default:
-                return BinPowMod(2, uint32_t(n - 1), uint32_t(n)) == 1;
+                return math_utils::bin_pow_mod(2, uint32_t(n - 1), uint32_t(n)) == 1;
         }
     }
 
@@ -354,6 +354,6 @@ static constexpr bool IsPrimeSmallN(uint16_t m) noexcept {
         case 65281:
             return false;
         default:
-            return BinPowMod(2, n - 1, n) == 1;
+            return math_utils::bin_pow_mod(2, n - 1, n) == 1;
     }
 }

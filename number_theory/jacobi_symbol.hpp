@@ -2,6 +2,7 @@
 #define _JACOBI_SYMBOL_HPP_ 1
 
 #include "integers_128_bit.hpp"
+#include "math_utils.hpp"
 
 #include <type_traits>
 
@@ -16,7 +17,7 @@ static constexpr int32_t JacobiSymbolUi(Uint a, Uint n) noexcept {
             return a == 1;
         }
 
-        uint32_t p = uint32_t(std::count_trailing_zeros(n));
+        uint32_t p = uint32_t(math_utils::count_trailing_zeros(n));
         n >>= p;
 
         switch (a % 8) {
@@ -87,7 +88,7 @@ static constexpr int32_t JacobiSymbolSi(Sint a, Sint n) noexcept {
 
     int32_t t = 1;
     if (n_u % 2 == 0) {
-        uint32_t p = uint32_t(std::count_trailing_zeros(n_u));
+        uint32_t p = uint32_t(math_utils::count_trailing_zeros(n_u));
         n_u >>= p;
         n >>= p;
 
