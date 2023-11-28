@@ -1954,12 +1954,6 @@ struct LongInt {
 
     static std::vector<LongInt> conv_dec_base_pows;
 
-    __attribute__((destructor(102))) static void
-    LongIntDataDeallocate() noexcept {
-        LongInt::conv_dec_base_pows.clear();
-        LongInt::conv_bin_base_pows.clear();
-    }
-
     static inline void EnsureDecBasePowsCapacity(size_t pows_size) {
         size_t i = conv_dec_base_pows.size();
         if (i >= pows_size) {
