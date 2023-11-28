@@ -22,8 +22,8 @@ namespace LongIntAllocator {
 namespace InnerImpl {
 
 enum PageCapacity {
-    kSmall = 32 * sizeof(uint32_t),
-    kMiddle = 256 * sizeof(uint32_t)
+    kSmall = 30 * sizeof(uint32_t),
+    kMiddle = 254 * sizeof(uint32_t)
 };
 
 struct SmallPage {
@@ -38,7 +38,7 @@ struct MiddlePage {
 
 inline constexpr size_t kPageMemoryOffsetInBytes = sizeof(void*);
 
-inline constexpr size_t kTotalSmallPages = 8;
+inline constexpr size_t kTotalSmallPages = 32;
 inline constexpr size_t kTotalMiddlePages = 8;
 
 static SmallPage first_small_page[kTotalSmallPages] = {};
@@ -82,7 +82,16 @@ static inline void LongIntAllocatorInitMiddlePages() noexcept {
     p->next = nullptr;
 }
 
-__attribute__((constructor)) static void LongIntAllocatorInitPages() noexcept {
+/**
+ * VS Code intellisense: "attribute "constructor" does not take arguments
+ * C/C++(1094)"
+ */
+#if __INTELLISENSE__
+#pragma diag_suppress 1094
+#endif
+
+__attribute__((constructor(101))) static void
+LongIntAllocatorInitPages() noexcept {
     LongIntAllocatorInitSmallPages();
     LongIntAllocatorInitMiddlePages();
 #ifdef DEBUG_LI_ALLOC_PRINTING
@@ -90,7 +99,8 @@ __attribute__((constructor)) static void LongIntAllocatorInitPages() noexcept {
 #endif
 }
 
-__attribute__((destructor)) static void LongIntAllocatorDeinitPages() noexcept {
+__attribute__((destructor(101))) static void
+LongIntAllocatorDeinitPages() noexcept {
     free_small_pages_head = nullptr;
     free_middle_pages_head = nullptr;
 #ifdef DEBUG_LI_ALLOC_PRINTING
@@ -337,7 +347,7 @@ static inline void BackwardFFT(complex* p, const size_t k) noexcept {
 }
 
 static void ForwardBackwardFFT(complex* p1, complex* p2, const size_t n) {
-    assert(n != 0 && (n & (n - 1)) == 0);
+    assert((n != 0) & ((n & (n - 1)) == 0));
     EnsureRootsCapacity(n);
     ForwardFFT(p1, n);
     /*
@@ -463,16 +473,16 @@ struct LongInt {
         return *this;
     }
 
-    LongInt& Square() {
+    void SquareThisTo(LongInt& other) const {
         size_t usize = USize();
         if (unlikely(usize == 0)) {
-            size_ = 0;
-            return *this;
+            other.size_ = 0;
+            return;
         }
         const uint32_t* nums_ptr = nums_;
         size_t prod_size = usize + usize;
-        if (usize <= 32) {
-            capacity_ = uint32_t(prod_size);
+        if (prod_size <= 16) {
+            other.capacity_ = uint32_t(prod_size);
             uint32_t* ans = static_cast<uint32_t*>(
                 LongIntAllocator::Allocate(prod_size * sizeof(uint32_t)));
             memset(ans, 0, prod_size * sizeof(uint32_t));
@@ -489,8 +499,8 @@ struct LongInt {
                 ans[j + usize] = uint32_t(carry);
             }
 
-            LongIntAllocator::Deallocate(nums_);
-            nums_ = ans;
+            LongIntAllocator::Deallocate(other.nums_);
+            other.nums_ = ans;
         } else {
             size_t n = 2 * math_utils::nearest_2_pow_greater_equal(prod_size);
             const bool high_precision = n > kFFTPrecisionBorder;
@@ -527,12 +537,12 @@ struct LongInt {
             memset(static_cast<void*>(p), 0,
                    (n - (prod_size << high_precision)) * sizeof(complex));
 
-            ReserveWithoutCopy(uint32_t(prod_size));
+            other.ReserveWithoutCopy(uint32_t(prod_size));
             complex* p2 = p1 + n;
             ForwardBackwardFFT(p1, p2, n);
             uint64_t carry = 0;
-            uint32_t* ans_p = nums_;
-            uint32_t* ans_p_end = ans_p + prod_size;
+            uint32_t* ans_p = other.nums_;
+            const uint32_t* ans_p_end = ans_p + prod_size;
             if (likely(!high_precision)) {
                 do {
                     uint64_t res = carry;
@@ -564,8 +574,12 @@ struct LongInt {
             LongIntAllocator::Deallocate(p1);
         }
 
-        size_ = int32_t(prod_size);
-        PopLeadingZeros();
+        other.size_ = int32_t(prod_size);
+        other.PopLeadingZeros();
+    }
+
+    inline LongInt& Square() {
+        SquareThisTo(*this);
         return *this;
     }
 
@@ -803,7 +817,7 @@ struct LongInt {
             ForwardBackwardFFT(p1, p2, n);
             uint64_t carry = 0;
             uint32_t* ans_p = nums_;
-            uint32_t* ans_p_end = ans_p + prod_size;
+            const uint32_t* ans_p_end = ans_p + prod_size;
             if (likely(!high_precision)) {
                 do {
                     uint64_t res = carry;
@@ -954,8 +968,9 @@ struct LongInt {
     inline LongInt& operator+=(const LongInt& other) {
         size_t usize2 = other.USize();
         if ((size_ ^ other.size_) >= 0) {
-            uint64_t add_overflow_carry = LongIntAdd(
-                nums_, other.nums_, SetSizeAtLeast(usize2 + 1), usize2);
+            size_t usize1 = SetSizeAtLeast(usize2 + 1);
+            uint64_t add_overflow_carry =
+                LongIntAdd(nums_, other.nums_, usize1, usize2);
             if (likely(add_overflow_carry == 0)) {
                 PopLeadingZeros();
             } else {
@@ -1410,112 +1425,58 @@ struct LongInt {
     }
 
     void ToString(std::string& ans) const {
-        constexpr uint32_t digits_per_word =
-            math_utils::base_10_len(uint32_t(-1));
-        size_t usize = USize();
-        if (usize == 0) {
-            ans = "0";
-            return;
-        }
-
-        // Now nums_ != null
-        size_t max_number_len = (size_ <= 0) + digits_per_word * usize;
-        char* digits = static_cast<char*>(operator new(max_number_len + 1));
-        digits[max_number_len] = '\0';
-        char* ptr = digits + max_number_len;
-        size_t length = 0;
-        uint32_t* nums_copy = static_cast<uint32_t*>(
-            LongIntAllocator::Allocate(usize * sizeof(uint32_t)));
-        memcpy(nums_copy, nums_, usize * sizeof(uint32_t));
-        do {
-            uint64_t carry = 0;
-            for (uint32_t *iter_end = nums_copy - 1, *iter = iter_end + usize;
-                 iter != iter_end; --iter) {
-                uint64_t cur = (carry << 32) | uint64_t(*iter);
-                uint64_t q = cur / 10;  // let compiler optimize it for us
-                uint64_t r = cur % 10;
-                *iter = uint32_t(q);
-                carry = r;
-            }
-
-            while (usize != 0 && nums_copy[usize - 1] == 0) {
-                usize--;
-            }
-
-            *--ptr = char('0' + carry);
-            length++;
-        } while (usize != 0);
-        LongIntAllocator::Deallocate(nums_copy);
+        ans.clear();
         if (size_ < 0) {
-            *--ptr = '-';
-            length++;
+            ans.push_back('-');
         }
 
-        ans = std::string(ptr, length);
-        operator delete(digits);
-    }
+        size_t usize = USize();
+        switch (usize) {
+            case 0:
+                ans = "0";
+                return;
+            case 1:
+                ans += std::to_string(nums_[0]);
+                return;
+            case 2:
+                ans += std::to_string((uint64_t(nums_[1]) << 32) | nums_[0]);
+                return;
+        }
 
-    // void ToStringExp(std::string&) const {}
+        size_t n = math_utils::nearest_2_pow_greater_equal(usize);
+        EnsureBinBasePowsCapacity(math_utils::log2_floor(n));
+        uint32_t* knums = static_cast<uint32_t*>(
+            LongIntAllocator::Allocate(n * sizeof(uint32_t)));
+        memcpy(knums, nums_, usize * sizeof(uint32_t));
+        memset(knums + usize, 0, (n - usize) * sizeof(uint32_t));
+        auto result = ConvertBinBase(knums, n);
+        LongIntAllocator::Deallocate(knums);
+        assert(result.size_ >= 3);
+        size_t full_blocks = result.size_ - 1;
+        uint32_t last_a_i = result.digits_[full_blocks];
+        size_t string_size = full_blocks * kStrConvBaseDigits +
+                             math_utils::base_10_digits(last_a_i);
+        ans.resize((size_ < 0) + string_size);
+        char* ptr = ans.data() + string_size;
+        for (size_t i = 0; i < full_blocks; i++) {
+            uint32_t a_i = result.digits_[i];
+            for (size_t j = kStrConvBaseDigits; j != 0; j--) {
+                *--ptr = char('0' + a_i % 10);
+                a_i /= 10;
+            }
+        }
+
+        do {
+            *--ptr = char('0' + last_a_i % 10);
+            last_a_i /= 10;
+        } while (last_a_i);
+    }
 
     inline friend std::ostream& operator<<(std::ostream& out,
                                            const LongInt& n) {
-        int32_t size = n.size_;
-        if (size < 0) {
-            out << '-';
-            size = -size;
-        }
-        switch (uint32_t(size)) {
-            case 0: {
-                out << '0';
-                break;
-            }
-            case 1: {
-                out << n.nums_[0];
-                break;
-            }
-            case 2: {
-                out << ((uint64_t(n.nums_[1]) << 32) | n.nums_[0]);
-                break;
-            }
-            default: {
-                constexpr uint32_t digits_per_word =
-                    math_utils::base_10_len(uint32_t(-1));
-                size_t usize = n.USize();
-                size_t max_number_len = digits_per_word * usize;
-                char* digits =
-                    static_cast<char*>(operator new(max_number_len + 1));
-                digits[max_number_len] = '\0';
-                char* ptr = digits + max_number_len;
-                size_t length = 0;
-                uint32_t* nums_copy = static_cast<uint32_t*>(
-                    LongIntAllocator::Allocate(usize * sizeof(uint32_t)));
-                memcpy(nums_copy, n.nums_, usize * sizeof(uint32_t));
-                do {
-                    uint64_t carry = 0;
-                    for (uint32_t *iter_end = nums_copy - 1,
-                                  *iter = iter_end + usize;
-                         iter != iter_end; --iter) {
-                        uint64_t cur = (carry << kNumsBits) | uint64_t(*iter);
-                        uint64_t q = cur / 10;
-                        uint64_t r = cur % 10;
-                        *iter = uint32_t(q);
-                        carry = r;
-                    }
-
-                    while (usize != 0 && nums_copy[usize - 1] == 0) {
-                        usize--;
-                    }
-
-                    *--ptr = char('0' + carry);
-                    length++;
-                } while (usize != 0);
-                LongIntAllocator::Deallocate(nums_copy);
-                out << std::string_view(ptr, length);
-                operator delete(digits);
-            } break;
-        }
-
-        return out;
+        std::string buffer;
+        n.ToString(buffer);
+        return out << buffer;
     }
 
     inline friend std::istream& operator>>(std::istream& in, LongInt& n) {
@@ -1557,9 +1518,12 @@ struct LongInt {
         uint32_t* digits_;
         size_t size_;
 
+        constexpr Decimal() noexcept : digits_(nullptr), size_(0) {}
+
         inline explicit Decimal(uint32_t n) {
             digits_ = static_cast<uint32_t*>(
                 LongIntAllocator::Allocate(2 * sizeof(uint32_t)));
+
             uint32_t low = n % kDecimalBase;
             digits_[0] = low;
             uint32_t hi = n / kDecimalBase;
@@ -1568,16 +1532,89 @@ struct LongInt {
         }
 
         inline explicit Decimal(uint64_t n) {
-            digits_ = static_cast<uint32_t*>(
+            this->digits_ = static_cast<uint32_t*>(
                 LongIntAllocator::Allocate(3 * sizeof(uint32_t)));
+
             uint32_t low = uint32_t(n % kDecimalBase);
-            digits_[0] = low;
+            uint64_t t = n / kDecimalBase;
+            uint32_t mid = uint32_t(t % kDecimalBase);
+            uint32_t hi = uint32_t(t / kDecimalBase);
+            this->digits_[0] = low;
+            this->digits_[1] = mid;
+            this->digits_[2] = hi;
+            this->size_ = hi != 0 ? 3 : (mid != 0 ? 2 : low != 0);
+        }
+
+        inline Decimal(const Decimal& other) : digits_(nullptr), size_(0) {
+            if (other.size_) {
+                this->digits_ = static_cast<uint32_t*>(
+                    LongIntAllocator::Allocate(other.size_ * sizeof(uint32_t)));
+
+                this->size_ = other.size_;
+                memcpy(this->digits_, other.digits_,
+                       other.size_ * sizeof(uint32_t));
+            }
+        }
+
+        inline Decimal& operator=(const Decimal& other) {
+            LongIntAllocator::Deallocate(this->digits_);
+            this->digits_ = nullptr;
+            this->size_ = 0;
+            if (other.size_) {
+                this->digits_ = static_cast<uint32_t*>(
+                    LongIntAllocator::Allocate(other.size_ * sizeof(uint32_t)));
+
+                size_ = other.size_;
+                memcpy(this->digits_, other.digits_,
+                       other.size_ * sizeof(uint32_t));
+            }
+            return *this;
+        }
+
+        Decimal(Decimal&& other) noexcept : size_(other.size_) {
+            digits_ = other.digits_;
+            other.digits_ = nullptr;
+            other.size_ = 0;
+        }
+
+        Decimal& operator=(Decimal&& other) noexcept {
+            LongIntAllocator::Deallocate(this->digits_);
+            this->digits_ = other.digits_;
+            this->size_ = other.size_;
+            other.digits_ = nullptr;
+            other.size_ = 0;
+            return *this;
+        }
+
+        inline Decimal& operator=(uint32_t n) {
+            if (this->digits_ == nullptr) {
+                this->digits_ = static_cast<uint32_t*>(
+                    LongIntAllocator::Allocate(2 * sizeof(uint32_t)));
+            }
+
+            uint32_t low = n % kDecimalBase;
+            this->digits_[0] = low;
+            uint32_t hi = n / kDecimalBase;
+            this->digits_[1] = hi;
+            this->size_ = hi != 0 ? 2 : low != 0;
+            return *this;
+        }
+
+        inline Decimal& operator=(uint64_t n) {
+            if (this->digits_ == nullptr) {
+                this->digits_ = static_cast<uint32_t*>(
+                    LongIntAllocator::Allocate(3 * sizeof(uint32_t)));
+            }
+
+            uint32_t low = uint32_t(n % kDecimalBase);
+            this->digits_[0] = low;
             uint32_t t = uint32_t(n / kDecimalBase);
             uint32_t mid = t % kDecimalBase;
             uint32_t hi = t / kDecimalBase;
-            digits_[1] = mid;
-            digits_[2] = hi;
-            size_ = hi != 0 ? 3 : (mid != 0 ? 2 : low != 0);
+            this->digits_[1] = mid;
+            this->digits_[2] = hi;
+            this->size_ = hi != 0 ? 3 : (mid != 0 ? 2 : low != 0);
+            return *this;
         }
 
         Decimal& operator*=(const Decimal& other) {
@@ -1587,11 +1624,11 @@ struct LongInt {
             const uint32_t* m_ptr;
 
             if (m <= k) {
-                k_ptr = digits_;
+                k_ptr = this->digits_;
                 m_ptr = other.digits_;
             } else {
                 k_ptr = other.digits_;
-                m_ptr = digits_;
+                m_ptr = this->digits_;
                 // let compiler decide whether it is faster then 3 xors or not
                 size_t tmp = m;
                 m = k;
@@ -1620,18 +1657,18 @@ struct LongInt {
                     ans[j + k] = uint32_t(carry % kDecimalBase);
                 }
 
-                LongIntAllocator::Deallocate(digits_);
-                digits_ = ans;
+                LongIntAllocator::Deallocate(this->digits_);
+                this->digits_ = ans;
             } else {
-                size_t n = math_utils::nearest_2_pow_greater_equal(new_size);
-                size_t poly_len = n * 3;
+                size_t n =
+                    math_utils::nearest_2_pow_greater_equal(3 * new_size);
                 static_assert(kFftDecimalBase * kFftDecimalBase *
                                   kFftDecimalBase ==
                               kDecimalBase);
-                // Allocate poly_len for the irst polynomial and poly_len for
+                // Allocate n for the first polynomial and n for
                 // the second one
-                complex* p1 = static_cast<complex*>(LongIntAllocator::Allocate(
-                    (poly_len + poly_len) * sizeof(complex)));
+                complex* p1 = static_cast<complex*>(operator new(
+                    (n + n) * sizeof(complex)));
                 complex* p = p1;
                 for (size_t i = 0; i < m; i++) {
                     uint32_t m_value = m_ptr[i];
@@ -1665,20 +1702,20 @@ struct LongInt {
                     p++;
                 }
 
-                memset(static_cast<void*>(p), 0,
-                       (poly_len - 3 * k) * sizeof(complex));
+                memset(static_cast<void*>(p), 0, (n - 3 * k) * sizeof(complex));
 
                 if (new_size > size_) {
-                    LongIntAllocator::Deallocate(digits_);
-                    digits_ = static_cast<uint32_t*>(LongIntAllocator::Allocate(
-                        new_size * sizeof(uint32_t)));
+                    LongIntAllocator::Deallocate(this->digits_);
+                    this->digits_ =
+                        static_cast<uint32_t*>(LongIntAllocator::Allocate(
+                            new_size * sizeof(uint32_t)));
                 }
 
-                complex* p2 = p1 + poly_len;
-                ForwardBackwardFFT(p1, p2, poly_len);
+                complex* p2 = p1 + n;
+                ForwardBackwardFFT(p1, p2, n);
 
                 uint64_t carry = 0;
-                uint32_t* ans_p = digits_;
+                uint32_t* ans_p = this->digits_;
                 const uint32_t* ans_p_end = ans_p + new_size;
                 do {
                     uint64_t res = carry;
@@ -1693,11 +1730,146 @@ struct LongInt {
                     carry = res / kDecimalBase;
                     ans_p++;
                 } while (ans_p != ans_p_end);
+                operator delete(p1);
             }
 
             size_ = new_size;
             this->PopLeadingZeros();
             return *this;
+        }
+
+        Decimal& operator+=(const Decimal& other) {
+            uint64_t carry = 0;
+            const size_t m = std::min(this->size_, other.size_);
+            uint32_t* p = this->digits_;
+            for (size_t i = 0; i < m; i++) {
+                uint64_t res =
+                    uint64_t(p[i]) + uint64_t(other.digits_[i]) + carry;
+                p[i] = uint32_t(res % kDecimalBase);
+                carry = res / kDecimalBase;
+            }
+
+            if (size_ < other.size_) {
+                uint32_t* new_digits = static_cast<uint32_t*>(
+                    LongIntAllocator::Allocate(other.size_ * sizeof(uint32_t)));
+                memcpy(new_digits, this->digits_, size_ * sizeof(uint32_t));
+                memcpy(new_digits + size_, other.digits_ + size_,
+                       (other.size_ - size_) * sizeof(uint32_t));
+                LongIntAllocator::Deallocate(this->digits_);
+                this->digits_ = new_digits;
+                size_ = other.size_;
+            }
+
+            p = this->digits_;
+            const size_t this_size = size_;
+            for (size_t i = m; carry != 0 && i < this_size; i++) {
+                uint64_t res = uint64_t(p[i]) + carry;
+                p[i] = uint32_t(res % kDecimalBase);
+                carry = res / kDecimalBase;
+            }
+
+            if (carry == 0) {
+                PopLeadingZeros();
+            } else {
+                uint32_t* new_digits =
+                    static_cast<uint32_t*>(LongIntAllocator::Allocate(
+                        (this_size + 1 + (this_size == 0)) * sizeof(uint32_t)));
+                memcpy(new_digits, this->digits_, this_size * sizeof(uint32_t));
+                new_digits[this_size] = uint32_t(carry);
+                LongIntAllocator::Deallocate(this->digits_);
+                this->digits_ = new_digits;
+                size_ = this_size + 1;
+            }
+
+            return *this;
+        }
+
+        void SquareThisTo(Decimal& other) const {
+            size_t digits_size = size_;
+            if (unlikely(digits_size == 0)) {
+                other.size_ = 0;
+                return;
+            }
+
+            const uint32_t* digits_ptr = this->digits_;
+            size_t prod_size = digits_size + digits_size;
+            if (prod_size <= 16) {
+                uint32_t* ans = static_cast<uint32_t*>(
+                    LongIntAllocator::Allocate(prod_size * sizeof(uint32_t)));
+                memset(ans, 0, prod_size * sizeof(uint32_t));
+                for (size_t j = 0; j < digits_size; j++) {
+                    uint64_t b_j = digits_ptr[j];
+                    uint64_t carry = 0;
+                    for (size_t i = 0; i < digits_size; i++) {
+                        uint64_t a_i = digits_ptr[i];
+                        uint64_t res = a_i * b_j + uint64_t(ans[j + i]) + carry;
+                        ans[j + i] = uint32_t(res % kDecimalBase);
+                        carry = res / kDecimalBase;
+                    }
+                    ans[j + digits_size] = uint32_t(carry % kDecimalBase);
+                }
+
+                LongIntAllocator::Deallocate(other.digits_);
+                other.digits_ = ans;
+            } else {
+                size_t n =
+                    math_utils::nearest_2_pow_greater_equal(3 * prod_size);
+                static_assert(kFftDecimalBase * kFftDecimalBase *
+                                  kFftDecimalBase ==
+                              kDecimalBase);
+                // Allocate n for the first polynomial and n for
+                // the second one
+                complex* p1 = static_cast<complex*>(operator new(
+                    (n + n) * sizeof(complex)));
+                complex* p = p1;
+                for (size_t i = 0; i < digits_size; i++) {
+                    uint32_t value = digits_ptr[i];
+                    uint32_t r1 = value % kFftDecimalBase;
+                    value /= kFftDecimalBase;
+                    *p = complex(r1, r1);
+                    p++;
+                    r1 = value % kFftDecimalBase;
+                    value /= kFftDecimalBase;
+                    *p = complex(r1, r1);
+                    p++;
+                    *p = complex(value, value);
+                    p++;
+                }
+
+                memset(static_cast<void*>(p), 0,
+                       (n - 3 * digits_size) * sizeof(complex));
+
+                if (prod_size > other.size_) {
+                    LongIntAllocator::Deallocate(other.digits_);
+                    other.digits_ =
+                        static_cast<uint32_t*>(LongIntAllocator::Allocate(
+                            prod_size * sizeof(uint32_t)));
+                }
+
+                complex* p2 = p1 + n;
+                ForwardBackwardFFT(p1, p2, n);
+
+                uint64_t carry = 0;
+                uint32_t* ans_p = other.digits_;
+                const uint32_t* ans_p_end = ans_p + prod_size;
+                do {
+                    uint64_t res = carry;
+                    res += uint64_t((*p2).real() + 0.5);
+                    p2++;
+                    res += uint64_t((*p2).real() + 0.5) * kFftDecimalBase;
+                    p2++;
+                    res += uint64_t((*p2).real() + 0.5) *
+                           (kFftDecimalBase * kFftDecimalBase);
+                    p2++;
+                    *ans_p = uint32_t(res % kDecimalBase);
+                    carry = res / kDecimalBase;
+                    ans_p++;
+                } while (ans_p != ans_p_end);
+                operator delete(p1);
+            }
+
+            other.size_ = prod_size;
+            other.PopLeadingZeros();
         }
 
         constexpr bool operator==(uint32_t n) const noexcept {
@@ -1782,6 +1954,12 @@ struct LongInt {
 
     static std::vector<LongInt> conv_dec_base_pows;
 
+    __attribute__((destructor(102))) static void
+    LongIntDataDeallocate() noexcept {
+        LongInt::conv_dec_base_pows.clear();
+        LongInt::conv_bin_base_pows.clear();
+    }
+
     static inline void EnsureDecBasePowsCapacity(size_t pows_size) {
         size_t i = conv_dec_base_pows.size();
         if (i >= pows_size) {
@@ -1790,10 +1968,7 @@ struct LongInt {
         conv_dec_base_pows.reserve(pows_size);
         do {
             conv_dec_base_pows.emplace_back();
-            conv_dec_base_pows.back().ReserveWithoutCopy(
-                uint32_t(conv_dec_base_pows[i - 1].USize() * 2));
-            conv_dec_base_pows.back() = conv_dec_base_pows[i - 1];
-            conv_dec_base_pows.back().Square();
+            conv_dec_base_pows[i - 1].SquareThisTo(conv_dec_base_pows.back());
         } while (++i != pows_size);
     }
 
@@ -1935,17 +2110,33 @@ struct LongInt {
     }
 
     static Decimal ConvertBinBase(const uint32_t* nums, size_t size) {
-        assert(size != 0 && (size & (size - 1)) == 0);
+        assert((size != 0) & ((size & (size - 1)) == 0));
         switch (size) {
             case 0:
             case 1:
                 return Decimal(nums[0]);
             case 2:
-                return Decimal(nums[1] * kNumsBase | nums[0]);
+                return Decimal(uint64_t(nums[1]) * kNumsBase | nums[0]);
         }
 
         Decimal low_dec = ConvertBinBase(nums, size / 2);
         Decimal high_dec = ConvertBinBase(nums + size / 2, size / 2);
+
+        high_dec *= conv_bin_base_pows.at(math_utils::log2_floor(size) - 1);
+        high_dec += low_dec;
+        return high_dec;
+    }
+
+    static inline void EnsureBinBasePowsCapacity(size_t pows_size) {
+        size_t i = conv_bin_base_pows.size();
+        if (i >= pows_size) {
+            return;
+        }
+        conv_bin_base_pows.reserve(pows_size);
+        do {
+            conv_bin_base_pows.emplace_back();
+            conv_bin_base_pows[i - 1].SquareThisTo(conv_bin_base_pows.back());
+        } while (++i != pows_size);
     }
 
     __attribute__((__noinline__)) void GrowCapacity() {
@@ -2007,8 +2198,9 @@ struct LongInt {
         capacity_ = kDefaultLINumsCapacity;
     }
 
-    static uint64_t LongIntAdd(uint32_t nums1[], const uint32_t nums2[],
-                               size_t usize1, size_t usize2) noexcept {
+    static constexpr uint64_t LongIntAdd(uint32_t nums1[],
+                                         const uint32_t nums2[], size_t usize1,
+                                         size_t usize2) noexcept {
         uint64_t carry = 0;
         const uint32_t* nums1_end = nums1 + usize1;
         for (const uint32_t* nums2_end = nums2 + usize2; nums2 != nums2_end;
@@ -2060,7 +2252,7 @@ struct LongInt {
         return;
     }
 
-    void NonZeroSizeSubUInt(uint32_t n) {
+    constexpr void NonZeroSizeSubUInt(uint32_t n) {
         size_t usize = USize();
         uint32_t* nums_iter = nums_;
         uint32_t low_num = nums_iter[0];
@@ -2086,8 +2278,10 @@ struct LongInt {
 };
 
 std::vector<LongInt> LongInt::conv_dec_base_pows = {
-    LongInt(LongInt::kStrConvBase),
-    LongInt(uint64_t(LongInt::kStrConvBase) * LongInt::kStrConvBase)};
+    LongInt(LongInt::kStrConvBase)};
+
+std::vector<LongInt::Decimal> LongInt::conv_bin_base_pows = {
+    LongInt::Decimal(LongInt::kNumsBase)};
 
 #if defined(constexpr_on_cfunc_call)
 #undef constexpr_on_cfunc_call
@@ -2106,6 +2300,8 @@ inline string to_string(const LongInt& n) { return n.ToString(); }
 }  // namespace std
 
 #include <chrono>
+
+namespace long_int_tests {
 
 void TestOperatorEqualsInt() {
     puts(__PRETTY_FUNCTION__);
@@ -2256,6 +2452,16 @@ void TestLongIntMult() {
          "189745687871346578913675631984859831398756913846314756",
          "444445923042499901900288719235071035985372602038867414228977476967324"
          "0565480827228712761450490207639434131119704"},
+        {"263784627842638746283742347238428746238753489753984753489753895734895"
+         "374598347593874590834823942389472893472983472983472984372983742894",
+         "217389254359307583476294856287563891627462895613761974651784651756317"
+         "561375613856310601356801561875871568715681346134571638145631413008153"
+         "301138138",
+         "573439435581586836344503148729108267131512809685670894440858871665949"
+         "350249919608663834189665543320561328456411904268336709732076203336012"
+         "709472247344406733059180011504893572100921001789368036815755131341796"
+         "530761123858780924440928033173601703530960115961336341530612366213698"
+         "91372"},
         {"497901391203133639584365248205694454191787983065888808021086054694516"
          "231678400769672247210449029211500692922450556195262154964450750615790"
          "589514188335169335767186667337238748906460179043594327975307613550873"
@@ -2407,6 +2613,18 @@ void TestLongIntMult() {
          "422756290924999941542817862891684525955199054347881182431401273481363"
          "138211857637015928078713366709245314733667696374248162928864711919502"
          "5"},
+        {"538714288092043980610037307269667416713870555024102721656419679779374"
+         "923813527446566333299023119588532960327655160416672952650552265438069"
+         "480844921279178590685230852805810043617124500309990368055562957",
+         "538714288092043980610037307269667416713870555024102721656419679779374"
+         "923813527446566333299023119588532960327655160416672952650552265438069"
+         "480844921279178590685230852805810043617124500309990368055562957",
+         "290213084194517758966516201644973136574935912430101593678728719207376"
+         "239283543794185421070570977723421111953765127658270193387362711172917"
+         "254842491555209808089298233500256901159707774581220239792305894702400"
+         "718422627848242457771440142125225540017207158668021195884313003164633"
+         "568953242740947472813766242520888691791570207128296293932060193742259"
+         "027655131589237232055417058854401516386978283594190583849"},
         {"378473591711125662205318978307400782427783753923984686802121246042271"
          "316236774444461081305720113769234627500055999892631802251943506510613"
          "041576973905140659553198302268762932232635013075121844024010844209617"
@@ -2570,6 +2788,31 @@ void TestLongIntSquare() {
         "9738423137118403063843808542333663086419299601252781649552905024490422"
         "7562909249999415428178628916845259551990543478811824314012734813631382"
         "118576370159280787133667092453147336676963742481629288647119195025");
+    assert(n == m);
+
+    n.SetString(
+        "5387142880920439806100373072696674167138705550241027216564196797793749"
+        "2381352744656633329902311958853296032765516041667295265055226543806948"
+        "0844921279178590685230852805810043617124500309990368055562957");
+    n.Square();
+    m.SetString(
+        "2902130841945177589665162016449731365749359124301015936787287192073762"
+        "3928354379418542107057097772342111195376512765827019338736271117291725"
+        "4842491555209808089298233500256901159707774581220239792305894702400718"
+        "4226278482424577714401421252255400172071586680211958843130031646335689"
+        "5324274094747281376624252088869179157020712829629393206019374225902765"
+        "5131589237232055417058854401516386978283594190583849");
+    assert(n == m);
+
+    constexpr size_t k = 572;
+    std::string long_ten_pow(k + 1, '0');
+    long_ten_pow[0] = '1';
+    n.SetString(long_ten_pow);
+    n.Square();
+
+    std::string long_ten_pow_square(2 * k + 1, '0');
+    long_ten_pow_square[0] = '1';
+    m.SetString(long_ten_pow_square);
     assert(n == m);
 }
 
@@ -2990,18 +3233,20 @@ void TestToString() {
         assert(buffer == s);
     }
 
-    // constexpr size_t k = size_t(1e6);
-    // std::string s1(k, '9');
-    // n.SetString(s1);
-    // n *= n;
-    // std::string ans(2 * k, '\0');
-    // memset(ans.data(), '9', (k - 1) * sizeof(char));
-    // ans[k - 1] = '8';
-    // memset(ans.data() + k, '0', (k - 1) * sizeof(char));
-    // ans[2 * k - 1] = '1';
-    // buffer.reserve(2 * k);
-    // n.ToString(buffer);
-    // if (buffer != ans) { std::cout << "Long test failed\n"; }
+    constexpr size_t k = size_t(1e6);
+    std::string s1(k, '9');
+    n.SetString(s1);
+    n *= n;
+    std::string ans(2 * k, '\0');
+    memset(ans.data(), '9', (k - 1) * sizeof(char));
+    ans[k - 1] = '8';
+    memset(ans.data() + k, '0', (k - 1) * sizeof(char));
+    ans[2 * k - 1] = '1';
+    buffer.reserve(2 * k);
+    n.ToString(buffer);
+    if (buffer != ans) {
+        std::cout << "Long test failed\n";
+    }
 }
 
 void TestBitShifts() {
@@ -3048,16 +3293,194 @@ void TestBitShifts() {
     }
 }
 
+void TestDecimal() {
+    puts(__PRETTY_FUNCTION__);
+    LongInt::Decimal d1(0u);
+    LongInt::Decimal d2(0u);
+    constexpr uint32_t kC = 2000;
+
+    for (uint32_t i = 0; i <= kC; i++) {
+        for (uint32_t j = 0; j <= kC; j++) {
+            d1 = i;
+            d2 = j;
+            d1 += d2;
+            assert(d1 == i + j);
+        }
+    }
+
+    for (uint32_t i = uint32_t(-1) - kC; i != 0; i++) {
+        for (uint32_t j = uint32_t(-1) - kC; j != 0; j++) {
+            d1 = i;
+            d2 = j;
+            d1 += d2;
+            assert(d1 == uint64_t(i) + j);
+        }
+    }
+
+    {
+        d1 = uint64_t(1e18);
+        constexpr size_t k = 29;
+        for (size_t i = 0; i < k; i++) {
+            d1 += d1;
+        }
+
+        assert(d1.size_ == 3 && d1.digits_[0] == 0 && d1.digits_[1] == 0 &&
+               d1.digits_[2] == (1 << k));
+
+        d1 += d1;
+        assert(
+            d1.size_ == 4 && d1.digits_[0] == 0 && d1.digits_[1] == 0 &&
+            d1.digits_[2] == (1u << (k + 1)) % LongInt::Decimal::kDecimalBase &&
+            d1.digits_[3] == (1u << (k + 1)) / LongInt::Decimal::kDecimalBase);
+    }
+
+    {
+        d1 = uint32_t(999'999'999u);
+        d2 = uint64_t(999'999'999'999'999'999ull);
+        d1 += d2;
+        assert(d1.size_ == 3 && d1.digits_[0] == 999999998 &&
+               d1.digits_[1] == 0 && d1.digits_[2] == 1);
+    }
+
+    for (uint32_t i = 0; i <= kC; i++) {
+        for (uint32_t j = 0; j <= kC; j++) {
+            d1 = i;
+            d2 = j;
+            d1 *= d2;
+            assert(d1 == i * j);
+        }
+    }
+
+    for (uint32_t i = uint32_t(-1) - kC; i != 0; i++) {
+        for (uint32_t j = uint32_t(-1) - kC; j != 0; j++) {
+            d1 = i;
+            d2 = j;
+            d1 *= d2;
+            assert(d1 == uint64_t(i) * j);
+        }
+    }
+
+    {
+        d1 = uint64_t(1e18);
+        constexpr size_t kInitialZeroLimbs = 2;
+        assert(d1.size_ == kInitialZeroLimbs + 1);
+        for (size_t i = 0; i < kInitialZeroLimbs; i++) {
+            assert(d1.digits_[i] == 0);
+        }
+        assert(d1.digits_[kInitialZeroLimbs] == 1);
+
+        constexpr size_t kMults = 20;
+        for (size_t i = 0; i < kMults; i++) {
+            d1 *= d1;
+        }
+
+        constexpr size_t kNewZeroLimbs = kInitialZeroLimbs << kMults;
+        assert(d1.size_ == kNewZeroLimbs + 1);
+        for (size_t i = 0; i < kNewZeroLimbs; i++) {
+            assert(d1.digits_[i] == 0);
+        }
+        assert(d1.digits_[kNewZeroLimbs] == 1);
+    }
+
+    {
+        d1 = uint64_t(1) << 32;
+        assert(d1.size_ == 2);
+        assert(d1.digits_[0] == 294967296 && d1.digits_[1] == 4);
+
+        d1 *= d1;
+        assert(d1.size_ == 3);
+        assert(d1.digits_[0] == 709551616 && d1.digits_[1] == 446744073 &&
+               d1.digits_[2] == 18);
+
+        d1 *= d1;
+        assert(d1.size_ == 5);
+        assert(d1.digits_[0] == 768211456 && d1.digits_[1] == 374607431 &&
+               d1.digits_[2] == 938463463 && d1.digits_[3] == 282366920 &&
+               d1.digits_[4] == 340);
+
+        d1 *= d1;
+        assert(d1.size_ == 9);
+        assert(d1.digits_[0] == 129639936 && d1.digits_[1] == 584007913 &&
+               d1.digits_[2] == 564039457 && d1.digits_[3] == 984665640 &&
+               d1.digits_[4] == 907853269 && d1.digits_[5] == 985008687 &&
+               d1.digits_[6] == 195423570 && d1.digits_[7] == 89237316 &&
+               d1.digits_[8] == 115792);
+    }
+
+    for (uint32_t i = 0; i <= kC; i++) {
+        d1 = i;
+        d1.SquareThisTo(d1);
+        assert(d1 == i * i);
+    }
+
+    for (uint32_t i = uint32_t(-1) - kC; i != 0; i++) {
+        d1 = i;
+        d1.SquareThisTo(d1);
+        assert(d1 == uint64_t(i) * i);
+    }
+
+    {
+        d1 = uint64_t(1e18);
+        constexpr size_t kInitialZeroLimbs = 2;
+        assert(d1.size_ == kInitialZeroLimbs + 1);
+        for (size_t i = 0; i < kInitialZeroLimbs; i++) {
+            assert(d1.digits_[i] == 0);
+        }
+        assert(d1.digits_[kInitialZeroLimbs] == 1);
+
+        constexpr size_t kMults = 20;
+        for (size_t i = 0; i < kMults; i++) {
+            d1.SquareThisTo(d1);
+        }
+
+        constexpr size_t kNewZeroLimbs = kInitialZeroLimbs << kMults;
+        assert(d1.size_ == kNewZeroLimbs + 1);
+        for (size_t i = 0; i < kNewZeroLimbs; i++) {
+            assert(d1.digits_[i] == 0);
+        }
+        assert(d1.digits_[kNewZeroLimbs] == 1);
+    }
+
+    {
+        d1 = uint64_t(1) << 32;
+        assert(d1.size_ == 2);
+        assert(d1.digits_[0] == 294967296 && d1.digits_[1] == 4);
+
+        d1.SquareThisTo(d1);
+        assert(d1.size_ == 3);
+        assert(d1.digits_[0] == 709551616 && d1.digits_[1] == 446744073 &&
+               d1.digits_[2] == 18);
+
+        d1.SquareThisTo(d1);
+        assert(d1.size_ == 5);
+        assert(d1.digits_[0] == 768211456 && d1.digits_[1] == 374607431 &&
+               d1.digits_[2] == 938463463 && d1.digits_[3] == 282366920 &&
+               d1.digits_[4] == 340);
+
+        d1.SquareThisTo(d1);
+        assert(d1.size_ == 9);
+        assert(d1.digits_[0] == 129639936 && d1.digits_[1] == 584007913 &&
+               d1.digits_[2] == 564039457 && d1.digits_[3] == 984665640 &&
+               d1.digits_[4] == 907853269 && d1.digits_[5] == 985008687 &&
+               d1.digits_[6] == 195423570 && d1.digits_[7] == 89237316 &&
+               d1.digits_[8] == 115792);
+    }
+}
+
+}  // namespace long_int_tests
+
 int main() {
+    using namespace long_int_tests;
     TestOperatorEqualsInt();
-    TestLongIntMult();
     TestUIntMult();
-    TestLongIntSquare();
     TestUIntAdd();
+    TestLongIntMult();
     TestLongIntAdd();
     TestSetString();
     TestToString();
+    TestLongIntSquare();
     TestBitShifts();
+    TestDecimal();
 
     // std::ios::sync_with_stdio(false);
     // std::cin.tie(nullptr);

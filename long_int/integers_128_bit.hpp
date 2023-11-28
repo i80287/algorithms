@@ -15,6 +15,7 @@
 #include <cstdint>
 #include <ostream>
 #include <string>
+#include <string_view>
 #include <type_traits>
 #if __cplusplus >= 202002L && defined(__GNUC__) && !defined(__clang__)
 #if __has_include("format")
