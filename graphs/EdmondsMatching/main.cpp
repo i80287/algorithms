@@ -5,8 +5,7 @@
 #include <iostream>
 
 /// @brief seealso https://e-maxx.ru/algo/matching_edmonds
-namespace EdmondsMatchingAlgorithm
-{
+namespace EdmondsMatchingAlgorithm {
 
 using vertex_t = size_t;
 using graph_t = std::vector<std::vector<vertex_t>>;
@@ -21,8 +20,9 @@ static vertex_t parent[MAX_GRAPH_SIZE] = {};
 // blossom_cycle_base[i] is a vertex number that is base of the blossom for the vertex i
 static vertex_t blossom_cycle_base[MAX_GRAPH_SIZE] = {};
 
-inline vertex_t find_lca(const std::vector<vertex_t>& matches, vertex_t vertex1, vertex_t vertex2) {
-    bool used_in_cycle[MAX_GRAPH_SIZE] = {};
+static inline vertex_t find_lca(const std::vector<vertex_t>& matches, vertex_t vertex1, vertex_t vertex2) {
+    static bool used_in_cycle[MAX_GRAPH_SIZE];
+    memset(used_in_cycle, 0, sizeof(used_in_cycle));
 
     // Go up from vertex1 to root, marking all even vertexes
     while (true) {
@@ -49,7 +49,7 @@ inline vertex_t find_lca(const std::vector<vertex_t>& matches, vertex_t vertex1,
     }
 }
 
-inline void mark_path_in_cycle(const std::vector<vertex_t>& matches, bool current_blossom_cycle_vertexes[], vertex_t v, vertex_t lca_base, vertex_t child) {
+static inline void mark_path_in_cycle(const std::vector<vertex_t>& matches, bool current_blossom_cycle_vertexes[], vertex_t v, vertex_t lca_base, vertex_t child) {
     while (blossom_cycle_base[v] != lca_base) {
         assert(matches[v] != NO_VERTEX);
         current_blossom_cycle_vertexes[blossom_cycle_base[v]] = true;
@@ -61,19 +61,21 @@ inline void mark_path_in_cycle(const std::vector<vertex_t>& matches, bool curren
     }
 }
 
-vertex_t find_increasing_path(const graph_t& graph, const std::vector<vertex_t>& matches, vertex_t n, vertex_t root) {
+static vertex_t find_increasing_path(const graph_t& graph, const std::vector<vertex_t>& matches, vertex_t n, vertex_t root) {
     for (vertex_t i = 0; i < n; i++) { blossom_cycle_base[i] = i; }
     std::memset(parent, static_cast<int>(NO_VERTEX), sizeof(parent));
 
     constexpr size_t QUEUE_MAX_SIZE = MAX_GRAPH_SIZE + MAX_GRAPH_SIZE;
 
     // Queue with even vertexes
-    vertex_t queue[QUEUE_MAX_SIZE] = {};
+    static vertex_t queue[QUEUE_MAX_SIZE] = {};
+    memset(queue, 0, sizeof(queue));
     size_t queue_head = 0;
     size_t queue_tail = 0;
     queue[queue_tail++] = root;
 
-    bool used[MAX_GRAPH_SIZE] = {};
+    static bool used[MAX_GRAPH_SIZE];
+    memset(used, false, sizeof(used));
     used[root] = true;
 
     while (queue_head < queue_tail) {
@@ -95,7 +97,7 @@ vertex_t find_increasing_path(const graph_t& graph, const std::vector<vertex_t>&
                 vertex_t current_base = find_lca(matches, v, to);
 
                 // Array of vertexes belongs to the current blossom
-                bool current_blossom_cycle_vertexes[MAX_GRAPH_SIZE];
+                static bool current_blossom_cycle_vertexes[MAX_GRAPH_SIZE];
                 std::memset(current_blossom_cycle_vertexes, false, sizeof(current_blossom_cycle_vertexes));
 
                 mark_path_in_cycle(matches, current_blossom_cycle_vertexes, v, current_base, to);
