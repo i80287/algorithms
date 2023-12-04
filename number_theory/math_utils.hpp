@@ -73,7 +73,7 @@ constexpr uint32_t bin_pow_mod(uint32_t n, uint32_t p, uint32_t mod) noexcept {
     }
 }
 
-#if defined(_INTEGERS_128_BIT_)
+#if defined(INTEGERS_128_BIT)
 
 /// @brief Calculate (n ^ p) % mod
 /// @param n
@@ -176,7 +176,7 @@ static_assert(isqrt(uint64_t(1) << 62) == uint64_t(1) << 31);
 static_assert(isqrt(uint64_t(-1)) == 0xFFFFFFFFull);
 static_assert(isqrt(uint64_t(1000000007) * 1000000007) == 1000000007);
 
-#if defined(_INTEGERS_128_BIT_)
+#if defined(INTEGERS_128_BIT)
 
 #if __cplusplus >= 202002L && defined(__GNUC__)
 constexpr
@@ -378,6 +378,8 @@ static_assert(is_perfect_square(uint64_t(1) << 40));
 static_assert(is_perfect_square(uint64_t(1) << 48));
 static_assert(is_perfect_square(uint64_t(1) << 56));
 static_assert(is_perfect_square(uint64_t(1) << 60));
+static_assert(is_perfect_square(uint64_t(1) << 62));
+static_assert(is_perfect_square(uint64_t(uint32_t(-1)) * uint64_t(uint32_t(-1))));
 
 #if __cpp_constexpr >= 202207L && defined(__GNUC__)
 constexpr
@@ -400,7 +402,7 @@ constexpr
     return log2_floor(n) + ((n & (n - 1)) != 0);
 }
 
-#if defined(_INTEGERS_128_BIT_)
+#if defined(INTEGERS_128_BIT)
 
 #if __cpp_constexpr >= 202207L && defined(__GNUC__)
 constexpr
@@ -661,7 +663,7 @@ constexpr int32_t sign(long long x) noexcept {
     return int32_t(x > 0) - int32_t(x < 0);
 }
 
-#if defined(_INTEGERS_128_BIT_)
+#if defined(INTEGERS_128_BIT)
 
 #if __cplusplus >= 202002L && defined(__GNUC__)
 constexpr
@@ -753,7 +755,7 @@ constexpr
 #endif
     int32_t
     count_trailing_zeros(T n) noexcept {
-#if defined(_INTEGERS_128_BIT_)
+#if defined(INTEGERS_128_BIT)
     if constexpr (std::is_same_v<T, uint128_t>) {
         uint64_t low = static_cast<uint64_t>(n);
         if (low != 0) {
@@ -773,11 +775,11 @@ constexpr
     }
 #endif
 #if __cplusplus >= 202002L
-#if defined(_INTEGERS_128_BIT_)
+#if defined(INTEGERS_128_BIT)
     else {
 #endif
         return std::countr_zero(n);
-#if defined(_INTEGERS_128_BIT_)
+#if defined(INTEGERS_128_BIT)
     }
 #endif
 #elif defined(__GNUC__)
@@ -830,7 +832,7 @@ constexpr
     if (unlikely(n == 0)) {
         return sizeof(n) * 8;
     }
-#if defined(_INTEGERS_128_BIT_)
+#if defined(INTEGERS_128_BIT)
     if constexpr (std::is_same_v<T, uint128_t>) {
         uint64_t hi = static_cast<uint64_t>(n >> 64);
         if (hi != 0) {
@@ -855,7 +857,7 @@ constexpr
     if (unlikely(n == 0)) {
         return sizeof(n) * 8;
     }
-#if defined(_INTEGERS_128_BIT_)
+#if defined(INTEGERS_128_BIT)
     if constexpr (std::is_same_v<T, uint128_t>) {
         uint64_t hi = static_cast<uint64_t>(n >> 64);
         if (hi != 0) {
@@ -1033,24 +1035,24 @@ static_assert(base_10_len(uint128_t(101)) == 3);
 static_assert(base_10_len(uint128_t(-1)) == 39);
 #endif
 
-/// @brief Find s and r such n = s * (2 ^ r), s odd
+/// @brief Find q and r such n = q * (2 ^ r), q odd
 /// @param n n value.
 /// @param r r value to find.
-/// @return s.
+/// @return q.
 template <typename T>
 #if __cplusplus >= 202002L
     requires std::is_unsigned_v<T>
 constexpr
 #endif
     inline T
-    find_rs(T n, int32_t &r) noexcept {
-    r = count_trailing_zeros(n);
+    extract_2pow(T n, uint32_t &r) noexcept {
+    r = uint32_t(count_trailing_zeros(n));
     return n >> r;
 }
 
 }  // namespace math_utils
 
-#if defined(_INTEGERS_128_BIT_)
+#if defined(INTEGERS_128_BIT)
 
 namespace std {
 

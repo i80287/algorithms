@@ -4,6 +4,8 @@
 #include <cmath>
 #include <cstdint>
 
+#include "math_utils.hpp"
+
 static constexpr bool IsPrimeSlow(uint64_t n) noexcept {
 	if (n % 2 == 0) {
         return n == 2;
@@ -18,7 +20,7 @@ static constexpr bool IsPrimeSlow(uint64_t n) noexcept {
         return n != 1;
     }
 	uint64_t i = 7;
-	const uint64_t root = static_cast<uint64_t>(std::sqrt(static_cast<double>(n)));
+	const uint64_t root = math_utils::isqrt(n);
 	do {
 		if (n % i == 0 || n % (i + 4) == 0 ||
 			n % (i + 6) == 0 || n % (i + 10) == 0 ||

@@ -31,7 +31,7 @@ static constexpr int32_t JacobiSymbolUi(Uint a, Uint n) noexcept {
             case 5:
                 // a === +-3 (mod 8)
                 // t = (-1) ^ p
-                t -= (int32_t(p % 2 != 0) << 1);
+                t -= int32_t((p % 2) * 2);
                 break;
             case 1:
             case 7:
@@ -103,7 +103,7 @@ static constexpr int32_t JacobiSymbolSi(Sint a, Sint n) noexcept {
             case 5:
                 // a === +-3 (mod 8)
                 // t = (-1) ^ p
-                t -= static_cast<int32_t>(static_cast<uint32_t>(p % 2 != 0) * 2);
+                t -= int32_t((p % 2) * 2);
                 break;
             case 1:
             case 7:

@@ -4,7 +4,7 @@
 #include <cstdio>   // printf
 
 #include "is_prime_slow.hpp"
-#include "is_prime_sympy.hpp"
+#include "is_prime_bpsw.hpp"
 
 template <size_t N>
 static constexpr bool binsearch_contains(const uint64_t (&nums)[N], uint64_t value) noexcept {

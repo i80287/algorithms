@@ -12,15 +12,37 @@
 
 static constexpr uint64_t bin_pow(uint64_t n, uint64_t p) noexcept {
     uint64_t res = 1;
-    do {
+    while (true) {
         if (p & 1) {
             res *= n;
         }
-        n *= n;
         p >>= 1;
-    } while(p);
+        if (p == 0) {
+            return res;
+        }
+        n *= n;
+    }
+}
 
-    return res;
+static constexpr uint64_t isqrt(uint64_t n) noexcept {
+    uint64_t l = 1;
+    uint64_t r = (n >> 5) + 8;
+    if (r > 0xFFFFFFFFull) {
+        r = 0xFFFFFFFFull;
+    }
+    do {
+        uint64_t m = (l + r) / 2;
+        if (n >= m * m) {
+            l = m + 1;
+        } else {
+            r = m - 1;
+        }
+    } while (r >= l);
+    return l - 1;
+}
+
+static uint32_t log2_floor(uint64_t n) noexcept {
+    return static_cast<uint32_t>(63 ^ __builtin_clzll(n | 1));
 }
 
 int main() {
@@ -29,7 +51,7 @@ int main() {
     primes.set();
     primes[0] = primes[1] = false;
 
-    constexpr size_t root = static_cast<size_t>(std::sqrt(N));
+    constexpr size_t root = isqrt(N);
     for (size_t i = 0; i <= root; i++) {
         if (primes[i]) {
             for (size_t j = i * i; j < N; j += i) {
@@ -47,7 +69,7 @@ int main() {
     divs_count[1] = 1;
     std::vector<uint32_t> euler_func(n + 1);
     euler_func[1] = 1;
-    primes_vec.reserve(n);
+    primes_vec.reserve(3 * n / log2_floor(n));
     for (uint32_t i = 2; i <= n; i++) {
         if (primes[i]) {
             divs_sum[i] = i + 1;
@@ -68,7 +90,8 @@ int main() {
      * s_0(n) - count of unique divisors of n
      * s_1(n) - the sum of all divisors of n
      * phi(n) - Euler function
-     * 
+     *
+     * Find:
      * sum1 = \sum{k=0}{n} d(n)
      * sum2 = \sum{k=0}{n} s_0(n)
      * sum3 = \sum{k=0}{n} s_1(n)
@@ -100,7 +123,7 @@ int main() {
                     prime_power++;
                 } while (current_k % prime_number == 0);
 
-                uint64_t p_m1 = bin_pow(prime_number, prime_power - 1);
+                uint64_t p_m1 = bin_pow(uint64_t(prime_number), uint64_t(prime_power - 1));
 
                 uint64_t k_divs_sum = divs_sum[current_k] * ((p_m1 * prime_number * prime_number - 1) / (prime_number - 1));
                 sum3 += k_divs_sum;

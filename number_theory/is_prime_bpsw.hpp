@@ -14,7 +14,7 @@
 static constexpr bool IsStrongPRP(uint64_t n, uint64_t a) noexcept {
     if (unlikely(a < 2)) {
         // throw std::domain_error("bool IsStrongPRP(uint64_t, uint64_t) requires 'a' greater than or equal to 2");
-        return false;
+        a = 2;
     }
 
     if (unlikely(n == 1)) {
@@ -31,25 +31,23 @@ static constexpr bool IsStrongPRP(uint64_t n, uint64_t a) noexcept {
     }
 
     const auto n_minus_1 = n - 1;
-    /* Find s and r satisfying: n - 1 = s * (2^r), s odd */
-    int32_t r = 0; uint64_t s = math_utils::find_rs(n_minus_1, r);
+    /* Find q and r satisfying: n - 1 = q * (2^r), q odd */
+    uint32_t r = 0; uint64_t q = math_utils::extract_2pow(n_minus_1, r);
 
     // n - 1 >= 2 => r >= 1
 
-    /* Check a^((2^t)*s) mod n for 0 <= t < r */
+    /* Check a^((2^t)*q) mod n for 0 <= t < r */
 
-    // Init test = ((a^s) mod n)
-    uint64_t test = math_utils::bin_pow_mod(a, s, n);
+    // Init test = ((a^q) mod n)
+    uint64_t test = math_utils::bin_pow_mod(a, q, n);
     if (test == 1 || test == n_minus_1) {
         return true;
     }
 
-    // Since n is odd and n - 1 is even, initially r > 0.
+    // Since n is odd and n - 1 is even >= 2, initially r > 0.
     while (--r) {
         /* test = (test ^ 2) % n */
-        uint128_t widen_test = test;
-        test = static_cast<uint64_t>((widen_test * widen_test) % n);
-
+        test = static_cast<uint64_t>((uint128_t(test) * test) % n);
         if (test == n_minus_1) {
             return true;
         }
@@ -90,7 +88,7 @@ static constexpr bool IsStrongLucasPRP(uint64_t n, uint32_t p, int32_t q) noexce
     uint64_t nmj = n - JacobiSymbol(d, n);
 
     /* Find s and r satisfying: nmj = (2 ^ r) * s, s odd */
-    int32_t r = 0; uint64_t s = math_utils::find_rs(nmj, r);
+    uint32_t r = 0; uint64_t s = math_utils::extract_2pow(nmj, r);
 
     /* make sure U_s == 0 mod n or V_((2^t)*s) == 0 mod n, for some t, 0 <= t < r */
     uint128_t uh = 1;
@@ -98,7 +96,7 @@ static constexpr bool IsStrongLucasPRP(uint64_t n, uint32_t p, int32_t q) noexce
     uint128_t vh = p;
     uint128_t ql = 1;
     uint128_t qh = 1;
-    const uint64_t widen_q = static_cast<uint64_t>(q >= 0 ? q : (n - static_cast<uint64_t>(-q)) % n);
+    const uint64_t widen_q = uint64_t(q >= 0 ? uint32_t(q) : (n - uint32_t(-q)) % n);
     // n >= 3 => n - 1 >= 2 => n - 1 >= 1 => s >= 1 => base_2_digits(s) >= 1
     for (uint32_t j = math_utils::base_2_digits(s) - 1; j != 0; j--) {
         /* ql = ql*qh (mod n) */
@@ -199,7 +197,7 @@ static constexpr bool IsStrongLucasPRP(uint64_t n, uint32_t p, int32_t q) noexce
         return true;
     }
 
-    for (int32_t j = 1; j < r; j++) {
+    for (uint32_t j = 1; j < r; j++) {
         /* vl = vl*vl - 2*ql (mod n) */
         auto vl_vl = vl * vl;
         auto ql_2 = 2 * ql;
@@ -236,39 +234,38 @@ static constexpr bool IsStrongSelfridgePRP(uint64_t n) noexcept {
         return n == 2;
     }
 
-    int32_t d = 5;
-    constexpr int32_t MAX_D = 1000000;
-    while (true) {
+    for (int32_t d = 5;; d += (d > 0) ? 2 : -2, d = -d) {
         // Calculate the Jacobi symbol (a/p).
         int32_t jacobi = JacobiSymbol(static_cast<int64_t>(d), n);
         switch (jacobi) {
-            /* if jacobi == 0, d is a factor of n, therefore n is composite... */
-            /* if d == n, then either n is either prime or 9... */
+            /**
+             * if jacobi == 0, d is a factor of n, therefore n is composite
+             * if d == n, then n is either prime or 9
+             */
             case 0:
-                return static_cast<uint64_t>(std::abs(d)) == n && n != 9;
+                return uint32_t(std::abs(d)) == n && n != 9;
             case 1:
-                /* if we get to the 5th d, make sure we aren't dealing with a square... */
+                /* if we get to the 5th d, make sure we aren't dealing with a
+                 * square... */
                 if (d == 13 && math_utils::is_perfect_square(n)) {
                     return false;
                 }
 
-                d += (d > 0) ? 2 : -2;
-                d = -d;
-
-                if (unlikely(d >= MAX_D)) {
-                    // throw std::domain_error("Appropriate value for D cannot be found in bool IsStrongSelfridgePRP(uint64_t)");
+                if (unlikely(d >= 1000000)) {
+                    // throw std::domain_error("Appropriate value for D cannot
+                    // be found in bool IsStrongSelfridgePRP(uint64_t)");
                     return false;
                 }
                 break;
-            case -1:
+            default:
+                /* jacobi == -1 */
                 int32_t q = (1 - d) / 4;
                 return IsStrongLucasPRP(n, 1, q);
         }
     }
 }
 
-/// @brief Realization taken from the sympy and gmpy2 C source code (IsStrongPRP(uint64_t, uint64_t) and IsStrongSelfridgePRP(uint64_t))
-///        complexity - O(log(n) ^ 2 * log(log(n)))
+/// @brief Complexity - O(log(n) ^ 2 * log(log(n))) ( O(log(n) ^ 3) bit operations )
 /// @param n number to test
 /// @return true if n is prime and false otherwise
 static constexpr bool IsPrime(uint64_t n) noexcept {
@@ -312,7 +309,7 @@ static constexpr bool IsPrime(uint64_t n) noexcept {
 /// @brief Funny realization that works in log(n)
 /// @param m 
 /// @return true if n is prime and false otherwise
-static constexpr bool IsPrimeSmallN(uint16_t m) noexcept {
+static constexpr bool IsPrimeBPSWSmallN(uint16_t m) noexcept {
     uint32_t n = m;
     if (n % 2 == 0) {
         return n == 2;
