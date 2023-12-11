@@ -1,5 +1,5 @@
-#if !defined(_JACOBI_SYMBOL_HPP_)
-#define _JACOBI_SYMBOL_HPP_ 1
+#if !defined(JACOBI_SYMBOL_HPP)
+#define JACOBI_SYMBOL_HPP 1
 
 #include "integers_128_bit.hpp"
 #include "math_utils.hpp"
@@ -92,7 +92,7 @@ static constexpr int32_t JacobiSymbolSi(Sint a, Sint n) noexcept {
         n_u >>= p;
         n >>= p;
 
-        switch (((a % 8) + 8) % 8) {
+        switch (uint32_t((a % 8) + 8) % 8) {
             case 0:
             case 2:
             case 4:
@@ -183,4 +183,4 @@ static constexpr int32_t JacobiSymbol(IntegerT1 a, IntegerT2 n) noexcept {
     }
 }
 
-#endif // !_JACOBI_SYMBOL_HPP_ 
+#endif // !JACOBI_SYMBOL_HPP

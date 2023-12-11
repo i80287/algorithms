@@ -1,5 +1,5 @@
-#ifndef _IS_PRIME_SLOW_H_
-#define _IS_PRIME_SLOW_H_ 1
+#ifndef IS_PRIME_SLOW_H
+#define IS_PRIME_SLOW_H 1
 
 #include <cmath>
 #include <cstdint>
@@ -33,4 +33,4 @@ static constexpr bool IsPrimeSlow(uint64_t n) noexcept {
 	return true;
 }
 
-#endif // !_IS_PRIME_SLOW_H_
+#endif // !IS_PRIME_SLOW_H

@@ -1,3 +1,6 @@
+#ifndef IS_PRIME_BPSW
+#define IS_PRIME_BPSW 1
+
 #include <cstdint>
 #include <cmath>
 #include <numeric>
@@ -309,7 +312,7 @@ static constexpr bool IsPrime(uint64_t n) noexcept {
 /// @brief Funny realization that works in log(n)
 /// @param m 
 /// @return true if n is prime and false otherwise
-static constexpr bool IsPrimeBPSWSmallN(uint16_t m) noexcept {
+static constexpr bool IsPrimeSmallN(uint16_t m) noexcept {
     uint32_t n = m;
     if (n % 2 == 0) {
         return n == 2;
@@ -354,3 +357,5 @@ static constexpr bool IsPrimeBPSWSmallN(uint16_t m) noexcept {
             return math_utils::bin_pow_mod(2, n - 1, n) == 1;
     }
 }
+
+#endif // !IS_PRIME_BPSW

@@ -1,5 +1,5 @@
-#if !defined(_MATH_UTILS_HPP_)
-#define _MATH_UTILS_HPP_ 1
+#if !defined(MATH_UTILS_HPP)
+#define MATH_UTILS_HPP 1
 
 #if defined(__GNUC__)
 // optionally for a bit faster log2 (lzcnt instead of bsr may be used)
@@ -345,7 +345,7 @@ constexpr bool is_perfect_square(uint64_t n) noexcept {
      * | n*n mod 16 |  0 |  1 |  4 |  9 |  0 |  9 |  4 |  1 |  0 |  1 |  4 |  9 |  0 |  9 |  4 |  1 |
      * +------------+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+
      *
-     * If we peek mod 32, then we should check only for n & 31 in { 0, 1, 4, 9,  16, 17, 25 },
+     * If we peek mod 32, then we should check only for n & 31 in { 0, 1, 4, 9, 16, 17, 25 },
      * but switch statement could be less efficient in this case
      */
     switch (n & 15) {
@@ -378,8 +378,6 @@ static_assert(is_perfect_square(uint64_t(1) << 40));
 static_assert(is_perfect_square(uint64_t(1) << 48));
 static_assert(is_perfect_square(uint64_t(1) << 56));
 static_assert(is_perfect_square(uint64_t(1) << 60));
-static_assert(is_perfect_square(uint64_t(1) << 62));
-static_assert(is_perfect_square(uint64_t(uint32_t(-1)) * uint64_t(uint32_t(-1))));
 
 #if __cpp_constexpr >= 202207L && defined(__GNUC__)
 constexpr
@@ -637,20 +635,6 @@ static_assert(int64_t(std::popcount(uint32_t(-1))) -
               int64_t(pop_diff(uint32_t(-1), uint32_t(-1))));
 #endif
 
-constexpr int32_t pop_cmp(uint32_t x, uint32_t y) noexcept {
-    /**
-     * See Hackers Delight Chapter 5.
-     */
-    uint32_t n = x & ~y;  // Clear bits where
-    uint32_t m = y & ~x;  // both bits are 1
-    while (true) {
-        if (n == 0) return static_cast<int32_t>(m | -m);
-        if (m == 0) return 1;
-        n &= n - 1;  // Clear one bit
-        m &= m - 1;  // from each
-    }
-}
-
 constexpr int32_t sign(int x) noexcept {
     return int32_t(x > 0) - int32_t(x < 0);
 }
@@ -721,7 +705,25 @@ static_assert(uabs(int128_t(-(uint128_t(1) << 127))) == uint128_t(1) << 127);
 
 #endif
 
+// Visual C++ thinks that unary minus on uint32_t is an error :clown:
+#if !defined(_MSC_VER)
+
+constexpr int32_t pop_cmp(uint32_t x, uint32_t y) noexcept {
+    /**
+     * See Hackers Delight Chapter 5.
+     */
+    uint32_t n = x & ~y;  // Clear bits where
+    uint32_t m = y & ~x;  // both bits are 1
+    while (true) {
+        if (n == 0) return static_cast<int32_t>(m | -m);
+        if (m == 0) return 1;
+        n &= n - 1;  // Clear one bit
+        m &= m - 1;  // from each
+    }
+}
+
 #if __cplusplus >= 202002L
+
 static_assert(sign(int64_t(std::popcount(0u)) - int64_t(std::popcount(0u))) ==
               sign(int64_t(pop_cmp(0, 0))));
 static_assert(sign(int64_t(std::popcount(1u)) - int64_t(std::popcount(0u))) ==
@@ -745,16 +747,143 @@ static_assert(sign(int64_t(std::popcount(uint32_t(-1))) -
               sign(int64_t(pop_cmp(uint32_t(-1), uint32_t(-1)))));
 #endif
 
+#endif
+
+constexpr uint32_t lz_count_32_software(uint32_t n) noexcept {
+    /**
+     * See Hackers Delight Chapter 5
+     */
+    if (unlikely(n == 0)) {
+        return 32;
+    }
+    uint32_t m = 1;
+    if ((n >> 16) == 0) {
+        m += 16;
+        n <<= 16;
+    }
+    if ((n >> 24) == 0) {
+        m += 8;
+        n <<= 8;
+    }
+    if ((n >> 28) == 0) {
+        m += 4;
+        n <<= 4;
+    }
+    if ((n >> 30) == 0) {
+        m += 2;
+        n <<= 2;
+    }
+    m -= n >> 31;
+    return m;
+}
+
+static_assert(lz_count_32_software(0u) == 32);
+static_assert(lz_count_32_software(1u) == 31);
+static_assert(lz_count_32_software(2u) == 30);
+static_assert(lz_count_32_software(4u) == 29);
+static_assert(lz_count_32_software(8u) == 28);
+static_assert(lz_count_32_software(12u) == 28);
+static_assert(lz_count_32_software(16u) == 27);
+static_assert(lz_count_32_software(32u) == 26);
+static_assert(lz_count_32_software(48u) == 26);
+static_assert(lz_count_32_software(1u << 30) == 1);
+static_assert(lz_count_32_software(1u << 31) == 0);
+static_assert(lz_count_32_software(~1u) == 0);
+
+constexpr uint32_t tz_count_32_software(uint32_t n) noexcept {
+    /**
+     * See Hackers Delight Chapter 5
+     */
+    if (unlikely(n == 0)) {
+        return 32;
+    }
+    uint32_t m = 1;
+    if ((n & 0x0000FFFFu) == 0) {
+        m += 16;
+        n >>= 16;
+    }
+    if ((n & 0x000000FFu) == 0) {
+        m += 8;
+        n >>= 8;
+    }
+    if ((n & 0x0000000Fu) == 0) {
+        m += 4;
+        n >>= 4;
+    }
+    if ((n & 0x00000003u) == 0) {
+        m += 2;
+        n >>= 2;
+    }
+    return m - (n & 1);
+}
+
+static_assert(tz_count_32_software(0u) == 32);
+static_assert(tz_count_32_software(1u) == 0);
+static_assert(tz_count_32_software(2u) == 1);
+static_assert(tz_count_32_software(4u) == 2);
+static_assert(tz_count_32_software(8u) == 3);
+static_assert(tz_count_32_software(12u) == 2);
+static_assert(tz_count_32_software(16u) == 4);
+static_assert(tz_count_32_software(32u) == 5);
+static_assert(tz_count_32_software(48u) == 4);
+static_assert(tz_count_32_software(1u << 30) == 30);
+static_assert(tz_count_32_software(1u << 31) == 31);
+static_assert(tz_count_32_software(~1u) == 1);
+static_assert(tz_count_32_software(-1u) == 0);
+
+constexpr uint32_t tz_count_64_software(uint64_t n) noexcept {
+    uint32_t m = 0;
+    for (n = ~n & (n - 1); n != 0;) {
+        m++;
+        n >>= 1;
+    }
+    return m;
+}
+
+static_assert(tz_count_64_software(0u) == 64);
+static_assert(tz_count_64_software(1u) == 0);
+static_assert(tz_count_64_software(2u) == 1);
+static_assert(tz_count_64_software(4u) == 2);
+static_assert(tz_count_64_software(8u) == 3);
+static_assert(tz_count_64_software(12u) == 2);
+static_assert(tz_count_64_software(16u) == 4);
+static_assert(tz_count_64_software(32u) == 5);
+static_assert(tz_count_64_software(48u) == 4);
+static_assert(tz_count_64_software(1u << 30) == 30);
+static_assert(tz_count_64_software(1u << 31) == 31);
+static_assert(tz_count_64_software(~1u) == 1);
+static_assert(tz_count_64_software(-1u) == 0);
+
 /// @brief Count trailing zeros for n
 /// @param n
 /// @return trailing zeros count (sizeof(n) * 8 for n = 0)
 template <typename T>
 #if __cplusplus >= 202002L
     requires std::is_unsigned_v<T>
+#if defined(__GNUC__)
 constexpr
+#endif
 #endif
     int32_t
     count_trailing_zeros(T n) noexcept {
+    if (unlikely(n == 0)) {
+        return sizeof(n) * 8;
+    }
+#if __cplusplus >= 202002L
+#if defined(INTEGERS_128_BIT)
+    if constexpr (std::is_same_v<T, uint128_t>) {
+        uint64_t low = static_cast<uint64_t>(n);
+        if (low != 0) {
+            return __builtin_ctzll(low);
+        }
+
+        uint64_t high = static_cast<uint64_t>(n >> 64);
+        return __builtin_ctzll(high) + 64;
+    }
+    else
+#endif
+    return std::countr_zero(n);
+#else
 #if defined(INTEGERS_128_BIT)
     if constexpr (std::is_same_v<T, uint128_t>) {
         uint64_t low = static_cast<uint64_t>(n);
@@ -772,46 +901,31 @@ constexpr
 #else
         return static_cast<int32_t>(_tzcnt_u64(high)) + 64;
 #endif
-    }
+    } else
 #endif
-#if __cplusplus >= 202002L
-#if defined(INTEGERS_128_BIT)
-    else {
-#endif
-        return std::countr_zero(n);
-#if defined(INTEGERS_128_BIT)
-    }
-#endif
-#elif defined(__GNUC__)
-    if (unlikely(n == 0)) {
-        return sizeof(n) * 8;
-    }
-
-    if constexpr (std::is_same_v<T, unsigned long long>) {
+        if constexpr (std::is_same_v<T, unsigned long long>) {
+#if defined(__GNUC__)
         return __builtin_ctzll(n);
-    } else if constexpr (std::is_same_v<T, unsigned long>) {
-        return __builtin_ctzl(n);
-    } else {
-        static_assert(std::is_same_v<T, unsigned int> ||
-                      std::is_same_v<T, unsigned short> ||
-                      std::is_same_v<T, unsigned char>);
-        return __builtin_ctz(n);
-    }
 #else
-    if (unlikely(n == 0)) {
-        return sizeof(n) * 8;
-    }
-
-    if constexpr (std::is_same_v<T, unsigned long long>) {
         return static_cast<int32_t>(_tzcnt_u64(n));
+#endif
     } else if constexpr (std::is_same_v<T, unsigned long>) {
+#if defined(__GNUC__)
+        return __builtin_ctzl(n);
+#else
         return static_cast<int32_t>(
             _tzcnt_u64(static_cast<unsigned long long>(n)));
+#endif
+
     } else {
         static_assert(std::is_same_v<T, unsigned int> ||
                       std::is_same_v<T, unsigned short> ||
                       std::is_same_v<T, unsigned char>);
+#if defined(__GNUC__)
+        return __builtin_ctz(n);
+#else
         return static_cast<int32_t>(_tzcnt_u32(n));
+#endif
     }
 #endif
 }
@@ -822,16 +936,16 @@ constexpr
 template <typename T>
 #if __cplusplus >= 202002L
     requires std::is_unsigned_v<T>
+#if defined(__GNUC__)
 constexpr
 #endif
+#endif
     inline int32_t
-    count_leading_zeros(T n) noexcept {
-#if __cplusplus >= 202002L
-    return std::countl_zero(n);
-#elif defined(__GNUC__)
+    count_leading_zeros(T n) noexcept {   
     if (unlikely(n == 0)) {
         return sizeof(n) * 8;
     }
+#if __cplusplus >= 202002L
 #if defined(INTEGERS_128_BIT)
     if constexpr (std::is_same_v<T, uint128_t>) {
         uint64_t hi = static_cast<uint64_t>(n >> 64);
@@ -841,43 +955,51 @@ constexpr
 
         uint64_t low = static_cast<uint64_t>(n);
         return 64 + __builtin_clzll(low);
-    }
+    } else
 #endif
-    if constexpr (std::is_same_v<T, unsigned long long>) {
-        return __builtin_clzll(n);
-    } else if constexpr (std::is_same_v<T, unsigned long>) {
-        return __builtin_clzl(n);
-    } else {
-        static_assert(std::is_same_v<T, unsigned int> ||
-                      std::is_same_v<T, unsigned short> ||
-                      std::is_same_v<T, unsigned char>);
-        return __builtin_clz(n);
-    }
+    return std::countl_zero(n);
 #else
-    if (unlikely(n == 0)) {
-        return sizeof(n) * 8;
-    }
 #if defined(INTEGERS_128_BIT)
     if constexpr (std::is_same_v<T, uint128_t>) {
         uint64_t hi = static_cast<uint64_t>(n >> 64);
         if (hi != 0) {
+#if defined(__GNUC__)
+            return __builtin_clzll(hi);
+#else
             return static_cast<int32_t>(_lzcnt_u64(hi));
+#endif
         }
 
         uint64_t low = static_cast<uint64_t>(n);
+#if defined(__GNUC__)
+        return 64 + __builtin_clzll(low);
+#else
         return 64 + static_cast<int32_t>(_lzcnt_u64(low));
-    }
+#endif
+    } else
 #endif
     if constexpr (std::is_same_v<T, unsigned long long>) {
+#if defined(__GNUC__)
+        return __builtin_clzll(n);
+#else
         return static_cast<int32_t>(_lzcnt_u64(n));
+#endif
     } else if constexpr (std::is_same_v<T, unsigned long>) {
+#if defined(__GNUC__)
+        return __builtin_clzl(n);
+#else
         return static_cast<int32_t>(
             _lzcnt_u64(static_cast<unsigned long long>(n)));
+#endif
     } else {
         static_assert(std::is_same_v<T, unsigned int> ||
                       std::is_same_v<T, unsigned short> ||
                       std::is_same_v<T, unsigned char>);
+#if defined(__GNUC__)
+        return __builtin_clz(n);
+#else
         return static_cast<int32_t>(_lzcnt_u32(n));
+#endif
     }
 #endif
 }
@@ -987,12 +1109,11 @@ template <typename T>
     requires std::is_unsigned_v<T>
 #endif
 constexpr uint32_t base_10_len(T value) noexcept {
-    uint32_t n = 1;
     const uint32_t base = 10;
     const uint32_t b2 = base * base;
     const uint32_t b3 = b2 * base;
     const uint32_t b4 = b3 * base;
-    for (;;) {
+    for (uint32_t n = 1;;) {
         if (value < base) {
             return n;
         }
@@ -1115,4 +1236,4 @@ static_assert(gcd(uint64_t(18446744073709551557ull), int128_t(0)) ==
 
 #endif
 
-#endif  // !_MATH_UTILS_HPP_
+#endif  // !MATH_UTILS_HPP

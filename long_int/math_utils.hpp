@@ -1,5 +1,5 @@
-#if !defined(_MATH_UTILS_HPP_)
-#define _MATH_UTILS_HPP_ 1
+#if !defined(MATH_UTILS_HPP)
+#define MATH_UTILS_HPP 1
 
 #if defined(__GNUC__)
 // optionally for a bit faster log2 (lzcnt instead of bsr may be used)
@@ -73,7 +73,7 @@ constexpr uint32_t bin_pow_mod(uint32_t n, uint32_t p, uint32_t mod) noexcept {
     }
 }
 
-#if defined(_INTEGERS_128_BIT_)
+#if defined(INTEGERS_128_BIT)
 
 /// @brief Calculate (n ^ p) % mod
 /// @param n
@@ -176,7 +176,7 @@ static_assert(isqrt(uint64_t(1) << 62) == uint64_t(1) << 31);
 static_assert(isqrt(uint64_t(-1)) == 0xFFFFFFFFull);
 static_assert(isqrt(uint64_t(1000000007) * 1000000007) == 1000000007);
 
-#if defined(_INTEGERS_128_BIT_)
+#if defined(INTEGERS_128_BIT)
 
 #if __cplusplus >= 202002L && defined(__GNUC__)
 constexpr
@@ -400,7 +400,7 @@ constexpr
     return log2_floor(n) + ((n & (n - 1)) != 0);
 }
 
-#if defined(_INTEGERS_128_BIT_)
+#if defined(INTEGERS_128_BIT)
 
 #if __cpp_constexpr >= 202207L && defined(__GNUC__)
 constexpr
@@ -647,7 +647,7 @@ constexpr int32_t sign(long long x) noexcept {
     return int32_t(x > 0) - int32_t(x < 0);
 }
 
-#if defined(_INTEGERS_128_BIT_)
+#if defined(INTEGERS_128_BIT)
 
 #if __cplusplus >= 202002L && defined(__GNUC__)
 constexpr
@@ -705,7 +705,7 @@ static_assert(uabs(int128_t(-(uint128_t(1) << 127))) == uint128_t(1) << 127);
 
 #endif
 
-// Stupid visual C++ thinks that unary minus on uint32_t is an error :clown:
+// Visual C++ thinks that unary minus on uint32_t is an error :clown:
 #if !defined(_MSC_VER)
 
 constexpr int32_t pop_cmp(uint32_t x, uint32_t y) noexcept {
@@ -749,6 +749,111 @@ static_assert(sign(int64_t(std::popcount(uint32_t(-1))) -
 
 #endif
 
+constexpr uint32_t lz_count_32_software(uint32_t n) noexcept {
+    /**
+     * See Hackers Delight Chapter 5
+     */
+    if (unlikely(n == 0)) {
+        return 32;
+    }
+    uint32_t m = 1;
+    if ((n >> 16) == 0) {
+        m += 16;
+        n <<= 16;
+    }
+    if ((n >> 24) == 0) {
+        m += 8;
+        n <<= 8;
+    }
+    if ((n >> 28) == 0) {
+        m += 4;
+        n <<= 4;
+    }
+    if ((n >> 30) == 0) {
+        m += 2;
+        n <<= 2;
+    }
+    m -= n >> 31;
+    return m;
+}
+
+static_assert(lz_count_32_software(0u) == 32);
+static_assert(lz_count_32_software(1u) == 31);
+static_assert(lz_count_32_software(2u) == 30);
+static_assert(lz_count_32_software(4u) == 29);
+static_assert(lz_count_32_software(8u) == 28);
+static_assert(lz_count_32_software(12u) == 28);
+static_assert(lz_count_32_software(16u) == 27);
+static_assert(lz_count_32_software(32u) == 26);
+static_assert(lz_count_32_software(48u) == 26);
+static_assert(lz_count_32_software(1u << 30) == 1);
+static_assert(lz_count_32_software(1u << 31) == 0);
+static_assert(lz_count_32_software(~1u) == 0);
+
+constexpr uint32_t tz_count_32_software(uint32_t n) noexcept {
+    /**
+     * See Hackers Delight Chapter 5
+     */
+    if (unlikely(n == 0)) {
+        return 32;
+    }
+    uint32_t m = 1;
+    if ((n & 0x0000FFFFu) == 0) {
+        m += 16;
+        n >>= 16;
+    }
+    if ((n & 0x000000FFu) == 0) {
+        m += 8;
+        n >>= 8;
+    }
+    if ((n & 0x0000000Fu) == 0) {
+        m += 4;
+        n >>= 4;
+    }
+    if ((n & 0x00000003u) == 0) {
+        m += 2;
+        n >>= 2;
+    }
+    return m - (n & 1);
+}
+
+static_assert(tz_count_32_software(0u) == 32);
+static_assert(tz_count_32_software(1u) == 0);
+static_assert(tz_count_32_software(2u) == 1);
+static_assert(tz_count_32_software(4u) == 2);
+static_assert(tz_count_32_software(8u) == 3);
+static_assert(tz_count_32_software(12u) == 2);
+static_assert(tz_count_32_software(16u) == 4);
+static_assert(tz_count_32_software(32u) == 5);
+static_assert(tz_count_32_software(48u) == 4);
+static_assert(tz_count_32_software(1u << 30) == 30);
+static_assert(tz_count_32_software(1u << 31) == 31);
+static_assert(tz_count_32_software(~1u) == 1);
+static_assert(tz_count_32_software(-1u) == 0);
+
+constexpr uint32_t tz_count_64_software(uint64_t n) noexcept {
+    uint32_t m = 0;
+    for (n = ~n & (n - 1); n != 0;) {
+        m++;
+        n >>= 1;
+    }
+    return m;
+}
+
+static_assert(tz_count_64_software(0u) == 64);
+static_assert(tz_count_64_software(1u) == 0);
+static_assert(tz_count_64_software(2u) == 1);
+static_assert(tz_count_64_software(4u) == 2);
+static_assert(tz_count_64_software(8u) == 3);
+static_assert(tz_count_64_software(12u) == 2);
+static_assert(tz_count_64_software(16u) == 4);
+static_assert(tz_count_64_software(32u) == 5);
+static_assert(tz_count_64_software(48u) == 4);
+static_assert(tz_count_64_software(1u << 30) == 30);
+static_assert(tz_count_64_software(1u << 31) == 31);
+static_assert(tz_count_64_software(~1u) == 1);
+static_assert(tz_count_64_software(-1u) == 0);
+
 /// @brief Count trailing zeros for n
 /// @param n
 /// @return trailing zeros count (sizeof(n) * 8 for n = 0)
@@ -765,7 +870,7 @@ constexpr
         return sizeof(n) * 8;
     }
 #if __cplusplus >= 202002L
-#if defined(_INTEGERS_128_BIT_)
+#if defined(INTEGERS_128_BIT)
     if constexpr (std::is_same_v<T, uint128_t>) {
         uint64_t low = static_cast<uint64_t>(n);
         if (low != 0) {
@@ -779,7 +884,7 @@ constexpr
 #endif
     return std::countr_zero(n);
 #else
-#if defined(_INTEGERS_128_BIT_)
+#if defined(INTEGERS_128_BIT)
     if constexpr (std::is_same_v<T, uint128_t>) {
         uint64_t low = static_cast<uint64_t>(n);
         if (low != 0) {
@@ -841,7 +946,7 @@ constexpr
         return sizeof(n) * 8;
     }
 #if __cplusplus >= 202002L
-#if defined(_INTEGERS_128_BIT_)
+#if defined(INTEGERS_128_BIT)
     if constexpr (std::is_same_v<T, uint128_t>) {
         uint64_t hi = static_cast<uint64_t>(n >> 64);
         if (hi != 0) {
@@ -854,7 +959,7 @@ constexpr
 #endif
     return std::countl_zero(n);
 #else
-#if defined(_INTEGERS_128_BIT_)
+#if defined(INTEGERS_128_BIT)
     if constexpr (std::is_same_v<T, uint128_t>) {
         uint64_t hi = static_cast<uint64_t>(n >> 64);
         if (hi != 0) {
@@ -1004,12 +1109,11 @@ template <typename T>
     requires std::is_unsigned_v<T>
 #endif
 constexpr uint32_t base_10_len(T value) noexcept {
-    uint32_t n = 1;
     const uint32_t base = 10;
     const uint32_t b2 = base * base;
     const uint32_t b3 = b2 * base;
     const uint32_t b4 = b3 * base;
-    for (;;) {
+    for (uint32_t n = 1;;) {
         if (value < base) {
             return n;
         }
@@ -1069,7 +1173,7 @@ constexpr
 
 }  // namespace math_utils
 
-#if defined(_INTEGERS_128_BIT_)
+#if defined(INTEGERS_128_BIT)
 
 namespace std {
 
@@ -1132,4 +1236,4 @@ static_assert(gcd(uint64_t(18446744073709551557ull), int128_t(0)) ==
 
 #endif
 
-#endif  // !_MATH_UTILS_HPP_
+#endif  // !MATH_UTILS_HPP

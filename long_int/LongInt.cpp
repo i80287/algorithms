@@ -439,7 +439,7 @@ struct LongInt {
         size_ *= sign;
     }
 
-#if _INTEGERS_128_BIT_
+#if INTEGERS_128_BIT
     inline LongInt(uint128_t n) : size_(n != 0), capacity_(4) {
         nums_ = static_cast<uint32_t*>(
             LongIntAllocator::Allocate(4 * sizeof(uint32_t)));
@@ -678,7 +678,7 @@ struct LongInt {
         return *this;
     }
 
-#if _INTEGERS_128_BIT_
+#if INTEGERS_128_BIT
     inline LongInt& operator=(uint128_t n) {
         if (capacity_ < 4) {
             LongIntAllocator::Deallocate(nums_);
@@ -1052,7 +1052,7 @@ struct LongInt {
         return !(*this == n);
     }
 
-#if _INTEGERS_128_BIT_
+#if INTEGERS_128_BIT
     constexpr bool operator==(uint128_t n) const noexcept {
         switch (size_) {
             case 0:

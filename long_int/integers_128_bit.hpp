@@ -9,8 +9,8 @@
  *
  */
 
-#ifndef _INTEGERS_128_BIT_
-#define _INTEGERS_128_BIT_ 1
+#ifndef INTEGERS_128_BIT
+#define INTEGERS_128_BIT 1
 
 #include <cstdint>
 #include <ostream>
@@ -263,4 +263,4 @@ struct formatter<int128_t, CharT> {
 
 }  // namespace std
 
-#endif  // !_INTEGERS_128_BIT_
+#endif  // !INTEGERS_128_BIT
