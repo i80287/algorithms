@@ -1,43 +1,45 @@
 #include <cassert>
-#include <cstdint>
 #include <cstddef>
+#include <cstdint>
 #include <cstdlib>
 #include <cstring>
-#include <limits>
 #include <iostream>
+#include <limits>
+
+#include <type_traits>
 #include <vector>
-#include <random>
 
-inline constexpr auto NO_MATCH = static_cast<size_t>(-1);
-inline constexpr auto NO_VERTEX = static_cast<size_t>(-1);
+namespace hungarian_algo {
 
-template <typename T>
-requires std::is_integral_v<T>
-[[maybe_unused]] static constexpr bool check_simmetric(const T *const * arr, size_t n) noexcept {
-    for (size_t i = 0; i < n; i++) {
-        for (size_t j = i + 1; j < n; j++) {
-            if (arr[i][j] != arr[j][i]) {
-                return false;
-            }
-        }
-    }
+using vertex_t = size_t;
+static_assert(sizeof(vertex_t) == sizeof(void*));
 
-    return true;
+inline constexpr vertex_t kNoMatch = static_cast<vertex_t>(-1);
+inline constexpr vertex_t kNoVertex = static_cast<vertex_t>(-1);
+
+struct GraphInfo {
+    bool* const first_part_visited;
+    bool* const second_part_visited;
+    vertex_t* const first_part_matches;
+    vertex_t* const second_part_matches;
+    size_t** const neighbours;
+    size_t* const neighbours_count;
+};
+
+static constexpr size_t AlignSize(size_t n) noexcept {
+    return (n + 15) & size_t(-16);
 }
 
-template <typename T>
-requires std::is_integral_v<T>
-static constexpr T** MakeCopyWithZeroOnRowsAndColumns(const std::vector<std::vector<T>>& matrix) noexcept {
+/// @brief Makes copy of matrix with zero on rows and columns (by subtracting
+/// min value of row from row and min value of column from column)
+/// @tparam T
+/// @param matrix
+/// @param matrix_copy
+template <class T>
+static void MatrixCopy(const std::vector<std::vector<T>>& matrix, T** matrix_copy) noexcept {
     size_t n = matrix.size();
-    if (n == 0) {
-        return nullptr;
-    }
-
-    T** matrix_copy = new T*[n]();
-
     for (size_t i = 0; i < n; i++) {
-        const std::vector<T>& row_i = matrix[i];
-
+        const T* row_i = matrix[i].data();
         T min_in_row = row_i[0];
         for (size_t j = 1; j < n; j++) {
             if (row_i[j] < min_in_row) {
@@ -45,13 +47,12 @@ static constexpr T** MakeCopyWithZeroOnRowsAndColumns(const std::vector<std::vec
             }
         }
 
-        T* row_i_copy = matrix_copy[i] = new T[n]();
+        T* row_i_copy = matrix_copy[i];
         if (min_in_row != 0) {
             for (size_t j = 0; j < n; j++) {
                 row_i_copy[j] = row_i[j] - min_in_row;
             }
-        }
-        else {
+        } else {
             // Not very rare case
             // Can by optimized by the compiler
             for (size_t j = 0; j < n; j++) {
@@ -61,128 +62,108 @@ static constexpr T** MakeCopyWithZeroOnRowsAndColumns(const std::vector<std::vec
     }
 
     for (size_t j = 0; j < n; j++) {
-        auto min_in_column = matrix_copy[0][j];
+        T min_in_column = matrix_copy[0][j];
         for (size_t i = 1; i < n; i++) {
             if (matrix_copy[i][j] < min_in_column) {
                 min_in_column = matrix_copy[i][j];
             }
         }
 
+        // Not very rare case
         if (min_in_column != 0) {
             for (size_t i = 0; i < n; i++) {
                 matrix_copy[i][j] -= min_in_column;
             }
         }
     }
-
-    return matrix_copy;
 }
 
-struct DFSPackedInfo {
-    size_t* first_part_matches;
-    size_t* second_part_matches;
-    const size_t *const * neighbours;
-    const size_t* neighbours_count;
-    bool* first_part_visited;
-    bool* second_part_visited;
-};
+static size_t DFSFindChainUpdateMatches(size_t i, GraphInfo& info) noexcept {
+    assert(!info.first_part_visited[i]);
+    info.first_part_visited[i] = true;
+    const size_t* i_neighbours = info.neighbours[i];
 
-template <bool IsDebug = false>
-static size_t DFSFindChainUpdateMatches(size_t i, DFSPackedInfo& dfs_packed_info) noexcept {
-    if constexpr (IsDebug) { assert(!dfs_packed_info.first_part_visited[i]); }
-    dfs_packed_info.first_part_visited[i] = true;
-    const size_t* i_neighbours = dfs_packed_info.neighbours[i];
-
-    for (size_t neighbour_index = 0, total_neighbours = dfs_packed_info.neighbours_count[i];
+    for (size_t neighbour_index = 0, total_neighbours = info.neighbours_count[i];
         neighbour_index < total_neighbours;
         ++neighbour_index) {
 
         size_t j = i_neighbours[neighbour_index];
-        size_t k = dfs_packed_info.second_part_matches[j];
+        size_t k = info.second_part_matches[j];
 
         /*
-         * Bipart. Graph
-         *
-         *      X   Y
-         *
-         * 1 -> i
-         *       \
-         *        \
-         *         %
-         *          j <- 2
-         * 
-         */
-        if (k == NO_MATCH) {
-            if constexpr (IsDebug) { std::cout << "End: " << i + 1 << " -> " << j + 1 << '\n'; }
-            dfs_packed_info.second_part_matches[j] = i;
-            dfs_packed_info.first_part_matches[i] = j;
+        * Bipart. Graph
+        *
+        *      X   Y
+        *
+        * 1 -> i
+        *       \
+        *        \
+        *         %
+        *          j <- 2
+        * 
+        */
+        if (k == kNoMatch) {
+            info.second_part_matches[j] = i;
+            info.first_part_matches[i] = j;
             return j;
         }
 
         /*
-         * Bipart. Graph
-         *
-         *      X   Y
-         *
-         * 1 -> i
-         *       \
-         *        \
-         *         %
-         * 3 -> k<--j <- 2
-         * 
-         */
-        if (!dfs_packed_info.second_part_visited[j] && !dfs_packed_info.first_part_visited[k]) {
-            dfs_packed_info.second_part_visited[j] = true;
-            if constexpr (IsDebug) { std::cout << "Go: " << i + 1 << " -> " << j + 1 << " -> " << k + 1 << '\n'; }
-            size_t end_vertex = DFSFindChainUpdateMatches<IsDebug>(k, dfs_packed_info);
-            if constexpr (IsDebug) { std::cout << "After dfs: " << i + 1 << " -> " << j + 1 << " -> " << k + 1 << " -> " << end_vertex + 1 << '\n'; }
-            if (end_vertex != NO_VERTEX) {
-                dfs_packed_info.second_part_matches[j] = i;
-                dfs_packed_info.first_part_matches[i] = j;
+        * Bipart. Graph
+        *
+        *      X   Y
+        *
+        * 1 -> i
+        *       \
+        *        \
+        *         %
+        * 3 -> k<--j <- 2
+        * 
+        */
+        if (!info.second_part_visited[j] && !info.first_part_visited[k]) {
+            info.second_part_visited[j] = true;
+            size_t end_vertex = DFSFindChainUpdateMatches(k, info);
+            if (end_vertex != kNoVertex) {
+                info.second_part_matches[j] = i;
+                info.first_part_matches[i] = j;
                 return end_vertex;
             }
         }
     }
 
-    return NO_VERTEX;
+    return kNoVertex;
 }
 
-static void DfsFromUnmatched(size_t i, DFSPackedInfo& dfs_packed_info) noexcept {
-    dfs_packed_info.first_part_visited[i] = true;
-    const size_t* i_neighbours = dfs_packed_info.neighbours[i];
+static void DfsFromUnmatched(size_t i, GraphInfo& info) noexcept {
+    info.first_part_visited[i] = true;
+    const size_t* i_neighbours = info.neighbours[i];
 
-    for (size_t neighbour_index = 0, total_neighbours = dfs_packed_info.neighbours_count[i];
+    for (size_t neighbour_index = 0, total_neighbours = info.neighbours_count[i];
         neighbour_index < total_neighbours;
         ++neighbour_index) {
         size_t j = i_neighbours[neighbour_index];
-        size_t k = dfs_packed_info.second_part_matches[j];
-        if (k != NO_MATCH && !dfs_packed_info.first_part_visited[k]) {
-            dfs_packed_info.second_part_visited[j] = true;
-            DfsFromUnmatched(k, dfs_packed_info);
+        size_t k = info.second_part_matches[j];
+        if (k != kNoMatch && !info.first_part_visited[k]) {
+            info.second_part_visited[j] = true;
+            DfsFromUnmatched(k, info);
         }
     }
 }
 
-template <bool IsDebug = false, typename T>
-requires std::is_integral_v<T>
-static inline constexpr void FillBipartiteGraph(
-    const T* const* matrix,
-    size_t n,
+template <class T>
+static void FillBipartiteGraph(T** matrix,
     bool** bipartite_graph_matrix,
-    size_t** neighbours,
-    size_t* neighbours_count,
-    size_t* first_part_matches,
-    size_t* second_part_matches) noexcept {
-    for (size_t i = 0; i < n; i++) {
+    GraphInfo& info,
+    size_t n) noexcept {
+    std::memset(bipartite_graph_matrix + n, false, sizeof(bool) * n * n);
+    std::memset(info.neighbours + n, 0, sizeof(vertex_t) * n * n);
+
+    for (vertex_t i = 0; i < n; i++) {
         bool* bipartite_graph_matrix_row = bipartite_graph_matrix[i];
-        std::memset(bipartite_graph_matrix_row, 0, sizeof(bool) * n);
 
-        size_t* i_neighbours = neighbours[i];
-        std::memset(i_neighbours, 0, sizeof(size_t) * n);
-
+        vertex_t* i_neighbours = info.neighbours[i];
         size_t i_neighbours_count = 0;
-
-        for (size_t j = 0; j < n; j++) {
+        for (vertex_t j = 0; j < n; j++) {
             if (matrix[i][j] == 0) {
                 bipartite_graph_matrix_row[j] = true;
                 i_neighbours[i_neighbours_count] = j;
@@ -190,63 +171,59 @@ static inline constexpr void FillBipartiteGraph(
             }
         }
 
-        neighbours_count[i] = i_neighbours_count;
+        info.neighbours_count[i] = i_neighbours_count;
     }
     
-    for (size_t i = 0; i < n; i++) {
-        first_part_matches[i] = NO_MATCH;
-        second_part_matches[i] = NO_MATCH;
+    for (vertex_t i = 0; i < n; i++) {
+        info.first_part_matches[i] = kNoMatch;
+        info.second_part_matches[i] = kNoMatch;
     }
 
-    for (size_t i = 0; i < n; i++) {
-        if (first_part_matches[i] != NO_MATCH) {
-            if constexpr (IsDebug) { assert(second_part_matches[first_part_matches[i]] == i); }
+    for (vertex_t i = 0; i < n; i++) {
+        if (info.first_part_matches[i] != kNoMatch) {
+            assert(info.second_part_matches[info.first_part_matches[i]] == i);
             continue;
         }
 
-        const size_t* i_neighbours = neighbours[i];
-        size_t i_neighbours_count = neighbours_count[i];
+        const size_t* i_neighbours = info.neighbours[i];
+        size_t i_neighbours_count = info.neighbours_count[i];
 
         for (size_t neighbour_index = 0; neighbour_index < i_neighbours_count; ++neighbour_index) {
             size_t j = i_neighbours[neighbour_index];
-            if constexpr (IsDebug) { assert(bipartite_graph_matrix[i][j]); }
-            if (second_part_matches[j] == NO_MATCH) {
-                second_part_matches[j] = i;
-                first_part_matches[i] = j;
+            assert(bipartite_graph_matrix[i][j]);
+            if (info.second_part_matches[j] == kNoMatch) {
+                info.second_part_matches[j] = i;
+                info.first_part_matches[i] = j;
                 break;
             }
         }
     }
 }
 
-static inline void PrintMatches(const size_t* first_part_matches, const size_t* second_part_matches, size_t n) try {
-    std::cout << "\nInverse edges:\n";
-    for (size_t __j = 0; __j < n; __j++) {
-        size_t __i = second_part_matches[__j];
-        if (__i != NO_MATCH) {
-            std::cout << "Inverse edge " << __i + 1 << " <- " << __j + 1 << '\n';
-            assert(first_part_matches[__i] == __j);
+static bool FindMaxMatching(GraphInfo& info, size_t n) noexcept {
+    for (vertex_t i = 0; i < n; i++) {
+        if (info.first_part_matches[i] == kNoMatch) {
+            std::memset(info.first_part_visited, false, sizeof(bool) * n);
+            std::memset(info.second_part_visited, false, sizeof(bool) * n);
+            DFSFindChainUpdateMatches(i, info);
         }
     }
-}
-catch (...) {
-}
 
-template <typename T>
-requires std::is_integral_v<T>
-static inline void PrintMatrix(const T *const * matrix, size_t n) {
-    std::cout << "\nMatrix:\n";
-    for (size_t i = 0; i < n; i++) {
-        for (size_t j = 0; j < n; j++) {
-            std::cout << matrix[i][j] << ' ';
+    std::memset(info.first_part_visited, false, sizeof(bool) * n);
+    std::memset(info.second_part_visited, false, sizeof(bool) * n);
+    bool graph_satisfied = true;
+    for (vertex_t i = 0; i < n; i++) {
+        if (info.first_part_matches[i] == kNoMatch) {
+            graph_satisfied = false;
+            DfsFromUnmatched(i, info);
         }
-        std::cout << '\n';
     }
+
+    return graph_satisfied;
 }
 
-template <bool IsDebug = false, typename T>
-requires std::is_integral_v<T>
-static inline constexpr void MakeAlphaTransformation(T** matrix, size_t n, const bool* first_part_visited, const bool* second_part_visited) noexcept {
+template <class T>
+static void MakeAlphaTransformation(T** matrix, const bool* first_part_visited, const bool* second_part_visited, size_t n) noexcept {
     T min = std::numeric_limits<T>::max();
     for (size_t i = 0; i < n; i++) {
         for (size_t j = 0; j < n; j++) {
@@ -254,7 +231,7 @@ static inline constexpr void MakeAlphaTransformation(T** matrix, size_t n, const
             bool y_j = second_part_visited[j];
             if (x_i && !y_j) {
                 T current = matrix[i][j];
-                if constexpr (IsDebug) { assert(current != 0); }
+                assert(current != 0);
                 if (current < min) {
                     min = current;
                 }
@@ -279,98 +256,94 @@ static inline constexpr void MakeAlphaTransformation(T** matrix, size_t n, const
     }
 }
 
-template <bool IsDebug = false, typename T>
-T HungarianAlgorithm(const std::vector<std::vector<T>>& original_matrix) {
-    T** matrix = MakeCopyWithZeroOnRowsAndColumns(original_matrix);
+template <class T>
+#if __cplusplus >= 202002L
+    requires std::is_arithmetic_v<T>
+#endif
+T MinAssigment(const std::vector<std::vector<T>>& original_matrix) {
+    const size_t n = original_matrix.size();
+    const size_t matrix_size = AlignSize(sizeof(T*) * n + sizeof(T) * n * n);
+    const size_t bipartite_graph_matrix_size = AlignSize(sizeof(bool*) * n + sizeof(bool) * n * n);
+    const size_t first_part_matches_size = AlignSize(sizeof(vertex_t) * n);
+    const size_t second_part_matches_size = AlignSize(sizeof(vertex_t) * n);
+    const size_t neighbours_size = AlignSize(sizeof(vertex_t*) * n + sizeof(vertex_t) * n * n);
+    const size_t neighbours_count_size = AlignSize(sizeof(size_t) * n);
+    const size_t first_part_visited_size = AlignSize(sizeof(bool) * n);
+    const size_t second_part_visited_size = AlignSize(sizeof(bool) * n);
+    const size_t algorithm_memory_size =
+        matrix_size + bipartite_graph_matrix_size + first_part_matches_size +
+        second_part_matches_size + neighbours_size + neighbours_count_size +
+        first_part_visited_size + second_part_visited_size;
+    char* current_free_memory =
+        static_cast<char*>(operator new(algorithm_memory_size));
+    std::memset(current_free_memory, 0, algorithm_memory_size);
 
-    size_t n = original_matrix.size();
-    bool** bipartite_graph_matrix = new bool*[n]();
-    size_t** neighbours = new size_t*[n]();
-    size_t* neighbours_count = new size_t[n]();
+    T** const matrix = reinterpret_cast<T**>(current_free_memory);
+    T* matrix_data_start = reinterpret_cast<T*>(matrix + n);
+    current_free_memory += matrix_size;
+
+    bool** const bipartite_graph_matrix = reinterpret_cast<bool**>(current_free_memory);
+    bool* bipartite_graph_matrix_data_start =
+        reinterpret_cast<bool*>(bipartite_graph_matrix + n);
+    current_free_memory += bipartite_graph_matrix_size;
+
+    vertex_t* const first_part_matches = reinterpret_cast<vertex_t*>(current_free_memory);
+    current_free_memory += first_part_matches_size;
+
+    vertex_t* const second_part_matches = reinterpret_cast<vertex_t*>(current_free_memory);
+    current_free_memory += second_part_matches_size;
+
+    vertex_t** const neighbours = reinterpret_cast<vertex_t**>(current_free_memory);
+    vertex_t* neighbours_data_start = reinterpret_cast<vertex_t*>(neighbours + n);
+    current_free_memory += neighbours_size;
+
+    size_t* const neighbours_count = reinterpret_cast<size_t*>(current_free_memory);
+    current_free_memory += neighbours_count_size;
+
+    bool* const first_part_visited = reinterpret_cast<bool*>(current_free_memory);
+    current_free_memory += first_part_visited_size;
+
+    bool* second_part_visited = reinterpret_cast<bool*>(current_free_memory);
+    
     for (size_t i = 0; i < n; i++) {
-        bipartite_graph_matrix[i] = new bool[n]();
-        neighbours[i] = new size_t[n]();
+        matrix[i] = matrix_data_start + i * n;
+        bipartite_graph_matrix[i] = bipartite_graph_matrix_data_start + i * n;
+        neighbours[i] = neighbours_data_start + i * n;
     }
 
-    size_t* first_part_matches = new size_t[n]();
-    size_t* second_part_matches = new size_t[n]();
-    bool* first_part_visited = new bool[n]();
-    bool* second_part_visited = new bool[n]();
+    GraphInfo info = {
+        .first_part_visited = first_part_visited,
+        .second_part_visited = second_part_visited,
+        .first_part_matches = first_part_matches,
+        .second_part_matches = second_part_matches,
+        .neighbours = neighbours,
+        .neighbours_count = neighbours_count,
+    };
 
-    do {
-        FillBipartiteGraph<IsDebug>(matrix, n, bipartite_graph_matrix, neighbours, neighbours_count, first_part_matches, second_part_matches);
+    MatrixCopy(original_matrix, matrix);
 
-        if constexpr (IsDebug) {
-            PrintMatrix(matrix, n);
-            PrintMatches(first_part_matches, second_part_matches, n);
-        }
-
-        DFSPackedInfo dfs_packed_info = {
-            .first_part_matches = first_part_matches,
-            .second_part_matches = second_part_matches,
-            .neighbours = neighbours,
-            .neighbours_count = neighbours_count,
-            .first_part_visited = first_part_visited,
-            .second_part_visited = second_part_visited
-        };
-        for (size_t i = 0; i < n; i++) {
-            if (first_part_matches[i] == NO_MATCH) {
-                std::memset(first_part_visited, false, sizeof(bool) * n);
-                std::memset(second_part_visited, false, sizeof(bool) * n);
-                DFSFindChainUpdateMatches<IsDebug>(i, dfs_packed_info);
-
-                if constexpr (IsDebug) {
-                    PrintMatches(first_part_matches, second_part_matches, n);
-                }
-            }
-        }
-
-        std::memset(first_part_visited, false, sizeof(bool) * n);
-        std::memset(second_part_visited, false, sizeof(bool) * n);
-        bool graph_satisfied = true;
-        for (size_t i = 0; i < n; i++) {
-            if (first_part_matches[i] == NO_MATCH) {
-                graph_satisfied = false;
-                DfsFromUnmatched(i, dfs_packed_info);
-            }
-        }
-
-        if (!graph_satisfied) {
-            MakeAlphaTransformation<IsDebug>(matrix, n, first_part_visited, second_part_visited);
-        }
-        else {
+    while (true) {
+        FillBipartiteGraph(matrix, bipartite_graph_matrix, info, n);
+        bool is_perfect_matching = FindMaxMatching(info, n);
+        if (is_perfect_matching) {
             break;
         }
-    } while (true);
-
-    delete[] second_part_visited;
-    delete[] first_part_visited;
-    delete[] neighbours_count;
-    for (size_t i = 0; i < n; i++) {
-        delete[] neighbours[i];
-        delete[] bipartite_graph_matrix[i];
-        delete[] matrix[i];
+        MakeAlphaTransformation(matrix, info.first_part_visited, info.second_part_visited, n);
     }
-    delete[] neighbours;
-    delete[] bipartite_graph_matrix;
-    delete[] matrix;
 
     T ans = 0;
     for (size_t i = 0; i < n; i++) {
-        size_t j = first_part_matches[i];
-        if constexpr (IsDebug) {
-            assert(j != NO_MATCH && second_part_matches[j] == i);
-        }
+        size_t j = info.first_part_matches[i];
+        assert(j != kNoMatch && info.second_part_matches[j] == i);
         ans += original_matrix[i][j];
     }
 
-    delete[] second_part_matches;
-    delete[] first_part_matches;
-
+    operator delete(static_cast<void*>(matrix));
     return ans;
 }
 
-template <bool IsDebug = false>
+} // namespace hungarian_algo
+
 static void TestHungarianAlgorithm() {
     std::vector<std::vector<std::vector<uint32_t>>> input {
         {
@@ -451,11 +424,11 @@ static void TestHungarianAlgorithm() {
     assert(input.size() == total_tests);
 
     for (size_t k = 0; k < total_tests; k++) {
-        uint32_t ans = HungarianAlgorithm<IsDebug, uint32_t>(input[k]);
+        uint32_t ans = hungarian_algo::MinAssigment<uint32_t>(input[k]);
         std::cout << "Test " << (k + 1) << ((ans == output[k]) ? "" : " not") << " passed\nAlgorithm answer: " << ans << "\nCorrect answer: " << output[k] << '\n';
     }
 }
 
 int main() {
-    TestHungarianAlgorithm<false>();
+    TestHungarianAlgorithm();
 }
