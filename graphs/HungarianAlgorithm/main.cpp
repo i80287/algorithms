@@ -12,7 +12,6 @@
 namespace hungarian_algo {
 
 using vertex_t = size_t;
-static_assert(sizeof(vertex_t) == sizeof(void*));
 
 inline constexpr vertex_t kNoMatch = static_cast<vertex_t>(-1);
 inline constexpr vertex_t kNoVertex = static_cast<vertex_t>(-1);
