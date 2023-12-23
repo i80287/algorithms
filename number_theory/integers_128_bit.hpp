@@ -22,12 +22,6 @@
 #endif
 #endif
 
-#if __cplusplus >= 202002L
-#include <bit>
-#elif !defined(__GNUC__)
-#include <intrin.h>
-#endif
-
 #if defined(__GNUC__)
 typedef __uint128_t uint128_t;
 typedef __int128_t int128_t;

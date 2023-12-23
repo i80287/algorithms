@@ -11,6 +11,12 @@
 #include <numeric>
 #include <type_traits>
 
+#if __cplusplus >= 202002L
+#include <bit>
+#elif !defined(__GNUC__)
+#include <intrin.h>
+#endif
+
 #include "integers_128_bit.hpp"
 
 #if defined(__GNUC__)
