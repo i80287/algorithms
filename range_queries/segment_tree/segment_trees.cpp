@@ -7,6 +7,10 @@
 #include <iostream>
 #include <vector>
 
+#if __cplusplus >= 202002L
+#include <bit>
+#endif
+
 enum class UpdateOperation {
     add,
     multiply,
@@ -39,6 +43,19 @@ static constexpr T bin_pow(T n, uint32_t p) noexcept {
     return res;
 }
 
+#if __cplusplus >= 202002L
+constexpr
+#endif
+static uint32_t tree_size(uint32_t n) noexcept {
+#if __cplusplus >= 202002L
+    const uint32_t lz_count = uint32_t(std::countl_zero(n | 1));
+#else
+    const uint32_t lz_count = uint32_t(__builtin_clz(n | 1));
+#endif
+    const uint32_t is_two_pow = uint32_t((n & (n - 1)) == 0);
+    return 1u << (32 - lz_count - is_two_pow + 1);
+}
+
 template <typename value_t, GetOperation get_op>
 class MinMaxSegTreeAdd {
 protected:
@@ -61,7 +78,7 @@ public:
         : MinMaxSegTreeAdd(data.data(), uint32_t(data.size())) {}
 
     MinMaxSegTreeAdd(const value_t* data, uint32_t n)
-        : n_{n}, tree_size_{n >= 1024 ? 2 * n - 1 : 4 * n} {
+        : n_{n}, tree_size_{tree_size(n)} {
         nodes_ = static_cast<Node*>(operator new(tree_size_ * sizeof(Node)));
         this->BuildRecImpl(data, 0, 0, n - 1);
     }
@@ -214,7 +231,7 @@ public:
         : MinMaxSegTreeMult(data.data(), uint32_t(data.size())) {}
 
     MinMaxSegTreeMult(const value_t* data, uint32_t n)
-        : n_{n}, tree_size_{n >= 1024 ? 2 * n - 1 : 4 * n} {
+        : n_{n}, tree_size_{tree_size(n)} {
         nodes_ = static_cast<Node*>(operator new(tree_size_ * sizeof(Node)));
         this->BuildRecImpl(data, 0, 0, n - 1);
         if constexpr (std::is_integral_v<value_t>) {
@@ -397,7 +414,7 @@ public:
         : MinMaxSegTreeSetEqual(data.data(), uint32_t(data.size())) {}
 
     MinMaxSegTreeSetEqual(const value_t* data, uint32_t n)
-        : n_{n}, tree_size_{n >= 1024 ? 2 * n - 1 : 4 * n} {
+        : n_{n}, tree_size_{tree_size(n)} {
         nodes_ = static_cast<Node*>(operator new(tree_size_ * sizeof(Node)));
         this->BuildRecImpl(data, 0, 0, n - 1);
     }
@@ -552,7 +569,7 @@ public:
         : SumSegTreeSetEqual(data.data(), uint32_t(data.size())) {}
 
     SumSegTreeSetEqual(const value_t* data, uint32_t n)
-        : n_{n}, tree_size_{n >= 1024 ? 2 * n - 1 : 4 * n} {
+        : n_{n}, tree_size_{tree_size(n)} {
         nodes_ = static_cast<Node*>(operator new(tree_size_ * sizeof(Node)));
         this->BuildRecImpl(data, 0, 0, n - 1);
     }
@@ -700,7 +717,7 @@ public:
         : ProdSegTreeSetEqual(data.data(), uint32_t(data.size())) {}
 
     ProdSegTreeSetEqual(const value_t* data, uint32_t n)
-        : n_{n}, tree_size_{n >= 1024 ? 2 * n - 1 : 4 * n} {
+        : n_{n}, tree_size_{tree_size(n)} {
         nodes_ = static_cast<Node*>(operator new(tree_size_ * sizeof(Node)));
         this->BuildRecImpl(data, 0, 0, n - 1);
     }
@@ -882,7 +899,7 @@ public:
         : SumSegTreeMult(data.data(), uint32_t(data.size())) {}
 
     SumSegTreeMult(const value_t* data, uint32_t n)
-        : n_{n}, tree_size_{n >= 1024 ? 2 * n - 1 : 4 * n} {
+        : n_{n}, tree_size_{tree_size(n)} {
         nodes_ = static_cast<Node*>(operator new(tree_size_ * sizeof(Node)));
         this->BuildRecImpl(data, 0, 0, n - 1);
     }
@@ -1014,7 +1031,7 @@ public:
         : SumSegTreeAdd(data.data(), uint32_t(data.size())) {}
 
     SumSegTreeAdd(const value_t* data, uint32_t n)
-        : n_{n}, tree_size_{n >= 1024 ? 2 * n - 1 : 4 * n} {
+        : n_{n}, tree_size_{tree_size(n)} {
         nodes_ = static_cast<Node*>(operator new(tree_size_ * sizeof(Node)));
         this->BuildRecImpl(data, 0, 0, n - 1);
     }
@@ -1151,7 +1168,7 @@ public:
         : ProdSegTreeMult(data.data(), uint32_t(data.size())) {}
 
     ProdSegTreeMult(const value_t* data, uint32_t n)
-        : n_{n}, tree_size_{n >= 1024 ? 2 * n - 1 : 4 * n} {
+        : n_{n}, tree_size_{tree_size(n)} {
         nodes_ = static_cast<Node*>(operator new(tree_size_ * sizeof(Node)));
         this->BuildRecImpl(data, 0, 0, n - 1);
     }
@@ -1195,6 +1212,7 @@ protected:
         assert(right_son < tree_size_);
         node.value = nodes_[left_son].value * nodes_[right_son].value;
     }
+
     void UpdateRecImpl(size_t node_index, uint32_t node_l,
                        uint32_t node_r) noexcept {
         assert(node_index < tree_size_ && node_l <= node_r && node_r < n_);
@@ -1424,14 +1442,14 @@ template <uint32_t n, uint32_t q, typename value_t>
     std::mt19937 rnd;
     for (value_t& a_i : values) {
         if constexpr (std::is_integral_v<value_t>) {
-            a_i = value_t(int32_t(rnd())) % value_t(32);
+            a_i = value_t(int32_t(rnd())) % value_t(64);
         } else {
             a_i = value_t(int32_t(rnd()));
         }
     }
     for (value_t& a_i : update_values) {
         if constexpr (std::is_integral_v<value_t>) {
-            a_i = value_t(int32_t(rnd())) % value_t(32);
+            a_i = value_t(int32_t(rnd())) % value_t(64);
         } else {
             a_i = value_t(int32_t(rnd()));
         }
