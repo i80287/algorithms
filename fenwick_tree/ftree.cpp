@@ -12,15 +12,15 @@ template <class ValueType = int64_t>
 class BITree {
     static_assert(std::is_arithmetic_v<ValueType>);
 public:
-    inline explicit BITree(const std::vector<ValueType>& elements) : sums_(elements.size()) {
+    explicit BITree(const std::vector<ValueType>& elements) : sums_(elements.size()) {
         RecalculateSums(elements.data());
     }
 
-    inline BITree(std::initializer_list<ValueType> elements) : sums_(elements.size()) {
+    BITree(std::initializer_list<ValueType> elements) : sums_(elements.size()) {
         RecalculateSums(elements.begin());
     }
 
-    inline constexpr void RecalculateSums(auto begin_it_or_ptr) noexcept {
+    constexpr void RecalculateSums(auto begin_it_or_ptr) noexcept {
         for (size_t i = 0, n = Size(); i < n; ++i)
         {
             ValueType sum = ValueType(0);
@@ -36,7 +36,7 @@ public:
     /// @brief Gets preffix sum of elements on [0..pos]
     /// @param pos Right index of the elements (included) (maybe equal to size_t(-1) )
     /// @return Preffix sum of elements on [0..pos]
-    inline constexpr ValueType PrefixSum(size_t pos) const noexcept {
+    constexpr ValueType PrefixSum(size_t pos) const noexcept {
         ValueType ans = ValueType(0);
         for (size_t i = pos; i != static_cast<size_t>(-1); i = (i & (i + 1)) - 1) {
             ans += sums_[i];
@@ -49,28 +49,28 @@ public:
     /// @param l Left index of the segment (included)
     /// @param r Right index of the segment (included)
     /// @return Sum of the elements on [l..r]
-    inline constexpr ValueType GetSum(size_t l, size_t r) const noexcept {
+    constexpr ValueType GetSum(size_t l, size_t r) const noexcept {
         return PrefixSum(r) - PrefixSum(l - 1);
     }
 
     /// @brief Gets element of the current elements on position index
     /// @param index Position of the element
     /// @return Element of the current elements on position index
-    inline constexpr ValueType operator[](size_t index) const noexcept {
+    constexpr ValueType operator[](size_t index) const noexcept {
         return PrefixSum(index) - PrefixSum(index - 1);
     }
 
-    inline constexpr void AddAt(size_t pos, ValueType value) noexcept {
+    constexpr void AddAt(size_t pos, ValueType value) noexcept {
         for (size_t i = pos, n = sums_.size(); i < n; i = i | (i + 1)) {
             sums_[i] += value;
         }
     }
 
-    inline constexpr void AssignAt(size_t pos, ValueType value) noexcept {
+    constexpr void AssignAt(size_t pos, ValueType value) noexcept {
         AddAt(pos, value - (*this)[pos]);
     }
 
-    inline constexpr size_t Size() const noexcept {
+    constexpr size_t Size() const noexcept {
         return sums_.size();
     }
 
