@@ -167,15 +167,13 @@ struct SparseTable {
     SparseTable& operator=(SparseTable&& other) noexcept {
         auto t1 = other.table;
         auto t2 = other.floored_log_table;
-        this->~SparseTable();
         other.table = nullptr;
         other.floored_log_table = nullptr;
+        this->~SparseTable();
         table = t1;
         floored_log_table = t2;
         return *this;
     }
-
-    SparseTable& operator=(const SparseTable& other) = delete;
 
     ~SparseTable() {
         operator delete(table);
