@@ -13,8 +13,6 @@
 
 #if __cplusplus >= 202002L
 #include <bit>
-#elif !defined(__GNUC__)
-#include <intrin.h>
 #endif
 
 #if __has_include("integers_128_bit.hpp")
@@ -415,7 +413,7 @@ static constexpr bool is_perfect_square(uint64_t n, uint32_t& root) noexcept {
      * If we peek mod 32, then we should check only for n & 31 in { 0, 1, 4, 9, 16, 17, 25 },
      * but switch statement could be less efficient in this case
      */
-    switch (uint64_t(n) & 15) {
+    switch (n & 15) {
         case 0:
         case 1:
         case 4:
@@ -1010,7 +1008,7 @@ static constexpr int32_t count_trailing_zeros(T n) noexcept {
     if (unlikely(n == 0)) {
         return sizeof(n) * 8;
     }
-#if __cplusplus >= 202002L
+
 #if defined(INTEGERS_128_BIT)
     if constexpr (std::is_same_v<T, uint128_t>) {
         uint64_t low = static_cast<uint64_t>(n);
@@ -1030,6 +1028,8 @@ static constexpr int32_t count_trailing_zeros(T n) noexcept {
 #endif
     } else
 #endif
+
+#if __cplusplus >= 202002L
         return std::countr_zero(n);
 #else
     if constexpr (std::is_same_v<T, unsigned long long>) {
@@ -1072,7 +1072,7 @@ static constexpr inline int32_t count_leading_zeros(T n) noexcept {
     if (unlikely(n == 0)) {
         return sizeof(n) * 8;
     }
-#if __cplusplus >= 202002L
+
 #if defined(INTEGERS_128_BIT)
     if constexpr (std::is_same_v<T, uint128_t>) {
         uint64_t hi = static_cast<uint64_t>(n >> 64);
@@ -1092,6 +1092,8 @@ static constexpr inline int32_t count_leading_zeros(T n) noexcept {
 #endif
     } else
 #endif
+
+#if __cplusplus >= 202002L
         return std::countl_zero(n);
 #else
     if constexpr (std::is_same_v<T, unsigned long long>) {

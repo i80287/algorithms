@@ -52,14 +52,14 @@ typedef std::_Signed128 int128_t;
 #endif
 #endif
 
-
 namespace format_impl_uint128_t {
 
 #if __cplusplus >= 202207L && defined(__GNUC__) && !defined(__clang__)
 constexpr
 #endif
     static inline char*
-    uint128_t_format_fill_chars_buffer(uint128_t number, char* buffer_ptr) noexcept {
+    uint128_t_format_fill_chars_buffer(uint128_t number,
+                                       char* buffer_ptr) noexcept {
     do { /**
           * let compiler optimize it like "q = number - r * 10"
           * or whatever (maybe / 10 and % 10 will be
@@ -75,21 +75,36 @@ constexpr
 
 }  // namespace format_impl_uint128_t
 
-namespace std {
+namespace type_traits_helper_int128_t {
+
+template <class T>
+struct is_integral {
+    static constexpr bool value = std::is_integral_v<T>;
+};
 
 template <>
 struct is_integral<int128_t> {
     static constexpr bool value = true;
 };
 
+template <class T>
+struct make_unsigned {
+    using type = std::make_unsigned_t<T>;
+};
+
 template <>
 struct make_unsigned<uint128_t> {
-    typedef uint128_t type;
+    using type = uint128_t;
 };
 
 template <>
 struct make_unsigned<int128_t> {
-    typedef uint128_t type;
+    using type = uint128_t;
+};
+
+template <class T>
+struct is_unsigned {
+    static constexpr bool value = std::is_unsigned_v<T>;
 };
 
 template <>
@@ -98,9 +113,27 @@ struct is_unsigned<uint128_t> {
 };
 
 template <>
+struct is_unsigned<int128_t> {
+    static constexpr bool value = false;
+};
+
+template <class T>
+struct is_signed {
+    static constexpr bool value = std::is_unsigned_v<T>;
+};
+
+template <>
+struct is_signed<uint128_t> {
+    static constexpr bool value = false;
+};
+
+template <>
 struct is_signed<int128_t> {
     static constexpr bool value = true;
 };
+
+template <class T>
+inline constexpr bool is_arithmetic_v = std::is_arithmetic_v<T>;
 
 template <>
 inline constexpr bool is_arithmetic_v<int128_t> = true;
@@ -108,54 +141,96 @@ inline constexpr bool is_arithmetic_v<int128_t> = true;
 template <>
 inline constexpr bool is_arithmetic_v<uint128_t> = true;
 
-// mingw-64 g++ CE
-// template <>
-// inline constexpr bool is_integral_v<int128_t> = true;
-// template <>
-// inline constexpr bool is_integral_v<uint128_t> = true;
+template <class T>
+inline constexpr bool is_integral_v = std::is_integral_v<T>;
 
 template <>
-inline constexpr bool is_default_constructible_v<int128_t> = true;
+inline constexpr bool is_integral_v<int128_t> = true;
 
 template <>
-inline constexpr bool is_copy_constructible_v<int128_t> = true;
+inline constexpr bool is_integral_v<uint128_t> = true;
 
-template <>
-inline constexpr bool is_move_constructible_v<int128_t> = true;
-
-template <>
-inline constexpr bool is_copy_assignable_v<int128_t> = true;
-
-template <>
-inline constexpr bool is_move_assignable_v<int128_t> = true;
+template <class T>
+inline constexpr bool is_default_constructible_v =
+    std::is_default_constructible_v<T>;
 
 template <>
 inline constexpr bool is_default_constructible_v<uint128_t> = true;
 
 template <>
+inline constexpr bool is_default_constructible_v<int128_t> = true;
+
+template <class T>
+inline constexpr bool is_copy_constructible_v =
+    std::is_copy_constructible_v<T>;
+
+template <>
 inline constexpr bool is_copy_constructible_v<uint128_t> = true;
+
+template <>
+inline constexpr bool is_copy_constructible_v<int128_t> = true;
+
+template <class T>
+inline constexpr bool is_move_constructible_v =
+    std::is_move_constructible_v<T>;
+
+template <>
+inline constexpr bool is_move_constructible_v<int128_t> = true;
 
 template <>
 inline constexpr bool is_move_constructible_v<uint128_t> = true;
 
+template <class T>
+inline constexpr bool is_copy_assignable_v =
+    std::is_copy_assignable_v<T>;
+
+template <>
+inline constexpr bool is_copy_assignable_v<int128_t> = true;
+
 template <>
 inline constexpr bool is_copy_assignable_v<uint128_t> = true;
 
+template <class T>
+inline constexpr bool is_move_assignable_v =
+    std::is_move_assignable_v<T>;
+
+template <>
+inline constexpr bool is_move_assignable_v<int128_t> = true;
+
 template <>
 inline constexpr bool is_move_assignable_v<uint128_t> = true;
+
+template <class T>
+inline constexpr bool is_unsigned_v = std::is_unsigned_v<T>;
 
 template <>
 inline constexpr bool is_unsigned_v<uint128_t> = true;
 
 template <>
+inline constexpr bool is_unsigned_v<int128_t> = false;
+
+template <class T>
+inline constexpr bool is_signed_v = std::is_signed_v<T>;
+
+template <>
+inline constexpr bool is_signed_v<uint128_t> = false;
+
+template <>
 inline constexpr bool is_signed_v<int128_t> = true;
 
+template <typename T>
+using make_unsigned_t = typename make_unsigned<T>::type;
+
 static_assert(is_arithmetic_v<int128_t>);
-// static_assert(is_integral_v<int128_t>);
+static_assert(is_integral_v<int128_t>);
 static_assert(is_arithmetic_v<uint128_t>);
 static_assert(is_unsigned_v<uint128_t>);
 static_assert(is_signed_v<int128_t>);
-static_assert(is_same_v<make_unsigned_t<int128_t>, uint128_t>);
+static_assert(std::is_same_v<make_unsigned_t<int128_t>, uint128_t>);
+
+}  // namespace type_traits_helper_int128_t
+
+namespace std {
 
 inline ostream& operator<<(ostream& out, uint128_t number) {
     // 340282366920938463463374607431768211455 == 2^128 - 1
