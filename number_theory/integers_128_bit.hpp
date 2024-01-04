@@ -15,6 +15,7 @@
 #include <cstdint>
 #include <ostream>
 #include <string>
+#include <string_view>
 #include <type_traits>
 #if __cplusplus >= 202002L && defined(__GNUC__) && !defined(__clang__)
 #if __has_include("format")
@@ -50,6 +51,29 @@ typedef std::_Signed128 int128_t;
 #define unlikely(x) static_cast<bool>(x)
 #endif
 #endif
+
+
+namespace format_impl_uint128_t {
+
+#if __cplusplus >= 202207L && defined(__GNUC__) && !defined(__clang__)
+constexpr
+#endif
+    static inline char*
+    uint128_t_format_fill_chars_buffer(uint128_t number, char* buffer_ptr) noexcept {
+    do { /**
+          * let compiler optimize it like "q = number - r * 10"
+          * or whatever (maybe / 10 and % 10 will be
+          * calculated at once for uint128_t too)
+          */
+        auto r = number / 10;
+        auto q = number % 10;
+        *--buffer_ptr = static_cast<char>('0' + static_cast<uint64_t>(q));
+        number = r;
+    } while (number);
+    return buffer_ptr;
+}
+
+}  // namespace format_impl_uint128_t
 
 namespace std {
 
@@ -133,28 +157,6 @@ static_assert(is_unsigned_v<uint128_t>);
 static_assert(is_signed_v<int128_t>);
 static_assert(is_same_v<make_unsigned_t<int128_t>, uint128_t>);
 
-namespace impl {
-
-#if __cplusplus >= 202207L && defined(__GNUC__) && !defined(__clang__)
-constexpr
-#endif
-    static inline char*
-    uint128_t_format_fill_chars_buffer(uint128_t number, char* buffer_ptr) noexcept {
-    do { /**
-          * let compiler optimize it like "q = number - r * 10"
-          * or whatever (maybe / 10 and % 10 will be
-          * calculated at once for uint128_t too)
-          */
-        auto r = number / 10;
-        auto q = number % 10;
-        *--buffer_ptr = static_cast<char>('0' + static_cast<uint64_t>(q));
-        number = r;
-    } while (number);
-    return buffer_ptr;
-}
-
-}  // namespace impl
-
 inline ostream& operator<<(ostream& out, uint128_t number) {
     // 340282366920938463463374607431768211455 == 2^128 - 1
     // strlen("340282366920938463463374607431768211455") == 39;
@@ -162,7 +164,7 @@ inline ostream& operator<<(ostream& out, uint128_t number) {
 
     char digits[max_number_digits_count + 1];
     digits[max_number_digits_count] = '\0';
-    const char* ptr = impl::uint128_t_format_fill_chars_buffer(
+    const char* ptr = format_impl_uint128_t::uint128_t_format_fill_chars_buffer(
         number, &digits[max_number_digits_count]);
     size_t length = static_cast<size_t>(&digits[max_number_digits_count] - ptr);
     return out << string_view(ptr, length);
@@ -174,7 +176,7 @@ inline int print_u128(uint128_t number) noexcept {
     constexpr size_t max_number_digits_count = 39;
     char digits[max_number_digits_count + 1];
     digits[max_number_digits_count] = '\0';
-    const char* ptr = impl::uint128_t_format_fill_chars_buffer(
+    const char* ptr = format_impl_uint128_t::uint128_t_format_fill_chars_buffer(
         number, &digits[max_number_digits_count]);
     return fputs(ptr, stdout);
 }
@@ -185,7 +187,7 @@ inline int print_u128_newline(uint128_t number) noexcept {
     constexpr size_t max_number_digits_count = 39;
     char digits[max_number_digits_count + 1];
     digits[max_number_digits_count] = '\0';
-    const char* ptr = impl::uint128_t_format_fill_chars_buffer(
+    const char* ptr = format_impl_uint128_t::uint128_t_format_fill_chars_buffer(
         number, &digits[max_number_digits_count]);
     return puts(ptr);
 }
@@ -197,7 +199,7 @@ inline string to_string(uint128_t number) {
     char digits[max_number_digits_count + 1];
     digits[max_number_digits_count] = '\0';
 
-    const char* ptr = impl::uint128_t_format_fill_chars_buffer(
+    const char* ptr = format_impl_uint128_t::uint128_t_format_fill_chars_buffer(
         number, &digits[max_number_digits_count]);
     size_t length = static_cast<size_t>(&digits[max_number_digits_count] - ptr);
 
@@ -217,12 +219,13 @@ inline string to_string(int128_t number) {
         number = -number;
     }
 
-    char* ptr = impl::uint128_t_format_fill_chars_buffer(
+    char* ptr = format_impl_uint128_t::uint128_t_format_fill_chars_buffer(
         uint128_t(number), &digits[max_number_digits_count + 1]);
     if (negative) {
         *--ptr = '-';
     }
-    size_t length = static_cast<size_t>(&digits[max_number_digits_count + 1] - ptr);
+    size_t length =
+        static_cast<size_t>(&digits[max_number_digits_count + 1] - ptr);
 
     return string(ptr, length);
 }
@@ -240,12 +243,13 @@ inline ostream& operator<<(ostream& out, int128_t number) {
         number = -number;
     }
 
-    char* ptr = impl::uint128_t_format_fill_chars_buffer(
+    char* ptr = format_impl_uint128_t::uint128_t_format_fill_chars_buffer(
         uint128_t(number), &digits[max_number_digits_count + 1]);
     if (negative) {
         *--ptr = '-';
     }
-    size_t length = static_cast<size_t>(&digits[max_number_digits_count + 1] - ptr);
+    size_t length =
+        static_cast<size_t>(&digits[max_number_digits_count + 1] - ptr);
 
     return out << string_view(ptr, length);
 }
@@ -258,6 +262,7 @@ struct formatter<uint128_t, CharT> {
     constexpr typename ParseContext::iterator parse(ParseContext& ctx) {
         return ctx.begin();
     }
+
     template <class FmtContext>
     typename FmtContext::iterator format(uint128_t n, FmtContext& ctx) const {
         string s = to_string(n);
