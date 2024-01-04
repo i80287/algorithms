@@ -47,7 +47,7 @@ namespace math_utils {
 /// @param p
 /// @return T ^ p
 template <class T>
-constexpr T bin_pow(T n, size_t p) noexcept {
+static constexpr T bin_pow(T n, size_t p) noexcept {
     T res(1u);
     while (true) {
         if (p & 1) {
@@ -66,7 +66,8 @@ constexpr T bin_pow(T n, size_t p) noexcept {
 /// @param p
 /// @param mod
 /// @return (n ^ p) % mod
-constexpr uint32_t bin_pow_mod(uint32_t n, uint32_t p, uint32_t mod) noexcept {
+static constexpr uint32_t bin_pow_mod(uint32_t n, uint32_t p,
+                                      uint32_t mod) noexcept {
     uint64_t res = 1;
     uint64_t wdn_n = n;
     while (true) {
@@ -81,9 +82,12 @@ constexpr uint32_t bin_pow_mod(uint32_t n, uint32_t p, uint32_t mod) noexcept {
     }
 }
 
-static_assert(bin_pow_mod(uint32_t(7), uint32_t(483), uint32_t(1000000007u)) == 263145387u);
-static_assert(bin_pow_mod(uint32_t(289), uint32_t(-1), uint32_t(2146514599u)) == 1349294778u);
-static_assert(bin_pow_mod(uint32_t(2146526839u), uint32_t(578423432u), uint32_t(2147483629u)) == 281853233u);
+static_assert(bin_pow_mod(uint32_t(7), uint32_t(483), uint32_t(1000000007u)) ==
+              263145387u);
+static_assert(bin_pow_mod(uint32_t(289), uint32_t(-1), uint32_t(2146514599u)) ==
+              1349294778u);
+static_assert(bin_pow_mod(uint32_t(2146526839u), uint32_t(578423432u),
+                          uint32_t(2147483629u)) == 281853233u);
 
 #if defined(INTEGERS_128_BIT)
 
@@ -94,8 +98,10 @@ static_assert(bin_pow_mod(uint32_t(2146526839u), uint32_t(578423432u), uint32_t(
 /// @return (n ^ p) % mod
 #if __cplusplus >= 202002L && defined(__GNUC__)
 constexpr
+#else
+inline
 #endif
-    uint64_t
+    static uint64_t
     bin_pow_mod(uint64_t n, uint64_t p, uint64_t mod) noexcept {
     uint64_t res = 1;
     while (true) {
@@ -111,14 +117,23 @@ constexpr
 }
 
 #if __cplusplus >= 202002L && defined(__GNUC__)
-static_assert(bin_pow_mod(uint64_t(119999999927ull), uint64_t(18446744073709515329ull), uint64_t(100000000000000003ull)) == 85847679703545452ull);
-static_assert(bin_pow_mod(uint64_t(72057594037927843ull), uint64_t(18446744073709515329ull), uint64_t(1000000000000000003ull)) == 404835689235904145ull);
-static_assert(bin_pow_mod(uint64_t(999999999999999487ull), uint64_t(18446744073709551557ull), uint64_t(1000000000000000009ull)) == 802735487082721113ull);
+static_assert(bin_pow_mod(uint64_t(119999999927ull),
+                          uint64_t(18446744073709515329ull),
+                          uint64_t(100000000000000003ull)) ==
+              85847679703545452ull);
+static_assert(bin_pow_mod(uint64_t(72057594037927843ull),
+                          uint64_t(18446744073709515329ull),
+                          uint64_t(1000000000000000003ull)) ==
+              404835689235904145ull);
+static_assert(bin_pow_mod(uint64_t(999999999999999487ull),
+                          uint64_t(18446744073709551557ull),
+                          uint64_t(1000000000000000009ull)) ==
+              802735487082721113ull);
 #endif
 
 #endif
 
-constexpr uint32_t isqrt(uint32_t n) noexcept {
+static constexpr uint32_t isqrt(uint32_t n) noexcept {
     /**
      * See Hackers Delight Chapter 11.
      */
@@ -151,7 +166,7 @@ static_assert(isqrt(1u << 28) == 1 << 14);
 static_assert(isqrt(1u << 30) == 1 << 15);
 static_assert(isqrt(uint32_t(-1)) == (1 << 16) - 1);
 
-constexpr uint32_t isqrt(uint64_t n) noexcept {
+static constexpr uint32_t isqrt(uint64_t n) noexcept {
     /**
      * See Hackers Delight Chapter 11.
      */
@@ -198,8 +213,10 @@ static_assert(isqrt(uint64_t(1000000007) * 1000000007) == 1000000007u);
 
 #if __cplusplus >= 202002L && defined(__GNUC__)
 constexpr
+#else
+inline
 #endif
-    uint64_t
+    static uint64_t
     isqrt(uint128_t n) noexcept {
     /**
      * See Hackers Delight Chapter 11.
@@ -266,7 +283,7 @@ static_assert(isqrt(uint128_t(18446744073709551558ull) *
 
 #endif
 
-constexpr uint32_t icbrt(uint32_t n) noexcept {
+static constexpr uint32_t icbrt(uint32_t n) noexcept {
     /**
      * See Hackers Delight Chapter 11.
      */
@@ -298,7 +315,7 @@ static_assert(icbrt(1u << 24) == 1u << 8);
 static_assert(icbrt(1u << 27) == 1u << 9);
 static_assert(icbrt(1u << 30) == 1u << 10);
 
-constexpr uint64_t icbrt(uint64_t n) noexcept {
+static constexpr uint64_t icbrt(uint64_t n) noexcept {
     /**
      * See Hackers Delight Chapter 11.
      */
@@ -356,9 +373,9 @@ static_assert(icbrt(uint64_t(15'625'000'000'000'000'000ull)) == 2'500'000);
 static_assert(icbrt(uint64_t(-1)) == 2642245);
 
 /// @brief Checks whether n is a perfect square or not
-/// @param n 
+/// @param n
 /// @return true if n is a perfect square and false otherwise
-constexpr bool is_perfect_square(uint64_t n) noexcept {
+static constexpr bool is_perfect_square(uint64_t n) noexcept {
     /**
      * +------------+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+
      * |   n mod 16 |  0 |  1 |  2 |  3 |  4 |  5 |  6 |  7 |  8 |  9 | 10 | 11 | 12 | 13 | 14 | 15 |
@@ -382,11 +399,12 @@ constexpr bool is_perfect_square(uint64_t n) noexcept {
     }
 }
 
-/// @brief Checks whether n is a perfect square or not. If it is, stores it to the root argument
-/// @param n 
-/// @param root 
+/// @brief Checks whether n is a perfect square or not. If it is, stores it to
+/// the root argument
+/// @param n
+/// @param root
 /// @return true if n is a perfect square and false otherwise
-constexpr bool is_perfect_square(uint64_t n, uint32_t& root) noexcept {
+static constexpr bool is_perfect_square(uint64_t n, uint32_t& root) noexcept {
     /**
      * +------------+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+
      * |   n mod 16 |  0 |  1 |  2 |  3 |  4 |  5 |  6 |  7 |  8 |  9 | 10 | 11 | 12 | 13 | 14 | 15 |
@@ -432,12 +450,15 @@ static_assert(is_perfect_square(uint64_t(1) << 60));
 #if defined(INTEGERS_128_BIT)
 
 /// @brief Checks whether n is a perfect square or not
-/// @param n 
+/// @param n
 /// @return true if n is a perfect square and false otherwise
 #if __cplusplus >= 202002L && defined(__GNUC__)
 constexpr
+#else
+inline
 #endif
-bool is_perfect_square(uint128_t n) noexcept {
+    static bool
+    is_perfect_square(uint128_t n) noexcept {
     /**
      * +------------+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+
      * |   n mod 16 |  0 |  1 |  2 |  3 |  4 |  5 |  6 |  7 |  8 |  9 | 10 | 11 | 12 | 13 | 14 | 15 |
@@ -461,14 +482,18 @@ bool is_perfect_square(uint128_t n) noexcept {
     }
 }
 
-/// @brief Checks whether n is a perfect square or not. If it is, stores it to the root argument
-/// @param n 
-/// @param root 
+/// @brief Checks whether n is a perfect square or not. If it is, stores it to
+/// the root argument
+/// @param n
+/// @param root
 /// @return true if n is a perfect square and false otherwise
 #if __cplusplus >= 202002L && defined(__GNUC__)
 constexpr
-#endif 
-bool is_perfect_square(uint128_t n, uint64_t& root) noexcept {
+#else
+inline
+#endif
+    static bool
+    is_perfect_square(uint128_t n, uint64_t& root) noexcept {
     /**
      * +------------+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+
      * |   n mod 16 |  0 |  1 |  2 |  3 |  4 |  5 |  6 |  7 |  8 |  9 | 10 | 11 | 12 | 13 | 14 | 15 |
@@ -514,58 +539,7 @@ static_assert(is_perfect_square(uint128_t(1) << 60));
 
 #endif
 
-#if __cpp_constexpr >= 202207L && defined(__GNUC__)
-constexpr
-#endif
-    inline uint32_t
-    log2_floor(uint64_t n) noexcept {
-    // " | 1" does not affect ans for all n >= 1.
-#if defined(__GNUC__)
-    return static_cast<uint32_t>(63 ^ __builtin_clzll(n | 1));
-#else
-    return static_cast<uint32_t>(63 ^ _lzcnt_u64(n | 1));
-#endif
-}
-
-#if __cpp_constexpr >= 202207L && defined(__GNUC__)
-constexpr
-#endif
-    inline uint32_t
-    log2_ceil(uint64_t n) noexcept {
-    return log2_floor(n) + ((n & (n - 1)) != 0);
-}
-
-#if defined(INTEGERS_128_BIT)
-
-#if __cpp_constexpr >= 202207L && defined(__GNUC__)
-constexpr
-#endif
-    inline uint32_t
-    log2_floor(uint128_t n) noexcept {
-    // " | 1" does not affect ans for all n >= 1.
-    uint64_t hi = static_cast<uint64_t>(n >> 64);
-#if defined(__GNUC__)
-    return static_cast<uint32_t>(
-        hi != 0 ? (127 ^ __builtin_clzll(hi))
-                : (63 ^ __builtin_clzll(static_cast<uint64_t>(n) | 1)));
-#else
-    return static_cast<uint32_t>(
-        hi != 0 ? (127 ^ _lzcnt_u64(hi))
-                : (63 ^ _lzcnt_u64(static_cast<uint64_t>(n) | 1)));
-#endif
-}
-
-#if __cpp_constexpr >= 202207L && defined(__GNUC__)
-constexpr
-#endif
-    inline uint32_t
-    log2_ceil(uint128_t n) noexcept {
-    return log2_floor(n) + ((n & (n - 1)) != 0);
-}
-
-#endif
-
-constexpr uint32_t bit_reverse(uint32_t n) noexcept {
+static constexpr uint32_t bit_reverse(uint32_t n) noexcept {
     /**
      * See Hackers Delight 7.1
      */
@@ -593,7 +567,7 @@ static_assert(bit_reverse(0b10101010'10101010'10101010'10101010u) ==
 static_assert(bit_reverse(0b11111111'00000000'11111111'00000000u) ==
               0b00000000'11111111'00000000'11111111u);
 
-constexpr uint64_t bit_reverse(uint64_t n) noexcept {
+static constexpr uint64_t bit_reverse(uint64_t n) noexcept {
     /**
      * See Knuth's algorithm in Hackers Delight 7.4
      */
@@ -639,28 +613,7 @@ static_assert(
         0b11111111'11111111'11111111'11111111'00000000'00000000'00000000'00000000ULL)) ==
     0b00000000'00000000'00000000'00000000'11111111'11111111'11111111'11111111ULL);
 
-constexpr uint32_t flip_bits(uint32_t n, uint32_t k) noexcept {
-    /**
-     * See Hackers Delight
-     */
-    if (k & 1) n = (n & 0x55555555u) << 1 | (n & 0xAAAAAAAAu) >> 1;
-    if (k & 2) n = (n & 0x33333333u) << 2 | (n & 0xCCCCCCCCu) >> 2;
-    if (k & 4) n = (n & 0x0F0F0F0Fu) << 4 | (n & 0xF0F0F0F0u) >> 4;
-    if (k & 8) n = (n & 0x00FF00FFu) << 8 | (n & 0xFF00FF00u) >> 8;
-    if (k & 16) n = (n & 0x0000FFFFu) << 16 | (n & 0xFFFF0000u) >> 16;
-    return n;
-}
-
-static_assert(flip_bits(0b00000000'00000000'00000000'00000000u, 2u) ==
-              0b00000000'00000000'00000000'00000000u);
-static_assert(flip_bits(0b01010101'00101000'00000110'00000001u, 31u) ==
-              0b10000000'01100000'00010100'10101010u);
-static_assert(flip_bits(0b00000000'00000000'00000000'0010011u, 5u) ==
-              0b00000000'00000000'00000000'00110010u);
-static_assert(flip_bits(0b00000000'00000000'00000000'0001011u, 5u) ==
-              0b00000000'00000000'00000000'01110000u);
-
-constexpr uint32_t pop_count_software(uint32_t n) noexcept {
+static constexpr uint32_t pop_count_software(uint32_t n) noexcept {
     /**
      * See Hackers Delight Chapter 5.
      */
@@ -688,7 +641,7 @@ static_assert(int64_t(pop_count_software(0xFFFFFFFFu)) ==
               int64_t(std::popcount(0xFFFFFFFFu)));
 #endif
 
-constexpr uint64_t pop_count_software(uint64_t n) noexcept {
+static constexpr uint64_t pop_count_software(uint64_t n) noexcept {
     /**
      * See Hackers Delight Chapter 5.
      */
@@ -731,7 +684,7 @@ static_assert(int64_t(pop_count_software(uint64_t(0xFFFFFFFFFFFFFFFFull))) ==
               int64_t(std::popcount(uint64_t(0xFFFFFFFFFFFFFFFFull))));
 #endif
 
-constexpr int32_t pop_diff(uint32_t x, uint32_t y) noexcept {
+static constexpr int32_t pop_diff(uint32_t x, uint32_t y) noexcept {
     /**
      * See Hackers Delight Chapter 5.
      */
@@ -770,15 +723,15 @@ static_assert(int64_t(std::popcount(uint32_t(-1))) -
               int64_t(pop_diff(uint32_t(-1), uint32_t(-1))));
 #endif
 
-constexpr int32_t sign(int x) noexcept {
+static constexpr int32_t sign(int x) noexcept {
     return int32_t(x > 0) - int32_t(x < 0);
 }
 
-constexpr int32_t sign(long x) noexcept {
+static constexpr int32_t sign(long x) noexcept {
     return int32_t(x > 0) - int32_t(x < 0);
 }
 
-constexpr int32_t sign(long long x) noexcept {
+static constexpr int32_t sign(long long x) noexcept {
     return int32_t(x > 0) - int32_t(x < 0);
 }
 
@@ -786,8 +739,10 @@ constexpr int32_t sign(long long x) noexcept {
 
 #if __cplusplus >= 202002L && defined(__GNUC__)
 constexpr
+#else
+inline
 #endif
-    int32_t
+    static int32_t
     sign(int128_t x) noexcept {
     uint32_t sign_bit = uint32_t(uint128_t(x) >> 127);
     return int32_t(x != 0) - int32_t(2 * sign_bit);
@@ -812,8 +767,10 @@ static_assert(sign(int128_t(-(uint128_t(1) << 127))) == -1);
 
 #if __cplusplus >= 202002L && defined(__GNUC__)
 constexpr
+#else
+inline
 #endif
-    uint128_t
+    static uint128_t
     uabs(int128_t n) noexcept {
     uint128_t t = uint128_t(n >> 127);
     return (uint128_t(n) ^ t) - t;
@@ -843,15 +800,17 @@ static_assert(uabs(int128_t(-(uint128_t(1) << 127))) == uint128_t(1) << 127);
 // Visual C++ thinks that unary minus on uint32_t is an error :clown:
 #if !defined(_MSC_VER)
 
-constexpr int32_t pop_cmp(uint32_t x, uint32_t y) noexcept {
+static constexpr int32_t pop_cmp(uint32_t x, uint32_t y) noexcept {
     /**
      * See Hackers Delight Chapter 5.
      */
     uint32_t n = x & ~y;  // Clear bits where
     uint32_t m = y & ~x;  // both bits are 1
     while (true) {
-        if (n == 0) return static_cast<int32_t>(m | -m);
-        if (m == 0) return 1;
+        if (n == 0)
+            return static_cast<int32_t>(m | -m);
+        if (m == 0)
+            return 1;
         n &= n - 1;  // Clear one bit
         m &= m - 1;  // from each
     }
@@ -884,7 +843,7 @@ static_assert(sign(int64_t(std::popcount(uint32_t(-1))) -
 
 #endif
 
-constexpr uint32_t lz_count_32_software(uint32_t n) noexcept {
+static constexpr uint32_t lz_count_32_software(uint32_t n) noexcept {
     /**
      * See Hackers Delight Chapter 5
      */
@@ -912,20 +871,68 @@ constexpr uint32_t lz_count_32_software(uint32_t n) noexcept {
     return m;
 }
 
-static_assert(lz_count_32_software(0u) == 32);
-static_assert(lz_count_32_software(1u) == 31);
-static_assert(lz_count_32_software(2u) == 30);
-static_assert(lz_count_32_software(4u) == 29);
-static_assert(lz_count_32_software(8u) == 28);
-static_assert(lz_count_32_software(12u) == 28);
-static_assert(lz_count_32_software(16u) == 27);
-static_assert(lz_count_32_software(32u) == 26);
-static_assert(lz_count_32_software(48u) == 26);
-static_assert(lz_count_32_software(1u << 30) == 1);
-static_assert(lz_count_32_software(1u << 31) == 0);
-static_assert(lz_count_32_software(~1u) == 0);
+static_assert(lz_count_32_software(0) == 32);
+static_assert(lz_count_32_software(1) == 31);
+static_assert(lz_count_32_software(2) == 30);
+static_assert(lz_count_32_software(4) == 29);
+static_assert(lz_count_32_software(8) == 28);
+static_assert(lz_count_32_software(12) == 28);
+static_assert(lz_count_32_software(16) == 27);
+static_assert(lz_count_32_software(32) == 26);
+static_assert(lz_count_32_software(48) == 26);
+static_assert(lz_count_32_software(uint32_t(1) << 30) == 1);
+static_assert(lz_count_32_software(uint32_t(1) << 31) == 0);
+static_assert(lz_count_32_software(~uint32_t(1)) == 0);
 
-constexpr uint32_t tz_count_32_software(uint32_t n) noexcept {
+static constexpr uint32_t lz_count_64_software(uint64_t n) noexcept {
+    /**
+     * See Hackers Delight Chapter 5
+     */
+    if (unlikely(n == 0)) {
+        return 64;
+    }
+    uint32_t m = 1;
+    if ((n >> 32) == 0) {
+        m += 32;
+        n <<= 32;
+    }
+    if ((n >> 48) == 0) {
+        m += 16;
+        n <<= 16;
+    }
+    if ((n >> 56) == 0) {
+        m += 8;
+        n <<= 8;
+    }
+    if ((n >> 60) == 0) {
+        m += 4;
+        n <<= 4;
+    }
+    if ((n >> 62) == 0) {
+        m += 2;
+        n <<= 2;
+    }
+    m -= uint32_t(n >> 63);
+    return m;
+}
+
+static_assert(lz_count_64_software(0) == 64);
+static_assert(lz_count_64_software(1) == 63);
+static_assert(lz_count_64_software(2) == 62);
+static_assert(lz_count_64_software(4) == 61);
+static_assert(lz_count_64_software(8) == 60);
+static_assert(lz_count_64_software(12) == 60);
+static_assert(lz_count_64_software(16) == 59);
+static_assert(lz_count_64_software(32) == 58);
+static_assert(lz_count_64_software(48) == 58);
+static_assert(lz_count_64_software(uint32_t(1) << 30) == 33);
+static_assert(lz_count_64_software(uint32_t(1) << 31) == 32);
+static_assert(lz_count_64_software(~uint32_t(1)) == 32);
+static_assert(lz_count_64_software(uint64_t(1) << 62) == 1);
+static_assert(lz_count_64_software(uint64_t(1) << 63) == 0);
+static_assert(lz_count_64_software(uint64_t(-1)) == 0);
+
+static constexpr uint32_t tz_count_32_software(uint32_t n) noexcept {
     /**
      * See Hackers Delight Chapter 5
      */
@@ -964,9 +971,9 @@ static_assert(tz_count_32_software(48u) == 4);
 static_assert(tz_count_32_software(1u << 30) == 30);
 static_assert(tz_count_32_software(1u << 31) == 31);
 static_assert(tz_count_32_software(~1u) == 1);
-static_assert(tz_count_32_software(-1u) == 0);
+static_assert(tz_count_32_software(uint32_t(-1)) == 0);
 
-constexpr uint32_t tz_count_64_software(uint64_t n) noexcept {
+static constexpr uint32_t tz_count_64_software(uint64_t n) noexcept {
     uint32_t m = 0;
     for (n = ~n & (n - 1); n != 0;) {
         m++;
@@ -987,7 +994,7 @@ static_assert(tz_count_64_software(48u) == 4);
 static_assert(tz_count_64_software(1u << 30) == 30);
 static_assert(tz_count_64_software(1u << 31) == 31);
 static_assert(tz_count_64_software(~1u) == 1);
-static_assert(tz_count_64_software(-1u) == 0);
+static_assert(tz_count_64_software(uint32_t(-1)) == 0);
 
 /// @brief Count trailing zeros for n
 /// @param n
@@ -998,12 +1005,8 @@ template <typename T>
 #if defined(INTEGERS_128_BIT)
              || std::is_same_v<T, uint128_t>
 #endif
-#if defined(__GNUC__)
-constexpr
 #endif
-#endif
-    int32_t
-    count_trailing_zeros(T n) noexcept {
+static constexpr int32_t count_trailing_zeros(T n) noexcept {
     if (unlikely(n == 0)) {
         return sizeof(n) * 8;
     }
@@ -1012,24 +1015,10 @@ constexpr
     if constexpr (std::is_same_v<T, uint128_t>) {
         uint64_t low = static_cast<uint64_t>(n);
         if (low != 0) {
-            return __builtin_ctzll(low);
-        }
-
-        uint64_t high = static_cast<uint64_t>(n >> 64);
-        return __builtin_ctzll(high) + 64;
-    }
-    else
-#endif
-    return std::countr_zero(n);
-#else
-#if defined(INTEGERS_128_BIT)
-    if constexpr (std::is_same_v<T, uint128_t>) {
-        uint64_t low = static_cast<uint64_t>(n);
-        if (low != 0) {
 #if defined(__GNUC__)
             return __builtin_ctzll(low);
 #else
-            return static_cast<int32_t>(_tzcnt_u64(low));
+            return static_cast<int32_t>(tz_count_64_software(low));
 #endif
         }
 
@@ -1037,24 +1026,25 @@ constexpr
 #if defined(__GNUC__)
         return __builtin_ctzll(high) + 64;
 #else
-        return static_cast<int32_t>(_tzcnt_u64(high)) + 64;
+        return static_cast<int32_t>(tz_count_64_software(high)) + 64;
 #endif
     } else
 #endif
-        if constexpr (std::is_same_v<T, unsigned long long>) {
+        return std::countr_zero(n);
+#else
+    if constexpr (std::is_same_v<T, unsigned long long>) {
 #if defined(__GNUC__)
         return __builtin_ctzll(n);
 #else
-        return static_cast<int32_t>(_tzcnt_u64(n));
+        return static_cast<int32_t>(tz_count_64_software(n));
 #endif
     } else if constexpr (std::is_same_v<T, unsigned long>) {
 #if defined(__GNUC__)
         return __builtin_ctzl(n);
 #else
         return static_cast<int32_t>(
-            _tzcnt_u64(static_cast<unsigned long long>(n)));
+            tz_count_64_software(static_cast<unsigned long long>(n)));
 #endif
-
     } else {
         static_assert(std::is_same_v<T, unsigned int> ||
                       std::is_same_v<T, unsigned short> ||
@@ -1062,7 +1052,7 @@ constexpr
 #if defined(__GNUC__)
         return __builtin_ctz(n);
 #else
-        return static_cast<int32_t>(_tzcnt_u32(n));
+        return static_cast<int32_t>(tz_count_32_software(n));
 #endif
     }
 #endif
@@ -1077,12 +1067,8 @@ template <typename T>
 #if defined(INTEGERS_128_BIT)
              || std::is_same_v<T, uint128_t>
 #endif
-#if defined(__GNUC__)
-constexpr
 #endif
-#endif
-    inline int32_t
-    count_leading_zeros(T n) noexcept {   
+static constexpr inline int32_t count_leading_zeros(T n) noexcept {
     if (unlikely(n == 0)) {
         return sizeof(n) * 8;
     }
@@ -1091,23 +1077,10 @@ constexpr
     if constexpr (std::is_same_v<T, uint128_t>) {
         uint64_t hi = static_cast<uint64_t>(n >> 64);
         if (hi != 0) {
-            return __builtin_clzll(hi);
-        }
-
-        uint64_t low = static_cast<uint64_t>(n);
-        return 64 + __builtin_clzll(low);
-    } else
-#endif
-    return std::countl_zero(n);
-#else
-#if defined(INTEGERS_128_BIT)
-    if constexpr (std::is_same_v<T, uint128_t>) {
-        uint64_t hi = static_cast<uint64_t>(n >> 64);
-        if (hi != 0) {
 #if defined(__GNUC__)
             return __builtin_clzll(hi);
 #else
-            return static_cast<int32_t>(_lzcnt_u64(hi));
+            return static_cast<int32_t>(lz_count_64_software(hi));
 #endif
         }
 
@@ -1115,22 +1088,23 @@ constexpr
 #if defined(__GNUC__)
         return 64 + __builtin_clzll(low);
 #else
-        return 64 + static_cast<int32_t>(_lzcnt_u64(low));
+        return 64 + static_cast<int32_t>(lz_count_64_software(low));
 #endif
     } else
 #endif
+        return std::countl_zero(n);
+#else
     if constexpr (std::is_same_v<T, unsigned long long>) {
 #if defined(__GNUC__)
         return __builtin_clzll(n);
 #else
-        return static_cast<int32_t>(_lzcnt_u64(n));
+        return static_cast<int32_t>(lz_count_64_software(n));
 #endif
     } else if constexpr (std::is_same_v<T, unsigned long>) {
 #if defined(__GNUC__)
         return __builtin_clzl(n);
 #else
-        return static_cast<int32_t>(
-            _lzcnt_u64(static_cast<unsigned long long>(n)));
+        return static_cast<int32_t>(lz_count_64_software(n));
 #endif
     } else {
         static_assert(std::is_same_v<T, unsigned int> ||
@@ -1139,77 +1113,38 @@ constexpr
 #if defined(__GNUC__)
         return __builtin_clz(n);
 #else
-        return static_cast<int32_t>(_lzcnt_u32(n));
+        return static_cast<int32_t>(lz_count_32_software(n));
 #endif
     }
 #endif
 }
 
-#if __cplusplus >= 202207L && defined(__GNUC__)
-constexpr
-#endif
-    inline size_t
-    nearest_2_pow_greater_equal(size_t n) noexcept {
-#if defined(__GNUC__)
-    if constexpr (sizeof(size_t) == sizeof(unsigned long long)) {
-        return 1ull << (64 - __builtin_clzll(n | 1) - ((n & (n - 1)) == 0));
-    } else if constexpr (sizeof(size_t) == sizeof(unsigned)) {
-        return static_cast<size_t>(1u)
-               << (32 - __builtin_clz(n | 1) - ((n & (n - 1)) == 0));
-    } else {
-        __builtin_unreachable();
-        return 0;
-    }
-#else
-    if constexpr (sizeof(size_t) == sizeof(unsigned long long)) {
-        return 1ull << (64 - _lzcnt_u64(n | 1) - ((n & (n - 1)) == 0));
-    } else if constexpr (sizeof(size_t) == sizeof(unsigned)) {
-        return static_cast<size_t>(1u)
-               << (32 - _lzcnt_u32(static_cast<unsigned>(n | 1)) -
-                   ((n & (n - 1)) == 0));
-    } else {
-        return 0;
-    }
-#endif
+static constexpr size_t nearest_2_pow_greater_equal(size_t n) noexcept {
+    return size_t(1u) << (64 - uint32_t(count_leading_zeros(n | 1)) -
+                          ((n & (n - 1)) == 0));
 }
 
 /* Just constexpr version of isdigit from ctype.h */
-constexpr bool is_digit(int32_t c) noexcept {
+static constexpr bool is_digit(int32_t c) noexcept {
     return static_cast<uint32_t>(c) - '0' <= '9' - '0';
 }
 
-#if __cplusplus >= 202207L && defined(__GNUC__)
-constexpr
-#endif
-    inline uint32_t
-    base_2_digits(uint32_t n) noexcept {
+static constexpr uint32_t base_2_digits(uint32_t n) noexcept {
     // " | 1" operation does not affect the answer for all numbers except n = 0
     // for n = 0 answer is 1
-#if defined(__GNUC__)
-    return static_cast<uint32_t>(32 - __builtin_clz(n | 1));
-#else
-    return static_cast<uint32_t>(32 - _lzcnt_u32(n | 1));
-#endif
+    return 32 - uint32_t(count_leading_zeros(n | 1));
 }
 
-#if __cplusplus >= 202207L && defined(__GNUC__)
-constexpr
-#endif
-    inline uint32_t
-    base_2_digits(uint64_t n) noexcept {
+static constexpr uint32_t base_2_digits(uint64_t n) noexcept {
     // " | 1" operation does not affect the answer for all numbers except n = 0
     // for n = 0 answer is 1
-#if defined(__GNUC__)
-    return static_cast<uint32_t>(64 - __builtin_clzll(n | 1));
-#else
-    return static_cast<uint32_t>(64 - _lzcnt_u64(n | 1));
-#endif
+    return 64 - uint32_t(count_leading_zeros(n | 1));
 }
 
 #if __cpp_constexpr >= 202211L && defined(__GNUC__)
 constexpr
 #endif
-    inline uint32_t
+    static inline uint32_t
     base_10_digits(uint32_t n) noexcept {
 #if __cpp_constexpr >= 202211L && defined(__GNUC__)
     constexpr
@@ -1252,7 +1187,7 @@ template <typename T>
              || std::is_same_v<T, uint128_t>
 #endif
 #endif
-constexpr uint32_t base_10_len(T value) noexcept {
+static constexpr uint32_t base_10_len(T value) noexcept {
     const uint32_t base = 10;
     const uint32_t b2 = base * base;
     const uint32_t b3 = b2 * base;
@@ -1303,6 +1238,29 @@ static_assert(base_10_len(uint128_t(-1)) == 39);
 
 #endif
 
+static constexpr uint32_t log2_floor(uint64_t n) noexcept {
+    // " | 1" does not affect ans for all n >= 1.
+    return 63 ^ uint32_t(count_leading_zeros(n | 1));
+}
+
+static constexpr uint32_t log2_ceil(uint64_t n) noexcept {
+    return log2_floor(n) + ((n & (n - 1)) != 0);
+}
+
+#if defined(INTEGERS_128_BIT)
+static constexpr uint32_t log2_floor(uint128_t n) noexcept {
+    // " | 1" does not affect ans for all n >= 1.
+    uint64_t hi = uint64_t(n >> 64);
+    return hi != 0 ? (127 ^ uint32_t(count_leading_zeros(hi)))
+                   : (63 ^ uint32_t(count_leading_zeros(uint64_t(n) | 1)));
+}
+
+static constexpr uint32_t log2_ceil(uint128_t n) noexcept {
+    return log2_floor(n) + ((n & (n - 1)) != 0);
+}
+
+#endif
+
 /// @brief Find q and r such n = q * (2 ^ r), q odd
 /// @param n n value.
 /// @param r r value to find.
@@ -1313,10 +1271,8 @@ template <typename T>
 #if defined(INTEGERS_128_BIT)
              || std::is_same_v<T, uint128_t>
 #endif
-constexpr
 #endif
-    inline T
-    extract_2pow(T n, uint32_t &r) noexcept {
+static constexpr T extract_2pow(T n, uint32_t& r) noexcept {
     r = uint32_t(count_trailing_zeros(n));
     return n >> r;
 }
@@ -1330,7 +1286,7 @@ namespace std {
 #if __cplusplus >= 202002L && defined(__GNUC__)
 constexpr
 #endif
-    uint128_t
+    static uint128_t
     gcd(uint128_t a, uint128_t b) noexcept {
     uint128_t temp = 0;
     while (b != 0) {
@@ -1345,7 +1301,7 @@ constexpr
 #if __cplusplus >= 202002L && defined(__GNUC__)
 constexpr
 #endif
-    uint128_t
+    static uint128_t
     gcd(uint64_t a, int128_t b) noexcept {
     if (unlikely(b == 0)) {
         return a;
