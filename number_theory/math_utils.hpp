@@ -4,10 +4,10 @@
 #if defined(__GNUC__)
 // optionally for a bit faster log2 (lzcnt instead of bsr may be used)
 // #pragma GCC target("lzcnt")
-#else
-#include <intrin.h>
 #endif
+
 #include <cmath>
+#include <cstdint>
 #include <numeric>
 #include <type_traits>
 
@@ -17,23 +17,25 @@
 #include <intrin.h>
 #endif
 
+#if __has_include("integers_128_bit.hpp")
 #include "integers_128_bit.hpp"
+#endif
 
 #if defined(__GNUC__)
 #if defined(likely)
 #undef likely
 #endif
-#define likely(x) __builtin_expect(!!(x), 1)
+#define likely(x) __builtin_expect(static_cast<bool>(x), true)
 #if defined(unlikely)
 #undef unlikely
 #endif
-#define unlikely(x) __builtin_expect(!!(x), 0)
+#define unlikely(x) __builtin_expect(static_cast<bool>(x), false)
 #else
 #if !defined(likely)
-#define likely(x) (!!(x))
+#define likely(x) static_cast<bool>(x)
 #endif
 #if !defined(unlikely)
-#define unlikely(x) (!!(x))
+#define unlikely(x) static_cast<bool>(x)
 #endif
 #endif
 
@@ -79,6 +81,10 @@ constexpr uint32_t bin_pow_mod(uint32_t n, uint32_t p, uint32_t mod) noexcept {
     }
 }
 
+static_assert(bin_pow_mod(uint32_t(7), uint32_t(483), uint32_t(1000000007u)) == 263145387u);
+static_assert(bin_pow_mod(uint32_t(289), uint32_t(-1), uint32_t(2146514599u)) == 1349294778u);
+static_assert(bin_pow_mod(uint32_t(2146526839u), uint32_t(578423432u), uint32_t(2147483629u)) == 281853233u);
+
 #if defined(INTEGERS_128_BIT)
 
 /// @brief Calculate (n ^ p) % mod
@@ -103,6 +109,12 @@ constexpr
         n = uint64_t((uint128_t(n) * n) % mod);
     }
 }
+
+#if __cplusplus >= 202002L && defined(__GNUC__)
+static_assert(bin_pow_mod(uint64_t(119999999927ull), uint64_t(18446744073709515329ull), uint64_t(100000000000000003ull)) == 85847679703545452ull);
+static_assert(bin_pow_mod(uint64_t(72057594037927843ull), uint64_t(18446744073709515329ull), uint64_t(1000000000000000003ull)) == 404835689235904145ull);
+static_assert(bin_pow_mod(uint64_t(999999999999999487ull), uint64_t(18446744073709551557ull), uint64_t(1000000000000000009ull)) == 802735487082721113ull);
+#endif
 
 #endif
 
@@ -139,7 +151,7 @@ static_assert(isqrt(1u << 28) == 1 << 14);
 static_assert(isqrt(1u << 30) == 1 << 15);
 static_assert(isqrt(uint32_t(-1)) == (1 << 16) - 1);
 
-constexpr uint64_t isqrt(uint64_t n) noexcept {
+constexpr uint32_t isqrt(uint64_t n) noexcept {
     /**
      * See Hackers Delight Chapter 11.
      */
@@ -156,7 +168,7 @@ constexpr uint64_t isqrt(uint64_t n) noexcept {
             r = m - 1;
         }
     } while (r >= l);
-    return l - 1;
+    return uint32_t(l - 1);
 }
 
 static_assert(isqrt(uint64_t(0)) == 0);
@@ -179,8 +191,8 @@ static_assert(isqrt(uint64_t(1) << 56) == uint64_t(1) << 28);
 static_assert(isqrt(uint64_t(1) << 58) == uint64_t(1) << 29);
 static_assert(isqrt(uint64_t(1) << 60) == uint64_t(1) << 30);
 static_assert(isqrt(uint64_t(1) << 62) == uint64_t(1) << 31);
-static_assert(isqrt(uint64_t(-1)) == 0xFFFFFFFFull);
-static_assert(isqrt(uint64_t(1000000007) * 1000000007) == 1000000007);
+static_assert(isqrt(uint64_t(-1)) == 0xFFFFFFFFu);
+static_assert(isqrt(uint64_t(1000000007) * 1000000007) == 1000000007u);
 
 #if defined(INTEGERS_128_BIT)
 
@@ -308,7 +320,7 @@ constexpr uint64_t icbrt(uint64_t n) noexcept {
             y++;
         }
     }
-    return y;
+    return uint32_t(y);
 }
 
 static_assert(icbrt(uint64_t(0)) == 0);
@@ -343,6 +355,9 @@ static_assert(icbrt(uint64_t(8'000'000'000'000'000'000ull)) == 2'000'000);
 static_assert(icbrt(uint64_t(15'625'000'000'000'000'000ull)) == 2'500'000);
 static_assert(icbrt(uint64_t(-1)) == 2642245);
 
+/// @brief Checks whether n is a perfect square or not
+/// @param n 
+/// @return true if n is a perfect square and false otherwise
 constexpr bool is_perfect_square(uint64_t n) noexcept {
     /**
      * +------------+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+
@@ -367,23 +382,137 @@ constexpr bool is_perfect_square(uint64_t n) noexcept {
     }
 }
 
-static_assert(is_perfect_square(0));
-static_assert(is_perfect_square(1));
-static_assert(!is_perfect_square(2));
-static_assert(!is_perfect_square(3));
-static_assert(is_perfect_square(4));
-static_assert(!is_perfect_square(5));
-static_assert(is_perfect_square(9));
-static_assert(!is_perfect_square(15));
-static_assert(is_perfect_square(16));
-static_assert(is_perfect_square(324));
-static_assert(is_perfect_square(1 << 16));
-static_assert(is_perfect_square(1 << 24));
+/// @brief Checks whether n is a perfect square or not. If it is, stores it to the root argument
+/// @param n 
+/// @param root 
+/// @return true if n is a perfect square and false otherwise
+constexpr bool is_perfect_square(uint64_t n, uint32_t& root) noexcept {
+    /**
+     * +------------+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+
+     * |   n mod 16 |  0 |  1 |  2 |  3 |  4 |  5 |  6 |  7 |  8 |  9 | 10 | 11 | 12 | 13 | 14 | 15 |
+     * +------------+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+
+     * | n*n mod 16 |  0 |  1 |  4 |  9 |  0 |  9 |  4 |  1 |  0 |  1 |  4 |  9 |  0 |  9 |  4 |  1 |
+     * +------------+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+
+     *
+     * If we peek mod 32, then we should check only for n & 31 in { 0, 1, 4, 9, 16, 17, 25 },
+     * but switch statement could be less efficient in this case
+     */
+    switch (uint64_t(n) & 15) {
+        case 0:
+        case 1:
+        case 4:
+        case 9: {
+            root = isqrt(n);
+            uint64_t r = root;
+            return r * r == n;
+        }
+        default:
+            return false;
+    }
+}
+
+static_assert(is_perfect_square(uint64_t(0)));
+static_assert(is_perfect_square(uint64_t(1)));
+static_assert(!is_perfect_square(uint64_t(2)));
+static_assert(!is_perfect_square(uint64_t(3)));
+static_assert(is_perfect_square(uint64_t(4)));
+static_assert(!is_perfect_square(uint64_t(5)));
+static_assert(is_perfect_square(uint64_t(9)));
+static_assert(!is_perfect_square(uint64_t(15)));
+static_assert(is_perfect_square(uint64_t(16)));
+static_assert(is_perfect_square(uint64_t(324)));
+static_assert(is_perfect_square(uint64_t(1 << 16)));
+static_assert(is_perfect_square(uint64_t(1 << 24)));
 static_assert(is_perfect_square(uint64_t(1) << 32));
 static_assert(is_perfect_square(uint64_t(1) << 40));
 static_assert(is_perfect_square(uint64_t(1) << 48));
 static_assert(is_perfect_square(uint64_t(1) << 56));
 static_assert(is_perfect_square(uint64_t(1) << 60));
+
+#if defined(INTEGERS_128_BIT)
+
+/// @brief Checks whether n is a perfect square or not
+/// @param n 
+/// @return true if n is a perfect square and false otherwise
+#if __cplusplus >= 202002L && defined(__GNUC__)
+constexpr
+#endif
+bool is_perfect_square(uint128_t n) noexcept {
+    /**
+     * +------------+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+
+     * |   n mod 16 |  0 |  1 |  2 |  3 |  4 |  5 |  6 |  7 |  8 |  9 | 10 | 11 | 12 | 13 | 14 | 15 |
+     * +------------+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+
+     * | n*n mod 16 |  0 |  1 |  4 |  9 |  0 |  9 |  4 |  1 |  0 |  1 |  4 |  9 |  0 |  9 |  4 |  1 |
+     * +------------+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+
+     *
+     * If we peek mod 32, then we should check only for n & 31 in { 0, 1, 4, 9, 16, 17, 25 },
+     * but switch statement could be less efficient in this case
+     */
+    switch (uint64_t(n) & 15) {
+        case 0:
+        case 1:
+        case 4:
+        case 9: {
+            uint64_t root = isqrt(n);
+            return uint128_t(root) * root == n;
+        }
+        default:
+            return false;
+    }
+}
+
+/// @brief Checks whether n is a perfect square or not. If it is, stores it to the root argument
+/// @param n 
+/// @param root 
+/// @return true if n is a perfect square and false otherwise
+#if __cplusplus >= 202002L && defined(__GNUC__)
+constexpr
+#endif 
+bool is_perfect_square(uint128_t n, uint64_t& root) noexcept {
+    /**
+     * +------------+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+
+     * |   n mod 16 |  0 |  1 |  2 |  3 |  4 |  5 |  6 |  7 |  8 |  9 | 10 | 11 | 12 | 13 | 14 | 15 |
+     * +------------+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+
+     * | n*n mod 16 |  0 |  1 |  4 |  9 |  0 |  9 |  4 |  1 |  0 |  1 |  4 |  9 |  0 |  9 |  4 |  1 |
+     * +------------+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+
+     *
+     * If we peek mod 32, then we should check only for n & 31 in { 0, 1, 4, 9, 16, 17, 25 },
+     * but switch statement could be less efficient in this case
+     */
+    switch (uint64_t(n) & 15) {
+        case 0:
+        case 1:
+        case 4:
+        case 9: {
+            root = isqrt(n);
+            return uint128_t(root) * root == n;
+        }
+        default:
+            return false;
+    }
+}
+
+#if __cplusplus >= 202002L && defined(__GNUC__)
+static_assert(is_perfect_square(uint128_t(0)));
+static_assert(is_perfect_square(uint128_t(1)));
+static_assert(!is_perfect_square(uint128_t(2)));
+static_assert(!is_perfect_square(uint128_t(3)));
+static_assert(is_perfect_square(uint128_t(4)));
+static_assert(!is_perfect_square(uint128_t(5)));
+static_assert(is_perfect_square(uint128_t(9)));
+static_assert(!is_perfect_square(uint128_t(15)));
+static_assert(is_perfect_square(uint128_t(16)));
+static_assert(is_perfect_square(uint128_t(324)));
+static_assert(is_perfect_square(uint128_t(1 << 16)));
+static_assert(is_perfect_square(uint128_t(1 << 24)));
+static_assert(is_perfect_square(uint128_t(1) << 32));
+static_assert(is_perfect_square(uint128_t(1) << 40));
+static_assert(is_perfect_square(uint128_t(1) << 48));
+static_assert(is_perfect_square(uint128_t(1) << 56));
+static_assert(is_perfect_square(uint128_t(1) << 60));
+#endif
+
+#endif
 
 #if __cpp_constexpr >= 202207L && defined(__GNUC__)
 constexpr
@@ -866,6 +995,9 @@ static_assert(tz_count_64_software(-1u) == 0);
 template <typename T>
 #if __cplusplus >= 202002L
     requires std::is_unsigned_v<T>
+#if defined(INTEGERS_128_BIT)
+             || std::is_same_v<T, uint128_t>
+#endif
 #if defined(__GNUC__)
 constexpr
 #endif
@@ -942,6 +1074,9 @@ constexpr
 template <typename T>
 #if __cplusplus >= 202002L
     requires std::is_unsigned_v<T>
+#if defined(INTEGERS_128_BIT)
+             || std::is_same_v<T, uint128_t>
+#endif
 #if defined(__GNUC__)
 constexpr
 #endif
@@ -1113,6 +1248,9 @@ static_assert(base_10_digits(uint32_t(-1)) == 10);
 template <typename T>
 #if __cplusplus >= 202002L
     requires std::is_unsigned_v<T>
+#if defined(INTEGERS_128_BIT)
+             || std::is_same_v<T, uint128_t>
+#endif
 #endif
 constexpr uint32_t base_10_len(T value) noexcept {
     const uint32_t base = 10;
@@ -1151,6 +1289,7 @@ static_assert(base_10_len(100ull) == 3);
 static_assert(base_10_len(101ull) == 3);
 static_assert(base_10_len(uint64_t(-1)) == 20);
 
+#if defined(INTEGERS_128_BIT)
 static_assert(base_10_len(uint128_t(0)) == 1);
 static_assert(base_10_len(uint128_t(1)) == 1);
 static_assert(base_10_len(uint128_t(9)) == 1);
@@ -1162,6 +1301,8 @@ static_assert(base_10_len(uint128_t(101)) == 3);
 static_assert(base_10_len(uint128_t(-1)) == 39);
 #endif
 
+#endif
+
 /// @brief Find q and r such n = q * (2 ^ r), q odd
 /// @param n n value.
 /// @param r r value to find.
@@ -1169,6 +1310,9 @@ static_assert(base_10_len(uint128_t(-1)) == 39);
 template <typename T>
 #if __cplusplus >= 202002L
     requires std::is_unsigned_v<T>
+#if defined(INTEGERS_128_BIT)
+             || std::is_same_v<T, uint128_t>
+#endif
 constexpr
 #endif
     inline T
@@ -1203,11 +1347,11 @@ constexpr
 #endif
     uint128_t
     gcd(uint64_t a, int128_t b) noexcept {
-    uint128_t b0 = math_utils::uabs(b);
     if (unlikely(b == 0)) {
         return a;
     }
 
+    uint128_t b0 = math_utils::uabs(b);
     uint128_t a1 = b0;
     uint64_t b1 = uint64_t(a % b0);  // Now b1 < 2^64
     if (b1 == 0) {

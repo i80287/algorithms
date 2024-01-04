@@ -31,7 +31,7 @@ static constexpr bool binsearch_contains(const uint64_t (&nums)[N], uint64_t val
     return false;
 }
 
-static inline void TestSmallPrimes() noexcept {
+static void TestSmallPrimes() noexcept {
     for (uint64_t n = 0; n < 65536; n++) {
         if (IsPrimeSlow(n) != IsPrime(n)) {
             printf("Error bool IsPrime(uint64_t) at number = %llu\n", n);
@@ -39,7 +39,7 @@ static inline void TestSmallPrimes() noexcept {
     }
 }
 
-static inline void TestMidPrimes() noexcept {
+static void TestMidPrimes() noexcept {
     constexpr uint64_t primes[] = {
         1000000000000000009ull,
         1000000000000000003ull,
@@ -96,7 +96,7 @@ static inline void TestMidPrimes() noexcept {
     }
 }
 
-static inline void TestLargestU64Primes() noexcept {
+static void TestLargestU64Primes() noexcept {
     constexpr uint64_t primes[] = {
         18446744073709551557ull,
         18446744073709551533ull,
@@ -908,7 +908,7 @@ static inline void TestLargestU64Primes() noexcept {
     }
 }
 
-static inline void TestRandomPrimes() {
+static void TestRandomPrimes() {
     std::mt19937_64 rnd(std::random_device{}());
     std::uniform_int_distribution<uint64_t> udist;
     constexpr size_t TOTAL_TESTS = 256;

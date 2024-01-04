@@ -37,17 +37,17 @@ typedef std::_Signed128 int128_t;
 #if defined(likely)
 #undef likely
 #endif
-#define likely(x) __builtin_expect(!!(x), 1)
+#define likely(x) __builtin_expect(static_cast<bool>(x), true)
 #if defined(unlikely)
 #undef unlikely
 #endif
-#define unlikely(x) __builtin_expect(!!(x), 0)
+#define unlikely(x) __builtin_expect(static_cast<bool>(x), false)
 #else
 #if !defined(likely)
-#define likely(x) (!!(x))
+#define likely(x) static_cast<bool>(x)
 #endif
 #if !defined(unlikely)
-#define unlikely(x) (!!(x))
+#define unlikely(x) static_cast<bool>(x)
 #endif
 #endif
 
@@ -139,8 +139,7 @@ namespace impl {
 constexpr
 #endif
     static inline char*
-    uint128_t_format_fill_chars_buffer(uint128_t number, char* buffer_ptr,
-                                       size_t& length) noexcept {
+    uint128_t_format_fill_chars_buffer(uint128_t number, char* buffer_ptr) noexcept {
     do { /**
           * let compiler optimize it like "q = number - r * 10"
           * or whatever (maybe / 10 and % 10 will be
@@ -149,7 +148,6 @@ constexpr
         auto r = number / 10;
         auto q = number % 10;
         *--buffer_ptr = static_cast<char>('0' + static_cast<uint64_t>(q));
-        length++;
         number = r;
     } while (number);
     return buffer_ptr;
@@ -161,11 +159,12 @@ inline ostream& operator<<(ostream& out, uint128_t number) {
     // 340282366920938463463374607431768211455 == 2^128 - 1
     // strlen("340282366920938463463374607431768211455") == 39;
     constexpr size_t max_number_digits_count = 39;
+
     char digits[max_number_digits_count + 1];
     digits[max_number_digits_count] = '\0';
-    size_t length = 0;
     const char* ptr = impl::uint128_t_format_fill_chars_buffer(
-        number, &digits[max_number_digits_count], length);
+        number, &digits[max_number_digits_count]);
+    size_t length = static_cast<size_t>(&digits[max_number_digits_count] - ptr);
     return out << string_view(ptr, length);
 }
 
@@ -175,9 +174,8 @@ inline int print_u128(uint128_t number) noexcept {
     constexpr size_t max_number_digits_count = 39;
     char digits[max_number_digits_count + 1];
     digits[max_number_digits_count] = '\0';
-    size_t length = 0;
     const char* ptr = impl::uint128_t_format_fill_chars_buffer(
-        number, &digits[max_number_digits_count], length);
+        number, &digits[max_number_digits_count]);
     return fputs(ptr, stdout);
 }
 
@@ -187,9 +185,8 @@ inline int print_u128_newline(uint128_t number) noexcept {
     constexpr size_t max_number_digits_count = 39;
     char digits[max_number_digits_count + 1];
     digits[max_number_digits_count] = '\0';
-    size_t length = 0;
     const char* ptr = impl::uint128_t_format_fill_chars_buffer(
-        number, &digits[max_number_digits_count], length);
+        number, &digits[max_number_digits_count]);
     return puts(ptr);
 }
 
@@ -199,9 +196,11 @@ inline string to_string(uint128_t number) {
     constexpr size_t max_number_digits_count = 39;
     char digits[max_number_digits_count + 1];
     digits[max_number_digits_count] = '\0';
-    size_t length = 0;
+
     const char* ptr = impl::uint128_t_format_fill_chars_buffer(
-        number, &digits[max_number_digits_count], length);
+        number, &digits[max_number_digits_count]);
+    size_t length = static_cast<size_t>(&digits[max_number_digits_count] - ptr);
+
     return string(ptr, length);
 }
 
@@ -211,18 +210,44 @@ inline string to_string(int128_t number) {
     constexpr size_t max_number_digits_count = 39;
     // + 1 for sign
     char digits[max_number_digits_count + 1 + 1];
-    digits[max_number_digits_count] = '\0';
+    digits[max_number_digits_count + 1] = '\0';
+
     bool negative = number < 0;
     if (negative) {
         number = -number;
     }
-    size_t length = 0;
+
     char* ptr = impl::uint128_t_format_fill_chars_buffer(
-        uint128_t(number), &digits[max_number_digits_count], length);
+        uint128_t(number), &digits[max_number_digits_count + 1]);
     if (negative) {
         *--ptr = '-';
     }
+    size_t length = static_cast<size_t>(&digits[max_number_digits_count + 1] - ptr);
+
     return string(ptr, length);
+}
+
+inline ostream& operator<<(ostream& out, int128_t number) {
+    // 340282366920938463463374607431768211455 == 2^128 - 1
+    // strlen("340282366920938463463374607431768211455") == 39;
+    constexpr size_t max_number_digits_count = 39;
+    // + 1 for sign
+    char digits[max_number_digits_count + 1 + 1];
+    digits[max_number_digits_count + 1] = '\0';
+
+    bool negative = number < 0;
+    if (negative) {
+        number = -number;
+    }
+
+    char* ptr = impl::uint128_t_format_fill_chars_buffer(
+        uint128_t(number), &digits[max_number_digits_count + 1]);
+    if (negative) {
+        *--ptr = '-';
+    }
+    size_t length = static_cast<size_t>(&digits[max_number_digits_count + 1] - ptr);
+
+    return out << string_view(ptr, length);
 }
 
 #if __cplusplus >= 202002L && defined(__GNUC__) && !defined(__clang__)
@@ -245,6 +270,7 @@ struct formatter<int128_t, CharT> {
     constexpr typename ParseContext::iterator parse(ParseContext& ctx) {
         return ctx.begin();
     }
+
     template <class FmtContext>
     typename FmtContext::iterator format(int128_t n, FmtContext& ctx) const {
         string s = to_string(n);
