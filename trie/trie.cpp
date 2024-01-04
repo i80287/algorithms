@@ -9,6 +9,24 @@
 #include <string_view> // std::string_view
 #include <vector>      // std::vector
 
+#if defined(__GNUC__)
+#if defined(likely)
+#undef likely
+#endif
+#define likely(x) __builtin_expect(static_cast<bool>(x), true)
+#if defined(unlikely)
+#undef unlikely
+#endif
+#define unlikely(x) __builtin_expect(static_cast<bool>(x), false)
+#else
+#if !defined(likely)
+#define likely(x) static_cast<bool>(x)
+#endif
+#if !defined(unlikely)
+#define unlikely(x) static_cast<bool>(x)
+#endif
+#endif
+
 namespace ACTrieADS {
 
 #if __cplusplus >= 202002L
@@ -85,12 +103,15 @@ public:
      */
     constexpr bool ContainsPattern(std::string_view pattern) const noexcept {
         uint32_t current_node_index = kRootIndex;
-        for (char sigma : pattern) {
+        const unsigned char* iter = reinterpret_cast<const unsigned char*>(pattern.begin());
+        const unsigned char* iter_end = reinterpret_cast<const unsigned char*>(pattern.end());
+        for (; iter != iter_end; ++iter) {
+            int32_t sigma = int32_t(*iter);
             if constexpr (kIsCaseInsensetive) {
                 sigma = ToLower(sigma);
             }
 
-            if (!IsInAlphabet(sigma)) {
+            if (unlikely(!IsInAlphabet(sigma))) {
                 return false;
             }
 
@@ -240,15 +261,18 @@ public:
 
 protected:
     static constexpr size_t CharToEdgeIndex(char c) noexcept {
-        return static_cast<size_t>(static_cast<uint8_t>(c)) - kAlphabetStart;
+        // Force zero extension
+        return size_t(uint8_t(c)) - kAlphabetStart;
     }
 
     static constexpr size_t CharToEdgeIndex(int32_t c) noexcept {
-        return static_cast<size_t>(c) - kAlphabetStart;
+        // Force zero extension
+        return size_t(uint32_t(c)) - kAlphabetStart;
     }
 
     static constexpr bool IsInAlphabet(char c) noexcept {
-        return static_cast<uint32_t>(static_cast<uint8_t>(c)) - kAlphabetStart <= kAlphabetEnd - kAlphabetStart;
+        // Force zero extension
+        return uint32_t(uint8_t(c)) - kAlphabetStart <= kAlphabetEnd - kAlphabetStart;
     }
 
     static_assert(IsInAlphabet(static_cast<char>(kAlphabetStart)));
@@ -266,15 +290,16 @@ protected:
     static_assert(!IsInAlphabet(static_cast<int32_t>(kAlphabetEnd + 1)));
 
     static constexpr bool IsUpper(char c) noexcept {
-        return static_cast<uint32_t>(c) - 'A' <= 'Z' - 'A';
+        return static_cast<uint32_t>(uint8_t(c)) - 'A' <= 'Z' - 'A';
     }
 
     static constexpr char ToLower(char c) noexcept {
         if constexpr ((('a' - 'A') & ('a' - 'A' - 1)) == 0) {
+            // Multiply by 'a' - 'A' that is power of two
             return static_cast<char>(uint8_t(c) | IsUpper(c) * ('a' - 'A'));
         }
         else {
-            return static_cast<char>(uint8_t(c) | (-(uint32_t)IsUpper(c) & ('a' - 'A')));
+            return static_cast<char>(uint8_t(c) | (-uint32_t(IsUpper(c)) & ('a' - 'A')));
         }
     }
 
@@ -293,10 +318,11 @@ protected:
 
     static constexpr int32_t ToLower(int32_t c) noexcept {
         if constexpr ((('a' - 'A') & ('a' - 'A' - 1)) == 0) {
+            // Multiply by 'a' - 'A' that is power of two
             return c | int32_t(('a' - 'A') * IsUpper(c));
         }
         else {
-            return c | int32_t(('a' - 'A') & -(uint32_t)IsUpper(c));
+            return c | int32_t(('a' - 'A') & -uint32_t(IsUpper(c)));
         }
     }
 
@@ -311,9 +337,9 @@ protected:
     inline void CheckComputedLinks() const {
         auto iter = nodes_.begin();
 
-        uint32_t max_node_index_excluding = static_cast<uint32_t>(nodes_.size());
+        uint32_t max_node_index_excluding = uint32_t(nodes_.size());
         assert(max_node_index_excluding >= kDefaultNodesCount);
-        uint32_t max_word_end_index_excl = static_cast<uint32_t>(words_lengths_.size());
+        uint32_t max_word_end_index_excl = uint32_t(words_lengths_.size());
 
         static_assert(kNullNodeIndex == kNullNodeIndex, "Current impl of CheckComputedLinks() relies on kNullNodeIndex");
         // Skip null node
@@ -340,7 +366,7 @@ protected:
             uint32_t compressed_suffix_link_index = iter->compressed_suffix_link;
             assert(compressed_suffix_link_index >= kFakePreRootIndex && compressed_suffix_link_index < max_node_index_excluding);
 
-            assert(!iter->IsTerminal() || (iter->word_index < max_word_end_index_excl));
+            assert(!iter->IsTerminal() || iter->word_index < max_word_end_index_excl);
         }
 
         are_links_computed_ = true;
@@ -369,7 +395,7 @@ public:
                 sigma = base::ToLower(sigma);
             }
 
-            if (!base::IsInAlphabet(sigma)) {
+            if (unlikely(!base::IsInAlphabet(sigma))) {
                 assert(false && "ACTrie::AddPattern(std::string_view): char in pattern is not in the alphabet");
                 continue;
             }
@@ -396,7 +422,7 @@ public:
                 sigma = base::ToLower(sigma);
             }
 
-            if (!base::IsInAlphabet(sigma)) {
+            if (unlikely(!base::IsInAlphabet(sigma))) {
                 assert(false && "char in pattern is not in alphabet!!!");
                 continue;
             }
@@ -429,7 +455,7 @@ public:
                     sigma = base::ToLower(sigma);
                 }
 
-                if (!base::IsInAlphabet(sigma)) {
+                if (unlikely(!base::IsInAlphabet(sigma))) {
                     if (sigma == Delimeter || sigma == EOF) {
                         break;
                     }
@@ -455,7 +481,7 @@ public:
                             sigma = base::ToLower(sigma);
                         }
 
-                        if (!base::IsInAlphabet(sigma)) {
+                        if (unlikely(!base::IsInAlphabet(sigma))) {
                             if (sigma == Delimeter || sigma == EOF) {
                                 break;
                             }
@@ -497,7 +523,7 @@ public:
                     sigma = base::ToLower(sigma);
                 }
 
-                if (!base::IsInAlphabet(sigma)) {
+                if (unlikely(!base::IsInAlphabet(sigma))) {
                     if (sigma == Delimeter || sigma == std::char_traits<char>::eof()) {
                         break;
                     }
@@ -523,16 +549,11 @@ public:
                             sigma = base::ToLower(sigma);
                         }
 
-                        if (!base::IsInAlphabet(sigma)) {
+                        if (unlikely(!base::IsInAlphabet(sigma))) {
                             if ((sigma == Delimeter) | (sigma == std::char_traits<char>::eof())) {
                                 break;
                             }
 
-                            assert(false && "char in pattern is not in alphabet!!!");
-                            continue;
-                        }
-
-                        if (!base::IsInAlphabet(sigma)) {
                             assert(false && "char in pattern is not in alphabet!!!");
                             continue;
                         }
@@ -577,7 +598,7 @@ public:
                 sigma = base::ToLower(sigma);
             }
 
-            if (!base::IsInAlphabet(sigma)) {
+            if (unlikely(!base::IsInAlphabet(sigma))) {
                 assert(false && "char in pattern is not in alphabet!!!");
                 continue;
             }
@@ -604,7 +625,7 @@ public:
                 sigma = base::ToLower(sigma);
             }
 
-            if (!base::IsInAlphabet(sigma)) {
+            if (unlikely(!base::IsInAlphabet(sigma))) {
                 assert(false && "char in pattern is not in alphabet!!!");
                 continue;
             }
@@ -673,7 +694,11 @@ public:
                 }
                 else {
                     uint32_t word_l_index_in_text = static_cast<uint32_t>(current_c_string + l_index_in_current_substring - c_string);
+#if __cplusplus >= 202002L
                     stack.emplace_back(word_l_index_in_text, word_index);
+#else
+                    stack.emplace_back(replacement_info_t{word_l_index_in_text, word_index});
+#endif
                     new_length += (replacement_length - word_length);
                 }
 
