@@ -238,8 +238,8 @@ static constexpr bool IsStrongSelfridgePRP(uint64_t n) noexcept {
     }
 
     for (int32_t d = 5;; d += (d > 0) ? 2 : -2, d = -d) {
-        // Calculate the Jacobi symbol (a/p).
-        int32_t jacobi = JacobiSymbol(static_cast<int64_t>(d), n);
+        // Calculate the Jacobi symbol (d/n)
+        int32_t jacobi = JacobiSymbol(int64_t(d), n);
         switch (jacobi) {
             /**
              * if jacobi == 0, d is a factor of n, therefore n is composite
@@ -255,6 +255,7 @@ static constexpr bool IsStrongSelfridgePRP(uint64_t n) noexcept {
                 }
 
                 if (unlikely(d >= 1000000)) {
+                    puts("d");
                     // throw std::domain_error("Appropriate value for D cannot
                     // be found in bool IsStrongSelfridgePRP(uint64_t)");
                     return false;
