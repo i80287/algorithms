@@ -3,6 +3,7 @@
 
 #include <type_traits>
 
+#include "integers_128_bit.hpp"
 #include "math_utils.hpp"
 
 template <typename Uint>
