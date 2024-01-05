@@ -1,7 +1,9 @@
-#include <cstdint>  // uint64_t, size_t
-#include <iterator> // std::size
-#include <random>   // std::mt19937_64, std::uniform_int_distribution
-#include <cstdio>   // printf
+#include <cstdint>   // uint64_t, size_t
+#include <iterator>  // std::size
+#include <random>    // std::mt19937_64, std::uniform_int_distribution
+#include <cstdio>    // printf
+#include <cinttypes> // PRIu64
+#include <ctime>     // std::time
 
 #include "is_prime_slow.hpp"
 #include "is_prime_bpsw.hpp"
@@ -33,8 +35,8 @@ static constexpr bool binsearch_contains(const uint64_t (&nums)[N], uint64_t val
 
 static void TestSmallPrimes() noexcept {
     for (uint64_t n = 0; n < 65536; n++) {
-        if (IsPrimeSlow(n) != IsPrime(n)) {
-            printf("Error bool IsPrime(uint64_t) at number = %llu\n", n);
+        if (unlikely(IsPrimeSlow(n) != IsPrime(n))) {
+            printf("Error bool IsPrime(uint64_t) at number = %" PRIu64 "\n", n);
         }
     }
 }
@@ -87,11 +89,13 @@ static void TestMidPrimes() noexcept {
     static_assert(binsearch_contains(primes, primes[0]));
     static_assert(binsearch_contains(primes, primes[N / 2]));
     static_assert(binsearch_contains(primes, primes[N - 1]));
+    static_assert(primes[N - 1] < primes[0]);
+    static_assert(primes[0] < primes[0] + 2);
 
     for (uint64_t n = primes[N - 1]; n <= primes[0]; n += 2) {
         bool is_prime = IsPrime(n);
-        if (is_prime != binsearch_contains(primes, n)) {
-            printf("Error bool IsPrime(uint64_t) at number = %llu\n", n);
+        if (unlikely(is_prime != binsearch_contains(primes, n))) {
+            printf("Error in bool IsPrime(uint64_t) at number = %" PRIu64 "\n", n);
         }
     }
 }
@@ -899,23 +903,26 @@ static void TestLargestU64Primes() noexcept {
     static_assert(binsearch_contains(primes, primes[0]));
     static_assert(binsearch_contains(primes, primes[N / 2]));
     static_assert(binsearch_contains(primes, primes[N - 1]));
+    static_assert(primes[N - 1] < primes[0]);
+    static_assert(primes[0] < primes[0] + 2);
 
     for (uint64_t n = primes[N - 1]; n <= primes[0]; n += 2) {
         bool is_prime = IsPrime(n);
-        if (is_prime != binsearch_contains(primes, n)) {
-            printf("Error bool IsPrime(uint64_t) at number = %llu\n", n);
+        if (unlikely(is_prime != binsearch_contains(primes, n))) {
+            printf("Error in bool IsPrime(uint64_t) at number = %" PRIu64 "\n", n);
         }
     }
 }
 
 static void TestRandomPrimes() {
-    std::mt19937_64 rnd(std::random_device{}());
-    std::uniform_int_distribution<uint64_t> udist;
-    constexpr size_t TOTAL_TESTS = 256;
-    for (size_t test = 0; test < TOTAL_TESTS; test++) {
-        uint64_t n = udist(rnd);
-        if (IsPrimeSlow(n) != IsPrime(n)) {
-            printf("Error bool IsPrime(uint64_t) at number = %llu\n", n);
+    const auto rnd_seed = std::uint_fast64_t(std::random_device{}()) ^
+                          std::uint_fast64_t(std::time(nullptr));
+    std::mt19937_64 rnd(rnd_seed);
+    constexpr size_t kTotalTests = 256;
+    for (size_t test = kTotalTests; test != 0; test--) {
+        uint64_t n = rnd() | 1;
+        if (unlikely(IsPrimeSlow(n) != IsPrime(n))) {
+            printf("Error bool IsPrime(uint64_t) at number = %" PRIu64 "\n", n);
         }
     }
 }
