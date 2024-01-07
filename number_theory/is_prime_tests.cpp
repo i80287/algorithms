@@ -5,7 +5,7 @@
 #include <cinttypes> // PRIu64
 #include <ctime>     // std::time
 
-#include "is_prime_slow.hpp"
+#include "is_prime_sqrt.hpp"
 #include "is_prime_bpsw.hpp"
 
 template <size_t N>
@@ -35,7 +35,7 @@ static constexpr bool binsearch_contains(const uint64_t (&nums)[N], uint64_t val
 
 static void TestSmallPrimes() noexcept {
     for (uint64_t n = 0; n < 65536; n++) {
-        if (unlikely(IsPrimeSlow(n) != IsPrime(n))) {
+        if (unlikely(IsPrimeSqrt(n) != IsPrime(n))) {
             printf("Error bool IsPrime(uint64_t) at number = %" PRIu64 "\n", n);
         }
     }
@@ -921,7 +921,7 @@ static void TestRandomPrimes() {
     constexpr size_t kTotalTests = 256;
     for (size_t test = kTotalTests; test != 0; test--) {
         uint64_t n = rnd() | 1;
-        if (unlikely(IsPrimeSlow(n) != IsPrime(n))) {
+        if (unlikely(IsPrimeSqrt(n) != IsPrime(n))) {
             printf("Error bool IsPrime(uint64_t) at number = %" PRIu64 "\n", n);
         }
     }

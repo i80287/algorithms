@@ -6,7 +6,7 @@
 
 #include "math_utils.hpp"
 
-static constexpr bool IsPrimeSlow(uint64_t n) noexcept {
+static constexpr bool IsPrimeSqrt(uint64_t n) noexcept {
 	if (n % 2 == 0) {
         return n == 2;
     }
@@ -16,7 +16,7 @@ static constexpr bool IsPrimeSlow(uint64_t n) noexcept {
     if (n % 5 == 0) {
         return n == 5;
     }
-    if (n < 7 * 7) {
+    if (unlikely(n < 7 * 7)) {
         return n != 1;
     }
 	uint64_t i = 7;
