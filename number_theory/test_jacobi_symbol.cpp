@@ -1,6 +1,5 @@
 #include <cassert>
 #include "jacobi_symbol.hpp"
-#include "is_prime_bpsw.hpp"
 
 static const int32_t jcb[30][30] = {
     {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
