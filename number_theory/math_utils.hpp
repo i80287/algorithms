@@ -973,9 +973,8 @@ static_assert(tz_count_32_software(uint32_t(-1)) == 0);
 
 static constexpr uint32_t tz_count_64_software(uint64_t n) noexcept {
     uint32_t m = 0;
-    for (n = ~n & (n - 1); n != 0;) {
+    for (n = ~n & (n - 1); n != 0; n >>= 1) {
         m++;
-        n >>= 1;
     }
     return m;
 }
