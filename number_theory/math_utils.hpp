@@ -1355,22 +1355,25 @@ static_assert(gcd(uint128_t(18446744073709551557ull), uint128_t(0)) ==
 #if __cplusplus >= 202002L && defined(__GNUC__)
 constexpr
 #endif
-    static uint128_t
-    gcd(uint64_t a, int128_t b) noexcept {
-    if (unlikely(b == 0)) {
+    static uint128_t gcd(uint64_t a, int128_t b) noexcept {
+    uint128_t b0 = math_utils::uabs(b);
+    if (unlikely(b0 == 0)) {
         return a;
     }
 
-    uint128_t b0 = math_utils::uabs(b);
+    // gcd(a, b) = gcd(a, b0) = gcd(b0, a % b0) = gcd(a1, b1)
     uint128_t a1 = b0;
-    uint64_t b1 = uint64_t(a % b0);  // Now b1 < 2^64
+    // b1 = a % b0
+    uint64_t b1 = a < b0 ? a : a % uint64_t(b0);  // a < 2^64 => b1 < 2^64
     if (b1 == 0) {
         return a1;
     }
-
-    uint64_t a2 = b1;                 // Now a2 < 2^64
-    uint64_t b2 = uint64_t(a1 % b1);  // And still b2 < 2^64
-    return gcd(a2, b2);
+    // gcd(a1, b1) = gcd(b1, a1 % b1) = gcd(a2, b2)
+    uint64_t a2 = b1;                 // b1 < 2^64 => a2 < 2^64
+    // b2 = a1 % b1
+    // a1 = b0, b1 = a % b0 => b1 < a1
+    uint64_t b2 = uint64_t(a1 % b1);  // b1 < 2^64 => b2 = a1 % b1 < 2^64
+    return std::gcd(a2, b2);
 }
 
 #if __cplusplus >= 202002L && defined(__GNUC__)
