@@ -1290,15 +1290,67 @@ constexpr
 #endif
     static uint128_t
     gcd(uint128_t a, uint128_t b) noexcept {
-    uint128_t temp = 0;
-    while (b != 0) {
-        temp = a;
-        a = b;
-        b = temp % b;
+    if (unlikely(a == 0)) {
+        return b;
+    }
+    if (unlikely(b == 0)) {
+        return a;
     }
 
-    return a;
+    uint32_t ra = uint32_t(math_utils::count_trailing_zeros(a));
+    uint32_t rb = uint32_t(math_utils::count_trailing_zeros(b));
+    uint32_t mult = std::min(ra, rb);
+    a >>= ra;
+    b >>= rb;
+    while (true) {
+        if (a < b) {
+            auto tmp = std::move(a);
+            a = b;
+            b = tmp;
+        }
+
+        a -= b;
+        if (a == 0) {
+            return b << mult;
+        }
+
+        a >>= math_utils::count_trailing_zeros(a);
+    }
 }
+
+#if __cplusplus >= 202002L && defined(__GNUC__)
+static_assert(gcd(uint128_t(1), uint128_t(1)) == 1);
+static_assert(gcd(uint128_t(3), uint128_t(7)) == 1);
+static_assert(gcd(uint128_t(0), uint128_t(112378432)) == 112378432);
+static_assert(gcd(uint128_t(112378432), uint128_t(0)) == 112378432);
+static_assert(gcd(uint128_t(429384832), uint128_t(324884)) == 4);
+static_assert(gcd(uint128_t(18446744073709551521ull),
+                  uint128_t(18446744073709551533ull)) == 1);
+static_assert(gcd(uint128_t(18446744073709551521ull) * 18446744073709551521ull,
+                  uint128_t(18446744073709551521ull)) ==
+              18446744073709551521ull);
+static_assert(gcd(uint128_t(23999993441ull) * 23999993377ull,
+                  uint128_t(23999992931ull) * 23999539633ull) == 1);
+static_assert(gcd(uint128_t(2146514599u) * 2146514603u * 2146514611u,
+                  uint128_t(2146514611u) * 2146514621u * 2146514647u) ==
+              2146514611ull);
+static_assert(gcd(uint128_t(2146514599u) * 2146514603u * 2146514611u * 2,
+                  uint128_t(2146514599u) * 2146514603u * 2146514611u * 3) ==
+              uint128_t(2146514599u) * 2146514603u * 2146514611u);
+static_assert(gcd(uint128_t(100000000000000003ull) * 1000000000000000003ull,
+                  uint128_t(1000000000000000003ull) * 1000000000000000009ull) ==
+              1000000000000000003ull);
+static_assert(gcd(uint128_t(3 * 2 * 5 * 7 * 11 * 13 * 17 * 19),
+                  uint128_t(18446744073709551557ull) * 3) == 3);
+static_assert(gcd(uint128_t(1000000000000000009ull),
+                  uint128_t(1000000000000000009ull) * 1000000000000000009ull) ==
+              1000000000000000009ull);
+static_assert(gcd(uint128_t(0),
+                  uint128_t(1000000000000000009ull) * 1000000000000000009ull) ==
+              uint128_t(1000000000000000009ull) * 1000000000000000009ull);
+static_assert(gcd(uint128_t(18446744073709551557ull), uint128_t(0)) ==
+              18446744073709551557ull);
+#endif
 
 #if __cplusplus >= 202002L && defined(__GNUC__)
 constexpr
