@@ -3,15 +3,16 @@
 
 #if defined(__cplusplus)
 extern "C" {
-#endif // __cplusplus
+#endif  // __cplusplus
 
 #if defined(__GNUC__)
 #if !defined(__clang__)
+#pragma GCC push_options
 #pragma GCC target("avx")
 #else
-#pragma clang attribute push (__attribute__((target("avx"))), apply_to=function)
-#endif // !__clang__
-#endif // __GNUC__
+#pragma clang attribute push(__attribute__((target("avx"))), apply_to = function)
+#endif  // !__clang__
+#endif  // __GNUC__
 
 #include <stdint.h>
 #include <x86intrin.h>
@@ -20,8 +21,8 @@ extern "C" {
 __attribute__((nonnull(1)))
 #if !defined(__clang__)
 __attribute__((access(write_only, 1, 3)))
-#endif // !__clang__
-#endif // __GNUC__
+#endif  // !__clang__
+#endif  // __GNUC__
 void memset_int(int32_t* dst, int32_t value, size_t size) {
 #if defined(__GNUC__)
 #if !defined(__clang__)
@@ -40,7 +41,7 @@ void memset_int(int32_t* dst, int32_t value, size_t size) {
 #endif
 #else
     if (dst == NULL)
-        return;    
+        return;
 #endif
 
     uint32_t* aligned_4_address = (uint32_t*)dst;
@@ -92,12 +93,16 @@ void memset_int(int32_t* dst, int32_t value, size_t size) {
     }
 }
 
-#if defined(__GNUC__) && defined(__clang__)
+#if defined(__GNUC__)
+#if !defined(__clang__)
+#pragma GCC pop_options
+#else
 #pragma clang attribute pop
-#endif
+#endif  // !__clang__
+#endif  // __GNUC__
 
 #if defined(__cplusplus)
 }
-#endif // __cplusplus
+#endif  // __cplusplus
 
-#endif // !MEMSET_INT_H
+#endif  // !MEMSET_INT_H

@@ -75,7 +75,7 @@ int main(void) {
     return EXIT_SUCCESS;
 }
 
-// gcc -O2 .\measure_memset_int.c -Wall -Wextra -Wpedantic -o measure_memset_int.exe
+// gcc -O2 .\measure_memset_int.c -Wall -Wextra -Wpedantic -Werror -Wunused -pedantic-errors -Wconversion -Wshadow -Wnull-dereference -Wundef -Wwrite-strings -Wbad-function-cast -Wsign-conversion -Wmissing-noreturn -Wunreachable-code -Warray-bounds -o measure_memset_int.exe
 
 /**
  * Possible outputs:
