@@ -5,6 +5,9 @@
 #include <stdio.h>
 
 int main(void) {
+#if defined(__GNUC__)
+    assert(__builtin_cpu_supports("avx"));
+#endif
     int32_t buffer[513];
     const size_t arr_len = 512;
     const int32_t k = atoi("-1345452112");
