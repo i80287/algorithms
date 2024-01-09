@@ -72,11 +72,15 @@ void memset_int(int32_t* dst, int32_t value, size_t size) {
         case 3:
             *aligned_8_address = uvalue_64;
             ++aligned_8_address;
+#if defined(__GNUC__)
             __attribute__((fallthrough));
+#endif
         case 2:
             *aligned_8_address = uvalue_64;
             ++aligned_8_address;
+#if defined(__GNUC__)
             __attribute__((fallthrough));
+#endif
         case 1:
             *aligned_8_address = uvalue_64;
             ++aligned_8_address;
