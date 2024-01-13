@@ -7,7 +7,7 @@
 #include "config_macros.hpp"
 #include "math_utils.hpp"
 
-static constexpr bool IsPrimeSqrt(uint64_t n) noexcept {
+gcc_attribute_const static constexpr bool IsPrimeSqrt(uint64_t n) noexcept {
     if (n % 2 == 0) {
         return n == 2;
     }

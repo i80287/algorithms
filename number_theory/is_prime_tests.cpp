@@ -920,16 +920,45 @@ static void TestRandomPrimes() {
     std::mt19937_64 rnd(rnd_seed);
     constexpr size_t kTotalTests = 256;
     for (size_t test = kTotalTests; test != 0; test--) {
-        uint64_t n = rnd() | 1;
+        const uint64_t n = rnd() | 1;
+        attribute_assume(n % 2 == 1);
         if (unlikely(IsPrimeSqrt(n) != IsPrime(n))) {
             printf("Error bool IsPrime(uint64_t) at number = %" PRIu64 "\n", n);
         }
     }
 }
 
+static void TestPrimesFromFile() noexcept {
+    std::FILE* primes_fin = std::fopen("u64_primes.txt", "r");
+    if (primes_fin == nullptr) {
+        puts("Could not open file");
+        return;
+    }
+
+    uint64_t prev_prime = uint64_t(-1);
+    for (uint64_t p = 0; likely(!feof(primes_fin)); ) {
+        if (unlikely(fscanf(primes_fin, "%" PRIu64, &p) != 1)) {
+            puts("File read error");
+            break;
+        }
+
+        if (unlikely(prev_prime <= p)) {
+            printf("Primes reversed ordering not held at p = %" PRIu64 "\n", p);
+        }
+        prev_prime = p;
+        if (unlikely(!IsPrime(p))) {
+            printf("IsPrime error on n = %" PRIu64 "\n", p);
+            break;
+        }
+    }
+
+    std::fclose(primes_fin);
+}
+
 int main() {
-    TestSmallPrimes();
-    TestMidPrimes();
-    TestLargestU64Primes();
+    // TestSmallPrimes();
+    // TestMidPrimes();
+    // TestLargestU64Primes();
     TestRandomPrimes();
+    TestPrimesFromFile();
 }

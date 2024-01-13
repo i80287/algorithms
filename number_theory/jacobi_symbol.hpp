@@ -235,7 +235,7 @@ static constexpr int32_t JacobiSymbolSiUi(Sint a, Uint n) noexcept {
 /// @param n
 /// @return Jacobi symbol of (a/n) (-1, 0 or 1)
 template <typename IntegerT1, typename IntegerT2>
-static constexpr int32_t JacobiSymbol(IntegerT1 a, IntegerT2 n) noexcept {
+gcc_attribute_const static constexpr int32_t JacobiSymbol(IntegerT1 a, IntegerT2 n) noexcept {
 #if __cplusplus >= 202002L
     using T1 = std::remove_cvref_t<IntegerT1>;
     using T2 = std::remove_cvref_t<IntegerT2>;
