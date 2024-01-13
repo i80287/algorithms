@@ -1,9 +1,9 @@
 #ifndef IS_PRIME_BPSW
 #define IS_PRIME_BPSW 1
 
-#include <cmath>
+#include <cstdlib> // std::abs
 #include <cstdint>
-#include <numeric>
+#include <numeric> // std::gcd
 
 #include "config_macros.hpp"
 #include "integers_128_bit.hpp"
@@ -42,9 +42,6 @@ gcc_attribute_const static constexpr bool IsStrongPRP(uint64_t n,
     attribute_assume(a >= 2);
     attribute_assume(n % 2 == 1);
     attribute_assume(n >= 3);
-#if !defined(_MSC_VER)
-    attribute_assume(std::gcd(n, a) == 1);
-#endif
 
     const uint64_t n_minus_1 = n - 1;
     /* Find q and r satisfying: n - 1 = q * (2^r), q odd */
@@ -297,9 +294,8 @@ gcc_attribute_const static constexpr bool IsStrongSelfridgePRP(
                 }
 
                 if (unlikely(d >= 1000000)) {
-                    // throw std::domain_error(
-                    //     "Appropriate value for D cannot be found in bool "
-                    //     "IsStrongSelfridgePRP(uint64_t)");
+                    // Appropriate value for D cannot be found in
+                    // IsStrongSelfridgePRP
                     return false;
                 }
                 break;
@@ -317,43 +313,42 @@ gcc_attribute_const static constexpr bool IsStrongSelfridgePRP(
 /// operations )
 /// @param n number to test
 /// @return true if n is prime and false otherwise
-// __attribute__((__noinline__))
 gcc_attribute_const static constexpr bool IsPrime(uint64_t n) noexcept {
     if (n % 2 == 0) {
         return n == 2;
     }
-    if (unlikely(n == 1)) { return false; }
-    // if (n % 3 == 0) {
-    //     return n == 3;
-    // }
-    // if (n % 5 == 0) {
-    //     return n == 5;
-    // }
-    // if (unlikely(n < 7 * 7)) {
-    //     return n != 1;
-    // }
-    // if ((n % 7) == 0 || (n % 11) == 0 || (n % 13) == 0 || (n % 17) == 0 ||
-    //     (n % 19) == 0 || (n % 23) == 0 || (n % 29) == 0 || (n % 31) == 0 ||
-    //     (n % 37) == 0 || (n % 41) == 0 || (n % 43) == 0 || (n % 47) == 0) {
-    //     return false;
-    // }
-    // if (unlikely(n < 53 * 53)) {
-    //     return true;
-    // }
-    // if (n < 31417) {
-    //     switch (n) {
-    //         case 7957:
-    //         case 8321:
-    //         case 13747:
-    //         case 18721:
-    //         case 19951:
-    //         case 23377:
-    //             return false;
-    //         default:
-    //             return math_utils::bin_pow_mod(2, uint32_t(n - 1),
-    //                                            uint32_t(n)) == 1;
-    //     }
-    // }
+
+    if (n % 3 == 0) {
+        return n == 3;
+    }
+    if (n % 5 == 0) {
+        return n == 5;
+    }
+    if (unlikely(n < 7 * 7)) {
+        return n != 1;
+    }
+    if ((n % 7) == 0 || (n % 11) == 0 || (n % 13) == 0 || (n % 17) == 0 ||
+        (n % 19) == 0 || (n % 23) == 0 || (n % 29) == 0 || (n % 31) == 0 ||
+        (n % 37) == 0 || (n % 41) == 0 || (n % 43) == 0 || (n % 47) == 0) {
+        return false;
+    }
+    if (unlikely(n < 53 * 53)) {
+        return true;
+    }
+    if (n < 31417) {
+        switch (n) {
+            case 7957:
+            case 8321:
+            case 13747:
+            case 18721:
+            case 19951:
+            case 23377:
+                return false;
+            default:
+                return math_utils::bin_pow_mod(2, uint32_t(n - 1),
+                                               uint32_t(n)) == 1;
+        }
+    }
 
     return IsStrongPRP<false>(n, 2) && IsStrongSelfridgePRP<false>(n);
 }
