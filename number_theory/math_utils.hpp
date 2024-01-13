@@ -10,6 +10,7 @@
 #include <cstdint>
 #include <numeric>
 #include <type_traits>
+#include <utility>     // std::pair
 
 #if __cplusplus >= 202002L
 #include <bit>
@@ -40,7 +41,7 @@
 #if defined(__GNUC__)
 #define gcc_attribute_const __attribute__((const))
 #else
-#define gcc_attribute_const __attribute__((const))
+#define gcc_attribute_const
 #endif
 
 namespace math_utils {
@@ -115,7 +116,7 @@ gcc_attribute_const
         }
         p >>= 1;
         if (p == 0) {
-            return static_cast<uint64_t>(res);
+            return res;
         }
         n = uint64_t((uint128_t(n) * n) % mod);
     }
@@ -779,6 +780,18 @@ static_assert(sign(int128_t(-((uint128_t(1) << 127) - 1))) == -1);
 static_assert(sign(int128_t(-(uint128_t(1) << 127))) == -1);
 #endif
 
+#endif
+
+gcc_attribute_const static constexpr uint32_t uabs(int32_t n) noexcept {
+    return n >= 0 ? uint32_t(n) : -uint32_t(n);
+}
+
+gcc_attribute_const static constexpr uint64_t uabs(int64_t n) noexcept {
+    return n >= 0 ? uint64_t(n) : -uint64_t(n);
+}
+
+#if defined(INTEGERS_128_BIT)
+
 gcc_attribute_const
 #if __cplusplus >= 202002L && defined(__GNUC__)
     constexpr
@@ -1301,9 +1314,9 @@ template <typename T>
              || std::is_same_v<T, uint128_t>
 #endif
 #endif
-gcc_attribute_const static constexpr T extract_2pow(T n, uint32_t& r) noexcept {
-    r = uint32_t(count_trailing_zeros(n));
-    return n >> r;
+gcc_attribute_const static constexpr std::pair<T, uint32_t> extract_2pow(T n) noexcept {
+    uint32_t r = uint32_t(count_trailing_zeros(n));
+    return { n >> r, r };
 }
 
 }  // namespace math_utils
@@ -1427,6 +1440,10 @@ static_assert(gcd(uint64_t(18446744073709551557ull), int128_t(0)) ==
 
 }  // namespace std
 
+#endif
+
+#ifdef gcc_attribute_const
+#undef gcc_attribute_const
 #endif
 
 #endif  // !MATH_UTILS_HPP

@@ -20,8 +20,8 @@ static constexpr int32_t JacobiSymbolUi(Uint a, Uint n) noexcept {
             return a == 1;
         }
 
-        uint32_t p;
-        n = math_utils::extract_2pow(n, p);
+        auto [q, p] = math_utils::extract_2pow(n);
+        n = q;
 
         switch (a % 8) {
             case 0:
@@ -93,8 +93,8 @@ static constexpr int32_t JacobiSymbolSi(Sint a, Sint n) noexcept {
             return a == 1 || a == -1;
         }
 
-        uint32_t p;
-        n_u = math_utils::extract_2pow(n_u, p);
+        auto [q, p] = math_utils::extract_2pow(n_u);
+        n_u = q;
         n >>= p;
 
         switch (uint32_t((a % 8) + 8) % 8) {
@@ -160,8 +160,8 @@ static constexpr int32_t JacobiSymbolSiUi(Sint a, Uint n) noexcept {
             return a == 1 || a == -1;
         }
 
-        uint32_t p;
-        n = math_utils::extract_2pow(n, p);
+        auto [q, p] = math_utils::extract_2pow(n);
+        n = q;
 
         switch (uint32_t((a % 8) + 8) % 8) {
             case 0:
