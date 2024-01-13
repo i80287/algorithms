@@ -8,29 +8,29 @@
 #include "is_prime_sqrt.hpp"
 #include "is_prime_bpsw.hpp"
 
-template <size_t N>
-static constexpr bool binsearch_contains(const uint64_t (&nums)[N], uint64_t value) noexcept {
-    static_assert(N >= 1);
-    if (value > nums[0] || nums[N - 1] > value) {
-        return false;
-    }
-
+template <size_t N, bool Reversed = true>
+static constexpr bool binsearch_contains(const uint64_t (&nums)[N],
+                                         uint64_t value) noexcept {
     size_t l = 0;
     size_t r = N - 1;
-    while (l <= r) {
-        size_t m_index = (l + r) >> 1;   
-        if (value > nums[m_index]) {
-            r = m_index - 1;
-        }
-        else if (value != nums[m_index]) {
-            l = m_index + 1;
-        }
-        else {
-            return true;
+    while (int64_t(l) <= int64_t(r)) {
+        size_t m_index = (l + r) / 2;
+        if constexpr (Reversed) {
+            if (value > nums[m_index]) {
+                r = m_index - 1;
+            } else {
+                l = m_index + 1;
+            }
+        } else {
+            if (value < nums[m_index]) {
+                r = m_index - 1;
+            } else {
+                l = m_index + 1;
+            }
         }
     }
 
-    return false;
+    return r < N && nums[r] == value;
 }
 
 static void TestSmallPrimes() noexcept {
