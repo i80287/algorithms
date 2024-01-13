@@ -1,7 +1,8 @@
 /*
  * Small chunk of functions (like std::ostream::operator<<, print_u128) and
- * template instantiations (like std::is_unsigned, std::make_unsigned)
- * for 128 bit width integers typedefed as uint128_t and int128_t.
+ * template instantiations (like type_traits_helper_int128_t::is_unsigned,
+ * type_traits_helper_int128_t::make_unsigned) for 128 bit width integers
+ * typedefed as uint128_t and int128_t.
  *
  * This file is targeted for the g++ compiler. If your compiler supports
  * 128 bit integers but typedefes them differently from g++ (__uint128_t and
@@ -34,23 +35,7 @@ typedef std::_Signed128 int128_t;
 #error "typedef 128-bit integer specific for your compiler"
 #endif
 
-#if defined(__GNUC__)
-#if defined(likely)
-#undef likely
-#endif
-#define likely(x) __builtin_expect(static_cast<bool>(x), true)
-#if defined(unlikely)
-#undef unlikely
-#endif
-#define unlikely(x) __builtin_expect(static_cast<bool>(x), false)
-#else
-#if !defined(likely)
-#define likely(x) static_cast<bool>(x)
-#endif
-#if !defined(unlikely)
-#define unlikely(x) static_cast<bool>(x)
-#endif
-#endif
+#include "config_macros.hpp"
 
 namespace format_impl_uint128_t {
 
@@ -161,8 +146,7 @@ template <>
 inline constexpr bool is_default_constructible_v<int128_t> = true;
 
 template <class T>
-inline constexpr bool is_copy_constructible_v =
-    std::is_copy_constructible_v<T>;
+inline constexpr bool is_copy_constructible_v = std::is_copy_constructible_v<T>;
 
 template <>
 inline constexpr bool is_copy_constructible_v<uint128_t> = true;
@@ -171,8 +155,7 @@ template <>
 inline constexpr bool is_copy_constructible_v<int128_t> = true;
 
 template <class T>
-inline constexpr bool is_move_constructible_v =
-    std::is_move_constructible_v<T>;
+inline constexpr bool is_move_constructible_v = std::is_move_constructible_v<T>;
 
 template <>
 inline constexpr bool is_move_constructible_v<int128_t> = true;
@@ -181,8 +164,7 @@ template <>
 inline constexpr bool is_move_constructible_v<uint128_t> = true;
 
 template <class T>
-inline constexpr bool is_copy_assignable_v =
-    std::is_copy_assignable_v<T>;
+inline constexpr bool is_copy_assignable_v = std::is_copy_assignable_v<T>;
 
 template <>
 inline constexpr bool is_copy_assignable_v<int128_t> = true;
@@ -191,8 +173,7 @@ template <>
 inline constexpr bool is_copy_assignable_v<uint128_t> = true;
 
 template <class T>
-inline constexpr bool is_move_assignable_v =
-    std::is_move_assignable_v<T>;
+inline constexpr bool is_move_assignable_v = std::is_move_assignable_v<T>;
 
 template <>
 inline constexpr bool is_move_assignable_v<int128_t> = true;
