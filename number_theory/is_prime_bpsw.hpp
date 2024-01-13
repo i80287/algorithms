@@ -9,14 +9,16 @@
 #include "integers_128_bit.hpp"
 #include "jacobi_symbol.hpp"
 #include "math_utils.hpp"
-/* *********************************************************************************************
+
+/**********************************************************************************************
  * mpz_sprp: (also called a Miller-Rabin probable prime)
  * A "strong probable prime" to the base a is an odd composite n = (2^r)*s+1
  * with s odd such that either a^s == 1 mod n, or a^((2^t)*s) == -1 mod n, for
  * some integer t, with 0 <= t < r.
- * *********************************************************************************************/
+ **********************************************************************************************/
 template <bool BasicChecks = true>
-static constexpr bool IsStrongPRP(uint64_t n, uint64_t a) noexcept {
+gcc_attribute_const static constexpr bool IsStrongPRP(uint64_t n,
+                                                      uint64_t a) noexcept {
     if constexpr (BasicChecks) {
         if (unlikely(a < 2)) {
             // IsStrongPRP requires 'a' greater than or equal to 2
@@ -73,16 +75,17 @@ static constexpr bool IsStrongPRP(uint64_t n, uint64_t a) noexcept {
     return false;
 }
 
-/* *********************************************************************************************
+/**********************************************************************************************
  * mpz_stronglucas_prp:
  * A "strong Lucas probable prime" with parameters (P,Q) is a composite n =
  * (2^r)*s+(D/n), where s is odd, D=P^2-4Q, and gcd(n,2QD)=1 such that either
  * U_s == 0 mod n or V_((2^t)*s) == 0 mod n for some t, 0 <= t < r. [(D/n) is
  * the Jacobi symbol]
- * *********************************************************************************************/
+ **********************************************************************************************/
 template <bool BasicChecks = true>
-static constexpr bool IsStrongLucasPRP(uint64_t n, uint32_t p,
-                                       int32_t q) noexcept {
+gcc_attribute_const static constexpr bool IsStrongLucasPRP(uint64_t n,
+                                                           uint32_t p,
+                                                           int32_t q) noexcept {
     int64_t d = int64_t(uint64_t(p) * p) - static_cast<int64_t>(q) * 4;
     if constexpr (BasicChecks) {
         /* Check if p*p - 4*q == 0. */
@@ -253,14 +256,15 @@ static constexpr bool IsStrongLucasPRP(uint64_t n, uint32_t p,
 
 /**********************************************************************************************************
  * mpz_strongselfridge_prp:
- * A "strong Lucas-Selfridge probable prime" n is a "strong Lucas probable prime"
- * using Selfridge parameters of: Find the first element D in the sequence
+ * A "strong Lucas-Selfridge probable prime" n is a "strong Lucas probable
+ *prime" using Selfridge parameters of: Find the first element D in the sequence
  * {5, -7, 9, -11, 13, ...} such that Jacobi(D,n) = -1 Then use P=1 and
  * Q=(1-D)/4 in the strong Lucas probable prime test. Make sure n is not a
  * perfect square, otherwise the search for D will only stop when D=n.
  ***********************************************************************************************************/
 template <bool BasicChecks = true>
-static constexpr bool IsStrongSelfridgePRP(uint64_t n) noexcept {
+gcc_attribute_const static constexpr bool IsStrongSelfridgePRP(
+    uint64_t n) noexcept {
     if constexpr (BasicChecks) {
         if (unlikely(n == 1)) {
             return false;
@@ -313,10 +317,12 @@ static constexpr bool IsStrongSelfridgePRP(uint64_t n) noexcept {
 /// operations )
 /// @param n number to test
 /// @return true if n is prime and false otherwise
+// __attribute__((__noinline__))
 gcc_attribute_const static constexpr bool IsPrime(uint64_t n) noexcept {
     if (n % 2 == 0) {
         return n == 2;
     }
+    if (unlikely(n == 1)) { return false; }
     // if (n % 3 == 0) {
     //     return n == 3;
     // }
@@ -348,14 +354,14 @@ gcc_attribute_const static constexpr bool IsPrime(uint64_t n) noexcept {
     //                                            uint32_t(n)) == 1;
     //     }
     // }
-    if (unlikely(n == 1)) { return false; }
+
     return IsStrongPRP<false>(n, 2) && IsStrongSelfridgePRP<false>(n);
 }
 
 /// @brief Funny realization that works in log(n)
 /// @param m
 /// @return true if n is prime and false otherwise
-static constexpr bool IsPrimeSmallN(uint16_t m) noexcept {
+gcc_attribute_const static constexpr bool IsPrimeSmallN(uint16_t m) noexcept {
     uint32_t n = m;
     if (n % 2 == 0) {
         return n == 2;

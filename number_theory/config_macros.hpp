@@ -7,11 +7,8 @@
 #define attribute_assume(expr) __attribute__((assume(expr)))
 #elif defined(__clang__) && defined(__has_builtin)
 #if __has_builtin(__builtin_assume)
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wassume"
 // Side effect of expr is discarded
 #define attribute_assume(expr) __builtin_assume(expr)
-#pragma clang diagnostic pop
 #else
 #define attribute_assume(expr)
 #endif

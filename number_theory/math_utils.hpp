@@ -766,12 +766,16 @@ static_assert(sign(int128_t(-(uint128_t(1) << 127))) == -1);
 
 #endif
 
-gcc_attribute_const static constexpr uint32_t uabs(int32_t n) noexcept {
-    return n >= 0 ? uint32_t(n) : -uint32_t(n);
+gcc_attribute_const static constexpr uint32_t uabs(int n) noexcept {
+    return n >= 0 ? static_cast<unsigned int>(n) : -static_cast<unsigned int>(n);
 }
 
-gcc_attribute_const static constexpr uint64_t uabs(int64_t n) noexcept {
-    return n >= 0 ? uint64_t(n) : -uint64_t(n);
+gcc_attribute_const static constexpr unsigned long uabs(long n) noexcept {
+    return n >= 0 ? static_cast<unsigned long>(n) : -static_cast<unsigned long>(n);
+}
+
+gcc_attribute_const static constexpr unsigned long long uabs(long long n) noexcept {
+    return n >= 0 ? static_cast<unsigned long long>(n) : -static_cast<unsigned long long>(n);
 }
 
 #if defined(INTEGERS_128_BIT)
