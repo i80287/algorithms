@@ -20,29 +20,7 @@
 #include "integers_128_bit.hpp"
 #endif
 
-#if defined(__GNUC__)
-#if defined(likely)
-#undef likely
-#endif
-#define likely(x) __builtin_expect(static_cast<bool>(x), true)
-#if defined(unlikely)
-#undef unlikely
-#endif
-#define unlikely(x) __builtin_expect(static_cast<bool>(x), false)
-#else
-#if !defined(likely)
-#define likely(x) static_cast<bool>(x)
-#endif
-#if !defined(unlikely)
-#define unlikely(x) static_cast<bool>(x)
-#endif
-#endif
-
-#if defined(__GNUC__)
-#define gcc_attribute_const __attribute__((const))
-#else
-#define gcc_attribute_const
-#endif
+#include "config_macros.hpp"
 
 namespace math_utils {
 
@@ -152,6 +130,7 @@ gcc_attribute_const static constexpr uint32_t isqrt(uint32_t n) noexcept {
             y |= m;
         }
     }
+    attribute_assume(y <= (1u << 16) - 1);
     return y;
 }
 
@@ -189,6 +168,7 @@ gcc_attribute_const static constexpr uint32_t isqrt(uint64_t n) noexcept {
             r = m - 1;
         }
     } while (r >= l);
+    attribute_assume(l - 1 <= 0xFFFFFFFFu);
     return uint32_t(l - 1);
 }
 
@@ -303,6 +283,8 @@ gcc_attribute_const static constexpr uint32_t icbrt(uint32_t n) noexcept {
             y++;
         }
     }
+    // 1625^3 = 4291015625 < 2^32 - 1 = 4294967295 < 4298942376 = 1626^3
+    attribute_assume(y <= 1625u);
     return y;
 }
 
@@ -321,6 +303,7 @@ static_assert(icbrt(1u << 21) == 1u << 7);
 static_assert(icbrt(1u << 24) == 1u << 8);
 static_assert(icbrt(1u << 27) == 1u << 9);
 static_assert(icbrt(1u << 30) == 1u << 10);
+static_assert(icbrt(uint32_t(-1)) == 1625u);
 
 gcc_attribute_const static constexpr uint64_t icbrt(uint64_t n) noexcept {
     /**
@@ -344,6 +327,7 @@ gcc_attribute_const static constexpr uint64_t icbrt(uint64_t n) noexcept {
             y++;
         }
     }
+    attribute_assume(y <= 2642245u);
     return uint32_t(y);
 }
 
@@ -1303,7 +1287,7 @@ gcc_attribute_const static constexpr uint32_t log2_ceil(uint128_t n) noexcept {
 
 #endif
 
-/// @brief Find q and r such n = q * (2 ^ r), q odd
+/// @brief Find q and r such n = q * (2 ^ r), q is odd if n != 0
 /// @param n n value.
 /// @param r r value to find.
 /// @return q.
@@ -1345,7 +1329,7 @@ gcc_attribute_const
     b >>= rb;
     while (true) {
         if (a < b) {
-            auto tmp = std::move(a);
+            uint128_t tmp = a;
             a = b;
             b = tmp;
         }
@@ -1440,10 +1424,6 @@ static_assert(gcd(uint64_t(18446744073709551557ull), int128_t(0)) ==
 
 }  // namespace std
 
-#endif
-
-#ifdef gcc_attribute_const
-#undef gcc_attribute_const
 #endif
 
 #endif  // !MATH_UTILS_HPP
