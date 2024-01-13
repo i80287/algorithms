@@ -1,3 +1,5 @@
+#include <gmp.h>  // mpz_t, mpz_init, mp_limb_t, mpz_limbs_write, mpz_limbs_finish, mpz_probab_prime_p
+
 #include <cinttypes>  // PRIu64
 #include <cstdint>    // uint64_t, size_t
 #include <cstdio>     // printf
@@ -490,20 +492,6 @@ static void TestLargestU64Primes() noexcept {
     }
 }
 
-static void TestRandomPrimes() {
-    const auto rnd_seed = std::uint_fast64_t(std::random_device{}()) ^
-                          std::uint_fast64_t(std::time(nullptr));
-    std::mt19937_64 rnd(rnd_seed);
-    constexpr size_t kTotalTests = 256;
-    for (size_t test = kTotalTests; test != 0; test--) {
-        const uint64_t n = rnd() | 1;
-        attribute_assume(n % 2 == 1);
-        if (unlikely(IsPrimeSqrt(n) != IsPrime(n))) {
-            printf("Error bool IsPrime(uint64_t) at number = %" PRIu64 "\n", n);
-        }
-    }
-}
-
 static void TestPrimesFromFile() noexcept {
     std::FILE* primes_fin = std::fopen("u64_primes.txt", "r");
     if (primes_fin == nullptr) {
@@ -531,10 +519,39 @@ static void TestPrimesFromFile() noexcept {
     std::fclose(primes_fin);
 }
 
+static void TestRandomPrimesGMP() {
+    if constexpr(sizeof(mp_limb_t) >= sizeof(uint64_t)) {
+        const auto rnd_seed = std::uint_fast64_t(std::random_device{}()) ^
+                              std::uint_fast64_t(std::time(nullptr));
+        std::mt19937_64 rnd(rnd_seed);
+
+        mpz_t n_gmp;
+        mpz_init(n_gmp);
+        mp_limb_t* n_gmp_array = mpz_limbs_write(n_gmp, 1);
+
+        constexpr size_t kTotalTests = 1u << 22;
+        for (size_t test = kTotalTests; test != 0; test--) {
+            const uint64_t n = rnd() | 1;
+            attribute_assume(n % 2 == 1);
+
+            n_gmp_array[0] = n;
+            mpz_limbs_finish(n_gmp, 1);
+
+            bool is_prime = mpz_probab_prime_p(n_gmp, 30) != 0;
+            if (unlikely(IsPrime(n) != is_prime)) {
+                printf("Error bool IsPrime(uint64_t) at number = %" PRIu64 "\n",
+                       n);
+            }
+        }
+
+        mpz_clear(n_gmp);
+    }
+}
+
 int main() {
     TestSmallPrimes();
     TestMidPrimes();
     TestLargestU64Primes();
-    TestRandomPrimes();
     TestPrimesFromFile();
+    TestRandomPrimesGMP();
 }
