@@ -3,15 +3,11 @@
 
 #if __cplusplus >= 202302L
 #define attribute_assume(expr) [[assume(expr)]]
-#elif defined(__GNUC__) && !defined(__clang__)
+#elif defined(__GNUC__) && __GNUC__ >= 13 && !defined(__clang__)
 #define attribute_assume(expr) __attribute__((assume(expr)))
-#elif defined(__clang__) && defined(__has_builtin)
-#if __has_builtin(__builtin_assume)
+#elif defined(__clang__) && defined(__has_builtin) && __has_builtin(__builtin_assume)
 // Side effect of expr is discarded
 #define attribute_assume(expr) __builtin_assume(expr)
-#else
-#define attribute_assume(expr)
-#endif
 #elif defined(_MSC_VER)
 #define attribute_assume(expr) __assume(expr)
 #else
