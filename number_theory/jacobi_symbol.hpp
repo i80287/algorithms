@@ -1,4 +1,4 @@
-#if !defined(JACOBI_SYMBOL_HPP)
+#ifndef JACOBI_SYMBOL_HPP
 #define JACOBI_SYMBOL_HPP 1
 
 #include <type_traits>
@@ -44,8 +44,12 @@ static constexpr int32_t JacobiSymbolUi(Uint a, Uint n) noexcept {
         }
     }
 
+    attribute_assume(n % 2 == 1);
+    // Redundant but still
+    attribute_assume(n != 0);
     // step 1
-    a = a % n;
+    a %= n;
+    attribute_assume(a < n);
     Uint r = 0;
     // step 3
     while (a != 0) {
@@ -65,7 +69,7 @@ static constexpr int32_t JacobiSymbolUi(Uint a, Uint n) noexcept {
         if (a % 4 == 3 && n % 4 == 3) {
             t = -t;
         }
-        a = a % n;
+        a %= n;
     }
 
     return (n == 1) ? t : 0;
@@ -118,8 +122,15 @@ static constexpr int32_t JacobiSymbolSi(Sint a, Sint n) noexcept {
         }
     }
 
+    attribute_assume(n % 2 == 1);
+    // Redundant but still
+    attribute_assume(n != 0);
+    attribute_assume(n_u % 2 == 1);
+    // Redundant but still
+    attribute_assume(n_u != 0);
     // step 1
     Uint a_u = static_cast<Uint>(a % n + n) % n_u;
+    attribute_assume(a_u < n_u);
     Uint r = 0;
     // step 3
     while (a_u != 0) {
@@ -184,13 +195,17 @@ static constexpr int32_t JacobiSymbolSiUi(Sint a, Uint n) noexcept {
         }
     }
 
-    //step 1
-    // a_u = a mod n
+    attribute_assume(n % 2 == 1);
+    // Redundant but still
+    attribute_assume(n != 0);
+    // step 1
+    //  a_u = a mod n
     Uint a_u = a >= 0 ? Uint(a) % n : (n - (-Uint(a)) % n);
+    attribute_assume(a_u < n);
     Uint r = 0;
-    //step 3
+    // step 3
     while (a_u != 0) {
-        //step 2
+        // step 2
         while (a_u % 2 == 0) {
             a_u /= 2;
             r = n % 8;
@@ -199,7 +214,7 @@ static constexpr int32_t JacobiSymbolSiUi(Sint a, Uint n) noexcept {
             }
         }
 
-        //step 4
+        // step 4
         r = n;
         n = a_u;
         a_u = r;
