@@ -14,6 +14,12 @@
 #define restrict_qualifier
 #endif
 
+#if defined(__GNUC__)
+#define function_macro __PRETTY_FUNCTION__
+#else
+#define function_macro __func__
+#endif
+
 #if __cplusplus >= 202302L
 #define attribute_assume(expr) [[assume(expr)]]
 #elif defined(__GNUC__) && __GNUC__ >= 13 && !defined(__clang__)
