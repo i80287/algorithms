@@ -1,14 +1,18 @@
 #include <gmp.h>  // mpz_t, mpz_init, mp_limb_t, mpz_limbs_write, mpz_limbs_finish, mpz_probab_prime_p
 
 #include <cinttypes>  // PRIu64
-#include <cstdint>    // uint64_t, size_t
-#include <cstdio>     // printf
+#include <cstdint>    // std::uint64_t, std::size_t
+#include <cstdio>     // std::printf, stdf::fscanf
 #include <ctime>      // std::time
 #include <iterator>   // std::size
 #include <random>     // std::mt19937_64
 
 #include "is_prime_bpsw.hpp"
 #include "is_prime_sqrt.hpp"
+
+using std::printf;
+using std::size_t;
+using std::uint64_t;
 
 template <size_t N, bool Reversed = true>
 static constexpr bool binsearch_contains(const uint64_t (&nums)[N],
@@ -36,6 +40,7 @@ static constexpr bool binsearch_contains(const uint64_t (&nums)[N],
 }
 
 static void TestSmallPrimes() noexcept {
+    printf("Started tests in %s\n", function_macro);
     for (uint64_t n = 0; n < 65536; n++) {
         if (unlikely(IsPrimeSqrt(n) != IsPrime(n))) {
             printf("Error bool IsPrime(uint64_t) at number = %" PRIu64 "\n", n);
@@ -44,6 +49,7 @@ static void TestSmallPrimes() noexcept {
 }
 
 static void TestMidPrimes() noexcept {
+    printf("Started tests in %s\n", function_macro);
     constexpr uint64_t primes[] = {
         1000000000000000009ull, 1000000000000000003ull, 999999999999999989ull,
         999999999999999967ull,  999999999999999877ull,  999999999999999863ull,
@@ -76,6 +82,7 @@ static void TestMidPrimes() noexcept {
 }
 
 static void TestLargestU64Primes() noexcept {
+    printf("Started tests in %s\n", function_macro);
     constexpr uint64_t primes[] = {
         18446744073709551557ull, 18446744073709551533ull,
         18446744073709551521ull, 18446744073709551437ull,
@@ -493,6 +500,7 @@ static void TestLargestU64Primes() noexcept {
 }
 
 static void TestPrimesFromFile() noexcept {
+    printf("Started tests in %s\n", function_macro);
     std::FILE* primes_fin = std::fopen("u64_primes.txt", "r");
     if (primes_fin == nullptr) {
         puts("File opening error");
@@ -501,13 +509,14 @@ static void TestPrimesFromFile() noexcept {
 
     uint64_t prev_prime = uint64_t(-1);
     for (uint64_t p = 0; likely(!feof(primes_fin));) {
-        if (unlikely(fscanf(primes_fin, "%" PRIu64, &p) != 1)) {
+        if (unlikely(std::fscanf(primes_fin, "%" PRIu64, &p) != 1)) {
             puts("File reading error");
             break;
         }
 
         if (unlikely(prev_prime <= p)) {
             printf("Primes reversed ordering not held at p = %" PRIu64 "\n", p);
+            break;
         }
         prev_prime = p;
         if (unlikely(!IsPrime(p))) {
@@ -520,16 +529,19 @@ static void TestPrimesFromFile() noexcept {
 }
 
 static void TestRandomPrimesGMP() {
-    if constexpr(sizeof(mp_limb_t) >= sizeof(uint64_t)) {
-        const auto rnd_seed = std::uint_fast64_t(std::random_device{}()) ^
-                              std::uint_fast64_t(std::time(nullptr));
-        std::mt19937_64 rnd(rnd_seed);
+    printf("Started tests in %s\n", function_macro);
 
-        mpz_t n_gmp;
-        mpz_init(n_gmp);
-        mp_limb_t* n_gmp_array = mpz_limbs_write(n_gmp, 1);
+    constexpr size_t kTotalTests = 1u << 24;
 
-        constexpr size_t kTotalTests = 1u << 22;
+    const auto rnd_seed = std::uint_fast64_t(std::random_device{}()) ^
+                          std::uint_fast64_t(std::time(nullptr));
+    std::mt19937_64 rnd(rnd_seed);
+
+    mpz_t n_gmp;
+    mpz_init(n_gmp);
+
+    if constexpr (sizeof(mp_limb_t) >= sizeof(uint64_t)) {
+        mp_limb_t* const n_gmp_array = mpz_limbs_write(n_gmp, 1);
         for (size_t test = kTotalTests; test != 0; test--) {
             const uint64_t n = rnd() | 1;
             attribute_assume(n % 2 == 1);
@@ -543,9 +555,27 @@ static void TestRandomPrimesGMP() {
                        n);
             }
         }
+    } else if constexpr (sizeof(unsigned long) == sizeof(uint32_t)) {
+        for (size_t test = kTotalTests; test != 0; test--) {
+            const uint64_t n = rnd() | 1;
+            attribute_assume(n % 2 == 1);
 
-        mpz_clear(n_gmp);
+            mpz_set_ui(n_gmp, static_cast<unsigned long int>(n >> 32));
+            mpz_mul_2exp(n_gmp, n_gmp, 32);
+            mpz_add_ui(n_gmp, n_gmp,
+                       static_cast<unsigned long int>(n & 0xFFFFFFFFu));
+
+            bool is_prime = mpz_probab_prime_p(n_gmp, 30) != 0;
+            if (unlikely(IsPrime(n) != is_prime)) {
+                printf("Error bool IsPrime(uint64_t) at number = %" PRIu64 "\n",
+                       n);
+            }
+        }
+    } else {
+        printf("Could not run tests in %s\n", function_macro);
     }
+
+    mpz_clear(n_gmp);
 }
 
 int main() {
