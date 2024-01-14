@@ -393,8 +393,8 @@ int main() {
             assert(JacobiSymbol(uint64_t(k), uint64_t(n)) == j);
 
             assert(JacobiSymbol(k, -int32_t(n)) == j);
-            assert(JacobiSymbol(int64_t(k), int64_t(-int32_t(n))) == j);
-            assert(JacobiSymbol(uint64_t(k), int64_t(-int32_t(n))) == j);
+            assert(JacobiSymbol(int64_t(k), -int64_t(n)) == j);
+            assert(JacobiSymbol(uint64_t(k), -int64_t(n)) == j);
         }
     }
 
