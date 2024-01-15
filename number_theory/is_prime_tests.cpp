@@ -7,6 +7,7 @@
 #include <iterator>   // std::size
 #include <random>     // std::mt19937_64
 
+#include "config_macros.hpp"
 #include "is_prime_bpsw.hpp"
 #include "is_prime_sqrt.hpp"
 
@@ -40,7 +41,7 @@ static constexpr bool binsearch_contains(const uint64_t (&nums)[N],
 }
 
 static void TestSmallPrimes() noexcept {
-    printf("Started tests in %s\n", function_macro);
+    printf("Started tests in %s\n", FUNCTION_MACRO);
     for (uint64_t n = 0; n < 65536; n++) {
         if (unlikely(IsPrimeSqrt(n) != IsPrime(n))) {
             printf("Error bool IsPrime(uint64_t) at number = %" PRIu64 "\n", n);
@@ -49,7 +50,7 @@ static void TestSmallPrimes() noexcept {
 }
 
 static void TestMidPrimes() noexcept {
-    printf("Started tests in %s\n", function_macro);
+    printf("Started tests in %s\n", FUNCTION_MACRO);
     constexpr uint64_t primes[] = {
         1000000000000000009ull, 1000000000000000003ull, 999999999999999989ull,
         999999999999999967ull,  999999999999999877ull,  999999999999999863ull,
@@ -82,7 +83,7 @@ static void TestMidPrimes() noexcept {
 }
 
 static void TestLargestU64Primes() noexcept {
-    printf("Started tests in %s\n", function_macro);
+    printf("Started tests in %s\n", FUNCTION_MACRO);
     constexpr uint64_t primes[] = {
         18446744073709551557ull, 18446744073709551533ull,
         18446744073709551521ull, 18446744073709551437ull,
@@ -500,7 +501,7 @@ static void TestLargestU64Primes() noexcept {
 }
 
 static void TestPrimesFromFile() noexcept {
-    printf("Started tests in %s\n", function_macro);
+    printf("Started tests in %s\n", FUNCTION_MACRO);
     std::FILE* primes_fin = std::fopen("u64_primes.txt", "r");
     if (primes_fin == nullptr) {
         puts("File opening error");
@@ -529,7 +530,7 @@ static void TestPrimesFromFile() noexcept {
 }
 
 static void TestRandomPrimesGMP() {
-    printf("Started tests in %s\n", function_macro);
+    printf("Started tests in %s\n", FUNCTION_MACRO);
 
     constexpr size_t kTotalTests = 1u << 24;
 
@@ -544,7 +545,7 @@ static void TestRandomPrimesGMP() {
         mp_limb_t* const n_gmp_array = mpz_limbs_write(n_gmp, 1);
         for (size_t test = kTotalTests; test != 0; test--) {
             const uint64_t n = rnd() | 1;
-            attribute_assume(n % 2 == 1);
+            ATTRIBUTE_ASSUME(n % 2 == 1);
 
             n_gmp_array[0] = n;
             mpz_limbs_finish(n_gmp, 1);
@@ -558,7 +559,7 @@ static void TestRandomPrimesGMP() {
     } else if constexpr (sizeof(unsigned long) == sizeof(uint32_t)) {
         for (size_t test = kTotalTests; test != 0; test--) {
             const uint64_t n = rnd() | 1;
-            attribute_assume(n % 2 == 1);
+            ATTRIBUTE_ASSUME(n % 2 == 1);
 
             mpz_set_ui(n_gmp, static_cast<unsigned long int>(n >> 32));
             mpz_mul_2exp(n_gmp, n_gmp, 32);
@@ -572,7 +573,7 @@ static void TestRandomPrimesGMP() {
             }
         }
     } else {
-        printf("Could not run tests in %s\n", function_macro);
+        printf("Could not run tests in %s\n", FUNCTION_MACRO);
     }
 
     mpz_clear(n_gmp);

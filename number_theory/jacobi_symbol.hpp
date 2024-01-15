@@ -10,7 +10,7 @@ template <typename Uint>
 #if __cplusplus >= 202002L
     requires type_traits_helper_int128_t::is_unsigned_v<Uint>
 #endif
-gcc_attribute_const static constexpr int32_t JacobiSymbolUi(Uint a,
+GCC_ATTRIBUTE_CONST static constexpr int32_t JacobiSymbolUi(Uint a,
                                                             Uint n) noexcept {
     int32_t t = 1;
 
@@ -23,7 +23,7 @@ gcc_attribute_const static constexpr int32_t JacobiSymbolUi(Uint a,
 
         auto [q, p] = math_utils::extract_2pow(n);
         assert(q % 2 == 1);
-        attribute_assume(q % 2 == 1);
+        ATTRIBUTE_ASSUME(q % 2 == 1);
         n = q;
 
         switch (a % 8) {
@@ -47,9 +47,9 @@ gcc_attribute_const static constexpr int32_t JacobiSymbolUi(Uint a,
         }
     }
 
-    attribute_assume(n % 2 == 1);
+    ATTRIBUTE_ASSUME(n % 2 == 1);
     // Redundant but still
-    attribute_assume(n != 0);
+    ATTRIBUTE_ASSUME(n != 0);
     // step 1
     a %= n;
     Uint r = 0;
@@ -81,7 +81,7 @@ template <typename Sint>
 #if __cplusplus >= 202002L
     requires type_traits_helper_int128_t::is_signed_v<Sint>
 #endif
-gcc_attribute_const static constexpr int32_t JacobiSymbolSi(Sint a,
+GCC_ATTRIBUTE_CONST static constexpr int32_t JacobiSymbolSi(Sint a,
                                                             Sint n) noexcept {
     bool carry = n < 0 && a < 0;
     using Uint = type_traits_helper_int128_t::make_unsigned<Sint>::type;
@@ -96,7 +96,7 @@ gcc_attribute_const static constexpr int32_t JacobiSymbolSi(Sint a,
         }
 
         auto [q, p] = math_utils::extract_2pow(n_u);
-        attribute_assume(q % 2 == 1);
+        ATTRIBUTE_ASSUME(q % 2 == 1);
         n_u = q;
 
         switch (uint32_t((a % 8) + 8) % 8) {
@@ -120,9 +120,9 @@ gcc_attribute_const static constexpr int32_t JacobiSymbolSi(Sint a,
         }
     }
 
-    attribute_assume(n_u % 2 == 1);
+    ATTRIBUTE_ASSUME(n_u % 2 == 1);
     // Redundant but still
-    attribute_assume(n_u > 0);
+    ATTRIBUTE_ASSUME(n_u > 0);
     // step 1
     Uint a_u = (static_cast<Uint>(a % Sint(n_u)) + n_u) % n_u;
     Uint r = 0;
@@ -155,7 +155,7 @@ template <class Sint, class Uint>
     requires type_traits_helper_int128_t::is_signed_v<Sint> &&
              type_traits_helper_int128_t::is_unsigned_v<Uint>
 #endif
-gcc_attribute_const static constexpr int32_t JacobiSymbolSiUi(Sint a,
+GCC_ATTRIBUTE_CONST static constexpr int32_t JacobiSymbolSiUi(Sint a,
                                                               Uint n) noexcept {
     int32_t t = 1;
 
@@ -167,7 +167,7 @@ gcc_attribute_const static constexpr int32_t JacobiSymbolSiUi(Sint a,
         }
 
         auto [q, p] = math_utils::extract_2pow(n);
-        attribute_assume(q % 2 == 1);
+        ATTRIBUTE_ASSUME(q % 2 == 1);
         n = q;
 
         switch (uint32_t((a % 8) + 8) % 8) {
@@ -191,9 +191,9 @@ gcc_attribute_const static constexpr int32_t JacobiSymbolSiUi(Sint a,
         }
     }
 
-    attribute_assume(n % 2 == 1);
+    ATTRIBUTE_ASSUME(n % 2 == 1);
     // Redundant but still
-    attribute_assume(n != 0);
+    ATTRIBUTE_ASSUME(n != 0);
     // step 1
     //  a_u = a mod n
     Uint a_u = (a >= 0 ? Uint(a) : (n - (-Uint(a)) % n)) % n;
@@ -230,7 +230,7 @@ gcc_attribute_const static constexpr int32_t JacobiSymbolSiUi(Sint a,
 /// @param n
 /// @return Jacobi symbol of (a/n) (-1, 0 or 1)
 template <typename IntegerT1, typename IntegerT2>
-gcc_attribute_const static constexpr int32_t JacobiSymbol(
+GCC_ATTRIBUTE_CONST static constexpr int32_t JacobiSymbol(
     IntegerT1 a, IntegerT2 n) noexcept {
 #if __cplusplus >= 202002L
     using T1 = std::remove_cvref_t<IntegerT1>;

@@ -10,8 +10,8 @@
  *
  */
 
-#ifndef INTEGERS_128_BIT
-#define INTEGERS_128_BIT 1
+#ifndef INTEGERS_128_BIT_HPP
+#define INTEGERS_128_BIT_HPP 1
 
 #include <cstdint>
 #include <ostream>
@@ -36,6 +36,26 @@ typedef std::_Signed128 int128_t;
 #endif
 
 #include "config_macros.hpp"
+
+/**
+ * Macro defined to 1 if current [u]int128_t supports constexpr
+ * operations and 0 otherwise.
+ */
+#if __cplusplus >= 202002L && defined(__GNUC__)
+#define HAS_I128_CONSTEXPR 1
+#else
+#define HAS_I128_CONSTEXPR 0
+#endif
+
+/**
+ * Macro defined to `constexpr` if current [u]int128_t supports constexpr
+ * operations. Defined to empty otherwise.
+ */
+#if HAS_I128_CONSTEXPR
+#define I128_CONSTEXPR constexpr
+#else
+#define I128_CONSTEXPR
+#endif
 
 namespace format_impl_uint128_t {
 
@@ -343,4 +363,4 @@ struct formatter<int128_t, CharT> {
 
 }  // namespace std
 
-#endif  // !INTEGERS_128_BIT
+#endif  // !INTEGERS_128_BIT_HPP

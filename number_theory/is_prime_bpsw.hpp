@@ -1,9 +1,9 @@
-#ifndef IS_PRIME_BPSW
-#define IS_PRIME_BPSW 1
+#ifndef IS_PRIME_BPSW_HPP
+#define IS_PRIME_BPSW_HPP 1
 
-#include <cstdlib> // std::abs
 #include <cstdint>
-#include <numeric> // std::gcd
+#include <cstdlib>  // std::abs
+#include <numeric>  // std::gcd
 
 #include "config_macros.hpp"
 #include "integers_128_bit.hpp"
@@ -17,7 +17,7 @@
  * some integer t, with 0 <= t < r.
  **********************************************************************************************/
 template <bool BasicChecks = true>
-gcc_attribute_const static constexpr bool IsStrongPRP(uint64_t n,
+GCC_ATTRIBUTE_CONST static constexpr bool IsStrongPRP(uint64_t n,
                                                       uint64_t a) noexcept {
     if constexpr (BasicChecks) {
         if (unlikely(a < 2)) {
@@ -39,18 +39,18 @@ gcc_attribute_const static constexpr bool IsStrongPRP(uint64_t n,
         }
     }
 
-    attribute_assume(a >= 2);
-    attribute_assume(n % 2 == 1);
-    attribute_assume(n >= 3);
+    ATTRIBUTE_ASSUME(a >= 2);
+    ATTRIBUTE_ASSUME(n % 2 == 1);
+    ATTRIBUTE_ASSUME(n >= 3);
 
     const uint64_t n_minus_1 = n - 1;
     /* Find q and r satisfying: n - 1 = q * (2^r), q odd */
     auto [q, r] = math_utils::extract_2pow(n_minus_1);
     // n - 1 >= 2 => r >= 1
-    attribute_assume(r >= 1);
-    attribute_assume(q % 2 == 1);
+    ATTRIBUTE_ASSUME(r >= 1);
+    ATTRIBUTE_ASSUME(q % 2 == 1);
     // Redundant but still
-    attribute_assume(q >= 1);
+    ATTRIBUTE_ASSUME(q >= 1);
 
     /* Check a^((2^t)*q) mod n for 0 <= t < r */
 
@@ -80,7 +80,7 @@ gcc_attribute_const static constexpr bool IsStrongPRP(uint64_t n,
  * the Jacobi symbol]
  **********************************************************************************************/
 template <bool BasicChecks = true>
-gcc_attribute_const static constexpr bool IsStrongLucasPRP(uint64_t n,
+GCC_ATTRIBUTE_CONST static constexpr bool IsStrongLucasPRP(uint64_t n,
                                                            uint32_t p,
                                                            int32_t q) noexcept {
     int64_t d = int64_t(uint64_t(p) * p) - static_cast<int64_t>(q) * 4;
@@ -105,23 +105,25 @@ gcc_attribute_const static constexpr bool IsStrongLucasPRP(uint64_t n,
         }
     }
 
-    attribute_assume(d != 0);
-    attribute_assume(n % 2 == 1);
-    attribute_assume(n >= 3);
+    ATTRIBUTE_ASSUME(d != 0);
+    ATTRIBUTE_ASSUME(n % 2 == 1);
+    ATTRIBUTE_ASSUME(n >= 3);
 
     /* nmj = n - (D/n), where (D/n) is the Jacobi symbol */
     uint64_t nmj = n - uint64_t(int64_t(JacobiSymbol(d, n)));
-    attribute_assume(nmj >= 2);
+    ATTRIBUTE_ASSUME(nmj >= 2);
 
     /* Find s and r satisfying: nmj = s * (2 ^ r), s odd */
     auto [s, r] = math_utils::extract_2pow(nmj);
-    attribute_assume(r >= 1);
-    attribute_assume(s % 2 == 1);
+    ATTRIBUTE_ASSUME(r >= 1);
+    ATTRIBUTE_ASSUME(s % 2 == 1);
     // Redundant but still
-    attribute_assume(s >= 1);
+    ATTRIBUTE_ASSUME(s >= 1);
 
-    /* make sure U_s == 0 mod n or V_((2^t)*s) == 0 mod n, for some t, 0 <= t <
-     * r */
+    /**
+     * make sure U_s == 0 mod n or V_((2^t)*s) == 0 mod n,
+     * for some t, 0 <= t < r
+     */
     uint128_t uh = 1;
     uint128_t vl = 2;
     uint128_t vh = p;
@@ -260,7 +262,7 @@ gcc_attribute_const static constexpr bool IsStrongLucasPRP(uint64_t n,
  * perfect square, otherwise the search for D will only stop when D=n.
  ***********************************************************************************************************/
 template <bool BasicChecks = true>
-gcc_attribute_const static constexpr bool IsStrongSelfridgePRP(
+GCC_ATTRIBUTE_CONST static constexpr bool IsStrongSelfridgePRP(
     uint64_t n) noexcept {
     if constexpr (BasicChecks) {
         if (unlikely(n == 1)) {
@@ -272,13 +274,13 @@ gcc_attribute_const static constexpr bool IsStrongSelfridgePRP(
         }
     }
 
-    attribute_assume(n % 2 == 1);
+    ATTRIBUTE_ASSUME(n % 2 == 1);
     // Redundant but still
-    attribute_assume(n >= 1);
+    ATTRIBUTE_ASSUME(n >= 1);
     for (int32_t d = 5;; d += (d > 0) ? 2 : -2, d = -d) {
         // Calculate the Jacobi symbol (d/n)
         const int32_t jacobi = JacobiSymbol(int64_t(d), n);
-        attribute_assume(jacobi == -1 || jacobi == 0 || jacobi == 1);
+        ATTRIBUTE_ASSUME(jacobi == -1 || jacobi == 0 || jacobi == 1);
         switch (jacobi) {
             /**
              * if jacobi == 0, d is a factor of n, therefore n is composite
@@ -300,9 +302,9 @@ gcc_attribute_const static constexpr bool IsStrongSelfridgePRP(
                 }
                 break;
             case -1: {
-                attribute_assume((1 - d) % 4 == 0);
+                ATTRIBUTE_ASSUME((1 - d) % 4 == 0);
                 int32_t q = (1 - d) / 4;
-                attribute_assume(1 - 4 * q == d);
+                ATTRIBUTE_ASSUME(1 - 4 * q == d);
                 return IsStrongLucasPRP<false>(n, 1, q);
             }
         }
@@ -313,11 +315,10 @@ gcc_attribute_const static constexpr bool IsStrongSelfridgePRP(
 /// operations )
 /// @param n number to test
 /// @return true if n is prime and false otherwise
-gcc_attribute_const static constexpr bool IsPrime(uint64_t n) noexcept {
+GCC_ATTRIBUTE_CONST static constexpr bool IsPrime(uint64_t n) noexcept {
     if (n % 2 == 0) {
         return n == 2;
     }
-
     if (n % 3 == 0) {
         return n == 3;
     }
@@ -356,7 +357,7 @@ gcc_attribute_const static constexpr bool IsPrime(uint64_t n) noexcept {
 /// @brief Funny realization that works in log(n)
 /// @param m
 /// @return true if n is prime and false otherwise
-gcc_attribute_const static constexpr bool IsPrimeSmallN(uint16_t m) noexcept {
+GCC_ATTRIBUTE_CONST static constexpr bool IsPrimeSmallN(uint16_t m) noexcept {
     uint32_t n = m;
     if (n % 2 == 0) {
         return n == 2;
@@ -402,4 +403,4 @@ gcc_attribute_const static constexpr bool IsPrimeSmallN(uint16_t m) noexcept {
     }
 }
 
-#endif  // !IS_PRIME_BPSW
+#endif  // !IS_PRIME_BPSW_HPP

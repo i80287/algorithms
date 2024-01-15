@@ -13,32 +13,32 @@
  * Restrict qualifier for the C++ (C has `restrict` keyword since C99)
  */
 #if defined(__GNUC__)
-#define restrict_qualifier __restrict__
+#define RESTRICT_QUALIFIER __restrict__
 #elif defined(__clang__)
-#define restrict_qualifier __restrict__
+#define RESTRICT_QUALIFIER __restrict__
 #elif defined(_MSC_VER)
-#define restrict_qualifier __restrict
+#define RESTRICT_QUALIFIER __restrict
 #else
-#define restrict_qualifier
+#define RESTRICT_QUALIFIER
 #endif
 
 #if defined(__GNUC__)
-#define function_macro __PRETTY_FUNCTION__
+#define FUNCTION_MACRO __PRETTY_FUNCTION__
 #else
-#define function_macro __func__
+#define FUNCTION_MACRO __func__
 #endif
 
 #if __cplusplus >= 202302L
-#define attribute_assume(expr) [[assume(expr)]]
+#define ATTRIBUTE_ASSUME(expr) [[assume(expr)]]
 #elif CONFIG_GNUC_PREREQ(13, 0) && !defined(__clang__)
-#define attribute_assume(expr) __attribute__((assume(expr)))
+#define ATTRIBUTE_ASSUME(expr) __attribute__((assume(expr)))
 #elif defined(__clang__) && defined(__has_builtin) && __has_builtin(__builtin_assume)
 // Side effect of expr is discarded
-#define attribute_assume(expr) __builtin_assume(expr)
+#define ATTRIBUTE_ASSUME(expr) __builtin_assume(expr)
 #elif defined(_MSC_VER)
-#define attribute_assume(expr) __assume(expr)
+#define ATTRIBUTE_ASSUME(expr) __assume(expr)
 #else
-#define attribute_assume(expr)
+#define ATTRIBUTE_ASSUME(expr)
 #endif
 
 /* __builtin_expect is in gcc 3.0 */
@@ -61,9 +61,9 @@
 #endif
 
 #if CONFIG_GNUC_PREREQ(2, 6)
-#define gcc_attribute_const __attribute__((const))
+#define GCC_ATTRIBUTE_CONST __attribute__((const))
 #else
-#define gcc_attribute_const
+#define GCC_ATTRIBUTE_CONST
 #endif
 
 #endif  // !CONFIG_MACROS_HPP
