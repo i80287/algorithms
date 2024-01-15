@@ -5,7 +5,7 @@
 int main() {
     static_assert(fibonacci_num(0) == 1);
     static_assert(fibonacci_num(1) == 1);
-    constexpr uint32_t k = 65536;
+    constexpr uint32_t k = 1048576;
     uint64_t prev_prev_fib = 1;
     uint64_t prev_fib = 1;
     for (uint32_t i = 2; i < k; i++) {
