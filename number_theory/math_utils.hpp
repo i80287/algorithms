@@ -8,12 +8,12 @@
 
 #include <cmath>
 #include <cstdint>
-#include <numeric>
+#include <numeric>  // std::gcd
 #include <type_traits>
-#include <utility>     // std::pair
+#include <utility>  // std::pair
 
 #if __cplusplus >= 202002L
-#include <bit>
+#include <bit>  // std::popcount, std::countr_zero, std::countl_zero
 #endif
 
 #if __has_include("integers_128_bit.hpp")
@@ -370,13 +370,15 @@ gcc_attribute_const static constexpr bool is_perfect_square(
     uint64_t n) noexcept {
     /**
      * +------------+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+
-     * |   n mod 16 |  0 |  1 |  2 |  3 |  4 |  5 |  6 |  7 |  8 |  9 | 10 | 11 | 12 | 13 | 14 | 15 |
+     * |   n mod 16 |  0 |  1 |  2 |  3 |  4 |  5 |  6 |  7 |  8 |  9 | 10 | 11
+     * | 12 | 13 | 14 | 15 |
      * +------------+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+
-     * | n*n mod 16 |  0 |  1 |  4 |  9 |  0 |  9 |  4 |  1 |  0 |  1 |  4 |  9 |  0 |  9 |  4 |  1 |
+     * | n*n mod 16 |  0 |  1 |  4 |  9 |  0 |  9 |  4 |  1 |  0 |  1 |  4 |  9
+     * |  0 |  9 |  4 |  1 |
      * +------------+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+
      *
-     * If we peek mod 32, then we should check only for n & 31 in { 0, 1, 4, 9, 16, 17, 25 },
-     * but switch statement could be less efficient in this case
+     * If we peek mod 32, then we should check only for n & 31 in { 0, 1, 4, 9,
+     * 16, 17, 25 }, but switch statement could be less efficient in this case
      */
     switch (n & 15) {
         case 0:
@@ -400,13 +402,15 @@ gcc_attribute_const static constexpr bool is_perfect_square(
     uint64_t n, uint32_t& root) noexcept {
     /**
      * +------------+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+
-     * |   n mod 16 |  0 |  1 |  2 |  3 |  4 |  5 |  6 |  7 |  8 |  9 | 10 | 11 | 12 | 13 | 14 | 15 |
+     * |   n mod 16 |  0 |  1 |  2 |  3 |  4 |  5 |  6 |  7 |  8 |  9 | 10 | 11
+     * | 12 | 13 | 14 | 15 |
      * +------------+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+
-     * | n*n mod 16 |  0 |  1 |  4 |  9 |  0 |  9 |  4 |  1 |  0 |  1 |  4 |  9 |  0 |  9 |  4 |  1 |
+     * | n*n mod 16 |  0 |  1 |  4 |  9 |  0 |  9 |  4 |  1 |  0 |  1 |  4 |  9
+     * |  0 |  9 |  4 |  1 |
      * +------------+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+
      *
-     * If we peek mod 32, then we should check only for n & 31 in { 0, 1, 4, 9, 16, 17, 25 },
-     * but switch statement could be less efficient in this case
+     * If we peek mod 32, then we should check only for n & 31 in { 0, 1, 4, 9,
+     * 16, 17, 25 }, but switch statement could be less efficient in this case
      */
     switch (n & 15) {
         case 0:
@@ -455,13 +459,15 @@ gcc_attribute_const
     is_perfect_square(uint128_t n) noexcept {
     /**
      * +------------+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+
-     * |   n mod 16 |  0 |  1 |  2 |  3 |  4 |  5 |  6 |  7 |  8 |  9 | 10 | 11 | 12 | 13 | 14 | 15 |
+     * |   n mod 16 |  0 |  1 |  2 |  3 |  4 |  5 |  6 |  7 |  8 |  9 | 10 | 11
+     * | 12 | 13 | 14 | 15 |
      * +------------+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+
-     * | n*n mod 16 |  0 |  1 |  4 |  9 |  0 |  9 |  4 |  1 |  0 |  1 |  4 |  9 |  0 |  9 |  4 |  1 |
+     * | n*n mod 16 |  0 |  1 |  4 |  9 |  0 |  9 |  4 |  1 |  0 |  1 |  4 |  9
+     * |  0 |  9 |  4 |  1 |
      * +------------+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+
      *
-     * If we peek mod 32, then we should check only for n & 31 in { 0, 1, 4, 9, 16, 17, 25 },
-     * but switch statement could be less efficient in this case
+     * If we peek mod 32, then we should check only for n & 31 in { 0, 1, 4, 9,
+     * 16, 17, 25 }, but switch statement could be less efficient in this case
      */
     switch (uint64_t(n) & 15) {
         case 0:
@@ -491,13 +497,15 @@ gcc_attribute_const
     is_perfect_square(uint128_t n, uint64_t& root) noexcept {
     /**
      * +------------+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+
-     * |   n mod 16 |  0 |  1 |  2 |  3 |  4 |  5 |  6 |  7 |  8 |  9 | 10 | 11 | 12 | 13 | 14 | 15 |
+     * |   n mod 16 |  0 |  1 |  2 |  3 |  4 |  5 |  6 |  7 |  8 |  9 | 10 | 11
+     * | 12 | 13 | 14 | 15 |
      * +------------+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+
-     * | n*n mod 16 |  0 |  1 |  4 |  9 |  0 |  9 |  4 |  1 |  0 |  1 |  4 |  9 |  0 |  9 |  4 |  1 |
+     * | n*n mod 16 |  0 |  1 |  4 |  9 |  0 |  9 |  4 |  1 |  0 |  1 |  4 |  9
+     * |  0 |  9 |  4 |  1 |
      * +------------+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+
      *
-     * If we peek mod 32, then we should check only for n & 31 in { 0, 1, 4, 9, 16, 17, 25 },
-     * but switch statement could be less efficient in this case
+     * If we peek mod 32, then we should check only for n & 31 in { 0, 1, 4, 9,
+     * 16, 17, 25 }, but switch statement could be less efficient in this case
      */
     switch (uint64_t(n) & 15) {
         case 0:
@@ -533,6 +541,19 @@ static_assert(is_perfect_square(uint128_t(1) << 60));
 #endif
 
 #endif
+
+gcc_attribute_const static constexpr uint8_t bit_reverse(uint8_t b) noexcept {
+    // See https://graphics.stanford.edu/~seander/bithacks.html#RoundUpPowerOf2
+    return uint8_t(((b * 0x80200802ULL) & 0x0884422110ULL) * 0x0101010101ULL >>
+                   32);
+}
+
+static_assert(bit_reverse(uint8_t(0b00000000)) == 0b00000000);
+static_assert(bit_reverse(uint8_t(0b00000010)) == 0b01000000);
+static_assert(bit_reverse(uint8_t(0b00001100)) == 0b00110000);
+static_assert(bit_reverse(uint8_t(0b10101010)) == 0b01010101);
+static_assert(bit_reverse(uint8_t(0b01010101)) == 0b10101010);
+static_assert(bit_reverse(uint8_t(0b11111111)) == 0b11111111);
 
 gcc_attribute_const static constexpr uint32_t bit_reverse(uint32_t n) noexcept {
     /**
@@ -766,16 +787,131 @@ static_assert(sign(int128_t(-(uint128_t(1) << 127))) == -1);
 
 #endif
 
+/// @brief a >= 0 and b > 0 => true
+///        a >= 0 and b = 0 => true
+///        a >= 0 and b < 0 => false
+///        a < 0 and b > 0 => false
+///        a < 0 and b = 0 => false
+///        a < 0 and b < 0 => true
+/// @param a
+/// @param b
+/// @return
+gcc_attribute_const static constexpr bool same_sign(int a, int b) noexcept {
+    return (a ^ b) >= 0;
+}
+
+static_assert(same_sign(1, 1));
+static_assert(same_sign(1, 0));
+static_assert(!same_sign(1, -1));
+static_assert(same_sign(0, 1));
+static_assert(same_sign(0, 0));
+static_assert(!same_sign(0, -1));
+static_assert(!same_sign(-1, 1));
+static_assert(!same_sign(-1, 0));
+static_assert(same_sign(-1, -1));
+
+/// @brief a >= 0 and b > 0 => true
+///        a >= 0 and b = 0 => true
+///        a >= 0 and b < 0 => false
+///        a < 0 and b > 0 => false
+///        a < 0 and b = 0 => false
+///        a < 0 and b < 0 => true
+/// @param a
+/// @param b
+/// @return
+gcc_attribute_const static constexpr bool same_sign(long a, long b) noexcept {
+    return (a ^ b) >= 0;
+}
+
+/// @brief a >= 0 and b > 0 => true
+///        a >= 0 and b = 0 => true
+///        a >= 0 and b < 0 => false
+///        a < 0 and b > 0 => false
+///        a < 0 and b = 0 => false
+///        a < 0 and b < 0 => true
+/// @param a
+/// @param b
+/// @return
+gcc_attribute_const static constexpr bool same_sign(long long a,
+                                                    long long b) noexcept {
+    return (a ^ b) >= 0;
+}
+
+/// @brief a > 0 and b > 0 => true
+///        a > 0 and b = 0 => false
+///        a > 0 and b < 0 => false
+///        a = 0 and b > 0 => false
+///        a = 0 and b = 0 => true
+///        a = 0 and b < 0 => false
+///        a < 0 and b > 0 => false
+///        a < 0 and b = 0 => false
+///        a < 0 and b < 0 => true
+/// @param a
+/// @param b
+/// @return
+gcc_attribute_const static constexpr bool same_sign_strict(int a,
+                                                           int b) noexcept {
+    return sign(a) == sign(b);
+}
+
+static_assert(same_sign_strict(1, 1));
+static_assert(!same_sign_strict(1, 0));
+static_assert(!same_sign_strict(1, -1));
+static_assert(!same_sign_strict(0, 1));
+static_assert(same_sign_strict(0, 0));
+static_assert(!same_sign_strict(0, -1));
+static_assert(!same_sign_strict(-1, 1));
+static_assert(!same_sign_strict(-1, 0));
+static_assert(same_sign_strict(-1, -1));
+
+/// @brief a > 0 and b > 0 => true
+///        a > 0 and b = 0 => false
+///        a > 0 and b < 0 => false
+///        a = 0 and b > 0 => false
+///        a = 0 and b = 0 => true
+///        a = 0 and b < 0 => false
+///        a < 0 and b > 0 => false
+///        a < 0 and b = 0 => false
+///        a < 0 and b < 0 => true
+/// @param a
+/// @param b
+/// @return
+gcc_attribute_const static constexpr bool same_sign_strict(long a,
+                                                           long b) noexcept {
+    return sign(a) == sign(b);
+}
+
+/// @brief a > 0 and b > 0 => true
+///        a > 0 and b = 0 => false
+///        a > 0 and b < 0 => false
+///        a = 0 and b > 0 => false
+///        a = 0 and b = 0 => true
+///        a = 0 and b < 0 => false
+///        a < 0 and b > 0 => false
+///        a < 0 and b = 0 => false
+///        a < 0 and b < 0 => true
+/// @param a
+/// @param b
+/// @return
+gcc_attribute_const static constexpr bool same_sign_strict(
+    long long a, long long b) noexcept {
+    return sign(a) == sign(b);
+}
+
 gcc_attribute_const static constexpr uint32_t uabs(int n) noexcept {
-    return n >= 0 ? static_cast<unsigned int>(n) : -static_cast<unsigned int>(n);
+    return n >= 0 ? static_cast<unsigned int>(n)
+                  : -static_cast<unsigned int>(n);
 }
 
 gcc_attribute_const static constexpr unsigned long uabs(long n) noexcept {
-    return n >= 0 ? static_cast<unsigned long>(n) : -static_cast<unsigned long>(n);
+    return n >= 0 ? static_cast<unsigned long>(n)
+                  : -static_cast<unsigned long>(n);
 }
 
-gcc_attribute_const static constexpr unsigned long long uabs(long long n) noexcept {
-    return n >= 0 ? static_cast<unsigned long long>(n) : -static_cast<unsigned long long>(n);
+gcc_attribute_const static constexpr unsigned long long uabs(
+    long long n) noexcept {
+    return n >= 0 ? static_cast<unsigned long long>(n)
+                  : -static_cast<unsigned long long>(n);
 }
 
 #if defined(INTEGERS_128_BIT)
@@ -1145,6 +1281,34 @@ gcc_attribute_const static constexpr inline int32_t count_leading_zeros(
 #endif
 }
 
+/// @brief 0b0010011 -> 0b0010101 -> 0b0010110 -> 0b0011001 -> 0b0011010 ->
+/// 0b0011100 -> 0b0100011 -> etc.
+/// x = 0 => undefined behaviour (shift by 33 bits)
+/// @param x
+/// @return
+constexpr uint32_t next_n_bits_permutation(uint32_t x) noexcept {
+    // See https://graphics.stanford.edu/~seander/bithacks.html#RoundUpPowerOf2
+
+    // t gets x's least significant 0 bits set to 1
+    uint32_t t = x | (x - 1);
+    // Next set to 1 the most significant bit to change,
+    // set to 0 the least significant ones, and add the necessary 1 bits.
+    return (t + 1) | (((~t & -~t) - 1) >> (count_trailing_zeros(x) + 1));
+}
+
+static_assert(next_n_bits_permutation(0b0010011) == 0b0010101);
+static_assert(next_n_bits_permutation(0b0010101) == 0b0010110);
+static_assert(next_n_bits_permutation(0b0010110) == 0b0011001);
+static_assert(next_n_bits_permutation(0b0011001) == 0b0011010);
+static_assert(next_n_bits_permutation(0b0011010) == 0b0011100);
+static_assert(next_n_bits_permutation(0b0011100) == 0b0100011);
+static_assert(next_n_bits_permutation(0b0100011) == 0b0100101);
+
+static_assert(next_n_bits_permutation(0b01) == 0b10);
+
+static_assert(next_n_bits_permutation(0b1111111) == 0b10111111);
+
+
 gcc_attribute_const static constexpr size_t nearest_2_pow_greater_equal(
     size_t n) noexcept {
     return size_t(1u) << (64 - uint32_t(count_leading_zeros(n | 1)) -
@@ -1302,9 +1466,10 @@ template <typename T>
              || std::is_same_v<T, uint128_t>
 #endif
 #endif
-gcc_attribute_const static constexpr std::pair<T, uint32_t> extract_2pow(T n) noexcept {
+gcc_attribute_const static constexpr std::pair<T, uint32_t> extract_2pow(
+    T n) noexcept {
     uint32_t r = uint32_t(count_trailing_zeros(n));
-    return { n >> r, r };
+    return {n >> r, r};
 }
 
 }  // namespace math_utils
