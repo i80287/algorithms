@@ -22,7 +22,6 @@ GCC_ATTRIBUTE_CONST static constexpr int32_t JacobiSymbolUi(Uint a,
         }
 
         auto [q, p] = math_utils::extract_2pow(n);
-        assert(q % 2 == 1);
         ATTRIBUTE_ASSUME(q % 2 == 1);
         n = q;
 
@@ -32,6 +31,7 @@ GCC_ATTRIBUTE_CONST static constexpr int32_t JacobiSymbolUi(Uint a,
             case 4:
             case 6:
                 // a % 2 == 0
+                // t = 0, but we return t or 0 so we can return 0 right here
                 return 0;
             case 3:
             case 5:
@@ -105,6 +105,7 @@ GCC_ATTRIBUTE_CONST static constexpr int32_t JacobiSymbolSi(Sint a,
             case 4:
             case 6:
                 // a % 2 == 0
+                // t = 0, but we return t or 0 so we can return 0 right here
                 return 0;
             case 3:
             case 5:
@@ -176,6 +177,7 @@ GCC_ATTRIBUTE_CONST static constexpr int32_t JacobiSymbolSiUi(Sint a,
             case 4:
             case 6:
                 // a % 2 == 0
+                // t = 0, but we return t or 0 so we can return 0 right here
                 return 0;
             case 3:
             case 5:
@@ -222,13 +224,14 @@ GCC_ATTRIBUTE_CONST static constexpr int32_t JacobiSymbolSiUi(Sint a,
     return (n == 1) ? t : 0;
 }
 
-/// @brief Calculates Jacobi symbol of (a/n)
+/// @brief Calculates Kronecker symbol of (a/n)
 /// Source:
+///     https://en.wikipedia.org/wiki/Legendre_symbol
 ///     https://en.wikipedia.org/wiki/Jacobi_symbol
 ///     https://en.wikipedia.org/wiki/Kronecker_symbol
 /// @param a
 /// @param n
-/// @return Jacobi symbol of (a/n) (-1, 0 or 1)
+/// @return Kronecker symbol of (a/n) (-1, 0 or 1)
 template <typename IntegerT1, typename IntegerT2>
 GCC_ATTRIBUTE_CONST static constexpr int32_t JacobiSymbol(
     IntegerT1 a, IntegerT2 n) noexcept {
@@ -243,7 +246,7 @@ GCC_ATTRIBUTE_CONST static constexpr int32_t JacobiSymbol(
     static_assert(type_traits_helper_int128_t::is_integral_v<T1>);
     static_assert(type_traits_helper_int128_t::is_integral_v<T2>);
     static_assert(sizeof(T1) == sizeof(T2));
-    static_assert(sizeof(T1) >= 4);
+    static_assert(sizeof(T1) >= sizeof(int));
 
     if constexpr (type_traits_helper_int128_t::is_unsigned_v<T1>) {
         if constexpr (type_traits_helper_int128_t::is_unsigned_v<T2>) {
