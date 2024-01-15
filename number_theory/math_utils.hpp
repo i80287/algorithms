@@ -1300,11 +1300,311 @@ static_assert(next_n_bits_permutation(0b01) == 0b10);
 
 static_assert(next_n_bits_permutation(0b1111111) == 0b10111111);
 
-GCC_ATTRIBUTE_CONST static constexpr size_t nearest_2_pow_greater_equal(
-    size_t n) noexcept {
-    return size_t(1u) << (64 - uint32_t(count_leading_zeros(n | 1)) -
-                          ((n & (n - 1)) == 0));
+GCC_ATTRIBUTE_CONST static constexpr bool is_pow2(int n) noexcept {
+    // Cast to unsigned to avoid potential overflow
+    unsigned m = static_cast<unsigned>(n);
+    // To check (m & (m - 1)) == 0 first is necessary
+    return (m & (m - 1)) == 0 && n > 0;
 }
+
+GCC_ATTRIBUTE_CONST static constexpr bool is_pow2(long n) noexcept {
+    // Cast to unsigned to avoid potential overflow
+    unsigned long m = static_cast<unsigned long>(n);
+    // To check (m & (m - 1)) == 0 first is necessary
+    return (m & (m - 1)) == 0 && n > 0;
+}
+
+GCC_ATTRIBUTE_CONST static constexpr bool is_pow2(long long n) noexcept {
+    // Cast to unsigned to avoid potential overflow
+    unsigned long long m = static_cast<unsigned long long>(n);
+    // To check (m & (m - 1)) == 0 first is necessary
+    return (m & (m - 1)) == 0 && n > 0;
+}
+
+GCC_ATTRIBUTE_CONST static constexpr bool is_pow2(unsigned int n) noexcept {
+    return (n & (n - 1)) == 0 && n != 0;
+}
+
+GCC_ATTRIBUTE_CONST static constexpr bool is_pow2(unsigned long n) noexcept {
+    return (n & (n - 1)) == 0 && n != 0;
+}
+
+GCC_ATTRIBUTE_CONST static constexpr bool is_pow2(
+    unsigned long long n) noexcept {
+    return (n & (n - 1)) == 0 && n != 0;
+}
+
+static_assert(!is_pow2(0ull));
+static_assert(is_pow2(1ull << 0));
+static_assert(is_pow2(1ull << 1));
+static_assert(is_pow2(1ull << 2));
+static_assert(is_pow2(1ull << 3));
+static_assert(is_pow2(1ull << 4));
+static_assert(is_pow2(1ull << 5));
+static_assert(is_pow2(1ull << 6));
+static_assert(is_pow2(1ull << 7));
+static_assert(is_pow2(1ull << 8));
+static_assert(is_pow2(1ull << 9));
+static_assert(is_pow2(1ull << 60));
+static_assert(is_pow2(1ull << 61));
+static_assert(is_pow2(1ull << 62));
+static_assert(is_pow2(1ull << 63));
+
+GCC_ATTRIBUTE_CONST static constexpr uint64_t nearest_pow2_ge(
+    uint32_t n) noexcept {
+    constexpr uint32_t k = sizeof(uint32_t) * CHAR_BIT;
+    return uint64_t(1ull) << (k - uint32_t(count_leading_zeros(n | 1)) -
+                              ((n & (n - 1)) == 0));
+}
+
+GCC_ATTRIBUTE_CONST static constexpr uint64_t nearest_pow2_ge(
+    uint64_t n) noexcept {
+    constexpr uint32_t k = sizeof(uint64_t) * CHAR_BIT;
+    return uint64_t(1ull) << (k - uint32_t(count_leading_zeros(n | 1)) -
+                              ((n & (n - 1)) == 0));
+}
+
+static_assert(nearest_pow2_ge(uint32_t(0u)) == 1u);
+static_assert(nearest_pow2_ge(uint32_t(1u)) == 1u);
+static_assert(nearest_pow2_ge(uint32_t(2u)) == 2u);
+static_assert(nearest_pow2_ge(uint32_t(3u)) == 4u);
+static_assert(nearest_pow2_ge(uint32_t(4u)) == 4u);
+static_assert(nearest_pow2_ge(uint32_t(5u)) == 8u);
+static_assert(nearest_pow2_ge(uint32_t(6u)) == 8u);
+static_assert(nearest_pow2_ge(uint32_t(7u)) == 8u);
+static_assert(nearest_pow2_ge(uint32_t(8u)) == 8u);
+static_assert(nearest_pow2_ge(uint32_t(16u)) == 16u);
+static_assert(nearest_pow2_ge(uint32_t(17u)) == 32u);
+static_assert(nearest_pow2_ge(uint32_t(18u)) == 32u);
+static_assert(nearest_pow2_ge(uint32_t(19u)) == 32u);
+static_assert(nearest_pow2_ge(uint32_t(20u)) == 32u);
+static_assert(nearest_pow2_ge(uint32_t(0x7FFFFFFFu)) ==
+              0x80000000u);
+static_assert(nearest_pow2_ge(uint32_t(0x80000000u)) ==
+              0x80000000u);
+static_assert(nearest_pow2_ge(uint32_t(0x80000001u)) ==
+              0x100000000ull);
+static_assert(nearest_pow2_ge(uint32_t(0xFFFFFFFFu)) ==
+              0x100000000ull);
+static_assert(nearest_pow2_ge(uint32_t(1) << 0) == uint32_t(1)
+                                                                   << 0);
+static_assert(nearest_pow2_ge(uint32_t(1) << 1) == uint32_t(1)
+                                                                   << 1);
+static_assert(nearest_pow2_ge(uint32_t(1) << 2) == uint32_t(1)
+                                                                   << 2);
+static_assert(nearest_pow2_ge(uint32_t(1) << 3) == uint32_t(1)
+                                                                   << 3);
+static_assert(nearest_pow2_ge(uint32_t(1) << 4) == uint32_t(1)
+                                                                   << 4);
+static_assert(nearest_pow2_ge(uint32_t(1) << 5) == uint32_t(1)
+                                                                   << 5);
+static_assert(nearest_pow2_ge(uint32_t(1) << 6) == uint32_t(1)
+                                                                   << 6);
+static_assert(nearest_pow2_ge(uint32_t(1) << 7) == uint32_t(1)
+                                                                   << 7);
+static_assert(nearest_pow2_ge(uint32_t(1) << 8) == uint32_t(1)
+                                                                   << 8);
+static_assert(nearest_pow2_ge(uint32_t(1) << 9) == uint32_t(1)
+                                                                   << 9);
+static_assert(nearest_pow2_ge(uint32_t(1) << 10) == uint32_t(1)
+                                                                    << 10);
+static_assert(nearest_pow2_ge(uint32_t(1) << 11) == uint32_t(1)
+                                                                    << 11);
+static_assert(nearest_pow2_ge(uint32_t(1) << 12) == uint32_t(1)
+                                                                    << 12);
+static_assert(nearest_pow2_ge(uint32_t(1) << 13) == uint32_t(1)
+                                                                    << 13);
+static_assert(nearest_pow2_ge(uint32_t(1) << 14) == uint32_t(1)
+                                                                    << 14);
+static_assert(nearest_pow2_ge(uint32_t(1) << 15) == uint32_t(1)
+                                                                    << 15);
+static_assert(nearest_pow2_ge(uint32_t(1) << 16) == uint32_t(1)
+                                                                    << 16);
+static_assert(nearest_pow2_ge(uint32_t(1) << 17) == uint32_t(1)
+                                                                    << 17);
+static_assert(nearest_pow2_ge(uint32_t(1) << 18) == uint32_t(1)
+                                                                    << 18);
+static_assert(nearest_pow2_ge(uint32_t(1) << 19) == uint32_t(1)
+                                                                    << 19);
+static_assert(nearest_pow2_ge(uint32_t(1) << 20) == uint32_t(1)
+                                                                    << 20);
+static_assert(nearest_pow2_ge(uint32_t(1) << 21) == uint32_t(1)
+                                                                    << 21);
+static_assert(nearest_pow2_ge(uint32_t(1) << 22) == uint32_t(1)
+                                                                    << 22);
+static_assert(nearest_pow2_ge(uint32_t(1) << 23) == uint32_t(1)
+                                                                    << 23);
+static_assert(nearest_pow2_ge(uint32_t(1) << 24) == uint32_t(1)
+                                                                    << 24);
+static_assert(nearest_pow2_ge(uint32_t(1) << 25) == uint32_t(1)
+                                                                    << 25);
+static_assert(nearest_pow2_ge(uint32_t(1) << 26) == uint32_t(1)
+                                                                    << 26);
+static_assert(nearest_pow2_ge(uint32_t(1) << 27) == uint32_t(1)
+                                                                    << 27);
+static_assert(nearest_pow2_ge(uint32_t(1) << 28) == uint32_t(1)
+                                                                    << 28);
+static_assert(nearest_pow2_ge(uint32_t(1) << 29) == uint32_t(1)
+                                                                    << 29);
+static_assert(nearest_pow2_ge(uint32_t(1) << 30) == uint32_t(1)
+                                                                    << 30);
+static_assert(nearest_pow2_ge(uint32_t(1) << 31) == uint32_t(1)
+                                                                    << 31);
+
+static_assert(nearest_pow2_ge(uint64_t(0u)) == 1u);
+static_assert(nearest_pow2_ge(uint64_t(1u)) == 1u);
+static_assert(nearest_pow2_ge(uint64_t(2u)) == 2u);
+static_assert(nearest_pow2_ge(uint64_t(3u)) == 4u);
+static_assert(nearest_pow2_ge(uint64_t(4u)) == 4u);
+static_assert(nearest_pow2_ge(uint64_t(5u)) == 8u);
+static_assert(nearest_pow2_ge(uint64_t(6u)) == 8u);
+static_assert(nearest_pow2_ge(uint64_t(7u)) == 8u);
+static_assert(nearest_pow2_ge(uint64_t(8u)) == 8u);
+static_assert(nearest_pow2_ge(uint64_t(16u)) == 16u);
+static_assert(nearest_pow2_ge(uint64_t(17u)) == 32u);
+static_assert(nearest_pow2_ge(uint64_t(18u)) == 32u);
+static_assert(nearest_pow2_ge(uint64_t(19u)) == 32u);
+static_assert(nearest_pow2_ge(uint64_t(20u)) == 32u);
+static_assert(nearest_pow2_ge(uint64_t(0x7FFFFFFFu)) ==
+              0x80000000u);
+static_assert(nearest_pow2_ge(uint64_t(0x80000000u)) ==
+              0x80000000u);
+static_assert(nearest_pow2_ge(uint64_t(0x80000001u)) ==
+              0x100000000ull);
+static_assert(nearest_pow2_ge(uint64_t(0xFFFFFFFFu)) ==
+              0x100000000ull);
+static_assert(nearest_pow2_ge(uint64_t(0x7FFFFFFFFFFFFFFFull)) ==
+              0x8000000000000000ull);
+static_assert(nearest_pow2_ge(uint64_t(0x8000000000000000ull)) ==
+              0x8000000000000000ull);
+static_assert(nearest_pow2_ge(uint64_t(1) << 0) == uint64_t(1)
+                                                                   << 0);
+static_assert(nearest_pow2_ge(uint64_t(1) << 1) == uint64_t(1)
+                                                                   << 1);
+static_assert(nearest_pow2_ge(uint64_t(1) << 2) == uint64_t(1)
+                                                                   << 2);
+static_assert(nearest_pow2_ge(uint64_t(1) << 3) == uint64_t(1)
+                                                                   << 3);
+static_assert(nearest_pow2_ge(uint64_t(1) << 4) == uint64_t(1)
+                                                                   << 4);
+static_assert(nearest_pow2_ge(uint64_t(1) << 5) == uint64_t(1)
+                                                                   << 5);
+static_assert(nearest_pow2_ge(uint64_t(1) << 6) == uint64_t(1)
+                                                                   << 6);
+static_assert(nearest_pow2_ge(uint64_t(1) << 7) == uint64_t(1)
+                                                                   << 7);
+static_assert(nearest_pow2_ge(uint64_t(1) << 8) == uint64_t(1)
+                                                                   << 8);
+static_assert(nearest_pow2_ge(uint64_t(1) << 9) == uint64_t(1)
+                                                                   << 9);
+static_assert(nearest_pow2_ge(uint64_t(1) << 10) == uint64_t(1)
+                                                                    << 10);
+static_assert(nearest_pow2_ge(uint64_t(1) << 11) == uint64_t(1)
+                                                                    << 11);
+static_assert(nearest_pow2_ge(uint64_t(1) << 12) == uint64_t(1)
+                                                                    << 12);
+static_assert(nearest_pow2_ge(uint64_t(1) << 13) == uint64_t(1)
+                                                                    << 13);
+static_assert(nearest_pow2_ge(uint64_t(1) << 14) == uint64_t(1)
+                                                                    << 14);
+static_assert(nearest_pow2_ge(uint64_t(1) << 15) == uint64_t(1)
+                                                                    << 15);
+static_assert(nearest_pow2_ge(uint64_t(1) << 16) == uint64_t(1)
+                                                                    << 16);
+static_assert(nearest_pow2_ge(uint64_t(1) << 17) == uint64_t(1)
+                                                                    << 17);
+static_assert(nearest_pow2_ge(uint64_t(1) << 18) == uint64_t(1)
+                                                                    << 18);
+static_assert(nearest_pow2_ge(uint64_t(1) << 19) == uint64_t(1)
+                                                                    << 19);
+static_assert(nearest_pow2_ge(uint64_t(1) << 20) == uint64_t(1)
+                                                                    << 20);
+static_assert(nearest_pow2_ge(uint64_t(1) << 21) == uint64_t(1)
+                                                                    << 21);
+static_assert(nearest_pow2_ge(uint64_t(1) << 22) == uint64_t(1)
+                                                                    << 22);
+static_assert(nearest_pow2_ge(uint64_t(1) << 23) == uint64_t(1)
+                                                                    << 23);
+static_assert(nearest_pow2_ge(uint64_t(1) << 24) == uint64_t(1)
+                                                                    << 24);
+static_assert(nearest_pow2_ge(uint64_t(1) << 25) == uint64_t(1)
+                                                                    << 25);
+static_assert(nearest_pow2_ge(uint64_t(1) << 26) == uint64_t(1)
+                                                                    << 26);
+static_assert(nearest_pow2_ge(uint64_t(1) << 27) == uint64_t(1)
+                                                                    << 27);
+static_assert(nearest_pow2_ge(uint64_t(1) << 28) == uint64_t(1)
+                                                                    << 28);
+static_assert(nearest_pow2_ge(uint64_t(1) << 29) == uint64_t(1)
+                                                                    << 29);
+static_assert(nearest_pow2_ge(uint64_t(1) << 30) == uint64_t(1)
+                                                                    << 30);
+static_assert(nearest_pow2_ge(uint64_t(1) << 31) == uint64_t(1)
+                                                                    << 31);
+static_assert(nearest_pow2_ge(uint64_t(1) << 32) == uint64_t(1)
+                                                                    << 32);
+static_assert(nearest_pow2_ge(uint64_t(1) << 33) == uint64_t(1)
+                                                                    << 33);
+static_assert(nearest_pow2_ge(uint64_t(1) << 34) == uint64_t(1)
+                                                                    << 34);
+static_assert(nearest_pow2_ge(uint64_t(1) << 35) == uint64_t(1)
+                                                                    << 35);
+static_assert(nearest_pow2_ge(uint64_t(1) << 36) == uint64_t(1)
+                                                                    << 36);
+static_assert(nearest_pow2_ge(uint64_t(1) << 37) == uint64_t(1)
+                                                                    << 37);
+static_assert(nearest_pow2_ge(uint64_t(1) << 38) == uint64_t(1)
+                                                                    << 38);
+static_assert(nearest_pow2_ge(uint64_t(1) << 39) == uint64_t(1)
+                                                                    << 39);
+static_assert(nearest_pow2_ge(uint64_t(1) << 40) == uint64_t(1)
+                                                                    << 40);
+static_assert(nearest_pow2_ge(uint64_t(1) << 41) == uint64_t(1)
+                                                                    << 41);
+static_assert(nearest_pow2_ge(uint64_t(1) << 42) == uint64_t(1)
+                                                                    << 42);
+static_assert(nearest_pow2_ge(uint64_t(1) << 43) == uint64_t(1)
+                                                                    << 43);
+static_assert(nearest_pow2_ge(uint64_t(1) << 44) == uint64_t(1)
+                                                                    << 44);
+static_assert(nearest_pow2_ge(uint64_t(1) << 45) == uint64_t(1)
+                                                                    << 45);
+static_assert(nearest_pow2_ge(uint64_t(1) << 46) == uint64_t(1)
+                                                                    << 46);
+static_assert(nearest_pow2_ge(uint64_t(1) << 47) == uint64_t(1)
+                                                                    << 47);
+static_assert(nearest_pow2_ge(uint64_t(1) << 48) == uint64_t(1)
+                                                                    << 48);
+static_assert(nearest_pow2_ge(uint64_t(1) << 49) == uint64_t(1)
+                                                                    << 49);
+static_assert(nearest_pow2_ge(uint64_t(1) << 50) == uint64_t(1)
+                                                                    << 50);
+static_assert(nearest_pow2_ge(uint64_t(1) << 51) == uint64_t(1)
+                                                                    << 51);
+static_assert(nearest_pow2_ge(uint64_t(1) << 52) == uint64_t(1)
+                                                                    << 52);
+static_assert(nearest_pow2_ge(uint64_t(1) << 53) == uint64_t(1)
+                                                                    << 53);
+static_assert(nearest_pow2_ge(uint64_t(1) << 54) == uint64_t(1)
+                                                                    << 54);
+static_assert(nearest_pow2_ge(uint64_t(1) << 55) == uint64_t(1)
+                                                                    << 55);
+static_assert(nearest_pow2_ge(uint64_t(1) << 56) == uint64_t(1)
+                                                                    << 56);
+static_assert(nearest_pow2_ge(uint64_t(1) << 57) == uint64_t(1)
+                                                                    << 57);
+static_assert(nearest_pow2_ge(uint64_t(1) << 58) == uint64_t(1)
+                                                                    << 58);
+static_assert(nearest_pow2_ge(uint64_t(1) << 59) == uint64_t(1)
+                                                                    << 59);
+static_assert(nearest_pow2_ge(uint64_t(1) << 60) == uint64_t(1)
+                                                                    << 60);
+static_assert(nearest_pow2_ge(uint64_t(1) << 61) == uint64_t(1)
+                                                                    << 61);
+static_assert(nearest_pow2_ge(uint64_t(1) << 62) == uint64_t(1)
+                                                                    << 62);
+static_assert(nearest_pow2_ge(uint64_t(1) << 63) == uint64_t(1)
+                                                                    << 63);
 
 /* Just constexpr version of isdigit from ctype.h */
 GCC_ATTRIBUTE_CONST static constexpr bool is_digit(int32_t c) noexcept {
@@ -1449,7 +1749,7 @@ GCC_ATTRIBUTE_CONST static constexpr uint32_t log2_ceil(uint128_t n) noexcept {
 /// @brief Find q and r such n = q * (2 ^ r), q is odd if n != 0
 /// @param n n value.
 /// @param r r value to find.
-/// @return q.
+/// @return Pair of q and r
 template <typename T>
 #if __cplusplus >= 202002L
     requires std::is_unsigned_v<T>
