@@ -103,7 +103,7 @@ public:
 
     // O(log*(n))
     bool Equivalent(size_t node_x_index,
-                                     size_t node_y_index) const noexcept {
+                                     size_t node_y_index) noexcept {
         assert(node_x_index < nodes_count_ && node_y_index < nodes_count_);
         return FindRoot(&nodes_[node_x_index]) ==
                FindRoot(&nodes_[node_y_index]);
@@ -111,7 +111,7 @@ public:
 
     // O(log*(n))
     void Unite(size_t node_x_index,
-                         size_t node_y_index) const noexcept {
+                         size_t node_y_index) noexcept {
         assert(node_x_index < nodes_count_ && node_y_index < nodes_count_);
         DSUTreeNode* node_x_root_ptr = FindRoot(&nodes_[node_x_index]);
         DSUTreeNode* node_y_root_ptr = FindRoot(&nodes_[node_y_index]);
@@ -235,7 +235,7 @@ public:
 
     // O(log*(n))
     bool Equivalent(size_t node_x_index,
-                                     size_t node_y_index) const noexcept {
+                                     size_t node_y_index) noexcept {
         assert(node_x_index < nodes_count_ && node_y_index < nodes_count_);
         return FindRoot(&nodes_[node_x_index]) ==
                FindRoot(&nodes_[node_y_index]);
@@ -270,7 +270,7 @@ public:
     }
 
     // O(log*(n))
-    int64_t GetWeightInSet(size_t node_index) const noexcept {
+    int64_t GetWeightInSet(size_t node_index) noexcept {
         assert(node_index < nodes_count_);
         return FindRoot(&nodes_[node_index])->weight_;
     }
