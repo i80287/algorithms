@@ -120,7 +120,7 @@ namespace search_lib {
         std::vector<string_view> result_lines;
         result_lines.reserve(result_size);
 
-        for (auto iter = lines_score.cbegin(), iter_end = iter + result_size; iter != iter_end; ++iter) {
+        for (auto iter = lines_score.cbegin(), iter_end = iter + ptrdiff_t(result_size); iter != iter_end; ++iter) {
             line_index = iter->second;
             size_t l = query_words_on_lines[line_index].line_start_index;
             size_t r = query_words_on_lines[line_index].line_end_index;

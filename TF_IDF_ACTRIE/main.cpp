@@ -34,8 +34,8 @@ void test1() {
 }
 
 void test2() {
-    constexpr const char filename[] = "Anglo_Saxon_Chronicle.txt";
-    std::FILE* file = std::fopen(filename, "r");
+    constexpr std::string_view filename = "Anglo_Saxon_Chronicle.txt";
+    std::FILE* file = std::fopen(filename.data(), "r");
 
     if (file == nullptr) {
         std::clog << "Was not able to open file " << filename << '\n';
@@ -43,13 +43,9 @@ void test2() {
     }
 
     std::string text;
-    {
-        text.reserve(1 << 20);
-        constexpr int BUFFER_SIZE = 8192;
-        char buffer[BUFFER_SIZE] = {};
-        while (fgets(buffer, BUFFER_SIZE, file) != nullptr) {
-            text += buffer;
-        }
+    text.reserve(1u << 20);
+    for (char buffer[8192] = {}; fgets(buffer, sizeof(buffer), file) != nullptr; ) {
+        text += buffer;
     }
 
     if (std::fclose(file)) {
@@ -64,7 +60,7 @@ void test2() {
     auto start = std::chrono::high_resolution_clock::now();
     std::vector<std::string_view> res = search_lib::Search(text, query, result_size);
     auto end = std::chrono::high_resolution_clock::now();
-    auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+    auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start);
 
     std::cout << "Test 2\nText length: " << text.length() << "\nFound " << res.size() << " lines in " << duration << ":\n\n";
     for (auto line : res) {
