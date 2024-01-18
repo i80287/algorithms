@@ -24,6 +24,8 @@
 
 #if defined(__GNUC__)
 #define FUNCTION_MACRO __PRETTY_FUNCTION__
+#elif defined(_MSC_VER)
+#define FUNCTION_MACRO __FUNCSIG__
 #else
 #define FUNCTION_MACRO __func__
 #endif
@@ -32,7 +34,8 @@
 #define ATTRIBUTE_ASSUME(expr) [[assume(expr)]]
 #elif CONFIG_GNUC_PREREQ(13, 0) && !defined(__clang__)
 #define ATTRIBUTE_ASSUME(expr) __attribute__((assume(expr)))
-#elif defined(__clang__) && defined(__has_builtin) && __has_builtin(__builtin_assume)
+#elif defined(__clang__) && defined(__has_builtin) && \
+    __has_builtin(__builtin_assume)
 // Side effect of expr is discarded
 #define ATTRIBUTE_ASSUME(expr) __builtin_assume(expr)
 #elif defined(_MSC_VER)
@@ -42,7 +45,7 @@
 #endif
 
 /* __builtin_expect is in gcc 3.0 */
-#if CONFIG_GNUC_PREREQ(3,0)
+#if CONFIG_GNUC_PREREQ(3, 0)
 #if defined(likely)
 #undef likely
 #endif
@@ -64,6 +67,12 @@
 #define GCC_ATTRIBUTE_CONST __attribute__((const))
 #else
 #define GCC_ATTRIBUTE_CONST
+#endif
+
+#if CONFIG_GNUC_PREREQ(1, 0)
+#define GCC_ATTRIBUTE_NOINLINE __attribute__((__noinline__))
+#else
+#define GCC_ATTRIBUTE_NOINLINE
 #endif
 
 #endif  // !CONFIG_MACROS_HPP
