@@ -43,6 +43,12 @@
 
 #include "config_macros.hpp"
 
+// Visual C++ thinks that unary minus on unsigned is an error :clown:
+#if defined(_MSC_VER)
+#pragma warning(push)
+#pragma warning(disable : 4146)
+#endif
+
 namespace math_utils {
 
 using std::int32_t;
@@ -1023,11 +1029,6 @@ static_assert(uabs(int128_t(-(uint128_t(1) << 127))) == uint128_t(1) << 127,
               "uabs");
 #endif
 
-#endif
-
-// Visual C++ thinks that unary minus on uint32_t is an error :clown:
-#if !defined(_MSC_VER)
-
 GCC_ATTRIBUTE_CONST static constexpr int32_t pop_cmp(uint32_t x,
                                                      uint32_t y) noexcept {
     /**
@@ -1999,6 +2000,10 @@ static_assert(gcd(uint64_t(18446744073709551557ull), int128_t(0)) ==
 }  // namespace std
 
 #endif
+
+#if defined(_MSC_VER)
+#pragma warning(pop)
+#endif(_MSC_VER)
 
 #if MATH_UTILS_HPP_ENABLE_TARGET_OPTIONS
 #if defined(__GNUC__)
