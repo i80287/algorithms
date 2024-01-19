@@ -47,7 +47,7 @@
 #if defined(_MSC_VER)
 #pragma warning(push)
 #pragma warning(disable : 4146)
-#endif
+#endif  // _MSC_VER
 
 namespace math_utils {
 
@@ -2013,7 +2013,7 @@ static_assert(gcd(uint64_t(18446744073709551557ull), int128_t(0)) ==
 
 #if defined(_MSC_VER)
 #pragma warning(pop)
-#endif(_MSC_VER)
+#endif  // _MSC_VER
 
 #if MATH_UTILS_HPP_ENABLE_TARGET_OPTIONS
 #if defined(__GNUC__)

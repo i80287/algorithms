@@ -1085,14 +1085,15 @@ struct LongInt {
     }
 #endif
 
-    constexpr_on_cfunc_call bool operator==(
-        const LongInt& other) const noexcept {
+    constexpr bool operator==(const LongInt& other) const noexcept {
         return size_ == other.size_ &&
-               memcmp(nums_, other.nums_, USize() * sizeof(uint32_t)) == 0;
+               std::char_traits<char>::compare(
+                   reinterpret_cast<const char*>(nums_),
+                   reinterpret_cast<const char*>(other.nums_),
+                   USize() * sizeof(uint32_t)) == 0;
     }
 
-    constexpr_on_cfunc_call bool operator!=(
-        const LongInt& other) const noexcept {
+    constexpr bool operator!=(const LongInt& other) const noexcept {
         return !(*this == other);
     }
 
@@ -1102,13 +1103,13 @@ struct LongInt {
         }
 
         size_t usize = USize();
-        const uint32_t* end = nums_ - 1;
-        const uint32_t* nums = end + usize;
-        const uint32_t* other_nums = other.nums_ - 1 + usize;
-        for (; nums != end; nums--, other_nums--) {
-            if (*nums != *other_nums) {
-                return ssize_t(*nums) * GetSign() <
-                       ssize_t(*other_nums) * other.GetSign();
+        const uint32_t* r_end = nums_ - 1;
+        const uint32_t* r_nums = r_end + usize;
+        const uint32_t* r_other_nums = other.nums_ - 1 + usize;
+        for (; r_nums != r_end; r_nums--, r_other_nums--) {
+            if (*r_nums != *r_other_nums) {
+                return ssize_t(*r_nums) * GetSign() <
+                       ssize_t(*r_other_nums) * other.GetSign();
             }
         }
 
@@ -1203,12 +1204,15 @@ struct LongInt {
         return *this;
     }
 
-    LongInt& operator/=(uint32_t n) noexcept {
-#if (defined(__GNUC__) && !defined(__clang__)) || (defined(__cpp_lib_is_constant_evaluated) && __cpp_lib_is_constant_evaluated >= 201811L)
-#if defined(__GNUC__) && !defined(__clang__)
-        if (__builtin_constant_p(n) && (n & (n - 1)) == 0)
-#else
+    constexpr LongInt& operator/=(uint32_t n) noexcept {
+#if (defined(__cpp_lib_is_constant_evaluated) &&    \
+     __cpp_lib_is_constant_evaluated >= 201811L) || \
+    (defined(__GNUC__) && __has_builtin(__builtin_constant_p))
+#if defined(__cpp_lib_is_constant_evaluated) && \
+    __cpp_lib_is_constant_evaluated >= 201811L
         if (std::is_constant_evaluated() && (n & (n - 1)) == 0)
+#else
+        if (__builtin_constant_p(n) && (n & (n - 1)) == 0)
 #endif
         {
             if (n == 0) {
@@ -1240,33 +1244,33 @@ struct LongInt {
         return uint32_t(carry);
     }
 
-    constexpr_on_cfunc_call LongInt& operator>>=(uint32_t shift) noexcept {
-        size_t size = USize();
+    constexpr LongInt& operator>>=(uint32_t shift) noexcept {
+        size_t usize = USize();
         uint32_t uints_move = shift >> 5;
-        if (uints_move >= size) {
+        if (uints_move >= usize) {
             size_ = 0;
             return *this;
         }
 
         if (uints_move != 0) {
-            size -= uints_move;
-            size_ = size_ >= 0 ? int32_t(size) : -int32_t(size);
+            usize -= uints_move;
+            size_ = size_ >= 0 ? int32_t(usize) : -int32_t(usize);
 #if defined(__cpp_lib_is_constant_evaluated) && \
     __cpp_lib_is_constant_evaluated >= 201811L
             if (std::is_constant_evaluated()) {
                 uint32_t* dst = nums_;
                 const uint32_t* src = nums_ + uints_move;
-                for (size_t limit = size; limit-- != 0; ++dst, ++src) {
+                for (size_t limit = usize; limit-- != 0; ++dst, ++src) {
                     *dst = *src;
                 }
             } else
 #endif
-                memmove(nums_, nums_ + uints_move, size * sizeof(uint32_t));
+                memmove(nums_, nums_ + uints_move, usize * sizeof(uint32_t));
         }
 
         shift &= 0b11111;
         uint32_t* nums_iter = nums_;
-        uint32_t* nums_iter_end = nums_iter + ssize_t(size) - 1;
+        uint32_t* nums_iter_end = nums_iter + ssize_t(usize) - 1;
         for (; nums_iter != nums_iter_end; ++nums_iter) {
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
             // *nums_iter = uint32_t(*reinterpret_cast<uint64_t*>(nums_iter) >>
@@ -1304,12 +1308,22 @@ struct LongInt {
 
     constexpr bool empty() const noexcept { return size_ == 0; }
 
+    constexpr int32_t size() const noexcept { return size_; }
+
+    constexpr uint32_t* begin() noexcept { return nums_; }
+
+    constexpr uint32_t* end() noexcept { return nums_ + USize(); }
+
+    constexpr const uint32_t* begin() const noexcept { return nums_; }
+
+    constexpr const uint32_t* end() const noexcept { return nums_ + USize(); }
+
     constexpr int32_t Size() const noexcept { return size_; }
 
     constexpr size_t USize() const noexcept {
         /**
          * cast to uint32_t to force zero extension when casting to size_t
-         * std::abs is not used in order to make method constexpr
+         * std::abs is not used in order to make method constexpr and avoid ub
          */
         return size_t(size_ >= 0 ? uint32_t(size_) : -uint32_t(size_));
     }
@@ -1524,10 +1538,10 @@ struct LongInt {
         static constexpr uint32_t kDecimalBase = kStrConvBase;
         static constexpr uint32_t kFftDecimalBase = 1'000;
 
-        uint32_t* digits_;
-        size_t size_;
+        uint32_t* digits_ = nullptr;
+        size_t size_ = 0;
 
-        constexpr Decimal() noexcept : digits_(nullptr), size_(0) {}
+        constexpr Decimal() noexcept = default;
 
         explicit Decimal(uint32_t n) {
             digits_ = static_cast<uint32_t*>(
@@ -1580,7 +1594,7 @@ struct LongInt {
             return *this;
         }
 
-        Decimal(Decimal&& other) noexcept : size_(other.size_) {
+        constexpr Decimal(Decimal&& other) noexcept : size_(other.size_) {
             digits_ = other.digits_;
             other.digits_ = nullptr;
             other.size_ = 0;
@@ -1932,31 +1946,31 @@ struct LongInt {
             return !(*this == n);
         }
 
-        constexpr_on_cfunc_call bool operator==(
-            const Decimal& other) const noexcept {
+        constexpr bool operator==(const Decimal& other) const noexcept {
             return size_ == other.size_ &&
-                   memcmp(digits_, other.digits_, size_ * sizeof(uint32_t)) ==
-                       0;
+                   std::char_traits<char>::compare(
+                       reinterpret_cast<const char*>(digits_),
+                       reinterpret_cast<const char*>(other.digits_),
+                       size_ * sizeof(uint32_t)) == 0;
         }
 
-        constexpr_on_cfunc_call bool operator!=(
-            const Decimal& other) const noexcept {
+        constexpr bool operator!=(const Decimal& other) const noexcept {
             return !(*this == other);
         }
 
         constexpr void PopLeadingZeros() noexcept {
-            size_t size = size_;
-            while (size != 0 && digits_[size - 1] == 0) {
-                size--;
+            size_t usize = size_;
+            while (usize != 0 && digits_[usize - 1] == 0) {
+                usize--;
             }
 
-            size_ = size;
+            size_ = usize;
         }
 
         ~Decimal() { LongIntAllocator::Deallocate(digits_); }
     };
 
-protected:
+private:
     static std::vector<Decimal> conv_bin_base_pows;
 
     static std::vector<LongInt> conv_dec_base_pows;
@@ -2224,8 +2238,8 @@ protected:
     }
 
     void NonZeroSizeAddUInt(uint32_t n) {
-        uint32_t* it = nums_;
-        const uint32_t* end = nums_ + USize();
+        uint32_t* it = begin();
+        const uint32_t* end_iter = end();
         uint64_t carry = n;
         do {
             uint64_t res = uint64_t(*it) + carry;
@@ -2235,7 +2249,7 @@ protected:
                 goto add_u_end;
             }
             ++it;
-        } while (it != end);
+        } while (it != end_iter);
 
         if (carry != 0) {
             size_t usize = USize();
