@@ -980,9 +980,8 @@ GCC_ATTRIBUTE_CONST static constexpr bool same_sign_strict(
     return sign(a) == sign(b);
 }
 
-GCC_ATTRIBUTE_CONST static constexpr uint32_t uabs(int n) noexcept {
-    return n >= 0 ? static_cast<unsigned int>(n)
-                  : -static_cast<unsigned int>(n);
+GCC_ATTRIBUTE_CONST static constexpr unsigned uabs(int n) noexcept {
+    return n >= 0 ? static_cast<unsigned>(n) : -static_cast<unsigned>(n);
 }
 
 GCC_ATTRIBUTE_CONST static constexpr unsigned long uabs(long n) noexcept {
