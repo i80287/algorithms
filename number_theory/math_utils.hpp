@@ -1829,7 +1829,6 @@ static_assert(base_10_len(uint128_t(-1)) == 39, "base_10_len");
 
 #endif
 
-
 GCC_ATTRIBUTE_CONST static constexpr uint32_t log2_floor(uint32_t n) noexcept {
     // " | 1" does not affect ans for all n >= 1.
     return 31 ^ uint32_t(count_leading_zeros(n | 1));
