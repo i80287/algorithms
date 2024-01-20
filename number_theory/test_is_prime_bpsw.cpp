@@ -3,6 +3,7 @@
 #include <cinttypes>  // PRIu64
 #include <cstdint>    // std::uint64_t, std::size_t
 #include <cstdio>     // std::printf, stdf::fscanf
+#include <cstring>    // std::strerrno
 #include <ctime>      // std::time
 #include <iterator>   // std::size
 #include <random>     // std::mt19937_64
@@ -509,7 +510,7 @@ static void TestPrimesFromFile() noexcept {
     printf("Started tests in %s\n", FUNCTION_MACRO);
     std::FILE* primes_fin = std::fopen("u64_primes.txt", "r");
     if (primes_fin == nullptr) {
-        puts("File opening error");
+        printf("File opening error: %s\n", std::strerror(errno));
         return;
     }
 
