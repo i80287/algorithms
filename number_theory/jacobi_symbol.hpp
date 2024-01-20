@@ -4,14 +4,17 @@
 #include <type_traits>
 
 #include "integers_128_bit.hpp"
-#include "math_utils.hpp"
+#include "math_functions.hpp"
+
+namespace math_functions {
+
+namespace impl {
 
 template <typename Uint>
 #if __cplusplus >= 202002L
     requires type_traits_helper_int128_t::is_unsigned_v<Uint>
 #endif
-GCC_ATTRIBUTE_CONST static constexpr int32_t JacobiSymbolUi(Uint a,
-                                                            Uint n) noexcept {
+GCC_ATTRIBUTE_CONST static constexpr int32_t jsymb_ui(Uint a, Uint n) noexcept {
     int32_t t = 1;
 
     if (n % 2 == 0) {
@@ -21,7 +24,7 @@ GCC_ATTRIBUTE_CONST static constexpr int32_t JacobiSymbolUi(Uint a,
             return a == 1;
         }
 
-        auto [q, p] = math_utils::extract_2pow(n);
+        auto [q, p] = extract_2pow(n);
         ATTRIBUTE_ASSUME(q % 2 == 1);
         n = q;
 
@@ -81,11 +84,10 @@ template <typename Sint>
 #if __cplusplus >= 202002L
     requires type_traits_helper_int128_t::is_signed_v<Sint>
 #endif
-GCC_ATTRIBUTE_CONST static constexpr int32_t JacobiSymbolSi(Sint a,
-                                                            Sint n) noexcept {
+GCC_ATTRIBUTE_CONST static constexpr int32_t jsymb_si(Sint a, Sint n) noexcept {
     bool carry = n < 0 && a < 0;
     using Uint = type_traits_helper_int128_t::make_unsigned<Sint>::type;
-    Uint n_u = static_cast<Uint>(math_utils::uabs(n));
+    Uint n_u = static_cast<Uint>(uabs(n));
 
     int32_t t = 1;
     if (n_u % 2 == 0) {
@@ -95,7 +97,7 @@ GCC_ATTRIBUTE_CONST static constexpr int32_t JacobiSymbolSi(Sint a,
             return a == 1 || a == -1;
         }
 
-        auto [q, p] = math_utils::extract_2pow(n_u);
+        auto [q, p] = extract_2pow(n_u);
         ATTRIBUTE_ASSUME(q % 2 == 1);
         n_u = q;
 
@@ -156,8 +158,8 @@ template <class Sint, class Uint>
     requires type_traits_helper_int128_t::is_signed_v<Sint> &&
              type_traits_helper_int128_t::is_unsigned_v<Uint>
 #endif
-GCC_ATTRIBUTE_CONST static constexpr int32_t JacobiSymbolSiUi(Sint a,
-                                                              Uint n) noexcept {
+GCC_ATTRIBUTE_CONST static constexpr int32_t jsymb_si_ui(Sint a,
+                                                         Uint n) noexcept {
     int32_t t = 1;
 
     if (n % 2 == 0) {
@@ -167,7 +169,7 @@ GCC_ATTRIBUTE_CONST static constexpr int32_t JacobiSymbolSiUi(Sint a,
             return a == 1 || a == -1;
         }
 
-        auto [q, p] = math_utils::extract_2pow(n);
+        auto [q, p] = extract_2pow(n);
         ATTRIBUTE_ASSUME(q % 2 == 1);
         n = q;
 
@@ -224,6 +226,8 @@ GCC_ATTRIBUTE_CONST static constexpr int32_t JacobiSymbolSiUi(Sint a,
     return (n == 1) ? t : 0;
 }
 
+}  // namespace impl
+
 /// @brief Calculates Kronecker symbol of (a/n)
 /// Source:
 ///     https://en.wikipedia.org/wiki/Legendre_symbol
@@ -233,7 +237,7 @@ GCC_ATTRIBUTE_CONST static constexpr int32_t JacobiSymbolSiUi(Sint a,
 /// @param n
 /// @return Kronecker symbol of (a/n) (-1, 0 or 1)
 template <typename IntegerT1, typename IntegerT2>
-GCC_ATTRIBUTE_CONST static constexpr int32_t JacobiSymbol(
+GCC_ATTRIBUTE_CONST static constexpr int32_t jacobi_symbol(
     IntegerT1 a, IntegerT2 n) noexcept {
 #if __cplusplus >= 202002L
     using T1 = std::remove_cvref_t<IntegerT1>;
@@ -250,18 +254,20 @@ GCC_ATTRIBUTE_CONST static constexpr int32_t JacobiSymbol(
 
     if constexpr (type_traits_helper_int128_t::is_unsigned_v<T1>) {
         if constexpr (type_traits_helper_int128_t::is_unsigned_v<T2>) {
-            return JacobiSymbolUi<T1>(a, static_cast<T1>(n));
+            return impl::jsymb_ui<T1>(a, static_cast<T1>(n));
         } else {
-            return JacobiSymbolUi<T1>(
+            return impl::jsymb_ui<T1>(
                 a, n >= 0 ? static_cast<T1>(n) : -static_cast<T1>(n));
         }
     } else {
         if constexpr (type_traits_helper_int128_t::is_unsigned_v<T2>) {
-            return JacobiSymbolSiUi<T1, T2>(a, n);
+            return impl::jsymb_si_ui<T1, T2>(a, n);
         } else {
-            return JacobiSymbolSi<T1>(a, static_cast<T1>(n));
+            return impl::jsymb_si<T1>(a, static_cast<T1>(n));
         }
     }
 }
+
+}  // namespace math_functions
 
 #endif  // !JACOBI_SYMBOL_HPP

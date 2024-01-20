@@ -8,9 +8,10 @@
 #include <random>     // std::mt19937_64
 
 #include "config_macros.hpp"
-#include "is_prime_bpsw.hpp"
-#include "is_prime_sqrt.hpp"
+#include "is_prime.hpp"
 
+using math_functions::is_prime_bpsw;
+using math_functions::is_prime_sqrt;
 using std::printf;
 using std::size_t;
 using std::uint64_t;
@@ -43,8 +44,10 @@ static constexpr bool binsearch_contains(const uint64_t (&nums)[N],
 static void TestSmallPrimes() noexcept {
     printf("Started tests in %s\n", FUNCTION_MACRO);
     for (uint64_t n = 0; n < 65536; n++) {
-        if (unlikely(IsPrimeSqrt(n) != IsPrime(n))) {
-            printf("Error bool IsPrime(uint64_t) at number = %" PRIu64 "\n", n);
+        if (unlikely(is_prime_sqrt(n) != is_prime_bpsw(n))) {
+            printf("Error bool is_prime_bpsw(uint64_t) at number = %" PRIu64
+                   "\n",
+                   n);
         }
     }
 }
@@ -75,8 +78,9 @@ static void TestMidPrimes() noexcept {
     static_assert(primes[0] < primes[0] + 2);
 
     for (uint64_t n = primes[N - 1]; n <= primes[0]; n += 2) {
-        if (unlikely(IsPrime(n) != binsearch_contains(primes, n))) {
-            printf("Error in bool IsPrime(uint64_t) at number = %" PRIu64 "\n",
+        if (unlikely(is_prime_bpsw(n) != binsearch_contains(primes, n))) {
+            printf("Error in bool is_prime_bpsw(uint64_t) at number = %" PRIu64
+                   "\n",
                    n);
         }
     }
@@ -493,8 +497,9 @@ static void TestLargestU64Primes() noexcept {
     static_assert(primes[0] < primes[0] + 2);
 
     for (uint64_t n = primes[N - 1]; n <= primes[0]; n += 2) {
-        if (unlikely(IsPrime(n) != binsearch_contains(primes, n))) {
-            printf("Error in bool IsPrime(uint64_t) at number = %" PRIu64 "\n",
+        if (unlikely(is_prime_bpsw(n) != binsearch_contains(primes, n))) {
+            printf("Error in bool is_prime_bpsw(uint64_t) at number = %" PRIu64
+                   "\n",
                    n);
         }
     }
@@ -520,8 +525,8 @@ static void TestPrimesFromFile() noexcept {
             break;
         }
         prev_prime = p;
-        if (unlikely(!IsPrime(p))) {
-            printf("IsPrime error on n = %" PRIu64 "\n", p);
+        if (unlikely(!is_prime_bpsw(p))) {
+            printf("is_prime_bpsw error on n = %" PRIu64 "\n", p);
             break;
         }
     }
@@ -551,8 +556,9 @@ static void TestRandomPrimesGMP() {
             mpz_limbs_finish(n_gmp, 1);
 
             bool is_prime = mpz_probab_prime_p(n_gmp, 30) != 0;
-            if (unlikely(IsPrime(n) != is_prime)) {
-                printf("Error bool IsPrime(uint64_t) at number = %" PRIu64 "\n",
+            if (unlikely(is_prime_bpsw(n) != is_prime)) {
+                printf("Error bool is_prime_bpsw(uint64_t) at number = %" PRIu64
+                       "\n",
                        n);
             }
         }
@@ -567,8 +573,9 @@ static void TestRandomPrimesGMP() {
                        static_cast<unsigned long int>(n & 0xFFFFFFFFu));
 
             bool is_prime = mpz_probab_prime_p(n_gmp, 30) != 0;
-            if (unlikely(IsPrime(n) != is_prime)) {
-                printf("Error bool IsPrime(uint64_t) at number = %" PRIu64 "\n",
+            if (unlikely(is_prime_bpsw(n) != is_prime)) {
+                printf("Error bool is_prime_bpsw(uint64_t) at number = %" PRIu64
+                       "\n",
                        n);
             }
         }
