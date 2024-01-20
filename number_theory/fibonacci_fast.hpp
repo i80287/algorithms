@@ -1,7 +1,7 @@
 #include <cstdint>
 #include <type_traits>
 
-/// @brief Helper namespace in order not to pollute globale namespace
+/// @brief Helper namespace in order not to pollute global namespace
 namespace fibonacci_helper_namespace {
 
 static constexpr void matrix_mul(uint64_t m1[2][2],
@@ -46,7 +46,7 @@ constexpr uint64_t fibonacci_num(uint32_t n) noexcept {
     return fibmatrix[0][0] + fibmatrix[1][0];
 }
 
-/// @brief Helper namespace in order not to pollute globale namespace
+/// @brief Helper namespace in order not to pollute global namespace
 namespace fibonacci_helper_namespace {
 
 #if __cplusplus >= 202002L
