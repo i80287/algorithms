@@ -5,9 +5,10 @@
 #include <cstring>
 #include <iostream>
 #include <limits>
-
 #include <type_traits>
 #include <vector>
+
+#include "config_macros.hpp"
 
 namespace hungarian_algo {
 
@@ -17,16 +18,18 @@ inline constexpr vertex_t kNoMatch = static_cast<vertex_t>(-1);
 inline constexpr vertex_t kNoVertex = static_cast<vertex_t>(-1);
 
 struct GraphInfo {
-    bool* const first_part_visited;
-    bool* const second_part_visited;
-    vertex_t* const first_part_matches;
-    vertex_t* const second_part_matches;
-    size_t** const neighbours;
-    size_t* const neighbours_count;
+    bool* const RESTRICT_QUALIFIER first_part_visited;
+    bool* const RESTRICT_QUALIFIER second_part_visited;
+    vertex_t* const RESTRICT_QUALIFIER first_part_matches;
+    vertex_t* const RESTRICT_QUALIFIER second_part_matches;
+    size_t** const RESTRICT_QUALIFIER neighbours;
+    size_t* const RESTRICT_QUALIFIER neighbours_count;
 };
 
 static constexpr size_t AlignSize(size_t n) noexcept {
-    return (n + 15) & size_t(-16);
+    n = (n + 15) & ~size_t(15);
+    ATTRIBUTE_ASSUME(n % 16 == 0);
+    return n;
 }
 
 /// @brief Makes copy of matrix with zero on rows and columns (by subtracting
@@ -35,7 +38,11 @@ static constexpr size_t AlignSize(size_t n) noexcept {
 /// @param matrix
 /// @param matrix_copy
 template <class T>
-static void MatrixCopy(const std::vector<std::vector<T>>& matrix, T** matrix_copy) noexcept {
+#if __cplusplus >= 202002L
+    requires std::is_arithmetic_v<T>
+#endif
+static void MatrixCopy(const std::vector<std::vector<T>>& matrix,
+                       T** RESTRICT_QUALIFIER matrix_copy) noexcept {
     size_t n = matrix.size();
     for (size_t i = 0; i < n; i++) {
         const T* row_i = matrix[i].data();
@@ -47,16 +54,8 @@ static void MatrixCopy(const std::vector<std::vector<T>>& matrix, T** matrix_cop
         }
 
         T* row_i_copy = matrix_copy[i];
-        if (min_in_row != 0) {
-            for (size_t j = 0; j < n; j++) {
-                row_i_copy[j] = row_i[j] - min_in_row;
-            }
-        } else {
-            // Not very rare case
-            // Can by optimized by the compiler
-            for (size_t j = 0; j < n; j++) {
-                row_i_copy[j] = row_i[j];
-            }
+        for (size_t j = 0; j < n; j++) {
+            row_i_copy[j] = row_i[j] - min_in_row;
         }
     }
 
@@ -68,11 +67,8 @@ static void MatrixCopy(const std::vector<std::vector<T>>& matrix, T** matrix_cop
             }
         }
 
-        // Not very rare case
-        if (min_in_column != 0) {
-            for (size_t i = 0; i < n; i++) {
-                matrix_copy[i][j] -= min_in_column;
-            }
+        for (size_t i = 0; i < n; i++) {
+            matrix_copy[i][j] -= min_in_column;
         }
     }
 }
@@ -82,25 +78,24 @@ static size_t DFSFindChainUpdateMatches(size_t i, GraphInfo& info) noexcept {
     info.first_part_visited[i] = true;
     const size_t* i_neighbours = info.neighbours[i];
 
-    for (size_t neighbour_index = 0, total_neighbours = info.neighbours_count[i];
-        neighbour_index < total_neighbours;
-        ++neighbour_index) {
-
+    for (size_t neighbour_index = 0,
+                total_neighbours = info.neighbours_count[i];
+         neighbour_index < total_neighbours; ++neighbour_index) {
         size_t j = i_neighbours[neighbour_index];
         size_t k = info.second_part_matches[j];
 
         /*
-        * Bipart. Graph
-        *
-        *      X   Y
-        *
-        * 1 -> i
-        *       \
-        *        \
-        *         %
-        *          j <- 2
-        * 
-        */
+         * Bipart. Graph
+         *
+         *      X   Y
+         *
+         * 1 -> i
+         *       \
+         *        \
+         *         %
+         *          j <- 2
+         *
+         */
         if (k == kNoMatch) {
             info.second_part_matches[j] = i;
             info.first_part_matches[i] = j;
@@ -108,17 +103,17 @@ static size_t DFSFindChainUpdateMatches(size_t i, GraphInfo& info) noexcept {
         }
 
         /*
-        * Bipart. Graph
-        *
-        *      X   Y
-        *
-        * 1 -> i
-        *       \
-        *        \
-        *         %
-        * 3 -> k<--j <- 2
-        * 
-        */
+         * Bipart. Graph
+         *
+         *      X   Y
+         *
+         * 1 -> i
+         *       \
+         *        \
+         *         %
+         * 3 -> k<--j <- 2
+         *
+         */
         if (!info.second_part_visited[j] && !info.first_part_visited[k]) {
             info.second_part_visited[j] = true;
             size_t end_vertex = DFSFindChainUpdateMatches(k, info);
@@ -137,11 +132,11 @@ static void DfsFromUnmatched(size_t i, GraphInfo& info) noexcept {
     info.first_part_visited[i] = true;
     const size_t* i_neighbours = info.neighbours[i];
 
-    for (size_t neighbour_index = 0, total_neighbours = info.neighbours_count[i];
-        neighbour_index < total_neighbours;
-        ++neighbour_index) {
+    for (size_t neighbour_index = 0,
+                total_neighbours = info.neighbours_count[i];
+         neighbour_index < total_neighbours; ++neighbour_index) {
         size_t j = i_neighbours[neighbour_index];
-        size_t k = info.second_part_matches[j];
+        vertex_t k = info.second_part_matches[j];
         if (k != kNoMatch && !info.first_part_visited[k]) {
             info.second_part_visited[j] = true;
             DfsFromUnmatched(k, info);
@@ -150,10 +145,12 @@ static void DfsFromUnmatched(size_t i, GraphInfo& info) noexcept {
 }
 
 template <class T>
-static void FillBipartiteGraph(T** matrix,
-    bool** bipartite_graph_matrix,
-    GraphInfo& info,
-    size_t n) noexcept {
+#if __cplusplus >= 202002L
+    requires std::is_arithmetic_v<T>
+#endif
+static void FillBipartiteGraph(T** RESTRICT_QUALIFIER matrix,
+                               bool** RESTRICT_QUALIFIER bipartite_graph_matrix,
+                               GraphInfo& info, size_t n) noexcept {
     std::memset(bipartite_graph_matrix + n, false, sizeof(bool) * n * n);
     std::memset(info.neighbours + n, 0, sizeof(vertex_t) * n * n);
 
@@ -172,7 +169,7 @@ static void FillBipartiteGraph(T** matrix,
 
         info.neighbours_count[i] = i_neighbours_count;
     }
-    
+
     for (vertex_t i = 0; i < n; i++) {
         info.first_part_matches[i] = kNoMatch;
         info.second_part_matches[i] = kNoMatch;
@@ -187,7 +184,8 @@ static void FillBipartiteGraph(T** matrix,
         const size_t* i_neighbours = info.neighbours[i];
         size_t i_neighbours_count = info.neighbours_count[i];
 
-        for (size_t neighbour_index = 0; neighbour_index < i_neighbours_count; ++neighbour_index) {
+        for (size_t neighbour_index = 0; neighbour_index < i_neighbours_count;
+             ++neighbour_index) {
             size_t j = i_neighbours[neighbour_index];
             assert(bipartite_graph_matrix[i][j]);
             if (info.second_part_matches[j] == kNoMatch) {
@@ -222,7 +220,13 @@ static bool FindMaxMatching(GraphInfo& info, size_t n) noexcept {
 }
 
 template <class T>
-static void MakeAlphaTransformation(T** matrix, const bool* first_part_visited, const bool* second_part_visited, size_t n) noexcept {
+#if __cplusplus >= 202002L
+    requires std::is_arithmetic_v<T>
+#endif
+static void MakeAlphaTransformation(
+    T** RESTRICT_QUALIFIER matrix,
+    const bool* RESTRICT_QUALIFIER first_part_visited,
+    const bool* RESTRICT_QUALIFIER second_part_visited, size_t n) noexcept {
     T min = std::numeric_limits<T>::max();
     for (size_t i = 0; i < n; i++) {
         for (size_t j = 0; j < n; j++) {
@@ -246,8 +250,7 @@ static void MakeAlphaTransformation(T** matrix, const bool* first_part_visited, 
             if (x_i != y_j) {
                 if (x_i) {
                     matrix[i][j] -= min;
-                }
-                else {
+                } else {
                     matrix[i][j] += min;
                 }
             }
@@ -262,10 +265,12 @@ template <class T>
 T MinAssigment(const std::vector<std::vector<T>>& original_matrix) {
     const size_t n = original_matrix.size();
     const size_t matrix_size = AlignSize(sizeof(T*) * n + sizeof(T) * n * n);
-    const size_t bipartite_graph_matrix_size = AlignSize(sizeof(bool*) * n + sizeof(bool) * n * n);
+    const size_t bipartite_graph_matrix_size =
+        AlignSize(sizeof(bool*) * n + sizeof(bool) * n * n);
     const size_t first_part_matches_size = AlignSize(sizeof(vertex_t) * n);
     const size_t second_part_matches_size = AlignSize(sizeof(vertex_t) * n);
-    const size_t neighbours_size = AlignSize(sizeof(vertex_t*) * n + sizeof(vertex_t) * n * n);
+    const size_t neighbours_size =
+        AlignSize(sizeof(vertex_t*) * n + sizeof(vertex_t) * n * n);
     const size_t neighbours_count_size = AlignSize(sizeof(size_t) * n);
     const size_t first_part_visited_size = AlignSize(sizeof(bool) * n);
     const size_t second_part_visited_size = AlignSize(sizeof(bool) * n);
@@ -281,29 +286,36 @@ T MinAssigment(const std::vector<std::vector<T>>& original_matrix) {
     T* matrix_data_start = reinterpret_cast<T*>(matrix + n);
     current_free_memory += matrix_size;
 
-    bool** const bipartite_graph_matrix = reinterpret_cast<bool**>(current_free_memory);
+    bool** const bipartite_graph_matrix =
+        reinterpret_cast<bool**>(current_free_memory);
     bool* bipartite_graph_matrix_data_start =
         reinterpret_cast<bool*>(bipartite_graph_matrix + n);
     current_free_memory += bipartite_graph_matrix_size;
 
-    vertex_t* const first_part_matches = reinterpret_cast<vertex_t*>(current_free_memory);
+    vertex_t* const first_part_matches =
+        reinterpret_cast<vertex_t*>(current_free_memory);
     current_free_memory += first_part_matches_size;
 
-    vertex_t* const second_part_matches = reinterpret_cast<vertex_t*>(current_free_memory);
+    vertex_t* const second_part_matches =
+        reinterpret_cast<vertex_t*>(current_free_memory);
     current_free_memory += second_part_matches_size;
 
-    vertex_t** const neighbours = reinterpret_cast<vertex_t**>(current_free_memory);
-    vertex_t* neighbours_data_start = reinterpret_cast<vertex_t*>(neighbours + n);
+    vertex_t** const neighbours =
+        reinterpret_cast<vertex_t**>(current_free_memory);
+    vertex_t* neighbours_data_start =
+        reinterpret_cast<vertex_t*>(neighbours + n);
     current_free_memory += neighbours_size;
 
-    size_t* const neighbours_count = reinterpret_cast<size_t*>(current_free_memory);
+    size_t* const neighbours_count =
+        reinterpret_cast<size_t*>(current_free_memory);
     current_free_memory += neighbours_count_size;
 
-    bool* const first_part_visited = reinterpret_cast<bool*>(current_free_memory);
+    bool* const first_part_visited =
+        reinterpret_cast<bool*>(current_free_memory);
     current_free_memory += first_part_visited_size;
 
     bool* second_part_visited = reinterpret_cast<bool*>(current_free_memory);
-    
+
     for (size_t i = 0; i < n; i++) {
         matrix[i] = matrix_data_start + i * n;
         bipartite_graph_matrix[i] = bipartite_graph_matrix_data_start + i * n;
@@ -327,7 +339,8 @@ T MinAssigment(const std::vector<std::vector<T>>& original_matrix) {
         if (is_perfect_matching) {
             break;
         }
-        MakeAlphaTransformation(matrix, info.first_part_visited, info.second_part_visited, n);
+        MakeAlphaTransformation(matrix, info.first_part_visited,
+                                info.second_part_visited, n);
     }
 
     T ans = 0;
@@ -341,93 +354,92 @@ T MinAssigment(const std::vector<std::vector<T>>& original_matrix) {
     return ans;
 }
 
-} // namespace hungarian_algo
+}  // namespace hungarian_algo
 
 static void TestHungarianAlgorithm() {
-    std::vector<std::vector<std::vector<uint32_t>>> input {
+    std::vector<std::vector<std::vector<uint32_t>>> input{
         {
-            { 1 }
+            {1},
         },
         {
-            { 1, 6, 1 },
-            { 3, 8, 5 },
-            { 2, 7, 6 }
+            {1, 6, 1},
+            {3, 8, 5},
+            {2, 7, 6},
         },
         {
-            { 32, 28,  4, 26,  4 },
-            { 17, 19,  4, 17,  4 },
-            {  4,  4,  5,  4,  4 },
-            { 17, 14,  4, 14,  4 },
-            { 21, 16,  4, 13,  4 }
+            {32, 28, 4, 26, 4},
+            {17, 19, 4, 17, 4},
+            {4, 4, 5, 4, 4},
+            {17, 14, 4, 14, 4},
+            {21, 16, 4, 13, 4},
         },
         {
-            { 1, 1, 1, 0, 0, 0 },
-            { 1, 1, 0, 1, 0, 0 },
-            { 1, 0, 1, 1, 1, 0 },
-            { 0, 1, 1, 1, 0, 0 },
-            { 0, 0, 1, 0, 1, 1 },
-            { 0, 0, 0, 0, 1, 1 }
+            {1, 1, 1, 0, 0, 0},
+            {1, 1, 0, 1, 0, 0},
+            {1, 0, 1, 1, 1, 0},
+            {0, 1, 1, 1, 0, 0},
+            {0, 0, 1, 0, 1, 1},
+            {0, 0, 0, 0, 1, 1},
         },
         {
-            {61,80,89,22,41,76,79,62,4,58},
-            {54,64,61,18,43,37,67,62,91,2},
-            {23,87,35,1,39,90,72,51,15,96},
-            {69,69,67,45,47,90,38,94,10,89},
-            {64,47,50,79,64,86,9,41,91,46},
-            {52,75,43,64,40,56,73,76,14,90},
-            {73,79,98,49,39,39,87,75,57,63},
-            {68,41,23,22,48,63,2,7,19,59},
-            {36,25,45,11,25,11,96,15,22,27},
-            {17,33,25,22,39,26,48,60,11,57},
+            {61, 80, 89, 22, 41, 76, 79, 62, 4, 58},
+            {54, 64, 61, 18, 43, 37, 67, 62, 91, 2},
+            {23, 87, 35, 1, 39, 90, 72, 51, 15, 96},
+            {69, 69, 67, 45, 47, 90, 38, 94, 10, 89},
+            {64, 47, 50, 79, 64, 86, 9, 41, 91, 46},
+            {52, 75, 43, 64, 40, 56, 73, 76, 14, 90},
+            {73, 79, 98, 49, 39, 39, 87, 75, 57, 63},
+            {68, 41, 23, 22, 48, 63, 2, 7, 19, 59},
+            {36, 25, 45, 11, 25, 11, 96, 15, 22, 27},
+            {17, 33, 25, 22, 39, 26, 48, 60, 11, 57},
         },
         {
-            {10,64,15,53,93,95,90,7,38,42},
-            {77,77,57,20,45,28,48,71,15,62},
-            {61,43,12,59,53,30,81,24,70,62},
-            {39,37,92,20,57,77,94,10,85,90},
-            {33,30,40,93,46,20,69,81,66,39},
-            {15,61,41,42,85,31,17,46,53,68},
-            {11,88,7,57,67,69,60,55,63,1},  
-            {58,24,72,44,67,81,28,58,31,5}, 
-            {82,54,30,5,48,41,23,91,59,10}, 
-            {21,76,10,71,11,23,79,18,8,33},
+            {10, 64, 15, 53, 93, 95, 90, 7, 38, 42},
+            {77, 77, 57, 20, 45, 28, 48, 71, 15, 62},
+            {61, 43, 12, 59, 53, 30, 81, 24, 70, 62},
+            {39, 37, 92, 20, 57, 77, 94, 10, 85, 90},
+            {33, 30, 40, 93, 46, 20, 69, 81, 66, 39},
+            {15, 61, 41, 42, 85, 31, 17, 46, 53, 68},
+            {11, 88, 7, 57, 67, 69, 60, 55, 63, 1},
+            {58, 24, 72, 44, 67, 81, 28, 58, 31, 5},
+            {82, 54, 30, 5, 48, 41, 23, 91, 59, 10},
+            {21, 76, 10, 71, 11, 23, 79, 18, 8, 33},
         },
         {
-            {47,6,53,82,11,67,56,37,82,25},
-            {75,35,63,16,44,75,58,53,94,26},
-            {13,32,27,71,53,34,27,21,92,96},
-            {46,7,62,76,76,36,33,72,17,38},
-            {43,94,55,12,9,9,60,18,80,71},
-            {2,54,84,11,60,75,48,32,76,23},
-            {43,52,20,29,41,75,37,80,38,95},
-            {92,23,28,18,25,90,84,35,97,83},
-            {94,59,67,56,88,16,82,28,46,80},
-            {75,76,86,2,79,1,49,8,72,69},
+            {47, 6, 53, 82, 11, 67, 56, 37, 82, 25},
+            {75, 35, 63, 16, 44, 75, 58, 53, 94, 26},
+            {13, 32, 27, 71, 53, 34, 27, 21, 92, 96},
+            {46, 7, 62, 76, 76, 36, 33, 72, 17, 38},
+            {43, 94, 55, 12, 9, 9, 60, 18, 80, 71},
+            {2, 54, 84, 11, 60, 75, 48, 32, 76, 23},
+            {43, 52, 20, 29, 41, 75, 37, 80, 38, 95},
+            {92, 23, 28, 18, 25, 90, 84, 35, 97, 83},
+            {94, 59, 67, 56, 88, 16, 82, 28, 46, 80},
+            {75, 76, 86, 2, 79, 1, 49, 8, 72, 69},
         },
         {
-            {1,0,1,0,1,1,0,1,0,1},
-            {1,1,1,0,0,1,0,1,0,0},
-            {1,0,1,1,1,0,1,1,0,0},
-            {0,1,0,0,0,0,1,0,1,0},
-            {1,0,1,0,1,1,0,0,0,1},
-            {0,0,0,1,0,1,0,0,0,1},
-            {1,0,0,1,1,1,1,0,0,1},
-            {0,1,0,0,1,0,0,1,1,1},
-            {0,1,1,0,0,0,0,0,0,0},
-            {1,0,0,0,1,1,1,0,0,1},
-        }
-    };
+            {1, 0, 1, 0, 1, 1, 0, 1, 0, 1},
+            {1, 1, 1, 0, 0, 1, 0, 1, 0, 0},
+            {1, 0, 1, 1, 1, 0, 1, 1, 0, 0},
+            {0, 1, 0, 0, 0, 0, 1, 0, 1, 0},
+            {1, 0, 1, 0, 1, 1, 0, 0, 0, 1},
+            {0, 0, 0, 1, 0, 1, 0, 0, 0, 1},
+            {1, 0, 0, 1, 1, 1, 1, 0, 0, 1},
+            {0, 1, 0, 0, 1, 0, 0, 1, 1, 1},
+            {0, 1, 1, 0, 0, 0, 0, 0, 0, 0},
+            {1, 0, 0, 0, 1, 1, 1, 0, 0, 1},
+        }};
 
-    uint32_t output[] = { 1, 11, 39, 0, 194, 125, 149, 0 };
+    uint32_t output[] = {1, 11, 39, 0, 194, 125, 149, 0};
     constexpr size_t total_tests = sizeof(output) / sizeof(output[0]);
     assert(input.size() == total_tests);
 
     for (size_t k = 0; k < total_tests; k++) {
         uint32_t ans = hungarian_algo::MinAssigment<uint32_t>(input[k]);
-        std::cout << "Test " << (k + 1) << ((ans == output[k]) ? "" : " not") << " passed\nAlgorithm answer: " << ans << "\nCorrect answer: " << output[k] << '\n';
+        std::cout << "Test " << (k + 1) << ((ans == output[k]) ? "" : " not")
+                  << " passed\nAlgorithm answer: " << ans
+                  << "\nCorrect answer: " << output[k] << '\n';
     }
 }
 
-int main() {
-    TestHungarianAlgorithm();
-}
+int main() { TestHungarianAlgorithm(); }
