@@ -41,7 +41,7 @@ typedef std::_Signed128 int128_t;
  * Macro defined to 1 if current [u]int128_t supports constexpr
  * operations and 0 otherwise.
  */
-#if __cplusplus >= 202002L && defined(__GNUC__)
+#if (__cplusplus >= 201703L && defined(__GNUC__)) || (__cplusplus >= 202002L && defined(_MSC_VER))
 #define HAS_I128_CONSTEXPR 1
 #else
 #define HAS_I128_CONSTEXPR 0
