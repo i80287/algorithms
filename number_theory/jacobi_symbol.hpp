@@ -86,7 +86,7 @@ template <typename Sint>
 #endif
 GCC_ATTRIBUTE_CONST static constexpr int32_t jsymb_si(Sint a, Sint n) noexcept {
     bool carry = n < 0 && a < 0;
-    using Uint = type_traits_helper_int128_t::make_unsigned<Sint>::type;
+    using Uint = type_traits_helper_int128_t::make_unsigned_t<Sint>;
     Uint n_u = static_cast<Uint>(uabs(n));
 
     int32_t t = 1;
