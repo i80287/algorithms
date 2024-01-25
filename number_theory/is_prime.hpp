@@ -68,7 +68,7 @@ GCC_ATTRIBUTE_CONST static constexpr bool is_strong_prp(uint64_t n,
     // Since n is odd and n - 1 is even >= 2, initially r > 0.
     while (--r) {
         /* test = (test ^ 2) % n */
-        test = static_cast<uint64_t>((uint128_t(test) * test) % n);
+        test = uint64_t((uint128_t(test) * test) % n);
         if (test == n_minus_1) {
             return true;
         }
@@ -118,7 +118,7 @@ GCC_ATTRIBUTE_CONST static constexpr bool is_strong_lucas_prp(
     ATTRIBUTE_ASSUME(nmj >= 2);
 
     /* Find s and r satisfying: nmj = s * (2 ^ r), s odd */
-    auto [s, r] = math_functions::extract_2pow(nmj);
+    const auto [s, r] = math_functions::extract_2pow(nmj);
     ATTRIBUTE_ASSUME(r >= 1);
     ATTRIBUTE_ASSUME(s % 2 == 1);
     // Redundant but still
@@ -128,130 +128,146 @@ GCC_ATTRIBUTE_CONST static constexpr bool is_strong_lucas_prp(
      * make sure U_s == 0 mod n or V_((2^t)*s) == 0 mod n,
      * for some t, 0 <= t < r
      */
-    uint128_t uh = 1;
-    uint128_t vl = 2;
-    uint128_t vh = p;
-    uint128_t ql = 1;
-    uint128_t qh = 1;
+    uint64_t uh = 1;
+    uint64_t vl = 2;
+    uint64_t vh = p;
+    uint64_t ql = 1;
+    uint64_t qh = 1;
     const uint64_t widen_q =
         uint64_t(q >= 0 ? uint32_t(q) : (n - uint32_t(-q)) % n);
     // n >= 3 => n - 1 >= 2 => n - 1 >= 1 => s >= 1
     for (uint32_t j = math_functions::log2_floor(s); j != 0; j--) {
         /* ql = ql*qh (mod n) */
-        ql = ((ql * qh) % n);
-        if (s & (1ull << j)) {
+        ql = uint64_t((uint128_t(ql) * qh) % n);
+        ATTRIBUTE_ASSUME(ql < n);
+        if (s & (uint64_t(1) << j)) {
             /* qh = ql*q */
-            qh = ((ql * widen_q) % n);
+            qh = uint64_t((uint128_t(ql) * widen_q) % n);
+            ATTRIBUTE_ASSUME(qh < n);
 
             /* uh = uh*vh (mod n) */
-            uh = ((uh * vh) % n);
+            uh = uint64_t((uint128_t(uh) * vh) % n);
+            ATTRIBUTE_ASSUME(uh < n);
 
             /* vl = vh*vl - p*ql (mod n) */
-            uint128_t vh_vl = vh * vl;
-            uint128_t p_ql = p * ql;
-            vl = vh_vl - p_ql;
-            if (vh_vl < p_ql) {
-                vl += n * ((p_ql - vh_vl + n - 1) / n);
-            }
-
-            vl = (vl % n);
+            uint64_t vh_vl = uint64_t((uint128_t(vh) * vl) % n);
+            uint64_t p_ql = uint64_t((p * uint128_t(ql)) % n);
+            ATTRIBUTE_ASSUME(vh_vl < n);
+            ATTRIBUTE_ASSUME(p_ql < n);
+            uint64_t tmp_vl = vh_vl - p_ql;
+            vl = vh_vl >= p_ql ? tmp_vl : tmp_vl + n;
+            ATTRIBUTE_ASSUME(vl < n);
 
             /* vh = vh*vh - 2*qh (mod n) */
-            uint128_t vh_vh = vh * vh;
-            uint128_t qh_2 = 2 * qh;
-            vh = vh_vh - qh_2;
-            if (vh_vh < qh_2) {
-                vh += n * ((qh_2 - vh_vh + n - 1) / n);
-            }
-
-            vh = (vh % n);
+            uint64_t vh_vh = uint64_t((uint128_t(vh) * vh) % n);
+            ATTRIBUTE_ASSUME(vh_vh < n);
+            uint128_t tmp_qh_2 = 2 * uint128_t(qh);
+            ATTRIBUTE_ASSUME(tmp_qh_2 <= 2 * uint128_t(n - 1));
+            uint64_t qh_2 =
+                tmp_qh_2 < n ? uint64_t(tmp_qh_2) : uint64_t(tmp_qh_2 - n);
+            ATTRIBUTE_ASSUME(qh_2 < n);
+            ATTRIBUTE_ASSUME(qh_2 == (uint128_t(qh) * 2) % n);
+            uint64_t tmp_vh = vh_vh - qh_2;
+            vh = vh_vh >= qh_2 ? tmp_vh : tmp_vh + n;
+            ATTRIBUTE_ASSUME(vh < n);
         } else {
             /* qh = ql */
             qh = ql;
 
             /* uh = uh*vl - ql (mod n) */
-            uint128_t uh_vl = uh * vl;
-            uh = uh_vl - ql;
-            if (uh_vl < ql) {
-                uh += n * ((ql - uh_vl + n - 1) / n);
-            }
-
-            uh = (uh % n);
+            uint64_t uh_vl = uint64_t((uint128_t(uh) * vl) % n);
+            ATTRIBUTE_ASSUME(uh_vl < n);
+            ATTRIBUTE_ASSUME(ql < n);
+            uint64_t tmp_uh = uh_vl - ql;
+            uh = uh_vl >= ql ? tmp_uh : tmp_uh + n;
+            ATTRIBUTE_ASSUME(uh < n);
 
             /* vh = vh*vl - p*ql (mod n) */
-            uint128_t vh_vl = vh * vl;
-            uint128_t p_ql = p * ql;
-            vh = vh_vl - p_ql;
-            if (vh_vl < p_ql) {
-                vh += n * ((p_ql - vh_vl + n - 1) / n);
-            }
-
-            vh = (vh % n);
+            uint64_t vh_vl = uint64_t((uint128_t(vh) * vl) % n);
+            uint64_t p_ql = uint64_t((p * uint128_t(ql)) % n);
+            ATTRIBUTE_ASSUME(vh_vl < n);
+            ATTRIBUTE_ASSUME(p_ql < n);
+            uint64_t tmp_vh = vh_vl - p_ql;
+            vh = vh_vl >= p_ql ? tmp_vh : tmp_vh + n;
+            ATTRIBUTE_ASSUME(vh < n);
 
             /* vl = vl*vl - 2*ql (mod n) */
-            uint128_t vl_vl = vl * vl;
-            uint128_t ql_2 = 2 * ql;
-            vl = vl_vl - ql_2;
-            if (vl_vl < ql_2) {
-                vl += n * ((ql_2 - vl_vl + n - 1) / n);
-            }
-
-            vl = (vl % n);
+            uint64_t vl_vl = uint64_t((uint128_t(vl) * vl) % n);
+            ATTRIBUTE_ASSUME(vl_vl < n);
+            uint128_t tmp_ql_2 = 2 * uint128_t(ql);
+            ATTRIBUTE_ASSUME(tmp_ql_2 <= 2 * uint128_t(n - 1));
+            uint64_t ql_2 =
+                tmp_ql_2 < n ? uint64_t(tmp_ql_2) : uint64_t(tmp_ql_2 - n);
+            ATTRIBUTE_ASSUME(ql_2 < n);
+            ATTRIBUTE_ASSUME(ql_2 == (uint128_t(ql) * 2) % n);
+            uint64_t tmp_vl = vl_vl - ql_2;
+            vl = vl_vl >= ql_2 ? tmp_vl : tmp_vl + n;
+            ATTRIBUTE_ASSUME(vl < n);
         }
     }
 
-    // Unrolled loop for j = 0 (s & (1 << j) = s % 2 = 1)
-
     /* ql = ql*qh */
-    ql = ((ql * qh) % n);
+    ql = uint64_t((uint128_t(ql) * qh) % n);
+    ATTRIBUTE_ASSUME(ql < n);
 
     /* qh = ql*q */
-    qh = ((ql * widen_q) % n);
+    qh = uint64_t((uint128_t(ql) * widen_q) % n);
+    ATTRIBUTE_ASSUME(qh < n);
 
     /* uh = uh*vl - ql (mod n) */
-    uint128_t uh_vl = uh * vl;
-    uh = uh_vl - ql;
-    if (uh_vl < ql) {
-        uh += n * ((ql - uh_vl + n - 1) / n);
-    }
+    uint64_t uh_vl = uint64_t((uint128_t(uh) * vl) % n);
+    ATTRIBUTE_ASSUME(uh_vl < n);
+    ATTRIBUTE_ASSUME(ql < n);
+    uint64_t tmp_uh = uh_vl - ql;
+    uh = uh_vl >= ql ? tmp_uh : tmp_uh + n;
+    ATTRIBUTE_ASSUME(uh < n);
+    ATTRIBUTE_ASSUME(uh == (uint128_t(n) + uh_vl - ql) % n);
 
-    uh = (uh % n);
+    /* uh contains LucasU_s */
+    if (uh == 0) {
+        return true;
+    }
 
     /* vl = vh*vl - p*ql (mod n) */
-    uint128_t vh_vl = vh * vl;
-    uint128_t p_ql = p * ql;
-    vl = vh_vl - p_ql;
-    if (vh_vl < p_ql) {
-        vl += n * ((p_ql - vh_vl + n - 1) / n);
-    }
-
-    vl = (vl % n);
-
-    /* ql = ql*qh */
-    ql = ((ql * qh) % n);
+    uint64_t vh_vl = uint64_t((uint128_t(vh) * vl) % n);
+    uint64_t p_ql = uint64_t((p * uint128_t(ql)) % n);
+    uint64_t tmp_vl = vh_vl - p_ql;
+    vl = vh_vl >= p_ql ? tmp_vl : tmp_vl + n;
+    ATTRIBUTE_ASSUME(vl < n);
+    ATTRIBUTE_ASSUME(vl == (uint128_t(n) + vh_vl - p_ql) % n);
 
     /* uh contains LucasU_s and vl contains LucasV_s */
-    if (uh == 0 || vl == 0) {
+    if (vl == 0) {
         // || vl == n - 2 || vl == 2 for mpz_extrastronglucas_prp
         return true;
     }
 
-    for (uint32_t j = 1; j < r; j++) {
+    /* ql = ql*qh */
+    ql = uint64_t((uint128_t(ql) * qh) % n);
+    ATTRIBUTE_ASSUME(ql < n);
+
+    for (uint32_t j = 1; j < r /* r - 1 for mpz_extrastronglucas_prp */; j++) {
         /* vl = vl*vl - 2*ql (mod n) */
-        auto vl_vl = vl * vl;
-        auto ql_2 = 2 * ql;
-        vl = vl_vl - ql_2;
-        if (vl_vl < ql_2) {
-            vl += n * ((ql_2 - vl_vl + n - 1) / n);
-        }
-        vl = vl % n;
+        uint64_t vl_vl = uint64_t((uint128_t(vl) * vl) % n);
+        ATTRIBUTE_ASSUME(vl_vl < n);
+        uint128_t tmp_ql_2 = 2 * uint128_t(ql);
+        ATTRIBUTE_ASSUME(tmp_ql_2 <= 2 * uint128_t(n - 1));
+        uint64_t ql_2 =
+            tmp_ql_2 < n ? uint64_t(tmp_ql_2) : uint64_t(tmp_ql_2 - n);
+        ATTRIBUTE_ASSUME(ql_2 < n);
+        ATTRIBUTE_ASSUME(ql_2 == (uint128_t(ql) * 2) % n);
+        tmp_vl = vl_vl - ql_2;
+        vl = vl_vl >= ql_2 ? tmp_vl : tmp_vl + n;
+        ATTRIBUTE_ASSUME(vl < n);
+        ATTRIBUTE_ASSUME(vl == (uint128_t(n) + vl_vl - ql_2) % n);
 
         if (vl == 0) {
             return true;
         }
 
         /* ql = ql*ql (mod n) */
-        ql = (ql * ql) % n;
+        ql = uint64_t((uint128_t(ql) * ql) % n);
+        ATTRIBUTE_ASSUME(ql < n);
     }
 
     return false;
@@ -339,20 +355,6 @@ GCC_ATTRIBUTE_CONST static constexpr bool is_prime_bpsw(uint64_t n) noexcept {
     }
     if (unlikely(n < 53 * 53)) {
         return true;
-    }
-    if (n < 31417) {
-        switch (n) {
-            case 7957:
-            case 8321:
-            case 13747:
-            case 18721:
-            case 19951:
-            case 23377:
-                return false;
-            default:
-                return math_functions::bin_pow_mod(2, uint32_t(n - 1),
-                                                   uint32_t(n)) == 1;
-        }
     }
 
     return is_strong_prp<false>(n, 2) && is_strong_selfridge_prp<false>(n);
