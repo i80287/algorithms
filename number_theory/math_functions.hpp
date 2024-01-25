@@ -175,7 +175,8 @@ static inline uint64_t isqrt(uint128_t n) noexcept {
     uint64_t r = r_ > 0xFFFFFFFFFFFFFFFFull ? uint64_t(0xFFFFFFFFFFFFFFFFull)
                                             : uint64_t(r_);
     do {
-        uint64_t m = uint64_t((uint128_t(l) + r + 1) >> 1);
+        // m = (l + r + 1) / 2
+        uint64_t m = (l / 2) + (r / 2) + ((r % 2) | (l % 2));
         if (n >= uint128_t(m) * m) {
             l = m;
         } else {
