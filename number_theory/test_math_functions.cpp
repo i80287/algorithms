@@ -1,3 +1,5 @@
+#include <cinttypes>  // PRIu64
+
 #include "math_functions.hpp"
 
 using namespace math_functions;
@@ -917,5 +919,46 @@ static_assert(gcd(uint64_t(18446744073709551557ull), int128_t(0)) ==
               "gcd");
 #endif
 
+static void test_isqrt() {
+    constexpr uint32_t kIters = 1000000;
+
+    for (uint32_t r = 0; r < (1u << 16); r++) {
+        uint32_t rs = r * r;
+        if (unlikely((r != math_functions::isqrt(rs)))) {
+            printf("Error isqrt(uint32_t) at n = %" PRIu32 "\n", rs);
+            return;
+        }
+        if (unlikely((r != math_functions::isqrt(uint64_t(rs))))) {
+            printf("Error isqrt(uint64_t) at n = %" PRIu32 "\n", rs);
+            return;
+        }
+        if (unlikely((r != math_functions::isqrt(uint128_t(rs))))) {
+            printf("Error isqrt(uint128_t) at n = %" PRIu32 "\n", rs);
+            return;
+        }
+    }
+
+    for (uint32_t r = uint32_t(0) - kIters; r != 0; r++) {
+        uint64_t rs = uint64_t(r) * r;
+        if (unlikely((r != math_functions::isqrt(rs)))) {
+            printf("Error isqrt(uint64_t) at n = %" PRIu64 "\n", rs);
+            return;
+        }
+        if (unlikely((r != math_functions::isqrt(uint128_t(rs))))) {
+            printf("Error isqrt(uint128_t) at n = %" PRIu64 "\n", rs);
+            return;
+        }
+    }
+
+    for (uint64_t r = uint64_t(0) - kIters; r != 0; r++) {
+        uint128_t rs = uint128_t(r) * r;
+        if (unlikely((r != math_functions::isqrt(uint128_t(rs))))) {
+            printf("Error isqrt(uint128_t) at n = %s\n", std::to_string(rs).c_str());
+            return;
+        }
+    }
+}
+
 int main() {
+    test_isqrt();
 }
