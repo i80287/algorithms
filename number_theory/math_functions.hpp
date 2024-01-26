@@ -741,6 +741,7 @@ GCC_ATTRIBUTE_CONST static constexpr int32_t count_trailing_zeros(
         }
 
         uint64_t high = static_cast<uint64_t>(n >> 64);
+        ATTRIBUTE_ASSUME(high != 0);
 #if defined(__GNUC__)
         return __builtin_ctzll(high) + 64;
 #else
@@ -799,7 +800,10 @@ GCC_ATTRIBUTE_CONST static constexpr inline int32_t count_leading_zeros(
     if constexpr (std::is_same_v<T, uint128_t>) {
         uint64_t hi = static_cast<uint64_t>(n >> 64);
         if (hi != 0) {
-#if defined(__GNUC__)
+            // Avoid recursive call to count_leading_zeros<uint64_t>
+#if __cplusplus >= 202002L
+            return std::countl_zero(hi);
+#elif defined(__GNUC__)
             return __builtin_clzll(hi);
 #else
             return static_cast<int32_t>(lz_count_64_software(hi));
@@ -807,7 +811,11 @@ GCC_ATTRIBUTE_CONST static constexpr inline int32_t count_leading_zeros(
         }
 
         uint64_t low = static_cast<uint64_t>(n);
-#if defined(__GNUC__)
+        ATTRIBUTE_ASSUME(low != 0);
+        // Avoid recursive call to count_leading_zeros<uint64_t>
+#if __cplusplus >= 202002L
+        return 64 + std::countl_zero(low);
+#elif defined(__GNUC__)
         return 64 + __builtin_clzll(low);
 #else
         return 64 + static_cast<int32_t>(lz_count_64_software(low));
