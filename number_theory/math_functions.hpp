@@ -452,11 +452,12 @@ GCC_ATTRIBUTE_CONST static inline uint32_t log2_ceil_software(uint64_t n) {
 }
 
 /**
- * Taken from .NET C# library
  *  Returns the integer (floor) log of the specified value, base 2.
  *  Note that by convention, input value 0 returns 0 since log(0) is undefined.
  */
 GCC_ATTRIBUTE_CONST static inline uint32_t de_bruijn_log2(uint32_t value) {
+    // See https://graphics.stanford.edu/~seander/bithacks.html#RoundUpPowerOf2
+
     static const unsigned char MultiplyDeBruijnBitPosition[32] = {
         0, 9,  1,  10, 13, 21, 2,  29, 11, 14, 16, 18, 22, 25, 3, 30,
         8, 12, 20, 28, 15, 17, 24, 7,  19, 27, 23, 6,  26, 5,  4, 31};
@@ -1147,7 +1148,6 @@ constexpr
                                             999999999999999999ull,
                                             9999999999999999999ull};
     int32_t digits = (19 * (63 - int32_t(count_leading_zeros(n)))) >> 6;
-    assert(digits >= -1);
     digits += int32_t((table2[digits + 1] - n) >> 63);
     return uint32_t(digits);
 }
