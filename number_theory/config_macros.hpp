@@ -69,10 +69,16 @@
 #define GCC_ATTRIBUTE_CONST
 #endif
 
-#if CONFIG_GNUC_PREREQ(1, 0)
+#if CONFIG_GNUC_PREREQ(3, 0)
 #define GCC_ATTRIBUTE_NOINLINE __attribute__((__noinline__))
 #else
 #define GCC_ATTRIBUTE_NOINLINE
+#endif
+
+#if CONFIG_GNUC_PREREQ(3, 0)
+#define GCC_ATTRIBUTE_ALWAYS_INLINE __attribute__((always_inline))
+#else
+#define GCC_ATTRIBUTE_ALWAYS_INLINE
 #endif
 
 #endif  // !CONFIG_MACROS_HPP
