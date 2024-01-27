@@ -159,6 +159,7 @@ GCC_ATTRIBUTE_CONST static constexpr uint32_t isqrt(uint64_t n) noexcept {
         }
     } while (r >= l);
     ATTRIBUTE_ASSUME(l - 1 <= 0xFFFFFFFFu);
+    ATTRIBUTE_ASSUME(((l - 1) >> 32) == 0);
     return uint32_t(l - 1);
 }
 
@@ -229,6 +230,22 @@ GCC_ATTRIBUTE_CONST static constexpr uint64_t icbrt(uint64_t n) noexcept {
     }
     ATTRIBUTE_ASSUME(y <= 2642245u);
     return uint32_t(y);
+}
+
+/// @brief Return integer part of the fourth root of n, that is [ n^0.25 ]
+///         It can be shown that [ n^0.25 ] = [ ( [ n^0.5 ] )^0.5 ]
+/// @param n
+/// @return
+GCC_ATTRIBUTE_CONST static constexpr uint32_t ifrrt(uint64_t n) noexcept {
+    return isqrt(isqrt(n));
+}
+
+/// @brief Return integer part of the fourth root of n, that is [ n^0.25 ]
+///         It can be shown that [ n^0.25 ] = [ ( [ n^0.5 ] )^0.5 ]
+/// @param n
+/// @return
+GCC_ATTRIBUTE_CONST static constexpr uint32_t ifrrt(uint128_t n) noexcept {
+    return isqrt(isqrt(n));
 }
 
 /// @brief Checks whether n is a perfect square or not
