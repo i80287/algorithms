@@ -10,7 +10,7 @@
 #if MATH_FUNCTIONS_HPP_ENABLE_TARGET_OPTIONS
 /**
  * From lzcnt: bsr -> lzcnt (used in leading zeros count)
- * Used in log2_floor, log2_ceiled
+ * Used in log2_floor, log2_ceil
  *
  * From bmi: bsf -> tzcnt (used in trailing zeros count)
  * Used in extract_2pow
@@ -105,10 +105,8 @@ GCC_ATTRIBUTE_CONST static constexpr uint32_t bin_pow_mod(
 /// @param p
 /// @param mod
 /// @return (n ^ p) % mod
-GCC_ATTRIBUTE_CONST
-I128_CONSTEXPR
-static inline uint64_t bin_pow_mod(uint64_t n, uint64_t p,
-                                   uint64_t mod) noexcept {
+GCC_ATTRIBUTE_CONST static I128_CONSTEXPR uint64_t
+bin_pow_mod(uint64_t n, uint64_t p, uint64_t mod) noexcept {
     uint64_t res = 1;
     while (true) {
         if (p & 1) {
@@ -164,9 +162,7 @@ GCC_ATTRIBUTE_CONST static constexpr uint32_t isqrt(uint64_t n) noexcept {
 
 #if defined(INTEGERS_128_BIT_HPP)
 
-GCC_ATTRIBUTE_CONST
-I128_CONSTEXPR
-static inline uint64_t isqrt(uint128_t n) noexcept {
+GCC_ATTRIBUTE_CONST static I128_CONSTEXPR uint64_t isqrt(uint128_t n) noexcept {
     /**
      * See Hackers Delight Chapter 11.
      */
@@ -300,9 +296,8 @@ GCC_ATTRIBUTE_CONST static constexpr bool is_perfect_square(
 /// @brief Checks whether n is a perfect square or not
 /// @param n
 /// @return true if n is a perfect square and false otherwise
-GCC_ATTRIBUTE_CONST
-I128_CONSTEXPR
-static inline bool is_perfect_square(uint128_t n) noexcept {
+GCC_ATTRIBUTE_CONST static I128_CONSTEXPR bool is_perfect_square(
+    uint128_t n) noexcept {
     /**
      * +------------+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+
      * |   n mod 16 |  0 |  1 |  2 |  3 |  4 |  5 |  6 |  7 |  8 |  9 | 10 | 11
@@ -333,9 +328,8 @@ static inline bool is_perfect_square(uint128_t n) noexcept {
 /// @param n
 /// @param root
 /// @return true if n is a perfect square and false otherwise
-GCC_ATTRIBUTE_CONST
-I128_CONSTEXPR
-static inline bool is_perfect_square(uint128_t n, uint64_t& root) noexcept {
+GCC_ATTRIBUTE_CONST static I128_CONSTEXPR bool is_perfect_square(
+    uint128_t n, uint64_t& root) noexcept {
     /**
      * +------------+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+
      * |   n mod 16 |  0 |  1 |  2 |  3 |  4 |  5 |  6 |  7 |  8 |  9 | 10 | 11
@@ -401,8 +395,8 @@ GCC_ATTRIBUTE_CONST static constexpr uint64_t bit_reverse(uint64_t n) noexcept {
 
 #if defined(INTEGERS_128_BIT_HPP)
 
-GCC_ATTRIBUTE_CONST I128_CONSTEXPR static uint128_t bit_reverse(
-    uint128_t n) noexcept {
+GCC_ATTRIBUTE_CONST static I128_CONSTEXPR uint128_t
+bit_reverse(uint128_t n) noexcept {
     uint128_t m = ~uint128_t(0);
     for (uint32_t s = sizeof(uint128_t) * CHAR_BIT; s >>= 1;) {
         m ^= m << s;
@@ -471,9 +465,7 @@ GCC_ATTRIBUTE_CONST static constexpr int32_t sign(long long x) noexcept {
 
 #if defined(INTEGERS_128_BIT_HPP)
 
-GCC_ATTRIBUTE_CONST
-I128_CONSTEXPR
-static inline int32_t sign(int128_t x) noexcept {
+GCC_ATTRIBUTE_CONST static I128_CONSTEXPR int32_t sign(int128_t x) noexcept {
     uint32_t sign_bit = uint32_t(uint128_t(x) >> 127);
     return int32_t(x != 0) - int32_t(2 * sign_bit);
 }
@@ -588,9 +580,7 @@ GCC_ATTRIBUTE_CONST static constexpr unsigned long long uabs(
 
 #if defined(INTEGERS_128_BIT_HPP)
 
-GCC_ATTRIBUTE_CONST
-I128_CONSTEXPR
-static inline uint128_t uabs(int128_t n) noexcept {
+GCC_ATTRIBUTE_CONST static I128_CONSTEXPR uint128_t uabs(int128_t n) noexcept {
     uint128_t t = uint128_t(n >> 127);
     return (uint128_t(n) ^ t) - t;
 }
@@ -901,6 +891,18 @@ GCC_ATTRIBUTE_CONST static constexpr bool is_pow2(
     return (n & (n - 1)) == 0 && n != 0;
 }
 
+#if defined(INTEGERS_128_BIT_HPP)
+
+GCC_ATTRIBUTE_CONST static I128_CONSTEXPR bool is_pow2(int128_t n) noexcept {
+    return (n & (n - 1)) == 0 && n > 0;
+}
+
+GCC_ATTRIBUTE_CONST static I128_CONSTEXPR bool is_pow2(uint128_t n) noexcept {
+    return (n & (n - 1)) == 0 && n != 0;
+}
+
+#endif
+
 GCC_ATTRIBUTE_CONST static constexpr uint64_t nearest_pow2_ge(
     uint32_t n) noexcept {
     constexpr uint32_t k = sizeof(uint32_t) * CHAR_BIT;
@@ -932,30 +934,6 @@ GCC_ATTRIBUTE_CONST static constexpr uint32_t base_2_digits(
     // " | 1" operation does not affect the answer for all numbers except n = 0
     // for n = 0 answer is 1
     return 64 - uint32_t(count_leading_zeros(n | 1));
-}
-
-GCC_ATTRIBUTE_CONST
-#if __cpp_constexpr >= 202211L && defined(__GNUC__)
-constexpr
-#endif
-    static inline uint32_t
-    base_10_digits(uint32_t n) noexcept {
-#if __cpp_constexpr >= 202211L && defined(__GNUC__)
-    constexpr
-#endif
-        static const uint8_t guess[33] = {0, 0, 0, 0, 1, 1, 1, 2, 2, 2, 3,
-                                          3, 3, 3, 4, 4, 4, 5, 5, 5, 6, 6,
-                                          6, 6, 7, 7, 7, 8, 8, 8, 9, 9, 9};
-#if __cpp_constexpr >= 202211L && defined(__GNUC__)
-    constexpr
-#endif
-        static const uint32_t ten_to_the[10] = {
-            1,      10,      100,      1000,      10000,
-            100000, 1000000, 10000000, 100000000, 1000000000,
-        };
-    uint32_t digits = guess[base_2_digits(n)];
-    // returns 1 for n = 0. If you want to return 0 for n = 0, remove | 1
-    return digits + ((n | 1) >= ten_to_the[digits]);
 }
 
 /// @brief Realization taken from the gcc libstdc++ __to_chars_len
@@ -996,18 +974,15 @@ GCC_ATTRIBUTE_CONST static constexpr uint32_t base_10_len(T value) noexcept {
 }
 
 GCC_ATTRIBUTE_CONST static constexpr uint32_t log2_floor(uint32_t n) noexcept {
-    // " | 1" does not affect ans for all n >= 1.
-    return 31 ^ uint32_t(count_leading_zeros(n | 1));
+    return 31 - uint32_t(count_leading_zeros(n));
 }
 
 GCC_ATTRIBUTE_CONST static constexpr uint32_t log2_ceil(uint32_t n) noexcept {
-    // " | 1" does not affect ans for all n >= 1.
     return log2_floor(n) + ((n & (n - 1)) != 0);
 }
 
 GCC_ATTRIBUTE_CONST static constexpr uint32_t log2_floor(uint64_t n) noexcept {
-    // " | 1" does not affect ans for all n >= 1.
-    return 63 ^ uint32_t(count_leading_zeros(n | 1));
+    return 63 - uint32_t(count_leading_zeros(n));
 }
 
 GCC_ATTRIBUTE_CONST static constexpr uint32_t log2_ceil(uint64_t n) noexcept {
@@ -1016,10 +991,9 @@ GCC_ATTRIBUTE_CONST static constexpr uint32_t log2_ceil(uint64_t n) noexcept {
 
 #if defined(INTEGERS_128_BIT_HPP)
 GCC_ATTRIBUTE_CONST static constexpr uint32_t log2_floor(uint128_t n) noexcept {
-    // " | 1" does not affect ans for all n >= 1.
     uint64_t hi = uint64_t(n >> 64);
-    return hi != 0 ? (127 ^ uint32_t(count_leading_zeros(hi)))
-                   : (63 ^ uint32_t(count_leading_zeros(uint64_t(n) | 1)));
+    return hi != 0 ? (127 - uint32_t(count_leading_zeros(hi)))
+                   : (log2_floor(uint64_t(n)));
 }
 
 GCC_ATTRIBUTE_CONST static constexpr uint32_t log2_ceil(uint128_t n) noexcept {
@@ -1027,6 +1001,39 @@ GCC_ATTRIBUTE_CONST static constexpr uint32_t log2_ceil(uint128_t n) noexcept {
 }
 
 #endif
+
+GCC_ATTRIBUTE_CONST
+#if __cpp_constexpr >= 202211L && defined(__GNUC__)
+constexpr
+#endif
+    static inline uint32_t
+    log10_floor(uint32_t n) noexcept {
+#if __cpp_constexpr >= 202211L && defined(__GNUC__)
+    constexpr
+#endif
+        static const uint8_t table1[33] = {9, 9, 9, 8, 8, 8, 7, 7, 7, 6, 6,
+                                           6, 6, 5, 5, 5, 4, 4, 4, 3, 3, 3,
+                                           3, 2, 2, 2, 1, 1, 1, 0, 0, 0, 0};
+#if __cpp_constexpr >= 202211L && defined(__GNUC__)
+    constexpr
+#endif
+        static const uint32_t ten_to_the[10] = {
+            1,      10,      100,      1000,      10000,
+            100000, 1000000, 10000000, 100000000, 1000000000,
+        };
+    uint32_t digits = table1[count_leading_zeros(n)];
+    return digits - (n < ten_to_the[digits]);
+}
+
+GCC_ATTRIBUTE_CONST
+#if __cpp_constexpr >= 202211L && defined(__GNUC__)
+constexpr
+#endif
+    static inline uint32_t
+    base_10_digits(uint32_t n) noexcept {
+    // log10_floor(n | 1) = 0
+    return log10_floor(n | 1) + 1;
+}
 
 /// @brief Find q and r such n = q * (2 ^ r), q is odd if n != 0
 /// @param n n value.
@@ -1051,9 +1058,8 @@ GCC_ATTRIBUTE_CONST static constexpr std::pair<T, uint32_t> extract_2pow(
 
 namespace std {
 
-GCC_ATTRIBUTE_CONST
-I128_CONSTEXPR
-static uint128_t gcd(uint128_t a, uint128_t b) noexcept {
+GCC_ATTRIBUTE_CONST static I128_CONSTEXPR uint128_t gcd(uint128_t a,
+                                                        uint128_t b) noexcept {
     if (unlikely(a == 0)) {
         return b;
     }
@@ -1082,7 +1088,7 @@ static uint128_t gcd(uint128_t a, uint128_t b) noexcept {
     }
 }
 
-GCC_ATTRIBUTE_CONST I128_CONSTEXPR static uint128_t gcd(uint64_t a,
+GCC_ATTRIBUTE_CONST static I128_CONSTEXPR uint128_t gcd(uint64_t a,
                                                         int128_t b) noexcept {
     uint128_t b0 = math_functions::uabs(b);
     if (unlikely(b0 == 0)) {
