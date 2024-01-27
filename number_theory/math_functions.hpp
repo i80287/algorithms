@@ -29,9 +29,11 @@
 #include <algorithm>  // std::min
 #include <climits>    // CHAR_BIT
 #include <cstdint>  // std::int32_t, std::int64_t, std::size_t, std::uint32_t, std::uint64_t
+#include <map>          // std::map
 #include <numeric>      // std::gcd
 #include <type_traits>  // std::is_unsigned_v, std::is_same_v
 #include <utility>      // std::pair
+#include <vector>       // std::vector
 
 #if __cplusplus >= 202002L
 #include <bit>  // std::popcount, std::countr_zero, std::countl_zero
@@ -105,7 +107,7 @@ GCC_ATTRIBUTE_CONST static constexpr uint32_t bin_pow_mod(
 /// @param p
 /// @param mod
 /// @return (n ^ p) % mod
-GCC_ATTRIBUTE_CONST static I128_CONSTEXPR uint64_t
+GCC_ATTRIBUTE_CONST static inline I128_CONSTEXPR uint64_t
 bin_pow_mod(uint64_t n, uint64_t p, uint64_t mod) noexcept {
     uint64_t res = 1;
     while (true) {
@@ -162,7 +164,8 @@ GCC_ATTRIBUTE_CONST static constexpr uint32_t isqrt(uint64_t n) noexcept {
 
 #if defined(INTEGERS_128_BIT_HPP)
 
-GCC_ATTRIBUTE_CONST static I128_CONSTEXPR uint64_t isqrt(uint128_t n) noexcept {
+GCC_ATTRIBUTE_CONST static inline I128_CONSTEXPR uint64_t
+isqrt(uint128_t n) noexcept {
     /**
      * See Hackers Delight Chapter 11.
      */
@@ -296,7 +299,7 @@ GCC_ATTRIBUTE_CONST static constexpr bool is_perfect_square(
 /// @brief Checks whether n is a perfect square or not
 /// @param n
 /// @return true if n is a perfect square and false otherwise
-GCC_ATTRIBUTE_CONST static I128_CONSTEXPR bool is_perfect_square(
+GCC_ATTRIBUTE_CONST static inline I128_CONSTEXPR bool is_perfect_square(
     uint128_t n) noexcept {
     /**
      * +------------+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+
@@ -328,7 +331,7 @@ GCC_ATTRIBUTE_CONST static I128_CONSTEXPR bool is_perfect_square(
 /// @param n
 /// @param root
 /// @return true if n is a perfect square and false otherwise
-GCC_ATTRIBUTE_CONST static I128_CONSTEXPR bool is_perfect_square(
+GCC_ATTRIBUTE_CONST static inline I128_CONSTEXPR bool is_perfect_square(
     uint128_t n, uint64_t& root) noexcept {
     /**
      * +------------+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+
@@ -395,7 +398,7 @@ GCC_ATTRIBUTE_CONST static constexpr uint64_t bit_reverse(uint64_t n) noexcept {
 
 #if defined(INTEGERS_128_BIT_HPP)
 
-GCC_ATTRIBUTE_CONST static I128_CONSTEXPR uint128_t
+GCC_ATTRIBUTE_CONST static inline I128_CONSTEXPR uint128_t
 bit_reverse(uint128_t n) noexcept {
     uint128_t m = ~uint128_t(0);
     for (uint32_t s = sizeof(uint128_t) * CHAR_BIT; s >>= 1;) {
@@ -406,6 +409,63 @@ bit_reverse(uint128_t n) noexcept {
 }
 
 #endif
+
+namespace impl {
+
+GCC_ATTRIBUTE_CONST static uint32_t log2_floor_software(uint64_t n) {
+    static const uint64_t t[6] = {0xFFFFFFFF00000000ull, 0x00000000FFFF0000ull,
+                                  0x000000000000FF00ull, 0x00000000000000F0ull,
+                                  0x000000000000000Cull, 0x0000000000000002ull};
+
+    uint32_t y = 0;
+    uint32_t j = 32;
+
+    for (size_t i = 0; i != 6; ++i) {
+        uint32_t k = (((n & t[i]) == 0) ? 0 : j);
+        y += k;
+        n >>= k;
+        j >>= 1;
+    }
+
+    return y;
+}
+
+GCC_ATTRIBUTE_CONST static inline uint32_t log2_ceil_software(uint64_t n) {
+    return log2_floor_software(n) + ((n & (n - 1)) != 0);
+}
+
+/**
+ * Taken from .NET C# library
+ *  Returns the integer (floor) log of the specified value, base 2.
+ *  Note that by convention, input value 0 returns 0 since log(0) is undefined.
+ */
+GCC_ATTRIBUTE_CONST static inline uint32_t de_bruijn_log2(uint32_t value) {
+    static const unsigned char MultiplyDeBruijnBitPosition[32] = {
+        0, 9,  1,  10, 13, 21, 2,  29, 11, 14, 16, 18, 22, 25, 3, 30,
+        8, 12, 20, 28, 15, 17, 24, 7,  19, 27, 23, 6,  26, 5,  4, 31};
+
+    // first round down to one less than a power of 2
+    value |= (value >> 1);
+    value |= (value >> 2);
+    value |= (value >> 4);
+    value |= (value >> 8);
+    value |= (value >> 16);
+
+    // Using de Bruijn sequence, k=2, n=5 (2^5=32) :
+    // 0b_0000_0111_1100_0100_1010_1100_1101_1101
+    return MultiplyDeBruijnBitPosition[((value * 0x07C4ACDDu) >> 27)];
+}
+
+/**
+ * Taken from .NET C# library
+ *  Returns the integer (floor) log of the specified value, base 2.
+ *  Note that by convention, input value 0 returns 0 since log(0) is undefined.
+ */
+GCC_ATTRIBUTE_CONST static inline uint32_t de_bruijn_log2(uint64_t value) {
+    uint32_t hi = static_cast<uint32_t>(value >> 32);
+    return (hi != 0) ? (de_bruijn_log2(hi) + 32)
+                     : de_bruijn_log2(static_cast<uint32_t>(value));
+}
 
 GCC_ATTRIBUTE_CONST static constexpr uint32_t pop_count_software(
     uint32_t n) noexcept {
@@ -433,6 +493,8 @@ GCC_ATTRIBUTE_CONST static constexpr uint64_t pop_count_software(
     n = (n & 0x00000000FFFFFFFFull) + ((n >> 32) & 0x00000000FFFFFFFFull);
     return n;
 }
+
+}  // namespace impl
 
 GCC_ATTRIBUTE_CONST static constexpr int32_t pop_diff(uint32_t x,
                                                       uint32_t y) noexcept {
@@ -465,7 +527,8 @@ GCC_ATTRIBUTE_CONST static constexpr int32_t sign(long long x) noexcept {
 
 #if defined(INTEGERS_128_BIT_HPP)
 
-GCC_ATTRIBUTE_CONST static I128_CONSTEXPR int32_t sign(int128_t x) noexcept {
+GCC_ATTRIBUTE_CONST static inline I128_CONSTEXPR int32_t
+sign(int128_t x) noexcept {
     uint32_t sign_bit = uint32_t(uint128_t(x) >> 127);
     return int32_t(x != 0) - int32_t(2 * sign_bit);
 }
@@ -580,7 +643,8 @@ GCC_ATTRIBUTE_CONST static constexpr unsigned long long uabs(
 
 #if defined(INTEGERS_128_BIT_HPP)
 
-GCC_ATTRIBUTE_CONST static I128_CONSTEXPR uint128_t uabs(int128_t n) noexcept {
+GCC_ATTRIBUTE_CONST static inline I128_CONSTEXPR uint128_t
+uabs(int128_t n) noexcept {
     uint128_t t = uint128_t(n >> 127);
     return (uint128_t(n) ^ t) - t;
 }
@@ -603,6 +667,8 @@ GCC_ATTRIBUTE_CONST static constexpr int32_t pop_cmp(uint32_t x,
         m &= m - 1;  // from each
     }
 }
+
+namespace impl {
 
 GCC_ATTRIBUTE_CONST static constexpr uint32_t lz_count_32_software(
     uint32_t n) noexcept {
@@ -703,6 +769,8 @@ GCC_ATTRIBUTE_CONST static constexpr uint32_t tz_count_64_software(
     return m;
 }
 
+}  // namespace impl
+
 /// @brief Count trailing zeros for n
 /// @param n
 /// @return trailing zeros count (sizeof(n) * 8 for n = 0)
@@ -726,7 +794,7 @@ GCC_ATTRIBUTE_CONST static constexpr int32_t count_trailing_zeros(
 #if defined(__GNUC__)
             return __builtin_ctzll(low);
 #else
-            return static_cast<int32_t>(tz_count_64_software(low));
+            return static_cast<int32_t>(impl::tz_count_64_software(low));
 #endif
         }
 
@@ -735,7 +803,7 @@ GCC_ATTRIBUTE_CONST static constexpr int32_t count_trailing_zeros(
 #if defined(__GNUC__)
         return __builtin_ctzll(high) + 64;
 #else
-        return static_cast<int32_t>(tz_count_64_software(high)) + 64;
+        return static_cast<int32_t>(impl::tz_count_64_software(high)) + 64;
 #endif
     } else
 #endif
@@ -747,14 +815,14 @@ GCC_ATTRIBUTE_CONST static constexpr int32_t count_trailing_zeros(
 #if defined(__GNUC__)
         return __builtin_ctzll(n);
 #else
-        return static_cast<int32_t>(tz_count_64_software(n));
+        return static_cast<int32_t>(impl::tz_count_64_software(n));
 #endif
     } else if constexpr (std::is_same_v<T, unsigned long>) {
 #if defined(__GNUC__)
         return __builtin_ctzl(n);
 #else
         return static_cast<int32_t>(
-            tz_count_64_software(static_cast<unsigned long long>(n)));
+            impl::tz_count_64_software(static_cast<unsigned long long>(n)));
 #endif
     } else {
         static_assert(std::is_same_v<T, unsigned int> ||
@@ -764,7 +832,7 @@ GCC_ATTRIBUTE_CONST static constexpr int32_t count_trailing_zeros(
 #if defined(__GNUC__)
         return __builtin_ctz(n);
 #else
-        return static_cast<int32_t>(tz_count_32_software(n));
+        return static_cast<int32_t>(impl::tz_count_32_software(n));
 #endif
     }
 #endif
@@ -780,8 +848,7 @@ template <typename T>
              || std::is_same_v<T, uint128_t>
 #endif
 #endif
-GCC_ATTRIBUTE_CONST static constexpr inline int32_t count_leading_zeros(
-    T n) noexcept {
+GCC_ATTRIBUTE_CONST static constexpr int32_t count_leading_zeros(T n) noexcept {
     if (unlikely(n == 0)) {
         return sizeof(n) * 8;
     }
@@ -796,7 +863,7 @@ GCC_ATTRIBUTE_CONST static constexpr inline int32_t count_leading_zeros(
 #elif defined(__GNUC__)
             return __builtin_clzll(hi);
 #else
-            return static_cast<int32_t>(lz_count_64_software(hi));
+            return static_cast<int32_t>(impl::lz_count_64_software(hi));
 #endif
         }
 
@@ -808,7 +875,7 @@ GCC_ATTRIBUTE_CONST static constexpr inline int32_t count_leading_zeros(
 #elif defined(__GNUC__)
         return 64 + __builtin_clzll(low);
 #else
-        return 64 + static_cast<int32_t>(lz_count_64_software(low));
+        return 64 + static_cast<int32_t>(impl::lz_count_64_software(low));
 #endif
     } else
 #endif
@@ -820,13 +887,13 @@ GCC_ATTRIBUTE_CONST static constexpr inline int32_t count_leading_zeros(
 #if defined(__GNUC__)
         return __builtin_clzll(n);
 #else
-        return static_cast<int32_t>(lz_count_64_software(n));
+        return static_cast<int32_t>(impl::lz_count_64_software(n));
 #endif
     } else if constexpr (std::is_same_v<T, unsigned long>) {
 #if defined(__GNUC__)
         return __builtin_clzl(n);
 #else
-        return static_cast<int32_t>(lz_count_64_software(n));
+        return static_cast<int32_t>(impl::lz_count_64_software(n));
 #endif
     } else {
         static_assert(std::is_same_v<T, unsigned int> ||
@@ -836,7 +903,7 @@ GCC_ATTRIBUTE_CONST static constexpr inline int32_t count_leading_zeros(
 #if defined(__GNUC__)
         return __builtin_clz(n);
 #else
-        return static_cast<int32_t>(lz_count_32_software(n));
+        return static_cast<int32_t>(impl::lz_count_32_software(n));
 #endif
     }
 #endif
@@ -893,11 +960,13 @@ GCC_ATTRIBUTE_CONST static constexpr bool is_pow2(
 
 #if defined(INTEGERS_128_BIT_HPP)
 
-GCC_ATTRIBUTE_CONST static I128_CONSTEXPR bool is_pow2(int128_t n) noexcept {
+GCC_ATTRIBUTE_CONST static inline I128_CONSTEXPR bool is_pow2(
+    int128_t n) noexcept {
     return (n & (n - 1)) == 0 && n > 0;
 }
 
-GCC_ATTRIBUTE_CONST static I128_CONSTEXPR bool is_pow2(uint128_t n) noexcept {
+GCC_ATTRIBUTE_CONST static inline I128_CONSTEXPR bool is_pow2(
+    uint128_t n) noexcept {
     return (n & (n - 1)) == 0 && n != 0;
 }
 
@@ -1008,21 +1077,62 @@ constexpr
 #endif
     static inline uint32_t
     log10_floor(uint32_t n) noexcept {
+    /**
+     * See Hackers Delight 11-4
+     */
 #if __cpp_constexpr >= 202211L && defined(__GNUC__)
     constexpr
 #endif
-        static const uint8_t table1[33] = {9, 9, 9, 8, 8, 8, 7, 7, 7, 6, 6,
-                                           6, 6, 5, 5, 5, 4, 4, 4, 3, 3, 3,
-                                           3, 2, 2, 2, 1, 1, 1, 0, 0, 0, 0};
+        static const uint8_t table1[33] = {10, 9, 9, 8, 8, 8, 7, 7, 7, 6, 6,
+                                           6,  6, 5, 5, 5, 4, 4, 4, 3, 3, 3,
+                                           3,  2, 2, 2, 1, 1, 1, 0, 0, 0, 0};
 #if __cpp_constexpr >= 202211L && defined(__GNUC__)
     constexpr
 #endif
-        static const uint32_t ten_to_the[10] = {
-            1,      10,      100,      1000,      10000,
-            100000, 1000000, 10000000, 100000000, 1000000000,
-        };
+        static const uint32_t table2[11] = {
+            1,       10,       100,       1000,       10000, 100000,
+            1000000, 10000000, 100000000, 1000000000, 0};
     uint32_t digits = table1[count_leading_zeros(n)];
-    return digits - (n < ten_to_the[digits]);
+    digits -= ((n - table2[digits]) >> 31);
+    return digits;
+}
+
+GCC_ATTRIBUTE_CONST
+#if __cpp_constexpr >= 202211L && defined(__GNUC__)
+constexpr
+#endif
+    static inline uint32_t
+    log10_floor(uint64_t n) noexcept {
+    /**
+     * See Hackers Delight 11-4
+     */
+#if __cpp_constexpr >= 202211L && defined(__GNUC__)
+    constexpr
+#endif
+        static const uint64_t table2[20] = {0ull,
+                                            9ull,
+                                            99ull,
+                                            999ull,
+                                            9999ull,
+                                            99999ull,
+                                            999999ull,
+                                            9999999ull,
+                                            99999999ull,
+                                            999999999ull,
+                                            9999999999ull,
+                                            99999999999ull,
+                                            999999999999ull,
+                                            9999999999999ull,
+                                            99999999999999ull,
+                                            999999999999999ull,
+                                            9999999999999999ull,
+                                            99999999999999999ull,
+                                            999999999999999999ull,
+                                            9999999999999999999ull};
+    int32_t digits = (19 * (63 - int32_t(count_leading_zeros(n)))) >> 6;
+    assert(digits >= -1);
+    digits += int32_t((table2[digits + 1] - n) >> 63);
+    return uint32_t(digits);
 }
 
 GCC_ATTRIBUTE_CONST
@@ -1031,7 +1141,17 @@ constexpr
 #endif
     static inline uint32_t
     base_10_digits(uint32_t n) noexcept {
-    // log10_floor(n | 1) = 0
+    // log10_floor(0 | 1) = 0
+    return log10_floor(n | 1) + 1;
+}
+
+GCC_ATTRIBUTE_CONST
+#if __cpp_constexpr >= 202211L && defined(__GNUC__)
+constexpr
+#endif
+    static inline uint32_t
+    base_10_digits(uint64_t n) noexcept {
+    // log10_floor(0 | 1) = 0
     return log10_floor(n | 1) + 1;
 }
 
@@ -1058,8 +1178,8 @@ GCC_ATTRIBUTE_CONST static constexpr std::pair<T, uint32_t> extract_2pow(
 
 namespace std {
 
-GCC_ATTRIBUTE_CONST static I128_CONSTEXPR uint128_t gcd(uint128_t a,
-                                                        uint128_t b) noexcept {
+GCC_ATTRIBUTE_CONST static inline I128_CONSTEXPR uint128_t
+gcd(uint128_t a, uint128_t b) noexcept {
     if (unlikely(a == 0)) {
         return b;
     }
@@ -1088,8 +1208,8 @@ GCC_ATTRIBUTE_CONST static I128_CONSTEXPR uint128_t gcd(uint128_t a,
     }
 }
 
-GCC_ATTRIBUTE_CONST static I128_CONSTEXPR uint128_t gcd(uint64_t a,
-                                                        int128_t b) noexcept {
+GCC_ATTRIBUTE_CONST static inline I128_CONSTEXPR uint128_t
+gcd(uint64_t a, int128_t b) noexcept {
     uint128_t b0 = math_functions::uabs(b);
     if (unlikely(b0 == 0)) {
         return a;
