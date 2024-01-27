@@ -1172,6 +1172,68 @@ GCC_ATTRIBUTE_CONST static constexpr std::pair<T, uint32_t> extract_2pow(
     return {n >> r, r};
 }
 
+GCC_ATTRIBUTE_CONST
+#if __cplusplus >= 202002L
+constexpr
+#endif
+    static inline std::vector<std::pair<uint32_t, uint32_t>>
+    prime_divisors_as_vector(uint32_t n) {
+    std::vector<std::pair<uint32_t, uint32_t>> divisors;
+    if (n % 2 == 0 && n != 0) {
+        // k = s * 2^pow_of_2, where s is odd
+        auto [s, pow_of_2] = extract_2pow(n);
+        n = s;
+        divisors.emplace_back(uint32_t(2), pow_of_2);
+    }
+
+    for (uint32_t d = 3; d * d <= n; d += 2) {
+        ATTRIBUTE_ASSUME(d != 0);
+        if (n % d == 0) {
+            uint32_t pow_of_d = 0;
+            do {
+                pow_of_d++;
+                n /= d;
+            } while (n % d == 0);
+            divisors.emplace_back(d, pow_of_d);
+        }
+    }
+
+    if (n != 1) {
+        divisors.emplace_back(n, uint32_t(1));
+    }
+
+    return divisors;
+}
+
+GCC_ATTRIBUTE_CONST static inline std::map<uint32_t, uint32_t>
+prime_divisors_as_map(uint32_t n) {
+    std::map<uint32_t, uint32_t> divisors;
+    if (n % 2 == 0 && n != 0) {
+        // k = s * 2^pow_of_2, where s is odd
+        auto [s, pow_of_2] = extract_2pow(n);
+        n = s;
+        divisors.emplace(uint32_t(2), pow_of_2);
+    }
+
+    for (uint32_t d = 3; d * d <= n; d += 2) {
+        ATTRIBUTE_ASSUME(d != 0);
+        if (n % d == 0) {
+            uint32_t pow_of_d = 0;
+            do {
+                pow_of_d++;
+                n /= d;
+            } while (n % d == 0);
+            divisors.emplace(d, pow_of_d);
+        }
+    }
+
+    if (n != 1) {
+        divisors.emplace(n, uint32_t(1));
+    }
+
+    return divisors;
+}
+
 }  // namespace math_functions
 
 #if defined(INTEGERS_128_BIT_HPP)
