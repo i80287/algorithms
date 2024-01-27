@@ -1,3 +1,4 @@
+#include <cassert>    // assert
 #include <cinttypes>  // PRIu64
 
 #include "math_functions.hpp"
@@ -569,6 +570,27 @@ static_assert(is_pow2(1ull << 61), "is_pow2");
 static_assert(is_pow2(1ull << 62), "is_pow2");
 static_assert(is_pow2(1ull << 63), "is_pow2");
 
+#if defined(INTEGERS_128_BIT_HPP)
+static_assert(!is_pow2(uint128_t(0)), "is_pow2");
+static_assert(is_pow2(uint128_t(1) << 0), "is_pow2");
+static_assert(is_pow2(uint128_t(1) << 1), "is_pow2");
+static_assert(is_pow2(uint128_t(1) << 2), "is_pow2");
+static_assert(is_pow2(uint128_t(1) << 3), "is_pow2");
+static_assert(is_pow2(uint128_t(1) << 4), "is_pow2");
+static_assert(is_pow2(uint128_t(1) << 5), "is_pow2");
+static_assert(is_pow2(uint128_t(1) << 6), "is_pow2");
+static_assert(is_pow2(uint128_t(1) << 7), "is_pow2");
+static_assert(is_pow2(uint128_t(1) << 8), "is_pow2");
+static_assert(is_pow2(uint128_t(1) << 9), "is_pow2");
+static_assert(is_pow2(uint128_t(1) << 60), "is_pow2");
+static_assert(is_pow2(uint128_t(1) << 61), "is_pow2");
+static_assert(is_pow2(uint128_t(1) << 62), "is_pow2");
+static_assert(is_pow2(uint128_t(1) << 63), "is_pow2");
+static_assert(is_pow2(uint128_t(1) << 64), "is_pow2");
+static_assert(is_pow2(uint128_t(1) << 65), "is_pow2");
+static_assert(is_pow2(uint128_t(1) << 127), "is_pow2");
+#endif
+
 static_assert(nearest_pow2_ge(uint32_t(0u)) == 1u, "nearest_pow2_ge");
 static_assert(nearest_pow2_ge(uint32_t(1u)) == 1u, "nearest_pow2_ge");
 static_assert(nearest_pow2_ge(uint32_t(2u)) == 2u, "nearest_pow2_ge");
@@ -813,7 +835,51 @@ static_assert(nearest_pow2_ge(uint64_t(1) << 62) == uint64_t(1) << 62,
 static_assert(nearest_pow2_ge(uint64_t(1) << 63) == uint64_t(1) << 63,
               "nearest_pow2_ge");
 
-#if __cplusplus >= 202207L && __cpp_constexpr >= 202211L && defined(__GNUC__)
+static_assert(log2_floor(uint32_t(0)) == uint32_t(-1), "log2_floor");
+static_assert(log2_floor(uint32_t(1)) == 0, "log2_floor");
+static_assert(log2_floor(uint32_t(2)) == 1, "log2_floor");
+static_assert(log2_floor(uint32_t(4)) == 2, "log2_floor");
+static_assert(log2_floor(uint32_t(8)) == 3, "log2_floor");
+static_assert(log2_floor(uint32_t(9)) == 3, "log2_floor");
+static_assert(log2_floor(uint32_t(10)) == 3, "log2_floor");
+static_assert(log2_floor(uint32_t(15)) == 3, "log2_floor");
+static_assert(log2_floor(uint32_t(16)) == 4, "log2_floor");
+static_assert(log2_floor(uint32_t(99)) == 6, "log2_floor");
+static_assert(log2_floor(uint32_t(100)) == 6, "log2_floor");
+static_assert(log2_floor(uint32_t(127)) == 6, "log2_floor");
+static_assert(log2_floor(uint32_t(128)) == 7, "log2_floor");
+static_assert(log2_floor(uint32_t(129)) == 7, "log2_floor");
+static_assert(log2_floor(uint32_t(-1)) == 31, "log2_floor");
+
+static_assert(log2_ceil(uint32_t(0)) == uint32_t(-1), "log2_ceil");
+static_assert(log2_ceil(uint32_t(1)) == 0, "log2_ceil");
+static_assert(log2_ceil(uint32_t(2)) == 1, "log2_ceil");
+static_assert(log2_ceil(uint32_t(4)) == 2, "log2_ceil");
+static_assert(log2_ceil(uint32_t(8)) == 3, "log2_ceil");
+static_assert(log2_ceil(uint32_t(9)) == 4, "log2_ceil");
+static_assert(log2_ceil(uint32_t(10)) == 4, "log2_ceil");
+static_assert(log2_ceil(uint32_t(15)) == 4, "log2_ceil");
+static_assert(log2_ceil(uint32_t(16)) == 4, "log2_ceil");
+static_assert(log2_ceil(uint32_t(99)) == 7, "log2_ceil");
+static_assert(log2_ceil(uint32_t(100)) == 7, "log2_ceil");
+static_assert(log2_ceil(uint32_t(127)) == 7, "log2_ceil");
+static_assert(log2_ceil(uint32_t(128)) == 7, "log2_ceil");
+static_assert(log2_ceil(uint32_t(129)) == 8, "log2_ceil");
+static_assert(log2_ceil(uint32_t(-1)) == 32, "log2_ceil");
+
+#if __cpp_constexpr >= 202211L && defined(__GNUC__)
+static_assert(log10_floor(uint32_t(0)) == uint32_t(-1), "log10_floor");
+static_assert(log10_floor(uint32_t(1)) == 0, "log10_floor");
+static_assert(log10_floor(uint32_t(9)) == 0, "log10_floor");
+static_assert(log10_floor(uint32_t(10)) == 1, "log10_floor");
+static_assert(log10_floor(uint32_t(11)) == 1, "log10_floor");
+static_assert(log10_floor(uint32_t(99)) == 1, "log10_floor");
+static_assert(log10_floor(uint32_t(100)) == 2, "log10_floor");
+static_assert(log10_floor(uint32_t(101)) == 2, "log10_floor");
+static_assert(log10_floor(uint32_t(-1)) == 9, "log10_floor");
+#endif
+
+#if __cpp_constexpr >= 202211L && defined(__GNUC__)
 static_assert(base_10_digits(0u) == 1, "base_10_digits");
 static_assert(base_10_digits(1u) == 1, "base_10_digits");
 static_assert(base_10_digits(9u) == 1, "base_10_digits");
@@ -924,15 +990,15 @@ static void test_isqrt() {
 
     for (uint32_t r = 0; r < (1u << 16); r++) {
         uint32_t rs = r * r;
-        if (unlikely((r != math_functions::isqrt(rs)))) {
+        if (unlikely((r != isqrt(rs)))) {
             printf("Error isqrt(uint32_t) at n = %" PRIu32 "\n", rs);
             return;
         }
-        if (unlikely((r != math_functions::isqrt(uint64_t(rs))))) {
+        if (unlikely((r != isqrt(uint64_t(rs))))) {
             printf("Error isqrt(uint64_t) at n = %" PRIu32 "\n", rs);
             return;
         }
-        if (unlikely((r != math_functions::isqrt(uint128_t(rs))))) {
+        if (unlikely((r != isqrt(uint128_t(rs))))) {
             printf("Error isqrt(uint128_t) at n = %" PRIu32 "\n", rs);
             return;
         }
@@ -940,11 +1006,11 @@ static void test_isqrt() {
 
     for (uint32_t r = uint32_t(0) - kIters; r != 0; r++) {
         uint64_t rs = uint64_t(r) * r;
-        if (unlikely((r != math_functions::isqrt(rs)))) {
+        if (unlikely((r != isqrt(rs)))) {
             printf("Error isqrt(uint64_t) at n = %" PRIu64 "\n", rs);
             return;
         }
-        if (unlikely((r != math_functions::isqrt(uint128_t(rs))))) {
+        if (unlikely((r != isqrt(uint128_t(rs))))) {
             printf("Error isqrt(uint128_t) at n = %" PRIu64 "\n", rs);
             return;
         }
@@ -952,13 +1018,54 @@ static void test_isqrt() {
 
     for (uint64_t r = uint64_t(0) - kIters; r != 0; r++) {
         uint128_t rs = uint128_t(r) * r;
-        if (unlikely((r != math_functions::isqrt(uint128_t(rs))))) {
-            printf("Error isqrt(uint128_t) at n = %s\n", std::to_string(rs).c_str());
+        if (unlikely((r != isqrt(uint128_t(rs))))) {
+            printf("Error isqrt(uint128_t) at n = %s\n",
+                   std::to_string(rs).c_str());
             return;
         }
     }
 }
 
+static void test_log2() {
+    for (uint32_t k = 0; k < sizeof(uint32_t) * CHAR_BIT; k++) {
+        uint32_t pw = uint32_t(1) << k;
+        assert(log2_floor(pw) == k);
+        assert(log2_ceil(pw) == k);
+        if (!is_pow2(pw + 1)) {
+            assert(log2_floor(pw + 1) == k);
+            assert(log2_ceil(pw + 1) == k + 1);
+        }
+    }
+
+    for (uint32_t k = 0; k < sizeof(uint64_t) * CHAR_BIT; k++) {
+        uint64_t pw = uint64_t(1) << k;
+        assert(log2_floor(pw) == k);
+        assert(log2_ceil(pw) == k);
+        if (!is_pow2(pw + 1)) {
+            assert(log2_floor(pw + 1) == k);
+            assert(log2_ceil(pw + 1) == k + 1);
+        }
+    }
+
+    for (uint32_t k = 0; k < sizeof(uint128_t) * CHAR_BIT; k++) {
+        uint128_t pw = uint128_t(1) << k;
+        assert(log2_floor(pw) == k);
+        assert(log2_ceil(pw) == k);
+        if (!is_pow2(pw + 1)) {
+            assert(log2_floor(pw + 1) == k);
+            assert(log2_ceil(pw + 1) == k + 1);
+        }
+    }
+
+    assert(log2_floor(uint32_t(0)) == uint32_t(-1));
+    assert(log2_ceil(uint32_t(0)) == uint32_t(-1));
+    assert(log2_floor(uint64_t(0)) == uint32_t(-1));
+    assert(log2_ceil(uint64_t(0)) == uint64_t(-1));
+    assert(log2_floor(uint128_t(0)) == uint32_t(-1));
+    assert(log2_ceil(uint128_t(0)) == uint32_t(-1));
+}
+
 int main() {
     test_isqrt();
+    test_log2();
 }
