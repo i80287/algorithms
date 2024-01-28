@@ -1119,7 +1119,25 @@ static void test_log2() {
     assert(log2_ceil(uint128_t(0)) == uint32_t(-1));
 }
 
+static void test_bit_reverse() {
+    for (uint32_t n = 0; n < 256; n++) {
+        assert(bit_reverse(uint8_t(n)) == (bit_reverse(n) >> 24));
+    }
+
+    constexpr uint32_t shifts[32] = {
+        2, 3,  5,  7,  11, 13, 17, 19, 23, 29, 31,  37,  41,  43,  47,  53,
+        59, 61, 67, 71, 73, 79, 83, 89, 97, 101, 103, 107, 109, 113, 127, 131
+    };
+    uint128_t n = uint64_t(-1);
+    for (uint32_t k = uint32_t(1e7); k != 0; k--) {
+        uint128_t b = (uint128_t(bit_reverse(uint64_t(n))) << 64) | bit_reverse(uint64_t(n >> 64));
+        assert(bit_reverse(n) == b);
+        n += shifts[k % 32];
+    }
+}
+
 int main() {
     test_isqrt();
     test_log2();
+    test_bit_reverse();
 }
