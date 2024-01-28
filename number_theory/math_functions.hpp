@@ -158,7 +158,6 @@ GCC_ATTRIBUTE_CONST static constexpr uint32_t isqrt(uint64_t n) noexcept {
             r = m - 1;
         }
     } while (r >= l);
-    ATTRIBUTE_ASSUME(l - 1 <= 0xFFFFFFFFu);
     ATTRIBUTE_ASSUME(((l - 1) >> 32) == 0);
     return uint32_t(l - 1);
 }
