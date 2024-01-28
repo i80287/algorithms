@@ -194,7 +194,7 @@ GCC_ATTRIBUTE_CONST static constexpr uint32_t icbrt(uint32_t n) noexcept {
      */
     uint32_t y = 0;
     for (int32_t s = 30; s >= 0; s -= 3) {
-        y <<= 1;
+        y *= 2;
         uint32_t b = (3 * y * (y + 1) | 1) << s;
         if (n >= b) {
             n -= b;
@@ -232,16 +232,16 @@ GCC_ATTRIBUTE_CONST static constexpr uint64_t icbrt(uint64_t n) noexcept {
     return uint32_t(y);
 }
 
-/// @brief Return integer part of the fourth root of n, that is [ n^0.25 ]
-///         It can be shown that [ n^0.25 ] = [ ( [ n^0.5 ] )^0.5 ]
+/// @brief Return integer part of the fourth root of n, that is ⌊n^0.25⌋
+///         It can be shown that ⌊n^0.25⌋ = ⌊⌊n^0.5⌋^0.5⌋
 /// @param n
 /// @return
 GCC_ATTRIBUTE_CONST static constexpr uint32_t ifrrt(uint64_t n) noexcept {
     return isqrt(isqrt(n));
 }
 
-/// @brief Return integer part of the fourth root of n, that is [ n^0.25 ]
-///         It can be shown that [ n^0.25 ] = [ ( [ n^0.5 ] )^0.5 ]
+/// @brief Return integer part of the fourth root of n, that is ⌊n^0.25⌋
+///         It can be shown that ⌊n^0.25⌋ = ⌊⌊n^0.5⌋^0.5⌋
 /// @param n
 /// @return
 GCC_ATTRIBUTE_CONST static constexpr uint32_t ifrrt(uint128_t n) noexcept {
@@ -253,18 +253,18 @@ GCC_ATTRIBUTE_CONST static constexpr uint32_t ifrrt(uint128_t n) noexcept {
 /// @return true if n is a perfect square and false otherwise
 GCC_ATTRIBUTE_CONST static constexpr bool is_perfect_square(
     uint64_t n) noexcept {
+    // clang-format off
     /**
      * +------------+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+
-     * |   n mod 16 |  0 |  1 |  2 |  3 |  4 |  5 |  6 |  7 |  8 |  9 | 10 | 11
-     * | 12 | 13 | 14 | 15 |
+     * |   n mod 16 |  0 |  1 |  2 |  3 |  4 |  5 |  6 |  7 |  8 |  9 | 10 | 11 | 12 | 13 | 14 | 15 |
      * +------------+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+
-     * | n*n mod 16 |  0 |  1 |  4 |  9 |  0 |  9 |  4 |  1 |  0 |  1 |  4 |  9
-     * |  0 |  9 |  4 |  1 |
+     * | n*n mod 16 |  0 |  1 |  4 |  9 |  0 |  9 |  4 |  1 |  0 |  1 |  4 |  9 |  0 |  9 |  4 |  1 |
      * +------------+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+
      *
-     * If we peek mod 32, then we should check only for n & 31 in { 0, 1, 4, 9,
-     * 16, 17, 25 }, but switch statement could be less efficient in this case
+     * If we peek mod 32, then we should check only for n & 31 in { 0, 1, 4, 9, 16, 17, 25 },
+     * but switch statement could be less efficient in this case
      */
+    // clang-format on
     switch (n & 15) {
         case 0:
         case 1:
@@ -285,25 +285,24 @@ GCC_ATTRIBUTE_CONST static constexpr bool is_perfect_square(
 /// @return true if n is a perfect square and false otherwise
 GCC_ATTRIBUTE_CONST static constexpr bool is_perfect_square(
     uint64_t n, uint32_t& root) noexcept {
+    // clang-format off
     /**
      * +------------+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+
-     * |   n mod 16 |  0 |  1 |  2 |  3 |  4 |  5 |  6 |  7 |  8 |  9 | 10 | 11
-     * | 12 | 13 | 14 | 15 |
+     * |   n mod 16 |  0 |  1 |  2 |  3 |  4 |  5 |  6 |  7 |  8 |  9 | 10 | 11 | 12 | 13 | 14 | 15 |
      * +------------+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+
-     * | n*n mod 16 |  0 |  1 |  4 |  9 |  0 |  9 |  4 |  1 |  0 |  1 |  4 |  9
-     * |  0 |  9 |  4 |  1 |
+     * | n*n mod 16 |  0 |  1 |  4 |  9 |  0 |  9 |  4 |  1 |  0 |  1 |  4 |  9 |  0 |  9 |  4 |  1 |
      * +------------+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+
      *
-     * If we peek mod 32, then we should check only for n & 31 in { 0, 1, 4, 9,
-     * 16, 17, 25 }, but switch statement could be less efficient in this case
+     * If we peek mod 32, then we should check only for n & 31 in { 0, 1, 4, 9, 16, 17, 25 },
+     * but switch statement could be less efficient in this case
      */
+    // clang-format on
     switch (n & 15) {
         case 0:
         case 1:
         case 4:
         case 9: {
-            root = isqrt(n);
-            uint64_t r = root;
+            uint64_t r = root = isqrt(n);
             return r * r == n;
         }
         default:
@@ -318,18 +317,18 @@ GCC_ATTRIBUTE_CONST static constexpr bool is_perfect_square(
 /// @return true if n is a perfect square and false otherwise
 GCC_ATTRIBUTE_CONST static inline I128_CONSTEXPR bool is_perfect_square(
     uint128_t n) noexcept {
+    // clang-format off
     /**
      * +------------+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+
-     * |   n mod 16 |  0 |  1 |  2 |  3 |  4 |  5 |  6 |  7 |  8 |  9 | 10 | 11
-     * | 12 | 13 | 14 | 15 |
+     * |   n mod 16 |  0 |  1 |  2 |  3 |  4 |  5 |  6 |  7 |  8 |  9 | 10 | 11 | 12 | 13 | 14 | 15 |
      * +------------+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+
-     * | n*n mod 16 |  0 |  1 |  4 |  9 |  0 |  9 |  4 |  1 |  0 |  1 |  4 |  9
-     * |  0 |  9 |  4 |  1 |
+     * | n*n mod 16 |  0 |  1 |  4 |  9 |  0 |  9 |  4 |  1 |  0 |  1 |  4 |  9 |  0 |  9 |  4 |  1 |
      * +------------+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+
      *
-     * If we peek mod 32, then we should check only for n & 31 in { 0, 1, 4, 9,
-     * 16, 17, 25 }, but switch statement could be less efficient in this case
+     * If we peek mod 32, then we should check only for n & 31 in { 0, 1, 4, 9, 16, 17, 25 },
+     * but switch statement could be less efficient in this case
      */
+    // clang-format on
     switch (uint64_t(n) & 15) {
         case 0:
         case 1:
@@ -350,18 +349,18 @@ GCC_ATTRIBUTE_CONST static inline I128_CONSTEXPR bool is_perfect_square(
 /// @return true if n is a perfect square and false otherwise
 GCC_ATTRIBUTE_CONST static inline I128_CONSTEXPR bool is_perfect_square(
     uint128_t n, uint64_t& root) noexcept {
+    // clang-format off
     /**
      * +------------+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+
-     * |   n mod 16 |  0 |  1 |  2 |  3 |  4 |  5 |  6 |  7 |  8 |  9 | 10 | 11
-     * | 12 | 13 | 14 | 15 |
+     * |   n mod 16 |  0 |  1 |  2 |  3 |  4 |  5 |  6 |  7 |  8 |  9 | 10 | 11 | 12 | 13 | 14 | 15 |
      * +------------+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+
-     * | n*n mod 16 |  0 |  1 |  4 |  9 |  0 |  9 |  4 |  1 |  0 |  1 |  4 |  9
-     * |  0 |  9 |  4 |  1 |
+     * | n*n mod 16 |  0 |  1 |  4 |  9 |  0 |  9 |  4 |  1 |  0 |  1 |  4 |  9 |  0 |  9 |  4 |  1 |
      * +------------+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+
      *
-     * If we peek mod 32, then we should check only for n & 31 in { 0, 1, 4, 9,
-     * 16, 17, 25 }, but switch statement could be less efficient in this case
+     * If we peek mod 32, then we should check only for n & 31 in { 0, 1, 4, 9, 16, 17, 25 },
+     * but switch statement could be less efficient in this case
      */
+    // clang-format on
     switch (uint64_t(n) & 15) {
         case 0:
         case 1:
@@ -1060,35 +1059,56 @@ GCC_ATTRIBUTE_CONST static constexpr uint32_t base_10_len(T value) noexcept {
     }
 }
 
+/// @brief For n > 0 returns ⌊log_2(n)⌋. For n = 0 returns (uint32_t)-1
+/// @param n
+/// @return
 GCC_ATTRIBUTE_CONST static constexpr uint32_t log2_floor(uint32_t n) noexcept {
     return 31 - uint32_t(count_leading_zeros(n));
 }
 
+/// @brief For n > 0 returns ⌈log_2(n)⌉. For n = 0 returns (uint32_t)-1
+/// @param n
+/// @return
 GCC_ATTRIBUTE_CONST static constexpr uint32_t log2_ceil(uint32_t n) noexcept {
     return log2_floor(n) + ((n & (n - 1)) != 0);
 }
 
+/// @brief For n > 0 returns ⌊log_2(n)⌋. For n = 0 returns (uint32_t)-1
+/// @param n
+/// @return
 GCC_ATTRIBUTE_CONST static constexpr uint32_t log2_floor(uint64_t n) noexcept {
     return 63 - uint32_t(count_leading_zeros(n));
 }
 
+/// @brief For n > 0 returns ⌈log_2(n)⌉. For n = 0 returns (uint32_t)-1
+/// @param n
+/// @return
 GCC_ATTRIBUTE_CONST static constexpr uint32_t log2_ceil(uint64_t n) noexcept {
     return log2_floor(n) + ((n & (n - 1)) != 0);
 }
 
 #if defined(INTEGERS_128_BIT_HPP)
+/// @brief For n > 0 returns ⌊log_2(n)⌋. For n = 0 returns (uint32_t)-1
+/// @param n
+/// @return
 GCC_ATTRIBUTE_CONST static constexpr uint32_t log2_floor(uint128_t n) noexcept {
     uint64_t hi = uint64_t(n >> 64);
     return hi != 0 ? (127 - uint32_t(count_leading_zeros(hi)))
                    : (log2_floor(uint64_t(n)));
 }
 
+/// @brief For n > 0 returns ⌈log_2(n)⌉. For n = 0 returns (uint32_t)-1
+/// @param n
+/// @return
 GCC_ATTRIBUTE_CONST static constexpr uint32_t log2_ceil(uint128_t n) noexcept {
     return log2_floor(n) + ((n & (n - 1)) != 0);
 }
 
 #endif
 
+/// @brief For n > 0 returns ⌈log_10(n)⌉. For n = 0 returns (uint32_t)-1
+/// @param n
+/// @return
 GCC_ATTRIBUTE_CONST
 #if __cpp_constexpr >= 202211L && defined(__GNUC__)
 constexpr
