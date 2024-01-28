@@ -1080,6 +1080,24 @@ static void test_isqrt() {
     }
 }
 
+static void test_icbrt() {
+    for (uint32_t n = 1; n < 1625; n++) {
+        uint32_t tr = n * n * n;
+        assert(icbrt(tr) == n);
+        assert(icbrt(uint64_t(tr)) == n);
+        assert(icbrt(tr + 3 * n * n + 3 * n) == n);
+        assert(icbrt(uint64_t(tr + 3 * n * n + 3 * n)) == n);
+    }
+    assert(icbrt(1625u * 1625u * 1625u) == 1625u);
+
+    for (uint64_t n = 1625; n < 2642245; n++) {
+        uint64_t tr = n * n * n;
+        assert(icbrt(tr) == n);
+        assert(icbrt(tr + 3 * n * n + 3 * n) == n);
+    }
+    assert(icbrt(2642245ull * 2642245ull * 2642245ull) == 2642245ull);
+}
+
 static void test_log2() {
     for (uint32_t k = 0; k < sizeof(uint32_t) * CHAR_BIT; k++) {
         uint32_t pw = uint32_t(1) << k;
@@ -1138,6 +1156,7 @@ static void test_bit_reverse() {
 
 int main() {
     test_isqrt();
+    test_icbrt();
     test_log2();
     test_bit_reverse();
 }
