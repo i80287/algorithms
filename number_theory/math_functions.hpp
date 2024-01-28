@@ -205,7 +205,7 @@ GCC_ATTRIBUTE_CONST static constexpr uint32_t icbrt(uint32_t n) noexcept {
     return y;
 }
 
-GCC_ATTRIBUTE_CONST static constexpr uint64_t icbrt(uint64_t n) noexcept {
+GCC_ATTRIBUTE_CONST static constexpr uint32_t icbrt(uint64_t n) noexcept {
     /**
      * See Hackers Delight Chapter 11.
      */
@@ -220,7 +220,9 @@ GCC_ATTRIBUTE_CONST static constexpr uint64_t icbrt(uint64_t n) noexcept {
         }
     }
     for (int32_t s = 57; s >= 0; s -= 3) {
+        ATTRIBUTE_ASSUME(y <= 1321122u);
         y *= 2;
+        ATTRIBUTE_ASSUME(y <= 2642244u);
         uint64_t bs = (3 * y * (y + 1) | 1) << s;
         if (n >= bs) {
             n -= bs;
