@@ -1,15 +1,12 @@
+#include <assert.h>
+#include <stdio.h>
+#include <string.h>
+
 #include "memset_int.h"
 
-#include <assert.h>
-#include <string.h>
-#include <stdio.h>
-
 int main(void) {
-#if defined(__GNUC__)
-    assert(__builtin_cpu_supports("avx"));
-#endif
-    int32_t buffer[513];
     const size_t arr_len = 512;
+    int32_t buffer[arr_len + 1];
     const int32_t k = atoi("-1345452112");
 
     for (size_t offset = 0; offset <= 1; offset++) {
@@ -28,5 +25,3 @@ int main(void) {
         }
     }
 }
-
-// clang -g3 .\test_memset_int.c -O2 -fsanitize="address,undefined" -Wall -Wextra -Wpedantic -Werror -Wunused -pedantic-errors -Wconversion -Wshadow -Wnull-dereference -Wundef -Wwrite-strings -Wbad-function-cast -Wsign-conversion -Wmissing-noreturn -Wunreachable-code -Wint-conversion -Warray-bounds -o test_memset_int.exe

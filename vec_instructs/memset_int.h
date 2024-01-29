@@ -30,7 +30,7 @@ extern "C" {
 #endif  // __GNUC__
 
 MEMSET_INT_FUNC_ATTRIBUTES
-void memset_int_avx2(int32_t* dst, int32_t value, size_t size) {
+void memset_int_avx(int32_t* dst, int32_t value, size_t size) {
 #if defined(__GNUC__)
 #if !defined(__clang__)
 #pragma GCC diagnostic push
@@ -95,6 +95,13 @@ void memset_int_avx2(int32_t* dst, int32_t value, size_t size) {
             *aligned_8_address = uvalue_64;
             ++aligned_8_address;
             break;
+#if defined(__GNUC__)
+        case 0:
+            break;
+        default:
+            __builtin_unreachable();
+            break;
+#endif
     }
     if (size % 2) {
         aligned_4_address = (uint32_t*)aligned_8_address;
@@ -144,29 +151,37 @@ void memset_int_default(int32_t* dst, int32_t value, size_t size) {
     switch (size) {
         case 3:
             dst[2] = value;
+#if defined(__GNUC__)
             __attribute__((fallthrough));
+#endif
         case 2:
             dst[1] = value;
+#if defined(__GNUC__)
             __attribute__((fallthrough));
+#endif
         case 1:
             dst[0] = value;
-            __attribute__((fallthrough));
+            break;
+#if defined(__GNUC__)
         case 0:
             break;
         default:
             __builtin_unreachable();
             break;
+#endif
     }
 }
 
 #if defined(__GNUC__)
+
+#if 0 && (defined(linux) || defined(__linux__))
 
 __attribute__((unused)) static void (*resolve_memset_int(void))(int32_t*,
                                                                 int32_t,
                                                                 size_t) {
     __builtin_cpu_init();
     if (__builtin_cpu_supports("avx")) {
-        return memset_int_avx2;
+        return memset_int_avx;
     }
     return memset_int_default;
 }
@@ -175,6 +190,18 @@ MEMSET_INT_FUNC_ATTRIBUTES
 __attribute__((ifunc("resolve_memset_int"))) void memset_int(int32_t* dst,
                                                              int32_t value,
                                                              size_t size);
+
+#else
+
+MEMSET_INT_FUNC_ATTRIBUTES
+void (*memset_int)(int32_t* dst, int32_t value, size_t size) = NULL;
+
+__attribute__((constructor)) static inline void memset_int_initializer(void) {
+    memset_int =
+        __builtin_cpu_supports("avx") ? memset_int_avx : memset_int_default;
+}
+
+#endif
 
 #else
 
