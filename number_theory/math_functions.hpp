@@ -84,7 +84,7 @@ static constexpr T bin_pow(T n, size_t p) noexcept {
 /// @param p
 /// @param mod
 /// @return (n ^ p) % mod
-GCC_ATTRIBUTE_CONST static constexpr uint32_t bin_pow_mod(
+ATTRIBUTE_CONST static constexpr uint32_t bin_pow_mod(
     uint32_t n, uint32_t p, uint32_t mod) noexcept {
     uint64_t res = mod != 1;
     uint64_t wdn_n = n;
@@ -107,7 +107,7 @@ GCC_ATTRIBUTE_CONST static constexpr uint32_t bin_pow_mod(
 /// @param p
 /// @param mod
 /// @return (n ^ p) % mod
-GCC_ATTRIBUTE_CONST static inline I128_CONSTEXPR uint64_t
+ATTRIBUTE_CONST static inline I128_CONSTEXPR uint64_t
 bin_pow_mod(uint64_t n, uint64_t p, uint64_t mod) noexcept {
     uint64_t res = mod != 1;
     while (true) {
@@ -124,7 +124,7 @@ bin_pow_mod(uint64_t n, uint64_t p, uint64_t mod) noexcept {
 
 #endif
 
-GCC_ATTRIBUTE_CONST static constexpr uint32_t isqrt(uint32_t n) noexcept {
+ATTRIBUTE_CONST static constexpr uint32_t isqrt(uint32_t n) noexcept {
     /**
      * See Hackers Delight Chapter 11.
      */
@@ -141,7 +141,7 @@ GCC_ATTRIBUTE_CONST static constexpr uint32_t isqrt(uint32_t n) noexcept {
     return y;
 }
 
-GCC_ATTRIBUTE_CONST static constexpr uint32_t isqrt(uint64_t n) noexcept {
+ATTRIBUTE_CONST static constexpr uint32_t isqrt(uint64_t n) noexcept {
     /**
      * See Hackers Delight Chapter 11.
      */
@@ -164,7 +164,7 @@ GCC_ATTRIBUTE_CONST static constexpr uint32_t isqrt(uint64_t n) noexcept {
 
 #if defined(INTEGERS_128_BIT_HPP)
 
-GCC_ATTRIBUTE_CONST static inline I128_CONSTEXPR uint64_t
+ATTRIBUTE_CONST static inline I128_CONSTEXPR uint64_t
 isqrt(uint128_t n) noexcept {
     /**
      * See Hackers Delight Chapter 11.
@@ -187,7 +187,7 @@ isqrt(uint128_t n) noexcept {
 
 #endif
 
-GCC_ATTRIBUTE_CONST static constexpr uint32_t icbrt(uint32_t n) noexcept {
+ATTRIBUTE_CONST static constexpr uint32_t icbrt(uint32_t n) noexcept {
     /**
      * See Hackers Delight Chapter 11.
      */
@@ -205,7 +205,7 @@ GCC_ATTRIBUTE_CONST static constexpr uint32_t icbrt(uint32_t n) noexcept {
     return y;
 }
 
-GCC_ATTRIBUTE_CONST static constexpr uint32_t icbrt(uint64_t n) noexcept {
+ATTRIBUTE_CONST static constexpr uint32_t icbrt(uint64_t n) noexcept {
     /**
      * See Hackers Delight Chapter 11.
      */
@@ -237,7 +237,7 @@ GCC_ATTRIBUTE_CONST static constexpr uint32_t icbrt(uint64_t n) noexcept {
 ///         It can be shown that ⌊n^0.25⌋ = ⌊⌊n^0.5⌋^0.5⌋
 /// @param n
 /// @return
-GCC_ATTRIBUTE_CONST static constexpr uint32_t ifrrt(uint64_t n) noexcept {
+ATTRIBUTE_CONST static constexpr uint32_t ifrrt(uint64_t n) noexcept {
     return isqrt(isqrt(n));
 }
 
@@ -245,14 +245,14 @@ GCC_ATTRIBUTE_CONST static constexpr uint32_t ifrrt(uint64_t n) noexcept {
 ///         It can be shown that ⌊n^0.25⌋ = ⌊⌊n^0.5⌋^0.5⌋
 /// @param n
 /// @return
-GCC_ATTRIBUTE_CONST static constexpr uint32_t ifrrt(uint128_t n) noexcept {
+ATTRIBUTE_CONST static constexpr uint32_t ifrrt(uint128_t n) noexcept {
     return isqrt(isqrt(n));
 }
 
 /// @brief Checks whether n is a perfect square or not
 /// @param n
 /// @return true if n is a perfect square and false otherwise
-GCC_ATTRIBUTE_CONST static constexpr bool is_perfect_square(
+ATTRIBUTE_CONST static constexpr bool is_perfect_square(
     uint64_t n) noexcept {
     // clang-format off
     /**
@@ -284,7 +284,7 @@ GCC_ATTRIBUTE_CONST static constexpr bool is_perfect_square(
 /// @param n
 /// @param root
 /// @return true if n is a perfect square and false otherwise
-GCC_ATTRIBUTE_CONST static constexpr bool is_perfect_square(
+ATTRIBUTE_CONST static constexpr bool is_perfect_square(
     uint64_t n, uint32_t& root) noexcept {
     // clang-format off
     /**
@@ -316,7 +316,7 @@ GCC_ATTRIBUTE_CONST static constexpr bool is_perfect_square(
 /// @brief Checks whether n is a perfect square or not
 /// @param n
 /// @return true if n is a perfect square and false otherwise
-GCC_ATTRIBUTE_CONST static inline I128_CONSTEXPR bool is_perfect_square(
+ATTRIBUTE_CONST static inline I128_CONSTEXPR bool is_perfect_square(
     uint128_t n) noexcept {
     // clang-format off
     /**
@@ -348,7 +348,7 @@ GCC_ATTRIBUTE_CONST static inline I128_CONSTEXPR bool is_perfect_square(
 /// @param n
 /// @param root
 /// @return true if n is a perfect square and false otherwise
-GCC_ATTRIBUTE_CONST static inline I128_CONSTEXPR bool is_perfect_square(
+ATTRIBUTE_CONST static inline I128_CONSTEXPR bool is_perfect_square(
     uint128_t n, uint64_t& root) noexcept {
     // clang-format off
     /**
@@ -377,13 +377,13 @@ GCC_ATTRIBUTE_CONST static inline I128_CONSTEXPR bool is_perfect_square(
 
 #endif
 
-GCC_ATTRIBUTE_CONST static constexpr uint8_t bit_reverse(uint8_t b) noexcept {
+ATTRIBUTE_CONST static constexpr uint8_t bit_reverse(uint8_t b) noexcept {
     // See https://graphics.stanford.edu/~seander/bithacks.html#RoundUpPowerOf2
     return uint8_t(((b * 0x80200802ULL) & 0x0884422110ULL) * 0x0101010101ULL >>
                    32);
 }
 
-GCC_ATTRIBUTE_CONST static constexpr uint32_t bit_reverse(uint32_t n) noexcept {
+ATTRIBUTE_CONST static constexpr uint32_t bit_reverse(uint32_t n) noexcept {
     /**
      * See Hackers Delight 7.1
      */
@@ -396,7 +396,7 @@ GCC_ATTRIBUTE_CONST static constexpr uint32_t bit_reverse(uint32_t n) noexcept {
     return n;
 }
 
-GCC_ATTRIBUTE_CONST static constexpr uint64_t bit_reverse(uint64_t n) noexcept {
+ATTRIBUTE_CONST static constexpr uint64_t bit_reverse(uint64_t n) noexcept {
     /**
      * See Knuth's algorithm in Hackers Delight 7.4
      */
@@ -415,7 +415,7 @@ GCC_ATTRIBUTE_CONST static constexpr uint64_t bit_reverse(uint64_t n) noexcept {
 
 #if defined(INTEGERS_128_BIT_HPP)
 
-GCC_ATTRIBUTE_CONST static inline I128_CONSTEXPR uint128_t
+ATTRIBUTE_CONST static inline I128_CONSTEXPR uint128_t
 bit_reverse(uint128_t n) noexcept {
     uint128_t m = ~uint128_t(0);
     for (uint32_t s = sizeof(uint128_t) * CHAR_BIT; s >>= 1;) {
@@ -429,7 +429,7 @@ bit_reverse(uint128_t n) noexcept {
 
 namespace impl {
 
-GCC_ATTRIBUTE_CONST static uint32_t log2_floor_software(uint64_t n) {
+ATTRIBUTE_CONST static uint32_t log2_floor_software(uint64_t n) {
     static const uint64_t t[6] = {0xFFFFFFFF00000000ull, 0x00000000FFFF0000ull,
                                   0x000000000000FF00ull, 0x00000000000000F0ull,
                                   0x000000000000000Cull, 0x0000000000000002ull};
@@ -447,7 +447,7 @@ GCC_ATTRIBUTE_CONST static uint32_t log2_floor_software(uint64_t n) {
     return y;
 }
 
-GCC_ATTRIBUTE_CONST static inline uint32_t log2_ceil_software(uint64_t n) {
+ATTRIBUTE_CONST static inline uint32_t log2_ceil_software(uint64_t n) {
     return log2_floor_software(n) + ((n & (n - 1)) != 0);
 }
 
@@ -455,7 +455,7 @@ GCC_ATTRIBUTE_CONST static inline uint32_t log2_ceil_software(uint64_t n) {
  *  Returns the integer (floor) log of the specified value, base 2.
  *  Note that by convention, input value 0 returns 0 since log(0) is undefined.
  */
-GCC_ATTRIBUTE_CONST static inline uint32_t de_bruijn_log2(uint32_t value) {
+ATTRIBUTE_CONST static inline uint32_t de_bruijn_log2(uint32_t value) {
     // See https://graphics.stanford.edu/~seander/bithacks.html#RoundUpPowerOf2
 
     static const unsigned char MultiplyDeBruijnBitPosition[32] = {
@@ -479,13 +479,13 @@ GCC_ATTRIBUTE_CONST static inline uint32_t de_bruijn_log2(uint32_t value) {
  *  Returns the integer (floor) log of the specified value, base 2.
  *  Note that by convention, input value 0 returns 0 since log(0) is undefined.
  */
-GCC_ATTRIBUTE_CONST static inline uint32_t de_bruijn_log2(uint64_t value) {
+ATTRIBUTE_CONST static inline uint32_t de_bruijn_log2(uint64_t value) {
     uint32_t hi = static_cast<uint32_t>(value >> 32);
     return (hi != 0) ? (de_bruijn_log2(hi) + 32)
                      : de_bruijn_log2(static_cast<uint32_t>(value));
 }
 
-GCC_ATTRIBUTE_CONST static constexpr uint32_t pop_count_software(
+ATTRIBUTE_CONST static constexpr uint32_t pop_count_software(
     uint32_t n) noexcept {
     /**
      * See Hackers Delight Chapter 5.
@@ -498,7 +498,7 @@ GCC_ATTRIBUTE_CONST static constexpr uint32_t pop_count_software(
     return n;
 }
 
-GCC_ATTRIBUTE_CONST static constexpr uint64_t pop_count_software(
+ATTRIBUTE_CONST static constexpr uint64_t pop_count_software(
     uint64_t n) noexcept {
     /**
      * See Hackers Delight Chapter 5.
@@ -514,7 +514,7 @@ GCC_ATTRIBUTE_CONST static constexpr uint64_t pop_count_software(
 
 }  // namespace impl
 
-GCC_ATTRIBUTE_CONST static constexpr int32_t pop_diff(uint32_t x,
+ATTRIBUTE_CONST static constexpr int32_t pop_diff(uint32_t x,
                                                       uint32_t y) noexcept {
     /**
      * See Hackers Delight Chapter 5.
@@ -531,21 +531,21 @@ GCC_ATTRIBUTE_CONST static constexpr int32_t pop_diff(uint32_t x,
     return static_cast<int32_t>(x & 0x0000007F) - 32;
 }
 
-GCC_ATTRIBUTE_CONST static constexpr int32_t sign(int x) noexcept {
+ATTRIBUTE_CONST static constexpr int32_t sign(int x) noexcept {
     return int32_t(x > 0) - int32_t(x < 0);
 }
 
-GCC_ATTRIBUTE_CONST static constexpr int32_t sign(long x) noexcept {
+ATTRIBUTE_CONST static constexpr int32_t sign(long x) noexcept {
     return int32_t(x > 0) - int32_t(x < 0);
 }
 
-GCC_ATTRIBUTE_CONST static constexpr int32_t sign(long long x) noexcept {
+ATTRIBUTE_CONST static constexpr int32_t sign(long long x) noexcept {
     return int32_t(x > 0) - int32_t(x < 0);
 }
 
 #if defined(INTEGERS_128_BIT_HPP)
 
-GCC_ATTRIBUTE_CONST static inline I128_CONSTEXPR int32_t
+ATTRIBUTE_CONST static inline I128_CONSTEXPR int32_t
 sign(int128_t x) noexcept {
     uint32_t sign_bit = uint32_t(uint128_t(x) >> 127);
     return int32_t(x != 0) - int32_t(2 * sign_bit);
@@ -562,7 +562,7 @@ sign(int128_t x) noexcept {
 /// @param a
 /// @param b
 /// @return
-GCC_ATTRIBUTE_CONST static constexpr bool same_sign(int a, int b) noexcept {
+ATTRIBUTE_CONST static constexpr bool same_sign(int a, int b) noexcept {
     return (a ^ b) >= 0;
 }
 
@@ -575,7 +575,7 @@ GCC_ATTRIBUTE_CONST static constexpr bool same_sign(int a, int b) noexcept {
 /// @param a
 /// @param b
 /// @return
-GCC_ATTRIBUTE_CONST static constexpr bool same_sign(long a, long b) noexcept {
+ATTRIBUTE_CONST static constexpr bool same_sign(long a, long b) noexcept {
     return (a ^ b) >= 0;
 }
 
@@ -588,7 +588,7 @@ GCC_ATTRIBUTE_CONST static constexpr bool same_sign(long a, long b) noexcept {
 /// @param a
 /// @param b
 /// @return
-GCC_ATTRIBUTE_CONST static constexpr bool same_sign(long long a,
+ATTRIBUTE_CONST static constexpr bool same_sign(long long a,
                                                     long long b) noexcept {
     return (a ^ b) >= 0;
 }
@@ -605,7 +605,7 @@ GCC_ATTRIBUTE_CONST static constexpr bool same_sign(long long a,
 /// @param a
 /// @param b
 /// @return
-GCC_ATTRIBUTE_CONST static constexpr bool same_sign_strict(int a,
+ATTRIBUTE_CONST static constexpr bool same_sign_strict(int a,
                                                            int b) noexcept {
     return sign(a) == sign(b);
 }
@@ -622,7 +622,7 @@ GCC_ATTRIBUTE_CONST static constexpr bool same_sign_strict(int a,
 /// @param a
 /// @param b
 /// @return
-GCC_ATTRIBUTE_CONST static constexpr bool same_sign_strict(long a,
+ATTRIBUTE_CONST static constexpr bool same_sign_strict(long a,
                                                            long b) noexcept {
     return sign(a) == sign(b);
 }
@@ -639,21 +639,21 @@ GCC_ATTRIBUTE_CONST static constexpr bool same_sign_strict(long a,
 /// @param a
 /// @param b
 /// @return
-GCC_ATTRIBUTE_CONST static constexpr bool same_sign_strict(
+ATTRIBUTE_CONST static constexpr bool same_sign_strict(
     long long a, long long b) noexcept {
     return sign(a) == sign(b);
 }
 
-GCC_ATTRIBUTE_CONST static constexpr unsigned uabs(int n) noexcept {
+ATTRIBUTE_CONST static constexpr unsigned uabs(int n) noexcept {
     return n >= 0 ? static_cast<unsigned>(n) : -static_cast<unsigned>(n);
 }
 
-GCC_ATTRIBUTE_CONST static constexpr unsigned long uabs(long n) noexcept {
+ATTRIBUTE_CONST static constexpr unsigned long uabs(long n) noexcept {
     return n >= 0 ? static_cast<unsigned long>(n)
                   : -static_cast<unsigned long>(n);
 }
 
-GCC_ATTRIBUTE_CONST static constexpr unsigned long long uabs(
+ATTRIBUTE_CONST static constexpr unsigned long long uabs(
     long long n) noexcept {
     return n >= 0 ? static_cast<unsigned long long>(n)
                   : -static_cast<unsigned long long>(n);
@@ -661,7 +661,7 @@ GCC_ATTRIBUTE_CONST static constexpr unsigned long long uabs(
 
 #if defined(INTEGERS_128_BIT_HPP)
 
-GCC_ATTRIBUTE_CONST static inline I128_CONSTEXPR uint128_t
+ATTRIBUTE_CONST static inline I128_CONSTEXPR uint128_t
 uabs(int128_t n) noexcept {
     uint128_t t = uint128_t(n >> 127);
     return (uint128_t(n) ^ t) - t;
@@ -669,7 +669,7 @@ uabs(int128_t n) noexcept {
 
 #endif
 
-GCC_ATTRIBUTE_CONST static constexpr int32_t pop_cmp(uint32_t x,
+ATTRIBUTE_CONST static constexpr int32_t pop_cmp(uint32_t x,
                                                      uint32_t y) noexcept {
     /**
      * See Hackers Delight Chapter 5.
@@ -688,7 +688,7 @@ GCC_ATTRIBUTE_CONST static constexpr int32_t pop_cmp(uint32_t x,
 
 namespace impl {
 
-GCC_ATTRIBUTE_CONST static constexpr uint32_t lz_count_32_software(
+ATTRIBUTE_CONST static constexpr uint32_t lz_count_32_software(
     uint32_t n) noexcept {
     /**
      * See Hackers Delight Chapter 5
@@ -717,7 +717,7 @@ GCC_ATTRIBUTE_CONST static constexpr uint32_t lz_count_32_software(
     return m;
 }
 
-GCC_ATTRIBUTE_CONST static constexpr uint32_t lz_count_64_software(
+ATTRIBUTE_CONST static constexpr uint32_t lz_count_64_software(
     uint64_t n) noexcept {
     /**
      * See Hackers Delight Chapter 5
@@ -750,7 +750,7 @@ GCC_ATTRIBUTE_CONST static constexpr uint32_t lz_count_64_software(
     return m;
 }
 
-GCC_ATTRIBUTE_CONST static constexpr uint32_t tz_count_32_software(
+ATTRIBUTE_CONST static constexpr uint32_t tz_count_32_software(
     uint32_t n) noexcept {
     /**
      * See Hackers Delight Chapter 5
@@ -778,7 +778,7 @@ GCC_ATTRIBUTE_CONST static constexpr uint32_t tz_count_32_software(
     return m - (n & 1);
 }
 
-GCC_ATTRIBUTE_CONST static constexpr uint32_t tz_count_64_software(
+ATTRIBUTE_CONST static constexpr uint32_t tz_count_64_software(
     uint64_t n) noexcept {
     uint32_t m = 0;
     for (n = ~n & (n - 1); n != 0; n >>= 1) {
@@ -799,7 +799,7 @@ template <typename T>
              || std::is_same_v<T, uint128_t>
 #endif
 #endif
-GCC_ATTRIBUTE_CONST static constexpr int32_t count_trailing_zeros(
+ATTRIBUTE_CONST static constexpr int32_t count_trailing_zeros(
     T n) noexcept {
     if (unlikely(n == 0)) {
         return sizeof(n) * 8;
@@ -866,7 +866,7 @@ template <typename T>
              || std::is_same_v<T, uint128_t>
 #endif
 #endif
-GCC_ATTRIBUTE_CONST static constexpr int32_t count_leading_zeros(T n) noexcept {
+ATTRIBUTE_CONST static constexpr int32_t count_leading_zeros(T n) noexcept {
     if (unlikely(n == 0)) {
         return sizeof(n) * 8;
     }
@@ -942,62 +942,62 @@ constexpr uint32_t next_n_bits_permutation(uint32_t x) noexcept {
     return (t + 1) | (((~t & -~t) - 1) >> (count_trailing_zeros(x) + 1));
 }
 
-GCC_ATTRIBUTE_CONST static constexpr bool is_pow2(int n) noexcept {
+ATTRIBUTE_CONST static constexpr bool is_pow2(int n) noexcept {
     // Cast to unsigned to avoid potential overflow
     unsigned m = static_cast<unsigned>(n);
     // To check (m & (m - 1)) == 0 first is necessary
     return (m & (m - 1)) == 0 && n > 0;
 }
 
-GCC_ATTRIBUTE_CONST static constexpr bool is_pow2(long n) noexcept {
+ATTRIBUTE_CONST static constexpr bool is_pow2(long n) noexcept {
     // Cast to unsigned to avoid potential overflow
     unsigned long m = static_cast<unsigned long>(n);
     // To check (m & (m - 1)) == 0 first is necessary
     return (m & (m - 1)) == 0 && n > 0;
 }
 
-GCC_ATTRIBUTE_CONST static constexpr bool is_pow2(long long n) noexcept {
+ATTRIBUTE_CONST static constexpr bool is_pow2(long long n) noexcept {
     // Cast to unsigned to avoid potential overflow
     unsigned long long m = static_cast<unsigned long long>(n);
     // To check (m & (m - 1)) == 0 first is necessary
     return (m & (m - 1)) == 0 && n > 0;
 }
 
-GCC_ATTRIBUTE_CONST static constexpr bool is_pow2(unsigned int n) noexcept {
+ATTRIBUTE_CONST static constexpr bool is_pow2(unsigned int n) noexcept {
     return (n & (n - 1)) == 0 && n != 0;
 }
 
-GCC_ATTRIBUTE_CONST static constexpr bool is_pow2(unsigned long n) noexcept {
+ATTRIBUTE_CONST static constexpr bool is_pow2(unsigned long n) noexcept {
     return (n & (n - 1)) == 0 && n != 0;
 }
 
-GCC_ATTRIBUTE_CONST static constexpr bool is_pow2(
+ATTRIBUTE_CONST static constexpr bool is_pow2(
     unsigned long long n) noexcept {
     return (n & (n - 1)) == 0 && n != 0;
 }
 
 #if defined(INTEGERS_128_BIT_HPP)
 
-GCC_ATTRIBUTE_CONST static inline I128_CONSTEXPR bool is_pow2(
+ATTRIBUTE_CONST static inline I128_CONSTEXPR bool is_pow2(
     int128_t n) noexcept {
     return (n & (n - 1)) == 0 && n > 0;
 }
 
-GCC_ATTRIBUTE_CONST static inline I128_CONSTEXPR bool is_pow2(
+ATTRIBUTE_CONST static inline I128_CONSTEXPR bool is_pow2(
     uint128_t n) noexcept {
     return (n & (n - 1)) == 0 && n != 0;
 }
 
 #endif
 
-GCC_ATTRIBUTE_CONST static constexpr uint64_t nearest_pow2_ge(
+ATTRIBUTE_CONST static constexpr uint64_t nearest_pow2_ge(
     uint32_t n) noexcept {
     constexpr uint32_t k = sizeof(uint32_t) * CHAR_BIT;
     return uint64_t(1ull) << (k - uint32_t(count_leading_zeros(n | 1)) -
                               ((n & (n - 1)) == 0));
 }
 
-GCC_ATTRIBUTE_CONST static constexpr uint64_t nearest_pow2_ge(
+ATTRIBUTE_CONST static constexpr uint64_t nearest_pow2_ge(
     uint64_t n) noexcept {
     constexpr uint32_t k = sizeof(uint64_t) * CHAR_BIT;
     return uint64_t(1ull) << (k - uint32_t(count_leading_zeros(n | 1)) -
@@ -1005,18 +1005,18 @@ GCC_ATTRIBUTE_CONST static constexpr uint64_t nearest_pow2_ge(
 }
 
 /* Just constexpr version of isdigit from ctype.h */
-GCC_ATTRIBUTE_CONST static constexpr bool is_digit(int32_t c) noexcept {
+ATTRIBUTE_CONST static constexpr bool is_digit(int32_t c) noexcept {
     return static_cast<uint32_t>(c) - '0' <= '9' - '0';
 }
 
-GCC_ATTRIBUTE_CONST static constexpr uint32_t base_2_digits(
+ATTRIBUTE_CONST static constexpr uint32_t base_2_digits(
     uint32_t n) noexcept {
     // " | 1" operation does not affect the answer for all numbers except n = 0
     // for n = 0 answer is 1
     return 32 - uint32_t(count_leading_zeros(n | 1));
 }
 
-GCC_ATTRIBUTE_CONST static constexpr uint32_t base_2_digits(
+ATTRIBUTE_CONST static constexpr uint32_t base_2_digits(
     uint64_t n) noexcept {
     // " | 1" operation does not affect the answer for all numbers except n = 0
     // for n = 0 answer is 1
@@ -1034,7 +1034,7 @@ template <typename T>
              || std::is_same_v<T, uint128_t>
 #endif
 #endif
-GCC_ATTRIBUTE_CONST static constexpr uint32_t base_10_len(T value) noexcept {
+ATTRIBUTE_CONST static constexpr uint32_t base_10_len(T value) noexcept {
     const uint32_t base = 10;
     const uint32_t b2 = base * base;
     const uint32_t b3 = b2 * base;
@@ -1063,28 +1063,28 @@ GCC_ATTRIBUTE_CONST static constexpr uint32_t base_10_len(T value) noexcept {
 /// @brief For n > 0 returns ⌊log_2(n)⌋. For n = 0 returns (uint32_t)-1
 /// @param n
 /// @return
-GCC_ATTRIBUTE_CONST static constexpr uint32_t log2_floor(uint32_t n) noexcept {
+ATTRIBUTE_CONST static constexpr uint32_t log2_floor(uint32_t n) noexcept {
     return 31 - uint32_t(count_leading_zeros(n));
 }
 
 /// @brief For n > 0 returns ⌈log_2(n)⌉. For n = 0 returns (uint32_t)-1
 /// @param n
 /// @return
-GCC_ATTRIBUTE_CONST static constexpr uint32_t log2_ceil(uint32_t n) noexcept {
+ATTRIBUTE_CONST static constexpr uint32_t log2_ceil(uint32_t n) noexcept {
     return log2_floor(n) + ((n & (n - 1)) != 0);
 }
 
 /// @brief For n > 0 returns ⌊log_2(n)⌋. For n = 0 returns (uint32_t)-1
 /// @param n
 /// @return
-GCC_ATTRIBUTE_CONST static constexpr uint32_t log2_floor(uint64_t n) noexcept {
+ATTRIBUTE_CONST static constexpr uint32_t log2_floor(uint64_t n) noexcept {
     return 63 - uint32_t(count_leading_zeros(n));
 }
 
 /// @brief For n > 0 returns ⌈log_2(n)⌉. For n = 0 returns (uint32_t)-1
 /// @param n
 /// @return
-GCC_ATTRIBUTE_CONST static constexpr uint32_t log2_ceil(uint64_t n) noexcept {
+ATTRIBUTE_CONST static constexpr uint32_t log2_ceil(uint64_t n) noexcept {
     return log2_floor(n) + ((n & (n - 1)) != 0);
 }
 
@@ -1092,7 +1092,7 @@ GCC_ATTRIBUTE_CONST static constexpr uint32_t log2_ceil(uint64_t n) noexcept {
 /// @brief For n > 0 returns ⌊log_2(n)⌋. For n = 0 returns (uint32_t)-1
 /// @param n
 /// @return
-GCC_ATTRIBUTE_CONST static constexpr uint32_t log2_floor(uint128_t n) noexcept {
+ATTRIBUTE_CONST static constexpr uint32_t log2_floor(uint128_t n) noexcept {
     uint64_t hi = uint64_t(n >> 64);
     return hi != 0 ? (127 - uint32_t(count_leading_zeros(hi)))
                    : (log2_floor(uint64_t(n)));
@@ -1101,7 +1101,7 @@ GCC_ATTRIBUTE_CONST static constexpr uint32_t log2_floor(uint128_t n) noexcept {
 /// @brief For n > 0 returns ⌈log_2(n)⌉. For n = 0 returns (uint32_t)-1
 /// @param n
 /// @return
-GCC_ATTRIBUTE_CONST static constexpr uint32_t log2_ceil(uint128_t n) noexcept {
+ATTRIBUTE_CONST static constexpr uint32_t log2_ceil(uint128_t n) noexcept {
     return log2_floor(n) + ((n & (n - 1)) != 0);
 }
 
@@ -1110,7 +1110,7 @@ GCC_ATTRIBUTE_CONST static constexpr uint32_t log2_ceil(uint128_t n) noexcept {
 /// @brief For n > 0 returns ⌈log_10(n)⌉. For n = 0 returns (uint32_t)-1
 /// @param n
 /// @return
-GCC_ATTRIBUTE_CONST
+ATTRIBUTE_CONST
 #if __cpp_constexpr >= 202211L && defined(__GNUC__)
 constexpr
 #endif
@@ -1136,7 +1136,7 @@ constexpr
     return digits;
 }
 
-GCC_ATTRIBUTE_CONST
+ATTRIBUTE_CONST
 #if __cpp_constexpr >= 202211L && defined(__GNUC__)
 constexpr
 #endif
@@ -1173,7 +1173,7 @@ constexpr
     return uint32_t(digits);
 }
 
-GCC_ATTRIBUTE_CONST
+ATTRIBUTE_CONST
 #if __cpp_constexpr >= 202211L && defined(__GNUC__)
 constexpr
 #endif
@@ -1183,7 +1183,7 @@ constexpr
     return log10_floor(n | 1) + 1;
 }
 
-GCC_ATTRIBUTE_CONST
+ATTRIBUTE_CONST
 #if __cpp_constexpr >= 202211L && defined(__GNUC__)
 constexpr
 #endif
@@ -1204,13 +1204,13 @@ template <typename T>
              || std::is_same_v<T, uint128_t>
 #endif
 #endif
-GCC_ATTRIBUTE_CONST static constexpr std::pair<T, uint32_t> extract_2pow(
+ATTRIBUTE_CONST static constexpr std::pair<T, uint32_t> extract_2pow(
     T n) noexcept {
     uint32_t r = uint32_t(count_trailing_zeros(n));
     return {n >> r, r};
 }
 
-GCC_ATTRIBUTE_CONST
+ATTRIBUTE_CONST
 #if __cplusplus >= 202002L
 constexpr
 #endif
@@ -1243,7 +1243,7 @@ constexpr
     return divisors;
 }
 
-GCC_ATTRIBUTE_CONST static inline std::map<uint32_t, uint32_t>
+ATTRIBUTE_CONST static inline std::map<uint32_t, uint32_t>
 prime_divisors_as_map(uint32_t n) {
     std::map<uint32_t, uint32_t> divisors;
     if (n % 2 == 0 && n != 0) {
@@ -1278,7 +1278,7 @@ prime_divisors_as_map(uint32_t n) {
 
 namespace std {
 
-GCC_ATTRIBUTE_CONST static inline I128_CONSTEXPR uint128_t
+ATTRIBUTE_CONST static inline I128_CONSTEXPR uint128_t
 gcd(uint128_t a, uint128_t b) noexcept {
     if (unlikely(a == 0)) {
         return b;
@@ -1308,7 +1308,7 @@ gcd(uint128_t a, uint128_t b) noexcept {
     }
 }
 
-GCC_ATTRIBUTE_CONST static inline I128_CONSTEXPR uint128_t
+ATTRIBUTE_CONST static inline I128_CONSTEXPR uint128_t
 gcd(uint64_t a, int128_t b) noexcept {
     uint128_t b0 = math_functions::uabs(b);
     if (unlikely(b0 == 0)) {

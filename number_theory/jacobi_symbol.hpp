@@ -14,7 +14,7 @@ template <typename Uint>
 #if __cplusplus >= 202002L
     requires type_traits_helper_int128_t::is_unsigned_v<Uint>
 #endif
-GCC_ATTRIBUTE_CONST static constexpr int32_t jsymb_ui(Uint a, Uint n) noexcept {
+ATTRIBUTE_CONST static constexpr int32_t jsymb_ui(Uint a, Uint n) noexcept {
     int32_t t = 1;
 
     if (n % 2 == 0) {
@@ -84,7 +84,7 @@ template <typename Sint>
 #if __cplusplus >= 202002L
     requires type_traits_helper_int128_t::is_signed_v<Sint>
 #endif
-GCC_ATTRIBUTE_CONST static constexpr int32_t jsymb_si(Sint a, Sint n) noexcept {
+ATTRIBUTE_CONST static constexpr int32_t jsymb_si(Sint a, Sint n) noexcept {
     bool carry = n < 0 && a < 0;
     using Uint = type_traits_helper_int128_t::make_unsigned_t<Sint>;
     Uint n_u = static_cast<Uint>(uabs(n));
@@ -158,7 +158,7 @@ template <class Sint, class Uint>
     requires type_traits_helper_int128_t::is_signed_v<Sint> &&
              type_traits_helper_int128_t::is_unsigned_v<Uint>
 #endif
-GCC_ATTRIBUTE_CONST static constexpr int32_t jsymb_si_ui(Sint a,
+ATTRIBUTE_CONST static constexpr int32_t jsymb_si_ui(Sint a,
                                                          Uint n) noexcept {
     int32_t t = 1;
 
@@ -237,7 +237,7 @@ GCC_ATTRIBUTE_CONST static constexpr int32_t jsymb_si_ui(Sint a,
 /// @param n
 /// @return Kronecker symbol of (a/n) (-1, 0 or 1)
 template <typename IntegerT1, typename IntegerT2>
-GCC_ATTRIBUTE_CONST static constexpr int32_t jacobi_symbol(
+ATTRIBUTE_CONST static constexpr int32_t jacobi_symbol(
     IntegerT1 a, IntegerT2 n) noexcept {
 #if __cplusplus >= 202002L
     using T1 = std::remove_cvref_t<IntegerT1>;
