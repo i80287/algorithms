@@ -69,10 +69,9 @@ void memset_int_avx(int32_t* dst, int32_t value, size_t size) {
         ++aligned_4_address;
     }
 
-    const __m256i value_vector = _mm256_set1_epi32(value);
-    while (size >= 8) {
+    for (const __m256i value_vector = _mm256_set1_epi32(value); size >= 8;
+         size -= 8) {
         _mm256_store_si256(aligned_32_address, value_vector);
-        size -= 8;
         ++aligned_32_address;
     }
 
