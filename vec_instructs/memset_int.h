@@ -10,7 +10,8 @@ extern "C" {
 #pragma GCC push_options
 #pragma GCC target("avx")
 #else
-#pragma clang attribute push(__attribute__((target("avx"))), apply_to = function)
+#pragma clang attribute push(__attribute__((target("avx"))), \
+                             apply_to = function)
 #endif  // !__clang__
 #endif  // __GNUC__
 
@@ -18,12 +19,18 @@ extern "C" {
 #include <x86intrin.h>
 
 #if defined(__GNUC__)
-__attribute__((nonnull(1)))
 #if !defined(__clang__)
-__attribute__((access(write_only, 1, 3)))
+#define MEMSET_INT_FUNC_ATTRIBUTES \
+    __attribute__((nonnull(1))) __attribute__((access(write_only, 1, 3)))
+#else
+#define MEMSET_INT_FUNC_ATTRIBUTES __attribute__((nonnull(1)))
 #endif  // !__clang__
+#else
+#define MEMSET_INT_FUNC_ATTRIBUTES
 #endif  // __GNUC__
-void memset_int(int32_t* dst, int32_t value, size_t size) {
+
+MEMSET_INT_FUNC_ATTRIBUTES
+void memset_int_avx2(int32_t* dst, int32_t value, size_t size) {
 #if defined(__GNUC__)
 #if !defined(__clang__)
 #pragma GCC diagnostic push
@@ -45,9 +52,11 @@ void memset_int(int32_t* dst, int32_t value, size_t size) {
 #endif
 
     uint32_t* aligned_4_address = (uint32_t*)dst;
-    __m256i* aligned_32_address = (__m256i*)(((uintptr_t)aligned_4_address + 31) & ~(uintptr_t)31);
+    __m256i* aligned_32_address =
+        (__m256i*)(((uintptr_t)aligned_4_address + 31) & ~(uintptr_t)31);
     const uint32_t uvalue_32 = (uint32_t)value;
-    uintptr_t offset = ((uintptr_t)aligned_32_address - (uintptr_t)aligned_4_address) / 4;
+    uintptr_t offset =
+        ((uintptr_t)aligned_32_address - (uintptr_t)aligned_4_address) / 4;
 #if defined(__GNUC__)
     if (__builtin_expect(offset > size, 0))
 #else
@@ -100,6 +109,83 @@ void memset_int(int32_t* dst, int32_t value, size_t size) {
 #pragma clang attribute pop
 #endif  // !__clang__
 #endif  // __GNUC__
+
+MEMSET_INT_FUNC_ATTRIBUTES
+void memset_int_default(int32_t* dst, int32_t value, size_t size) {
+#if defined(__GNUC__)
+#if !defined(__clang__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wnonnull-compare"
+#else
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wtautological-pointer-compare"
+#endif
+    if (__builtin_expect(dst == NULL, 0))
+        return;
+#if !defined(__clang__)
+#pragma GCC diagnostic pop
+#else
+#pragma clang diagnostic pop
+#endif
+#else
+    if (dst == NULL)
+        return;
+#endif
+
+    while (size >= 4) {
+        dst[0] = value;
+        dst[1] = value;
+        dst[2] = value;
+        dst[3] = value;
+        dst += 4;
+        size -= 4;
+    }
+
+    switch (size) {
+        case 3:
+            dst[2] = value;
+            __attribute__((fallthrough));
+        case 2:
+            dst[1] = value;
+            __attribute__((fallthrough));
+        case 1:
+            dst[0] = value;
+            __attribute__((fallthrough));
+        case 0:
+            break;
+        default:
+            __builtin_unreachable();
+            break;
+    }
+}
+
+#if defined(__GNUC__)
+
+__attribute__((unused)) static void (*resolve_memset_int(void))(int32_t*,
+                                                                int32_t,
+                                                                size_t) {
+    __builtin_cpu_init();
+    if (__builtin_cpu_supports("avx")) {
+        return memset_int_avx2;
+    }
+    return memset_int_default;
+}
+
+MEMSET_INT_FUNC_ATTRIBUTES
+__attribute__((ifunc("resolve_memset_int"))) void memset_int(int32_t* dst,
+                                                             int32_t value,
+                                                             size_t size);
+
+#else
+
+MEMSET_INT_FUNC_ATTRIBUTES
+static inline memset_int(int32_t* dst, int32_t value, size_t size) {
+    return memset_int_default(dst, value, size);
+}
+
+#endif
+
+#undef MEMSET_INT_FUNC_ATTRIBUTES
 
 #if defined(__cplusplus)
 }

@@ -1,8 +1,13 @@
+// For CLOCK_REALTIME
+#define _POSIX_C_SOURCE 200809L
+
 #include "memset_int.h"
 
 #include <stdio.h>
 #include <string.h>
 #include <inttypes.h>
+#include <time.h>
+
 #include <sys/time.h>
 #include <sys/types.h>
 
