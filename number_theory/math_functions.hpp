@@ -86,7 +86,7 @@ static constexpr T bin_pow(T n, size_t p) noexcept {
 /// @return (n ^ p) % mod
 GCC_ATTRIBUTE_CONST static constexpr uint32_t bin_pow_mod(
     uint32_t n, uint32_t p, uint32_t mod) noexcept {
-    uint64_t res = 1;
+    uint64_t res = mod != 1;
     uint64_t wdn_n = n;
     while (true) {
         if (p & 1) {
@@ -109,7 +109,7 @@ GCC_ATTRIBUTE_CONST static constexpr uint32_t bin_pow_mod(
 /// @return (n ^ p) % mod
 GCC_ATTRIBUTE_CONST static inline I128_CONSTEXPR uint64_t
 bin_pow_mod(uint64_t n, uint64_t p, uint64_t mod) noexcept {
-    uint64_t res = 1;
+    uint64_t res = mod != 1;
     while (true) {
         if (p & 1) {
             res = uint64_t((uint128_t(res) * n) % mod);
