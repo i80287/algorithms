@@ -173,7 +173,7 @@ void memset_int_default(int32_t* dst, int32_t value, size_t size) {
 
 #if defined(__GNUC__)
 
-#if 0 && (defined(linux) || defined(__linux__))
+#if (defined(linux) || defined(__linux__))
 
 __attribute__((unused)) static void (*resolve_memset_int(void))(int32_t*,
                                                                 int32_t,
