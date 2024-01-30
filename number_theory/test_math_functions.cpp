@@ -1095,7 +1095,7 @@ static void test_icbrt() {
         assert(icbrt(tr) == n);
         assert(icbrt(tr + 3 * n * n + 3 * n) == n);
     }
-    assert(icbrt(2642245ull * 2642245ull * 2642245ull) == 2642245ull);
+    assert(icbrt(uint64_t(2642245) * 2642245 * 2642245) == 2642245);
 }
 
 static void test_log2() {
