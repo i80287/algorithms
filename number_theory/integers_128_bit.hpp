@@ -41,7 +41,8 @@ typedef std::_Signed128 int128_t;
  * Macro defined to 1 if current [u]int128_t supports constexpr
  * operations and 0 otherwise.
  */
-#if (__cplusplus >= 201703L && defined(__GNUC__)) || (__cplusplus >= 202002L && defined(_MSC_VER))
+#if (__cplusplus >= 201703L && defined(__GNUC__)) || \
+    (__cplusplus >= 202002L && defined(_MSC_VER))
 #define HAS_I128_CONSTEXPR 1
 #else
 #define HAS_I128_CONSTEXPR 0
@@ -59,22 +60,35 @@ typedef std::_Signed128 int128_t;
 
 namespace format_impl_uint128_t {
 
-#if __cplusplus >= 202207L && defined(__GNUC__) && !defined(__clang__)
-constexpr
-#endif
-    static inline char*
-    uint128_t_format_fill_chars_buffer(uint128_t number,
-                                       char* buffer_ptr) noexcept {
-    do { /**
-          * let compiler optimize it like "q = number - r * 10"
-          * or whatever (maybe / 10 and % 10 will be
-          * calculated at once for uint128_t too)
-          */
-        auto r = number / 10;
-        auto q = number % 10;
-        *--buffer_ptr = static_cast<char>('0' + static_cast<uint64_t>(q));
-        number = r;
-    } while (number);
+/// @brief Realization taken from the gcc libstdc++ __to_chars_10_impl
+/// @param number
+/// @param buffer_ptr
+/// @return
+static inline I128_CONSTEXPR char* uint128_t_format_fill_chars_buffer(
+    uint128_t number, char* buffer_ptr) noexcept {
+    constexpr uint8_t remainders[201] =
+        "0001020304050607080910111213141516171819"
+        "2021222324252627282930313233343536373839"
+        "4041424344454647484950515253545556575859"
+        "6061626364656667686970717273747576777879"
+        "8081828384858687888990919293949596979899";
+
+    while (number >= 100) {
+        const uint32_t remainder_index = uint32_t(number % 100) * 2;
+        number /= 100;
+        *--buffer_ptr = char(remainders[remainder_index + 1]);
+        *--buffer_ptr = char(remainders[remainder_index]);
+    }
+
+    ATTRIBUTE_ASSUME(number < 100);
+    if (number >= 10) {
+        const uint32_t remainder_index = uint32_t(number) * 2;
+        *--buffer_ptr = char(remainders[remainder_index + 1]);
+        *--buffer_ptr = char(remainders[remainder_index]);
+    } else {
+        *--buffer_ptr = char('0' + uint32_t(number));
+    }
+
     return buffer_ptr;
 }
 
@@ -85,6 +99,11 @@ namespace type_traits_helper_int128_t {
 template <class T>
 struct is_integral {
     static constexpr bool value = std::is_integral_v<T>;
+};
+
+template <>
+struct is_integral<uint128_t> {
+    static constexpr bool value = true;
 };
 
 template <>
@@ -147,13 +166,7 @@ template <>
 inline constexpr bool is_arithmetic_v<uint128_t> = true;
 
 template <class T>
-inline constexpr bool is_integral_v = std::is_integral_v<T>;
-
-template <>
-inline constexpr bool is_integral_v<int128_t> = true;
-
-template <>
-inline constexpr bool is_integral_v<uint128_t> = true;
+inline constexpr bool is_integral_v = is_integral<T>::value;
 
 template <class T>
 inline constexpr bool is_default_constructible_v =
@@ -202,32 +215,13 @@ template <>
 inline constexpr bool is_move_assignable_v<uint128_t> = true;
 
 template <class T>
-inline constexpr bool is_unsigned_v = std::is_unsigned_v<T>;
-
-template <>
-inline constexpr bool is_unsigned_v<uint128_t> = true;
-
-template <>
-inline constexpr bool is_unsigned_v<int128_t> = false;
+inline constexpr bool is_unsigned_v = is_unsigned<T>::value;
 
 template <class T>
-inline constexpr bool is_signed_v = std::is_signed_v<T>;
-
-template <>
-inline constexpr bool is_signed_v<uint128_t> = false;
-
-template <>
-inline constexpr bool is_signed_v<int128_t> = true;
+inline constexpr bool is_signed_v = is_signed<T>::value;
 
 template <typename T>
 using make_unsigned_t = typename make_unsigned<T>::type;
-
-static_assert(is_arithmetic_v<int128_t>);
-static_assert(is_integral_v<int128_t>);
-static_assert(is_arithmetic_v<uint128_t>);
-static_assert(is_unsigned_v<uint128_t>);
-static_assert(is_signed_v<int128_t>);
-static_assert(std::is_same_v<make_unsigned_t<int128_t>, uint128_t>);
 
 }  // namespace type_traits_helper_int128_t
 
@@ -283,25 +277,20 @@ inline string to_string(uint128_t number) {
 }
 
 inline string to_string(int128_t number) {
-    // 340282366920938463463374607431768211455 == 2^128 - 1
-    // strlen("340282366920938463463374607431768211455") == 39;
-    constexpr size_t max_number_digits_count = 39;
-    // + 1 for sign
-    char digits[max_number_digits_count + 1 + 1];
-    digits[max_number_digits_count + 1] = '\0';
+    //  170141183460469231731687303715884105727 ==  2^127 - 1
+    // -170141183460469231731687303715884105728 == -2^127
+    // strlen("-170141183460469231731687303715884105728") == 40;
+    constexpr size_t max_number_digits_count = 40;
+    char digits[max_number_digits_count + 1];
+    digits[max_number_digits_count] = '\0';
 
-    bool negative = number < 0;
-    if (negative) {
-        number = -number;
-    }
-
+    uint128_t number_m = number >= 0 ? uint128_t(number) : -uint128_t(number);
     char* ptr = format_impl_uint128_t::uint128_t_format_fill_chars_buffer(
-        uint128_t(number), &digits[max_number_digits_count + 1]);
-    if (negative) {
+        number_m, &digits[max_number_digits_count]);
+    if (number < 0) {
         *--ptr = '-';
     }
-    size_t length =
-        static_cast<size_t>(&digits[max_number_digits_count + 1] - ptr);
+    size_t length = static_cast<size_t>(&digits[max_number_digits_count] - ptr);
 
     return string(ptr, length);
 }
