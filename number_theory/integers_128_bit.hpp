@@ -74,19 +74,18 @@ static inline I128_CONSTEXPR char* uint128_t_format_fill_chars_buffer(
         "8081828384858687888990919293949596979899";
 
     while (number >= 100) {
-        const uint32_t remainder_index = uint32_t(number % 100) * 2;
+        const size_t remainder_index = size_t(number % 100) * 2;
         number /= 100;
         *--buffer_ptr = char(remainders[remainder_index + 1]);
         *--buffer_ptr = char(remainders[remainder_index]);
     }
 
-    ATTRIBUTE_ASSUME(number < 100);
     if (number >= 10) {
-        const uint32_t remainder_index = uint32_t(number) * 2;
+        const size_t remainder_index = size_t(number) * 2;
         *--buffer_ptr = char(remainders[remainder_index + 1]);
         *--buffer_ptr = char(remainders[remainder_index]);
     } else {
-        *--buffer_ptr = char('0' + uint32_t(number));
+        *--buffer_ptr = char('0' + number);
     }
 
     return buffer_ptr;
