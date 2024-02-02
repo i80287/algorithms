@@ -15,6 +15,18 @@ static_assert(!i128_helper::is_signed_v<uint128_t>);
 static_assert(std::is_same_v<i128_helper::make_unsigned_t<int128_t>, uint128_t>);
 static_assert(std::is_same_v<i128_helper::make_unsigned_t<uint128_t>, uint128_t>);
 
+static_assert(i128_helper::is_arithmetic_v<int64_t>);
+static_assert(i128_helper::is_integral_v<int64_t>);
+static_assert(!i128_helper::is_unsigned_v<int64_t>);
+static_assert(i128_helper::is_signed_v<int64_t>);
+static_assert(std::is_same_v<i128_helper::make_unsigned_t<int64_t>, uint64_t>);
+
+static_assert(i128_helper::is_arithmetic_v<uint64_t>);
+static_assert(i128_helper::is_integral_v<uint64_t>);
+static_assert(i128_helper::is_unsigned_v<uint64_t>);
+static_assert(!i128_helper::is_signed_v<uint64_t>);
+static_assert(std::is_same_v<i128_helper::make_unsigned_t<uint64_t>, uint64_t>);
+
 int main() {
     constexpr uint64_t k = 20000;
     for (uint64_t n = 0; n <= k; n++) {

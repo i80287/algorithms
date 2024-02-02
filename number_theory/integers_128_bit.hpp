@@ -142,7 +142,7 @@ struct is_unsigned<int128_t> {
 
 template <class T>
 struct is_signed {
-    static constexpr bool value = std::is_unsigned_v<T>;
+    static constexpr bool value = std::is_signed_v<T>;
 };
 
 template <>
