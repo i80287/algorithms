@@ -9,19 +9,18 @@
 
 #if MATH_FUNCTIONS_HPP_ENABLE_TARGET_OPTIONS
 /**
- * From lzcnt: bsr -> lzcnt (used in leading zeros count)
- * Used in log2_floor, log2_ceil
+ * From lzcnt: bsr -> lzcnt (leading zeros count)
+ * Used in: log2_floor, log2_ceil, log10_floor, base_10_digits
  *
- * From bmi: bsf -> tzcnt (used in trailing zeros count)
- * Used in extract_2pow
+ * From bmi: bsf -> tzcnt (trailing zeros count)
+ * Used in: extract_2pow, next_n_bits_permutation, gcd(uint128_t, uint128_t)
  */
 #if defined(__GNUC__)
 #if !defined(__clang__)
 #pragma GCC push_options
 #pragma GCC target("lzcnt,bmi")
 #else
-#pragma clang attribute push(__attribute__((target("lzcnt,bmi"))), \
-                             apply_to = function)
+#pragma clang attribute push(__attribute__((target("lzcnt,bmi"))), apply_to = function)
 #endif  // !__clang__
 #endif  // __GNUC__
 #endif  // MATH_FUNCTIONS_HPP_ENABLE_TARGET_OPTIONS
@@ -29,7 +28,7 @@
 #include <algorithm>  // std::min
 #include <climits>    // CHAR_BIT
 #include <cstdint>  // std::int32_t, std::int64_t, std::size_t, std::uint32_t, std::uint64_t
-#include <map>          // std::map
+#include <map>      // std::map
 #include <numeric>      // std::gcd
 #include <type_traits>  // std::is_unsigned_v, std::is_same_v
 #include <utility>      // std::pair
@@ -86,7 +85,7 @@ static constexpr T bin_pow(T n, size_t p) noexcept {
 /// @return (n ^ p) % mod
 ATTRIBUTE_CONST constexpr uint32_t bin_pow_mod(uint32_t n, uint32_t p,
                                                uint32_t mod) noexcept {
-    uint64_t res = mod != 1;
+    uint64_t res   = mod != 1;
     uint64_t wdn_n = n;
     while (true) {
         if (p & 1) {
@@ -107,8 +106,8 @@ ATTRIBUTE_CONST constexpr uint32_t bin_pow_mod(uint32_t n, uint32_t p,
 /// @param p
 /// @param mod
 /// @return (n ^ p) % mod
-ATTRIBUTE_CONST inline I128_CONSTEXPR uint64_t
-bin_pow_mod(uint64_t n, uint64_t p, uint64_t mod) noexcept {
+ATTRIBUTE_CONST inline I128_CONSTEXPR uint64_t bin_pow_mod(uint64_t n, uint64_t p,
+                                                           uint64_t mod) noexcept {
     uint64_t res = mod != 1;
     while (true) {
         if (p & 1) {
@@ -168,10 +167,10 @@ ATTRIBUTE_CONST inline I128_CONSTEXPR uint64_t isqrt(uint128_t n) noexcept {
     /**
      * See Hackers Delight Chapter 11.
      */
-    uint64_t l = 0;
+    uint64_t l   = 0;
     uint128_t r_ = (n >> 6) + 16;
-    uint64_t r = r_ > 0xFFFFFFFFFFFFFFFFull ? uint64_t(0xFFFFFFFFFFFFFFFFull)
-                                            : uint64_t(r_);
+    uint64_t r =
+        r_ > 0xFFFFFFFFFFFFFFFFull ? uint64_t(0xFFFFFFFFFFFFFFFFull) : uint64_t(r_);
     do {
         // m = (l + r + 1) / 2
         uint64_t m = (l / 2) + (r / 2) + ((r % 2) | (l % 2));
@@ -236,17 +235,13 @@ ATTRIBUTE_CONST constexpr uint32_t icbrt(uint64_t n) noexcept {
 ///         It can be shown that ⌊n^0.25⌋ = ⌊⌊n^0.5⌋^0.5⌋
 /// @param n
 /// @return
-ATTRIBUTE_CONST constexpr uint32_t ifrrt(uint64_t n) noexcept {
-    return isqrt(isqrt(n));
-}
+ATTRIBUTE_CONST constexpr uint32_t ifrrt(uint64_t n) noexcept { return isqrt(isqrt(n)); }
 
 /// @brief Return integer part of the fourth root of n, that is ⌊n^0.25⌋
 ///         It can be shown that ⌊n^0.25⌋ = ⌊⌊n^0.5⌋^0.5⌋
 /// @param n
 /// @return
-ATTRIBUTE_CONST constexpr uint32_t ifrrt(uint128_t n) noexcept {
-    return isqrt(isqrt(n));
-}
+ATTRIBUTE_CONST constexpr uint32_t ifrrt(uint128_t n) noexcept { return isqrt(isqrt(n)); }
 
 /// @brief Checks whether n is a perfect square or not
 /// @param n
@@ -282,8 +277,7 @@ ATTRIBUTE_CONST constexpr bool is_perfect_square(uint64_t n) noexcept {
 /// @param n
 /// @param root
 /// @return true if n is a perfect square and false otherwise
-ATTRIBUTE_CONST constexpr bool is_perfect_square(uint64_t n,
-                                                 uint32_t& root) noexcept {
+ATTRIBUTE_CONST constexpr bool is_perfect_square(uint64_t n, uint32_t& root) noexcept {
     // clang-format off
     /**
      * +------------+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+
@@ -314,8 +308,7 @@ ATTRIBUTE_CONST constexpr bool is_perfect_square(uint64_t n,
 /// @brief Checks whether n is a perfect square or not
 /// @param n
 /// @return true if n is a perfect square and false otherwise
-ATTRIBUTE_CONST inline I128_CONSTEXPR bool is_perfect_square(
-    uint128_t n) noexcept {
+ATTRIBUTE_CONST inline I128_CONSTEXPR bool is_perfect_square(uint128_t n) noexcept {
     // clang-format off
     /**
      * +------------+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+
@@ -346,8 +339,8 @@ ATTRIBUTE_CONST inline I128_CONSTEXPR bool is_perfect_square(
 /// @param n
 /// @param root
 /// @return true if n is a perfect square and false otherwise
-ATTRIBUTE_CONST inline I128_CONSTEXPR bool is_perfect_square(
-    uint128_t n, uint64_t& root) noexcept {
+ATTRIBUTE_CONST inline I128_CONSTEXPR bool is_perfect_square(uint128_t n,
+                                                             uint64_t& root) noexcept {
     // clang-format off
     /**
      * +------------+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+
@@ -377,8 +370,7 @@ ATTRIBUTE_CONST inline I128_CONSTEXPR bool is_perfect_square(
 
 ATTRIBUTE_CONST constexpr uint8_t bit_reverse(uint8_t b) noexcept {
     // See https://graphics.stanford.edu/~seander/bithacks.html#RoundUpPowerOf2
-    return uint8_t(((b * 0x80200802ULL) & 0x0884422110ULL) * 0x0101010101ULL >>
-                   32);
+    return uint8_t(((b * 0x80200802ULL) & 0x0884422110ULL) * 0x0101010101ULL >> 32);
 }
 
 ATTRIBUTE_CONST constexpr uint32_t bit_reverse(uint32_t n) noexcept {
@@ -398,6 +390,7 @@ ATTRIBUTE_CONST constexpr uint64_t bit_reverse(uint64_t n) noexcept {
     /**
      * See Knuth's algorithm in Hackers Delight 7.4
      */
+    // clang-format off
     uint64_t t = 0;
     n = (n << 31) | (n >> 33);  // I.e., shlr(x, 31).
     t = (n ^ (n >> 20)) & 0x00000FFF800007FFULL;
@@ -408,13 +401,13 @@ ATTRIBUTE_CONST constexpr uint64_t bit_reverse(uint64_t n) noexcept {
     n = (t | (t << 4)) ^ n;
     t = (n ^ (n >> 2)) & 0x1111111111111111ULL;
     n = (t | (t << 2)) ^ n;
+    // clang-format on
     return n;
 }
 
 #if defined(INTEGERS_128_BIT_HPP)
 
-ATTRIBUTE_CONST inline I128_CONSTEXPR uint128_t
-bit_reverse(uint128_t n) noexcept {
+ATTRIBUTE_CONST inline I128_CONSTEXPR uint128_t bit_reverse(uint128_t n) noexcept {
     uint128_t m = ~uint128_t(0);
     for (uint32_t s = sizeof(uint128_t) * CHAR_BIT; s >>= 1;) {
         m ^= m << s;
@@ -556,9 +549,7 @@ ATTRIBUTE_CONST inline I128_CONSTEXPR int32_t sign(int128_t x) noexcept {
 /// @param a
 /// @param b
 /// @return
-ATTRIBUTE_CONST constexpr bool same_sign(int a, int b) noexcept {
-    return (a ^ b) >= 0;
-}
+ATTRIBUTE_CONST constexpr bool same_sign(int a, int b) noexcept { return (a ^ b) >= 0; }
 
 /// @brief a >= 0 and b > 0 => true
 ///        a >= 0 and b = 0 => true
@@ -569,9 +560,7 @@ ATTRIBUTE_CONST constexpr bool same_sign(int a, int b) noexcept {
 /// @param a
 /// @param b
 /// @return
-ATTRIBUTE_CONST constexpr bool same_sign(long a, long b) noexcept {
-    return (a ^ b) >= 0;
-}
+ATTRIBUTE_CONST constexpr bool same_sign(long a, long b) noexcept { return (a ^ b) >= 0; }
 
 /// @brief a >= 0 and b > 0 => true
 ///        a >= 0 and b = 0 => true
@@ -630,8 +619,7 @@ ATTRIBUTE_CONST constexpr bool same_sign_strict(long a, long b) noexcept {
 /// @param a
 /// @param b
 /// @return
-ATTRIBUTE_CONST constexpr bool same_sign_strict(long long a,
-                                                long long b) noexcept {
+ATTRIBUTE_CONST constexpr bool same_sign_strict(long long a, long long b) noexcept {
     return sign(a) == sign(b);
 }
 
@@ -640,8 +628,7 @@ ATTRIBUTE_CONST constexpr unsigned uabs(int n) noexcept {
 }
 
 ATTRIBUTE_CONST constexpr unsigned long uabs(long n) noexcept {
-    return n >= 0 ? static_cast<unsigned long>(n)
-                  : -static_cast<unsigned long>(n);
+    return n >= 0 ? static_cast<unsigned long>(n) : -static_cast<unsigned long>(n);
 }
 
 ATTRIBUTE_CONST constexpr unsigned long long uabs(long long n) noexcept {
@@ -1012,9 +999,9 @@ template <typename T>
 #endif
 ATTRIBUTE_CONST constexpr uint32_t base_10_len(T value) noexcept {
     const uint32_t base = 10;
-    const uint32_t b2 = base * base;
-    const uint32_t b3 = b2 * base;
-    const uint32_t b4 = b3 * base;
+    const uint32_t b2   = base * base;
+    const uint32_t b3   = b2 * base;
+    const uint32_t b4   = b3 * base;
     for (uint32_t n = 1;;) {
         if (value < base) {
             return n;
@@ -1105,8 +1092,7 @@ constexpr
     constexpr
 #endif
         static const uint32_t table2[11] = {
-            1,       10,       100,       1000,       10000, 100000,
-            1000000, 10000000, 100000000, 1000000000, 0};
+            1, 10, 100, 1000, 10000, 100000, 1000000, 10000000, 100000000, 1000000000, 0};
     uint32_t digits = table1[count_leading_zeros(n)];
     digits -= ((n - table2[digits]) >> 31);
     return digits;
@@ -1185,17 +1171,12 @@ ATTRIBUTE_CONST constexpr std::pair<T, uint32_t> extract_2pow(T n) noexcept {
     return {n >> r, r};
 }
 
-ATTRIBUTE_CONST
-#if __cplusplus >= 202002L
-constexpr
-#endif
-    inline std::vector<std::pair<uint32_t, uint32_t>>
-    prime_divisors_as_vector(uint32_t n) {
-    std::vector<std::pair<uint32_t, uint32_t>> divisors;
+constexpr void prime_divisors_to_vector(
+    uint32_t n, std::vector<std::pair<uint32_t, uint32_t>>& divisors) {
     if (n % 2 == 0 && n != 0) {
-        // k = s * 2^pow_of_2, where s is odd
+        // n = s * 2^pow_of_2, where s is odd
         auto [s, pow_of_2] = extract_2pow(n);
-        n = s;
+        n                  = s;
         divisors.emplace_back(uint32_t(2), pow_of_2);
     }
 
@@ -1214,17 +1195,39 @@ constexpr
     if (n != 1) {
         divisors.emplace_back(n, uint32_t(1));
     }
-
-    return divisors;
 }
 
-ATTRIBUTE_CONST
-inline std::map<uint32_t, uint32_t> prime_divisors_as_map(uint32_t n) {
-    std::map<uint32_t, uint32_t> divisors;
+constexpr void prime_divisors_to_vector(
+    uint64_t n, std::vector<std::pair<uint32_t, uint32_t>>& divisors) {
     if (n % 2 == 0 && n != 0) {
-        // k = s * 2^pow_of_2, where s is odd
+        // n = s * 2^pow_of_2, where s is odd
         auto [s, pow_of_2] = extract_2pow(n);
-        n = s;
+        n                  = s;
+        divisors.emplace_back(uint64_t(2), pow_of_2);
+    }
+
+    for (uint64_t d = 3; d * d <= n; d += 2) {
+        ATTRIBUTE_ASSUME(d != 0);
+        if (n % d == 0) {
+            uint32_t pow_of_d = 0;
+            do {
+                pow_of_d++;
+                n /= d;
+            } while (n % d == 0);
+            divisors.emplace_back(d, pow_of_d);
+        }
+    }
+
+    if (n != 1) {
+        divisors.emplace_back(n, uint32_t(1));
+    }
+}
+
+inline void prime_divisors_to_map(uint32_t n, std::map<uint32_t, uint32_t>& divisors) {
+    if (n % 2 == 0 && n != 0) {
+        // n = s * 2^pow_of_2, where s is odd
+        auto [s, pow_of_2] = extract_2pow(n);
+        n                  = s;
         divisors.emplace(uint32_t(2), pow_of_2);
     }
 
@@ -1243,8 +1246,31 @@ inline std::map<uint32_t, uint32_t> prime_divisors_as_map(uint32_t n) {
     if (n != 1) {
         divisors.emplace(n, uint32_t(1));
     }
+}
 
-    return divisors;
+inline void prime_divisors_to_map(uint64_t n, std::map<uint64_t, uint32_t>& divisors) {
+    if (n % 2 == 0 && n != 0) {
+        // n = s * 2^pow_of_2, where s is odd
+        auto [s, pow_of_2] = extract_2pow(n);
+        n                  = s;
+        divisors.emplace(uint64_t(2), pow_of_2);
+    }
+
+    for (uint64_t d = 3; d * d <= n; d += 2) {
+        ATTRIBUTE_ASSUME(d != 0);
+        if (n % d == 0) {
+            uint32_t pow_of_d = 0;
+            do {
+                pow_of_d++;
+                n /= d;
+            } while (n % d == 0);
+            divisors.emplace(d, pow_of_d);
+        }
+    }
+
+    if (n != 1) {
+        divisors.emplace(n, uint32_t(1));
+    }
 }
 
 }  // namespace math_functions
@@ -1253,8 +1279,7 @@ inline std::map<uint32_t, uint32_t> prime_divisors_as_map(uint32_t n) {
 
 namespace std {
 
-ATTRIBUTE_CONST inline I128_CONSTEXPR uint128_t gcd(uint128_t a,
-                                                    uint128_t b) noexcept {
+ATTRIBUTE_CONST inline I128_CONSTEXPR uint128_t gcd(uint128_t a, uint128_t b) noexcept {
     if (unlikely(a == 0)) {
         return b;
     }
@@ -1262,16 +1287,16 @@ ATTRIBUTE_CONST inline I128_CONSTEXPR uint128_t gcd(uint128_t a,
         return a;
     }
 
-    uint32_t ra = uint32_t(math_functions::count_trailing_zeros(a));
-    uint32_t rb = uint32_t(math_functions::count_trailing_zeros(b));
+    uint32_t ra   = uint32_t(math_functions::count_trailing_zeros(a));
+    uint32_t rb   = uint32_t(math_functions::count_trailing_zeros(b));
     uint32_t mult = std::min(ra, rb);
     a >>= ra;
     b >>= rb;
     while (true) {
         if (a < b) {
             uint128_t tmp = a;
-            a = b;
-            b = tmp;
+            a             = b;
+            b             = tmp;
         }
 
         a -= b;
@@ -1283,8 +1308,7 @@ ATTRIBUTE_CONST inline I128_CONSTEXPR uint128_t gcd(uint128_t a,
     }
 }
 
-ATTRIBUTE_CONST inline I128_CONSTEXPR uint128_t gcd(uint64_t a,
-                                                    int128_t b) noexcept {
+ATTRIBUTE_CONST inline I128_CONSTEXPR uint128_t gcd(uint64_t a, int128_t b) noexcept {
     uint128_t b0 = math_functions::uabs(b);
     if (unlikely(b0 == 0)) {
         return a;
