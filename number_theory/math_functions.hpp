@@ -1070,7 +1070,7 @@ ATTRIBUTE_CONST constexpr uint32_t log2_ceil(uint128_t n) noexcept {
 
 #endif
 
-/// @brief For n > 0 returns ⌈log_10(n)⌉. For n = 0 returns (uint32_t)-1
+/// @brief For n > 0 returns ⌊log_10(n)⌋. For n = 0 returns (uint32_t)-1
 /// @param n
 /// @return
 ATTRIBUTE_CONST
