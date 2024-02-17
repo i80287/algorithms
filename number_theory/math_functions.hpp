@@ -894,8 +894,15 @@ ATTRIBUTE_CONST constexpr int32_t count_leading_zeros(T n) noexcept {
 #endif
 }
 
-/// @brief 0b0010011 -> 0b0010101 -> 0b0010110 -> 0b0011001 -> 0b0011010 ->
-/// 0b0011100 -> 0b0100011 -> etc.
+/// @brief Generates next n bits permutation of @a `x`, e.g.
+///         0b0010011 ->
+///         0b0010101 ->
+///         0b0010110 ->
+///         0b0011001 ->
+///         0b0011010 ->
+///         0b0011100 ->
+///         0b0100011 ->
+///         etc.
 /// x = 0 => undefined behaviour (shift by 33 bits)
 /// @param[in] x
 /// @return
@@ -986,6 +993,7 @@ ATTRIBUTE_CONST constexpr uint32_t base_2_digits(uint64_t n) noexcept {
 /// @brief Realization taken from the gcc libstdc++ __to_chars_len
 /// @tparam T
 /// @param[in] value
+/// @param[in] base
 /// @return
 template <typename T>
 #if __cplusplus >= 202002L
@@ -994,13 +1002,13 @@ template <typename T>
              || std::is_same_v<T, uint128_t>
 #endif
 #endif
-ATTRIBUTE_CONST constexpr uint32_t base_10_len(T value) noexcept {
-    const uint32_t base = 10;
-    const uint32_t b2   = base * base;
-    const uint32_t b3   = b2 * base;
-    const uint32_t b4   = b3 * base;
+ATTRIBUTE_CONST constexpr uint32_t base_b_len(T value, uint8_t base = 10) noexcept {
+    const uint32_t b  = base;
+    const uint32_t b2 = b * b;
+    const uint32_t b3 = b2 * b;
+    const uint32_t b4 = b3 * b;
     for (uint32_t n = 1;;) {
-        if (value < base) {
+        if (value < b) {
             return n;
         }
         n++;
@@ -1095,6 +1103,9 @@ constexpr
     return digits;
 }
 
+/// @brief For @a `n` > 0 returns ⌊log_10(n)⌋. For @a `n` = 0 returns (uint32_t)-1
+/// @param[in] n
+/// @return
 ATTRIBUTE_CONST
 #if __cpp_constexpr >= 202211L && defined(__GNUC__)
 constexpr
@@ -1127,8 +1138,10 @@ constexpr
                                             99999999999999999ull,
                                             999999999999999999ull,
                                             9999999999999999999ull};
+    static_assert(count_leading_zeros(uint64_t(0)) == 64, "");
     int32_t digits = (19 * (63 - int32_t(count_leading_zeros(n)))) >> 6;
-    digits += int32_t((table2[digits + 1] - n) >> 63);
+    ATTRIBUTE_ASSUME((-19 >> 6) <= digits && digits <= ((19 * 63) >> 6));
+    digits += int32_t((table2[uint32_t(digits + 1)] - n) >> 63);
     return uint32_t(digits);
 }
 
@@ -1167,71 +1180,58 @@ ATTRIBUTE_CONST constexpr std::pair<T, uint32_t> extract_2pow(T n) noexcept {
     return {n >> r, r};
 }
 
-constexpr void prime_divisors_to_vector(
-    uint32_t n, std::vector<std::pair<uint32_t, uint32_t>>& divisors) {
-    if (n % 2 == 0 && n != 0) {
-        // n = s * 2^pow_of_2, where s is odd
-        auto [s, pow_of_2] = extract_2pow(n);
-        n                  = s;
-        divisors.emplace_back(uint32_t(2), pow_of_2);
-    }
+namespace impl {
 
-    for (uint32_t d = 3; d * d <= n; d += 2) {
-        ATTRIBUTE_ASSUME(d != 0);
-        if (n % d == 0) {
-            uint32_t pow_of_d = 0;
-            do {
-                pow_of_d++;
-                n /= d;
-            } while (n % d == 0);
-            divisors.emplace_back(d, pow_of_d);
-        }
-    }
-
-    if (n != 1) {
-        divisors.emplace_back(n, uint32_t(1));
-    }
-}
-
-inline std::vector<std::pair<uint32_t, uint32_t>> prime_divisors_to_vector(uint32_t n) {
-    std::vector<std::pair<uint32_t, uint32_t>> divisors;
-    size_t k;
-
+/// @brief Returns max number of possible different
+///         prime divisors for the given @a `n`.
+///        Note that it may be greater than the real
+///         number of different prime divisors of @a `n`.
+/// @param[in] n
+/// @return
+ATTRIBUTE_CONST constexpr uint32_t max_number_of_prime_divisors(uint32_t n) noexcept {
     if (n >= 2 * 3 * 5 * 7 * 11) {
         if (n >= 2 * 3 * 5 * 7 * 11 * 13 * 17) {
             if (n >= 2 * 3 * 5 * 7 * 11 * 13 * 17 * 19) {
                 if (n >= 2 * 3 * 5 * 7 * 11 * 13 * 17 * 19 * 23) {
-                    k = 9;
+                    return 9;
                 } else {
-                    k = 8;
+                    return 8;
                 }
             } else {
-                k = 7;
+                return 7;
             }
         } else {
             if (n >= 2 * 3 * 5 * 7 * 11 * 13) {
-                k = 6;
+                return 6;
             } else {
-                k = 5;
+                return 5;
             }
         }
     } else {
         if (n >= 2 * 3 * 5) {
             if (n >= 2 * 3 * 5 * 7) {
-                k = 4;
+                return 4;
             } else {
-                k = 3;
+                return 3;
             }
         } else {
             if (n >= 2 * 3) {
-                k = 2;
+                return 2;
             } else {
-                k = 1;
+                return 1;
             }
         }
     }
+}
 
-    divisors.reserve(k);
+}  // namespace impl
+
+/// @brief
+/// @param[in] n
+/// @return vector of pairs { prime_div : power_of_prime_div } in sorted order.
+inline std::vector<std::pair<uint32_t, uint32_t>> prime_divisors_to_vector(uint32_t n) {
+    std::vector<std::pair<uint32_t, uint32_t>> divisors;
+    divisors.reserve(impl::max_number_of_prime_divisors(n));
     if (n % 2 == 0 && n != 0) {
         // n = s * 2^pow_of_2, where s is odd
         auto [s, pow_of_2] = extract_2pow(n);
@@ -1258,8 +1258,11 @@ inline std::vector<std::pair<uint32_t, uint32_t>> prime_divisors_to_vector(uint3
     return divisors;
 }
 
-constexpr void prime_divisors_to_vector(
-    uint64_t n, std::vector<std::pair<uint32_t, uint32_t>>& divisors) {
+/// @brief
+/// @param[in] n
+/// @return vector of pairs { prime_div : power_of_prime_div } in sorted order.
+inline std::vector<std::pair<uint32_t, uint32_t>> prime_divisors_to_vector(uint64_t n) {
+    std::vector<std::pair<uint32_t, uint32_t>> divisors;
     if (n % 2 == 0 && n != 0) {
         // n = s * 2^pow_of_2, where s is odd
         auto [s, pow_of_2] = extract_2pow(n);
@@ -1282,9 +1285,16 @@ constexpr void prime_divisors_to_vector(
     if (n != 1) {
         divisors.emplace_back(n, uint32_t(1));
     }
+
+    return divisors;
 }
 
-inline void prime_divisors_to_map(uint32_t n, std::map<uint32_t, uint32_t>& divisors) {
+/// @brief
+/// @param[in] n
+/// @return
+inline std::map<uint32_t, uint32_t> prime_divisors_to_map(uint32_t n) {
+    std::map<uint32_t, uint32_t> divisors;
+
     if (n % 2 == 0 && n != 0) {
         // n = s * 2^pow_of_2, where s is odd
         auto [s, pow_of_2] = extract_2pow(n);
@@ -1307,9 +1317,65 @@ inline void prime_divisors_to_map(uint32_t n, std::map<uint32_t, uint32_t>& divi
     if (n != 1) {
         divisors.emplace(n, uint32_t(1));
     }
+
+    return divisors;
+}
+
+/// @brief
+/// @param[in] n
+/// @param[out] divisors
+inline void prime_divisors_to_map(uint32_t n, std::map<uint32_t, uint32_t>& divisors) {
+    if (n % 2 == 0 && n != 0) {
+        // n = s * 2^pow_of_2, where s is odd
+        auto [s, pow_of_2] = extract_2pow(n);
+        n                  = s;
+        divisors[2] += pow_of_2;
+    }
+
+    for (uint32_t d = 3; d * d <= n; d += 2) {
+        ATTRIBUTE_ASSUME(d != 0);
+        if (n % d == 0) {
+            uint32_t pow_of_d = 0;
+            do {
+                pow_of_d++;
+                n /= d;
+            } while (n % d == 0);
+            divisors[d] += pow_of_d;
+        }
+    }
+
+    if (n != 1) {
+        divisors[n]++;
+    }
 }
 
 inline void prime_divisors_to_map(uint64_t n, std::map<uint64_t, uint32_t>& divisors) {
+    if (n % 2 == 0 && n != 0) {
+        // n = s * 2^pow_of_2, where s is odd
+        auto [s, pow_of_2] = extract_2pow(n);
+        n                  = s;
+        divisors[2] += pow_of_2;
+    }
+
+    for (uint64_t d = 3; d * d <= n; d += 2) {
+        ATTRIBUTE_ASSUME(d != 0);
+        if (n % d == 0) {
+            uint32_t pow_of_d = 0;
+            do {
+                pow_of_d++;
+                n /= d;
+            } while (n % d == 0);
+            divisors[d] += pow_of_d;
+        }
+    }
+
+    if (n != 1) {
+        divisors[n]++;
+    }
+}
+
+inline std::map<uint64_t, uint32_t> prime_divisors_to_map(uint64_t n) {
+    std::map<uint64_t, uint32_t> divisors;
     if (n % 2 == 0 && n != 0) {
         // n = s * 2^pow_of_2, where s is odd
         auto [s, pow_of_2] = extract_2pow(n);
@@ -1332,6 +1398,8 @@ inline void prime_divisors_to_map(uint64_t n, std::map<uint64_t, uint32_t>& divi
     if (n != 1) {
         divisors.emplace(n, uint32_t(1));
     }
+
+    return divisors;
 }
 
 }  // namespace math_functions
@@ -1340,6 +1408,11 @@ inline void prime_divisors_to_map(uint64_t n, std::map<uint64_t, uint32_t>& divi
 
 namespace std {
 
+/// @brief Computes greaters common divisor of @a `a` and @a `b`
+///         using Stein's algorithm (binary gcd). Here gcd(0, 0) = 0.
+/// @param[in] a
+/// @param[in] b
+/// @return gcd(a, b)
 ATTRIBUTE_CONST inline I128_CONSTEXPR uint128_t gcd(uint128_t a, uint128_t b) noexcept {
     if (unlikely(a == 0)) {
         return b;

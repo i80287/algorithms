@@ -944,27 +944,27 @@ static_assert(base_10_digits(uint64_t(-1)) == 20, "log10_floor");
 
 #if __cplusplus >= 201703L
 
-static_assert(base_10_len(0ull) == 1, "base_10_len");
-static_assert(base_10_len(1ull) == 1, "base_10_len");
-static_assert(base_10_len(9ull) == 1, "base_10_len");
-static_assert(base_10_len(10ull) == 2, "base_10_len");
-static_assert(base_10_len(11ull) == 2, "base_10_len");
-static_assert(base_10_len(99ull) == 2, "base_10_len");
-static_assert(base_10_len(100ull) == 3, "base_10_len");
-static_assert(base_10_len(101ull) == 3, "base_10_len");
-static_assert(base_10_len(uint64_t(-1)) == 20, "base_10_len");
+static_assert(base_b_len(0ull) == 1, "base_b_len");
+static_assert(base_b_len(1ull) == 1, "base_b_len");
+static_assert(base_b_len(9ull) == 1, "base_b_len");
+static_assert(base_b_len(10ull) == 2, "base_b_len");
+static_assert(base_b_len(11ull) == 2, "base_b_len");
+static_assert(base_b_len(99ull) == 2, "base_b_len");
+static_assert(base_b_len(100ull) == 3, "base_b_len");
+static_assert(base_b_len(101ull) == 3, "base_b_len");
+static_assert(base_b_len(uint64_t(-1)) == 20, "base_b_len");
 
 #if defined(INTEGERS_128_BIT_HPP)
 
-static_assert(base_10_len(uint128_t(0)) == 1, "base_10_len");
-static_assert(base_10_len(uint128_t(1)) == 1, "base_10_len");
-static_assert(base_10_len(uint128_t(9)) == 1, "base_10_len");
-static_assert(base_10_len(uint128_t(10)) == 2, "base_10_len");
-static_assert(base_10_len(uint128_t(11)) == 2, "base_10_len");
-static_assert(base_10_len(uint128_t(99)) == 2, "base_10_len");
-static_assert(base_10_len(uint128_t(100)) == 3, "base_10_len");
-static_assert(base_10_len(uint128_t(101)) == 3, "base_10_len");
-static_assert(base_10_len(uint128_t(-1)) == 39, "base_10_len");
+static_assert(base_b_len(uint128_t(0)) == 1, "base_b_len");
+static_assert(base_b_len(uint128_t(1)) == 1, "base_b_len");
+static_assert(base_b_len(uint128_t(9)) == 1, "base_b_len");
+static_assert(base_b_len(uint128_t(10)) == 2, "base_b_len");
+static_assert(base_b_len(uint128_t(11)) == 2, "base_b_len");
+static_assert(base_b_len(uint128_t(99)) == 2, "base_b_len");
+static_assert(base_b_len(uint128_t(100)) == 3, "base_b_len");
+static_assert(base_b_len(uint128_t(101)) == 3, "base_b_len");
+static_assert(base_b_len(uint128_t(-1)) == 39, "base_b_len");
 
 #endif  // INTEGERS_128_BIT_HPP
 
