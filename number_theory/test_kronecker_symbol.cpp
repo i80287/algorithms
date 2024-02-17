@@ -3,10 +3,10 @@
 
 #include "config_macros.hpp"
 #include "fibonacci_num.hpp"
-#include "jacobi_symbol.hpp"
+#include "kronecker_symbol.hpp"
 
 using math_functions::fibonacci_num;
-using math_functions::jacobi_symbol;
+using math_functions::kronecker_symbol;
 
 // Link with -lgmp and -lgmpxx
 #include <gmpxx.h>
@@ -77,9 +77,9 @@ static const int32_t krnk[30][30] = {
 };
 
 /// @brief First 30 odd prime numbers
-static const uint32_t odd_primes[30] = {
-    3,  5,  7,  11, 13, 17, 19, 23, 29, 31,  37,  41,  43,  47,  53,
-    59, 61, 67, 71, 73, 79, 83, 89, 97, 101, 103, 107, 109, 113, 127};
+static const uint32_t odd_primes[30] = {3,  5,  7,  11, 13,  17,  19,  23,  29,  31,
+                                        37, 41, 43, 47, 53,  59,  61,  67,  71,  73,
+                                        79, 83, 89, 97, 101, 103, 107, 109, 113, 127};
 
 /// @brief Legendre symbols (a/p) for 1 <= a <= 30 and 3 <= p <= 127, p is prime
 static const int32_t lgnr[30][30] = {
@@ -147,21 +147,21 @@ static const int32_t lgnr[30][30] = {
 
 static void CheckJacobi(uint32_t a, uint32_t n, int32_t real_jacobi) noexcept {
     // Special checker for a < 2^31 and n < 2^31
-    assert(jacobi_symbol(a, n) == real_jacobi);
-    assert(jacobi_symbol(int32_t(a), n) == real_jacobi);
-    assert(jacobi_symbol(a, int32_t(n)) == real_jacobi);
-    assert(jacobi_symbol(int32_t(a), int32_t(n)) == real_jacobi);
+    assert(kronecker_symbol(a, n) == real_jacobi);
+    assert(kronecker_symbol(int32_t(a), n) == real_jacobi);
+    assert(kronecker_symbol(a, int32_t(n)) == real_jacobi);
+    assert(kronecker_symbol(int32_t(a), int32_t(n)) == real_jacobi);
 
-    assert(jacobi_symbol(uint64_t(a), uint64_t(n)) == real_jacobi);
-    assert(jacobi_symbol(uint64_t(a), int64_t(n)) == real_jacobi);
-    assert(jacobi_symbol(int64_t(a), uint64_t(n)) == real_jacobi);
-    assert(jacobi_symbol(int64_t(a), int64_t(n)) == real_jacobi);
+    assert(kronecker_symbol(uint64_t(a), uint64_t(n)) == real_jacobi);
+    assert(kronecker_symbol(uint64_t(a), int64_t(n)) == real_jacobi);
+    assert(kronecker_symbol(int64_t(a), uint64_t(n)) == real_jacobi);
+    assert(kronecker_symbol(int64_t(a), int64_t(n)) == real_jacobi);
 
     // a >= 0 => (a/-1) = 1 => (a/n) = (a/-n)
-    assert(jacobi_symbol(a, -int32_t(n)) == real_jacobi);
-    assert(jacobi_symbol(int32_t(a), -int32_t(n)) == real_jacobi);
-    assert(jacobi_symbol(int64_t(a), -int64_t(n)) == real_jacobi);
-    assert(jacobi_symbol(uint64_t(a), -int64_t(n)) == real_jacobi);
+    assert(kronecker_symbol(a, -int32_t(n)) == real_jacobi);
+    assert(kronecker_symbol(int32_t(a), -int32_t(n)) == real_jacobi);
+    assert(kronecker_symbol(int64_t(a), -int64_t(n)) == real_jacobi);
+    assert(kronecker_symbol(uint64_t(a), -int64_t(n)) == real_jacobi);
 }
 
 template <uint16_t kLen>
@@ -176,10 +176,10 @@ static void CheckJacobiBasic() noexcept {
 
     for (int32_t k = -int32_t(kLen); k <= int32_t(kLen); k++) {
         const int32_t b = k == 1 || k == -1;
-        assert(jacobi_symbol(k, int32_t(0)) == b);
-        assert(jacobi_symbol(k, uint32_t(0)) == b);
-        assert(jacobi_symbol(int64_t(k), int64_t(0)) == b);
-        assert(jacobi_symbol(int64_t(k), uint64_t(0)) == b);
+        assert(kronecker_symbol(k, int32_t(0)) == b);
+        assert(kronecker_symbol(k, uint32_t(0)) == b);
+        assert(kronecker_symbol(int64_t(k), int64_t(0)) == b);
+        assert(kronecker_symbol(int64_t(k), uint64_t(0)) == b);
     }
 
     for (size_t i = 0; i < 30; i++) {
@@ -192,27 +192,27 @@ static void CheckJacobiBasic() noexcept {
     // Check some properties of the Legendre/Kronecker/Jacobi symbol
     for (int32_t a = -int32_t(kLen); a <= kLen; a++) {
         for (int32_t n = -int32_t(kLen); a <= kLen; a++) {
-            uint32_t j_abs = uint32_t(std::abs(jacobi_symbol(a, n)));
+            uint32_t j_abs = uint32_t(std::abs(kronecker_symbol(a, n)));
             assert(j_abs == uint32_t(std::gcd(a, n) == 1));
         }
     }
 
     for (uint32_t p : odd_primes) {
-        assert(jacobi_symbol(p, p) == 0);
+        assert(kronecker_symbol(p, p) == 0);
         for (uint32_t q : odd_primes) {
             if (unlikely(p == q)) {
                 continue;
             }
-            int32_t j_p_q = jacobi_symbol(p, q);
-            int32_t j_q_p = jacobi_symbol(q, p);
+            int32_t j_p_q        = kronecker_symbol(p, q);
+            int32_t j_q_p        = kronecker_symbol(q, p);
             uint32_t p12_q12_pow = ((p - 1) / 2) * ((q - 1) / 2);
             // (-1)^{ ((p - 1) / 2) * ((q - 1) / 2) }
             int32_t to_p12_q12_pow = 1 - int32_t((p12_q12_pow % 2) * 2);
             assert(j_p_q * j_q_p == to_p12_q12_pow);
         }
 
-        int32_t j_m1_p = jacobi_symbol(-1, p);
-        int32_t j_2_p = jacobi_symbol(2u, p);
+        int32_t j_m1_p = kronecker_symbol(-1, p);
+        int32_t j_2_p  = kronecker_symbol(2u, p);
         switch (p % 8) {
             case 1:
                 assert(j_m1_p == 1);
@@ -232,7 +232,7 @@ static void CheckJacobiBasic() noexcept {
                 break;
         }
 
-        int32_t j_3_p = jacobi_symbol(3u, p);
+        int32_t j_3_p = kronecker_symbol(3u, p);
         switch (p % 12) {
             case 1:
             case 11:
@@ -244,7 +244,7 @@ static void CheckJacobiBasic() noexcept {
                 break;
         }
 
-        int32_t j_5_p = jacobi_symbol(5u, p);
+        int32_t j_5_p        = kronecker_symbol(5u, p);
         uint32_t j_5_p_mod_p = uint32_t(j_5_p);
         switch (p % 5) {
             case 1:
@@ -271,16 +271,16 @@ static void CheckJacobiBasic() noexcept {
         }
 
         for (uint32_t a = 0; a <= kLen; a++) {
-            int32_t j_a_p = jacobi_symbol(a, p);
+            int32_t j_a_p = kronecker_symbol(a, p);
             assert(j_a_p == -1 || j_a_p == 0 || j_a_p == 1);
             ATTRIBUTE_ASSUME(j_a_p == -1 || j_a_p == 0 || j_a_p == 1);
             uint32_t j_a_p_mod_p = j_a_p == -1 ? p - 1 : uint32_t(j_a_p);
-            uint32_t a_p12 = math_functions::bin_pow_mod(a, (p - 1) / 2, p);
+            uint32_t a_p12       = math_functions::bin_pow_mod(a, (p - 1) / 2, p);
             assert(j_a_p_mod_p == a_p12);
             for (uint32_t b = 0; b <= kLen; b++) {
-                int32_t j_b_p = jacobi_symbol(b, p);
+                int32_t j_b_p = kronecker_symbol(b, p);
                 assert(a % p != b % p || j_a_p == j_b_p);
-                int32_t j_ab_p = jacobi_symbol(a * b, p);
+                int32_t j_ab_p = kronecker_symbol(a * b, p);
                 assert(j_ab_p == j_a_p * j_b_p);
             }
         }
@@ -289,89 +289,81 @@ static void CheckJacobiBasic() noexcept {
 
 static void CheckJacobi(int32_t i, int32_t j, const mpz_class& n1,
                         const mpz_class& n2) noexcept {
-    int32_t func_jac = jacobi_symbol(i, j);
-    int real_jac = mpz_jacobi(n1.get_mpz_t(), n2.get_mpz_t());
+    int32_t func_jac = kronecker_symbol(i, j);
+    int real_jac     = mpz_jacobi(n1.get_mpz_t(), n2.get_mpz_t());
     if (func_jac != real_jac) {
-        printf("Error at (%" PRId32 ", %" PRId32
-               "): given J = %d, correct J = %d\n",
-               i, j, func_jac, real_jac);
+        printf("Error at (%" PRId32 ", %" PRId32 "): given J = %d, correct J = %d\n", i,
+               j, func_jac, real_jac);
     }
 }
 
 static void CheckJacobi(int64_t i, int64_t j, const mpz_class& n1,
                         const mpz_class& n2) noexcept {
-    int32_t func_jac = jacobi_symbol(i, j);
-    int real_jac = mpz_jacobi(n1.get_mpz_t(), n2.get_mpz_t());
+    int32_t func_jac = kronecker_symbol(i, j);
+    int real_jac     = mpz_jacobi(n1.get_mpz_t(), n2.get_mpz_t());
     if (func_jac != real_jac) {
-        printf("Error at (%" PRId64 ", %" PRId64
-               "): given J = %d, correct J = %d\n",
-               i, j, func_jac, real_jac);
+        printf("Error at (%" PRId64 ", %" PRId64 "): given J = %d, correct J = %d\n", i,
+               j, func_jac, real_jac);
     }
 }
 
 static void CheckJacobi(uint32_t i, uint32_t j, const mpz_class& n1,
                         const mpz_class& n2) noexcept {
-    int32_t func_jac = jacobi_symbol(i, j);
-    int real_jac = mpz_jacobi(n1.get_mpz_t(), n2.get_mpz_t());
+    int32_t func_jac = kronecker_symbol(i, j);
+    int real_jac     = mpz_jacobi(n1.get_mpz_t(), n2.get_mpz_t());
     if (func_jac != real_jac) {
-        printf("Error at (%" PRIu32 ", %" PRIu32
-               "): given J = %d, correct J = %d\n",
-               i, j, func_jac, real_jac);
+        printf("Error at (%" PRIu32 ", %" PRIu32 "): given J = %d, correct J = %d\n", i,
+               j, func_jac, real_jac);
     }
 }
 
 static void CheckJacobi(uint64_t i, uint64_t j, const mpz_class& n1,
                         const mpz_class& n2) noexcept {
-    int32_t func_jac = jacobi_symbol(i, j);
-    int real_jac = mpz_jacobi(n1.get_mpz_t(), n2.get_mpz_t());
+    int32_t func_jac = kronecker_symbol(i, j);
+    int real_jac     = mpz_jacobi(n1.get_mpz_t(), n2.get_mpz_t());
     if (func_jac != real_jac) {
-        printf("Error at (%" PRIu64 ", %" PRIu64
-               "): given J = %d, correct J = %d\n",
-               i, j, func_jac, real_jac);
+        printf("Error at (%" PRIu64 ", %" PRIu64 "): given J = %d, correct J = %d\n", i,
+               j, func_jac, real_jac);
     }
 }
 
 static void CheckJacobi(uint32_t i, int32_t j, const mpz_class& n1,
                         const mpz_class& n2) noexcept {
-    int32_t func_jac = jacobi_symbol(i, j);
-    int real_jac = mpz_jacobi(n1.get_mpz_t(), n2.get_mpz_t());
+    int32_t func_jac = kronecker_symbol(i, j);
+    int real_jac     = mpz_jacobi(n1.get_mpz_t(), n2.get_mpz_t());
     if (func_jac != real_jac) {
-        printf("Error at (%" PRIu32 ", %" PRId32
-               "): given J = %d, correct J = %d\n",
-               i, j, func_jac, real_jac);
+        printf("Error at (%" PRIu32 ", %" PRId32 "): given J = %d, correct J = %d\n", i,
+               j, func_jac, real_jac);
     }
 }
 
 static void CheckJacobi(int32_t i, uint32_t j, const mpz_class& n1,
                         const mpz_class& n2) noexcept {
-    int32_t func_jac = jacobi_symbol(i, j);
-    int real_jac = mpz_jacobi(n1.get_mpz_t(), n2.get_mpz_t());
+    int32_t func_jac = kronecker_symbol(i, j);
+    int real_jac     = mpz_jacobi(n1.get_mpz_t(), n2.get_mpz_t());
     if (func_jac != real_jac) {
-        printf("Error at (%" PRId32 ", %" PRIu32
-               "): given J = %d, correct J = %d\n",
-               i, j, func_jac, real_jac);
+        printf("Error at (%" PRId32 ", %" PRIu32 "): given J = %d, correct J = %d\n", i,
+               j, func_jac, real_jac);
     }
 }
 
 static void CheckJacobi(uint64_t i, int64_t j, const mpz_class& n1,
                         const mpz_class& n2) noexcept {
-    int32_t func_jac = jacobi_symbol(i, j);
-    int real_jac = mpz_jacobi(n1.get_mpz_t(), n2.get_mpz_t());
+    int32_t func_jac = kronecker_symbol(i, j);
+    int real_jac     = mpz_jacobi(n1.get_mpz_t(), n2.get_mpz_t());
     if (func_jac != real_jac) {
-        printf("Error at (%" PRIu64 ", %" PRId64
-               "): given J = %d, correct J = %d\n",
-               i, j, func_jac, real_jac);
+        printf("Error at (%" PRIu64 ", %" PRId64 "): given J = %d, correct J = %d\n", i,
+               j, func_jac, real_jac);
     }
 }
 
 static void CheckJacobi(int64_t i, uint64_t j, const mpz_class& n1,
                         const mpz_class& n2) noexcept {
-    int32_t func_jac = jacobi_symbol(i, j);
-    int real_jac = mpz_jacobi(n1.get_mpz_t(), n2.get_mpz_t());
+    int32_t func_jac = kronecker_symbol(i, j);
+    int real_jac     = mpz_jacobi(n1.get_mpz_t(), n2.get_mpz_t());
     if (func_jac != real_jac) {
-        printf("Error at (%" PRId64 ", %" PRIu64
-               "): given J = %d, correct J = %d\n",
-               i, j, func_jac, real_jac);
+        printf("Error at (%" PRId64 ", %" PRIu64 "): given J = %d, correct J = %d\n", i,
+               j, func_jac, real_jac);
     }
 }
 
@@ -461,8 +453,7 @@ static void GMPCheckJacobiU64() {
     n1.set_str("18446744073709551615", 10);
     for (uint64_t i = UINT64_MAX; i >= UINT64_MAX - uint64_t(kLen); --i, --n1) {
         n2.set_str("18446744073709551615", 10);
-        for (uint64_t j = UINT64_MAX; j >= UINT64_MAX - uint64_t(kLen);
-             --j, --n2) {
+        for (uint64_t j = UINT64_MAX; j >= UINT64_MAX - uint64_t(kLen); --j, --n2) {
             CheckJacobi(i, j, n1, n2);
         }
     }
@@ -518,8 +509,7 @@ static void GMPCheckJacobiU64I64() {
         }
 
         n2.set_str("18446744073709551615", 10);
-        for (uint64_t j = UINT64_MAX; j >= UINT64_MAX - uint64_t(kLen);
-             --j, --n2) {
+        for (uint64_t j = UINT64_MAX; j >= UINT64_MAX - uint64_t(kLen); --j, --n2) {
             CheckJacobi(i, j, n1, n2);
             CheckJacobi(j, i, n2, n1);
         }
@@ -534,8 +524,7 @@ static void GMPCheckJacobiU64I64() {
         }
 
         n2.set_str("18446744073709551615", 10);
-        for (uint64_t j = UINT64_MAX; j >= UINT64_MAX - uint64_t(kLen);
-             --j, --n2) {
+        for (uint64_t j = UINT64_MAX; j >= UINT64_MAX - uint64_t(kLen); --j, --n2) {
             CheckJacobi(i, j, n1, n2);
             CheckJacobi(j, i, n2, n1);
         }

@@ -7,7 +7,7 @@
 
 #include "config_macros.hpp"
 #include "integers_128_bit.hpp"
-#include "jacobi_symbol.hpp"
+#include "kronecker_symbol.hpp"
 #include "math_functions.hpp"
 
 namespace math_functions {
@@ -22,8 +22,7 @@ using std::uint64_t;
  * some integer t, with 0 <= t < r.
  **********************************************************************************************/
 template <bool BasicChecks = true>
-ATTRIBUTE_CONST static constexpr bool is_strong_prp(uint64_t n,
-                                                    uint64_t a) noexcept {
+ATTRIBUTE_CONST static constexpr bool is_strong_prp(uint64_t n, uint64_t a) noexcept {
     if constexpr (BasicChecks) {
         if (unlikely(a < 2)) {
             // is_strong_prp requires 'a' greater than or equal to 2
@@ -88,8 +87,7 @@ ATTRIBUTE_CONST static constexpr bool is_strong_prp(uint64_t n,
  * the Jacobi symbol]
  **********************************************************************************************/
 template <bool BasicChecks = true>
-ATTRIBUTE_CONST static constexpr bool is_strong_lucas_prp(uint64_t n,
-                                                          uint32_t p,
+ATTRIBUTE_CONST static constexpr bool is_strong_lucas_prp(uint64_t n, uint32_t p,
                                                           int32_t q) noexcept {
     int64_t d = int64_t(uint64_t(p) * p) - int64_t(q) * 4;
     if constexpr (BasicChecks) {
@@ -118,7 +116,7 @@ ATTRIBUTE_CONST static constexpr bool is_strong_lucas_prp(uint64_t n,
     ATTRIBUTE_ASSUME(n >= 3);
 
     /* nmj = n - (D/n), where (D/n) is the Jacobi symbol */
-    uint64_t nmj = n - uint64_t(int64_t(jacobi_symbol(d, n)));
+    uint64_t nmj = n - uint64_t(int64_t(kronecker_symbol(d, n)));
     ATTRIBUTE_ASSUME(nmj >= 2);
 
     /* Find s and r satisfying: nmj = s * (2 ^ r), s odd */
@@ -161,11 +159,11 @@ ATTRIBUTE_CONST static constexpr bool is_strong_lucas_prp(uint64_t n,
             ATTRIBUTE_ASSUME(vl < n);
             /* vl = vh*vl - p*ql (mod n) */
             uint64_t vh_vl = uint64_t((uint128_t(vh) * vl) % n);
-            uint64_t p_ql = uint64_t((p * uint128_t(ql)) % n);
+            uint64_t p_ql  = uint64_t((p * uint128_t(ql)) % n);
             ATTRIBUTE_ASSUME(vh_vl < n);
             ATTRIBUTE_ASSUME(p_ql < n);
             uint64_t tmp_vl = vh_vl - p_ql;
-            vl = vh_vl >= p_ql ? tmp_vl : tmp_vl + n;
+            vl              = vh_vl >= p_ql ? tmp_vl : tmp_vl + n;
             ATTRIBUTE_ASSUME(vl < n);
 
             ATTRIBUTE_ASSUME(vh < n);
@@ -174,12 +172,11 @@ ATTRIBUTE_CONST static constexpr bool is_strong_lucas_prp(uint64_t n,
             ATTRIBUTE_ASSUME(vh_vh < n);
             uint128_t tmp_qh_2 = 2 * uint128_t(qh);
             ATTRIBUTE_ASSUME(tmp_qh_2 <= 2 * uint128_t(n - 1));
-            uint64_t qh_2 =
-                tmp_qh_2 < n ? uint64_t(tmp_qh_2) : uint64_t(tmp_qh_2 - n);
+            uint64_t qh_2 = tmp_qh_2 < n ? uint64_t(tmp_qh_2) : uint64_t(tmp_qh_2 - n);
             ATTRIBUTE_ASSUME(qh_2 < n);
             ATTRIBUTE_ASSUME(qh_2 == (uint128_t(qh) * 2) % n);
             uint64_t tmp_vh = vh_vh - qh_2;
-            vh = vh_vh >= qh_2 ? tmp_vh : tmp_vh + n;
+            vh              = vh_vh >= qh_2 ? tmp_vh : tmp_vh + n;
             ATTRIBUTE_ASSUME(vh < n);
         } else {
             /* qh = ql */
@@ -192,18 +189,18 @@ ATTRIBUTE_CONST static constexpr bool is_strong_lucas_prp(uint64_t n,
             ATTRIBUTE_ASSUME(uh_vl < n);
             ATTRIBUTE_ASSUME(ql < n);
             uint64_t tmp_uh = uh_vl - ql;
-            uh = uh_vl >= ql ? tmp_uh : tmp_uh + n;
+            uh              = uh_vl >= ql ? tmp_uh : tmp_uh + n;
             ATTRIBUTE_ASSUME(uh < n);
 
             ATTRIBUTE_ASSUME(vh < n);
             ATTRIBUTE_ASSUME(vl < n);
             /* vh = vh*vl - p*ql (mod n) */
             uint64_t vh_vl = uint64_t((uint128_t(vh) * vl) % n);
-            uint64_t p_ql = uint64_t((p * uint128_t(ql)) % n);
+            uint64_t p_ql  = uint64_t((p * uint128_t(ql)) % n);
             ATTRIBUTE_ASSUME(vh_vl < n);
             ATTRIBUTE_ASSUME(p_ql < n);
             uint64_t tmp_vh = vh_vl - p_ql;
-            vh = vh_vl >= p_ql ? tmp_vh : tmp_vh + n;
+            vh              = vh_vl >= p_ql ? tmp_vh : tmp_vh + n;
             ATTRIBUTE_ASSUME(vh < n);
 
             ATTRIBUTE_ASSUME(vl < n);
@@ -212,12 +209,11 @@ ATTRIBUTE_CONST static constexpr bool is_strong_lucas_prp(uint64_t n,
             ATTRIBUTE_ASSUME(vl_vl < n);
             uint128_t tmp_ql_2 = 2 * uint128_t(ql);
             ATTRIBUTE_ASSUME(tmp_ql_2 <= 2 * uint128_t(n - 1));
-            uint64_t ql_2 =
-                tmp_ql_2 < n ? uint64_t(tmp_ql_2) : uint64_t(tmp_ql_2 - n);
+            uint64_t ql_2 = tmp_ql_2 < n ? uint64_t(tmp_ql_2) : uint64_t(tmp_ql_2 - n);
             ATTRIBUTE_ASSUME(ql_2 < n);
             ATTRIBUTE_ASSUME(ql_2 == (uint128_t(ql) * 2) % n);
             uint64_t tmp_vl = vl_vl - ql_2;
-            vl = vl_vl >= ql_2 ? tmp_vl : tmp_vl + n;
+            vl              = vl_vl >= ql_2 ? tmp_vl : tmp_vl + n;
             ATTRIBUTE_ASSUME(vl < n);
         }
     }
@@ -238,7 +234,7 @@ ATTRIBUTE_CONST static constexpr bool is_strong_lucas_prp(uint64_t n,
     ATTRIBUTE_ASSUME(uh_vl < n);
     ATTRIBUTE_ASSUME(ql < n);
     uint64_t tmp_uh = uh_vl - ql;
-    uh = uh_vl >= ql ? tmp_uh : tmp_uh + n;
+    uh              = uh_vl >= ql ? tmp_uh : tmp_uh + n;
     ATTRIBUTE_ASSUME(uh < n);
     ATTRIBUTE_ASSUME(uh == (uint128_t(n) + uh_vl - ql) % n);
 
@@ -249,10 +245,10 @@ ATTRIBUTE_CONST static constexpr bool is_strong_lucas_prp(uint64_t n,
 
     ATTRIBUTE_ASSUME(vl < n);
     /* vl = vh*vl - p*ql (mod n) */
-    uint64_t vh_vl = uint64_t((uint128_t(vh) * vl) % n);
-    uint64_t p_ql = uint64_t((p * uint128_t(ql)) % n);
+    uint64_t vh_vl  = uint64_t((uint128_t(vh) * vl) % n);
+    uint64_t p_ql   = uint64_t((p * uint128_t(ql)) % n);
     uint64_t tmp_vl = vh_vl - p_ql;
-    vl = vh_vl >= p_ql ? tmp_vl : tmp_vl + n;
+    vl              = vh_vl >= p_ql ? tmp_vl : tmp_vl + n;
     ATTRIBUTE_ASSUME(vl < n);
     ATTRIBUTE_ASSUME(vl == (uint128_t(n) + vh_vl - p_ql) % n);
 
@@ -274,12 +270,11 @@ ATTRIBUTE_CONST static constexpr bool is_strong_lucas_prp(uint64_t n,
         ATTRIBUTE_ASSUME(vl_vl < n);
         uint128_t tmp_ql_2 = 2 * uint128_t(ql);
         ATTRIBUTE_ASSUME(tmp_ql_2 <= 2 * uint128_t(n - 1));
-        uint64_t ql_2 =
-            tmp_ql_2 < n ? uint64_t(tmp_ql_2) : uint64_t(tmp_ql_2 - n);
+        uint64_t ql_2 = tmp_ql_2 < n ? uint64_t(tmp_ql_2) : uint64_t(tmp_ql_2 - n);
         ATTRIBUTE_ASSUME(ql_2 < n);
         ATTRIBUTE_ASSUME(ql_2 == (uint128_t(ql) * 2) % n);
         tmp_vl = vl_vl - ql_2;
-        vl = vl_vl >= ql_2 ? tmp_vl : tmp_vl + n;
+        vl     = vl_vl >= ql_2 ? tmp_vl : tmp_vl + n;
         ATTRIBUTE_ASSUME(vl < n);
         ATTRIBUTE_ASSUME(vl == (uint128_t(n) + vl_vl - ql_2) % n);
 
@@ -305,8 +300,7 @@ ATTRIBUTE_CONST static constexpr bool is_strong_lucas_prp(uint64_t n,
  * perfect square, otherwise the search for D will only stop when D=n.
  ***********************************************************************************************************/
 template <bool BasicChecks = true>
-ATTRIBUTE_CONST static constexpr bool is_strong_selfridge_prp(
-    uint64_t n) noexcept {
+ATTRIBUTE_CONST static constexpr bool is_strong_selfridge_prp(uint64_t n) noexcept {
     if constexpr (BasicChecks) {
         if (unlikely(n == 1)) {
             return false;
@@ -322,7 +316,7 @@ ATTRIBUTE_CONST static constexpr bool is_strong_selfridge_prp(
     ATTRIBUTE_ASSUME(n >= 1);
     for (int32_t d = 5;; d += (d > 0) ? 2 : -2, d = -d) {
         // Calculate the Jacobi symbol (d/n)
-        const int32_t jacobi = jacobi_symbol(int64_t(d), n);
+        const int32_t jacobi = kronecker_symbol(int64_t(d), n);
         ATTRIBUTE_ASSUME(jacobi == -1 || jacobi == 0 || jacobi == 1);
         switch (jacobi) {
             /**
@@ -396,12 +390,12 @@ ATTRIBUTE_CONST static constexpr bool is_prime_sqrt(uint32_t n) noexcept {
     if (unlikely(n < 7 * 7)) {
         return n != 1;
     }
-    uint32_t i = 7;
+    uint32_t i          = 7;
     const uint32_t root = math_functions::isqrt(n);
     do {
-        if (n % i == 0 || n % (i + 4) == 0 || n % (i + 6) == 0 ||
-            n % (i + 10) == 0 || n % (i + 12) == 0 || n % (i + 16) == 0 ||
-            n % (i + 22) == 0 || n % (i + 24) == 0) {
+        if (n % i == 0 || n % (i + 4) == 0 || n % (i + 6) == 0 || n % (i + 10) == 0 ||
+            n % (i + 12) == 0 || n % (i + 16) == 0 || n % (i + 22) == 0 ||
+            n % (i + 24) == 0) {
             return false;
         }
         i += 30;
@@ -422,12 +416,12 @@ ATTRIBUTE_CONST static constexpr bool is_prime_sqrt(uint64_t n) noexcept {
     if (unlikely(n < 7 * 7)) {
         return n != 1;
     }
-    uint64_t i = 7;
+    uint64_t i          = 7;
     const uint64_t root = math_functions::isqrt(n);
     do {
-        if (n % i == 0 || n % (i + 4) == 0 || n % (i + 6) == 0 ||
-            n % (i + 10) == 0 || n % (i + 12) == 0 || n % (i + 16) == 0 ||
-            n % (i + 22) == 0 || n % (i + 24) == 0) {
+        if (n % i == 0 || n % (i + 4) == 0 || n % (i + 6) == 0 || n % (i + 10) == 0 ||
+            n % (i + 12) == 0 || n % (i + 16) == 0 || n % (i + 22) == 0 ||
+            n % (i + 24) == 0) {
             return false;
         }
         i += 30;
@@ -448,7 +442,7 @@ ATTRIBUTE_CONST static constexpr bool is_prime_sqrt(uint128_t n) noexcept {
     if (unlikely(n < 7 * 7)) {
         return n != 1;
     }
-    uint64_t i = 7;
+    uint64_t i                   = 7;
     constexpr uint64_t kMaxPrime = 18446744073709551557ull;
     static_assert(kMaxPrime < kMaxPrime + 30, "");
     /**
@@ -461,9 +455,9 @@ ATTRIBUTE_CONST static constexpr bool is_prime_sqrt(uint128_t n) noexcept {
     const uint64_t root = std::min(math_functions::isqrt(n), kMaxPrime);
 
     do {
-        if (n % i == 0 || n % (i + 4) == 0 || n % (i + 6) == 0 ||
-            n % (i + 10) == 0 || n % (i + 12) == 0 || n % (i + 16) == 0 ||
-            n % (i + 22) == 0 || n % (i + 24) == 0) {
+        if (n % i == 0 || n % (i + 4) == 0 || n % (i + 6) == 0 || n % (i + 10) == 0 ||
+            n % (i + 12) == 0 || n % (i + 16) == 0 || n % (i + 22) == 0 ||
+            n % (i + 24) == 0) {
             return false;
         }
         i += 30;
