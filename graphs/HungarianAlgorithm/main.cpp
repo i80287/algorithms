@@ -20,6 +20,18 @@ class MinAssignmentGraph {
     using vertex_t = size_t;
 
 public:
+    static T find_min_assignment() {
+        MinAssignmentGraph<T> g = MinAssignmentGraph<T>::from_matrix(original_matrix);
+        bool found_perfect_matching;
+        do {
+            found_perfect_matching = g.next_iter();
+        } while (!found_perfect_matching);
+        return g.accumulate_over(original_matrix);
+    }
+
+    ~MinAssignmentGraph() { operator delete(static_cast<void*>(matrix_)); }
+
+private:
     static MinAssignmentGraph from_matrix(
         const std::vector<std::vector<T>>& original_matrix) {
         const size_t n = original_matrix.size();
@@ -87,8 +99,8 @@ public:
 
     bool next_iter() noexcept {
         fill_bipartite_graph();
-        bool is_perfect_matching = find_max_matching();
-        if (is_perfect_matching) {
+        bool found_perfect_matching = find_max_matching();
+        if (found_perfect_matching) {
             return true;
         }
         apply_alpha_transformation();
@@ -105,9 +117,6 @@ public:
         return ans;
     }
 
-    ~MinAssignmentGraph() { operator delete(static_cast<void*>(matrix_)); }
-
-private:
     constexpr MinAssignmentGraph(vertex_t* RESTRICT_QUALIFIER first_part_matches,
                                  vertex_t* RESTRICT_QUALIFIER second_part_matches,
                                  bool* RESTRICT_QUALIFIER first_part_visited,
@@ -358,16 +367,7 @@ template <class T>
     requires std::is_arithmetic_v<T>
 #endif
 T min_assignment(const std::vector<std::vector<T>>& original_matrix) {
-    MinAssignmentGraph<T> g = MinAssignmentGraph<T>::from_matrix(original_matrix);
-
-    while (true) {
-        bool found_perfect_matching = g.next_iter();
-        if (found_perfect_matching) {
-            break;
-        }
-    }
-
-    return g.accumulate_over(original_matrix);
+    return MinAssignmentGraph<T>::find_min_assignment(original_matrix);
 }
 
 }  // namespace hungarian_algo
