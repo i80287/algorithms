@@ -239,7 +239,7 @@ inline ostream& operator<<(ostream& out, uint128_t number) {
     return out << string_view(ptr, length);
 }
 
-inline int print_u128(uint128_t number) noexcept {
+inline int fprint_u128(uint128_t number, FILE* filestream) noexcept {
     // 340282366920938463463374607431768211455 == 2^128 - 1
     // strlen("340282366920938463463374607431768211455") == 39;
     constexpr size_t max_number_digits_count = 39;
@@ -247,7 +247,24 @@ inline int print_u128(uint128_t number) noexcept {
     digits[max_number_digits_count] = '\0';
     const char* ptr = format_impl_uint128_t::uint128_t_format_fill_chars_buffer(
         number, &digits[max_number_digits_count]);
-    return fputs(ptr, stdout);
+    return fputs(ptr, filestream);
+}
+
+inline int print_u128(uint128_t number) noexcept {
+    return fprint_u128(number, stdout);
+}
+
+inline int fprint_u128_newline(uint128_t number, FILE* filestream) noexcept {
+    // 340282366920938463463374607431768211455 == 2^128 - 1
+    // strlen("340282366920938463463374607431768211455") == 39;
+    constexpr size_t max_number_digits_count = 39;
+    // + 1 for '\0', + 1 for '\n'
+    char digits[max_number_digits_count + 1 + 1];
+    digits[max_number_digits_count]     = '\n';
+    digits[max_number_digits_count + 1] = '\0';
+    const char* ptr = format_impl_uint128_t::uint128_t_format_fill_chars_buffer(
+        number, &digits[max_number_digits_count]);
+    return fputs(ptr, filestream);
 }
 
 inline int print_u128_newline(uint128_t number) noexcept {
