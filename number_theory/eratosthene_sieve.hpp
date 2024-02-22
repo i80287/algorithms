@@ -35,11 +35,16 @@ std::vector<bool> primes_sieve_as_bvector(size_t n) {
 /// @tparam N exclusive upper bound
 /// @return bitset, for which bset[n] == true \iff n is prime
 template <size_t N>
-# if __cplusplus >= 202100L
+#if __cplusplus >= 202100L
 constexpr
 #endif
-std::bitset<N>& primes_sieve_as_bitset() noexcept {
-    static constinit std::bitset<N> primes;
+    std::bitset<N>&
+    primes_sieve_as_bitset() noexcept {
+#if defined(__cpp_constinit) && __cplusplus >= 202002L
+    constinit
+#endif
+        static std::bitset<N>
+            primes;
     if constexpr (N > 2) {
         primes.set();
         primes[0]             = false;

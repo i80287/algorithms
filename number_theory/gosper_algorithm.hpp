@@ -25,7 +25,12 @@ static constexpr loop_detect_result loop_detection_Gosper(Function f,
     /**
      * See Hackers Delight 5-5.
      */
-    int32_t f_values[33];
+    int32_t f_values[33]
+#if __cplusplus < 202002L
+        = {};
+#else
+        ;
+#endif
     f_values[0] = x0;
     int32_t xn = x0;
     for (uint32_t n = 1;; n++) {
