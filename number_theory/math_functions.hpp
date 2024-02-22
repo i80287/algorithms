@@ -10,10 +10,10 @@
 #if MATH_FUNCTIONS_HPP_ENABLE_TARGET_OPTIONS
 /**
  * From lzcnt: bsr -> lzcnt (leading zeros count)
- * Used in: log2_floor, log2_ceil, log10_floor, base_10_digits
+ * Used in: log2_floor, log2_ceil, log10_floor, base_10_len
  *
  * From bmi: bsf -> tzcnt (trailing zeros count)
- * Used in: extract_2pow, next_n_bits_permutation, gcd(uint128_t, uint128_t)
+ * Used in: extract_pow2, next_n_bits_permutation, gcd(uint128_t, uint128_t)
  */
 #if defined(__GNUC__)
 #if !defined(__clang__)
@@ -65,7 +65,7 @@ using std::uint64_t;
 /// @return T ^ p
 template <class T>
 static constexpr T bin_pow(T n, size_t p) noexcept {
-    T res = 1u;
+    T res = 1;
     while (true) {
         if (p & 1) {
             res *= n;
@@ -73,6 +73,28 @@ static constexpr T bin_pow(T n, size_t p) noexcept {
         p >>= 1;
         if (p == 0) {
             return res;
+        }
+        n *= n;
+    }
+}
+
+/// @brief Calculates T ^ p
+/// @tparam T
+/// @param[in] n
+/// @param[in] p
+/// @return T ^ p
+template <class T>
+static constexpr T bin_pow(T n, int64_t p) noexcept {
+    const bool not_inverse = p >= 0;
+    uint64_t p_u = p >= 0 ? static_cast<uint64_t>(p) : -static_cast<uint64_t>(p);
+    T res        = 1;
+    while (true) {
+        if (p_u & 1) {
+            res *= n;
+        }
+        p_u >>= 1;
+        if (p_u == 0) {
+            return not_inverse ? res : 1 / res;
         }
         n *= n;
     }
@@ -628,6 +650,7 @@ ATTRIBUTE_CONST constexpr uint32_t lz_count_32_software(uint32_t n) noexcept {
         n <<= 2;
     }
     m -= n >> 31;
+    ATTRIBUTE_ASSUME(m <= 31);
     return m;
 }
 
@@ -660,6 +683,7 @@ ATTRIBUTE_CONST constexpr uint32_t lz_count_64_software(uint64_t n) noexcept {
         n <<= 2;
     }
     m -= uint32_t(n >> 63);
+    ATTRIBUTE_ASSUME(m <= 63);
     return m;
 }
 
@@ -687,7 +711,9 @@ ATTRIBUTE_CONST constexpr uint32_t tz_count_32_software(uint32_t n) noexcept {
         m += 2;
         n >>= 2;
     }
-    return m - (n & 1);
+    m -= (n & 1);
+    ATTRIBUTE_ASSUME(m <= 31);
+    return m;
 }
 
 ATTRIBUTE_CONST constexpr uint32_t tz_count_64_software(uint64_t n) noexcept {
@@ -695,10 +721,11 @@ ATTRIBUTE_CONST constexpr uint32_t tz_count_64_software(uint64_t n) noexcept {
     for (n = ~n & (n - 1); n != 0; n >>= 1) {
         m++;
     }
+    ATTRIBUTE_ASSUME(m <= 64);
     return m;
 }
 
-ATTRIBUTE_CONST constexpr uint32_t pop_count_software(uint32_t n) noexcept {
+ATTRIBUTE_CONST constexpr uint32_t pop_count_32_software(uint32_t n) noexcept {
     /**
      * See Hackers Delight Chapter 5.
      */
@@ -707,10 +734,11 @@ ATTRIBUTE_CONST constexpr uint32_t pop_count_software(uint32_t n) noexcept {
     n = (n & 0x0F0F0F0F) + ((n >> 4) & 0x0F0F0F0F);
     n = (n & 0x00FF00FF) + ((n >> 8) & 0x00FF00FF);
     n = (n & 0x0000FFFF) + ((n >> 16) & 0x0000FFFF);
+    ATTRIBUTE_ASSUME(n <= 32);
     return n;
 }
 
-ATTRIBUTE_CONST constexpr uint64_t pop_count_software(uint64_t n) noexcept {
+ATTRIBUTE_CONST constexpr uint64_t pop_count_64_software(uint64_t n) noexcept {
     /**
      * See Hackers Delight Chapter 5.
      */
@@ -720,6 +748,7 @@ ATTRIBUTE_CONST constexpr uint64_t pop_count_software(uint64_t n) noexcept {
     n = (n & 0x00FF00FF00FF00FFull) + ((n >> 8) & 0x00FF00FF00FF00FFull);
     n = (n & 0x0000FFFF0000FFFFull) + ((n >> 16) & 0x0000FFFF0000FFFFull);
     n = (n & 0x00000000FFFFFFFFull) + ((n >> 32) & 0x00000000FFFFFFFFull);
+    ATTRIBUTE_ASSUME(n <= 64);
     return n;
 }
 
@@ -761,13 +790,13 @@ ATTRIBUTE_CONST constexpr int32_t pop_cmp(uint32_t x, uint32_t y) noexcept {
 /// @param[in] n
 /// @return trailing zeros count (sizeof(n) * 8 for n = 0)
 template <typename T>
-#if __cplusplus >= 202002L
+#if defined(__cpp_concepts) && __cpp_concepts
     requires std::is_unsigned_v<T>
 #if defined(INTEGERS_128_BIT_HPP)
              || std::is_same_v<T, uint128_t>
 #endif
 #endif
-ATTRIBUTE_CONST constexpr int32_t count_trailing_zeros(T n) noexcept {
+ATTRIBUTE_CONST constexpr int32_t countr_zero(T n) noexcept {
     if (unlikely(n == 0)) {
         return sizeof(n) * 8;
     }
@@ -776,7 +805,9 @@ ATTRIBUTE_CONST constexpr int32_t count_trailing_zeros(T n) noexcept {
     if constexpr (std::is_same_v<T, uint128_t>) {
         uint64_t low = static_cast<uint64_t>(n);
         if (low != 0) {
-#if defined(__GNUC__)
+#if __cplusplus >= 202002L
+            return std::countr_zero(low);
+#elif defined(__GNUC__)
             return __builtin_ctzll(low);
 #else
             return static_cast<int32_t>(impl::tz_count_64_software(low));
@@ -785,11 +816,15 @@ ATTRIBUTE_CONST constexpr int32_t count_trailing_zeros(T n) noexcept {
 
         uint64_t high = static_cast<uint64_t>(n >> 64);
         ATTRIBUTE_ASSUME(high != 0);
-#if defined(__GNUC__)
-        return __builtin_ctzll(high) + 64;
+#if __cplusplus >= 202002L
+        int32_t high_trailing_zeros_count = std::countr_zero(high);
+#elif defined(__GNUC__)
+        int32_t high_trailing_zeros_count = __builtin_ctzll(high);
 #else
-        return static_cast<int32_t>(impl::tz_count_64_software(high)) + 64;
+        int32_t high_trailing_zeros_count =
+            static_cast<int32_t>(impl::tz_count_64_software(high));
 #endif
+        return high_trailing_zeros_count + 64;
     } else
 #endif
 
@@ -813,7 +848,7 @@ ATTRIBUTE_CONST constexpr int32_t count_trailing_zeros(T n) noexcept {
         static_assert(std::is_same_v<T, unsigned int> ||
                           std::is_same_v<T, unsigned short> ||
                           std::is_same_v<T, unsigned char>,
-                      "error in count_trailing_zeros");
+                      "Inappropriate integer type in countr_zero");
 #if defined(__GNUC__)
         return __builtin_ctz(n);
 #else
@@ -827,34 +862,34 @@ ATTRIBUTE_CONST constexpr int32_t count_trailing_zeros(T n) noexcept {
 /// @param[in] n
 /// @return leading zeros count (sizeof(n) * 8 for n = 0)
 template <typename T>
-#if __cplusplus >= 202002L
+#if defined(__cpp_concepts) && __cpp_concepts
     requires std::is_unsigned_v<T>
 #if defined(INTEGERS_128_BIT_HPP)
              || std::is_same_v<T, uint128_t>
 #endif
 #endif
-ATTRIBUTE_CONST constexpr int32_t count_leading_zeros(T n) noexcept {
+ATTRIBUTE_CONST constexpr int32_t countl_zero(T n) noexcept {
     if (unlikely(n == 0)) {
         return sizeof(n) * 8;
     }
 
 #if defined(INTEGERS_128_BIT_HPP)
     if constexpr (std::is_same_v<T, uint128_t>) {
-        uint64_t hi = static_cast<uint64_t>(n >> 64);
-        if (hi != 0) {
-            // Avoid recursive call to count_leading_zeros<uint64_t>
+        uint64_t high = static_cast<uint64_t>(n >> 64);
+        if (high != 0) {
+            // Avoid recursive call to countl_zero<uint64_t>
 #if __cplusplus >= 202002L
-            return std::countl_zero(hi);
+            return std::countl_zero(high);
 #elif defined(__GNUC__)
-            return __builtin_clzll(hi);
+            return __builtin_clzll(high);
 #else
-            return static_cast<int32_t>(impl::lz_count_64_software(hi));
+            return static_cast<int32_t>(impl::lz_count_64_software(high));
 #endif
         }
 
         uint64_t low = static_cast<uint64_t>(n);
         ATTRIBUTE_ASSUME(low != 0);
-        // Avoid recursive call to count_leading_zeros<uint64_t>
+        // Avoid recursive call to countl_zero<uint64_t>
 #if __cplusplus >= 202002L
         return 64 + std::countl_zero(low);
 #elif defined(__GNUC__)
@@ -884,11 +919,63 @@ ATTRIBUTE_CONST constexpr int32_t count_leading_zeros(T n) noexcept {
         static_assert(std::is_same_v<T, unsigned int> ||
                           std::is_same_v<T, unsigned short> ||
                           std::is_same_v<T, unsigned char>,
-                      "error in count_leading_zeros");
+                      "Inappropriate integer type in countl_zero");
 #if defined(__GNUC__)
         return __builtin_clz(n);
 #else
         return static_cast<int32_t>(impl::lz_count_32_software(n));
+#endif
+    }
+#endif
+}
+
+template <class T>
+#if defined(__cpp_concepts) && __cpp_concepts
+    requires std::is_unsigned_v<T>
+#if defined(INTEGERS_128_BIT_HPP)
+             || std::is_same_v<T, uint128_t>
+#endif
+#endif
+ATTRIBUTE_CONST constexpr int32_t popcount(T n) noexcept {
+#if defined(INTEGERS_128_BIT_HPP)
+    if constexpr (std::is_same_v<T, uint128_t>) {
+        uint64_t high = static_cast<uint64_t>(n >> 64);
+        uint64_t low  = static_cast<uint64_t>(n);
+#if __cplusplus >= 202002L
+        return std::popcount(high) + std::popcount(low);
+#elif defined(__GNUC__)
+        return __builtin_popcountll(high) + __builtin_popcountll(low);
+#else
+        return static_cast<int32_t>(impl::pop_count_64_software(high) +
+                                    impl::pop_count_64_software(low));
+#endif
+    } else
+#endif
+
+#if __cplusplus >= 202002L
+        return std::popcount(n);
+#else
+    if constexpr (std::is_same_v<T, unsigned long long>) {
+#if defined(__GNUC__)
+        return __builtin_popcountll(n);
+#else
+        return static_cast<int32_t>(impl::pop_count_64_software(n));
+#endif
+    } else if constexpr (std::is_same_v<T, unsigned long>) {
+#if defined(__GNUC__)
+        return __builtin_popcountl(n);
+#else
+        return static_cast<int32_t>(impl::pop_count_64_software(n));
+#endif
+    } else {
+        static_assert(std::is_same_v<T, unsigned int> ||
+                          std::is_same_v<T, unsigned short> ||
+                          std::is_same_v<T, unsigned char>,
+                      "Inappropriate integer type in popcount");
+#if defined(__GNUC__)
+        return __builtin_popcount(n);
+#else
+        return static_cast<int32_t>(impl::pop_count_32_software(n));
 #endif
     }
 #endif
@@ -913,7 +1000,7 @@ constexpr uint32_t next_n_bits_permutation(uint32_t x) noexcept {
     uint32_t t = x | (x - 1);
     // Next set to 1 the most significant bit to change,
     // set to 0 the least significant ones, and add the necessary 1 bits.
-    return (t + 1) | (((~t & -~t) - 1) >> (count_trailing_zeros(x) + 1));
+    return (t + 1) | (((~t & -~t) - 1) >> (countr_zero(x) + 1));
 }
 
 ATTRIBUTE_CONST constexpr bool is_pow2(int n) noexcept {
@@ -963,14 +1050,12 @@ ATTRIBUTE_CONST inline I128_CONSTEXPR bool is_pow2(uint128_t n) noexcept {
 
 ATTRIBUTE_CONST constexpr uint64_t nearest_pow2_ge(uint32_t n) noexcept {
     constexpr uint32_t k = sizeof(uint32_t) * CHAR_BIT;
-    return uint64_t(1ull) << (k - uint32_t(count_leading_zeros(n | 1)) -
-                              ((n & (n - 1)) == 0));
+    return uint64_t(1ull) << (k - uint32_t(countl_zero(n | 1)) - ((n & (n - 1)) == 0));
 }
 
 ATTRIBUTE_CONST constexpr uint64_t nearest_pow2_ge(uint64_t n) noexcept {
     constexpr uint32_t k = sizeof(uint64_t) * CHAR_BIT;
-    return uint64_t(1ull) << (k - uint32_t(count_leading_zeros(n | 1)) -
-                              ((n & (n - 1)) == 0));
+    return uint64_t(1ull) << (k - uint32_t(countl_zero(n | 1)) - ((n & (n - 1)) == 0));
 }
 
 /* Just constexpr version of isdigit from ctype.h */
@@ -978,16 +1063,16 @@ ATTRIBUTE_CONST constexpr bool is_digit(int32_t c) noexcept {
     return static_cast<uint32_t>(c) - '0' <= '9' - '0';
 }
 
-ATTRIBUTE_CONST constexpr uint32_t base_2_digits(uint32_t n) noexcept {
+ATTRIBUTE_CONST constexpr uint32_t base_2_len(uint32_t n) noexcept {
     // " | 1" operation does not affect the answer for all numbers except n = 0
     // for n = 0 answer is 1
-    return 32 - uint32_t(count_leading_zeros(n | 1));
+    return 32 - uint32_t(countl_zero(n | 1));
 }
 
-ATTRIBUTE_CONST constexpr uint32_t base_2_digits(uint64_t n) noexcept {
+ATTRIBUTE_CONST constexpr uint32_t base_2_len(uint64_t n) noexcept {
     // " | 1" operation does not affect the answer for all numbers except n = 0
     // for n = 0 answer is 1
-    return 64 - uint32_t(count_leading_zeros(n | 1));
+    return 64 - uint32_t(countl_zero(n | 1));
 }
 
 /// @brief Realization taken from the gcc libstdc++ __to_chars_len
@@ -996,7 +1081,7 @@ ATTRIBUTE_CONST constexpr uint32_t base_2_digits(uint64_t n) noexcept {
 /// @param[in] base
 /// @return
 template <typename T>
-#if __cplusplus >= 202002L
+#if defined(__cpp_concepts) && __cpp_concepts
     requires std::is_unsigned_v<T>
 #if defined(INTEGERS_128_BIT_HPP)
              || std::is_same_v<T, uint128_t>
@@ -1032,7 +1117,7 @@ ATTRIBUTE_CONST constexpr uint32_t base_b_len(T value, uint8_t base = 10) noexce
 /// @param[in] n
 /// @return
 ATTRIBUTE_CONST constexpr uint32_t log2_floor(uint32_t n) noexcept {
-    return 31 - uint32_t(count_leading_zeros(n));
+    return 31 - uint32_t(countl_zero(n));
 }
 
 /// @brief For n > 0 returns ⌈log_2(n)⌉. For n = 0 returns (uint32_t)-1
@@ -1046,7 +1131,7 @@ ATTRIBUTE_CONST constexpr uint32_t log2_ceil(uint32_t n) noexcept {
 /// @param[in] n
 /// @return
 ATTRIBUTE_CONST constexpr uint32_t log2_floor(uint64_t n) noexcept {
-    return 63 - uint32_t(count_leading_zeros(n));
+    return 63 - uint32_t(countl_zero(n));
 }
 
 /// @brief For n > 0 returns ⌈log_2(n)⌉. For n = 0 returns (uint32_t)-1
@@ -1062,8 +1147,7 @@ ATTRIBUTE_CONST constexpr uint32_t log2_ceil(uint64_t n) noexcept {
 /// @return
 ATTRIBUTE_CONST constexpr uint32_t log2_floor(uint128_t n) noexcept {
     uint64_t hi = uint64_t(n >> 64);
-    return hi != 0 ? (127 - uint32_t(count_leading_zeros(hi)))
-                   : (log2_floor(uint64_t(n)));
+    return hi != 0 ? (127 - uint32_t(countl_zero(hi))) : (log2_floor(uint64_t(n)));
 }
 
 /// @brief For n > 0 returns ⌈log_2(n)⌉. For n = 0 returns (uint32_t)-1
@@ -1098,7 +1182,7 @@ constexpr
 #endif
         static const uint32_t table2[11] = {
             1, 10, 100, 1000, 10000, 100000, 1000000, 10000000, 100000000, 1000000000, 0};
-    uint32_t digits = table1[count_leading_zeros(n)];
+    uint32_t digits = table1[countl_zero(n)];
     digits -= ((n - table2[digits]) >> 31);
     return digits;
 }
@@ -1138,8 +1222,8 @@ constexpr
                                             99999999999999999ull,
                                             999999999999999999ull,
                                             9999999999999999999ull};
-    static_assert(count_leading_zeros(uint64_t(0)) == 64, "");
-    int32_t digits = (19 * (63 - int32_t(count_leading_zeros(n)))) >> 6;
+    static_assert(countl_zero(uint64_t(0)) == 64, "");
+    int32_t digits = (19 * (63 - int32_t(countl_zero(n)))) >> 6;
     ATTRIBUTE_ASSUME((-19 >> 6) <= digits && digits <= ((19 * 63) >> 6));
     digits += int32_t((table2[uint32_t(digits + 1)] - n) >> 63);
     return uint32_t(digits);
@@ -1150,7 +1234,7 @@ ATTRIBUTE_CONST
 constexpr
 #endif
     inline uint32_t
-    base_10_digits(uint32_t n) noexcept {
+    base_10_len(uint32_t n) noexcept {
     // log10_floor(0 | 1) = 0
     return log10_floor(n | 1) + 1;
 }
@@ -1160,7 +1244,7 @@ ATTRIBUTE_CONST
 constexpr
 #endif
     inline uint32_t
-    base_10_digits(uint64_t n) noexcept {
+    base_10_len(uint64_t n) noexcept {
     // log10_floor(0 | 1) = 0
     return log10_floor(n | 1) + 1;
 }
@@ -1169,14 +1253,14 @@ constexpr
 /// @param[in] n
 /// @return Pair of q and r
 template <typename T>
-#if __cplusplus >= 202002L
+#if defined(__cpp_concepts) && __cpp_concepts
     requires std::is_unsigned_v<T>
 #if defined(INTEGERS_128_BIT_HPP)
              || std::is_same_v<T, uint128_t>
 #endif
 #endif
-ATTRIBUTE_CONST constexpr std::pair<T, uint32_t> extract_2pow(T n) noexcept {
-    uint32_t r = uint32_t(count_trailing_zeros(n));
+ATTRIBUTE_CONST constexpr std::pair<T, uint32_t> extract_pow2(T n) noexcept {
+    uint32_t r = uint32_t(countr_zero(n));
     return {n >> r, r};
 }
 
@@ -1228,13 +1312,13 @@ ATTRIBUTE_CONST constexpr uint32_t max_number_of_prime_divisors(uint32_t n) noex
 
 /// @brief
 /// @param[in] n
-/// @return vector of pairs { prime_div : power_of_prime_div } in sorted order.
+/// @return vector of pairs { prime_div : power_of_prime_div } sorted by prime_div.
 inline std::vector<std::pair<uint32_t, uint32_t>> prime_divisors_to_vector(uint32_t n) {
     std::vector<std::pair<uint32_t, uint32_t>> divisors;
     divisors.reserve(impl::max_number_of_prime_divisors(n));
     if (n % 2 == 0 && n != 0) {
         // n = s * 2^pow_of_2, where s is odd
-        auto [s, pow_of_2] = extract_2pow(n);
+        auto [s, pow_of_2] = extract_pow2(n);
         n                  = s;
         divisors.emplace_back(uint32_t(2), pow_of_2);
     }
@@ -1260,12 +1344,12 @@ inline std::vector<std::pair<uint32_t, uint32_t>> prime_divisors_to_vector(uint3
 
 /// @brief
 /// @param[in] n
-/// @return vector of pairs { prime_div : power_of_prime_div } in sorted order.
+/// @return vector of pairs { prime_div : power_of_prime_div } sorted by prime_div.
 inline std::vector<std::pair<uint32_t, uint32_t>> prime_divisors_to_vector(uint64_t n) {
     std::vector<std::pair<uint32_t, uint32_t>> divisors;
     if (n % 2 == 0 && n != 0) {
         // n = s * 2^pow_of_2, where s is odd
-        auto [s, pow_of_2] = extract_2pow(n);
+        auto [s, pow_of_2] = extract_pow2(n);
         n                  = s;
         divisors.emplace_back(uint64_t(2), pow_of_2);
     }
@@ -1297,7 +1381,7 @@ inline std::map<uint32_t, uint32_t> prime_divisors_to_map(uint32_t n) {
 
     if (n % 2 == 0 && n != 0) {
         // n = s * 2^pow_of_2, where s is odd
-        auto [s, pow_of_2] = extract_2pow(n);
+        auto [s, pow_of_2] = extract_pow2(n);
         n                  = s;
         divisors.emplace(uint32_t(2), pow_of_2);
     }
@@ -1327,7 +1411,7 @@ inline std::map<uint32_t, uint32_t> prime_divisors_to_map(uint32_t n) {
 inline void prime_divisors_to_map(uint32_t n, std::map<uint32_t, uint32_t>& divisors) {
     if (n % 2 == 0 && n != 0) {
         // n = s * 2^pow_of_2, where s is odd
-        auto [s, pow_of_2] = extract_2pow(n);
+        auto [s, pow_of_2] = extract_pow2(n);
         n                  = s;
         divisors[2] += pow_of_2;
     }
@@ -1352,7 +1436,7 @@ inline void prime_divisors_to_map(uint32_t n, std::map<uint32_t, uint32_t>& divi
 inline void prime_divisors_to_map(uint64_t n, std::map<uint64_t, uint32_t>& divisors) {
     if (n % 2 == 0 && n != 0) {
         // n = s * 2^pow_of_2, where s is odd
-        auto [s, pow_of_2] = extract_2pow(n);
+        auto [s, pow_of_2] = extract_pow2(n);
         n                  = s;
         divisors[2] += pow_of_2;
     }
@@ -1378,7 +1462,7 @@ inline std::map<uint64_t, uint32_t> prime_divisors_to_map(uint64_t n) {
     std::map<uint64_t, uint32_t> divisors;
     if (n % 2 == 0 && n != 0) {
         // n = s * 2^pow_of_2, where s is odd
-        auto [s, pow_of_2] = extract_2pow(n);
+        auto [s, pow_of_2] = extract_pow2(n);
         n                  = s;
         divisors.emplace(uint64_t(2), pow_of_2);
     }
@@ -1421,8 +1505,8 @@ ATTRIBUTE_CONST inline I128_CONSTEXPR uint128_t gcd(uint128_t a, uint128_t b) no
         return a;
     }
 
-    uint32_t ra   = uint32_t(math_functions::count_trailing_zeros(a));
-    uint32_t rb   = uint32_t(math_functions::count_trailing_zeros(b));
+    uint32_t ra   = uint32_t(math_functions::countr_zero(a));
+    uint32_t rb   = uint32_t(math_functions::countr_zero(b));
     uint32_t mult = std::min(ra, rb);
     a >>= ra;
     b >>= rb;
@@ -1438,7 +1522,7 @@ ATTRIBUTE_CONST inline I128_CONSTEXPR uint128_t gcd(uint128_t a, uint128_t b) no
             return b << mult;
         }
 
-        a >>= math_functions::count_trailing_zeros(a);
+        a >>= math_functions::countr_zero(a);
     }
 }
 

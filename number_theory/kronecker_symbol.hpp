@@ -1,5 +1,5 @@
-#ifndef JACOBI_SYMBOL_HPP
-#define JACOBI_SYMBOL_HPP 1
+#ifndef KRONECKER_SYMBOL_HPP
+#define KRONECKER_SYMBOL_HPP
 
 #include <type_traits>
 
@@ -23,7 +23,7 @@ ATTRIBUTE_CONST static constexpr int32_t kronecker_symb_ui(Uint a, Uint n) noexc
             return a == 1;
         }
 
-        auto [q, p] = extract_2pow(n);
+        auto [q, p] = extract_pow2(n);
         ATTRIBUTE_ASSUME(q % 2 == 1);
         n = q;
 
@@ -60,7 +60,7 @@ ATTRIBUTE_CONST static constexpr int32_t kronecker_symb_ui(Uint a, Uint n) noexc
     while (a != 0) {
         // step 2
         if (a % 2 == 0) {
-            auto [a_odd_part, a_exp] = math_functions::extract_2pow(a);
+            auto [a_odd_part, a_exp] = math_functions::extract_pow2(a);
             a                        = a_odd_part;
             r                        = n % 8;
             ATTRIBUTE_ASSUME(r <= 7);
@@ -103,7 +103,7 @@ ATTRIBUTE_CONST static constexpr int32_t kronecker_symbol_si(Sint a, Sint n) noe
             return a == 1 || a == -1;
         }
 
-        auto [q, p] = extract_2pow(n_u);
+        auto [q, p] = extract_pow2(n_u);
         ATTRIBUTE_ASSUME(q % 2 == 1);
         n_u = q;
 
@@ -140,7 +140,7 @@ ATTRIBUTE_CONST static constexpr int32_t kronecker_symbol_si(Sint a, Sint n) noe
     while (a_u != 0) {
         // step 2
         if (a_u % 2 == 0) {
-            auto [a_u_odd_part, a_u_exp] = math_functions::extract_2pow(a_u);
+            auto [a_u_odd_part, a_u_exp] = math_functions::extract_pow2(a_u);
             a_u                          = a_u_odd_part;
             r                            = n_u % 8;
             ATTRIBUTE_ASSUME(r <= 7);
@@ -181,7 +181,7 @@ ATTRIBUTE_CONST static constexpr int32_t kronecker_symbol_ui(Sint a, Uint n) noe
             return a == 1 || a == -1;
         }
 
-        auto [q, p] = extract_2pow(n);
+        auto [q, p] = extract_pow2(n);
         ATTRIBUTE_ASSUME(q % 2 == 1);
         n = q;
 
@@ -219,7 +219,7 @@ ATTRIBUTE_CONST static constexpr int32_t kronecker_symbol_ui(Sint a, Uint n) noe
     while (a_u != 0) {
         // step 2
         if (a_u % 2 == 0) {
-            auto [a_u_odd_part, a_u_exp] = math_functions::extract_2pow(a_u);
+            auto [a_u_odd_part, a_u_exp] = math_functions::extract_pow2(a_u);
             a_u                          = a_u_odd_part;
             r                            = n % 8;
             ATTRIBUTE_ASSUME(r <= 7);
@@ -289,4 +289,4 @@ ATTRIBUTE_CONST static constexpr int32_t kronecker_symbol(IntegerT1 a,
 
 }  // namespace math_functions
 
-#endif  // !JACOBI_SYMBOL_HPP
+#endif  // !KRONECKER_SYMBOL_HPP

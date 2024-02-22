@@ -49,7 +49,7 @@ ATTRIBUTE_CONST static constexpr bool is_strong_prp(uint64_t n, uint64_t a) noex
 
     const uint64_t n_minus_1 = n - 1;
     /* Find q and r satisfying: n - 1 = q * (2^r), q odd */
-    auto [q, r] = math_functions::extract_2pow(n_minus_1);
+    auto [q, r] = math_functions::extract_pow2(n_minus_1);
     // n - 1 >= 2 => r >= 1
     ATTRIBUTE_ASSUME(r >= 1);
     ATTRIBUTE_ASSUME(q % 2 == 1);
@@ -120,7 +120,7 @@ ATTRIBUTE_CONST static constexpr bool is_strong_lucas_prp(uint64_t n, uint32_t p
     ATTRIBUTE_ASSUME(nmj >= 2);
 
     /* Find s and r satisfying: nmj = s * (2 ^ r), s odd */
-    const auto [s, r] = math_functions::extract_2pow(nmj);
+    const auto [s, r] = math_functions::extract_pow2(nmj);
     ATTRIBUTE_ASSUME(r >= 1);
     ATTRIBUTE_ASSUME(s % 2 == 1);
     // Redundant but still

@@ -53,7 +53,7 @@ static constexpr loop_detect_result loop_detection_Gosper(Function f,
                 return {mu_lower, mu_upper, lambda};
             }
         }
-        f_values[uint32_t(count_trailing_zeros(n + 1))] = xn;  // No match.
+        f_values[uint32_t(countr_zero(n + 1))] = xn;  // No match.
     }
 }
 
