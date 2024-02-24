@@ -9,9 +9,8 @@ int main() {
     scanf("%15s", input);
     const char* ans;
 
-    static constexpr auto sw =
-        StringSwitch<"abc", "def", "ghij", "foo", "bar", "baz", "abacaba",
-                     "ring", "ideal", "GLn(F)">();
+    static constexpr auto sw = StringSwitch<"abc", "def", "ghij", "foo", "bar", "baz",
+                                            "abacaba", "ring", "ideal", "GLn(F)">();
     switch (sw.Switch(input)) {
         case 0:
             ans = "found abc";
