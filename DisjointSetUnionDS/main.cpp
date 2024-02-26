@@ -52,8 +52,7 @@ public:
     explicit DisjointSetUnion(size_t nodes_count)
         : nodes_count_{nodes_count} {
         if (nodes_count) {
-            nodes_ = static_cast<DSUTreeNode*>(operator new(
-                sizeof(DSUTreeNode) * nodes_count));
+            nodes_ = static_cast<DSUTreeNode*>(operator new(sizeof(DSUTreeNode) * nodes_count));
             std::memset(nodes_, 0, sizeof(DSUTreeNode) * nodes_count);
         }
     }
@@ -93,9 +92,9 @@ public:
     DisjointSetUnion& operator=(DisjointSetUnion&& other) noexcept {
         auto nodes = other.nodes_;
         auto nodes_count = other.nodes_count_;
-        this->~DisjointSetUnion();
         other.nodes_ = nullptr;
         other.nodes_count_ = 0;
+        this->~DisjointSetUnion();
         nodes_ = nodes;
         nodes_count_ = nodes_count;
         return *this;
