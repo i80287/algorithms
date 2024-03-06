@@ -21,14 +21,11 @@ public:
     };
 
     static constexpr heap from_graph(size_t graph_size, vertex_t start_vertex) {
-        std::vector<node_t> heap_nodes(graph_size);
-        for (vertex_t vertex = 1; size_t(vertex) < graph_size; vertex++) {
-            heap_nodes[vertex].dist   = kInfDist;
-            heap_nodes[vertex].vertex = vertex;
-        }
-        heap_nodes[0].dist              = 0;
-        heap_nodes[0].vertex            = start_vertex;
-        heap_nodes[start_vertex].vertex = 0;
+        std::vector<node_t> heap_nodes;
+        heap_nodes.reserve(graph_size);
+        heap_nodes.resize(1);
+        heap_nodes[0].dist   = 0;
+        heap_nodes[0].vertex = start_vertex;
         return heap(std::move(heap_nodes));
     }
 
@@ -185,7 +182,7 @@ static void find_shr_pths_lowdensity(const graph_t& g, vector<weight_t>& dist,
     vector<bool> visited(n);
     heap not_visited = heap::from_graph(n, from);
     assert(!not_visited.empty());
-    while (true) {
+    do {
         weight_t vertex_dist;
         vertex_t vertex;
         do {
@@ -194,7 +191,7 @@ static void find_shr_pths_lowdensity(const graph_t& g, vector<weight_t>& dist,
             not_visited.pop_top();
         } while (visited[vertex] && !not_visited.empty());
 
-        if (vertex_dist == kInfDist || not_visited.empty()) {
+        if (vertex_dist == kInfDist) {
             break;
         }
 
@@ -208,7 +205,7 @@ static void find_shr_pths_lowdensity(const graph_t& g, vector<weight_t>& dist,
         }
 
         visited[vertex] = true;
-    }
+    } while (!not_visited.empty());
 }
 
 static uint32_t log2_floor(size_t n) noexcept {
@@ -269,5 +266,23 @@ int main() {
         assert(ancestors[0] == 2);
         assert(ancestors[1] == 2);
         assert(ancestors[2] == kNoVertex);
+    }
+
+    g.clear();
+    g.resize(6);
+    for (auto [u, v, w] : std::vector<std::tuple<uint32_t, uint32_t, uint32_t>>{
+             {1, 2, 7},
+             {2, 4, 8},
+             {4, 5, 1},
+             {4, 3, 100},
+         }) {
+        u--;
+        v--;
+        g[u].emplace_back(vertex_t(v), weight_t(w));
+        g[v].emplace_back(vertex_t(u), weight_t(w));
+    }
+    {
+        auto [dist, ancestors] = shortest_paths(g, 2);
+        assert(dist[0] == 115);
     }
 }
