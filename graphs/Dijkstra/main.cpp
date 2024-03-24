@@ -190,8 +190,7 @@ static void find_shr_pths_lowdensity(const graph_t& g, vector<weight_t>& dist,
             vertex      = not_visited.top().vertex;
             not_visited.pop_top();
         } while (visited[vertex] && !not_visited.empty());
-
-        if (vertex_dist == kInfDist) {
+        if (visited[vertex]) {
             break;
         }
 
