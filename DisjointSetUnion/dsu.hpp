@@ -179,7 +179,7 @@ public:
 
 /// @brief See also class dsu_t and
 /// https://youtu.be/MmemGjxsZTc?si=NHMBw-KJmxeXvkNA
-class weighted_dsu_t : dsu_impl::dsu_base<dsu_impl::wdsu_node_t> {
+class weighted_dsu_t : public dsu_impl::dsu_base<dsu_impl::wdsu_node_t> {
     using node_t = dsu_impl::wdsu_node_t;
     using base   = dsu_base<node_t>;
 
