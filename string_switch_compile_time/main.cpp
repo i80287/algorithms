@@ -12,34 +12,34 @@ int main() {
     static constexpr auto sw = StringSwitch<"abc", "def", "ghij", "foo", "bar", "baz",
                                             "abacaba", "ring", "ideal", "GLn(F)">();
     switch (sw.Switch(input)) {
-        case 0:
+        case sw.Case("abc"):
             ans = "found abc";
             break;
-        case 1:
+        case sw.Case("def"):
             ans = "found def";
             break;
-        case 2:
+        case sw.Case("ghij"):
             ans = "found ghij";
             break;
-        case 3:
+        case sw.Case("foo"):
             ans = "found foo";
             break;
-        case 4:
+        case sw.Case("bar"):
             ans = "found bar";
             break;
-        case 5:
+        case sw.Case("baz"):
             ans = "found baz";
             break;
-        case 6:
+        case sw.Case("abacaba"):
             ans = "found abacaba";
             break;
-        case 7:
+        case sw.Case("ring"):
             ans = "found ring";
             break;
-        case 8:
+        case sw.Case("ideal"):
             ans = "found ideal";
             break;
-        case 9:
+        case sw.Case("GLn(F)"):
             ans = "found GLn(F)";
             break;
         case sw.kDefaultSwitch:
@@ -66,4 +66,21 @@ int main() {
     static_assert(sw.Switch("de") == sw.kDefaultSwitch);
     static_assert(sw.Switch("ghi") == sw.kDefaultSwitch);
     static_assert(sw.Switch("not_in_switch") == sw.kDefaultSwitch);
+
+    static_assert(sw.Case("abc") == 0);
+    static_assert(sw.Case("def") == 1);
+    static_assert(sw.Case("ghij") == 2);
+    static_assert(sw.Case("foo") == 3);
+    static_assert(sw.Case("bar") == 4);
+    static_assert(sw.Case("baz") == 5);
+    static_assert(sw.Case("abacaba") == 6);
+    static_assert(sw.Case("ring") == 7);
+    static_assert(sw.Case("ideal") == 8);
+    static_assert(sw.Case("GLn(F)") == 9);
+    static_assert(sw.Case("") == sw.kDefaultSwitch);
+    static_assert(sw.Case("a") == sw.kDefaultSwitch);
+    static_assert(sw.Case("A") == sw.kDefaultSwitch);
+    static_assert(sw.Case("de") == sw.kDefaultSwitch);
+    static_assert(sw.Case("ghi") == sw.kDefaultSwitch);
+    static_assert(sw.Case("not_in_switch") == sw.kDefaultSwitch);
 }

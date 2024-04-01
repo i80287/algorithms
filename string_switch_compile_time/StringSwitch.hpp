@@ -85,6 +85,12 @@ public:
         AddPattern(kInitialFirstFreeNodeIndex, str_index_t(0), args...);
     }
 
+    [[nodiscard]] consteval uint32_t Case(std::nullptr_t) const noexcept = delete;
+
+    [[nodiscard]] consteval uint32_t Case(std::string_view str) const noexcept {
+        return Switch(str.data());
+    }
+
     [[nodiscard]] constexpr uint32_t Switch(const char* str) const noexcept {
         if (str == nullptr) [[unlikely]] {
             return kDefaultSwitch;
