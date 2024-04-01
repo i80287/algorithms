@@ -6,33 +6,35 @@
 
 using std::string, std::string_view, std::vector, std::cin, std::cout;
 
-inline vector<uint32_t> prefix_function(const string& s) {
-	size_t n = uint32_t(s.length());
+inline vector<uint32_t> prefix_function(string_view s) {
+	const size_t n = s.length();
 	vector<uint32_t> pi(n);
-	for (uint32_t i = 1; i < n; i++) {
+	for (size_t i = 1; i < n; i++) {
 		size_t j = pi[i - 1];
 		uint32_t c_i = uint8_t(s[i]);
 		while (j > 0 && c_i != uint8_t(s[j])) {
             j = pi[j - 1];
         }
-		j += c_i == uint8_t(s[j]);
+		if (c_i == uint8_t(s[j])) {
+			j++;
+		}
 		pi[i] = uint32_t(j);
 	}
 
 	return pi;
 }
 
-inline vector<uint32_t> z_function(const string& s) {
-	uint32_t n = uint32_t(s.length());
+inline vector<uint32_t> z_function(string_view s) {
+	const size_t n = s.length();
 	vector<uint32_t> z(n);
-	for (uint32_t i = 1, l = 0, r = 0; i < n; i++) {
+	for (size_t i = 1, l = 0, r = 0; i < n; i++) {
 		if (i <= r) {
-            z[i] = std::min(z[i - l], r - i + 1);
+            z[i] = std::min(z[i - l], uint32_t(r - i + 1));
         }
         while (i + z[i] < n && uint8_t(s[z[i]]) == uint8_t(s[i + z[i]])) {
             z[i]++;
         }
-        uint32_t cur_r = i + z[i] - 1;
+        size_t cur_r = i + z[i] - 1;
         if (cur_r > r) {
             r = cur_r;
             l = i;
@@ -48,11 +50,9 @@ void find_p(string_view text, string_view substr) {
 	s.append(substr);
 	s.push_back('#');
 	s.append(text);
-
 	vector<uint32_t> pref_func = prefix_function(s);
-
 	cout << "Input: " << text << "\nSubstring to search: " << substr << '\n';
-	auto it = pref_func.begin() + (substr.size() + 1); // Skip "substr#"
+	auto it = pref_func.begin() + static_cast<std::ptrdiff_t>(substr.size() + 1); // Skip "substr#"
 	auto end = pref_func.end();
 	for (size_t i = 0; it != end; ++it, ++i) {
 		if (*it == substr.size()) {
@@ -69,11 +69,9 @@ void find_z(string_view text, string_view substr) {
 	s.append(substr);
 	s.push_back('#');
 	s.append(text);
-
 	vector<uint32_t> zf = z_function(s);
-
 	cout << "Input: " << text << "\nSubstring to search: " << substr << '\n';
-	auto it = zf.begin() + (substr.size() + 1); // Skip "substr#"
+	auto it = zf.begin() + static_cast<std::ptrdiff_t>(substr.size() + 1); // Skip "substr#"
 	auto end = zf.end();
 	for (size_t i = 0; it != end; ++it, ++i) {
 		if (*it == substr.size()) {
