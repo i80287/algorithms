@@ -85,13 +85,13 @@ public:
         AddPattern(kInitialFirstFreeNodeIndex, str_index_t(0), args...);
     }
 
-    [[nodiscard]] consteval uint32_t Case(std::nullptr_t) const noexcept = delete;
+    [[nodiscard]] consteval uint32_t operator()(std::nullptr_t) const noexcept = delete;
 
-    [[nodiscard]] consteval uint32_t Case(std::string_view str) const noexcept {
-        return Switch(str.data());
+    [[nodiscard]] constexpr uint32_t operator()(std::string_view str) const noexcept {
+        return operator()(str.data());
     }
 
-    [[nodiscard]] constexpr uint32_t Switch(const char* str) const noexcept {
+    [[nodiscard]] constexpr uint32_t operator()(const char* str) const noexcept {
         if (str == nullptr) [[unlikely]] {
             return kDefaultSwitch;
         }
@@ -113,10 +113,6 @@ public:
 
         return nodes_[current_node].IsTerminal() ? nodes_[current_node].string_index
                                                  : kDefaultSwitch;
-    }
-
-    [[nodiscard]] constexpr uint32_t Switch(std::string_view str) const noexcept {
-        return Switch(str.data());
     }
 };
 

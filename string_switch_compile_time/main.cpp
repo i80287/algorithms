@@ -11,35 +11,35 @@ int main() {
 
     static constexpr auto sw = StringSwitch<"abc", "def", "ghij", "foo", "bar", "baz",
                                             "abacaba", "ring", "ideal", "GLn(F)">();
-    switch (sw.Switch(input)) {
-        case sw.Case("abc"):
+    switch (sw(input)) {
+        case sw("abc"):
             ans = "found abc";
             break;
-        case sw.Case("def"):
+        case sw("def"):
             ans = "found def";
             break;
-        case sw.Case("ghij"):
+        case sw("ghij"):
             ans = "found ghij";
             break;
-        case sw.Case("foo"):
+        case sw("foo"):
             ans = "found foo";
             break;
-        case sw.Case("bar"):
+        case sw("bar"):
             ans = "found bar";
             break;
-        case sw.Case("baz"):
+        case sw("baz"):
             ans = "found baz";
             break;
-        case sw.Case("abacaba"):
+        case sw("abacaba"):
             ans = "found abacaba";
             break;
-        case sw.Case("ring"):
+        case sw("ring"):
             ans = "found ring";
             break;
-        case sw.Case("ideal"):
+        case sw("ideal"):
             ans = "found ideal";
             break;
-        case sw.Case("GLn(F)"):
+        case sw("GLn(F)"):
             ans = "found GLn(F)";
             break;
         case sw.kDefaultSwitch:
@@ -49,38 +49,20 @@ int main() {
     }
     puts(ans);
 
-    static_assert(sw.Switch("abc") == 0);
-    static_assert(sw.Switch("def") == 1);
-    static_assert(sw.Switch("ghij") == 2);
-    static_assert(sw.Switch("foo") == 3);
-    static_assert(sw.Switch("bar") == 4);
-    static_assert(sw.Switch("baz") == 5);
-    static_assert(sw.Switch("abacaba") == 6);
-    static_assert(sw.Switch("ring") == 7);
-    static_assert(sw.Switch("ideal") == 8);
-    static_assert(sw.Switch("GLn(F)") == 9);
-    static_assert(sw.Switch(nullptr) == sw.kDefaultSwitch);
-    static_assert(sw.Switch("") == sw.kDefaultSwitch);
-    static_assert(sw.Switch("a") == sw.kDefaultSwitch);
-    static_assert(sw.Switch("A") == sw.kDefaultSwitch);
-    static_assert(sw.Switch("de") == sw.kDefaultSwitch);
-    static_assert(sw.Switch("ghi") == sw.kDefaultSwitch);
-    static_assert(sw.Switch("not_in_switch") == sw.kDefaultSwitch);
-
-    static_assert(sw.Case("abc") == 0);
-    static_assert(sw.Case("def") == 1);
-    static_assert(sw.Case("ghij") == 2);
-    static_assert(sw.Case("foo") == 3);
-    static_assert(sw.Case("bar") == 4);
-    static_assert(sw.Case("baz") == 5);
-    static_assert(sw.Case("abacaba") == 6);
-    static_assert(sw.Case("ring") == 7);
-    static_assert(sw.Case("ideal") == 8);
-    static_assert(sw.Case("GLn(F)") == 9);
-    static_assert(sw.Case("") == sw.kDefaultSwitch);
-    static_assert(sw.Case("a") == sw.kDefaultSwitch);
-    static_assert(sw.Case("A") == sw.kDefaultSwitch);
-    static_assert(sw.Case("de") == sw.kDefaultSwitch);
-    static_assert(sw.Case("ghi") == sw.kDefaultSwitch);
-    static_assert(sw.Case("not_in_switch") == sw.kDefaultSwitch);
+    static_assert(sw("abc") == 0);
+    static_assert(sw("def") == 1);
+    static_assert(sw("ghij") == 2);
+    static_assert(sw("foo") == 3);
+    static_assert(sw("bar") == 4);
+    static_assert(sw("baz") == 5);
+    static_assert(sw("abacaba") == 6);
+    static_assert(sw("ring") == 7);
+    static_assert(sw("ideal") == 8);
+    static_assert(sw("GLn(F)") == 9);
+    static_assert(sw("") == sw.kDefaultSwitch);
+    static_assert(sw("a") == sw.kDefaultSwitch);
+    static_assert(sw("A") == sw.kDefaultSwitch);
+    static_assert(sw("de") == sw.kDefaultSwitch);
+    static_assert(sw("ghi") == sw.kDefaultSwitch);
+    static_assert(sw("not_in_switch") == sw.kDefaultSwitch);
 }
