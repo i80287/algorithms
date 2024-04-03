@@ -1,501 +1,470 @@
-#ifndef _ACTRIE_H_
-#define _ACTRIE_H_ 1
+#pragma once
 
-#include <cassert>     // assert
-#include <climits>     // CHAR_MAX
-#include <cstdint>     // std::uint32_t, std::size_t
-#include <cstring>     // std::memset
-#include <deque>       // std::deque
-#include <string_view> // std::string_view
-#include <vector>      // std::vector
+#include <algorithm>
+#include <array>
+#include <cassert>
+#include <cctype>
+#include <cstdint>
+#include <limits>
+#include <string_view>
+#include <type_traits>
+#include <vector>
 
-namespace ACTrieADS {
+namespace actrie {
 
-template <uint8_t ALPHABET_START = 'a', uint8_t ALPHABET_END = 'z', bool IsCaseInsensetive = false>
-class ACTrie final {
-    static_assert('\0' < ALPHABET_START && ALPHABET_START < ALPHABET_END && ALPHABET_END < CHAR_MAX);
+template <uint8_t kAlphabetStart = 'A', uint8_t kAlphabetEnd = 'z',
+          bool kIsCaseInsensetive = false>
+class ACTrieBuilder {
+    static_assert('\0' < kAlphabetStart && kAlphabetStart < kAlphabetEnd &&
+                  kAlphabetEnd < std::numeric_limits<char>::max());
+    static constexpr uint8_t kAlphabetLength =
+        kAlphabetEnd - kAlphabetStart + 1;
 
-    // Default value = 'z' - 'a' + 1 = 26
-    static constexpr uint8_t ALPHABET_LENGTH = ALPHABET_END - ALPHABET_START + 1;
+private:
+    using StoredNodeIndex    = std::uint32_t;
+    using StoredPatternSize  = std::uint32_t;
+    using StoredPatternIndex = std::uint32_t;
 
-    static constexpr size_t NULL_NODE_INDEX = 0;
-    static constexpr size_t FAKE_PREROOT_INDEX = 1;
-    static constexpr size_t ROOT_INDEX = 2;
-    static constexpr size_t DEFAULT_NODES_COUNT = 3; // null node; fake preroot node; root node
-    static constexpr size_t DEFAULT_VECTORS_CAPACITY = DEFAULT_NODES_COUNT * 2;
+    static constexpr StoredNodeIndex kNullNodeIndex = 0;
+    static constexpr StoredNodeIndex kFakePrerootNodeIndex =
+        kNullNodeIndex + 1;
+    static constexpr StoredNodeIndex kRootNodeIndex =
+        kFakePrerootNodeIndex + 1;
+    static constexpr std::size_t kDefaultNodesCount =
+        kRootNodeIndex + 1;  // null node; fake preroot node; root node
+    static constexpr std::size_t kDefaultNodesCapacity = 32;
 
-    static_assert(std::max(NULL_NODE_INDEX, std::max(FAKE_PREROOT_INDEX, ROOT_INDEX)) < DEFAULT_NODES_COUNT);
+    struct Node {
+        static constexpr StoredPatternIndex kMissingWordIndex =
+            std::numeric_limits<StoredPatternIndex>::max();
 
-    struct ACTNode {
-        static constexpr uint32_t MISSING_SENTIEL = static_cast<uint32_t>(-1);
+        std::array<StoredNodeIndex, kAlphabetLength> edges{kNullNodeIndex};
+        StoredNodeIndex suffix_link            = kNullNodeIndex;
+        StoredNodeIndex compressed_suffix_link = kNullNodeIndex;
+        StoredPatternIndex pattern_index       = kMissingWordIndex;
 
-        // Indexes in array of nodes
-        uint32_t edges[ALPHABET_LENGTH];
+        constexpr StoredNodeIndex operator[](
+            std::size_t index) const noexcept {
+            return edges[index];
+        }
 
-        // Index in array of nodes
-        uint32_t suffix_link = NULL_NODE_INDEX;
-
-        // Index in array of nodes
-        uint32_t compressed_suffix_link = NULL_NODE_INDEX;
-
-        /* 
-        * Index of the word in the ac trie which ends on this
-        * MISSING_SENTIEL if node is not terminal
-        */
-        uint32_t word_index = MISSING_SENTIEL;
-
-        constexpr ACTNode() noexcept {
-            std::memset(edges, static_cast<int>(NULL_NODE_INDEX), sizeof(edges));
+        constexpr StoredNodeIndex& operator[](std::size_t index) noexcept {
+            return edges[index];
         }
 
         constexpr bool IsTerminal() const noexcept {
-            return word_index != MISSING_SENTIEL;
+            return pattern_index != kMissingWordIndex;
         }
     };
 
-    std::vector<ACTNode> nodes_;
-    std::vector<uint32_t> words_lengths_;
-    mutable bool are_links_computed_ = false;
-
 public:
-    constexpr ACTrie() : nodes_{}, words_lengths_() {
-        nodes_.reserve(DEFAULT_VECTORS_CAPACITY);
-        nodes_.resize(DEFAULT_NODES_COUNT);
-        words_lengths_.reserve(DEFAULT_VECTORS_CAPACITY);
+    constexpr ACTrieBuilder() {
+        nodes_.reserve(kDefaultNodesCapacity);
+        nodes_.resize(kDefaultNodesCount);
+    }
 
-        /*
-         * link(root) = fake_vertex;
-         * For all chars from the alphabet: fake_vertex ---char--> root
-         */
+    constexpr ACTrieBuilder(std::size_t patterns_capacity)
+        : ACTrieBuilder() {
+        patterns_lengths_.reserve(patterns_capacity);
+    }
 
-        nodes_[ROOT_INDEX].suffix_link = FAKE_PREROOT_INDEX;
-        nodes_[ROOT_INDEX].compressed_suffix_link = ROOT_INDEX;
-
-        for (uint32_t& edge : nodes_[FAKE_PREROOT_INDEX].edges) {
-            edge = ROOT_INDEX;
+    constexpr bool AddPattern(std::string_view pattern) {
+        if (std::is_constant_evaluated()) {
+            return AddPatternImpl(pattern.begin(), pattern.end(), nodes_,
+                                  patterns_lengths_);
+        } else {
+            const unsigned char* pattern_iter_begin =
+                reinterpret_cast<const unsigned char*>(pattern.data());
+            const unsigned char* pattern_iter_end =
+                pattern_iter_begin + pattern.size();
+            return AddPatternImpl(pattern_iter_begin, pattern_iter_end,
+                                  nodes_, patterns_lengths_);
         }
     }
 
-    constexpr void ReservePlaceForPatterns(size_t patterns_capacity) {
-        words_lengths_.reserve(patterns_capacity);
+    constexpr bool ContainsPattern(
+        std::string_view pattern) const noexcept {
+        if (std::is_constant_evaluated()) {
+            return ContainsPatternImpl(pattern.begin(), pattern.end(),
+                                       nodes_);
+        } else {
+            const unsigned char* pattern_iter_begin =
+                reinterpret_cast<const unsigned char*>(pattern.data());
+            const unsigned char* pattern_iter_end =
+                pattern_iter_begin + pattern.size();
+            return ContainsPatternImpl(pattern_iter_begin,
+                                       pattern_iter_end, nodes_);
+        }
     }
 
-    void AddPattern(std::string_view pattern) {
-        assert(!IsReady());
+    friend class ACTrie;
 
-        uint32_t current_node_index = ROOT_INDEX;
-        const char* pattern_iter = pattern.begin();
-        const char* const pattern_end = pattern.end();
-
-        for (; pattern_iter != pattern_end; ++pattern_iter) {
-            char sigma;
-            if constexpr (IsCaseInsensetive) {
-                sigma = ToLower(*pattern_iter);
+    class ACTrie {
+    public:
+        constexpr bool ContainsPattern(
+            std::string_view pattern) const noexcept {
+            if (std::is_constant_evaluated()) {
+                return ContainsPatternImpl(pattern.begin(), pattern.end(),
+                                           nodes_);
+            } else {
+                const unsigned char* pattern_iter_begin =
+                    reinterpret_cast<const unsigned char*>(pattern.data());
+                const unsigned char* pattern_iter_end =
+                    pattern_iter_begin + pattern.size();
+                return ContainsPatternImpl(pattern_iter_begin,
+                                           pattern_iter_end, nodes_);
             }
-            else {
-                sigma = *pattern_iter;
+        }
+
+        template <typename FindCallback>
+            requires requires(FindCallback func,
+                              std::string_view found_word,
+                              size_t start_index_in_original_text) {
+                func(found_word, start_index_in_original_text);
+            }
+        constexpr void FindAllSubstringsInText(
+            std::string_view text, FindCallback find_callback) const {
+            if constexpr (std::is_pointer_v<decltype(find_callback)> &&
+                          !std::is_constant_evaluated()) {
+                assert(find_callback != nullptr);
             }
 
-            if (!IsInAlphabet(sigma)) {
-                assert(!"char in pattern is not in alphabet!!!");
-                continue;
+            uint32_t current_node_index = kRootNodeIndex;
+            size_t i                    = 0;
+            for (auto iter = text.begin(), end = text.end(); iter != end;
+                 ++iter, ++i) {
+                std::size_t symbol_index = SymbolToIndex(*iter);
+                if (symbol_index >= kAlphabetLength) {
+                    current_node_index = kRootNodeIndex;
+                    continue;
+                }
+
+                current_node_index =
+                    nodes_[current_node_index][symbol_index];
+                if (!std::is_constant_evaluated()) {
+                    assert(current_node_index != kNullNodeIndex);
+                }
+                const Node& node = nodes_[current_node_index];
+                if (node.IsTerminal()) {
+                    size_t pattern_index = node.pattern_index;
+                    if (!std::is_constant_evaluated()) {
+                        assert(pattern_index < patterns_lengths_.size());
+                    }
+                    size_t word_length = patterns_lengths_[pattern_index];
+                    size_t l           = i + 1 - word_length;
+                    find_callback(text.substr(l, word_length), l);
+                }
+
+                for (uint32_t terminal_node_index =
+                         node.compressed_suffix_link;
+                     terminal_node_index != kRootNodeIndex;
+                     terminal_node_index = nodes_[terminal_node_index]
+                                               .compressed_suffix_link) {
+                    if (!std::is_constant_evaluated()) {
+                        assert(terminal_node_index != kNullNodeIndex);
+                        assert(nodes_[terminal_node_index].IsTerminal());
+                    }
+                    size_t pattern_index =
+                        nodes_[terminal_node_index].pattern_index;
+                    if (!std::is_constant_evaluated()) {
+                        assert(pattern_index < patterns_lengths_.size());
+                    }
+                    size_t word_length = patterns_lengths_[pattern_index];
+                    size_t l           = i + 1 - word_length;
+                    find_callback(text.substr(l, word_length), l);
+                }
+            }
+        }
+
+        template <bool IsExactWordsMatching   = true,
+                  std::uint8_t LinesDelimeter = '\n',
+                  typename QueryWordCallback, typename NewLineCallback>
+            requires requires(QueryWordCallback func, size_t line_number,
+                              size_t query_word_index) {
+                func(line_number, query_word_index);
+            } && requires(NewLineCallback func, size_t line_number,
+                          size_t words_on_current_line,
+                          size_t line_start_index, size_t line_end_index) {
+                func(line_number, words_on_current_line, line_start_index,
+                     line_end_index);
+            }
+        constexpr size_t FindAllSubstringsInTextAndCountLines(
+            std::string_view text, QueryWordCallback find_callback,
+            NewLineCallback line_callback) const {
+            static_assert(!(kAlphabetStart <= LinesDelimeter &&
+                            LinesDelimeter <= kAlphabetEnd));
+            if constexpr (std::is_pointer_v<decltype(find_callback)>) {
+                if (!std::is_constant_evaluated()) {
+                    assert(find_callback != nullptr);
+                }
+            }
+            if constexpr (std::is_pointer_v<decltype(line_callback)>) {
+                if (!std::is_constant_evaluated()) {
+                    assert(line_callback != nullptr);
+                }
             }
 
-            uint32_t next_node_index = nodes_[current_node_index].edges[CharToEdgeIndex(sigma)];
-            if (next_node_index != NULL_NODE_INDEX) {
+            uint32_t current_node_index  = kRootNodeIndex;
+            size_t line_start_index      = 0;
+            size_t i                     = 0;
+            size_t current_line          = 1;
+            size_t words_on_current_line = 0;
+            bool prev_symbol_in_alphabet = false;
+            for (auto iter = text.begin(), end = text.end(); iter != end;
+                 ++iter, ++i) {
+                std::uint8_t symbol = static_cast<std::uint8_t>(*iter);
+                std::size_t symbol_index = SymbolToIndex(symbol);
+                if (symbol_index >= kAlphabetLength) {
+                    current_node_index = kRootNodeIndex;
+                    words_on_current_line += prev_symbol_in_alphabet;
+                    if (symbol == LinesDelimeter) {
+                        if (line_start_index != i) {
+                            line_callback(current_line,
+                                          words_on_current_line,
+                                          line_start_index, i);
+                        }
+                        line_start_index      = i + 1;
+                        words_on_current_line = 0;
+                        current_line++;
+                    }
+
+                    prev_symbol_in_alphabet = false;
+                    continue;
+                }
+
+                current_node_index =
+                    nodes_[current_node_index][symbol_index];
+                if (!std::is_constant_evaluated()) {
+                    assert(current_node_index != kNullNodeIndex);
+                }
+                const Node& node = nodes_[current_node_index];
+                if (node.IsTerminal()) {
+                    uint32_t pattern_index = node.pattern_index;
+                    if (!std::is_constant_evaluated()) {
+                        assert(pattern_index < patterns_lengths_.size());
+                    }
+
+                    if constexpr (IsExactWordsMatching) {
+                        size_t word_length =
+                            patterns_lengths_[pattern_index];
+                        size_t l = i + 1 - word_length;
+                        if ((l == 0 || !IsInAlphabet(text[l - 1])) &&
+                            (i + 1 == text.size() ||
+                             !IsInAlphabet(text[i + 1]))) {
+                            find_callback(current_line, pattern_index);
+                        }
+                    } else {
+                        find_callback(current_line, pattern_index);
+                    }
+                }
+
+                // Jump up through compressed suffix links
+                for (uint32_t terminal_node_index =
+                         node.compressed_suffix_link;
+                     terminal_node_index != kRootNodeIndex;
+                     terminal_node_index = nodes_[terminal_node_index]
+                                               .compressed_suffix_link) {
+                    assert(terminal_node_index != kNullNodeIndex &&
+                           nodes_[terminal_node_index].IsTerminal());
+                    size_t pattern_index =
+                        nodes_[terminal_node_index].pattern_index;
+                    if (!std::is_constant_evaluated()) {
+                        assert(pattern_index < patterns_lengths_.size());
+                    }
+
+                    if constexpr (IsExactWordsMatching) {
+                        size_t word_length =
+                            patterns_lengths_[pattern_index];
+                        size_t l = i + 1 - word_length;
+                        if ((l == 0 || !IsInAlphabet(text[l - 1])) &&
+                            (i + 1 == text.size() ||
+                             !IsInAlphabet(text[i + 1]))) {
+                            find_callback(current_line, pattern_index);
+                        }
+                    } else {
+                        find_callback(current_line, pattern_index);
+                    }
+                }
+
+                prev_symbol_in_alphabet = true;
+            }
+
+            return current_line;
+        }
+
+        constexpr std::size_t PatternsSize() const noexcept {
+            return patterns_lengths_.size();
+        }
+
+    private:
+        using Builder = ACTrieBuilder<kAlphabetStart, kAlphabetEnd,
+                                      kIsCaseInsensetive>;
+        friend Builder;
+        constexpr ACTrie(std::vector<Builder::Node>&& nodes,
+                         std::vector<Builder::StoredPatternSize>&&
+                             words_lengths) noexcept
+            : nodes_(std::move(nodes)),
+              patterns_lengths_(std::move(words_lengths)) {}
+
+        std::vector<Builder::Node> nodes_;
+        std::vector<Builder::StoredPatternSize> patterns_lengths_;
+    };
+
+    constexpr ACTrie Build() && {
+        nodes_[kRootNodeIndex].suffix_link = kFakePrerootNodeIndex;
+        nodes_[kRootNodeIndex].compressed_suffix_link = kRootNodeIndex;
+        nodes_[kFakePrerootNodeIndex].edges.fill(kRootNodeIndex);
+        // We use std::vector instead of std::queue
+        //  in order to make this method constexpr.
+        std::vector<std::size_t> bfs_queue(nodes_.size());
+        std::size_t queue_head  = 0;
+        std::size_t queue_tail  = 0;
+        bfs_queue[queue_tail++] = kRootNodeIndex;
+        do {
+            std::size_t node_index = bfs_queue[queue_head++];
+            ComputeLinksForNodeChildren(node_index, nodes_, bfs_queue,
+                                        queue_tail);
+        } while (queue_head < queue_tail);
+        return ACTrie(std::move(nodes_), std::move(patterns_lengths_));
+    }
+
+private:
+    static constexpr void ComputeLinksForNodeChildren(
+        std::size_t node_index, std::vector<Node>& nodes,
+        std::vector<std::size_t>& bfs_queue,
+        std::size_t& queue_tail) noexcept {
+        Node& node = nodes[node_index];
+        for (std::size_t symbol_index = 0; symbol_index < kAlphabetLength;
+             symbol_index++) {
+            const StoredNodeIndex child_link_v_index =
+                nodes[node.suffix_link][symbol_index];
+            const std::size_t child_index = node[symbol_index];
+            if (child_index != kNullNodeIndex) {
+                nodes[child_index].suffix_link = child_link_v_index;
+                const StoredNodeIndex child_comp_sl =
+                    nodes[child_link_v_index].compressed_suffix_link;
+                const bool is_terminal_or_root =
+                    nodes[child_link_v_index].IsTerminal() ||
+                    child_link_v_index == kRootNodeIndex;
+                nodes[child_index].compressed_suffix_link =
+                    is_terminal_or_root ? child_link_v_index
+                                        : child_comp_sl;
+                bfs_queue[queue_tail++] = child_index;
+            } else {
+                node[symbol_index] = child_link_v_index;
+            }
+        }
+    }
+
+    static consteval std::int32_t ToLowerConstevalImpl(
+        std::int32_t c) noexcept {
+        static_assert('a' - 'A' == (1 << 5));
+        return c | (IsUpperConstevalImpl(c) * ('a' - 'A'));
+    }
+
+    static consteval bool IsUpperConstevalImpl(std::int32_t c) noexcept {
+        return static_cast<std::uint32_t>(c) - 'A' <= 'Z' - 'A';
+    }
+
+    static constexpr bool IsInAlphabet(unsigned char symbol) noexcept {
+        return static_cast<std::uint32_t>(symbol) - kAlphabetStart <=
+               kAlphabetEnd - kAlphabetStart;
+    }
+
+    static constexpr bool IsInAlphabet(char symbol) noexcept {
+        return IsInAlphabet(static_cast<unsigned char>(symbol));
+    }
+
+    static constexpr std::size_t SymbolToIndex(
+        unsigned char symbol) noexcept {
+        std::int32_t symbol_as_int = symbol;
+        if constexpr (kIsCaseInsensetive) {
+            symbol_as_int = std::tolower(symbol_as_int);
+        }
+
+        return static_cast<std::size_t>(
+                   static_cast<std::uint32_t>(symbol_as_int)) -
+               kAlphabetStart;
+    }
+
+    static constexpr std::size_t SymbolToIndex(char symbol) noexcept {
+        return SymbolToIndex(static_cast<unsigned char>(symbol));
+    }
+
+    template <class PatternIterator>
+    static constexpr bool AddPatternImpl(
+        PatternIterator pattern_iter_begin,
+        PatternIterator pattern_iter_end, std::vector<Node>& nodes,
+        std::vector<StoredPatternSize>& words_lengths) noexcept {
+        const auto pattern_size = static_cast<std::size_t>(
+            pattern_iter_end - pattern_iter_begin);
+        std::size_t current_node_index = kRootNodeIndex;
+        for (; pattern_iter_begin != pattern_iter_end;
+             ++pattern_iter_begin) {
+            std::size_t symbol_index = SymbolToIndex(*pattern_iter_begin);
+            if (symbol_index >= kAlphabetLength) {
+                return false;
+            }
+            std::size_t next_node_index =
+                nodes[current_node_index][symbol_index];
+            if (next_node_index != kNullNodeIndex) {
                 current_node_index = next_node_index;
-            }
-            else {
+            } else {
                 break;
             }
         }
 
-        size_t lasted_max_length = static_cast<size_t>(pattern_end - pattern_iter);
-        nodes_.reserve(nodes_.size() + lasted_max_length);
-
-        /*
-         * Inserts substring [i..length - 1] of pattern if i < length (<=> i != length)
-         * If i == length, then for cycle will no execute
-         */
-        for (; pattern_iter != pattern_end; ++pattern_iter) {
-            char sigma;
-            if constexpr (IsCaseInsensetive) {
-                sigma = ToLower(*pattern_iter);
-            }
-            else {
-                sigma = *pattern_iter;
-            }
-
-            if (!IsInAlphabet(sigma)) {
-                assert(!"char in pattern is not in alphabet!!!");
-                continue;
-            }
-
-            uint32_t new_node_index = static_cast<uint32_t>(nodes_.size());
-            nodes_.emplace_back();
-            nodes_[current_node_index].edges[CharToEdgeIndex(sigma)] = new_node_index;
-            current_node_index = new_node_index;
-        }
-
-        uint32_t word_index = static_cast<uint32_t>(words_lengths_.size());
-        nodes_[current_node_index].word_index = word_index;
-        words_lengths_.push_back(static_cast<uint32_t>(pattern.size()));
-    }
-
-    /*
-     * Aho–Corasick deterministic finite-state machine is built on the ordinal trie.
-     */
-    constexpr bool ContainsPattern(std::string_view pattern) const noexcept {
-        uint32_t current_node_index = ROOT_INDEX;
-        for (char sigma : pattern) {
-            if constexpr (IsCaseInsensetive) {
-                sigma = ToLower(sigma);
-            }
-
-            if (!IsInAlphabet(sigma)) {
+        const auto lasted_max_length = static_cast<std::size_t>(
+            pattern_iter_end - pattern_iter_begin);
+        nodes.reserve(nodes.size() + lasted_max_length);
+        for (std::size_t new_node_index = nodes.size();
+             pattern_iter_begin != pattern_iter_end;
+             ++pattern_iter_begin) {
+            std::size_t symbol_index = SymbolToIndex(*pattern_iter_begin);
+            if (symbol_index >= kAlphabetLength) {
                 return false;
             }
 
-            uint32_t next_node_index = nodes_[current_node_index].edges[CharToEdgeIndex(sigma)];
-            if (next_node_index != NULL_NODE_INDEX) {
+            nodes.emplace_back();
+            nodes[current_node_index][symbol_index] =
+                static_cast<StoredNodeIndex>(new_node_index);
+            current_node_index = new_node_index++;
+        }
+
+        StoredPatternIndex pattern_index =
+            static_cast<StoredPatternIndex>(words_lengths.size());
+        nodes[current_node_index].pattern_index = pattern_index;
+        words_lengths.push_back(
+            static_cast<StoredPatternSize>(pattern_size));
+        return true;
+    }
+
+    template <class PatternIterator>
+    static constexpr bool ContainsPatternImpl(
+        PatternIterator pattern_iter_begin,
+        PatternIterator pattern_iter_end,
+        const std::vector<Node>& nodes) noexcept {
+        std::size_t current_node_index = kRootNodeIndex;
+        for (; pattern_iter_begin != pattern_iter_end;
+             ++pattern_iter_begin) {
+            std::size_t index = SymbolToIndex(*pattern_iter_begin);
+            if (index >= kAlphabetLength) {
+                return false;
+            }
+
+            std::size_t next_node_index = nodes[current_node_index][index];
+            if (next_node_index != kNullNodeIndex) {
                 current_node_index = next_node_index;
-            }
-            else {
+            } else {
                 return false;
             }
         }
 
-        return nodes_[current_node_index].IsTerminal();
+        return nodes[current_node_index].IsTerminal();
     }
 
-    void ComputeLinks() {
-        assert(!IsReady());
-
-        /*
-         * See MIPT lecture https://youtu.be/MEFrIcGsw1o for more info
-         *
-         * For each char (marked as sigma) in the Alphabet:
-         *   v := root_eges[sigma] <=> to((root, sigma))
-         *
-         *   root_edges[c] = root_edges[c] ? root_edegs[c] : root
-         *   <=>
-         *   to((root, sigma)) = to((root, sigma)) if (root, sigma) in rng(to) else root
-         *
-         *   link(v) = root (if v aka to((root, sigma)) exists)
-         *
-         *   rood_edges[sigma].compressed_suffix_link = root
-		 */
-
-        // Run BFS through all nodes.
-        std::deque<uint32_t> bfs_queue;
-        bfs_queue.push_back(ROOT_INDEX);
-
-        do {
-            uint32_t vertex_index = bfs_queue.front();
-            bfs_queue.pop_front();
-
-            // to(v, sigma) === vertex.edges[sigma]
-            uint32_t* vertex_edges = nodes_[vertex_index].edges;
-            uint32_t vertex_suffix_link = nodes_[vertex_index].suffix_link;
-
-            assert(vertex_suffix_link != NULL_NODE_INDEX);
-            // to((link(v), sigma)) === nodes[vertex.suffix_link].edges[sigma]
-            const uint32_t* vertex_suffix_link_edges = nodes_[vertex_suffix_link].edges;
-
-            // For each char (sigma) in the Alphabet vertex_edges[sigma] is the child such: v --sigma--> child
-            for (size_t sigma = 0; sigma != ALPHABET_LENGTH; ++sigma) {
-                uint32_t child_link_v_index = vertex_suffix_link_edges[sigma];
-                assert(child_link_v_index != NULL_NODE_INDEX);
-
-                // child = to(v, sigma)
-                uint32_t child_index = vertex_edges[sigma];
-
-                // to((v, sigma)) = to((v, sigma)) if (v, sigma) in the rng(to) else to((link(v), sigma))
-                // rng(to) is a range of function 'to'
-                if (child_index != NULL_NODE_INDEX) {
-                    // link(to(v, sigma)) = to((link(v), sigma)) if (v, sigma) in the rng(to)
-                    nodes_[child_index].suffix_link = child_link_v_index;
-
-                    assert(nodes_[child_link_v_index].compressed_suffix_link != NULL_NODE_INDEX);
-
-                    // comp(v) = link(v) if link(v) is terminal or root else comp(link(v))
-                    nodes_[child_index].compressed_suffix_link =
-                        ((!nodes_[child_link_v_index].IsTerminal()) & (child_link_v_index != ROOT_INDEX))
-                        ? nodes_[child_link_v_index].compressed_suffix_link
-                        : child_link_v_index;
-
-                    bfs_queue.push_back(child_index);
-                } else {
-                    vertex_edges[sigma] = child_link_v_index;
-                }
-            }
-        } while (!bfs_queue.empty());
-
-#ifndef NDEBUG
-        CheckComputedLinks();
-#else
-        are_links_computed_ = true;
-#endif
-    }
-
-    constexpr bool IsReady() const noexcept {
-        return are_links_computed_;
-    }
-
-    constexpr size_t NodesSize() const noexcept {
-        return nodes_.size();
-    }
-
-    constexpr size_t PatternsSize() const noexcept {
-        return words_lengths_.size();
-    }
-
-    template <typename FindCallback>
-    requires requires (FindCallback func, std::string_view found_word, size_t start_index_in_original_text) {
-        func(found_word, start_index_in_original_text);
-    }
-    void RunText(std::string_view text, FindCallback find_callback) const {
-        assert(IsReady());
-
-        if constexpr (std::is_pointer_v<decltype(find_callback)>) {
-            assert(find_callback != nullptr);
-        }
-
-        uint32_t current_node_index = ROOT_INDEX;
-        size_t i = 0;
-        for (auto iter = text.begin(), end = text.end(); iter != end; ++iter, ++i) {
-            char sigma;
-            if constexpr (IsCaseInsensetive) {
-                sigma = ToLower(*iter);
-            }
-            else {
-                sigma = *iter;
-            }
-
-            if (!IsInAlphabet(sigma)) {
-                current_node_index = ROOT_INDEX;
-                continue;
-            }
-
-            current_node_index = nodes_[current_node_index].edges[CharToEdgeIndex(sigma)];
-            assert(current_node_index != NULL_NODE_INDEX);
-            if (nodes_[current_node_index].IsTerminal()) {
-                uint32_t word_index = nodes_[current_node_index].word_index;
-                assert(word_index < words_lengths_.size());
-                size_t word_length = words_lengths_[word_index];
-                size_t l = i + 1 - word_length;
-                find_callback(text.substr(l, word_length), l);
-            }
-
-            // Jump up through compressed suffix links
-            for (uint32_t tmp_node_index = nodes_[current_node_index].compressed_suffix_link;
-                tmp_node_index != ROOT_INDEX;
-                tmp_node_index = nodes_[tmp_node_index].compressed_suffix_link) {
-                assert(tmp_node_index != NULL_NODE_INDEX && nodes_[tmp_node_index].IsTerminal());
-                size_t word_index = nodes_[tmp_node_index].word_index;
-                assert(word_index < words_lengths_.size());
-                size_t word_length = words_lengths_[word_index];
-                size_t l = i + 1 - word_length;
-                find_callback(text.substr(l, word_length), l);
-            }
-        }
-    }
-
-    template <bool IsExactWordsMatching = true, char LinesDelimeter = '\n', typename QueryWordCallback, typename NewLineCallback>
-    requires requires (QueryWordCallback func, size_t line_number, size_t query_word_index) {
-        func(line_number, query_word_index);
-    }
-    && requires (NewLineCallback func, size_t line_number, size_t words_on_current_line, size_t line_start_index, size_t line_end_index) {
-        func(line_number, words_on_current_line, line_start_index, line_end_index);
-    }
-    size_t RunTextCountLines(std::string_view text, QueryWordCallback find_callback, NewLineCallback line_callback) const {
-        static_assert(!IsInAlphabet(LinesDelimeter));
-        assert(IsReady());
-
-        if constexpr (std::is_pointer_v<decltype(find_callback)>) {
-            assert(find_callback != nullptr);
-        }
-
-        uint32_t current_node_index = ROOT_INDEX;
-        size_t line_start_index = 0;
-        size_t i = 0;
-        size_t current_line = 1;
-        size_t words_on_current_line = 0;
-        bool prev_symbol_in_alphabet = false;
-        for (auto iter = text.begin(), end = text.end(); iter != end; ++iter, ++i) {
-            char sigma;
-            if constexpr (IsCaseInsensetive) {
-                sigma = ToLower(*iter);
-            }
-            else {
-                sigma = *iter;
-            }
-
-            if (!IsInAlphabet(sigma)) {
-                current_node_index = ROOT_INDEX;
-                words_on_current_line += prev_symbol_in_alphabet;
-                if (sigma == LinesDelimeter) {
-                    if (line_start_index != i) {
-                        line_callback(current_line, words_on_current_line, line_start_index, i);
-
-                    }
-                    line_start_index = i + 1;
-                    words_on_current_line = 0;
-                    current_line++;
-                }
-
-                prev_symbol_in_alphabet = false;
-                continue;
-            }
-
-            current_node_index = nodes_[current_node_index].edges[CharToEdgeIndex(sigma)];
-            assert(current_node_index != NULL_NODE_INDEX);
-            if (nodes_[current_node_index].IsTerminal()) {
-                uint32_t word_index = nodes_[current_node_index].word_index;
-                assert(word_index < words_lengths_.size());
-
-                if constexpr (IsExactWordsMatching) {
-                    size_t word_length = words_lengths_[word_index];
-                    size_t l = i + 1 - word_length;
-                    if ((l == 0 || !IsInAlphabet(text[l - 1])) && (i + 1 == text.size() || !IsInAlphabet(text[i + 1]))) {
-                        find_callback(current_line, word_index);
-                    }
-                }
-                else {
-                    find_callback(current_line, word_index);
-                }
-            }
-
-            // Jump up through compressed suffix links
-            for (uint32_t tmp_node_index = nodes_[current_node_index].compressed_suffix_link;
-                tmp_node_index != ROOT_INDEX;
-                tmp_node_index = nodes_[tmp_node_index].compressed_suffix_link) {
-                assert(tmp_node_index != NULL_NODE_INDEX && nodes_[tmp_node_index].IsTerminal());
-                size_t word_index = nodes_[tmp_node_index].word_index;
-                assert(word_index < words_lengths_.size());
-
-                if constexpr (IsExactWordsMatching) {
-                    size_t word_length = words_lengths_[word_index];
-                    size_t l = i + 1 - word_length;
-                    if ((l == 0 || !IsInAlphabet(text[l - 1])) && (i + 1 == text.size() || !IsInAlphabet(text[i + 1]))) {
-                        find_callback(current_line, word_index);
-                    }
-                }
-                else {
-                    find_callback(current_line, word_index);
-                }
-            }
-
-            prev_symbol_in_alphabet = true;
-        }
-
-        return current_line;
-    }
-
-private:
-    static inline constexpr size_t CharToEdgeIndex(char c) noexcept {
-        return static_cast<size_t>(static_cast<uint8_t>(c)) - ALPHABET_START;
-    }
-
-    static inline constexpr size_t CharToEdgeIndex(int c) noexcept {
-        return static_cast<size_t>(static_cast<uint8_t>(c)) - ALPHABET_START;
-    }
-
-    static inline constexpr bool IsInAlphabet(char c) noexcept {
-        return static_cast<uint32_t>(c) - ALPHABET_START <= ALPHABET_END - ALPHABET_START;
-    }
-
-    static_assert(IsInAlphabet(static_cast<char>(ALPHABET_START)));
-    static_assert(!IsInAlphabet(static_cast<char>(ALPHABET_START - 1)));
-    static_assert(IsInAlphabet(static_cast<char>(ALPHABET_END)));
-    static_assert(!IsInAlphabet(static_cast<char>(ALPHABET_END + 1)));
-
-    static inline constexpr bool IsInAlphabet(int c) noexcept {
-        return static_cast<uint32_t>(c) - ALPHABET_START <= ALPHABET_END - ALPHABET_START;
-    }
-
-    static_assert(IsInAlphabet(static_cast<int>(ALPHABET_START)));
-    static_assert(!IsInAlphabet(static_cast<int>(ALPHABET_START - 1)));
-    static_assert(IsInAlphabet(static_cast<int>(ALPHABET_END)));
-    static_assert(!IsInAlphabet(static_cast<int>(ALPHABET_END + 1)));
-
-    static inline constexpr bool IsUpper(char c) noexcept {
-        return static_cast<uint32_t>(c) - 'A' <= 'Z' - 'A';
-    }
-
-    static inline constexpr char ToLower(char c) noexcept {
-        // return static_cast<char>(c | ('a' - 'A') * IsUpper(c));
-        static_assert('a' - 'A' == (1 << 5));
-        return static_cast<char>(c | (IsUpper(c) << 5));
-    }
-
-    static_assert(ToLower('\0') == '\0');
-    static_assert(ToLower('a') == 'a');
-    static_assert(ToLower('z') == 'z');
-    static_assert(ToLower('A') == 'a');
-    static_assert(ToLower('Z') == 'z');
-    static_assert(ToLower('~') == '~');
-
-    static inline constexpr bool IsUpper(int c) noexcept {
-        return static_cast<uint32_t>(c) - 'A' <= 'Z' - 'A';
-    }
-
-    static inline constexpr int ToLower(int c) noexcept {
-        // return c | ('a' - 'A') * IsUpper(c);
-        static_assert('a' - 'A' == (1 << 5));
-        return c | (IsUpper(c) << 5);
-    }
-
-    static_assert(ToLower(0) == 0);
-    static_assert(ToLower(static_cast<int>('a')) == 'a');
-    static_assert(ToLower(static_cast<int>('z')) == 'z');
-    static_assert(ToLower(static_cast<int>('A')) == 'a');
-    static_assert(ToLower(static_cast<int>('Z')) == 'z');
-    static_assert(ToLower(static_cast<int>('~')) == '~');
-
-#ifndef NDEBUG
-    inline void CheckComputedLinks() const {
-        typename std::vector<ACTNode>::const_iterator iter = nodes_.begin();
-
-        uint32_t max_node_index_excl = static_cast<uint32_t>(nodes_.size());
-        assert(max_node_index_excl >= DEFAULT_NODES_COUNT);
-        uint32_t max_word_end_index_excl = static_cast<uint32_t>(words_lengths_.size());
-
-        // Check just for existing
-        static_assert(NULL_NODE_INDEX == NULL_NODE_INDEX, "current impl of CheckComputedLinks() relies on NULL_NODE_INDEX");
-
-        // Skip null node
-        ++iter;
-        // Now iter points to fake preroot node
-        // fake preroot node does not have suffix_link_index and compressed_suffix_link
-        // all children point to root
-        for (uint32_t child_index : iter->edges) {
-            assert(child_index == ROOT_INDEX);
-        }
-
-        ++iter;
-        // Now iter points to the root node
-        for (auto iter_end = nodes_.end(); iter != iter_end; ++iter) {
-            static_assert(NULL_NODE_INDEX < FAKE_PREROOT_INDEX);
-
-            for (uint32_t child_index : iter->edges) {
-                assert(child_index >= FAKE_PREROOT_INDEX && child_index < max_node_index_excl);
-            }
-
-            uint32_t suffix_link_index = iter->suffix_link;
-            assert(suffix_link_index >= FAKE_PREROOT_INDEX && suffix_link_index < max_node_index_excl);
-
-            uint32_t compressed_suffix_link_index = iter->compressed_suffix_link;
-            assert(compressed_suffix_link_index >= FAKE_PREROOT_INDEX && compressed_suffix_link_index < max_node_index_excl);
-
-            assert(!iter->IsTerminal() || (iter->word_index < max_word_end_index_excl));
-        }
-
-        are_links_computed_ = true;
-    }
-#endif
+    std::vector<Node> nodes_;
+    std::vector<StoredPatternSize> patterns_lengths_;
 };
 
-} // namespace ACTrieADS
-
-#endif // _ACTRIE_H_
+}  // namespace actrie
