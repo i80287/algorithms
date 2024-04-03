@@ -69,36 +69,37 @@ std::vector<string_view> Search(string_view text, string_view query,
 
     std::vector<LineInfo> query_words_on_lines;
 
-    size_t total_lines = act.FindAllSubstringsInTextAndCountLines<IsExactWordsMatching>(
-        text,
-        [&query_words_on_lines](size_t line_number,
-                                size_t query_word_index) constexpr {
-            if (query_words_on_lines.empty() ||
-                query_words_on_lines.back().line_number != line_number) {
-                query_words_on_lines.emplace_back().line_number =
-                    line_number;
-            }
+    size_t total_lines =
+        act.FindAllSubstringsInTextAndCountLines<IsExactWordsMatching>(
+            text,
+            [&query_words_on_lines](size_t line_number,
+                                    size_t query_word_index) constexpr {
+                if (query_words_on_lines.empty() ||
+                    query_words_on_lines.back().line_number !=
+                        line_number) {
+                    query_words_on_lines.emplace_back().line_number =
+                        line_number;
+                }
+                ++query_words_on_lines.back()
+                      .query_words_indexes[query_word_index];
+            },
+            [&query_words_on_lines](
+                size_t line_number, size_t words_on_current_line,
+                size_t line_start_index,
+                size_t line_end_index) constexpr noexcept {
+                if (query_words_on_lines.empty()) [[unlikely]] {
+                    return;
+                }
 
-            ++query_words_on_lines.back()
-                  .query_words_indexes[query_word_index];
-        },
-        [&query_words_on_lines](size_t line_number,
-                                size_t words_on_current_line,
-                                size_t line_start_index,
-                                size_t line_end_index) constexpr noexcept {
-            if (query_words_on_lines.empty()) [[unlikely]] {
-                return;
-            }
+                LineInfo& ref = query_words_on_lines.back();
+                if (ref.line_number != line_number) {
+                    return;
+                }
 
-            LineInfo& ref = query_words_on_lines.back();
-            if (ref.line_number != line_number) {
-                return;
-            }
-
-            ref.words_count      = words_on_current_line;
-            ref.line_start_index = line_start_index;
-            ref.line_end_index   = line_end_index;
-        });
+                ref.words_count      = words_on_current_line;
+                ref.line_start_index = line_start_index;
+                ref.line_end_index   = line_end_index;
+            });
 
     std::vector<double> query_words_inv_idf_log(query_words_count);
     double total_lines_log = std::log(total_lines);

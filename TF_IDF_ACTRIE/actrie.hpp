@@ -3,7 +3,6 @@
 #include <algorithm>
 #include <array>
 #include <cassert>
-#include <cctype>
 #include <cstdint>
 #include <limits>
 #include <string_view>
@@ -20,19 +19,21 @@ class ACTrieBuilder {
     static constexpr uint8_t kAlphabetLength =
         kAlphabetEnd - kAlphabetStart + 1;
 
-private:
-    using StoredNodeIndex    = std::uint32_t;
-    using StoredPatternSize  = std::uint32_t;
-    using StoredPatternIndex = std::uint32_t;
+    using uint8_t            = std::uint8_t;
+    using uint32_t           = std::uint32_t;
+    using size_t             = std::size_t;
+    using StoredNodeIndex    = uint32_t;
+    using StoredPatternSize  = uint32_t;
+    using StoredPatternIndex = uint32_t;
 
     static constexpr StoredNodeIndex kNullNodeIndex = 0;
     static constexpr StoredNodeIndex kFakePrerootNodeIndex =
         kNullNodeIndex + 1;
     static constexpr StoredNodeIndex kRootNodeIndex =
         kFakePrerootNodeIndex + 1;
-    static constexpr std::size_t kDefaultNodesCount =
+    static constexpr size_t kDefaultNodesCount =
         kRootNodeIndex + 1;  // null node; fake preroot node; root node
-    static constexpr std::size_t kDefaultNodesCapacity = 32;
+    static constexpr size_t kDefaultNodesCapacity = 32;
 
     struct Node {
         static constexpr StoredPatternIndex kMissingWordIndex =
@@ -43,12 +44,11 @@ private:
         StoredNodeIndex compressed_suffix_link = kNullNodeIndex;
         StoredPatternIndex pattern_index       = kMissingWordIndex;
 
-        constexpr StoredNodeIndex operator[](
-            std::size_t index) const noexcept {
+        constexpr StoredNodeIndex operator[](size_t index) const noexcept {
             return edges[index];
         }
 
-        constexpr StoredNodeIndex& operator[](std::size_t index) noexcept {
+        constexpr StoredNodeIndex& operator[](size_t index) noexcept {
             return edges[index];
         }
 
@@ -63,8 +63,7 @@ public:
         nodes_.resize(kDefaultNodesCount);
     }
 
-    constexpr ACTrieBuilder(std::size_t patterns_capacity)
-        : ACTrieBuilder() {
+    constexpr ACTrieBuilder(size_t patterns_capacity) : ACTrieBuilder() {
         patterns_lengths_.reserve(patterns_capacity);
     }
 
@@ -124,16 +123,17 @@ public:
             }
         constexpr void FindAllSubstringsInText(
             std::string_view text, FindCallback find_callback) const {
-            if constexpr (std::is_pointer_v<decltype(find_callback)> &&
-                          !std::is_constant_evaluated()) {
-                assert(find_callback != nullptr);
+            if constexpr (std::is_pointer_v<decltype(find_callback)>) {
+                if (!std::is_constant_evaluated()) {
+                    assert(find_callback != nullptr);
+                }
             }
 
             uint32_t current_node_index = kRootNodeIndex;
             size_t i                    = 0;
             for (auto iter = text.begin(), end = text.end(); iter != end;
                  ++iter, ++i) {
-                std::size_t symbol_index = SymbolToIndex(*iter);
+                size_t symbol_index = SymbolToIndex(*iter);
                 if (symbol_index >= kAlphabetLength) {
                     current_node_index = kRootNodeIndex;
                     continue;
@@ -176,8 +176,8 @@ public:
             }
         }
 
-        template <bool IsExactWordsMatching   = true,
-                  std::uint8_t LinesDelimeter = '\n',
+        template <bool IsExactWordsMatching = true,
+                  uint8_t LinesDelimeter    = '\n',
                   typename QueryWordCallback, typename NewLineCallback>
             requires requires(QueryWordCallback func, size_t line_number,
                               size_t query_word_index) {
@@ -212,8 +212,8 @@ public:
             bool prev_symbol_in_alphabet = false;
             for (auto iter = text.begin(), end = text.end(); iter != end;
                  ++iter, ++i) {
-                std::uint8_t symbol = static_cast<std::uint8_t>(*iter);
-                std::size_t symbol_index = SymbolToIndex(symbol);
+                uint8_t symbol      = static_cast<uint8_t>(*iter);
+                size_t symbol_index = SymbolToIndex(symbol);
                 if (symbol_index >= kAlphabetLength) {
                     current_node_index = kRootNodeIndex;
                     words_on_current_line += prev_symbol_in_alphabet;
@@ -264,8 +264,10 @@ public:
                      terminal_node_index != kRootNodeIndex;
                      terminal_node_index = nodes_[terminal_node_index]
                                                .compressed_suffix_link) {
-                    assert(terminal_node_index != kNullNodeIndex &&
-                           nodes_[terminal_node_index].IsTerminal());
+                    if (!std::is_constant_evaluated()) {
+                        assert(terminal_node_index != kNullNodeIndex &&
+                               nodes_[terminal_node_index].IsTerminal());
+                    }
                     size_t pattern_index =
                         nodes_[terminal_node_index].pattern_index;
                     if (!std::is_constant_evaluated()) {
@@ -292,7 +294,7 @@ public:
             return current_line;
         }
 
-        constexpr std::size_t PatternsSize() const noexcept {
+        constexpr size_t PatternsSize() const noexcept {
             return patterns_lengths_.size();
         }
 
@@ -316,12 +318,12 @@ public:
         nodes_[kFakePrerootNodeIndex].edges.fill(kRootNodeIndex);
         // We use std::vector instead of std::queue
         //  in order to make this method constexpr.
-        std::vector<std::size_t> bfs_queue(nodes_.size());
-        std::size_t queue_head  = 0;
-        std::size_t queue_tail  = 0;
+        std::vector<size_t> bfs_queue(nodes_.size());
+        size_t queue_head       = 0;
+        size_t queue_tail       = 0;
         bfs_queue[queue_tail++] = kRootNodeIndex;
         do {
-            std::size_t node_index = bfs_queue[queue_head++];
+            size_t node_index = bfs_queue[queue_head++];
             ComputeLinksForNodeChildren(node_index, nodes_, bfs_queue,
                                         queue_tail);
         } while (queue_head < queue_tail);
@@ -330,15 +332,14 @@ public:
 
 private:
     static constexpr void ComputeLinksForNodeChildren(
-        std::size_t node_index, std::vector<Node>& nodes,
-        std::vector<std::size_t>& bfs_queue,
-        std::size_t& queue_tail) noexcept {
+        size_t node_index, std::vector<Node>& nodes,
+        std::vector<size_t>& bfs_queue, size_t& queue_tail) noexcept {
         Node& node = nodes[node_index];
-        for (std::size_t symbol_index = 0; symbol_index < kAlphabetLength;
+        for (size_t symbol_index = 0; symbol_index < kAlphabetLength;
              symbol_index++) {
             const StoredNodeIndex child_link_v_index =
                 nodes[node.suffix_link][symbol_index];
-            const std::size_t child_index = node[symbol_index];
+            const size_t child_index = node[symbol_index];
             if (child_index != kNullNodeIndex) {
                 nodes[child_index].suffix_link = child_link_v_index;
                 const StoredNodeIndex child_comp_sl =
@@ -356,18 +357,17 @@ private:
         }
     }
 
-    static consteval std::int32_t ToLowerConstevalImpl(
-        std::int32_t c) noexcept {
+    static constexpr int32_t ToLowerImpl(int32_t c) noexcept {
         static_assert('a' - 'A' == (1 << 5));
-        return c | (IsUpperConstevalImpl(c) * ('a' - 'A'));
+        return c | (IsUpperImpl(c) * ('a' - 'A'));
     }
 
-    static consteval bool IsUpperConstevalImpl(std::int32_t c) noexcept {
-        return static_cast<std::uint32_t>(c) - 'A' <= 'Z' - 'A';
+    static constexpr bool IsUpperImpl(int32_t c) noexcept {
+        return static_cast<uint32_t>(c) - 'A' <= 'Z' - 'A';
     }
 
     static constexpr bool IsInAlphabet(unsigned char symbol) noexcept {
-        return static_cast<std::uint32_t>(symbol) - kAlphabetStart <=
+        return static_cast<uint32_t>(symbol) - kAlphabetStart <=
                kAlphabetEnd - kAlphabetStart;
     }
 
@@ -375,19 +375,21 @@ private:
         return IsInAlphabet(static_cast<unsigned char>(symbol));
     }
 
-    static constexpr std::size_t SymbolToIndex(
-        unsigned char symbol) noexcept {
-        std::int32_t symbol_as_int = symbol;
+    static constexpr size_t SymbolToIndex(unsigned char symbol) noexcept {
+        int32_t symbol_as_int = symbol;
         if constexpr (kIsCaseInsensetive) {
-            symbol_as_int = std::tolower(symbol_as_int);
+            // We don't use std::tolower because we know that all
+            //  chars are < 128. On the other side, std::tolower makes
+            //  text finding runs almost 1.5x times slower because of
+            //  the locale handling.
+            symbol_as_int = ToLowerImpl(symbol_as_int);
         }
 
-        return static_cast<std::size_t>(
-                   static_cast<std::uint32_t>(symbol_as_int)) -
+        return static_cast<size_t>(static_cast<uint32_t>(symbol_as_int)) -
                kAlphabetStart;
     }
 
-    static constexpr std::size_t SymbolToIndex(char symbol) noexcept {
+    static constexpr size_t SymbolToIndex(char symbol) noexcept {
         return SymbolToIndex(static_cast<unsigned char>(symbol));
     }
 
@@ -396,16 +398,16 @@ private:
         PatternIterator pattern_iter_begin,
         PatternIterator pattern_iter_end, std::vector<Node>& nodes,
         std::vector<StoredPatternSize>& words_lengths) noexcept {
-        const auto pattern_size = static_cast<std::size_t>(
-            pattern_iter_end - pattern_iter_begin);
-        std::size_t current_node_index = kRootNodeIndex;
+        const auto pattern_size =
+            static_cast<size_t>(pattern_iter_end - pattern_iter_begin);
+        size_t current_node_index = kRootNodeIndex;
         for (; pattern_iter_begin != pattern_iter_end;
              ++pattern_iter_begin) {
-            std::size_t symbol_index = SymbolToIndex(*pattern_iter_begin);
+            size_t symbol_index = SymbolToIndex(*pattern_iter_begin);
             if (symbol_index >= kAlphabetLength) {
                 return false;
             }
-            std::size_t next_node_index =
+            size_t next_node_index =
                 nodes[current_node_index][symbol_index];
             if (next_node_index != kNullNodeIndex) {
                 current_node_index = next_node_index;
@@ -414,13 +416,13 @@ private:
             }
         }
 
-        const auto lasted_max_length = static_cast<std::size_t>(
-            pattern_iter_end - pattern_iter_begin);
+        const auto lasted_max_length =
+            static_cast<size_t>(pattern_iter_end - pattern_iter_begin);
         nodes.reserve(nodes.size() + lasted_max_length);
-        for (std::size_t new_node_index = nodes.size();
+        for (size_t new_node_index = nodes.size();
              pattern_iter_begin != pattern_iter_end;
              ++pattern_iter_begin) {
-            std::size_t symbol_index = SymbolToIndex(*pattern_iter_begin);
+            size_t symbol_index = SymbolToIndex(*pattern_iter_begin);
             if (symbol_index >= kAlphabetLength) {
                 return false;
             }
@@ -444,15 +446,15 @@ private:
         PatternIterator pattern_iter_begin,
         PatternIterator pattern_iter_end,
         const std::vector<Node>& nodes) noexcept {
-        std::size_t current_node_index = kRootNodeIndex;
+        size_t current_node_index = kRootNodeIndex;
         for (; pattern_iter_begin != pattern_iter_end;
              ++pattern_iter_begin) {
-            std::size_t index = SymbolToIndex(*pattern_iter_begin);
+            size_t index = SymbolToIndex(*pattern_iter_begin);
             if (index >= kAlphabetLength) {
                 return false;
             }
 
-            std::size_t next_node_index = nodes[current_node_index][index];
+            size_t next_node_index = nodes[current_node_index][index];
             if (next_node_index != kNullNodeIndex) {
                 current_node_index = next_node_index;
             } else {
