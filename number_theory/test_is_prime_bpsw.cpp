@@ -369,15 +369,19 @@ static void TestLargestU64Primes() noexcept {
 
 static void TestPrimesFromFile() noexcept {
     printf("Started tests in %s\n", FUNCTION_MACRO);
-    std::FILE* primes_fin = std::fopen("u64_primes.txt", "r");
+    std::FILE* primes_fin = std::fopen("u64-primes.txt", "r");
     if (primes_fin == nullptr) {
         printf("File opening error: %s\n", std::strerror(errno));
         return;
     }
 
     uint64_t prev_prime = uint64_t(-1);
-    for (uint64_t p = 0; likely(!feof(primes_fin));) {
-        if (unlikely(std::fscanf(primes_fin, "%" PRIu64, &p) != 1)) {
+    for (uint64_t p = 0;;) {
+        const int ret = std::fscanf(primes_fin, "%" PRIu64, &p);
+        if (unlikely(ret == std::char_traits<char>::eof())) {
+            break;
+        }
+        if (unlikely(ret != 1)) {
             puts("File reading error");
             break;
         }
