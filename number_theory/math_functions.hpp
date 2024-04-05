@@ -1299,12 +1299,28 @@ ATTRIBUTE_CONST constexpr uint64_t umod_128_64(uint128_t a, uint64_t b) noexcept
 
     const uint32_t n_udword_bits = sizeof(uint64_t) * CHAR_BIT;
     const uint32_t n_utword_bits = sizeof(uint128_t) * CHAR_BIT;
-    utwords n;
+    utwords n
+#if __cplusplus < 202002L
+    {}
+#endif
+    ;
     n.all = a;
-    utwords d;
+    utwords d
+#if __cplusplus < 202002L
+    {}
+#endif
+    ;
     d.all = b;
-    utwords q;
-    utwords r;
+    utwords q
+#if __cplusplus < 202002L
+    {}
+#endif
+    ;
+    utwords r
+#if __cplusplus < 202002L
+    {}
+#endif
+    ;
     // special cases, X is unknown, K != 0
     if (n.s.high == 0) {
         // 0 X
