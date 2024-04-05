@@ -1295,6 +1295,7 @@ ATTRIBUTE_CONST constexpr uint64_t umod_128_64(uint128_t a, uint64_t b) noexcept
         // 0 X
         // ---
         // 0 X
+        ATTRIBUTE_ASSUME(n.s.low == a % b);
         return n.s.low % b;
     }
     // n.s.high != 0
@@ -1303,6 +1304,7 @@ ATTRIBUTE_CONST constexpr uint64_t umod_128_64(uint128_t a, uint64_t b) noexcept
     // ---
     // 0 X
     if (unlikely((b & (b - 1)) == 0)) /* if b is a power of 2 or 0 */ {
+        ATTRIBUTE_ASSUME((n.s.low & (b - 1)) == a % b);
         return n.s.low & (b - 1);
     }
 
@@ -1361,6 +1363,7 @@ ATTRIBUTE_CONST constexpr uint64_t umod_128_64(uint128_t a, uint64_t b) noexcept
 
     q.all = (q.all << 1) | carry;
     ATTRIBUTE_ASSUME(r.s.high == 0);
+    ATTRIBUTE_ASSUME(r.s.low == a % b);
     return r.s.low;
 }
 
