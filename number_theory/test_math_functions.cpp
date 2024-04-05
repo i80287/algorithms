@@ -936,6 +936,15 @@ static_assert(math_functions::popcount(1ull << 31) == 1, "popcount");
 static_assert(math_functions::popcount(1ull << 62) == 1, "popcount");
 static_assert(math_functions::popcount(1ull << 63) == 1, "popcount");
 
+static_assert(!bool_median(false, false, false));
+static_assert(!bool_median(false, false, true));
+static_assert(!bool_median(false, true, false));
+static_assert(bool_median(false, true, true));
+static_assert(!bool_median(true, false, false));
+static_assert(bool_median(true, false, true));
+static_assert(bool_median(true, true, false));
+static_assert(bool_median(false, true, true));
+
 #endif  // defined(HAS_I128_CONSTEXPR) && HAS_I128_CONSTEXPR
 
 static void test_isqrt() {
@@ -1098,10 +1107,26 @@ static void test_sin_cos_sum() {
     test_sin_cos_sum_generic<long double>();
 }
 
+static void test_visit_all_submasks() {
+    std::vector<uint64_t> vec;
+    vec.reserve(128);
+    visit_all_submasks(0b10100, [&](uint64_t m) { vec.push_back(m); });
+    assert((vec == std::vector<uint64_t>{ 0b10100, 0b10000, 0b00100 }));
+
+    vec.clear();
+    visit_all_submasks(0, [&](uint64_t m) { vec.push_back(m); });
+    assert(vec.size() == 1 && vec[0] == 0);
+    
+    vec.clear();
+    visit_all_submasks(0b111, [&](uint64_t m) { vec.push_back(m); });
+    assert((vec == std::vector<uint64_t>{ 0b111, 0b110, 0b101, 0b100, 0b011, 0b010, 0b001 }));
+}
+
 int main() {
     test_isqrt();
     test_icbrt();
     test_log2();
     test_bit_reverse();
     test_sin_cos_sum();
+    test_visit_all_submasks();
 }

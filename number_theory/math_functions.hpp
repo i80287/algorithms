@@ -454,6 +454,19 @@ ATTRIBUTE_CONST inline I128_CONSTEXPR uint128_t bit_reverse(uint128_t n) noexcep
 
 #endif
 
+template <class Functor>
+#if __cplusplus >= 202002L
+    requires requires(Functor f) { f(uint64_t()); }
+#endif
+constexpr void visit_all_submasks(uint64_t mask, Functor visiter) noexcept(
+    noexcept(visiter(uint64_t()))) {
+    uint64_t s = mask;
+    do {
+        visiter(s);
+        s = (s - 1) & mask;
+    } while (s != 0);
+}
+
 ATTRIBUTE_CONST constexpr int32_t sign(int x) noexcept {
     return int32_t(x > 0) - int32_t(x < 0);
 }
@@ -1369,6 +1382,15 @@ ATTRIBUTE_CONST constexpr uint64_t umod_128_64(uint128_t a, uint64_t b) noexcept
     return r.s.low;
 }
 
+/// @brief Returns median of boolean variables x, y and z
+/// @param x x
+/// @param y y
+/// @param z z
+/// @return median of x, y and z
+constexpr bool bool_median(bool x, bool y, bool z) noexcept {
+    return (x | y) & (y | z) & (x | z);
+}
+
 template <class FloatType>
 struct SumSinCos {
     FloatType sines_sum;
@@ -1427,7 +1449,7 @@ ATTRIBUTE_CONST SumSinCos<FloatType> sum_of_sines_and_cosines(
         std::sin(nf * half_beta) / std::sin(half_beta);
     const auto arg = alpha + (nf - 1) * half_beta;
     // Make arg const and call sin and cos close to each
-    //  other so that compiler will call sincos here.
+    //  other so that compiler can call sincos here.
     const auto sin_mult = std::sin(arg);
     const auto cos_mult = std::cos(arg);
     return {
