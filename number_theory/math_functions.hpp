@@ -25,14 +25,16 @@
 #endif  // __GNUC__
 #endif  // MATH_FUNCTIONS_HPP_ENABLE_TARGET_OPTIONS
 
-#include <algorithm>  // std::min
-#include <climits>    // CHAR_BIT
-#include <cstdint>  // std::int32_t, std::int64_t, std::size_t, std::uint32_t, std::uint64_t
-#include <map>      // std::map
-#include <numeric>      // std::gcd
-#include <type_traits>  // std::is_unsigned_v, std::is_same_v
-#include <utility>      // std::pair
-#include <vector>       // std::vector
+#include <algorithm>
+#include <climits>
+#include <cmath>
+#include <cstdint>
+#include <limits>
+#include <map>
+#include <numeric>
+#include <type_traits>
+#include <utility>
+#include <vector>
 
 #if __cplusplus >= 202002L
 #include <bit>  // std::popcount, std::countr_zero, std::countl_zero
@@ -1365,6 +1367,79 @@ ATTRIBUTE_CONST constexpr uint64_t umod_128_64(uint128_t a, uint64_t b) noexcept
     ATTRIBUTE_ASSUME(r.s.high == 0);
     ATTRIBUTE_ASSUME(r.s.low == a % b);
     return r.s.low;
+}
+
+template <class FloatType>
+struct SumSinCos {
+    FloatType sines_sum;
+    FloatType cosines_sum;
+};
+
+/// @brief Function returns pair of 2 sums:
+///         (
+///           sin(alpha) +
+///           + sin(alpha + beta) +
+///           + sin(alpha + 2 beta) +
+///           + sin(alpha + 3 beta) +
+///           + ... + sin(alpha + (n - 1) beta)
+///         ),
+///         (
+///           cos(alpha) +
+///           + cos(alpha + beta) +
+///           + cos(alpha + 2 beta) +
+///           + cos(alpha + 3 beta) +
+///           + ... + cos(alpha + (n - 1) beta)
+///         ).
+///        For n = 0 function returns (0, 0).
+///        Proof of the formula can found on
+///         https://blog.myrank.co.in/sum-of-sines-or-cosines-of-n-angles-in-a-p/
+/// @tparam FloatType
+/// @param alpha
+/// @param beta
+/// @param n
+/// @return pair of (
+///           sin(alpha) + sin(alpha + beta) + sin(alpha + 2 beta) + ... +
+///            + sin(alpha + (n - 1) beta),
+///           cos(alpha) + cos(alpha + beta) + cos(alpha + 2 beta) + ... +
+///            + cos(alpha + (n - 1) beta)
+///         )
+template <class FloatType>
+#if __cplusplus >= 202002L
+    requires std::is_arithmetic_v<FloatType>
+#endif
+ATTRIBUTE_CONST SumSinCos<FloatType> sum_of_sines_and_cosines(
+    FloatType alpha, FloatType beta, uint32_t n) noexcept {
+    const FloatType nf   = static_cast<FloatType>(n);
+    const auto half_beta = beta / 2;
+    if (unlikely(half_beta == 0)) {
+        return {
+#if __cplusplus >= 202002L
+            .sines_sum =
+#endif
+                std::sin(alpha) * nf,
+#if __cplusplus >= 202002L
+            .cosines_sum = std::cos(alpha) * nf,
+#endif
+        };
+    }
+
+    const auto sin_numer_over_sin_denum =
+        std::sin(nf * half_beta) / std::sin(half_beta);
+    const auto arg = alpha + (nf - 1) * half_beta;
+    // Make arg const and call sin and cos close to each
+    //  other so that compiler will call sincos here.
+    const auto sin_mult = std::sin(arg);
+    const auto cos_mult = std::cos(arg);
+    return {
+#if __cplusplus >= 202002L
+        .sines_sum =
+#endif
+            sin_numer_over_sin_denum * sin_mult,
+#if __cplusplus >= 202002L
+        .cosines_sum =
+#endif
+            sin_numer_over_sin_denum * cos_mult,
+    };
 }
 
 namespace impl {

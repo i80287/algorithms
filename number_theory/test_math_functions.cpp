@@ -1052,9 +1052,56 @@ static void test_bit_reverse() {
     }
 }
 
+template <class FloatType>
+static void test_sin_cos_sum_generic() {
+    constexpr uint32_t kMaxN = 1e2;
+    constexpr int64_t k = 5;
+    constexpr FloatType angle_scale = 10;
+    constexpr FloatType angle_start = static_cast<FloatType>(bin_pow(10.0L, -k));
+    constexpr FloatType angle_end = static_cast<FloatType>(bin_pow(10.0L, k));
+
+    constexpr auto get_eps = [](uint32_t n) constexpr noexcept -> FloatType {
+        if constexpr (std::is_same_v<FloatType, float>) {
+            return static_cast<float>(n | 1) / 10.0f;
+        } else if constexpr (std::is_same_v<FloatType, double>) {
+            return 0.0000001;
+        } else {
+            return 0.00000000001L;
+        }
+    };
+
+    for (uint32_t n = 0; n < kMaxN; n++) {
+        for (FloatType alpha = angle_start; alpha <= angle_end; alpha *= angle_scale) {
+            for (FloatType beta = angle_start; beta <= angle_end; beta *= angle_scale) {
+                const auto [sines_sum, cosines_sum] = sum_of_sines_and_cosines(alpha, beta, n);
+                FloatType c_sines_sum = 0;
+                FloatType c_cosines_sum = 0;
+                FloatType angle = alpha;
+                for (uint32_t i = 0; i < n; i++) {
+                    c_sines_sum += std::sin(angle);
+                    c_cosines_sum += std::cos(angle);
+                    angle += beta;
+                }
+
+                bool sin_sum_correct = std::abs(c_sines_sum - sines_sum) < get_eps(n);
+                bool cos_sum_correct = std::abs(c_cosines_sum - cosines_sum) < get_eps(n);
+                assert(sin_sum_correct);
+                assert(cos_sum_correct);
+            }
+        }
+    }
+}
+
+static void test_sin_cos_sum() {
+    test_sin_cos_sum_generic<float>();
+    test_sin_cos_sum_generic<double>();
+    test_sin_cos_sum_generic<long double>();
+}
+
 int main() {
     test_isqrt();
     test_icbrt();
     test_log2();
     test_bit_reverse();
+    test_sin_cos_sum();
 }
