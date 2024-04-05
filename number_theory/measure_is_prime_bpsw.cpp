@@ -58,6 +58,7 @@ int main() {
     }
 
     for (auto iter = 4zu; iter != 0; iter--) {
-        std::cout << run_measurements(primes) << '\n';
+        const std::chrono::microseconds time_ms = run_measurements(primes);
+        printf("%" PRId64 "ms\n", time_ms.count());
     }
 }
