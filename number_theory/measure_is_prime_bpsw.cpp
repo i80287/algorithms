@@ -23,6 +23,7 @@ static std::vector<uint64_t> read_primes() {
     nums.reserve(1065000zu);
     Wrapper fin("u64-primes.txt", "r");
     if (fin.file == nullptr) [[unlikely]] {
+        perror("fopen");
         throw std::runtime_error("fopen");
     }
     while (true) {
@@ -31,9 +32,10 @@ static std::vector<uint64_t> read_primes() {
             [[likely]] case 1:
                 nums.push_back(n);
                 break;
-            [[unlikely]] case -1:
+            [[unlikely]] case std::char_traits<char>::eof():
                 return nums;
             [[unlikely]] default:
+                perror("fscanf");
                 throw std::runtime_error("fscanf");
         }
     }
@@ -41,14 +43,13 @@ static std::vector<uint64_t> read_primes() {
 
 static volatile bool side_effect_ensurer{};
 
-static auto run_measurements(const std::vector<uint64_t>& primes) {
+static std::chrono::nanoseconds run_measurements(const std::vector<uint64_t>& primes) {
     const auto start = std::chrono::high_resolution_clock::now();
     for (uint64_t prime : primes) {
         side_effect_ensurer = math_functions::is_prime_bpsw(prime);
     }
     const auto end = std::chrono::high_resolution_clock::now();
-    return std::chrono::duration_cast<std::chrono::microseconds>(end -
-                                                                 start);
+    return end - start;
 }
 
 int main() {
@@ -58,7 +59,12 @@ int main() {
     }
 
     for (auto iter = 4zu; iter != 0; iter--) {
-        const std::chrono::microseconds time_ms = run_measurements(primes);
-        printf("%" PRId64 "ms\n", time_ms.count());
+        const std::chrono::nanoseconds time_ms = run_measurements(primes);
+        const std::uint64_t ns = static_cast<std::uint64_t>(time_ms.count());
+        const std::uint64_t ns_per_primes = ns / primes.size();
+        printf("%" PRIu64
+               " nano seconds\n"
+               "%" PRIu64 " nano seconds per prime on average\n",
+               ns, ns_per_primes);
     }
 }
