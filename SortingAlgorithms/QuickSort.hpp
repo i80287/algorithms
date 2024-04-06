@@ -6,6 +6,8 @@
 #include <ctime>
 #include <functional>
 
+namespace detail {
+
 template <class Iterator, class Comparator>
 inline Iterator partition(Iterator begin, Iterator end, Iterator pivot_it, Comparator comp) {
     Iterator l_it = begin;
@@ -14,7 +16,6 @@ inline Iterator partition(Iterator begin, Iterator end, Iterator pivot_it, Compa
     }
     if (l_it == end) {
         if (pivot_it != begin) {
-            assert(begin != end);
             std::swap(*begin, *pivot_it);
         }
         return begin - 1;
@@ -76,17 +77,17 @@ inline Iterator partition(Iterator begin, Iterator end, Iterator pivot_it, Compa
     return l_it;
 }
 
-std::mt19937 rnd(std::ranlux24{static_cast<uint32_t>(std::time(nullptr))}());
+inline std::mt19937 quicksort_rnd(static_cast<uint32_t>(std::time(nullptr)));
 
 template <class Iterator, class Comparator>
-void __QSort(Iterator begin, Iterator end, Comparator comp) {
-    size_t pivot_index = rnd() % static_cast<size_t>(end - begin);
+inline void QSortImpl(Iterator begin, Iterator end, Comparator comp) {
+    size_t pivot_index = quicksort_rnd() % static_cast<size_t>(end - begin);
     Iterator last_l_p = partition(begin, end, begin + pivot_index, comp);
     Iterator pivot_it = last_l_p;
     ++pivot_it;
 
     if (pivot_it - begin > 1) {
-        __QSort(begin, pivot_it, comp);
+        QSortImpl(begin, pivot_it, comp);
     }
 
     Iterator first_not_equal = pivot_it;
@@ -99,14 +100,16 @@ void __QSort(Iterator begin, Iterator end, Comparator comp) {
     }
 
     if (end - first_not_equal > 1) {
-        __QSort(first_not_equal, end, comp);
+        QSortImpl(first_not_equal, end, comp);
     }
 }
+
+} // namespace detail
 
 template <class Iterator, class Comparator = std::less<typename std::iterator_traits<Iterator>::value_type>>
 inline void QuickSort(Iterator begin, Iterator end, Comparator comp = Comparator{}) {
     if (end - begin > 1) {
-        __QSort(begin, end, comp);
+        detail::QSortImpl(begin, end, comp);
     }
 }
 
