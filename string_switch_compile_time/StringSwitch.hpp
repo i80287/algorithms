@@ -4,13 +4,15 @@
 #include <string_view>
 #include <vector>
 
+enum class DefaultSwitchValue { kNextAfterLast, kMaxUintValue };
+
 namespace string_switch_impl {
 
-using std::int32_t;
-using std::size_t;
-using std::uint16_t;
-using std::uint32_t;
-using std::uint8_t;
+using int32_t  = std::int32_t;
+using size_t   = std::size_t;
+using uint16_t = std::uint16_t;
+using uint32_t = std::uint32_t;
+using uint8_t  = std::uint8_t;
 
 template <size_t N>
 struct CompileTimeStringLiteral {
@@ -20,14 +22,18 @@ struct CompileTimeStringLiteral {
         std::char_traits<char>::copy(value, str, N);
     }
 
-    consteval size_t size() const noexcept { return N - 1; }
+    consteval size_t size() const noexcept {
+        return N - 1;
+    }
 
     char value[N];
 };
 
-template <size_t NodesCount, uint32_t MinChar, uint32_t MaxChar>
+template <size_t NodesCount, uint32_t MinChar, uint32_t MaxChar,
+          size_t StringsCount>
 class StringSwitchImpl {
-    static_assert(MinChar <= MaxChar && MaxChar <= std::numeric_limits<uint8_t>::max());
+    static_assert(MinChar <= MaxChar &&
+                  MaxChar <= std::numeric_limits<uint8_t>::max(), "impl error");
 
     using str_index_t = uint32_t;
 
@@ -37,11 +43,7 @@ class StringSwitchImpl {
 
     struct TrieNodeImpl {
         uint32_t children[kAlphabetSize] = {};
-        str_index_t string_index         = kNonTerminalStringIndex;
-
-        constexpr bool IsTerminal() const noexcept {
-            return string_index != kNonTerminalStringIndex;
-        }
+        str_index_t string_index         = kDefaultSwitch;
     };
     TrieNodeImpl nodes_[NodesCount] = {};
 
@@ -49,14 +51,14 @@ class StringSwitchImpl {
         return static_cast<uint32_t>(chr) - MinChar;
     }
 
-    consteval void AddPattern(size_t, size_t) noexcept {}
-
     template <class... Args>
-    consteval void AddPattern(size_t first_free_node_index, str_index_t string_index,
-                              const auto& string, Args... args) noexcept {
+    consteval void AddPattern(size_t first_free_node_index,
+                              str_index_t string_index, const auto& string,
+                              Args... args) noexcept {
         size_t current_node = 0;
         for (size_t i = 0; i < string.size(); i++) {
-            size_t index       = CharToIndex(static_cast<uint8_t>(string.value[i]));
+            size_t index =
+                CharToIndex(static_cast<uint8_t>(string.value[i]));
             size_t child_index = nodes_[current_node].children[index];
             if (child_index != 0) {
                 current_node = child_index;
@@ -70,13 +72,16 @@ class StringSwitchImpl {
 
         // Value is overwritten if the same patterns are added to the trie
         nodes_[current_node].string_index = string_index;
-        AddPattern(first_free_node_index, string_index + 1, args...);
+        if constexpr (sizeof...(args) > 0) {
+            AddPattern(first_free_node_index, string_index + 1, args...);
+        }
     }
 
 public:
-    static constexpr uint32_t kDefaultSwitch = std::numeric_limits<uint32_t>::max();
-    static constexpr char kMinChar           = static_cast<char>(MinChar);
-    static constexpr char kMaxChar           = static_cast<char>(MaxChar);
+    static constexpr uint32_t kDefaultSwitch =
+        static_cast<uint32_t>(StringsCount);
+    static constexpr char kMinChar = static_cast<char>(MinChar);
+    static constexpr char kMaxChar = static_cast<char>(MaxChar);
 
     template <class... Args>
     consteval StringSwitchImpl(Args... args) noexcept {
@@ -85,19 +90,23 @@ public:
         AddPattern(kInitialFirstFreeNodeIndex, str_index_t(0), args...);
     }
 
-    [[nodiscard]] consteval uint32_t operator()(std::nullptr_t) const noexcept = delete;
+    [[nodiscard]] consteval uint32_t operator()(
+        std::nullptr_t) const noexcept = delete;
 
-    [[nodiscard]] constexpr uint32_t operator()(std::string_view str) const noexcept {
+    [[nodiscard]] constexpr uint32_t operator()(
+        std::string_view str) const noexcept {
         return operator()(str.data());
     }
 
-    [[nodiscard]] constexpr uint32_t operator()(const char* str) const noexcept {
+    [[nodiscard]] constexpr uint32_t operator()(
+        const char* str) const noexcept {
         if (str == nullptr) [[unlikely]] {
             return kDefaultSwitch;
         }
 
         size_t current_node = 0;
-        for (uint8_t c = 0; (c = static_cast<uint8_t>(*str)) != '\0'; str++) {
+        for (uint8_t c = 0; (c = static_cast<uint8_t>(*str)) != '\0';
+             str++) {
             size_t index = CharToIndex(c);
             if (index >= kAlphabetSize) {
                 return kDefaultSwitch;
@@ -111,8 +120,9 @@ public:
             }
         }
 
-        return nodes_[current_node].IsTerminal() ? nodes_[current_node].string_index
-                                                 : kDefaultSwitch;
+        // If node is not terminal it is
+        /// already equal to kDefaultSwitch.
+        return nodes_[current_node].string_index;
     }
 };
 
@@ -121,48 +131,46 @@ public:
 /// @param a
 /// @param b
 /// @return
-consteval int32_t min(int32_t a, int32_t b) noexcept { return a <= b ? a : b; }
+consteval int32_t min(int32_t a, int32_t b) noexcept {
+    return a <= b ? a : b;
+}
 
 /// @brief std::min is not used in order not to include additional header
 /// (<algorithm>) just for min/max
 /// @param a
 /// @param b
 /// @return
-consteval int32_t max(int32_t a, int32_t b) noexcept { return a >= b ? a : b; }
-
-template <CompileTimeStringLiteral FirstString, CompileTimeStringLiteral... Strings>
-consteval int32_t CountMinChar() noexcept {
-    // not FirstString.value[0] because it can be '\0'
-    int32_t min_char     = std::numeric_limits<int32_t>::max();
-    constexpr size_t len = FirstString.size();
-    for (size_t i = 0; i < len; i++) {
-        int32_t chr = static_cast<uint8_t>(FirstString.value[i]);
-        if (chr < min_char) {
-            min_char = chr;
-        }
-    }
-    if constexpr (sizeof...(Strings) != 0) {
-        return std::min(min_char, CountMinChar<Strings...>());
-    } else {
-        return min_char;
-    }
+consteval int32_t max(int32_t a, int32_t b) noexcept {
+    return a >= b ? a : b;
 }
 
-template <CompileTimeStringLiteral FirstString, CompileTimeStringLiteral... Strings>
-consteval int32_t CountMaxChar() noexcept {
+struct MinMaxChars {
+    int32_t min_char;
+    int32_t max_char;
+};
+
+template <CompileTimeStringLiteral FirstString,
+          CompileTimeStringLiteral... Strings>
+consteval MinMaxChars FindMinMaxChars() noexcept {
+    // not FirstString.value[0] because it can be '\0'
+    int32_t min_char     = std::numeric_limits<int32_t>::max();
     int32_t max_char     = std::numeric_limits<int32_t>::min();
     constexpr size_t len = FirstString.size();
     for (size_t i = 0; i < len; i++) {
-        int32_t chr = static_cast<uint8_t>(FirstString.value[i]);
-        if (chr > max_char) {
-            max_char = chr;
-        }
+        const int32_t chr = static_cast<uint8_t>(FirstString.value[i]);
+        min_char          = min(min_char, chr);
+        max_char          = max(max_char, chr);
     }
-    if constexpr (sizeof...(Strings) != 0) {
-        return std::max(max_char, CountMaxChar<Strings...>());
-    } else {
-        return max_char;
+    if constexpr (sizeof...(Strings) > 0) {
+        const MinMaxChars mn_mx_chars = FindMinMaxChars<Strings...>();
+        min_char = min(min_char, mn_mx_chars.min_char);
+        max_char = max(max_char, mn_mx_chars.max_char);
     }
+
+    return {
+        .min_char = min_char,
+        .max_char = max_char,
+    };
 }
 
 template <uint32_t IndexesSize>
@@ -171,7 +179,8 @@ struct CountingImplNode {
     uint32_t edges[IndexesSize] = {};
 };
 
-template <uint32_t MinChar, uint32_t MaxChar, CompileTimeStringLiteral FirstString,
+template <uint32_t MinChar, uint32_t MaxChar,
+          CompileTimeStringLiteral FirstString,
           CompileTimeStringLiteral... Strings>
 consteval size_t CountNodesImpl(
     std::vector<CountingImplNode<MaxChar - MinChar + 1>>& nodes) {
@@ -180,8 +189,10 @@ consteval size_t CountNodesImpl(
     constexpr size_t pattern_size = FirstString.size();
 
     for (; pattern_index != pattern_size; ++pattern_index) {
-        uint32_t sigma           = static_cast<uint8_t>(FirstString.value[pattern_index]);
-        uint32_t next_node_index = nodes[current_node_index].edges[sigma - MinChar];
+        uint32_t sigma =
+            static_cast<uint8_t>(FirstString.value[pattern_index]);
+        uint32_t next_node_index =
+            nodes[current_node_index].edges[sigma - MinChar];
         if (next_node_index != 0) {
             current_node_index = next_node_index;
         } else {
@@ -192,26 +203,24 @@ consteval size_t CountNodesImpl(
     size_t lasted_max_length = pattern_size - pattern_index;
     nodes.reserve(nodes.size() + lasted_max_length);
 
-    /*
-     * Inserts substring [i..length - 1] of pattern if i < length (<=> i !=
-     * length) If i == length, then for cycle will no execute
-     */
     for (uint32_t new_node_index = static_cast<uint32_t>(nodes.size());
          pattern_index != pattern_size; ++pattern_index) {
-        uint32_t sigma = static_cast<uint8_t>(FirstString.value[pattern_index]);
+        uint32_t sigma =
+            static_cast<uint8_t>(FirstString.value[pattern_index]);
         nodes.emplace_back();
         nodes[current_node_index].edges[sigma - MinChar] = new_node_index;
-        current_node_index                               = new_node_index++;
+        current_node_index = new_node_index++;
     }
 
-    if constexpr (sizeof...(Strings) != 0) {
+    if constexpr (sizeof...(Strings) > 0) {
         return CountNodesImpl<MinChar, MaxChar, Strings...>(nodes);
     } else {
         return nodes.size();
     }
 }
 
-template <uint32_t MinChar, uint32_t MaxChar, CompileTimeStringLiteral... Strings>
+template <uint32_t MinChar, uint32_t MaxChar,
+          CompileTimeStringLiteral... Strings>
 consteval size_t CountNodes() {
     std::vector<CountingImplNode<MaxChar - MinChar + 1>> nodes(size_t(1));
     return CountNodesImpl<MinChar, MaxChar, Strings...>(nodes);
@@ -221,23 +230,34 @@ consteval size_t CountNodes() {
 
 template <string_switch_impl::CompileTimeStringLiteral... Strings>
 consteval auto StringSwitch() {
-    constexpr int32_t kMinChar    = string_switch_impl::CountMinChar<Strings...>();
-    constexpr int32_t kMaxChar    = string_switch_impl::CountMaxChar<Strings...>();
-    constexpr bool kEmptyStrings1 = kMinChar == std::numeric_limits<int32_t>::max();
-    constexpr bool kEmptyStrings2 = kMaxChar == std::numeric_limits<int32_t>::min();
+    constexpr string_switch_impl::MinMaxChars kMinMaxChars =
+        string_switch_impl::FindMinMaxChars<Strings...>();
+
+    constexpr bool kEmptyStrings1 =
+        kMinMaxChars.min_char == std::numeric_limits<int32_t>::max();
+    constexpr bool kEmptyStrings2 =
+        kMinMaxChars.max_char == std::numeric_limits<int32_t>::min();
     static_assert(kEmptyStrings1 == kEmptyStrings2, "impl error");
 
     if constexpr (kEmptyStrings1) {
-        return string_switch_impl::StringSwitchImpl<size_t(1), uint32_t('\0'),
-                                                    uint32_t('\0')>(Strings...);
+        return string_switch_impl::StringSwitchImpl<
+            size_t(1), uint32_t('\0'), uint32_t('\0'), sizeof...(Strings)>(
+            Strings...);
     } else {
-        static_assert(kMinChar > 0 && kMaxChar > 0, "impl error");
+        static_assert(
+            kMinMaxChars.min_char > 0 && kMinMaxChars.max_char > 0,
+            "impl error");
+
+        constexpr uint32_t kMinUChar =
+            static_cast<uint32_t>(kMinMaxChars.min_char);
+        constexpr uint32_t kMaxUChar =
+            static_cast<uint32_t>(kMinMaxChars.max_char);
+
         constexpr size_t kNodesCount =
-            string_switch_impl::CountNodes<static_cast<uint32_t>(kMinChar),
-                                           static_cast<uint32_t>(kMaxChar), Strings...>();
-        return string_switch_impl::StringSwitchImpl<kNodesCount,
-                                                    static_cast<uint32_t>(kMinChar),
-                                                    static_cast<uint32_t>(kMaxChar)>(
+            string_switch_impl::CountNodes<kMinUChar, kMaxUChar,
+                                           Strings...>();
+        return string_switch_impl::StringSwitchImpl<
+            kNodesCount, kMinUChar, kMaxUChar, sizeof...(Strings)>(
             Strings...);
     }
 }
