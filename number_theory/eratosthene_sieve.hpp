@@ -13,16 +13,16 @@ namespace math_functions {
 /// @brief Find all prime numbers in [2; n)
 /// @param N exclusive upper bound
 /// @return vector<bool>, for which bvec[n] == true \iff n is prime
-std::vector<bool> primes_sieve_as_bvector(size_t n) {
+std::vector<bool> primes_sieve_as_bvector(uint32_t n) {
     std::vector<bool> primes(n, true);
     if (likely(n >= 2)) {
         primes[0] = false;
         primes[1] = false;
     }
-    const size_t root = math_functions::isqrt(n);
-    for (size_t i = 2; i <= root; ++i) {
+    const uint32_t root = math_functions::isqrt(n);
+    for (uint32_t i = 2; i <= root; ++i) {
         if (primes[i]) {
-            for (size_t j = uint32_t(i) * uint32_t(i); j < n; j += i) {
+            for (uint32_t j = uint32_t(i) * uint32_t(i); j < n; j += i) {
                 primes[j] = false;
             }
         }
@@ -34,7 +34,7 @@ std::vector<bool> primes_sieve_as_bvector(size_t n) {
 /// @brief Find all prime numbers in [2; N)
 /// @tparam N exclusive upper bound
 /// @return bitset, for which bset[n] == true \iff n is prime
-template <size_t N>
+template <uint32_t N>
 #if __cplusplus >= 202100L
 constexpr
 #endif
@@ -49,10 +49,10 @@ constexpr
         primes.set();
         primes[0]             = false;
         primes[1]             = false;
-        constexpr size_t root = math_functions::isqrt(N);
-        for (size_t i = 2; i <= root; i++) {
+        constexpr uint32_t root = math_functions::isqrt(N);
+        for (uint32_t i = 2; i <= root; i++) {
             if (primes[i]) {
-                for (size_t j = uint32_t(i) * uint32_t(i); j < N; j += i) {
+                for (uint32_t j = i * i; j < N; j += i) {
                     primes[j] = false;
                 }
             }
