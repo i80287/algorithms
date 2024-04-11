@@ -1367,13 +1367,15 @@ struct SumSinCos {
 ///         )
 template <class FloatType>
 #if __cplusplus >= 202002L
-    requires std::is_arithmetic_v<FloatType>
+    requires std::is_floating_point_v<FloatType>
 #endif
 ATTRIBUTE_CONST SumSinCos<FloatType> sum_of_sines_and_cosines(
     FloatType alpha, FloatType beta, uint32_t n) noexcept {
-    const FloatType nf   = static_cast<FloatType>(n);
-    const auto half_beta = beta / 2;
-    if (unlikely(half_beta == 0)) {
+    const FloatType nf       = static_cast<FloatType>(n);
+    const auto half_beta     = beta / 2;
+    const auto half_beta_sin = std::sin(half_beta);
+    if (unlikely(half_beta_sin == 0)) {
+        // If beta = 2 pi k, k \in Z
         return {
 #if __cplusplus >= 202002L
             .sines_sum =
@@ -1387,7 +1389,7 @@ ATTRIBUTE_CONST SumSinCos<FloatType> sum_of_sines_and_cosines(
     }
 
     const auto sin_numer_over_sin_denum =
-        std::sin(nf * half_beta) / std::sin(half_beta);
+        std::sin(nf * half_beta) / half_beta_sin;
     const auto arg = alpha + (nf - 1) * half_beta;
     // Make arg const and call sin and cos close to each
     //  other so that compiler can call sincos here.
