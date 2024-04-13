@@ -1140,14 +1140,14 @@ static_assert(math_functions::popcount(1ull << 31) == 1, "popcount");
 static_assert(math_functions::popcount(1ull << 62) == 1, "popcount");
 static_assert(math_functions::popcount(1ull << 63) == 1, "popcount");
 
-static_assert(!bool_median(false, false, false));
-static_assert(!bool_median(false, false, true));
-static_assert(!bool_median(false, true, false));
-static_assert(bool_median(false, true, true));
-static_assert(!bool_median(true, false, false));
-static_assert(bool_median(true, false, true));
-static_assert(bool_median(true, true, false));
-static_assert(bool_median(false, true, true));
+static_assert(!bool_median(false, false, false), "bool_median");
+static_assert(!bool_median(false, false, true), "bool_median");
+static_assert(!bool_median(false, true, false), "bool_median");
+static_assert(bool_median(false, true, true), "bool_median");
+static_assert(!bool_median(true, false, false), "bool_median");
+static_assert(bool_median(true, false, true), "bool_median");
+static_assert(bool_median(true, true, false), "bool_median");
+static_assert(bool_median(false, true, true), "bool_median");
 
 #endif  // defined(HAS_I128_CONSTEXPR) && HAS_I128_CONSTEXPR
 

@@ -12,7 +12,9 @@
 #include <vector>
 
 #include "fft.hpp"
+#if defined(__has_include) && __has_include("integers_128_bit.hpp")
 #include "integers_128_bit.hpp"
+#endif
 #include "math_functions.hpp"
 
 #if !defined(__GNUC__)
@@ -266,7 +268,7 @@ struct LongInt {
         size_ *= sgn;
     }
 
-#if INTEGERS_128_BIT_HPP
+#if defined(INTEGERS_128_BIT_HPP)
     LongInt(uint128_t n) : size_(n != 0), capacity_(4) {
         nums_ = static_cast<uint32_t*>(longint_allocator::Allocate(4 * sizeof(uint32_t)));
         nums_[0] = uint32_t(n);
@@ -504,7 +506,7 @@ struct LongInt {
         return *this;
     }
 
-#if INTEGERS_128_BIT_HPP
+#if defined(INTEGERS_128_BIT_HPP)
     LongInt& operator=(uint128_t n) {
         if (capacity_ < 4) {
             longint_allocator::Deallocate(nums_);
@@ -870,7 +872,7 @@ struct LongInt {
 
     constexpr bool operator!=(uint64_t n) const noexcept { return !(*this == n); }
 
-#if INTEGERS_128_BIT_HPP
+#if defined(INTEGERS_128_BIT_HPP)
     constexpr bool operator==(uint128_t n) const noexcept {
         switch (size_) {
             case 0:
