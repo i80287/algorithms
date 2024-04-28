@@ -4,8 +4,6 @@
 #include <string_view>
 #include <vector>
 
-enum class DefaultSwitchValue { kNextAfterLast, kMaxUintValue };
-
 namespace string_switch_impl {
 
 using int32_t  = std::int32_t;
@@ -14,19 +12,29 @@ using uint16_t = std::uint16_t;
 using uint32_t = std::uint32_t;
 using uint8_t  = std::uint8_t;
 
-template <size_t N>
+inline constexpr size_t kMaxStringViewLength = 200;
+
+template <size_t N = kMaxStringViewLength>
 struct CompileTimeStringLiteral {
     static_assert(N > 0);
 
-    consteval CompileTimeStringLiteral(const char (&str)[N]) {
+    consteval CompileTimeStringLiteral(std::string_view str) : length(str.size()) {
+        // Change kMaxStringViewLength if you are using
+        //  very long strings in the StringSwitch.
+        [[maybe_unused]] const auto string_view_size_check = 0 / (str.size() <= std::size(value));
+        std::char_traits<char>::copy(value, str.data(), str.size());
+    }
+
+    consteval CompileTimeStringLiteral(const char (&str)[N]) : length(N - 1) {
         std::char_traits<char>::copy(value, str, N);
     }
 
     consteval size_t size() const noexcept {
-        return N - 1;
+        return length;
     }
 
-    char value[N];
+    char value[N]{};
+    const size_t length;
 };
 
 template <size_t NodesCount, uint32_t MinChar, uint32_t MaxChar,
