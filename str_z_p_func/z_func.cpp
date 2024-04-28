@@ -6,25 +6,7 @@
 
 using std::string, std::string_view, std::vector, std::cin, std::cout;
 
-inline vector<uint32_t> prefix_function(string_view s) {
-	const size_t n = s.length();
-	vector<uint32_t> pi(n);
-	for (size_t i = 1; i < n; i++) {
-		size_t j = pi[i - 1];
-		uint32_t c_i = uint8_t(s[i]);
-		while (j > 0 && c_i != uint8_t(s[j])) {
-            j = pi[j - 1];
-        }
-		if (c_i == uint8_t(s[j])) {
-			j++;
-		}
-		pi[i] = uint32_t(j);
-	}
-
-	return pi;
-}
-
-inline vector<uint32_t> z_function(string_view s) {
+vector<uint32_t> z_function(string_view s) {
 	const size_t n = s.length();
 	vector<uint32_t> z(n);
 	for (size_t i = 1, l = 0, r = 0; i < n; i++) {
@@ -44,26 +26,7 @@ inline vector<uint32_t> z_function(string_view s) {
 	return z;
 }
 
-void find_p(string_view text, string_view substr) {
-	string s;
-	s.reserve(substr.size() + 1 + text.size());
-	s.append(substr);
-	s.push_back('#');
-	s.append(text);
-	vector<uint32_t> pref_func = prefix_function(s);
-	cout << "Input: " << text << "\nSubstring to search: " << substr << '\n';
-	auto it = pref_func.begin() + static_cast<std::ptrdiff_t>(substr.size() + 1); // Skip "substr#"
-	auto end = pref_func.end();
-	for (size_t i = 0; it != end; ++it, ++i) {
-		if (*it == substr.size()) {
-			size_t start_index = i + 1 - substr.size();
-			cout << "Substring " << text.substr(start_index, substr.size())
-				<< " from " << start_index << " to " << i << '\n';
-		}
-	}
-}
-
-void find_z(string_view text, string_view substr) {
+void find_z_func(string_view text, string_view substr) {
 	string s;
 	s.reserve(substr.size() + 1 + text.size());
 	s.append(substr);
@@ -85,6 +48,5 @@ void find_z(string_view text, string_view substr) {
 int main() {
 	constexpr std::string_view text = "abcdabcdddabcd";
 	constexpr std::string_view substr = "abc";
-	find_p(text, substr);
-	find_z(text, substr);
+	find_z_func(text, substr);
 }
