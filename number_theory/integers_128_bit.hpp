@@ -60,11 +60,21 @@ typedef std::_Signed128 int128_t;
 
 namespace format_impl_uint128_t {
 
+#if __cplusplus >= 202002L
+// 340282366920938463463374607431768211455 == 2^128 - 1
+static_assert(std::char_traits<char>::length("340282366920938463463374607431768211455") == 39, "");
+//  170141183460469231731687303715884105727 ==  2^127 - 1
+// -170141183460469231731687303715884105728 == -2^127
+static_assert(std::char_traits<char>::length("-170141183460469231731687303715884105728") == 40, "");
+#endif
+inline constexpr size_t kMaxStringLengthU128 = 39;
+inline constexpr size_t kMaxStringLengthI128 = 40;
+
 /// @brief Realization taken from the gcc libstdc++ __to_chars_10_impl
 /// @param number
 /// @param buffer_ptr
 /// @return
-static inline I128_CONSTEXPR char* uint128_t_format_fill_chars_buffer(
+inline I128_CONSTEXPR char* uint128_t_format_fill_chars_buffer(
     uint128_t number, char* buffer_ptr) noexcept {
     constexpr uint8_t remainders[201] =
         "0001020304050607080910111213141516171819"
@@ -227,26 +237,28 @@ using make_unsigned_t = typename make_unsigned<T>::type;
 namespace std {
 
 inline ostream& operator<<(ostream& out, uint128_t number) {
-    // 340282366920938463463374607431768211455 == 2^128 - 1
-    // strlen("340282366920938463463374607431768211455") == 39;
-    constexpr size_t max_number_digits_count = 39;
+    using namespace format_impl_uint128_t;
 
-    char digits[max_number_digits_count + 1];
-    digits[max_number_digits_count] = '\0';
-    const char* ptr = format_impl_uint128_t::uint128_t_format_fill_chars_buffer(
-        number, &digits[max_number_digits_count]);
-    size_t length = static_cast<size_t>(&digits[max_number_digits_count] - ptr);
+    // + 1 for '\0'
+    constexpr auto buffer_size = kMaxStringLengthU128 + 1;
+
+    char digits[buffer_size];
+    digits[buffer_size - 1] = '\0';
+    const char* ptr = uint128_t_format_fill_chars_buffer(
+        number, &digits[buffer_size - 1]);
+    size_t length = static_cast<size_t>(&digits[buffer_size - 1] - ptr);
     return out << string_view(ptr, length);
 }
 
 inline int fprint_u128(uint128_t number, FILE* filestream) noexcept {
-    // 340282366920938463463374607431768211455 == 2^128 - 1
-    // strlen("340282366920938463463374607431768211455") == 39;
-    constexpr size_t max_number_digits_count = 39;
-    char digits[max_number_digits_count + 1];
-    digits[max_number_digits_count] = '\0';
-    const char* ptr = format_impl_uint128_t::uint128_t_format_fill_chars_buffer(
-        number, &digits[max_number_digits_count]);
+    using namespace format_impl_uint128_t;
+
+    // + 1 for '\0'
+    constexpr auto buffer_size = kMaxStringLengthU128 + 1;
+    char digits[buffer_size];
+    digits[buffer_size - 1] = '\0';
+    const char* ptr = uint128_t_format_fill_chars_buffer(
+        number, &digits[buffer_size - 1]);
     return fputs(ptr, filestream);
 }
 
@@ -255,82 +267,84 @@ inline int print_u128(uint128_t number) noexcept {
 }
 
 inline int fprint_u128_newline(uint128_t number, FILE* filestream) noexcept {
-    // 340282366920938463463374607431768211455 == 2^128 - 1
-    // strlen("340282366920938463463374607431768211455") == 39;
-    constexpr size_t max_number_digits_count = 39;
+    using namespace format_impl_uint128_t;
+
     // + 1 for '\0', + 1 for '\n'
-    char digits[max_number_digits_count + 1 + 1];
-    digits[max_number_digits_count]     = '\n';
-    digits[max_number_digits_count + 1] = '\0';
-    const char* ptr = format_impl_uint128_t::uint128_t_format_fill_chars_buffer(
-        number, &digits[max_number_digits_count]);
+    constexpr auto buffer_size = kMaxStringLengthU128 + 1 + 1;
+    char digits[buffer_size];
+    digits[buffer_size - 2]     = '\n';
+    digits[buffer_size - 1] = '\0';
+    const char* ptr = uint128_t_format_fill_chars_buffer(
+        number, &digits[buffer_size - 2]);
     return fputs(ptr, filestream);
 }
 
 inline int print_u128_newline(uint128_t number) noexcept {
-    // 340282366920938463463374607431768211455 == 2^128 - 1
-    // strlen("340282366920938463463374607431768211455") == 39;
-    constexpr size_t max_number_digits_count = 39;
-    char digits[max_number_digits_count + 1];
-    digits[max_number_digits_count] = '\0';
-    const char* ptr = format_impl_uint128_t::uint128_t_format_fill_chars_buffer(
-        number, &digits[max_number_digits_count]);
+    using namespace format_impl_uint128_t;
+
+    // + 1 for '\0'
+    constexpr auto buffer_size = kMaxStringLengthU128 + 1;
+    char digits[buffer_size];
+    digits[buffer_size - 1] = '\0';
+    const char* ptr = uint128_t_format_fill_chars_buffer(
+        number, &digits[buffer_size - 1]);
     return puts(ptr);
 }
 
 inline string to_string(uint128_t number) {
-    // 340282366920938463463374607431768211455 == 2^128 - 1
-    // strlen("340282366920938463463374607431768211455") == 39;
-    constexpr size_t max_number_digits_count = 39;
-    char digits[max_number_digits_count + 1];
-    digits[max_number_digits_count] = '\0';
+    using namespace format_impl_uint128_t;
 
-    const char* ptr = format_impl_uint128_t::uint128_t_format_fill_chars_buffer(
-        number, &digits[max_number_digits_count]);
-    size_t length = static_cast<size_t>(&digits[max_number_digits_count] - ptr);
+    // + 1 for '\0'
+    constexpr auto buffer_size = kMaxStringLengthU128 + 1;
+    char digits[buffer_size];
+    digits[buffer_size - 1] = '\0';
+
+    const char* ptr = uint128_t_format_fill_chars_buffer(
+        number, &digits[buffer_size - 1]);
+    size_t length = static_cast<size_t>(&digits[buffer_size - 1] - ptr);
 
     return string(ptr, length);
 }
 
 inline string to_string(int128_t number) {
-    //  170141183460469231731687303715884105727 ==  2^127 - 1
-    // -170141183460469231731687303715884105728 == -2^127
-    // strlen("-170141183460469231731687303715884105728") == 40;
-    constexpr size_t max_number_digits_count = 40;
-    char digits[max_number_digits_count + 1];
-    digits[max_number_digits_count] = '\0';
+    using namespace format_impl_uint128_t;
+
+    // + 1 for '\0'
+    constexpr auto buffer_size = kMaxStringLengthI128 + 1;
+    char digits[buffer_size];
+    digits[buffer_size - 1] = '\0';
 
     uint128_t number_m = number >= 0 ? uint128_t(number) : -uint128_t(number);
-    char* ptr = format_impl_uint128_t::uint128_t_format_fill_chars_buffer(
-        number_m, &digits[max_number_digits_count]);
+    char* ptr = uint128_t_format_fill_chars_buffer(
+        number_m, &digits[buffer_size - 1]);
     if (number < 0) {
         *--ptr = '-';
     }
-    size_t length = static_cast<size_t>(&digits[max_number_digits_count] - ptr);
+    size_t length = static_cast<size_t>(&digits[buffer_size - 1] - ptr);
 
     return string(ptr, length);
 }
 
 inline ostream& operator<<(ostream& out, int128_t number) {
-    // 340282366920938463463374607431768211455 == 2^128 - 1
-    // strlen("340282366920938463463374607431768211455") == 39;
-    constexpr size_t max_number_digits_count = 39;
-    // + 1 for sign
-    char digits[max_number_digits_count + 1 + 1];
-    digits[max_number_digits_count + 1] = '\0';
+    using namespace format_impl_uint128_t;
 
-    bool negative = number < 0;
+    // + 1 for '\0'
+    constexpr auto buffer_size = kMaxStringLengthI128 + 1;
+    char digits[buffer_size];
+    digits[buffer_size - 1] = '\0';
+
+    const bool negative = number < 0;
     if (negative) {
         number = -number;
     }
 
-    char* ptr = format_impl_uint128_t::uint128_t_format_fill_chars_buffer(
-        uint128_t(number), &digits[max_number_digits_count + 1]);
+    char* ptr = uint128_t_format_fill_chars_buffer(
+        uint128_t(number), &digits[buffer_size - 1]);
     if (negative) {
         *--ptr = '-';
     }
     size_t length =
-        static_cast<size_t>(&digits[max_number_digits_count + 1] - ptr);
+        static_cast<size_t>(&digits[buffer_size - 1] - ptr);
 
     return out << string_view(ptr, length);
 }
