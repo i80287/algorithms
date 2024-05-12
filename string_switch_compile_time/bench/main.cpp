@@ -6,7 +6,7 @@
 #include <random>
 #include <ranges>
 
-#include "../StringMatch.hpp"
+#include "../StringMap.hpp"
 
 // clang-format off
 inline constexpr std::string_view kStrings[] = {

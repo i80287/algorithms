@@ -20,16 +20,13 @@ inline constexpr size_t kMaxStringViewSize = 200;
 template <size_t N = kMaxStringViewSize>
 struct [[nodiscard]] CompileTimeStringLiteral {
     static_assert(N > 0);
-
-    consteval CompileTimeStringLiteral() noexcept = default;
-
-    // consteval CompileTimeStringLiteral(std::string_view str) noexcept : length(str.size()) {
-    //     // Change kMaxStringViewSize if you are using
-    //     //  very long strings in the StringSet / StringMap.
-    //     [[maybe_unused]] const auto string_view_size_check =
-    //         0 / (str.size() <= std::size(value));
-    //     std::char_traits<char>::copy(value.data(), str.data(), str.size());
-    // }
+    consteval CompileTimeStringLiteral(std::string_view str) noexcept : length(str.size()) {
+        // Change kMaxStringViewSize if you are using
+        //  very long strings in the StringSet / StringMap.
+        [[maybe_unused]] const auto string_view_size_check =
+            0 / (str.size() <= std::size(value));
+        std::char_traits<char>::copy(value.data(), str.data(), str.size());
+    }
     consteval CompileTimeStringLiteral(const char (&str)[N]) noexcept
         : length(str[N - 1] == '\0' ? N - 1 : N) {
         std::char_traits<char>::copy(value.data(), str, size());
