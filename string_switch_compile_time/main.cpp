@@ -8,7 +8,7 @@
 
 #include "StringMatch.hpp"
 
-static void StringMatchExample() {
+void StringMatchExample() {
     // Fixed length array and C-style input are
     //  used for easy inspection of the asm file
     //  generated for this file.
@@ -79,7 +79,7 @@ static void StringMatchExample() {
     puts(ans.data());
 }
 
-static void ComileTimeStringMapExample() {
+void ComileTimeStringMapExample() {
     static constexpr auto match = StringMatch<"text1", "text2", "text3", "text4">();
     static_assert(match("text1") == 0);
     static_assert(match("text2") == 1);
@@ -95,24 +95,23 @@ static void ComileTimeStringMapExample() {
         kText4,
         kNone,
     };
+    using enum SomeEnum;
 
-    static constexpr auto map = StringMap<
-        StringsList<"text1", "text2", "text3", "text4", "Text1", "Text3">,
-        TypedValuesList<SomeEnum, SomeEnum::kText1, SomeEnum::kText2, SomeEnum::kText3,
-                        SomeEnum::kText4, SomeEnum::kText1, SomeEnum::kText3>,
-        SomeEnum::kNone>();
+    static constexpr auto map =
+        StringMap<std::array{kText1, kText2, kText3, kText4, kText1, kText3}, kNone, "text1",
+                  "text2", "text3", "text4", "Text1", "Text3">();
 
-    static_assert(map("text1") == SomeEnum::kText1);
-    static_assert(map("text2") == SomeEnum::kText2);
-    static_assert(map("text3") == SomeEnum::kText3);
-    static_assert(map("text4") == SomeEnum::kText4);
-    static_assert(map("Text1") == SomeEnum::kText1);
-    static_assert(map("Text3") == SomeEnum::kText3);
-    static_assert(map("something else") == SomeEnum::kNone);
-    static_assert(map.kDefaultValue == SomeEnum::kNone);
+    static_assert(map("text1") == kText1);
+    static_assert(map("text2") == kText2);
+    static_assert(map("text3") == kText3);
+    static_assert(map("text4") == kText4);
+    static_assert(map("Text1") == kText1);
+    static_assert(map("Text3") == kText3);
+    static_assert(map("something else") == kNone);
+    static_assert(map.kDefaultValue == kNone);
 }
 
 int main() {
-    StringMatchExample();
+    // StringMatchExample();
     ComileTimeStringMapExample();
 }
