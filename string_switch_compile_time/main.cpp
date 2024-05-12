@@ -1,22 +1,41 @@
 #include <algorithm>
 #include <array>
+#include <compare>
 #include <cstdint>
 #include <cstdio>
 #include <iostream>
 #include <string>
-#include <compare>
-#include "StringSwitch.hpp"
 
-static void StringSwitchExample() {
+#include "StringMatch.hpp"
+
+static void StringMatchExample() {
     // Fixed length array and C-style input are
     //  used for easy inspection of the asm file
     //  generated for this file.
     std::array<char, 16> input;
     scanf("%15s", input.data());
     std::string_view ans;
-    static constexpr auto sw =
-        StringSwitch<"abc", "def", "ghij", "foo", "bar", "baz", "abacaba",
-                     "ring", "ideal", "GLn(F)">();
+    static constexpr auto sw = StringMatch<"abc", "def", "ghij", "foo", "bar", "baz", "qux",
+                                           "abacaba", "ring", "ideal", "GLn(F)">();
+    static_assert(sw("abc") == 0);
+    static_assert(sw("def") == 1);
+    static_assert(sw("ghij") == 2);
+    static_assert(sw("foo") == 3);
+    static_assert(sw("bar") == 4);
+    static_assert(sw("baz") == 5);
+    static_assert(sw("qux") == 6);
+    static_assert(sw("abacaba") == 7);
+    static_assert(sw("ring") == 8);
+    static_assert(sw("ideal") == 9);
+    static_assert(sw("GLn(F)") == 10);
+    static_assert(sw.kDefaultValue == sw("GLn(F)") + 1);
+    static_assert(sw.kDefaultValue == 11);
+    static_assert(sw("") == sw.kDefaultValue);
+    static_assert(sw("a") == sw.kDefaultValue);
+    static_assert(sw("A") == sw.kDefaultValue);
+    static_assert(sw("de") == sw.kDefaultValue);
+    static_assert(sw("ghi") == sw.kDefaultValue);
+    static_assert(sw("not_in_set") == sw.kDefaultValue);
 
     switch (sw(input.data())) {
         case sw("abc"):
@@ -37,6 +56,9 @@ static void StringSwitchExample() {
         case sw("baz"):
             ans = "found baz";
             break;
+        case sw("qux"):
+            ans = "found qux";
+            break;
         case sw("abacaba"):
             ans = "found abacaba";
             break;
@@ -49,52 +71,48 @@ static void StringSwitchExample() {
         case sw("GLn(F)"):
             ans = "found GLn(F)";
             break;
-        case sw.kDefaultSwitch:
+        case sw.kDefaultValue:
         default:
             ans = "not in the switch!";
             break;
     }
     puts(ans.data());
-
-    static_assert(sw("abc") == 0);
-    static_assert(sw("def") == 1);
-    static_assert(sw("ghij") == 2);
-    static_assert(sw("foo") == 3);
-    static_assert(sw("bar") == 4);
-    static_assert(sw("baz") == 5);
-    static_assert(sw("abacaba") == 6);
-    static_assert(sw("ring") == 7);
-    static_assert(sw("ideal") == 8);
-    static_assert(sw("GLn(F)") == 9);
-    static_assert(sw.kDefaultSwitch == (sw("GLn(F)") + 1));
-    static_assert(sw.kDefaultSwitch == 10);
-    static_assert(sw("") == sw.kDefaultSwitch);
-    static_assert(sw("a") == sw.kDefaultSwitch);
-    static_assert(sw("A") == sw.kDefaultSwitch);
-    static_assert(sw("de") == sw.kDefaultSwitch);
-    static_assert(sw("ghi") == sw.kDefaultSwitch);
-    static_assert(sw("not_in_switch") == sw.kDefaultSwitch);
 }
 
 static void ComileTimeStringMapExample() {
-    static constexpr auto sw =
-        StringSwitch<"cmd1", "cmd2", "cmd3", "cmd4">();
-    static_assert(sw.kDefaultSwitch == sw("cmd4") + 1);
-    static_assert(sw.kDefaultSwitch == 4);
-    constexpr const char* map[] = {
-        [sw("cmd1")]        = "called cmd1",
-        [sw("cmd2")]        = "called cmd2",
-        [sw("cmd3")]        = "called cmd3",
-        [sw("cmd4")]        = "called cmd4",
-        [sw.kDefaultSwitch] = "called something else",
+    static constexpr auto match = StringMatch<"text1", "text2", "text3", "text4">();
+    static_assert(match("text1") == 0);
+    static_assert(match("text2") == 1);
+    static_assert(match("text3") == 2);
+    static_assert(match("text4") == 3);
+    static_assert(match("not in") == match.kDefaultValue);
+    static_assert(match.kDefaultValue == 4);
+
+    enum class SomeEnum {
+        kText1,
+        kText2,
+        kText3,
+        kText4,
+        kNone,
     };
 
-    std::string input;
-    std::cin >> input;
-    puts(map[sw(input)]);
+    static constexpr auto map = StringMap<
+        StringsList<"text1", "text2", "text3", "text4", "Text1", "Text3">,
+        TypedValuesList<SomeEnum, SomeEnum::kText1, SomeEnum::kText2, SomeEnum::kText3,
+                        SomeEnum::kText4, SomeEnum::kText1, SomeEnum::kText3>,
+        SomeEnum::kNone>();
+
+    static_assert(map("text1") == SomeEnum::kText1);
+    static_assert(map("text2") == SomeEnum::kText2);
+    static_assert(map("text3") == SomeEnum::kText3);
+    static_assert(map("text4") == SomeEnum::kText4);
+    static_assert(map("Text1") == SomeEnum::kText1);
+    static_assert(map("Text3") == SomeEnum::kText3);
+    static_assert(map("something else") == SomeEnum::kNone);
+    static_assert(map.kDefaultValue == SomeEnum::kNone);
 }
 
 int main() {
-    StringSwitchExample();
+    StringMatchExample();
     ComileTimeStringMapExample();
 }

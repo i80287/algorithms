@@ -6,7 +6,7 @@
 #include <random>
 #include <ranges>
 
-#include "../StringSwitch.hpp"
+#include "../StringMatch.hpp"
 
 // clang-format off
 inline constexpr std::string_view kStrings[] = {
@@ -53,21 +53,6 @@ inline constexpr std::string_view kStrings[] = {
 };
 // clang-format on
 
-constexpr uint32_t map(std::string_view s) noexcept {
-    static constexpr auto sw = StringSwitch<
-        kStrings[0], kStrings[1], kStrings[2], kStrings[3], kStrings[4],
-        kStrings[5], kStrings[6], kStrings[7], kStrings[8], kStrings[9],
-        kStrings[10], kStrings[11], kStrings[12], kStrings[13],
-        kStrings[14], kStrings[15], kStrings[16], kStrings[17],
-        kStrings[18], kStrings[19], kStrings[20], kStrings[21],
-        kStrings[22], kStrings[23], kStrings[24], kStrings[25],
-        kStrings[26], kStrings[27], kStrings[28], kStrings[29],
-        kStrings[30], kStrings[31], kStrings[32], kStrings[33],
-        kStrings[34], kStrings[35], kStrings[36], kStrings[37],
-        kStrings[38], kStrings[39]>();
-    return sw(s);
-}
-
 constexpr auto operator-(const timespec& t2, const timespec& t1) noexcept {
     const auto sec_passed = static_cast<uint64_t>(t2.tv_sec - t1.tv_sec);
     using unsigned_nsec_t = std::make_unsigned_t<decltype(t2.tv_nsec)>;
@@ -82,13 +67,22 @@ int main() {
     std::mt19937 rnd;
     uint64_t total_time = 0;
 
+    static constexpr auto sw =
+        StringMatch<kStrings[0], kStrings[1], kStrings[2], kStrings[3], kStrings[4],
+                    kStrings[5], kStrings[6], kStrings[7], kStrings[8], kStrings[9],
+                    kStrings[10], kStrings[11], kStrings[12], kStrings[13], kStrings[14],
+                    kStrings[15], kStrings[16], kStrings[17], kStrings[18], kStrings[19],
+                    kStrings[20], kStrings[21], kStrings[22], kStrings[23], kStrings[24],
+                    kStrings[25], kStrings[26], kStrings[27], kStrings[28], kStrings[29],
+                    kStrings[30], kStrings[31], kStrings[32], kStrings[33], kStrings[34],
+                    kStrings[35], kStrings[36], kStrings[37], kStrings[38], kStrings[39]>();
+
     for (size_t i = 0; i < kMeasureLimit; i++) {
         timespec t1{};
         timespec t2{};
-        const auto ind             = rnd() % std::size(kStrings);
-        const std::string_view str = kStrings[ind];
+        const auto ind = rnd() % std::size(kStrings);
         clock_gettime(CLOCK_REALTIME, &t1);
-        auto ans = map(str);
+        auto ans = sw(kStrings[ind]);
         clock_gettime(CLOCK_REALTIME, &t2);
         assert(ans == ind);
         assert(t2.tv_sec >= t1.tv_sec);
