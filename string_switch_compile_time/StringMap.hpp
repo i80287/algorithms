@@ -18,27 +18,33 @@ using uint8_t  = std::uint8_t;
 inline constexpr size_t kMaxStringViewSize = 200;
 
 template <size_t N = kMaxStringViewSize>
-struct [[nodiscard]] CompileTimeStringLiteral final {
+struct [[nodiscard]] CompileTimeStringLiteral {
     static_assert(N > 0);
 
-    consteval CompileTimeStringLiteral(std::string_view str) noexcept : length(str.size()) {
-        // Change kMaxStringViewSize if you are using
-        //  very long strings in the StringSet / StringMap.
-        [[maybe_unused]] const auto string_view_size_check =
-            0 / (str.size() <= std::size(value));
-        std::char_traits<char>::copy(value, str.data(), str.size());
-    }
+    consteval CompileTimeStringLiteral() noexcept = default;
 
+    // consteval CompileTimeStringLiteral(std::string_view str) noexcept : length(str.size()) {
+    //     // Change kMaxStringViewSize if you are using
+    //     //  very long strings in the StringSet / StringMap.
+    //     [[maybe_unused]] const auto string_view_size_check =
+    //         0 / (str.size() <= std::size(value));
+    //     std::char_traits<char>::copy(value.data(), str.data(), str.size());
+    // }
     consteval CompileTimeStringLiteral(const char (&str)[N]) noexcept
         : length(str[N - 1] == '\0' ? N - 1 : N) {
-        std::char_traits<char>::copy(value, str, N);
+        std::char_traits<char>::copy(value.data(), str, size());
     }
-
     [[nodiscard]] consteval size_t size() const noexcept {
         return length;
     }
+    consteval char operator[](size_t index) const noexcept {
+        return value[index];
+    }
+    consteval char& operator[](size_t index) noexcept {
+        return value[index];
+    }
 
-    char value[N]{};
+    std::array<char, N> value{};
     const size_t length{};
 };
 

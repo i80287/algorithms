@@ -6,7 +6,7 @@
 #include <iostream>
 #include <string>
 
-#include "StringMatch.hpp"
+#include "StringMap.hpp"
 
 void StringMatchExample() {
     // Fixed length array and C-style input are
@@ -112,6 +112,6 @@ void ComileTimeStringMapExample() {
 }
 
 int main() {
-    // StringMatchExample();
+    StringMatchExample();
     ComileTimeStringMapExample();
 }
