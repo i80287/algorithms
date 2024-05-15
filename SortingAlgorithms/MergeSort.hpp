@@ -1,59 +1,103 @@
-#include <cassert>
-#include <cstdint>
-#include <cstdio>
+#pragma once
+
+#include <algorithm>
+#include <iterator>
+#include <ranges>
+#include <type_traits>
 #include <utility>
 
-template <typename T>
-static void merge(T arr_iter, size_t left, size_t mid, size_t right) {
-    // индекс начала второй "половины" для слияния
-    size_t left_2 = mid + 1;
-    // половины уже отсортированы
-    if (arr_iter[mid] <= arr_iter[left_2]) {
-        return;
+namespace detail {
+namespace merge_sort_impl {
+namespace {
+
+template <class Iterator, class Comparator>
+inline constexpr bool kIsNothrowComparable =
+    noexcept(std::declval<Comparator>()(*std::declval<Iterator>(),
+                                        *std::declval<Iterator>()));
+
+template <class Iterator, class Comparator>
+inline constexpr bool kIsNoexceptSortable =
+    noexcept(std::is_nothrow_move_assignable_v<
+             typename std::iterator_traits<Iterator>::value_type>) &&
+    kIsNothrowComparable<Iterator, Comparator>;
+
+// clang-format off
+template <class Iterator, class Comparator>
+constexpr void MergeImpl(Iterator iter_left, Iterator iter_left_2, Iterator iter_right, Comparator comp)
+    noexcept(kIsNoexceptSortable<Iterator, Comparator>) {
+    // clang-format on
+    while (iter_left < iter_left_2 && iter_left_2 < iter_right) {
+        if (comp(*iter_left_2, *iter_left)) {
+            auto value = std::move(*iter_left_2);
+            std::move_backward(iter_left, iter_left_2, iter_left_2 + 1);
+            *iter_left = std::move(value);
+            ++iter_left_2;
+        }
+        ++iter_left;
+    }
+}
+
+// clang-format off
+template <class Iterator, class Comparator>
+constexpr void MergeSortImpl(Iterator iter_left, Iterator iter_right, Comparator comp)
+    noexcept(kIsNoexceptSortable<Iterator, Comparator>) {
+    // clang-format on
+    Iterator iter_left_2 =
+        iter_left + std::distance(iter_left, iter_right) / 2;
+    if (std::distance(iter_left, iter_left_2) >= 2) {
+        MergeSortImpl(iter_left, iter_left_2, comp);
     }
 
-    while (left <= mid && left_2 <= right) {
-        // первые элементы в правильном порядке
-        if (arr_iter[left] <= arr_iter[left_2]) {
-            left++;
-        }
-        else {
-            // вставляем на правильное место left элемент arr_iter[left_2]
-            // запоминаем его и его индекс
-            auto value = std::move(arr_iter[left_2]);
-            size_t ind = left_2;
+    if (std::distance(iter_left_2, iter_right) >= 2) {
+        MergeSortImpl(iter_left_2, iter_right, comp);
+    }
+    MergeImpl(iter_left, iter_left_2, iter_right, std::move(comp));
+}
 
-            // сдвигаем все элементы между left и left_2 вправо
-            // и записываем на место left элемент arr_iter[left_2]
-            while (ind != left) {
-                arr_iter[ind] = std::move(arr_iter[ind - 1]);
-                ind--;
-            }
-            arr_iter[left] = std::move(value);
+// clang-format off
+template <class Iterator, class Comparator>
+constexpr void MergeSortWithEmptyComparatorImpl(Iterator iter_left, Iterator iter_right)
+    noexcept(kIsNoexceptSortable<Iterator, Comparator>) {
+    // clang-format on
+    auto dist            = std::distance(iter_left, iter_right);
+    Iterator iter_left_2 = iter_left + dist / 2;
+    if (std::distance(iter_left, iter_left_2) >= 2) {
+        MergeSortWithEmptyComparatorImpl<Iterator, Comparator>(
+            iter_left, iter_left_2);
+    }
 
-            // передвигаем все рабочие индексы
-            left++;
-            mid++;
-            left_2++;
+    if (std::distance(iter_left_2, iter_right) >= 2) {
+        MergeSortWithEmptyComparatorImpl<Iterator, Comparator>(iter_left_2,
+                                                               iter_right);
+    }
+    MergeImpl(iter_left, iter_left_2, iter_right, Comparator{});
+}
+
+}  // namespace
+}  // namespace merge_sort_impl
+}  // namespace detail
+
+template <class Iterator, class Comparator = std::ranges::less>
+constexpr void
+MergeSort(Iterator begin, Iterator end, Comparator comp = {}) noexcept(
+    detail::merge_sort_impl::kIsNoexceptSortable<Iterator, Comparator>) {
+    if (std::distance(begin, end) >= 2) {
+        if constexpr (sizeof(Comparator) == 1 &&
+                      std::is_nothrow_constructible_v<Comparator>) {
+            detail::merge_sort_impl::MergeSortWithEmptyComparatorImpl<
+                Iterator, Comparator>(begin, end);
+        } else {
+            detail::merge_sort_impl::MergeSortImpl(begin, end,
+                                                   std::move(comp));
         }
     }
 }
 
-template <typename T>
-static void mergeSort(T arr_iter, size_t l, size_t r) {
-    size_t m = (l + r) / 2;
-    if (l < m) {
-        mergeSort(arr_iter, l, m);
-    }
-    if (m + 1 < r) {
-        mergeSort(arr_iter, m + 1, r);
-    }
-    merge(arr_iter, l, m, r);
-}
-
-template <typename T>
-static inline void MergeSort(T arr_iter, size_t length) {
-    if (length >= 2) {
-        mergeSort(arr_iter, 0, length - 1);
-    }
+template <std::ranges::random_access_range Range,
+          class Comparator = std::ranges::less>
+constexpr void MergeSort(Range&& range, Comparator comp = {}) noexcept(
+    noexcept(MergeSort(std::ranges::begin(range), std::ranges::end(range),
+                       std::move(comp)))) {
+    MergeSort(std::ranges::begin(range), std::ranges::end(range),
+              std::move(comp));
 }
