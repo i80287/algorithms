@@ -10,22 +10,24 @@
 static std::vector<uint64_t> read_primes() {
     struct Wrapper final {
         FILE* const file;
-        Wrapper(const char* fname, const char* mode) noexcept
-            : file(fopen(fname, mode)) {}
-        ~Wrapper() {
-            if (file) {
-                fclose(file);
+        Wrapper(const char* fname, const char* mode) : file(fopen(fname, mode)) {
+            if (file == nullptr) [[unlikely]] {
+                perror("fopen");
+                throw std::runtime_error("fopen");
             }
+        }
+        Wrapper(const Wrapper&) = delete;
+        Wrapper(Wrapper&&) = delete;
+        Wrapper& operator=(const Wrapper&) = delete;
+        Wrapper& operator=(Wrapper&&) = delete;
+        ~Wrapper() {
+            fclose(file);
         }
     };
 
     std::vector<uint64_t> nums;
     nums.reserve(1065000zu);
     Wrapper fin("u64-primes.txt", "r");
-    if (fin.file == nullptr) [[unlikely]] {
-        perror("fopen");
-        throw std::runtime_error("fopen");
-    }
     while (true) {
         uint64_t n = 0;
         switch (fscanf(fin.file, "%" PRIu64, &n)) {
