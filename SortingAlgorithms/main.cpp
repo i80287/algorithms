@@ -127,12 +127,12 @@ int main() {
             measure_tools::MeasureSort(
                 array.get(), buffer_for_sorting.get(), length,
                 [](T* buffer, size_t len) constexpr noexcept {
-                    HeapSort(&buffer[0], len);
+                    heap_sort(&buffer[0], len);
                 });
         const uint64_t shell_sort_time_res = measure_tools::MeasureSort(
             array.get(), buffer_for_sorting.get(), length,
             [](T* buffer, size_t len) constexpr noexcept {
-                ShellSort(&buffer[0], len);
+                algorithms::shell_sort(&buffer[0], len);
             });
         const uint64_t merge_sort_time_res = measure_tools::MeasureSort(
             array.get(), buffer_for_sorting.get(), length,
@@ -141,18 +141,18 @@ int main() {
             });
         const uint64_t quick_sort_time_res = measure_tools::MeasureSort(
             array.get(), buffer_for_sorting.get(), length,
-            [](T* buffer, size_t len) {
-                QuickSort(&buffer[0], &buffer[len]);
+            [](T* buffer, size_t len) constexpr noexcept {
+                algorithms::quick_sort(&buffer[0], &buffer[len]);
             });
 
         // clang-format off
-        printf(""
-            "std::sort intro sort average nanoseconds:         %" PRIu64 "\n"
-            "::qsort quick sort average nanoseconds:           %" PRIu64 "\n"
-            "::HeapSort inplace heap sort average nanoseconds: %" PRIu64 "\n"
-            "std::stable_sort merge sort average nanoseconds:  %" PRIu64 "\n"
-            "::QuickSort quick sort average nanoseconds:       %" PRIu64 "\n"
-            "::ShellSort Shell sort average nanoseconds:       %" PRIu64 "\n",
+        printf(
+            "std::sort intro sort average nanoseconds:        %" PRIu64 "\n"
+            "qsort quick sort average nanoseconds:            %" PRIu64 "\n"
+            "heap_sort inplace heap sort average nanoseconds: %" PRIu64 "\n"
+            "std::stable_sort merge sort average nanoseconds: %" PRIu64 "\n"
+            "quick_sort quick sort average nanoseconds:       %" PRIu64 "\n"
+            "shell_sort Shell sort average nanoseconds:       %" PRIu64 "\n",
             std_algo_sort_time_res,
             qsort_time_res,
             inplace_heap_sort_time_res,
@@ -173,10 +173,10 @@ int main() {
     printf("Results:\n"
         "std::sort intro sort average nanoseconds:         %" PRIu64 "\n"
         "::qsort quick sort average nanoseconds:           %" PRIu64 "\n"
-        "::HeapSort inplace heap sort average nanoseconds: %" PRIu64 "\n"
+        "::heap_sort inplace heap sort average nanoseconds: %" PRIu64 "\n"
         "std::stable_sort merge sort average nanoseconds:  %" PRIu64 "\n"
         "::QuickSort quick sort average nanoseconds:       %" PRIu64 "\n"
-        "::ShellSort Shell sort average nanoseconds:       %" PRIu64 "\n",
+        "::shell_sort Shell sort average nanoseconds:       %" PRIu64 "\n",
         std_algo_sort_time / kTotalTests,
         qsort_time / kTotalTests,
         inplace_heap_sort_time / kTotalTests,
