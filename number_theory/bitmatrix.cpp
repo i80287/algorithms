@@ -2,11 +2,10 @@
 #include <cassert>
 #include <cstddef>
 #include <cstdint>
-#include <cstring>
 #include <iostream>
+#include <random>
 
 #include "config_macros.hpp"
-#include "math_functions.hpp"
 
 /// @brief Transposes 8x8 matrix in `src` and puts it in into `dst`. `src` may
 /// be equal to `dst` (inplace transposition)
@@ -97,8 +96,8 @@ constexpr void transpose8(const uint8_t src[8], uint8_t dst[8]) noexcept {
 
 /// @brief Transposes 32x32 matrix in `src` inplace.
 /// If AgainstMinorDiagonal = false, the function is equivalent to:
-///     for (size_t i = 0; i < 32; i++) {
-///         for (size_t j = i + 1; j < 32; j++) {
+///     for (std::size_t i = 0; i < 32; i++) {
+///         for (std::size_t j = i + 1; j < 32; j++) {
 ///             auto aij = (src[i] & (1u << j)) >> j;
 ///             auto aji = (src[j] & (1u << i)) >> i;
 ///             src[i] &= ~(1u << j);
@@ -351,7 +350,7 @@ constexpr bool test_32x32() {
 }
 
 constexpr bool test_64x64() {
-    // clang-format on
+    // clang-format off
     uint64_t a[64] = {
         0b0000000000000000000000000000000000000000000000000000000000010101,
         0b0000000000000000000000000000000000000000000000000000000000001010,
@@ -550,7 +549,7 @@ constexpr bool test_64x64() {
         0b0101010000000000000000000000000000000000000000000000000000000001,
         0b1010110000000000000000000000000000000000000000000000000000000001,
     };
-    // clang-format off
+    // clang-format on
     static_assert(sizeof(a) == sizeof(b1));
     static_assert(sizeof(a) == sizeof(b2));
 
@@ -563,11 +562,75 @@ constexpr bool test_64x64() {
     transpose64<true>(a);
     bool f2 = std::equal(&a[0], &a[32], &b2[0]);
 
+    class {
+    public:
+        constexpr uint64_t operator()() noexcept {
+            constexpr uint64_t A = std::minstd_rand0::multiplier;
+            constexpr uint64_t C = std::minstd_rand0::increment;
+            constexpr uint64_t M = std::minstd_rand0::modulus;
+            state                = (A * state + C) % M;
+            return state;
+        }
+
+    private:
+        uint64_t state = 872189u;
+    } gen;
+
+    if (!std::is_constant_evaluated()) {
+        // Here we manually set too many operations for compile time check
+        uint64_t src[64] = {};
+        static_assert(sizeof(a) == sizeof(src));
+        for (std::size_t iter = 1 << 20; iter > 0; iter--) {
+            for (std::size_t i = 0; i < 32; i++) {
+                uint64_t w   = gen();
+                a[i * 2]     = uint32_t(w);
+                a[i * 2 + 1] = uint32_t(w >> 32);
+            }
+            std::copy(&a[0], &a[64], &src[0]);
+            transpose64(a);
+            for (std::size_t i = 0; i < 64; i++) {
+                for (std::size_t j = i + 1; j < 64; j++) {
+                    auto aij = (src[i] & (1ull << j)) >> j;
+                    auto aji = (src[j] & (1ull << i)) >> i;
+                    src[i] &= ~(1ull << j);
+                    src[i] |= aji << j;
+                    src[j] &= ~(1ull << i);
+                    src[j] |= aij << i;
+                }
+            }
+            if (!std::equal(&a[0], &a[64], &src[0])) {
+                return false;
+            }
+        }
+    }
+
     return f1 && f2;
+}
+
+#include <bitset>
+
+void transpose_m(std::bitset<4096> (&m)[4096]) {
+    uint64_t tmp1[64] = {};
+    uint64_t tmp2[64] = {};
+    for (std::size_t i = 0; i < 64; i++) {
+        for (std::size_t j = i; j < 64; j++) {
+            for (std::size_t k = 0; k < 64; k++) {
+                tmp1[k] = *(reinterpret_cast<const uint64_t*>(&m[i * 64 + k]) + j);
+                tmp2[k] = *(reinterpret_cast<const uint64_t*>(&m[j * 64 + k]) + i);
+            }
+            transpose64(tmp1);
+            transpose64(tmp2);
+            for (std::size_t k = 0; k < 64; k++) {
+                *(reinterpret_cast<uint64_t*>(&m[i * 64 + k]) + j) = tmp2[k];
+                *(reinterpret_cast<uint64_t*>(&m[j * 64 + k]) + i) = tmp1[k];
+            }
+        }
+    }
 }
 
 int main() {
     static_assert(test_8x8());
     static_assert(test_32x32());
     static_assert(test_64x64());
+    assert(test_64x64());
 }
