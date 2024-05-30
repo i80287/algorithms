@@ -625,7 +625,7 @@ ATTRIBUTE_CONST inline I128_CONSTEXPR uint128_t uabs(int128_t n) noexcept {
 
 #endif
 
-namespace impl {
+namespace detail {
 
 ATTRIBUTE_CONST inline uint32_t log2_floor_software(uint64_t n) {
     static const uint64_t t[6] = {0xFFFFFFFF00000000ull, 0x00000000FFFF0000ull,
@@ -801,7 +801,7 @@ ATTRIBUTE_CONST constexpr uint64_t pop_count_64_software(uint64_t n) noexcept {
     return n;
 }
 
-}  // namespace impl
+}  // namespace detail
 
 ATTRIBUTE_CONST constexpr int32_t pop_diff(uint32_t x, uint32_t y) noexcept {
     /**
@@ -859,7 +859,7 @@ ATTRIBUTE_CONST constexpr int32_t countr_zero(T n) noexcept {
 #elif defined(__GNUC__)
             return __builtin_ctzll(low);
 #else
-            return static_cast<int32_t>(impl::tz_count_64_software(low));
+            return static_cast<int32_t>(detail::tz_count_64_software(low));
 #endif
         }
 
@@ -870,7 +870,7 @@ ATTRIBUTE_CONST constexpr int32_t countr_zero(T n) noexcept {
 #elif defined(__GNUC__)
         int32_t high_trailing_zeros_count = __builtin_ctzll(high);
 #else
-        int32_t high_trailing_zeros_count = static_cast<int32_t>(impl::tz_count_64_software(high));
+        int32_t high_trailing_zeros_count = static_cast<int32_t>(detail::tz_count_64_software(high));
 #endif
         return high_trailing_zeros_count + 64;
     } else
@@ -883,13 +883,13 @@ ATTRIBUTE_CONST constexpr int32_t countr_zero(T n) noexcept {
 #if defined(__GNUC__)
         return __builtin_ctzll(n);
 #else
-        return static_cast<int32_t>(impl::tz_count_64_software(n));
+        return static_cast<int32_t>(detail::tz_count_64_software(n));
 #endif
     } else if constexpr (std::is_same_v<T, unsigned long>) {
 #if defined(__GNUC__)
         return __builtin_ctzl(n);
 #else
-        return static_cast<int32_t>(impl::tz_count_64_software(static_cast<unsigned long long>(n)));
+        return static_cast<int32_t>(detail::tz_count_64_software(static_cast<unsigned long long>(n)));
 #endif
     } else {
         static_assert(std::is_same_v<T, unsigned int> || std::is_same_v<T, unsigned short> ||
@@ -898,7 +898,7 @@ ATTRIBUTE_CONST constexpr int32_t countr_zero(T n) noexcept {
 #if defined(__GNUC__)
         return __builtin_ctz(n);
 #else
-        return static_cast<int32_t>(impl::tz_count_32_software(n));
+        return static_cast<int32_t>(detail::tz_count_32_software(n));
 #endif
     }
 #endif
@@ -929,7 +929,7 @@ ATTRIBUTE_CONST constexpr int32_t countl_zero(T n) noexcept {
 #elif defined(__GNUC__)
             return __builtin_clzll(high);
 #else
-            return static_cast<int32_t>(impl::lz_count_64_software(high));
+            return static_cast<int32_t>(detail::lz_count_64_software(high));
 #endif
         }
 
@@ -941,7 +941,7 @@ ATTRIBUTE_CONST constexpr int32_t countl_zero(T n) noexcept {
 #elif defined(__GNUC__)
         return 64 + __builtin_clzll(low);
 #else
-        return 64 + static_cast<int32_t>(impl::lz_count_64_software(low));
+        return 64 + static_cast<int32_t>(detail::lz_count_64_software(low));
 #endif
     } else
 #endif
@@ -953,13 +953,13 @@ ATTRIBUTE_CONST constexpr int32_t countl_zero(T n) noexcept {
 #if defined(__GNUC__)
         return __builtin_clzll(n);
 #else
-        return static_cast<int32_t>(impl::lz_count_64_software(n));
+        return static_cast<int32_t>(detail::lz_count_64_software(n));
 #endif
     } else if constexpr (std::is_same_v<T, unsigned long>) {
 #if defined(__GNUC__)
         return __builtin_clzl(n);
 #else
-        return static_cast<int32_t>(impl::lz_count_64_software(n));
+        return static_cast<int32_t>(detail::lz_count_64_software(n));
 #endif
     } else {
         static_assert(std::is_same_v<T, unsigned int> || std::is_same_v<T, unsigned short> ||
@@ -968,7 +968,7 @@ ATTRIBUTE_CONST constexpr int32_t countl_zero(T n) noexcept {
 #if defined(__GNUC__)
         return __builtin_clz(n);
 #else
-        return static_cast<int32_t>(impl::lz_count_32_software(n));
+        return static_cast<int32_t>(detail::lz_count_32_software(n));
 #endif
     }
 #endif
@@ -991,8 +991,8 @@ ATTRIBUTE_CONST constexpr int32_t popcount(T n) noexcept {
 #elif defined(__GNUC__)
         return __builtin_popcountll(high) + __builtin_popcountll(low);
 #else
-        return static_cast<int32_t>(impl::pop_count_64_software(high) +
-                                    impl::pop_count_64_software(low));
+        return static_cast<int32_t>(detail::pop_count_64_software(high) +
+                                    detail::pop_count_64_software(low));
 #endif
     } else
 #endif
@@ -1004,13 +1004,13 @@ ATTRIBUTE_CONST constexpr int32_t popcount(T n) noexcept {
 #if defined(__GNUC__)
         return __builtin_popcountll(n);
 #else
-        return static_cast<int32_t>(impl::pop_count_64_software(n));
+        return static_cast<int32_t>(detail::pop_count_64_software(n));
 #endif
     } else if constexpr (std::is_same_v<T, unsigned long>) {
 #if defined(__GNUC__)
         return __builtin_popcountl(n);
 #else
-        return static_cast<int32_t>(impl::pop_count_64_software(n));
+        return static_cast<int32_t>(detail::pop_count_64_software(n));
 #endif
     } else {
         static_assert(std::is_same_v<T, unsigned int> || std::is_same_v<T, unsigned short> ||
@@ -1019,7 +1019,7 @@ ATTRIBUTE_CONST constexpr int32_t popcount(T n) noexcept {
 #if defined(__GNUC__)
         return __builtin_popcount(n);
 #else
-        return static_cast<int32_t>(impl::pop_count_32_software(n));
+        return static_cast<int32_t>(detail::pop_count_32_software(n));
 #endif
     }
 #endif
@@ -1267,7 +1267,7 @@ constexpr
                                             99999999999999999ull,
                                             999999999999999999ull,
                                             9999999999999999999ull};
-    static_assert(countl_zero(uint64_t(0)) == 64, "countl_zero impl error");
+    static_assert(countl_zero(uint64_t(0)) == 64, "countl_zero detail error");
     int32_t digits = (19 * (63 - int32_t(countl_zero(n)))) >> 6;
     ATTRIBUTE_ASSUME((-19 >> 6) <= digits && digits <= ((19 * 63) >> 6));
     digits += int32_t((table2[uint32_t(digits + 1)] - n) >> 63);
@@ -1393,7 +1393,7 @@ ATTRIBUTE_CONST SumSinCos<FloatType> sum_of_sines_and_cosines(FloatType alpha, F
     };
 }
 
-namespace impl {
+namespace detail {
 
 /// @brief Returns max number of possible different
 ///         prime divisors for the given @a `n`.
@@ -1437,7 +1437,7 @@ ATTRIBUTE_CONST constexpr uint32_t max_number_of_prime_divisors(uint32_t n) noex
     }
 }
 
-}  // namespace impl
+}  // namespace detail
 
 /// @brief
 /// @param[in] n
@@ -1445,7 +1445,7 @@ ATTRIBUTE_CONST constexpr uint32_t max_number_of_prime_divisors(uint32_t n) noex
 ///          sorted by prime_div.
 inline std::vector<std::pair<uint32_t, uint32_t>> prime_divisors_to_vector(uint32_t n) {
     std::vector<std::pair<uint32_t, uint32_t>> divisors;
-    divisors.reserve(impl::max_number_of_prime_divisors(n));
+    divisors.reserve(detail::max_number_of_prime_divisors(n));
     if (n % 2 == 0 && n != 0) {
         // n = s * 2^pow_of_2, where s is odd
         auto [s, pow_of_2] = extract_pow2(n);

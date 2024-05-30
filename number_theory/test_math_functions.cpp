@@ -279,60 +279,60 @@ static_assert(bit_reverse(uint128_t(-1)) == uint128_t(-1), "bit_reverse");
 #endif
 
 #if __cplusplus >= 202002L
-static_assert(int(impl::pop_count_32_software(0u)) == int(std::popcount(0u)),
+static_assert(int(detail::pop_count_32_software(0u)) == int(std::popcount(0u)),
               "pop_count_32_software");
-static_assert(int(impl::pop_count_32_software(1u)) == int(std::popcount(1u)),
+static_assert(int(detail::pop_count_32_software(1u)) == int(std::popcount(1u)),
               "pop_count_32_software");
-static_assert(int(impl::pop_count_32_software(2u)) == int(std::popcount(2u)),
+static_assert(int(detail::pop_count_32_software(2u)) == int(std::popcount(2u)),
               "pop_count_32_software");
-static_assert(int(impl::pop_count_32_software(3u)) == int(std::popcount(3u)),
+static_assert(int(detail::pop_count_32_software(3u)) == int(std::popcount(3u)),
               "pop_count_32_software");
-static_assert(int(impl::pop_count_32_software(4u)) == int(std::popcount(4u)),
+static_assert(int(detail::pop_count_32_software(4u)) == int(std::popcount(4u)),
               "pop_count_32_software");
-static_assert(int(impl::pop_count_32_software(0x4788743u)) == int(std::popcount(0x4788743u)),
+static_assert(int(detail::pop_count_32_software(0x4788743u)) == int(std::popcount(0x4788743u)),
               "pop_count_32_software");
-static_assert(int(impl::pop_count_32_software(0x2D425B23u)) == int(std::popcount(0x2D425B23u)),
+static_assert(int(detail::pop_count_32_software(0x2D425B23u)) == int(std::popcount(0x2D425B23u)),
               "pop_count_32_software");
-static_assert(int(impl::pop_count_32_software(0xFFFFFFFFu - 1)) ==
+static_assert(int(detail::pop_count_32_software(0xFFFFFFFFu - 1)) ==
                   int(std::popcount(0xFFFFFFFFu - 1)),
               "pop_count_32_software");
-static_assert(int(impl::pop_count_32_software(0xFFFFFFFFu)) == int(std::popcount(0xFFFFFFFFu)),
+static_assert(int(detail::pop_count_32_software(0xFFFFFFFFu)) == int(std::popcount(0xFFFFFFFFu)),
               "pop_count_32_software");
 #endif
 
 #if __cplusplus >= 202002L
-static_assert(int(impl::pop_count_64_software(uint64_t(0))) == int(std::popcount(uint64_t(0))),
+static_assert(int(detail::pop_count_64_software(uint64_t(0))) == int(std::popcount(uint64_t(0))),
               "pop_count_64_software");
-static_assert(int(impl::pop_count_64_software(uint64_t(1))) == int(std::popcount(uint64_t(1))),
+static_assert(int(detail::pop_count_64_software(uint64_t(1))) == int(std::popcount(uint64_t(1))),
               "pop_count_64_software");
-static_assert(int(impl::pop_count_64_software(uint64_t(2))) == int(std::popcount(uint64_t(2))),
+static_assert(int(detail::pop_count_64_software(uint64_t(2))) == int(std::popcount(uint64_t(2))),
               "pop_count_64_software");
-static_assert(int(impl::pop_count_64_software(uint64_t(3))) == int(std::popcount(uint64_t(3))),
+static_assert(int(detail::pop_count_64_software(uint64_t(3))) == int(std::popcount(uint64_t(3))),
               "pop_count_64_software");
-static_assert(int(impl::pop_count_64_software(uint64_t(4))) == int(std::popcount(uint64_t(4))),
+static_assert(int(detail::pop_count_64_software(uint64_t(4))) == int(std::popcount(uint64_t(4))),
               "pop_count_64_software");
-static_assert(int(impl::pop_count_64_software(uint64_t(0x4788743u))) ==
+static_assert(int(detail::pop_count_64_software(uint64_t(0x4788743u))) ==
                   int(std::popcount(uint64_t(0x4788743u))),
               "pop_count_64_software");
-static_assert(int(impl::pop_count_64_software(uint64_t(0x2D425B23u))) ==
+static_assert(int(detail::pop_count_64_software(uint64_t(0x2D425B23u))) ==
                   int(std::popcount(uint64_t(0x2D425B23u))),
               "pop_count_64_software");
-static_assert(int(impl::pop_count_64_software(uint64_t(0xFFFFFFFFu - 1))) ==
+static_assert(int(detail::pop_count_64_software(uint64_t(0xFFFFFFFFu - 1))) ==
                   int(std::popcount(uint64_t(0xFFFFFFFFu - 1))),
               "pop_count_64_software");
-static_assert(int(impl::pop_count_64_software(uint64_t(0xFFFFFFFFu))) ==
+static_assert(int(detail::pop_count_64_software(uint64_t(0xFFFFFFFFu))) ==
                   int(std::popcount(uint64_t(0xFFFFFFFFu))),
               "pop_count_64_software");
-static_assert(int(impl::pop_count_64_software(uint64_t(0x5873485893484ull))) ==
+static_assert(int(detail::pop_count_64_software(uint64_t(0x5873485893484ull))) ==
                   int(std::popcount(uint64_t(0x5873485893484ull))),
               "pop_count_64_software");
-static_assert(int(impl::pop_count_64_software(uint64_t(0x85923489853245ull))) ==
+static_assert(int(detail::pop_count_64_software(uint64_t(0x85923489853245ull))) ==
                   int(std::popcount(uint64_t(0x85923489853245ull))),
               "pop_count_64_software");
-static_assert(int(impl::pop_count_64_software(uint64_t(0xFFFFFFFFFFFFFFFFull - 1))) ==
+static_assert(int(detail::pop_count_64_software(uint64_t(0xFFFFFFFFFFFFFFFFull - 1))) ==
                   int(std::popcount(uint64_t(0xFFFFFFFFFFFFFFFFull - 1))),
               "pop_count_64_software");
-static_assert(int(impl::pop_count_64_software(uint64_t(0xFFFFFFFFFFFFFFFFull))) ==
+static_assert(int(detail::pop_count_64_software(uint64_t(0xFFFFFFFFFFFFFFFFull))) ==
                   int(std::popcount(uint64_t(0xFFFFFFFFFFFFFFFFull))),
               "pop_count_64_software");
 #endif
@@ -425,62 +425,62 @@ static_assert(sign(std::popcount(uint32_t(-1)) - std::popcount(uint32_t(-1))) ==
               "pop_cmp");
 #endif
 
-static_assert(impl::lz_count_32_software(0) == 32, "lz_count_32_software");
-static_assert(impl::lz_count_32_software(1) == 31, "lz_count_32_software");
-static_assert(impl::lz_count_32_software(2) == 30, "lz_count_32_software");
-static_assert(impl::lz_count_32_software(4) == 29, "lz_count_32_software");
-static_assert(impl::lz_count_32_software(8) == 28, "lz_count_32_software");
-static_assert(impl::lz_count_32_software(12) == 28, "lz_count_32_software");
-static_assert(impl::lz_count_32_software(16) == 27, "lz_count_32_software");
-static_assert(impl::lz_count_32_software(32) == 26, "lz_count_32_software");
-static_assert(impl::lz_count_32_software(48) == 26, "lz_count_32_software");
-static_assert(impl::lz_count_32_software(uint32_t(1) << 30) == 1, "lz_count_32_software");
-static_assert(impl::lz_count_32_software(uint32_t(1) << 31) == 0, "lz_count_32_software");
-static_assert(impl::lz_count_32_software(~uint32_t(1)) == 0, "lz_count_32_software");
+static_assert(detail::lz_count_32_software(0) == 32, "lz_count_32_software");
+static_assert(detail::lz_count_32_software(1) == 31, "lz_count_32_software");
+static_assert(detail::lz_count_32_software(2) == 30, "lz_count_32_software");
+static_assert(detail::lz_count_32_software(4) == 29, "lz_count_32_software");
+static_assert(detail::lz_count_32_software(8) == 28, "lz_count_32_software");
+static_assert(detail::lz_count_32_software(12) == 28, "lz_count_32_software");
+static_assert(detail::lz_count_32_software(16) == 27, "lz_count_32_software");
+static_assert(detail::lz_count_32_software(32) == 26, "lz_count_32_software");
+static_assert(detail::lz_count_32_software(48) == 26, "lz_count_32_software");
+static_assert(detail::lz_count_32_software(uint32_t(1) << 30) == 1, "lz_count_32_software");
+static_assert(detail::lz_count_32_software(uint32_t(1) << 31) == 0, "lz_count_32_software");
+static_assert(detail::lz_count_32_software(~uint32_t(1)) == 0, "lz_count_32_software");
 
-static_assert(impl::lz_count_64_software(0) == 64, "lz_count_64_software");
-static_assert(impl::lz_count_64_software(1) == 63, "lz_count_64_software");
-static_assert(impl::lz_count_64_software(2) == 62, "lz_count_64_software");
-static_assert(impl::lz_count_64_software(4) == 61, "lz_count_64_software");
-static_assert(impl::lz_count_64_software(8) == 60, "lz_count_64_software");
-static_assert(impl::lz_count_64_software(12) == 60, "lz_count_64_software");
-static_assert(impl::lz_count_64_software(16) == 59, "lz_count_64_software");
-static_assert(impl::lz_count_64_software(32) == 58, "lz_count_64_software");
-static_assert(impl::lz_count_64_software(48) == 58, "lz_count_64_software");
-static_assert(impl::lz_count_64_software(uint32_t(1) << 30) == 33, "lz_count_64_software");
-static_assert(impl::lz_count_64_software(uint32_t(1) << 31) == 32, "lz_count_64_software");
-static_assert(impl::lz_count_64_software(~uint32_t(1)) == 32, "lz_count_64_software");
-static_assert(impl::lz_count_64_software(uint64_t(1) << 62) == 1, "lz_count_64_software");
-static_assert(impl::lz_count_64_software(uint64_t(1) << 63) == 0, "lz_count_64_software");
-static_assert(impl::lz_count_64_software(uint64_t(-1)) == 0, "lz_count_64_software");
+static_assert(detail::lz_count_64_software(0) == 64, "lz_count_64_software");
+static_assert(detail::lz_count_64_software(1) == 63, "lz_count_64_software");
+static_assert(detail::lz_count_64_software(2) == 62, "lz_count_64_software");
+static_assert(detail::lz_count_64_software(4) == 61, "lz_count_64_software");
+static_assert(detail::lz_count_64_software(8) == 60, "lz_count_64_software");
+static_assert(detail::lz_count_64_software(12) == 60, "lz_count_64_software");
+static_assert(detail::lz_count_64_software(16) == 59, "lz_count_64_software");
+static_assert(detail::lz_count_64_software(32) == 58, "lz_count_64_software");
+static_assert(detail::lz_count_64_software(48) == 58, "lz_count_64_software");
+static_assert(detail::lz_count_64_software(uint32_t(1) << 30) == 33, "lz_count_64_software");
+static_assert(detail::lz_count_64_software(uint32_t(1) << 31) == 32, "lz_count_64_software");
+static_assert(detail::lz_count_64_software(~uint32_t(1)) == 32, "lz_count_64_software");
+static_assert(detail::lz_count_64_software(uint64_t(1) << 62) == 1, "lz_count_64_software");
+static_assert(detail::lz_count_64_software(uint64_t(1) << 63) == 0, "lz_count_64_software");
+static_assert(detail::lz_count_64_software(uint64_t(-1)) == 0, "lz_count_64_software");
 
-static_assert(impl::tz_count_32_software(0u) == 32, "tz_count_32_software");
-static_assert(impl::tz_count_32_software(1u) == 0, "tz_count_32_software");
-static_assert(impl::tz_count_32_software(2u) == 1, "tz_count_32_software");
-static_assert(impl::tz_count_32_software(4u) == 2, "tz_count_32_software");
-static_assert(impl::tz_count_32_software(8u) == 3, "tz_count_32_software");
-static_assert(impl::tz_count_32_software(12u) == 2, "tz_count_32_software");
-static_assert(impl::tz_count_32_software(16u) == 4, "tz_count_32_software");
-static_assert(impl::tz_count_32_software(32u) == 5, "tz_count_32_software");
-static_assert(impl::tz_count_32_software(48u) == 4, "tz_count_32_software");
-static_assert(impl::tz_count_32_software(1u << 30) == 30, "tz_count_32_software");
-static_assert(impl::tz_count_32_software(1u << 31) == 31, "tz_count_32_software");
-static_assert(impl::tz_count_32_software(~1u) == 1, "tz_count_32_software");
-static_assert(impl::tz_count_32_software(uint32_t(-1)) == 0, "tz_count_32_software");
+static_assert(detail::tz_count_32_software(0u) == 32, "tz_count_32_software");
+static_assert(detail::tz_count_32_software(1u) == 0, "tz_count_32_software");
+static_assert(detail::tz_count_32_software(2u) == 1, "tz_count_32_software");
+static_assert(detail::tz_count_32_software(4u) == 2, "tz_count_32_software");
+static_assert(detail::tz_count_32_software(8u) == 3, "tz_count_32_software");
+static_assert(detail::tz_count_32_software(12u) == 2, "tz_count_32_software");
+static_assert(detail::tz_count_32_software(16u) == 4, "tz_count_32_software");
+static_assert(detail::tz_count_32_software(32u) == 5, "tz_count_32_software");
+static_assert(detail::tz_count_32_software(48u) == 4, "tz_count_32_software");
+static_assert(detail::tz_count_32_software(1u << 30) == 30, "tz_count_32_software");
+static_assert(detail::tz_count_32_software(1u << 31) == 31, "tz_count_32_software");
+static_assert(detail::tz_count_32_software(~1u) == 1, "tz_count_32_software");
+static_assert(detail::tz_count_32_software(uint32_t(-1)) == 0, "tz_count_32_software");
 
-static_assert(impl::tz_count_64_software(0u) == 64, "tz_count_64_software");
-static_assert(impl::tz_count_64_software(1u) == 0, "tz_count_64_software");
-static_assert(impl::tz_count_64_software(2u) == 1, "tz_count_64_software");
-static_assert(impl::tz_count_64_software(4u) == 2, "tz_count_64_software");
-static_assert(impl::tz_count_64_software(8u) == 3, "tz_count_64_software");
-static_assert(impl::tz_count_64_software(12u) == 2, "tz_count_64_software");
-static_assert(impl::tz_count_64_software(16u) == 4, "tz_count_64_software");
-static_assert(impl::tz_count_64_software(32u) == 5, "tz_count_64_software");
-static_assert(impl::tz_count_64_software(48u) == 4, "tz_count_64_software");
-static_assert(impl::tz_count_64_software(1u << 30) == 30, "tz_count_64_software");
-static_assert(impl::tz_count_64_software(1u << 31) == 31, "tz_count_64_software");
-static_assert(impl::tz_count_64_software(~1u) == 1, "tz_count_64_software");
-static_assert(impl::tz_count_64_software(uint32_t(-1)) == 0, "tz_count_64_software");
+static_assert(detail::tz_count_64_software(0u) == 64, "tz_count_64_software");
+static_assert(detail::tz_count_64_software(1u) == 0, "tz_count_64_software");
+static_assert(detail::tz_count_64_software(2u) == 1, "tz_count_64_software");
+static_assert(detail::tz_count_64_software(4u) == 2, "tz_count_64_software");
+static_assert(detail::tz_count_64_software(8u) == 3, "tz_count_64_software");
+static_assert(detail::tz_count_64_software(12u) == 2, "tz_count_64_software");
+static_assert(detail::tz_count_64_software(16u) == 4, "tz_count_64_software");
+static_assert(detail::tz_count_64_software(32u) == 5, "tz_count_64_software");
+static_assert(detail::tz_count_64_software(48u) == 4, "tz_count_64_software");
+static_assert(detail::tz_count_64_software(1u << 30) == 30, "tz_count_64_software");
+static_assert(detail::tz_count_64_software(1u << 31) == 31, "tz_count_64_software");
+static_assert(detail::tz_count_64_software(~1u) == 1, "tz_count_64_software");
+static_assert(detail::tz_count_64_software(uint32_t(-1)) == 0, "tz_count_64_software");
 
 static_assert(next_n_bits_permutation(0b0010011) == 0b0010101, "next_n_bits_permutation");
 static_assert(next_n_bits_permutation(0b0010101) == 0b0010110, "next_n_bits_permutation");
