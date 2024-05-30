@@ -55,7 +55,7 @@ static void TestSmallPrimes() {
 
 static void TestMidPrimes() {
     log_tests_started();
-    
+
     constexpr uint64_t primes[] = {
         1000000000000000009ull, 1000000000000000003ull, 999999999999999989ull,
         999999999999999967ull,  999999999999999877ull,  999999999999999863ull,
@@ -380,7 +380,7 @@ static void TestPrimesFromFile() {
                              "Primes reversed ordering not held at p = %" PRIu64 "\n", p);
                 throw_if_not(is_prime_bpsw(p), "is_prime_bpsw error on n = %" PRIu64 "\n", p);
                 break;
-            [[unlikely]] case std::char_traits<char>::eof():
+            [[unlikely]] case std::char_traits<char>::eof() :
                 return;
             [[unlikely]] default:
                 perror("std::fscanf");

@@ -38,6 +38,7 @@ struct Wrapper final {
     }
 };
 
+namespace test_tools {
 namespace detail {
 
 template <class T>
@@ -62,6 +63,7 @@ ATTRIBUTE_COLD [[noreturn]] inline void throw_impl(const char* message_format, T
 }
 
 }  // namespace detail
+}  // namespace test_tools
 
 template <class T>
 inline void throw_if_not(bool expr, const char* message_format, T arg,

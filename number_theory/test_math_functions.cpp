@@ -922,9 +922,12 @@ static void test_isqrt() {
     constexpr uint32_t kIters = 1000000;
 
     constexpr auto test_sqrts = [](uint32_t n, uint32_t n_squared) {
-        throw_if_not(n == isqrt(n_squared), "Error isqrt(uint32_t) at n = %" PRIu32 "\n", n_squared);
-        throw_if_not(n == isqrt(uint64_t(n_squared)), "Error isqrt(uint64_t) at n = %" PRIu32 "\n", n_squared);
-        throw_if_not(n == isqrt(uint128_t(n_squared)), "Error isqrt(uint128_t) at n = %" PRIu32 "\n", n_squared);
+        throw_if_not(n == isqrt(n_squared), "Error isqrt(uint32_t) at n = %" PRIu32 "\n",
+                     n_squared);
+        throw_if_not(n == isqrt(uint64_t(n_squared)), "Error isqrt(uint64_t) at n = %" PRIu32 "\n",
+                     n_squared);
+        throw_if_not(n == isqrt(uint128_t(n_squared)),
+                     "Error isqrt(uint128_t) at n = %" PRIu32 "\n", n_squared);
     };
 
     constexpr uint32_t kProbes = 32768;

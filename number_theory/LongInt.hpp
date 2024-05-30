@@ -1491,7 +1491,7 @@ struct LongInt {
                               "");
                 // Allocate n for the first polynomial
                 //  and n for the second one
-                auto p1 = std::make_unique<fft::complex[]>(n + n);
+                auto p1         = std::make_unique<fft::complex[]>(n + n);
                 fft::complex* p = p1.get();
                 for (size_t i = 0; i < m; i++) {
                     uint32_t m_value = m_ptr[i];
@@ -1633,9 +1633,9 @@ struct LongInt {
                 size_t n = math_functions::nearest_pow2_ge(3 * prod_size);
                 static_assert(kFftDecimalBase * kFftDecimalBase * kFftDecimalBase == kDecimalBase,
                               "");
-                // Allocate n for the first polynomial 
+                // Allocate n for the first polynomial
                 //  and n for the second one
-                auto p1 = std::make_unique<fft::complex[]>(n + n);
+                auto p1         = std::make_unique<fft::complex[]>(n + n);
                 fft::complex* p = p1.get();
                 for (size_t i = 0; i < digits_size; i++) {
                     uint32_t value = digits_ptr[i];

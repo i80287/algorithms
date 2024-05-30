@@ -3,16 +3,14 @@
 
 /* Test for gcc >= maj.min, as per __GNUC_PREREQ in glibc */
 #if defined(__GNUC__) && defined(__GNUC_MINOR__)
-#define CONFIG_GNUC_PREREQ(maj, min) \
-    ((__GNUC__ << 16) + __GNUC_MINOR__ >= ((maj) << 16) + (min))
+#define CONFIG_GNUC_PREREQ(maj, min) ((__GNUC__ << 16) + __GNUC_MINOR__ >= ((maj) << 16) + (min))
 #else
 #define CONFIG_GNUC_PREREQ(maj, min) 0
 #endif
 
 /* Test for __has_attribute as per __glibc_has_attribute in glibc */
-#if (defined(__has_attribute) &&   \
-     (!defined(__clang_major__) || \
-      3 < __clang_major__ + (5 <= __clang_minor__)))
+#if (defined(__has_attribute) && \
+     (!defined(__clang_major__) || 3 < __clang_major__ + (5 <= __clang_minor__)))
 #define CONFIG_HAS_ATTRIBUTE(attr) __has_attribute(attr)
 #else
 #define CONFIG_HAS_ATTRIBUTE(attr) 0
@@ -166,8 +164,7 @@
  * ===----------------------------------------------------------------------===
  */
 
-#if defined(__BYTE_ORDER__) && defined(__ORDER_BIG_ENDIAN__) && \
-    defined(__ORDER_LITTLE_ENDIAN__)
+#if defined(__BYTE_ORDER__) && defined(__ORDER_BIG_ENDIAN__) && defined(__ORDER_LITTLE_ENDIAN__)
 
 /* Clang and GCC provide built-in endianness definitions. */
 #if __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
@@ -197,8 +194,7 @@
 
 /* .. */
 
-#if defined(__FreeBSD__) || defined(__NetBSD__) || defined(__DragonFly__) ||   \
-    defined(__minix)
+#if defined(__FreeBSD__) || defined(__NetBSD__) || defined(__DragonFly__) || defined(__minix)
 #include <sys/endian.h>
 
 #if _BYTE_ORDER == _BIG_ENDIAN
@@ -228,7 +224,7 @@
 
 /* Mac OSX has __BIG_ENDIAN__ or __LITTLE_ENDIAN__ automatically set by the
  * compiler (at least with GCC) */
-#if defined(__APPLE__) || defined(__ellcc__ )
+#if defined(__APPLE__) || defined(__ellcc__)
 
 #ifdef __BIG_ENDIAN__
 #if __BIG_ENDIAN__

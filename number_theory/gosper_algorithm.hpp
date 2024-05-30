@@ -20,8 +20,7 @@ template <class Function>
         { f(int32_t()) } -> std::same_as<int32_t>;
     }
 #endif
-static constexpr loop_detect_result loop_detection_Gosper(Function f,
-                                                          int32_t x0) noexcept {
+static constexpr loop_detect_result loop_detection_Gosper(Function f, int32_t x0) noexcept {
     /**
      * See Hackers Delight 5-5.
      */
@@ -32,9 +31,9 @@ static constexpr loop_detect_result loop_detection_Gosper(Function f,
         ;
 #endif
     f_values[0] = x0;
-    int32_t xn = x0;
+    int32_t xn  = x0;
     for (uint32_t n = 1;; n++) {
-        xn = f(xn);
+        xn            = f(xn);
         uint32_t kmax = log2_floor(n);
         for (uint32_t k = 0; k <= kmax; k++) {
             if (unlikely(xn == f_values[k])) {
@@ -54,7 +53,7 @@ static constexpr loop_detect_result loop_detection_Gosper(Function f,
                 uint32_t lambda = n - m;
                 ATTRIBUTE_ASSUME(lambda >= 1);
                 uint32_t mu_upper = m;
-                int32_t mu_lower = int32_t(m - std::max(1u, lambda - 1) + 1);
+                int32_t mu_lower  = int32_t(m - std::max(1u, lambda - 1) + 1);
                 return {mu_lower, mu_upper, lambda};
             }
         }

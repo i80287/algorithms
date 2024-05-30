@@ -1,3 +1,3 @@
 #! /bin/sh
 
-clang-format -i ./number_theory/math_functions.hpp ./number_theory/test_math_functions.cpp -style=file:./.clang-format -fallback-style=Google
+clang-format -i ./number_theory/*.hpp ./number_theory/*.cpp -style=file:./.clang-format -fallback-style=Google

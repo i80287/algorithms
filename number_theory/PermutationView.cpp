@@ -5,10 +5,10 @@
 #include <initializer_list>
 #include <iostream>
 #include <iterator>
+#include <numeric>
 #include <stdexcept>
 #include <string>
 #include <vector>
-#include <numeric>
 
 #if __cplusplus >= 202002L
 #define PermutationViewConstexpr constexpr
@@ -18,24 +18,21 @@
 
 class PermutationView {
 public:
-    PermutationViewConstexpr PermutationView() noexcept(
-        noexcept(std::vector<uint32_t>{})) = default;
+    PermutationViewConstexpr PermutationView() noexcept(noexcept(std::vector<uint32_t>{})) =
+        default;
 
-    PermutationViewConstexpr explicit PermutationView(size_t length)
-        : elems_(length) {
+    PermutationViewConstexpr explicit PermutationView(size_t length) : elems_(length) {
         uint32_t i = 0;
         for (uint32_t& elem : elems_) {
             elem = ++i;
         }
     }
 
-    explicit PermutationView(const std::vector<uint32_t>& elems)
-        : elems_{elems} {
+    explicit PermutationView(const std::vector<uint32_t>& elems) : elems_{elems} {
         CheckElems(elems.begin(), elems.end());
     }
 
-    explicit PermutationView(std::initializer_list<uint32_t> elems)
-        : elems_{elems} {
+    explicit PermutationView(std::initializer_list<uint32_t> elems) : elems_{elems} {
         CheckElems(elems.begin(), elems.end());
     }
 
@@ -70,23 +67,20 @@ public:
 
     PermutationViewConstexpr uint32_t& operator[](size_t number) {
         // see https://en.cppreference.com/w/cpp/language/constexpr
-        return CheckNumber(number)
-                   ? elems_[number - 1]
-                   : throw std::out_of_range(__PRETTY_FUNCTION__);
+        return CheckNumber(number) ? elems_[number - 1]
+                                   : throw std::out_of_range(__PRETTY_FUNCTION__);
     }
 
     PermutationViewConstexpr uint32_t operator[](size_t number) const {
         // see https://en.cppreference.com/w/cpp/language/constexpr
-        return CheckNumber(number)
-                   ? elems_[number - 1]
-                   : throw std::out_of_range(__PRETTY_FUNCTION__);
+        return CheckNumber(number) ? elems_[number - 1]
+                                   : throw std::out_of_range(__PRETTY_FUNCTION__);
     }
 
     std::string to_string() const {
-        const size_t n = elems_.size();
+        const size_t n                = elems_.size();
         const size_t max_digits_count = std::to_string(n).size();
-        const size_t one_line_length =
-            n * max_digits_count + (n - 1);  // n - 1 spaces
+        const size_t one_line_length  = n * max_digits_count + (n - 1);  // n - 1 spaces
         // 1 for '\n', 8 for "/ ", "\ ", " \", " /"
         const size_t capacity = one_line_length + 1 + one_line_length + 8;
         std::string s;
@@ -95,7 +89,7 @@ public:
         s.push_back(' ');
 
         for (uint32_t i = 1; i <= n; i++) {
-            std::string str_i_repr = std::to_string(i);
+            std::string str_i_repr     = std::to_string(i);
             size_t needed_spaces_count = max_digits_count - str_i_repr.size();
             // Unroll while loop for small i space padding
             switch (needed_spaces_count) {
@@ -122,7 +116,7 @@ public:
         s.append("\\\n\\ ");
 
         for (uint32_t i = 0; i < n; i++) {
-            std::string str_i_repr = std::to_string(elems_[i]);
+            std::string str_i_repr     = std::to_string(elems_[i]);
             size_t needed_spaces_count = max_digits_count - str_i_repr.size();
             // Unroll while loop for small i space padding
             switch (needed_spaces_count) {
@@ -151,8 +145,7 @@ public:
         return s;
     }
 
-    friend std::ostream& operator<<(std::ostream& out,
-                                    const PermutationView& perm) {
+    friend std::ostream& operator<<(std::ostream& out, const PermutationView& perm) {
         return out << perm.to_string();
     }
 

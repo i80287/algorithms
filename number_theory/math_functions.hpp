@@ -870,7 +870,8 @@ ATTRIBUTE_CONST constexpr int32_t countr_zero(T n) noexcept {
 #elif defined(__GNUC__)
         int32_t high_trailing_zeros_count = __builtin_ctzll(high);
 #else
-        int32_t high_trailing_zeros_count = static_cast<int32_t>(detail::tz_count_64_software(high));
+        int32_t high_trailing_zeros_count =
+            static_cast<int32_t>(detail::tz_count_64_software(high));
 #endif
         return high_trailing_zeros_count + 64;
     } else
@@ -889,7 +890,8 @@ ATTRIBUTE_CONST constexpr int32_t countr_zero(T n) noexcept {
 #if defined(__GNUC__)
         return __builtin_ctzl(n);
 #else
-        return static_cast<int32_t>(detail::tz_count_64_software(static_cast<unsigned long long>(n)));
+        return static_cast<int32_t>(
+            detail::tz_count_64_software(static_cast<unsigned long long>(n)));
 #endif
     } else {
         static_assert(std::is_same_v<T, unsigned int> || std::is_same_v<T, unsigned short> ||
