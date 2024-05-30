@@ -6,25 +6,9 @@
 #include <vector>
 
 #include "is_prime.hpp"
+#include "test_tools.hpp"
 
 static std::vector<uint64_t> read_primes() {
-    struct Wrapper final {
-        FILE* const file;
-        Wrapper(const char* fname, const char* mode) : file(fopen(fname, mode)) {
-            if (file == nullptr) [[unlikely]] {
-                perror("fopen");
-                throw std::runtime_error("fopen");
-            }
-        }
-        Wrapper(const Wrapper&) = delete;
-        Wrapper(Wrapper&&) = delete;
-        Wrapper& operator=(const Wrapper&) = delete;
-        Wrapper& operator=(Wrapper&&) = delete;
-        ~Wrapper() {
-            fclose(file);
-        }
-    };
-
     std::vector<uint64_t> nums;
     nums.reserve(1065000zu);
     Wrapper fin("u64-primes.txt", "r");

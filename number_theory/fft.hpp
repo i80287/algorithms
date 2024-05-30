@@ -6,8 +6,7 @@
 #include <utility>
 #include <vector>
 
-
-#if defined(__cpp_lib_math_constants) && __cplusplus >= 202002L
+#if defined(__cpp_lib_math_constants) && __cpp_lib_math_constants >= 201907L
 #include <numbers>
 #endif
 
@@ -15,12 +14,6 @@ namespace fft {
 
 using f64     = double;
 using complex = std::complex<f64>;
-
-#if defined(__cpp_lib_math_constants) && __cplusplus >= 202002L
-inline constexpr f64 PI = std::numbers::pi_v<f64>;
-#else
-const f64 PI = f64(3.141592653589793238462643383279502884L);
-#endif
 
 /*
  * Save only e^{2pi*0/1}, e^{2pi*0/2}, e^{2pi*0/4}, e^{2pi*1/4}, e^{2pi*0/8},
@@ -39,12 +32,17 @@ static void ensure_roots_capacity(size_t n) {
     }
 
     fft_roots.reserve(n);
+#if defined(__cpp_lib_math_constants) && __cpp_lib_math_constants >= 201907L
+    constexpr f64 kPi = std::numbers::pi_v<f64>;
+#else
+    const f64 kPi = std::acos(f64(-1));
+#endif
+
     do {
         for (size_t i = current_len / 2; i != current_len; i++) {
             fft_roots.emplace_back(fft_roots[i]);
-            // double phi = 2 * PI * (2 * i - current_len + 1) / (2 *
-            // current_len);
-            f64 phi = PI * f64(2 * i - current_len + 1) / f64(current_len);
+            // double phi = 2 * kPi * (2 * i - current_len + 1) / (2 * current_len);
+            f64 phi = kPi * f64(2 * i - current_len + 1) / f64(current_len);
             fft_roots.emplace_back(std::cos(phi), std::sin(phi));
         }
         current_len *= 2;
@@ -65,7 +63,7 @@ static void forward_fft(complex* p, const size_t k) noexcept {
         }
     }
 
-    const complex* points = fft_roots.data();
+    const complex* const points = fft_roots.data();
 
     /* Unroll for step = 1 */
     for (size_t block_start = 0; block_start < k; block_start += 2) {
@@ -105,16 +103,16 @@ static void backward_fft(complex* p, const size_t k) noexcept {
         }
     }
 
-    const complex* points = fft_roots.data();
+    const complex* const points = fft_roots.data();
     for (size_t step = 1, point_step = k / 2; step < k; step *= 2, point_step /= 2) {
         for (size_t block_start = 0; block_start < k;) {
             size_t point_index = step;
             size_t block_end   = block_start + step;
             for (size_t pos_in_block = block_start; pos_in_block < block_end;
                  pos_in_block++, point_index++) {
-                complex p0_i    = p[pos_in_block];
-                auto w_j_p1_i   = std::conj(points[point_index]) * p[pos_in_block + step];
-                p[pos_in_block] = p0_i + w_j_p1_i;
+                complex p0_i           = p[pos_in_block];
+                auto w_j_p1_i          = std::conj(points[point_index]) * p[pos_in_block + step];
+                p[pos_in_block]        = p0_i + w_j_p1_i;
                 p[pos_in_block + step] = p0_i - w_j_p1_i;
             }
 

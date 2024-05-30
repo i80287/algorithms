@@ -11,7 +11,7 @@
  */
 
 #ifndef INTEGERS_128_BIT_HPP
-#define INTEGERS_128_BIT_HPP
+#define INTEGERS_128_BIT_HPP 1
 
 #include <cstdint>
 #include <ostream>

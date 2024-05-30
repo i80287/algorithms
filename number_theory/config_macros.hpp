@@ -263,4 +263,24 @@
 #error Unable to determine endian
 #endif /* Check we found an endianness correctly. */
 
+// https://en.cppreference.com/w/cpp/feature_test
+#if defined(__cplusplus) && __cplusplus >= 202002L
+#define CONFIG_HAS_AT_LEAST_CXX_20 1
+#else
+#define CONFIG_HAS_AT_LEAST_CXX_20 0
+#endif
+
+// https://en.cppreference.com/w/cpp/feature_test
+#if defined(__cpp_concepts) && __cpp_concepts >= 202002L
+#define CONFIG_HAS_CONCEPTS 1
+#else
+#define CONFIG_HAS_CONCEPTS 0
+#endif
+
+#if defined(__has_include)
+#define CONFIG_HAS_INCLUDE(include_string) __has_include(include_string)
+#else
+#define CONFIG_HAS_INCLUDE(include_string) 0
+#endif
+
 #endif  // !CONFIG_MACROS_HPP
