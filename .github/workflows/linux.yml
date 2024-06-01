@@ -36,7 +36,7 @@ jobs:
     - name: Install dependencies
       run: |
        dnf -y update
-       dnf -y install gcc-c++ cmake make ninja-build gmp gmp-devel gmp-c++ gmp-devel gmp-static
+       dnf -y install gcc-c++ cmake make ninja-build gmp gmp-devel gmp-c++ gmp-devel gmp-static mpfr-devel
     - name: Run tests
       run: |
         cd ./number_theory
