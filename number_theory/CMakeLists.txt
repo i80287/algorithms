@@ -21,18 +21,15 @@ add_executable(integers_128_bit_test test_integers_128_bit.cpp)
 list(APPEND TestExecutables integers_128_bit_test)
 
 add_executable(is_prime_bpsw_test test_is_prime_bpsw.cpp)
-target_link_libraries(is_prime_bpsw_test gmp)
 list(APPEND TestExecutables is_prime_bpsw_test)
 
 add_executable(kronecker_symbol_test test_kronecker_symbol.cpp)
-target_link_libraries(kronecker_symbol_test gmp gmpxx)
 list(APPEND TestExecutables kronecker_symbol_test)
 
 add_executable(long_int_test test_long_int.cpp)
 list(APPEND TestExecutables long_int_test)
 
 add_executable(math_functions_test test_math_functions.cpp)
-target_link_libraries(math_functions_test gmp mpfr)
 list(APPEND TestExecutables math_functions_test)
 
 # Empty by default
@@ -91,6 +88,7 @@ endif()
 
 foreach(target ${TestExecutables})
     add_test(NAME ${target} COMMAND $<TARGET_FILE:${target}>)
+    target_link_libraries(${target} gmp gmpxx mpfr)
     target_compile_options(${target} PRIVATE ${TEST_COMPILE_OPTIONS})
     target_compile_definitions(${target} PRIVATE ${TEST_COMPILE_DEFINITIONS})
 endforeach()
