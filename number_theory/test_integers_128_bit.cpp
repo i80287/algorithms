@@ -1,5 +1,6 @@
 #include <cassert>
 #include <cstdint>
+
 #include "integers_128_bit.hpp"
 
 namespace i128_helper = type_traits_helper_int128_t;
@@ -34,21 +35,23 @@ int main() {
         assert(std::to_string(int128_t(n)) == std::to_string(n));
     }
 
-    for (int64_t n = -int64_t(k); n <= 0 ; n++) {
+    for (int64_t n = -int64_t(k); n <= 0; n++) {
         assert(std::to_string(int128_t(n)) == std::to_string(n));
     }
 
-    for (uint64_t n = UINT64_MAX; n >= UINT64_MAX - k ; n--) {
+    for (uint64_t n = UINT64_MAX; n >= UINT64_MAX - k; n--) {
         assert(std::to_string(uint128_t(n)) == std::to_string(n));
         assert(std::to_string(int128_t(n)) == std::to_string(n));
     }
 
-    for (int64_t n = INT64_MIN; n <= INT64_MIN + int64_t(k) ; n++) {
+    for (int64_t n = INT64_MIN; n <= INT64_MIN + int64_t(k); n++) {
         assert(std::to_string(int128_t(n)) == std::to_string(n));
     }
 
     assert(std::to_string(uint128_t(-1)) == "340282366920938463463374607431768211455");
     assert(std::to_string(uint128_t(1) << 127) == "170141183460469231731687303715884105728");
-    assert(std::to_string(int128_t((uint128_t(1) << 127) - 1)) == "170141183460469231731687303715884105727");
-    assert(std::to_string(int128_t(uint128_t(1) << 127)) == "-170141183460469231731687303715884105728");
+    assert(std::to_string(int128_t((uint128_t(1) << 127) - 1)) ==
+           "170141183460469231731687303715884105727");
+    assert(std::to_string(int128_t(uint128_t(1) << 127)) ==
+           "-170141183460469231731687303715884105728");
 }

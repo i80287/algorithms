@@ -136,8 +136,7 @@ ATTRIBUTE_CONST static constexpr bool is_strong_lucas_prp(uint64_t n, uint32_t p
     uint64_t ql = 1;
     uint64_t qh = 1;
     // q mod n
-    const uint64_t widen_q =
-        (q >= 0 ? uint32_t(q) : (n - (uint64_t(-uint32_t(q)) % n))) % n;
+    const uint64_t widen_q = (q >= 0 ? uint32_t(q) : (n - (uint64_t(-uint32_t(q)) % n))) % n;
     ATTRIBUTE_ASSUME(widen_q < n);
     // n >= 3 => n - 1 >= 2 => n - 1 >= 1 => s >= 1
     for (uint32_t j = math_functions::log2_floor(s); j != 0; j--) {
@@ -365,9 +364,9 @@ ATTRIBUTE_CONST static constexpr bool is_prime_bpsw(uint64_t n) noexcept {
     if (unlikely(n < 7 * 7)) {
         return n != 1;
     }
-    if ((n % 7) == 0 || (n % 11) == 0 || (n % 13) == 0 || (n % 17) == 0 ||
-        (n % 19) == 0 || (n % 23) == 0 || (n % 29) == 0 || (n % 31) == 0 ||
-        (n % 37) == 0 || (n % 41) == 0 || (n % 43) == 0 || (n % 47) == 0) {
+    if ((n % 7) == 0 || (n % 11) == 0 || (n % 13) == 0 || (n % 17) == 0 || (n % 19) == 0 ||
+        (n % 23) == 0 || (n % 29) == 0 || (n % 31) == 0 || (n % 37) == 0 || (n % 41) == 0 ||
+        (n % 43) == 0 || (n % 47) == 0) {
         return false;
     }
     if (unlikely(n < 53 * 53)) {
@@ -394,8 +393,7 @@ ATTRIBUTE_CONST static constexpr bool is_prime_sqrt(uint32_t n) noexcept {
     const uint32_t root = math_functions::isqrt(n);
     do {
         if (n % i == 0 || n % (i + 4) == 0 || n % (i + 6) == 0 || n % (i + 10) == 0 ||
-            n % (i + 12) == 0 || n % (i + 16) == 0 || n % (i + 22) == 0 ||
-            n % (i + 24) == 0) {
+            n % (i + 12) == 0 || n % (i + 16) == 0 || n % (i + 22) == 0 || n % (i + 24) == 0) {
             return false;
         }
         i += 30;
@@ -420,8 +418,7 @@ ATTRIBUTE_CONST static constexpr bool is_prime_sqrt(uint64_t n) noexcept {
     const uint64_t root = math_functions::isqrt(n);
     do {
         if (n % i == 0 || n % (i + 4) == 0 || n % (i + 6) == 0 || n % (i + 10) == 0 ||
-            n % (i + 12) == 0 || n % (i + 16) == 0 || n % (i + 22) == 0 ||
-            n % (i + 24) == 0) {
+            n % (i + 12) == 0 || n % (i + 16) == 0 || n % (i + 22) == 0 || n % (i + 24) == 0) {
             return false;
         }
         i += 30;
@@ -456,8 +453,7 @@ ATTRIBUTE_CONST static constexpr bool is_prime_sqrt(uint128_t n) noexcept {
 
     do {
         if (n % i == 0 || n % (i + 4) == 0 || n % (i + 6) == 0 || n % (i + 10) == 0 ||
-            n % (i + 12) == 0 || n % (i + 16) == 0 || n % (i + 22) == 0 ||
-            n % (i + 24) == 0) {
+            n % (i + 12) == 0 || n % (i + 16) == 0 || n % (i + 22) == 0 || n % (i + 24) == 0) {
             return false;
         }
         i += 30;
@@ -483,9 +479,9 @@ ATTRIBUTE_CONST static constexpr bool is_prime_u16(uint16_t m) noexcept {
     if (n < 7 * 7) {
         return n != 1;
     }
-    if ((n % 7) == 0 || (n % 11) == 0 || (n % 13) == 0 || (n % 17) == 0 ||
-        (n % 19) == 0 || (n % 23) == 0 || (n % 29) == 0 || (n % 31) == 0 ||
-        (n % 37) == 0 || (n % 41) == 0 || (n % 43) == 0 || (n % 47) == 0) {
+    if ((n % 7) == 0 || (n % 11) == 0 || (n % 13) == 0 || (n % 17) == 0 || (n % 19) == 0 ||
+        (n % 23) == 0 || (n % 29) == 0 || (n % 31) == 0 || (n % 37) == 0 || (n % 41) == 0 ||
+        (n % 43) == 0 || (n % 47) == 0) {
         return false;
     }
     if (n < 53 * 53) {

@@ -13,7 +13,7 @@ int main() {
         uint32_t a = 0;
         std::cin >> a;
 
-        if (a % 2 == 0) { // we dont need to optimize it like (k & 1) == 0, compiler will do it anyway
+        if (a % 2 == 0) {
             if (a == 0) {
                 continue;
             }

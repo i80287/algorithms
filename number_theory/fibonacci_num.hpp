@@ -6,15 +6,12 @@
 
 namespace math_functions {
 
-/// @brief Helper namespace in order not to pollute math_functions namespace
-namespace impl {
+namespace detail {
 
-static constexpr void matrix_mul(uint64_t m1[2][2], const uint64_t m2[2][2]) noexcept {
+static constexpr void matrix_mul(uint64_t (&m1)[2][2], const uint64_t (&m2)[2][2]) noexcept {
     const uint64_t tmp[2][2] = {
-        {m1[0][0] * m2[0][0] + m1[0][1] * m2[1][0],
-         m1[0][0] * m2[0][1] + m1[0][1] * m2[1][1]},
-        {m1[1][0] * m2[0][0] + m1[1][1] * m2[1][0],
-         m1[1][0] * m2[0][1] + m1[1][1] * m2[1][1]},
+        {m1[0][0] * m2[0][0] + m1[0][1] * m2[1][0], m1[0][0] * m2[0][1] + m1[0][1] * m2[1][1]},
+        {m1[1][0] * m2[0][0] + m1[1][1] * m2[1][0], m1[1][0] * m2[0][1] + m1[1][1] * m2[1][1]},
     };
     m1[0][0] = tmp[0][0];
     m1[0][1] = tmp[0][1];
@@ -22,7 +19,7 @@ static constexpr void matrix_mul(uint64_t m1[2][2], const uint64_t m2[2][2]) noe
     m1[1][1] = tmp[1][1];
 }
 
-}  // namespace impl
+}  // namespace detail
 
 struct fibs_pair {
     /// @brief F_{n - 1}
@@ -48,7 +45,7 @@ ATTRIBUTE_CONST constexpr fibs_pair fibonacci_nums(uint32_t n) noexcept {
 
     while (true) {
         if (n % 2 != 0) {
-            impl::matrix_mul(fibmatrix, p);
+            detail::matrix_mul(fibmatrix, p);
         }
 
         n /= 2;
@@ -56,7 +53,7 @@ ATTRIBUTE_CONST constexpr fibs_pair fibonacci_nums(uint32_t n) noexcept {
             break;
         }
 
-        impl::matrix_mul(p, p);
+        detail::matrix_mul(p, p);
     }
 
     return {fibmatrix[1][0], fibmatrix[1][1]};
@@ -87,15 +84,13 @@ inline constexpr uint32_t kMaxFibNonOverflowU64 = 92;
 #if defined(INTEGERS_128_BIT_HPP)
 
 /// @brief Helper namespace in order not to pollute math_functions namespace
-namespace impl {
+namespace detail {
 
 static inline I128_CONSTEXPR void matrix_mul(uint128_t m1[2][2],
                                              const uint128_t m2[2][2]) noexcept {
     const uint128_t tmp[2][2] = {
-        {m1[0][0] * m2[0][0] + m1[0][1] * m2[1][0],
-         m1[0][0] * m2[0][1] + m1[0][1] * m2[1][1]},
-        {m1[1][0] * m2[0][0] + m1[1][1] * m2[1][0],
-         m1[1][0] * m2[0][1] + m1[1][1] * m2[1][1]},
+        {m1[0][0] * m2[0][0] + m1[0][1] * m2[1][0], m1[0][0] * m2[0][1] + m1[0][1] * m2[1][1]},
+        {m1[1][0] * m2[0][0] + m1[1][1] * m2[1][0], m1[1][0] * m2[0][1] + m1[1][1] * m2[1][1]},
     };
     m1[0][0] = tmp[0][0];
     m1[0][1] = tmp[0][1];
@@ -103,7 +98,7 @@ static inline I128_CONSTEXPR void matrix_mul(uint128_t m1[2][2],
     m1[1][1] = tmp[1][1];
 }
 
-}  // namespace impl
+}  // namespace detail
 
 struct fibs_pair_u128 {
     /// @brief F_{n - 1}
@@ -117,8 +112,7 @@ struct fibs_pair_u128 {
 ///        Here we suppose that F_{-1} = 0, F_0 = 1, F_1 = 1.
 /// @param n
 /// @return (F_{n - 1}, F_n)
-ATTRIBUTE_CONST inline I128_CONSTEXPR fibs_pair_u128
-fibonacci_nums_u128(uint32_t n) noexcept {
+ATTRIBUTE_CONST inline I128_CONSTEXPR fibs_pair_u128 fibonacci_nums_u128(uint32_t n) noexcept {
     uint128_t p[2][2] = {
         {0, 1},
         {1, 1},
@@ -130,7 +124,7 @@ fibonacci_nums_u128(uint32_t n) noexcept {
 
     while (true) {
         if (n % 2 != 0) {
-            impl::matrix_mul(fibmatrix, p);
+            detail::matrix_mul(fibmatrix, p);
         }
 
         n /= 2;
@@ -138,7 +132,7 @@ fibonacci_nums_u128(uint32_t n) noexcept {
             break;
         }
 
-        impl::matrix_mul(p, p);
+        detail::matrix_mul(p, p);
     }
 
     return {fibmatrix[1][0], fibmatrix[1][1]};

@@ -7,7 +7,7 @@ AccessModifierOffset: -4
 AlignConsecutiveMacros: true
 AllowShortIfStatementsOnASingleLine: Never
 SortIncludes: CaseInsensitive
-ColumnLimit: 75
+ColumnLimit: 100
 BraceWrapping:
     BeforeElse: true
 AlignConsecutiveAssignments: true

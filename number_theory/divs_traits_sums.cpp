@@ -1,12 +1,12 @@
-#include <cassert>
-#include <cstdint>
 #include <bitset>
+#include <cassert>
 #include <cmath>
+#include <cstdint>
 #include <iostream>
 #include <numeric>
 #include <string>
-#include <type_traits>
 #include <tuple>
+#include <type_traits>
 #include <utility>
 #include <vector>
 
@@ -72,7 +72,7 @@ int main() {
     primes_vec.reserve(3 * n / log2_floor(n));
     for (uint32_t i = 2; i <= n; i++) {
         if (primes[i]) {
-            divs_sum[i] = i + 1;
+            divs_sum[i]   = i + 1;
             divs_count[i] = 2;
             euler_func[i] = i - 1;
             primes_vec.push_back(i);
@@ -83,9 +83,9 @@ int main() {
      * 1 <= n <= 1e7
      * Time limit: 5 seconds
      * Memory limit: 512 mb
-     * 
+     *
      * Task J. Rucode festival
-     * 
+     *
      * d(n) - minimal divisor of n that is greater then 1. d(1) := 0
      * s_0(n) - count of unique divisors of n
      * s_1(n) - the sum of all divisors of n
@@ -96,10 +96,10 @@ int main() {
      * sum2 = \sum{k=0}{n} s_0(n)
      * sum3 = \sum{k=0}{n} s_1(n)
      * sum4 = \sum{k=0}{n} phi(n)
-    */
+     */
 
     uint64_t sum1 = 0;
-    uint64_t sum2 = 1; // for 1
+    uint64_t sum2 = 1;  // for 1
     uint64_t sum3 = divs_sum[1];
     uint64_t sum4 = euler_func[1];
     for (uint32_t k = 2; k <= n; k++) {
@@ -117,7 +117,7 @@ int main() {
                 sum1 += prime_number;
 
                 uint32_t prime_power = 0;
-                uint32_t current_k = k;
+                uint32_t current_k   = k;
                 do {
                     current_k /= prime_number;
                     prime_power++;
@@ -125,7 +125,9 @@ int main() {
 
                 uint64_t p_m1 = bin_pow(uint64_t(prime_number), uint64_t(prime_power - 1));
 
-                uint64_t k_divs_sum = divs_sum[current_k] * ((p_m1 * prime_number * prime_number - 1) / (prime_number - 1));
+                uint64_t k_divs_sum =
+                    divs_sum[current_k] *
+                    ((p_m1 * prime_number * prime_number - 1) / (prime_number - 1));
                 sum3 += k_divs_sum;
                 divs_sum[k] = k_divs_sum;
 
@@ -133,7 +135,8 @@ int main() {
                 sum2 += k_divs_count;
                 divs_count[k] = k_divs_count;
 
-                uint32_t k_euler_func = uint32_t(euler_func[current_k] * (p_m1 * (prime_number - 1)));
+                uint32_t k_euler_func =
+                    uint32_t(euler_func[current_k] * (p_m1 * (prime_number - 1)));
                 sum4 += k_euler_func;
                 euler_func[k] = k_euler_func;
                 break;

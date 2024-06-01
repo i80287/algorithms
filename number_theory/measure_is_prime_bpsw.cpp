@@ -6,25 +6,9 @@
 #include <vector>
 
 #include "is_prime.hpp"
+#include "test_tools.hpp"
 
 static std::vector<uint64_t> read_primes() {
-    struct Wrapper final {
-        FILE* const file;
-        Wrapper(const char* fname, const char* mode) : file(fopen(fname, mode)) {
-            if (file == nullptr) [[unlikely]] {
-                perror("fopen");
-                throw std::runtime_error("fopen");
-            }
-        }
-        Wrapper(const Wrapper&) = delete;
-        Wrapper(Wrapper&&) = delete;
-        Wrapper& operator=(const Wrapper&) = delete;
-        Wrapper& operator=(Wrapper&&) = delete;
-        ~Wrapper() {
-            fclose(file);
-        }
-    };
-
     std::vector<uint64_t> nums;
     nums.reserve(1065000zu);
     Wrapper fin("u64-primes.txt", "r");
@@ -34,7 +18,7 @@ static std::vector<uint64_t> read_primes() {
             [[likely]] case 1:
                 nums.push_back(n);
                 break;
-            [[unlikely]] case std::char_traits<char>::eof():
+            [[unlikely]] case std::char_traits<char>::eof() :
                 return nums;
             [[unlikely]] default:
                 perror("fscanf");
@@ -62,8 +46,8 @@ int main() {
 
     for (auto iter = 4zu; iter != 0; iter--) {
         const std::chrono::nanoseconds time_ms = run_measurements(primes);
-        const std::uint64_t ns = static_cast<std::uint64_t>(time_ms.count());
-        const std::uint64_t ns_per_primes = ns / primes.size();
+        const std::uint64_t ns                 = static_cast<std::uint64_t>(time_ms.count());
+        const std::uint64_t ns_per_primes      = ns / primes.size();
         printf("%" PRIu64
                " nano seconds\n"
                "%" PRIu64 " nano seconds per prime on average\n",

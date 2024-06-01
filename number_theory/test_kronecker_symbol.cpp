@@ -14,66 +14,53 @@ using math_functions::kronecker_symbol;
 /// @brief Kronecker symbols (n/k) for 1 <= n <= 30 and 1 <= k <= 30
 ///        Here (n/k) = krnk[n - 1][k - 1] (using zero indexing notation)
 static const int32_t krnk[30][30] = {
-    {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-     1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
+    {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
     {1, 0, -1, 0,  -1, 0,  1, 0, 1, 0, -1, 0,  -1, 0,  1,
      0, 1, 0,  -1, 0,  -1, 0, 1, 0, 1, 0,  -1, 0,  -1, 0},
     {1, -1, 0, 1, -1, 0, 1, -1, 0, 1, -1, 0, 1, -1, 0,
      1, -1, 0, 1, -1, 0, 1, -1, 0, 1, -1, 0, 1, -1, 0},
-    {1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1,
-     0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0},
+    {1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0},
     {1, -1, -1, 1, 0, 1, -1, -1, 1, 0, 1, -1, -1, 1, 0,
      1, -1, -1, 1, 0, 1, -1, -1, 1, 0, 1, -1, -1, 1, 0},
-    {1, 0,  0, 0,  1, 0, 1, 0,  0, 0, 1, 0, -1, 0, 0,
-     0, -1, 0, -1, 0, 0, 0, -1, 0, 1, 0, 0, 0,  1, 0},
+    {1, 0, 0, 0, 1, 0, 1, 0, 0, 0, 1, 0, -1, 0, 0, 0, -1, 0, -1, 0, 0, 0, -1, 0, 1, 0, 0, 0, 1, 0},
     {1, 1,  -1, 1,  -1, -1, 0, 1, 1,  -1, 1,  -1, -1, 0, 1,
      1, -1, 1,  -1, -1, 0,  1, 1, -1, 1,  -1, -1, 0,  1, 1},
     {1, 0, -1, 0,  -1, 0,  1, 0, 1, 0, -1, 0,  -1, 0,  1,
      0, 1, 0,  -1, 0,  -1, 0, 1, 0, 1, 0,  -1, 0,  -1, 0},
-    {1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 0,
-     1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 0},
+    {1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 0},
     {1, 0,  1, 0,  0, 0,  -1, 0,  1, 0, -1, 0, 1, 0,  0,
      0, -1, 0, -1, 0, -1, 0,  -1, 0, 0, 0,  1, 0, -1, 0},
     {1, -1, 1,  1,  1, -1, -1, -1, 1,  -1, 0, 1, -1, 1,  1,
      1, -1, -1, -1, 1, -1, 0,  1,  -1, 1,  1, 1, -1, -1, -1},
-    {1, 0,  0, 0, -1, 0, 1, 0,  0, 0, -1, 0, 1, 0,  0,
-     0, -1, 0, 1, 0,  0, 0, -1, 0, 1, 0,  0, 0, -1, 0},
+    {1, 0, 0, 0, -1, 0, 1, 0, 0, 0, -1, 0, 1, 0, 0, 0, -1, 0, 1, 0, 0, 0, -1, 0, 1, 0, 0, 0, -1, 0},
     {1, -1, 1,  1,  -1, -1, -1, -1, 1,  1, -1, 1, 0,  1, -1,
      1, 1,  -1, -1, -1, -1, 1,  1,  -1, 1, 0,  1, -1, 1, 1},
-    {1, 0,  1, 0, 1, 0, 0, 0, 1, 0, -1, 0, 1, 0,  1,
-     0, -1, 0, 1, 0, 0, 0, 1, 0, 1, 0,  1, 0, -1, 0},
+    {1, 0, 1, 0, 1, 0, 0, 0, 1, 0, -1, 0, 1, 0, 1, 0, -1, 0, 1, 0, 0, 0, 1, 0, 1, 0, 1, 0, -1, 0},
     {1, 1, 0, 1, 0, 0, -1, 1, 0, 0, -1, 0, -1, -1, 0,
      1, 1, 0, 1, 0, 0, -1, 1, 0, 0, -1, 0, -1, -1, 0},
-    {1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1,
-     0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0},
+    {1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0},
     {1, 1, -1, 1, -1, -1, -1, 1,  1,  -1, -1, -1, 1,  -1, 1,
      1, 0, 1,  1, -1, 1,  -1, -1, -1, 1,  1,  -1, -1, -1, 1},
-    {1, 0, 0, 0,  -1, 0, 1, 0, 0, 0, -1, 0, -1, 0,  0,
-     0, 1, 0, -1, 0,  0, 0, 1, 0, 1, 0,  0, 0,  -1, 0},
+    {1, 0, 0, 0, -1, 0, 1, 0, 0, 0, -1, 0, -1, 0, 0, 0, 1, 0, -1, 0, 0, 0, 1, 0, 1, 0, 0, 0, -1, 0},
     {1, -1, -1, 1, 1, 1,  1,  -1, 1, -1, 1, -1, -1, -1, -1,
      1, 1,  -1, 0, 1, -1, -1, 1,  1, 1,  1, -1, 1,  -1, 1},
     {1, 0,  -1, 0, 0, 0, -1, 0,  1, 0, 1, 0,  -1, 0, 0,
      0, -1, 0,  1, 0, 1, 0,  -1, 0, 0, 0, -1, 0,  1, 0},
     {1, -1, 0, 1,  1, 0, 0, -1, 0, -1, -1, 0, -1, 0,  0,
      1, 1,  0, -1, 1, 0, 1, -1, 0, 1,  1,  0, 0,  -1, 0},
-    {1, 0,  -1, 0, -1, 0, -1, 0, 1, 0, 0, 0,  1, 0, 1,
-     0, -1, 0,  1, 0,  1, 0,  1, 0, 1, 0, -1, 0, 1, 0},
+    {1, 0, -1, 0, -1, 0, -1, 0, 1, 0, 0, 0, 1, 0, 1, 0, -1, 0, 1, 0, 1, 0, 1, 0, 1, 0, -1, 0, 1, 0},
     {1, 1,  1, 1,  -1, 1,  -1, 1, 1, -1, -1, 1, 1,  -1, -1,
      1, -1, 1, -1, -1, -1, -1, 0, 1, 1,  1,  1, -1, 1,  -1},
-    {1, 0,  0, 0,  1, 0, 1, 0,  0, 0, 1, 0, -1, 0, 0,
-     0, -1, 0, -1, 0, 0, 0, -1, 0, 1, 0, 0, 0,  1, 0},
-    {1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0,
-     1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0},
-    {1, 0, -1, 0, 1, 0, -1, 0, 1, 0, 1, 0,  0, 0,  -1,
-     0, 1, 0,  1, 0, 1, 0,  1, 0, 1, 0, -1, 0, -1, 0},
+    {1, 0, 0, 0, 1, 0, 1, 0, 0, 0, 1, 0, -1, 0, 0, 0, -1, 0, -1, 0, 0, 0, -1, 0, 1, 0, 0, 0, 1, 0},
+    {1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0},
+    {1, 0, -1, 0, 1, 0, -1, 0, 1, 0, 1, 0, 0, 0, -1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, -1, 0, -1, 0},
     {1, -1, 0, 1, -1, 0, 1, -1, 0, 1, -1, 0, 1, -1, 0,
      1, -1, 0, 1, -1, 0, 1, -1, 0, 1, -1, 0, 1, -1, 0},
     {1, 0,  -1, 0,  -1, 0, 0, 0, 1, 0, 1, 0,  -1, 0, 1,
      0, -1, 0,  -1, 0,  0, 0, 1, 0, 1, 0, -1, 0,  1, 0},
     {1, -1, -1, 1,  1, 1,  1, -1, 1, -1, -1, -1, 1, -1, -1,
      1, -1, -1, -1, 1, -1, 1, 1,  1, 1,  -1, -1, 1, 0,  1},
-    {1, 0, 0, 0,  0, 0, -1, 0, 0, 0, 1, 0, 1, 0, 0,
-     0, 1, 0, -1, 0, 0, 0,  1, 0, 0, 0, 0, 0, 1, 0},
+    {1, 0, 0, 0, 0, 0, -1, 0, 0, 0, 1, 0, 1, 0, 0, 0, 1, 0, -1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0},
 };
 
 /// @brief First 30 odd prime numbers
@@ -287,83 +274,75 @@ static void CheckJacobiBasic() noexcept {
     }
 }
 
-static void CheckJacobi(int32_t i, int32_t j, const mpz_class& n1,
-                        const mpz_class& n2) noexcept {
+static void CheckJacobi(int32_t i, int32_t j, const mpz_class& n1, const mpz_class& n2) noexcept {
     int32_t func_jac = kronecker_symbol(i, j);
     int real_jac     = mpz_jacobi(n1.get_mpz_t(), n2.get_mpz_t());
     if (func_jac != real_jac) {
-        printf("Error at (%" PRId32 ", %" PRId32 "): given J = %d, correct J = %d\n", i,
-               j, func_jac, real_jac);
+        printf("Error at (%" PRId32 ", %" PRId32 "): given J = %d, correct J = %d\n", i, j,
+               func_jac, real_jac);
     }
 }
 
-static void CheckJacobi(int64_t i, int64_t j, const mpz_class& n1,
-                        const mpz_class& n2) noexcept {
+static void CheckJacobi(int64_t i, int64_t j, const mpz_class& n1, const mpz_class& n2) noexcept {
     int32_t func_jac = kronecker_symbol(i, j);
     int real_jac     = mpz_jacobi(n1.get_mpz_t(), n2.get_mpz_t());
     if (func_jac != real_jac) {
-        printf("Error at (%" PRId64 ", %" PRId64 "): given J = %d, correct J = %d\n", i,
-               j, func_jac, real_jac);
+        printf("Error at (%" PRId64 ", %" PRId64 "): given J = %d, correct J = %d\n", i, j,
+               func_jac, real_jac);
     }
 }
 
-static void CheckJacobi(uint32_t i, uint32_t j, const mpz_class& n1,
-                        const mpz_class& n2) noexcept {
+static void CheckJacobi(uint32_t i, uint32_t j, const mpz_class& n1, const mpz_class& n2) noexcept {
     int32_t func_jac = kronecker_symbol(i, j);
     int real_jac     = mpz_jacobi(n1.get_mpz_t(), n2.get_mpz_t());
     if (func_jac != real_jac) {
-        printf("Error at (%" PRIu32 ", %" PRIu32 "): given J = %d, correct J = %d\n", i,
-               j, func_jac, real_jac);
+        printf("Error at (%" PRIu32 ", %" PRIu32 "): given J = %d, correct J = %d\n", i, j,
+               func_jac, real_jac);
     }
 }
 
-static void CheckJacobi(uint64_t i, uint64_t j, const mpz_class& n1,
-                        const mpz_class& n2) noexcept {
+static void CheckJacobi(uint64_t i, uint64_t j, const mpz_class& n1, const mpz_class& n2) noexcept {
     int32_t func_jac = kronecker_symbol(i, j);
     int real_jac     = mpz_jacobi(n1.get_mpz_t(), n2.get_mpz_t());
     if (func_jac != real_jac) {
-        printf("Error at (%" PRIu64 ", %" PRIu64 "): given J = %d, correct J = %d\n", i,
-               j, func_jac, real_jac);
+        printf("Error at (%" PRIu64 ", %" PRIu64 "): given J = %d, correct J = %d\n", i, j,
+               func_jac, real_jac);
     }
 }
 
-static void CheckJacobi(uint32_t i, int32_t j, const mpz_class& n1,
-                        const mpz_class& n2) noexcept {
+static void CheckJacobi(uint32_t i, int32_t j, const mpz_class& n1, const mpz_class& n2) noexcept {
     int32_t func_jac = kronecker_symbol(i, j);
     int real_jac     = mpz_jacobi(n1.get_mpz_t(), n2.get_mpz_t());
     if (func_jac != real_jac) {
-        printf("Error at (%" PRIu32 ", %" PRId32 "): given J = %d, correct J = %d\n", i,
-               j, func_jac, real_jac);
+        printf("Error at (%" PRIu32 ", %" PRId32 "): given J = %d, correct J = %d\n", i, j,
+               func_jac, real_jac);
     }
 }
 
-static void CheckJacobi(int32_t i, uint32_t j, const mpz_class& n1,
-                        const mpz_class& n2) noexcept {
+static void CheckJacobi(int32_t i, uint32_t j, const mpz_class& n1, const mpz_class& n2) noexcept {
     int32_t func_jac = kronecker_symbol(i, j);
     int real_jac     = mpz_jacobi(n1.get_mpz_t(), n2.get_mpz_t());
     if (func_jac != real_jac) {
-        printf("Error at (%" PRId32 ", %" PRIu32 "): given J = %d, correct J = %d\n", i,
-               j, func_jac, real_jac);
+        printf("Error at (%" PRId32 ", %" PRIu32 "): given J = %d, correct J = %d\n", i, j,
+               func_jac, real_jac);
     }
 }
 
-static void CheckJacobi(uint64_t i, int64_t j, const mpz_class& n1,
-                        const mpz_class& n2) noexcept {
+static void CheckJacobi(uint64_t i, int64_t j, const mpz_class& n1, const mpz_class& n2) noexcept {
     int32_t func_jac = kronecker_symbol(i, j);
     int real_jac     = mpz_jacobi(n1.get_mpz_t(), n2.get_mpz_t());
     if (func_jac != real_jac) {
-        printf("Error at (%" PRIu64 ", %" PRId64 "): given J = %d, correct J = %d\n", i,
-               j, func_jac, real_jac);
+        printf("Error at (%" PRIu64 ", %" PRId64 "): given J = %d, correct J = %d\n", i, j,
+               func_jac, real_jac);
     }
 }
 
-static void CheckJacobi(int64_t i, uint64_t j, const mpz_class& n1,
-                        const mpz_class& n2) noexcept {
+static void CheckJacobi(int64_t i, uint64_t j, const mpz_class& n1, const mpz_class& n2) noexcept {
     int32_t func_jac = kronecker_symbol(i, j);
     int real_jac     = mpz_jacobi(n1.get_mpz_t(), n2.get_mpz_t());
     if (func_jac != real_jac) {
-        printf("Error at (%" PRId64 ", %" PRIu64 "): given J = %d, correct J = %d\n", i,
-               j, func_jac, real_jac);
+        printf("Error at (%" PRId64 ", %" PRIu64 "): given J = %d, correct J = %d\n", i, j,
+               func_jac, real_jac);
     }
 }
 

@@ -11,7 +11,7 @@
  */
 
 #ifndef INTEGERS_128_BIT_HPP
-#define INTEGERS_128_BIT_HPP
+#define INTEGERS_128_BIT_HPP 1
 
 #include <cstdint>
 #include <ostream>
@@ -41,8 +41,7 @@ typedef std::_Signed128 int128_t;
  * Macro defined to 1 if current [u]int128_t supports constexpr
  * operations and 0 otherwise.
  */
-#if (__cplusplus >= 201703L && defined(__GNUC__)) || \
-    (__cplusplus >= 202002L && defined(_MSC_VER))
+#if (__cplusplus >= 201703L && defined(__GNUC__)) || (__cplusplus >= 202002L && defined(_MSC_VER))
 #define HAS_I128_CONSTEXPR 1
 #else
 #define HAS_I128_CONSTEXPR 0
@@ -74,8 +73,8 @@ inline constexpr size_t kMaxStringLengthI128 = 40;
 /// @param number
 /// @param buffer_ptr
 /// @return
-inline I128_CONSTEXPR char* uint128_t_format_fill_chars_buffer(
-    uint128_t number, char* buffer_ptr) noexcept {
+inline I128_CONSTEXPR char* uint128_t_format_fill_chars_buffer(uint128_t number,
+                                                               char* buffer_ptr) noexcept {
     constexpr uint8_t remainders[201] =
         "0001020304050607080910111213141516171819"
         "2021222324252627282930313233343536373839"
@@ -92,8 +91,8 @@ inline I128_CONSTEXPR char* uint128_t_format_fill_chars_buffer(
 
     if (number >= 10) {
         const size_t remainder_index = size_t(number) * 2;
-        *--buffer_ptr = char(remainders[remainder_index + 1]);
-        *--buffer_ptr = char(remainders[remainder_index]);
+        *--buffer_ptr                = char(remainders[remainder_index + 1]);
+        *--buffer_ptr                = char(remainders[remainder_index]);
     } else {
         *--buffer_ptr = char('0' + number);
     }
@@ -178,8 +177,7 @@ template <class T>
 inline constexpr bool is_integral_v = is_integral<T>::value;
 
 template <class T>
-inline constexpr bool is_default_constructible_v =
-    std::is_default_constructible_v<T>;
+inline constexpr bool is_default_constructible_v = std::is_default_constructible_v<T>;
 
 template <>
 inline constexpr bool is_default_constructible_v<uint128_t> = true;
@@ -244,9 +242,8 @@ inline ostream& operator<<(ostream& out, uint128_t number) {
 
     char digits[buffer_size];
     digits[buffer_size - 1] = '\0';
-    const char* ptr = uint128_t_format_fill_chars_buffer(
-        number, &digits[buffer_size - 1]);
-    size_t length = static_cast<size_t>(&digits[buffer_size - 1] - ptr);
+    const char* ptr         = uint128_t_format_fill_chars_buffer(number, &digits[buffer_size - 1]);
+    size_t length           = static_cast<size_t>(&digits[buffer_size - 1] - ptr);
     return out << string_view(ptr, length);
 }
 
@@ -257,8 +254,7 @@ inline int fprint_u128(uint128_t number, FILE* filestream) noexcept {
     constexpr auto buffer_size = kMaxStringLengthU128 + 1;
     char digits[buffer_size];
     digits[buffer_size - 1] = '\0';
-    const char* ptr = uint128_t_format_fill_chars_buffer(
-        number, &digits[buffer_size - 1]);
+    const char* ptr         = uint128_t_format_fill_chars_buffer(number, &digits[buffer_size - 1]);
     return fputs(ptr, filestream);
 }
 
@@ -272,10 +268,9 @@ inline int fprint_u128_newline(uint128_t number, FILE* filestream) noexcept {
     // + 1 for '\0', + 1 for '\n'
     constexpr auto buffer_size = kMaxStringLengthU128 + 1 + 1;
     char digits[buffer_size];
-    digits[buffer_size - 2]     = '\n';
+    digits[buffer_size - 2] = '\n';
     digits[buffer_size - 1] = '\0';
-    const char* ptr = uint128_t_format_fill_chars_buffer(
-        number, &digits[buffer_size - 2]);
+    const char* ptr         = uint128_t_format_fill_chars_buffer(number, &digits[buffer_size - 2]);
     return fputs(ptr, filestream);
 }
 
@@ -286,8 +281,7 @@ inline int print_u128_newline(uint128_t number) noexcept {
     constexpr auto buffer_size = kMaxStringLengthU128 + 1;
     char digits[buffer_size];
     digits[buffer_size - 1] = '\0';
-    const char* ptr = uint128_t_format_fill_chars_buffer(
-        number, &digits[buffer_size - 1]);
+    const char* ptr         = uint128_t_format_fill_chars_buffer(number, &digits[buffer_size - 1]);
     return puts(ptr);
 }
 
@@ -299,9 +293,8 @@ inline string to_string(uint128_t number) {
     char digits[buffer_size];
     digits[buffer_size - 1] = '\0';
 
-    const char* ptr = uint128_t_format_fill_chars_buffer(
-        number, &digits[buffer_size - 1]);
-    size_t length = static_cast<size_t>(&digits[buffer_size - 1] - ptr);
+    const char* ptr = uint128_t_format_fill_chars_buffer(number, &digits[buffer_size - 1]);
+    size_t length   = static_cast<size_t>(&digits[buffer_size - 1] - ptr);
 
     return string(ptr, length);
 }
@@ -315,8 +308,7 @@ inline string to_string(int128_t number) {
     digits[buffer_size - 1] = '\0';
 
     uint128_t number_m = number >= 0 ? uint128_t(number) : -uint128_t(number);
-    char* ptr = uint128_t_format_fill_chars_buffer(
-        number_m, &digits[buffer_size - 1]);
+    char* ptr          = uint128_t_format_fill_chars_buffer(number_m, &digits[buffer_size - 1]);
     if (number < 0) {
         *--ptr = '-';
     }
@@ -338,13 +330,11 @@ inline ostream& operator<<(ostream& out, int128_t number) {
         number = -number;
     }
 
-    char* ptr = uint128_t_format_fill_chars_buffer(
-        uint128_t(number), &digits[buffer_size - 1]);
+    char* ptr = uint128_t_format_fill_chars_buffer(uint128_t(number), &digits[buffer_size - 1]);
     if (negative) {
         *--ptr = '-';
     }
-    size_t length =
-        static_cast<size_t>(&digits[buffer_size - 1] - ptr);
+    size_t length = static_cast<size_t>(&digits[buffer_size - 1] - ptr);
 
     return out << string_view(ptr, length);
 }

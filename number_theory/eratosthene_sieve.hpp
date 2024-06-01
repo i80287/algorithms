@@ -40,15 +40,15 @@ constexpr
 #endif
     std::bitset<N>&
     primes_sieve_as_bitset() noexcept {
-#if defined(__cpp_constinit) && __cplusplus >= 202002L
+#if defined(__cpp_constinit) && __cpp_constinit >= 201907L
     constinit
 #endif
         static std::bitset<N>
-            primes;
+            primes{};
     if constexpr (N > 2) {
         primes.set();
-        primes[0]             = false;
-        primes[1]             = false;
+        primes[0]               = false;
+        primes[1]               = false;
         constexpr uint32_t root = math_functions::isqrt(N);
         for (uint32_t i = 2; i <= root; i++) {
             if (primes[i]) {

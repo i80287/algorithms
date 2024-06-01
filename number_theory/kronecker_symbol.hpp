@@ -7,7 +7,7 @@
 #include "math_functions.hpp"
 namespace math_functions {
 
-namespace impl {
+namespace detail {
 
 template <typename Uint>
 #if __cplusplus >= 202002L
@@ -245,7 +245,7 @@ ATTRIBUTE_CONST static constexpr int32_t kronecker_symbol_ui(Sint a, Uint n) noe
     return (n == 1) ? t : 0;
 }
 
-}  // namespace impl
+}  // namespace detail
 
 /// @brief Calculates Kronecker symbol of (a/n)
 /// Source:
@@ -256,8 +256,7 @@ ATTRIBUTE_CONST static constexpr int32_t kronecker_symbol_ui(Sint a, Uint n) noe
 /// @param n
 /// @return Kronecker symbol of (a/n) (-1, 0 or 1)
 template <typename IntegerT1, typename IntegerT2>
-ATTRIBUTE_CONST static constexpr int32_t kronecker_symbol(IntegerT1 a,
-                                                          IntegerT2 n) noexcept {
+ATTRIBUTE_CONST static constexpr int32_t kronecker_symbol(IntegerT1 a, IntegerT2 n) noexcept {
 #if __cplusplus >= 202002L
     using T1 = std::remove_cvref_t<IntegerT1>;
     using T2 = std::remove_cvref_t<IntegerT2>;
@@ -273,16 +272,16 @@ ATTRIBUTE_CONST static constexpr int32_t kronecker_symbol(IntegerT1 a,
 
     if constexpr (type_traits_helper_int128_t::is_unsigned_v<T1>) {
         if constexpr (type_traits_helper_int128_t::is_unsigned_v<T2>) {
-            return impl::kronecker_symb_ui<T1>(a, static_cast<T1>(n));
+            return detail::kronecker_symb_ui<T1>(a, static_cast<T1>(n));
         } else {
-            return impl::kronecker_symb_ui<T1>(
-                a, n >= 0 ? static_cast<T1>(n) : -static_cast<T1>(n));
+            return detail::kronecker_symb_ui<T1>(a,
+                                                 n >= 0 ? static_cast<T1>(n) : -static_cast<T1>(n));
         }
     } else {
         if constexpr (type_traits_helper_int128_t::is_unsigned_v<T2>) {
-            return impl::kronecker_symbol_ui<T1, T2>(a, n);
+            return detail::kronecker_symbol_ui<T1, T2>(a, n);
         } else {
-            return impl::kronecker_symbol_si<T1>(a, static_cast<T1>(n));
+            return detail::kronecker_symbol_si<T1>(a, static_cast<T1>(n));
         }
     }
 }
