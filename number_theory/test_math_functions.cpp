@@ -12,6 +12,7 @@
 #include "test_tools.hpp"
 
 using namespace math_functions;
+using namespace test_tools;
 using std::gcd;
 
 static_assert(bin_pow_mod(uint32_t(7), uint32_t(483), uint32_t(1000000007u)) == 263145387u,

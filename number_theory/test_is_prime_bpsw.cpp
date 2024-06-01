@@ -14,6 +14,7 @@
 #include "is_prime.hpp"
 #include "test_tools.hpp"
 
+using namespace test_tools;
 using math_functions::is_prime_bpsw;
 using math_functions::is_prime_sqrt;
 using std::printf;
@@ -380,7 +381,7 @@ static void TestPrimesFromFile() {
                              "Primes reversed ordering not held at p = %" PRIu64 "\n", p);
                 throw_if_not(is_prime_bpsw(p), "is_prime_bpsw error on n = %" PRIu64 "\n", p);
                 break;
-            [[unlikely]] case std::char_traits<char>::eof() :
+            [[unlikely]] case std::char_traits<char>::eof():
                 return;
             [[unlikely]] default:
                 perror("std::fscanf");

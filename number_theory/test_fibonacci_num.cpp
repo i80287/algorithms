@@ -3,6 +3,8 @@
 #include "fibonacci_num.hpp"
 #include "test_tools.hpp"
 
+using namespace test_tools;
+
 template <uint32_t k>
 static void test_fib_u64() noexcept {
     log_tests_started();

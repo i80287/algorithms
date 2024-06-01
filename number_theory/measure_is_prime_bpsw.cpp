@@ -8,6 +8,8 @@
 #include "is_prime.hpp"
 #include "test_tools.hpp"
 
+using namespace test_tools;
+
 static std::vector<uint64_t> read_primes() {
     std::vector<uint64_t> nums;
     nums.reserve(1065000zu);
@@ -18,7 +20,7 @@ static std::vector<uint64_t> read_primes() {
             [[likely]] case 1:
                 nums.push_back(n);
                 break;
-            [[unlikely]] case std::char_traits<char>::eof() :
+            [[unlikely]] case std::char_traits<char>::eof():
                 return nums;
             [[unlikely]] default:
                 perror("fscanf");

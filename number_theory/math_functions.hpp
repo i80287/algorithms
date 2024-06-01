@@ -1105,11 +1105,6 @@ ATTRIBUTE_CONST constexpr uint64_t nearest_pow2_ge(uint64_t n) noexcept {
     return uint64_t(1ull) << (k - uint32_t(countl_zero(n | 1)) - ((n & (n - 1)) == 0));
 }
 
-/* Just constexpr version of isdigit from ctype.h */
-ATTRIBUTE_CONST constexpr bool is_digit(int32_t c) noexcept {
-    return static_cast<uint32_t>(c) - '0' <= '9' - '0';
-}
-
 ATTRIBUTE_CONST constexpr uint32_t base_2_len(uint32_t n) noexcept {
     // " | 1" operation does not affect answer for all
     //  numbers except n = 0. For n = 0 answer is 1.
@@ -1210,7 +1205,7 @@ ATTRIBUTE_CONST constexpr uint32_t log2_ceil(uint128_t n) noexcept {
 /// @param[in] n
 /// @return
 ATTRIBUTE_CONST
-#if __cpp_constexpr >= 202211L && defined(__GNUC__)
+#if defined(__cpp_constexpr) && __cpp_constexpr >= 202211L && defined(__GNUC__)
 constexpr
 #endif
     inline uint32_t
@@ -1218,17 +1213,24 @@ constexpr
     /**
      * See Hackers Delight 11-4
      */
-#if __cpp_constexpr >= 202211L && defined(__GNUC__)
+#if defined(__cpp_constexpr) && __cpp_constexpr >= 202211L && defined(__GNUC__)
     constexpr
+#elif defined(__cpp_constinit) && __cpp_constinit >= 201907L
+    constinit
 #endif
-        static const uint8_t table1[33] = {10, 9, 9, 8, 8, 8, 7, 7, 7, 6, 6, 6, 6, 5, 5, 5, 4,
-                                           4,  4, 3, 3, 3, 3, 2, 2, 2, 1, 1, 1, 0, 0, 0, 0};
-#if __cpp_constexpr >= 202211L && defined(__GNUC__)
+        static const uint8_t table1[33] = {
+            10, 9, 9, 8, 8, 8, 7, 7, 7, 6, 6, 6, 6, 5, 5, 5, 4,
+            4,  4, 3, 3, 3, 3, 2, 2, 2, 1, 1, 1, 0, 0, 0, 0,
+        };
+#if defined(__cpp_constexpr) && __cpp_constexpr >= 202211L && defined(__GNUC__)
     constexpr
+#elif defined(__cpp_constinit) && __cpp_constinit >= 201907L
+    constinit
 #endif
-        static const uint32_t table2[11] = {1,       10,       100,       1000,       10000, 100000,
-                                            1000000, 10000000, 100000000, 1000000000, 0};
-    uint32_t digits                      = table1[countl_zero(n)];
+        static const uint32_t table2[11] = {
+            1, 10, 100, 1000, 10000, 100000, 1000000, 10000000, 100000000, 1000000000, 0,
+        };
+    uint32_t digits = table1[countl_zero(n)];
     digits -= ((n - table2[digits]) >> 31);
     return digits;
 }
@@ -1238,7 +1240,7 @@ constexpr
 /// @param[in] n
 /// @return
 ATTRIBUTE_CONST
-#if __cpp_constexpr >= 202211L && defined(__GNUC__)
+#if defined(__cpp_constexpr) && __cpp_constexpr >= 202211L && defined(__GNUC__)
 constexpr
 #endif
     inline uint32_t
@@ -1246,29 +1248,33 @@ constexpr
     /**
      * See Hackers Delight 11-4
      */
-#if __cpp_constexpr >= 202211L && defined(__GNUC__)
+#if defined(__cpp_constexpr) && __cpp_constexpr >= 202211L && defined(__GNUC__)
     constexpr
+#elif defined(__cpp_constinit) && __cpp_constinit >= 201907L
+    constinit
 #endif
-        static const uint64_t table2[20] = {0ull,
-                                            9ull,
-                                            99ull,
-                                            999ull,
-                                            9999ull,
-                                            99999ull,
-                                            999999ull,
-                                            9999999ull,
-                                            99999999ull,
-                                            999999999ull,
-                                            9999999999ull,
-                                            99999999999ull,
-                                            999999999999ull,
-                                            9999999999999ull,
-                                            99999999999999ull,
-                                            999999999999999ull,
-                                            9999999999999999ull,
-                                            99999999999999999ull,
-                                            999999999999999999ull,
-                                            9999999999999999999ull};
+        static const uint64_t table2[20] = {
+            0ull,
+            9ull,
+            99ull,
+            999ull,
+            9999ull,
+            99999ull,
+            999999ull,
+            9999999ull,
+            99999999ull,
+            999999999ull,
+            9999999999ull,
+            99999999999ull,
+            999999999999ull,
+            9999999999999ull,
+            99999999999999ull,
+            999999999999999ull,
+            9999999999999999ull,
+            99999999999999999ull,
+            999999999999999999ull,
+            9999999999999999999ull,
+        };
     static_assert(countl_zero(uint64_t(0)) == 64, "countl_zero detail error");
     int32_t digits = (19 * (63 - int32_t(countl_zero(n)))) >> 6;
     ATTRIBUTE_ASSUME((-19 >> 6) <= digits && digits <= ((19 * 63) >> 6));
@@ -1277,7 +1283,7 @@ constexpr
 }
 
 ATTRIBUTE_CONST
-#if __cpp_constexpr >= 202211L && defined(__GNUC__)
+#if defined(__cpp_constexpr) && __cpp_constexpr >= 202211L && defined(__GNUC__)
 constexpr
 #endif
     inline uint32_t
@@ -1287,7 +1293,7 @@ constexpr
 }
 
 ATTRIBUTE_CONST
-#if __cpp_constexpr >= 202211L && defined(__GNUC__)
+#if defined(__cpp_constexpr) && __cpp_constexpr >= 202211L && defined(__GNUC__)
 constexpr
 #endif
     inline uint32_t
@@ -1360,6 +1366,7 @@ template <class FloatType>
 #endif
 ATTRIBUTE_CONST SumSinCos<FloatType> sum_of_sines_and_cosines(FloatType alpha, FloatType beta,
                                                               uint32_t n) noexcept {
+    static_assert(std::is_floating_point_v<FloatType>, "Invalid type in sum_of_sines_and_cosines");
     const FloatType nf       = static_cast<FloatType>(n);
     const auto half_beta     = beta / 2;
     const auto half_beta_sin = std::sin(half_beta);
