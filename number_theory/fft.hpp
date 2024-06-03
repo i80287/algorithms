@@ -27,11 +27,12 @@ namespace fft_detail {
  */
 static std::vector<complex> fft_roots = {complex(0, 0), complex(1, 0)};
 
-#if CONFIG_HAS_AT_LEAST_CXX_20
+template <bool IsBackwardFFT = false /* Forward of backward FFT */>
+#if CONFIG_HAS_AT_LEAST_CXX_20 && !defined(_GLIBCXX_DEBUG)
 constexpr
 #endif
     inline void
-    forward_fft(complex* p, const size_t k) noexcept {
+    forward_or_backward_fft(complex* p, const size_t k) noexcept {
     ATTRIBUTE_ASSUME(k > 0 && (k & (k - 1)) == 0);
 
     for (size_t i = 1, k_reversed_i = 0; i < k; i++) {
@@ -49,59 +50,26 @@ constexpr
 
     const complex* const points = fft_roots.data();
 
-    /* Unroll for step = 1 */
+    // Unrolled loop for step = 1
     for (size_t block_start = 0; block_start < k; block_start += 2) {
-        const complex p0_i  = p[block_start];
-        const auto w_j_p1_i = p[block_start + 1];
-        p[block_start]      = p0_i + w_j_p1_i;
-        p[block_start + 1]  = p0_i - w_j_p1_i;
+        const complex p0_i = p[block_start];
+        complex w_j_p1_i   = p[block_start + 1];
+        p[block_start]     = p0_i + w_j_p1_i;
+        p[block_start + 1] = p0_i - w_j_p1_i;
     }
 
     for (size_t step = 2; step < k; step *= 2) {
         for (size_t block_start = 0; block_start < k;) {
-            const size_t block_end = block_start + step;
+            size_t block_end = block_start + step;
             for (size_t pos_in_block = block_start, point_index = step; pos_in_block < block_end;
                  pos_in_block++, point_index++) {
-                const complex p0_i     = p[pos_in_block];
-                const auto w_j_p1_i    = points[point_index] * p[pos_in_block + step];
-                p[pos_in_block]        = p0_i + w_j_p1_i;
-                p[pos_in_block + step] = p0_i - w_j_p1_i;
-            }
-
-            block_start = block_end + step;
-        }
-    }
-}
-
-#if CONFIG_HAS_AT_LEAST_CXX_20
-constexpr
-#endif
-    inline void
-    backward_fft(complex* p, const size_t k) noexcept {
-    ATTRIBUTE_ASSUME(k > 0 && (k & (k - 1)) == 0);
-
-    for (size_t i = 1, k_reversed_i = 0; i < k; i++) {
-        // 'Increase' k_reversed_i by one
-        size_t bit = k >> 1;
-        for (; k_reversed_i >= bit; bit >>= 1) {
-            k_reversed_i -= bit;
-        }
-
-        k_reversed_i += bit;
-        if (i < k_reversed_i) {
-            std::swap(p[i], p[k_reversed_i]);
-        }
-    }
-
-    const complex* const points = fft_roots.data();
-    for (size_t step = 1, point_step = k / 2; step < k; step *= 2, point_step /= 2) {
-        for (size_t block_start = 0; block_start < k;) {
-            size_t point_index = step;
-            size_t block_end   = block_start + step;
-            for (size_t pos_in_block = block_start; pos_in_block < block_end;
-                 pos_in_block++, point_index++) {
-                complex p0_i           = p[pos_in_block];
-                auto w_j_p1_i          = std::conj(points[point_index]) * p[pos_in_block + step];
+                const complex p0_i = p[pos_in_block];
+                complex w_j_p1_i{};
+                if constexpr (IsBackwardFFT) {
+                    w_j_p1_i = std::conj(points[point_index]) * p[pos_in_block + step];
+                } else {
+                    w_j_p1_i = points[point_index] * p[pos_in_block + step];
+                }
                 p[pos_in_block]        = p0_i + w_j_p1_i;
                 p[pos_in_block + step] = p0_i - w_j_p1_i;
             }
@@ -110,9 +78,11 @@ constexpr
         }
     }
 
-    f64 one_kth = 1.0 / f64(k);
-    for (complex *p_iter = p, *p_end = p_iter + k; p_iter != p_end; ++p_iter) {
-        *p_iter *= one_kth;
+    if constexpr (IsBackwardFFT) {
+        f64 one_kth = 1.0 / f64(k);
+        for (complex *p_iter = p, *p_end = p_iter + k; p_iter != p_end; ++p_iter) {
+            *p_iter *= one_kth;
+        }
     }
 }
 
@@ -166,7 +136,7 @@ inline void forward_backward_fft(complex* p1, complex* p2, const size_t n) {
     ATTRIBUTE_ASSUME(n > 0 && (n & (n - 1)) == 0);
 
     ensure_roots_capacity(n);
-    fft_detail::forward_fft(p1, n);
+    fft_detail::forward_or_backward_fft</*IsBackwardFFT = */ false>(p1, n);
     /*
      * A(w^j) = a_0 + a_1 * w^j + a_2 * w^{2 j} + ... + a_{n - 1} * w^{(n - 1)
      * j} B(w^j) = b_0 + b_1 * w^j + b_2 * w^{2 j} + ... + b_{n - 1} * w^{(n -
@@ -203,7 +173,7 @@ inline void forward_backward_fft(complex* p1, complex* p2, const size_t n) {
         complex p_w_n_j = std::conj(p1[n_j]);
         p2[j]           = (p_w_j + p_w_n_j) * (p_w_j - p_w_n_j) * one_quat_i;
     }
-    fft_detail::backward_fft(p2, n);
+    fft_detail::forward_or_backward_fft</*IsBackwardFFT = */ true>(p2, n);
 }
 
 }  // namespace fft
