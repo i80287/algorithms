@@ -609,20 +609,22 @@ constexpr bool test_64x64() {
 
 #include <bitset>
 
-void transpose_m(std::bitset<4096> (&m)[4096]) {
-    uint64_t tmp1[64] = {};
-    uint64_t tmp2[64] = {};
+void transpose_4096(std::bitset<4096> (&m)[4096]) {
+    assert(std::bit_cast<uintptr_t>(&m[0]) % 8 == 0);
+    assert(std::bit_cast<uintptr_t>(&m[4095]) % 8 == 0);
+    uint64_t tmp1[64]{};
+    uint64_t tmp2[64]{};
     for (std::size_t i = 0; i < 64; i++) {
         for (std::size_t j = i; j < 64; j++) {
             for (std::size_t k = 0; k < 64; k++) {
-                tmp1[k] = *(reinterpret_cast<const uint64_t*>(&m[i * 64 + k]) + j);
-                tmp2[k] = *(reinterpret_cast<const uint64_t*>(&m[j * 64 + k]) + i);
+                tmp1[k] = *(std::bit_cast<const uint64_t*>(&m[i * 64 + k]) + j);
+                tmp2[k] = *(std::bit_cast<const uint64_t*>(&m[j * 64 + k]) + i);
             }
             transpose64(tmp1);
             transpose64(tmp2);
             for (std::size_t k = 0; k < 64; k++) {
-                *(reinterpret_cast<uint64_t*>(&m[i * 64 + k]) + j) = tmp2[k];
-                *(reinterpret_cast<uint64_t*>(&m[j * 64 + k]) + i) = tmp1[k];
+                *(std::bit_cast<uint64_t*>(&m[i * 64 + k]) + j) = tmp2[k];
+                *(std::bit_cast<uint64_t*>(&m[j * 64 + k]) + i) = tmp1[k];
             }
         }
     }
