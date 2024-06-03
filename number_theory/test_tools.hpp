@@ -9,7 +9,7 @@
 #include <stdexcept>
 
 #include "config_macros.hpp"
-#if CONFIG_HAS_AT_LEAST_CXX_20
+#if CONFIG_HAS_INCLUDE(<source_location>)
 #include <source_location>
 #endif
 
@@ -17,7 +17,7 @@ namespace test_tools {
 namespace test_tools_detail {
 
 template <class T>
-ATTRIBUTE_COLD [[noreturn]] inline void throw_impl(const char* message_format, T arg,
+[[noreturn]] ATTRIBUTE_COLD inline void throw_impl(const char* message_format, T arg,
                                                    const char* file_name, uint32_t line,
                                                    const char* function_name) {
     std::array<char, 1024> buffer;
@@ -39,7 +39,7 @@ ATTRIBUTE_COLD [[noreturn]] inline void throw_impl(const char* message_format, T
 
 }  // namespace test_tools_detail
 
-#if CONFIG_HAS_AT_LEAST_CXX_20
+#if defined(__cpp_lib_source_location) && __cpp_lib_source_location >= 201907L
 
 template <class T>
 inline void throw_if_not(bool expr, const char* message_format, T arg,

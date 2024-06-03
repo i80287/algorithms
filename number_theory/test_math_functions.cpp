@@ -4,9 +4,9 @@
 #include <cinttypes>
 #include <limits>
 
+#include "config_macros.hpp"
 #include "math_functions.hpp"
 #include "test_tools.hpp"
-#include "config_macros.hpp"
 
 using namespace math_functions;
 using namespace test_tools;
