@@ -4,6 +4,7 @@
 #include "config_macros.hpp"
 #include "fibonacci_num.hpp"
 #include "kronecker_symbol.hpp"
+#include "test_tools.hpp"
 
 using math_functions::fibonacci_num;
 using math_functions::kronecker_symbol;
@@ -13,7 +14,7 @@ using math_functions::kronecker_symbol;
 
 /// @brief Kronecker symbols (n/k) for 1 <= n <= 30 and 1 <= k <= 30
 ///        Here (n/k) = krnk[n - 1][k - 1] (using zero indexing notation)
-static const int32_t krnk[30][30] = {
+inline constexpr int32_t krnk[30][30] = {
     {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
     {1, 0, -1, 0,  -1, 0,  1, 0, 1, 0, -1, 0,  -1, 0,  1,
      0, 1, 0,  -1, 0,  -1, 0, 1, 0, 1, 0,  -1, 0,  -1, 0},
@@ -64,12 +65,12 @@ static const int32_t krnk[30][30] = {
 };
 
 /// @brief First 30 odd prime numbers
-static const uint32_t odd_primes[30] = {3,  5,  7,  11, 13,  17,  19,  23,  29,  31,
+inline constexpr uint32_t odd_primes[30] = {3,  5,  7,  11, 13,  17,  19,  23,  29,  31,
                                         37, 41, 43, 47, 53,  59,  61,  67,  71,  73,
                                         79, 83, 89, 97, 101, 103, 107, 109, 113, 127};
 
 /// @brief Legendre symbols (a/p) for 1 <= a <= 30 and 3 <= p <= 127, p is prime
-static const int32_t lgnr[30][30] = {
+inline constexpr int32_t lgnr[30][30] = {
     {1, -1, 0, 1, -1, 0, 1, -1, 0, 1, -1, 0, 1, -1, 0,
      1, -1, 0, 1, -1, 0, 1, -1, 0, 1, -1, 0, 1, -1, 0},
     {1, -1, -1, 1, 0, 1, -1, -1, 1, 0, 1, -1, -1, 1, 0,
@@ -153,7 +154,7 @@ static void CheckJacobi(uint32_t a, uint32_t n, int32_t real_jacobi) noexcept {
 
 template <uint16_t kLen>
 static void CheckJacobiBasic() noexcept {
-    printf("Started tests in %s\n", FUNCTION_MACRO);
+    test_tools::log_tests_started();
 
     for (uint32_t n = 1; n <= 30; n++) {
         for (uint32_t k = 1; k <= 30; k++) {
@@ -348,7 +349,7 @@ static void CheckJacobi(int64_t i, uint64_t j, const mpz_class& n1, const mpz_cl
 
 template <uint16_t kLen>
 static void GMPCheckJacobiI32() {
-    printf("Started tests in %s\n", FUNCTION_MACRO);
+    test_tools::log_tests_started();
     mpz_class n1;
     mpz_class n2;
 
@@ -371,7 +372,7 @@ static void GMPCheckJacobiI32() {
 
 template <uint16_t kLen>
 static void GMPCheckJacobiI64() {
-    printf("Started tests in %s\n", FUNCTION_MACRO);
+    test_tools::log_tests_started();
     mpz_class n1;
     mpz_class n2;
 
@@ -394,7 +395,7 @@ static void GMPCheckJacobiI64() {
 
 template <uint16_t kLen>
 static void GMPCheckJacobiU32() {
-    printf("Started tests in %s\n", FUNCTION_MACRO);
+    test_tools::log_tests_started();
     mpz_class n1;
     mpz_class n2;
 
@@ -417,7 +418,7 @@ static void GMPCheckJacobiU32() {
 
 template <uint16_t kLen>
 static void GMPCheckJacobiU64() {
-    printf("Started tests in %s\n", FUNCTION_MACRO);
+    test_tools::log_tests_started();
     mpz_class n1;
     mpz_class n2;
 
@@ -440,7 +441,7 @@ static void GMPCheckJacobiU64() {
 
 template <uint16_t kLen>
 static void GMPCheckJacobiU32I32() {
-    printf("Started tests in %s\n", FUNCTION_MACRO);
+    test_tools::log_tests_started();
     mpz_class n1;
     mpz_class n2;
 
@@ -475,7 +476,7 @@ static void GMPCheckJacobiU32I32() {
 
 template <uint16_t kLen>
 static void GMPCheckJacobiU64I64() {
-    printf("Started tests in %s\n", FUNCTION_MACRO);
+    test_tools::log_tests_started();
     mpz_class n1;
     mpz_class n2;
 

@@ -42,7 +42,7 @@ inline void throw_if_not(bool expr, const char* message_format, T arg,
     }
 }
 
-inline void log_tests_started(
+ATTRIBUTE_ALWAYS_INLINE inline void log_tests_started(
     const std::source_location src = std::source_location::current()) noexcept {
     printf("Started tests in %s\n", src.function_name());
 }
