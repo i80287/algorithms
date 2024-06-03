@@ -1,0 +1,48 @@
+name: Fedora
+
+on: [push, pull_request, workflow_dispatch]
+
+permissions:
+    contents: read
+
+jobs:
+
+  fedora-cmake-gcc:
+    name: fedora
+    runs-on: ubuntu-latest
+    container:
+      image: fedora:latest
+
+    steps:
+    - uses: actions/checkout@v3
+    - run: cat /etc/os-release
+    - name: Install dependencies
+      run: |
+        sudo dnf -y update
+        sudo dnf -y install gcc-c++ cmake make gmp gmp-devel gmp-c++ gmp-devel gmp-static mpfr-devel
+        sudo dnf upgrade
+    - name: Run tests
+      run: |
+        cd ./number_theory
+        chmod +x ./run_gcc_tests.sh
+        ./run_gcc_tests.sh
+
+  fedora-cmake-clang:
+    name: fedora
+    runs-on: ubuntu-latest
+    container:
+      image: fedora:latest
+
+    steps:
+    - uses: actions/checkout@v3
+    - run: cat /etc/os-release
+    - name: Install dependencies
+      run: |
+        sudo dnf -y update
+        sudo dnf -y install clang cmake make gmp gmp-devel gmp-c++ gmp-devel gmp-static mpfr-devel
+        sudo dnf upgrade
+    - name: Run tests
+      run: |
+        cd ./number_theory
+        chmod +x ./run_clang_tests.sh
+        ./run_clang_tests.sh

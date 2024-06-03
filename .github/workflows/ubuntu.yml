@@ -1,0 +1,41 @@
+name: Ubuntu
+
+on: [push, pull_request, workflow_dispatch]
+
+permissions:
+    contents: read
+
+jobs:
+
+  ubuntu-cmake-gcc:
+    name: ubuntu
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+    - name: Install dependencies
+      run: |
+        sudo apt update
+        sudo apt install g++ build-essential cmake make libgmp-dev libmpfr-dev
+        sudo apt upgrade
+    - name: Run tests
+      run: |
+        cd ./number_theory
+        chmod +x ./run_gcc_tests.sh
+        ./run_gcc_tests.sh
+
+  ubuntu-cmake-clang:
+    name: ubuntu
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+    - name: Install dependencies
+      run: |
+        sudo apt update
+        sudo apt install clang llvm cmake make libgmp-dev libmpfr-dev
+    - name: Run tests
+      run: |
+        cd ./number_theory
+        chmod +x ./run_clang_tests.sh
+        ./run_clang_tests.sh

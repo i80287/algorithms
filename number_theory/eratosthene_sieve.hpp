@@ -49,7 +49,7 @@ constexpr
         primes.set();
         primes[0]               = false;
         primes[1]               = false;
-        constexpr uint32_t root = math_functions::isqrt(N);
+        constexpr uint32_t root = math_functions::isqrt(uint64_t(N));
         for (uint32_t i = 2; i <= root; i++) {
             if (primes[i]) {
                 for (uint32_t j = i * i; j < N; j += i) {

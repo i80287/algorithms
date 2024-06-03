@@ -1,5 +1,9 @@
 #pragma once
 
+#ifdef NDEBUG
+#warning "Can't test properly with NDEBUG macro defined (macro won't be undefined manually)"
+#endif
+
 #include <array>
 #include <cstdio>
 #include <stdexcept>
@@ -97,7 +101,7 @@ struct Wrapper final {
     }
 
 private:
-    ATTRIBUTE_COLD [[noreturn]] static void ThrowOnFOpenFail(const char* fname, const char* mode) {
+    [[noreturn]] ATTRIBUTE_COLD static void ThrowOnFOpenFail(const char* fname, const char* mode) {
         std::array<char, 1024> buffer;
         int bytes_written = std::snprintf(
             buffer.data(), buffer.size(),

@@ -1,7 +1,3 @@
-#ifdef NDEBUG
-#warning "Can't test properly with NDEBUG macro defined (macro won't be undefined manually)"
-#endif
-
 #include <mpfr.h>
 
 #include <cassert>
@@ -10,6 +6,7 @@
 
 #include "math_functions.hpp"
 #include "test_tools.hpp"
+#include "config_macros.hpp"
 
 using namespace math_functions;
 using namespace test_tools;
@@ -35,6 +32,8 @@ static_assert(bin_pow_mod(uint64_t(999999999999999487ull), uint64_t(184467440737
               "bin_pow_mod");
 #endif
 
+#if HAS_AT_LEAST_CXX_20
+
 static_assert(isqrt(0u) == 0, "isqrt");
 static_assert(isqrt(1u) == 1, "isqrt");
 static_assert(isqrt(4u) == 2, "isqrt");
@@ -51,6 +50,8 @@ static_assert(isqrt(1u << 16) == 1 << 8, "isqrt");
 static_assert(isqrt(1u << 28) == 1 << 14, "isqrt");
 static_assert(isqrt(1u << 30) == 1 << 15, "isqrt");
 static_assert(isqrt(uint32_t(-1)) == (1u << 16) - 1, "isqrt");
+
+#endif
 
 static_assert(isqrt(uint64_t(0)) == 0, "isqrt");
 static_assert(isqrt(uint64_t(1)) == 1, "isqrt");
