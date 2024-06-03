@@ -162,9 +162,8 @@ ATTRIBUTE_CONST inline I128_CONSTEXPR uint64_t bin_pow_mod(uint64_t n, uint64_t 
 ATTRIBUTE_CONST constexpr uint32_t isqrt(uint32_t n) noexcept {
     uint32_t y = 0;
 
-#if defined(__STDC_HOSTED__) && __STDC_HOSTED__ == 1
+#if defined(__cpp_lib_is_constant_evaluated) && __cpp_lib_is_constant_evaluated >= 201811L
     if (std::is_constant_evaluated()) {
-#endif
         /**
          * See Hackers Delight Chapter 11.
          */
@@ -176,11 +175,11 @@ ATTRIBUTE_CONST constexpr uint32_t isqrt(uint32_t n) noexcept {
                 y |= m;
             }
         }
-#if defined(__STDC_HOSTED__) && __STDC_HOSTED__ == 1
-    } else {
+    } else
+#endif
+    {
         y = static_cast<uint32_t>(std::sqrt(static_cast<double>(n)));
     }
-#endif
 
     ATTRIBUTE_ASSUME(y < (1u << 16));
     return y;

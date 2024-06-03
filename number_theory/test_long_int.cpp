@@ -2,11 +2,12 @@
 
 #include "config_macros.hpp"
 #include "LongInt.hpp"
+#include "test_tools.hpp"
 
 namespace long_int_tests {
 
 static void TestOperatorEqualsInt() {
-    puts(FUNCTION_MACRO);
+    test_tools::log_tests_started();
     LongInt n;
 
     constexpr int32_t K = 131072;
@@ -80,7 +81,8 @@ static void TestOperatorEqualsInt() {
 }
 
 static void TestLongIntMult() {
-    puts(FUNCTION_MACRO);
+    test_tools::log_tests_started();
+
     LongInt n1;
     LongInt n2;
     constexpr uint64_t K = 6000;
@@ -400,11 +402,7 @@ static void TestLongIntMult() {
         n2.set_string(test[1]);
         n1 *= n2;
         n2.set_string(test[2]);
-        if (n1 != n2) {
-            std::cout << test[2] << ' ' << strlen(test[2]) << '\n'
-                      << n1 << ' ' << n1.size() << '\n';
-            return;
-        }
+        assert(n1 == n2);
     }
 
     namespace chrono = std::chrono;
@@ -416,8 +414,8 @@ static void TestLongIntMult() {
         auto start = chrono::high_resolution_clock::now();
         n1 *= n1;
         auto end = chrono::high_resolution_clock::now();
-        printf("Multiplied %zu digit numbers in %" PRIu64 " ms\n", k,
-               uint64_t(chrono::duration_cast<chrono::milliseconds>(end - start).count()));
+        printf("Multiplied %zu digit numbers in %" PRIu64 " microseconds\n", k,
+               uint64_t(chrono::duration_cast<chrono::microseconds>(end - start).count()));
     }
     std::string ans(2 * k, '\0');
     std::memset(ans.data(), '9', (k - 1) * sizeof(char));
@@ -425,13 +423,12 @@ static void TestLongIntMult() {
     std::memset(ans.data() + k, '0', (k - 1) * sizeof(char));
     ans[2 * k - 1] = '1';
     n2.set_string(ans);
-    if (n1 != n2) {
-        std::cout << "Long test failed\n";
-    }
+    assert(n1 == n2 && "Long test failed");
 }
 
 static void TestLongIntSquare() {
-    puts(FUNCTION_MACRO);
+    test_tools::log_tests_started();
+
     LongInt n;
     n.Reserve(4);
     constexpr uint64_t K = 8192;
@@ -513,7 +510,8 @@ static void TestLongIntSquare() {
 }
 
 static void TestUIntMult() {
-    puts(FUNCTION_MACRO);
+    test_tools::log_tests_started();
+
     LongInt n;
     constexpr uint64_t K = 6000;
     for (uint64_t i = 0; i <= K; i++) {
@@ -550,7 +548,8 @@ static void TestUIntMult() {
 }
 
 static void TestUIntAdd() {
-    puts(FUNCTION_MACRO);
+    test_tools::log_tests_started();
+
     LongInt n;
     n.ReserveWithoutCopy(4);
     constexpr uint32_t K = 6000;
@@ -649,7 +648,7 @@ static void TestUIntAdd() {
 }
 
 static void TestLongIntAdd() {
-    puts(FUNCTION_MACRO);
+    test_tools::log_tests_started();
     LongInt n;
     n.ReserveWithoutCopy(4);
     LongInt m;
@@ -702,8 +701,34 @@ static void TestLongIntAdd() {
     }
 }
 
+static void TestLongUIntSub() {
+    test_tools::log_tests_started();
+
+    LongInt n;
+    n -= std::numeric_limits<uint32_t>::max();
+    assert(n == -int64_t(std::numeric_limits<uint32_t>::max()));
+    constexpr uint32_t K = 6000;
+    for (uint32_t i = 0; i <= K; i++) {
+        for (uint32_t j = 0; j <= K; j++) {
+            n = i;
+            assert(n == i);
+            n -= j;
+            assert(n == int64_t(i) - int64_t(j));
+        }
+    }
+
+    for (uint32_t i = uint32_t(-1) - K; i != 0; i++) {
+        for (uint32_t j = uint32_t(-1) - K; j != 0; j++) {
+            n = i;
+            assert(n == i);
+            n -= j;
+            assert(n == int64_t(i) - int64_t(j));
+        }
+    }
+}
+
 static void TestSetString() {
-    puts(FUNCTION_MACRO);
+    test_tools::log_tests_started();
     constexpr int64_t numbersI64[] = {
         0,
         1,
@@ -813,7 +838,7 @@ static void TestSetString() {
 }
 
 static void TestToString() {
-    puts(FUNCTION_MACRO);
+    test_tools::log_tests_started();
     std::string buffer;
 
     constexpr int64_t numbersI64[] = {
@@ -933,7 +958,7 @@ static void TestToString() {
 }
 
 static void TestBitShifts() {
-    puts(FUNCTION_MACRO);
+    test_tools::log_tests_started();
     constexpr uint32_t k = 4096;
     LongInt n;
     n.Reserve(4);
@@ -975,7 +1000,7 @@ static void TestBitShifts() {
 }
 
 static void TestDecimal() {
-    puts(FUNCTION_MACRO);
+    test_tools::log_tests_started();
     LongInt::Decimal d1(0u);
     LongInt::Decimal d2(0u);
     constexpr uint32_t kC = 2000;
@@ -1150,6 +1175,7 @@ int main() {
     TestUIntAdd();
     TestLongIntMult();
     TestLongIntAdd();
+    TestLongUIntSub();
     TestSetString();
     TestToString();
     TestLongIntSquare();

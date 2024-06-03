@@ -1,5 +1,6 @@
 // #define NDEBUG 1
 
+#include <algorithm>
 #include <cassert>
 #include <cinttypes>
 #include <cmath>
@@ -11,6 +12,7 @@
 #include <new>
 #include <string>
 #include <string_view>
+#include <type_traits>
 #include <vector>
 
 #include "fft.hpp"
@@ -536,10 +538,7 @@ struct LongInt {
         } else {
             k_ptr = other.nums_;
             m_ptr = nums_;
-            // let compiler decide whether it is faster then 3 xors or not
-            size_t tmp = m;
-            m          = k;
-            k          = tmp;
+            std::swap(m, k);
         }
 
         if (unlikely(m == 0)) {
@@ -895,16 +894,28 @@ struct LongInt {
 #endif
 
     constexpr bool operator==(const LongInt& other) const noexcept {
-        return size_ == other.size_ &&
-               std::char_traits<char>::compare(reinterpret_cast<const char*>(nums_),
-                                               reinterpret_cast<const char*>(other.nums_),
-                                               USize() * sizeof(uint32_t)) == 0;
+        return size_ == other.size_ && std::equal(nums_, nums_ + USize(), other.nums_);
     }
 
-    constexpr bool operator!=(const LongInt& other) const noexcept {
-        return !(*this == other);
-    }
+#if CONFIG_HAS_AT_LEAST_CXX_20
+    constexpr std::strong_ordering operator<=>(const LongInt& other) const noexcept {
+        if (size_ != other.size_) {
+            return size_ <=> other.size_;
+        }
 
+        size_t usize                 = USize();
+        const uint32_t* r_end        = nums_ - 1;
+        const uint32_t* r_nums       = r_end + usize;
+        const uint32_t* r_other_nums = other.nums_ - 1 + usize;
+        for (; r_nums != r_end; r_nums--, r_other_nums--) {
+            if (*r_nums != *r_other_nums) {
+                return int64_t(*r_nums) * sign() <=> int64_t(*r_other_nums) * other.sign();
+            }
+        }
+
+        return std::strong_ordering::equivalent;
+    }
+#else
     constexpr bool operator<(const LongInt& other) const noexcept {
         if (size_ != other.size_) {
             return size_ < other.size_;
@@ -916,7 +927,7 @@ struct LongInt {
         const uint32_t* r_other_nums = other.nums_ - 1 + usize;
         for (; r_nums != r_end; r_nums--, r_other_nums--) {
             if (*r_nums != *r_other_nums) {
-                return ssize_t(*r_nums) * sign() < ssize_t(*r_other_nums) * other.sign();
+                return int64_t(*r_nums) * sign() < int64_t(*r_other_nums) * other.sign();
             }
         }
 
@@ -928,12 +939,13 @@ struct LongInt {
     }
 
     constexpr bool operator<=(const LongInt& other) const noexcept {
-        return !(other < *this);
+        return !(*this > other);
     }
 
     constexpr bool operator>=(const LongInt& other) const noexcept {
         return !(*this < other);
     }
+#endif
 
     LongInt& operator+=(uint32_t n) {
         if (unlikely(size_ == 0)) {
@@ -964,7 +976,7 @@ struct LongInt {
                 capacity_ = 2;
             }
 
-            nums_[0] = -n;
+            nums_[0] = n;
             size_    = -int32_t(n != 0);
             return *this;
         }
@@ -1098,55 +1110,65 @@ struct LongInt {
     constexpr bool iszero() const noexcept {
         return size_ == 0;
     }
-
     constexpr bool empty() const noexcept {
         return iszero();
     }
-
     constexpr operator bool() noexcept {
         return !iszero();
     }
-
     constexpr int32_t size() const noexcept {
         return size_;
     }
-
     constexpr uint32_t* begin() noexcept {
         return nums_;
     }
-
     constexpr uint32_t* end() noexcept {
         return nums_ + USize();
     }
-
     constexpr const uint32_t* begin() const noexcept {
         return nums_;
     }
-
     constexpr const uint32_t* end() const noexcept {
         return nums_ + USize();
     }
-
+    constexpr const uint32_t* cbegin() const noexcept {
+        return begin();
+    }
+    constexpr const uint32_t* cend() const noexcept {
+        return end();
+    }
+    constexpr std::reverse_iterator<uint32_t*> rbegin() noexcept {
+        return std::make_reverse_iterator(end());
+    }
+    constexpr std::reverse_iterator<uint32_t*> rend() noexcept {
+        return std::make_reverse_iterator(begin());
+    }
+    constexpr std::reverse_iterator<const uint32_t*> rbegin() const noexcept {
+        return std::make_reverse_iterator(end());
+    }
+    constexpr std::reverse_iterator<const uint32_t*> rend() const noexcept {
+        return std::make_reverse_iterator(begin());
+    }
     constexpr size_t USize() const noexcept {
-        /**
-         * cast to uint32_t to force zero extension when casting to size_t
-         * std::abs is not used in order to make method constexpr and avoid ub
-         */
+        // std::abs is not used in order to make method constexpr
         return size_t(math_functions::uabs(size_));
     }
-
     constexpr int32_t sign() const noexcept {
         return int32_t(size_ > 0) - int32_t(size_ < 0);
     }
-
     constexpr void change_sign() noexcept {
         size_ = -size_;
     }
 
     void set_string(std::string_view s) {
+#if CONFIG_HAS_AT_LEAST_CXX_20
+        const unsigned char* str_iter = std::bit_cast<const unsigned char*>(s.begin());
+        const unsigned char* str_end  = std::bit_cast<const unsigned char*>(s.end());
+#else
         const unsigned char* str_iter = reinterpret_cast<const unsigned char*>(s.begin());
         const unsigned char* str_end  = reinterpret_cast<const unsigned char*>(s.end());
-        int32_t sgn                   = 1;
+#endif
+        int32_t sgn = 1;
         while (str_iter != str_end && !std::isdigit(*str_iter)) {
             sgn = 1 - int32_t(uint32_t(*str_iter == '-') << 1);
             ++str_iter;
@@ -1373,42 +1395,31 @@ struct LongInt {
             this->size_      = hi != 0 ? 3 : (mid != 0 ? 2 : low != 0);
         }
 
-        Decimal(const Decimal& other) : digits_(nullptr), size_(0) {
-            if (other.size_) {
-                this->digits_ = static_cast<uint32_t*>(
-                    longint_allocator::Allocate(other.size_ * sizeof(uint32_t)));
-
-                this->size_ = other.size_;
-                std::memcpy(this->digits_, other.digits_, other.size_ * sizeof(uint32_t));
+        Decimal(const Decimal& other) : digits_(nullptr), size_(other.size_) {
+            if (size_) {
+                digits_ =
+                    static_cast<uint32_t*>(longint_allocator::Allocate(size_ * sizeof(uint32_t)));
+                std::copy_n(other.digits_, other.size_, digits_);
             }
         }
 
         Decimal& operator=(const Decimal& other) {
-            longint_allocator::Deallocate(this->digits_);
-            this->digits_ = nullptr;
-            this->size_   = 0;
-            if (other.size_) {
-                this->digits_ = static_cast<uint32_t*>(
-                    longint_allocator::Allocate(other.size_ * sizeof(uint32_t)));
-
-                size_ = other.size_;
-                std::memcpy(this->digits_, other.digits_, other.size_ * sizeof(uint32_t));
-            }
-            return *this;
+            return *this = Decimal(other);
         }
 
-        constexpr Decimal(Decimal&& other) noexcept : size_(other.size_) {
-            digits_       = other.digits_;
+        constexpr Decimal(Decimal&& other) noexcept : digits_(other.digits_), size_(other.size_) {
             other.digits_ = nullptr;
             other.size_   = 0;
         }
 
         Decimal& operator=(Decimal&& other) noexcept {
-            longint_allocator::Deallocate(this->digits_);
-            this->digits_ = other.digits_;
-            this->size_   = other.size_;
-            other.digits_ = nullptr;
-            other.size_   = 0;
+            const auto tmp_other_digits = other.digits_;
+            const auto tmp_other_size   = other.size_;
+            other.digits_               = nullptr;
+            other.size_                 = 0;
+            longint_allocator::Deallocate(digits_);
+            digits_ = tmp_other_digits;
+            size_   = tmp_other_size;
             return *this;
         }
 
@@ -1455,10 +1466,7 @@ struct LongInt {
             } else {
                 k_ptr = other.digits_;
                 m_ptr = this->digits_;
-                // let compiler decide whether it is faster then 3 xors or not
-                size_t tmp = m;
-                m          = k;
-                k          = tmp;
+                std::swap(m, k);
             }
 
             if (unlikely(m == 0)) {
@@ -1732,18 +1740,12 @@ struct LongInt {
         }
 
         constexpr bool operator==(const Decimal& other) const noexcept {
-            return size_ == other.size_ &&
-                   std::char_traits<char>::compare(reinterpret_cast<const char*>(digits_),
-                                                   reinterpret_cast<const char*>(other.digits_),
-                                                   size_ * sizeof(uint32_t)) == 0;
-        }
-
-        constexpr bool operator!=(const Decimal& other) const noexcept {
-            return !(*this == other);
+            return size_ == other.size_ && std::equal(digits_, digits_ + size_, other.digits_);
         }
 
         constexpr void PopLeadingZeros() noexcept {
             size_t usize = size_;
+            // std::find_first_of(std::make_reverse_iterator(begin))
             while (usize != 0 && digits_[usize - 1] == 0) {
                 usize--;
             }
@@ -1905,7 +1907,8 @@ private:
     }
 
     static Decimal ConvertBinBase(const uint32_t* nums, size_t size) {
-        assert((size != 0) & ((size & (size - 1)) == 0));
+        assert(math_functions::is_pow2(size));
+        ATTRIBUTE_ASSUME(math_functions::is_pow2(size));
         switch (size) {
             case 0:
             case 1:
@@ -1917,7 +1920,9 @@ private:
         Decimal low_dec  = ConvertBinBase(nums, size / 2);
         Decimal high_dec = ConvertBinBase(nums + size / 2, size / 2);
 
-        high_dec *= conv_bin_base_pows.at(math_functions::log2_floor(size) - 1);
+        const std::size_t idx = math_functions::log2_floor(size) - 1;
+        assert(idx < conv_bin_base_pows.size());
+        high_dec *= conv_bin_base_pows[idx];
         high_dec += low_dec;
         return high_dec;
     }

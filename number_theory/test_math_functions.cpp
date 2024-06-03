@@ -1114,10 +1114,12 @@ static void test_sin_cos_sum_generic() noexcept {
             for (int32_t beta_power = -k; beta_power <= k; beta_power++) {
                 const auto [sines_sum, cosines_sum] =
                     call_sum_of_sines_and_cosines<FloatType>(alpha, beta, n);
+#if CONFIG_HAS_AT_LEAST_CXX_20
                 static_assert(
                     std::is_same_v<std::remove_cvref_t<decltype(sines_sum)>, FloatType> &&
                         std::is_same_v<std::remove_cvref_t<decltype(cosines_sum)>, FloatType>,
                     "sum_of_sines_and_cosines return type error");
+#endif
 
                 mpfr_set_zero(c_sines_sum, 0);
                 mpfr_set_zero(c_cosines_sum, 0);

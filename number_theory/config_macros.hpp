@@ -91,7 +91,7 @@
 #define FUNCTION_MACRO __func__
 #endif
 
-#if CONFIG_HAS_CPP_ATTRIBUTE(assume)
+#if CONFIG_HAS_AT_LEAST_CXX_23 && CONFIG_HAS_CPP_ATTRIBUTE(assume)
 #define ATTRIBUTE_ASSUME(expr) [[assume(expr)]]
 #elif CONFIG_GNUC_PREREQ(13, 0) && !defined(__clang__)
 #define ATTRIBUTE_ASSUME(expr) __attribute__((assume(expr)))

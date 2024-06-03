@@ -1,36 +1,16 @@
 cmake_minimum_required(VERSION 3.5)
 
-project(math_tests VERSION 0.1.0 LANGUAGES C CXX)
+project(math_tests VERSION 0.1.0 LANGUAGES CXX)
 
-set(CMAKE_CXX_STANDARD 20)
-set(CMAKE_CXX_EXTENSIONS OFF)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-
-set(TestExecutables)
-
-add_executable(eratosthene_sieve_test test_eratosthene_sieve.cpp)
-list(APPEND TestExecutables eratosthene_sieve_test)
-
-add_executable(fibonacci_num_test test_fibonacci_num.cpp)
-list(APPEND TestExecutables fibonacci_num_test)
-
-add_executable(gosper_algorithm_test test_gosper_algorithm.cpp)
-list(APPEND TestExecutables gosper_algorithm_test)
-
-add_executable(integers_128_bit_test test_integers_128_bit.cpp)
-list(APPEND TestExecutables integers_128_bit_test)
-
-add_executable(is_prime_bpsw_test test_is_prime_bpsw.cpp)
-list(APPEND TestExecutables is_prime_bpsw_test)
-
-add_executable(kronecker_symbol_test test_kronecker_symbol.cpp)
-list(APPEND TestExecutables kronecker_symbol_test)
-
-add_executable(long_int_test test_long_int.cpp)
-list(APPEND TestExecutables long_int_test)
-
-add_executable(math_functions_test test_math_functions.cpp)
-list(APPEND TestExecutables math_functions_test)
+set(TestFilenames)
+list(APPEND TestFilenames test_eratosthene_sieve)
+list(APPEND TestFilenames test_fibonacci_num)
+list(APPEND TestFilenames test_gosper_algorithm)
+list(APPEND TestFilenames test_integers_128_bit)
+list(APPEND TestFilenames test_is_prime_bpsw)
+list(APPEND TestFilenames test_kronecker_symbol)
+list(APPEND TestFilenames test_long_int)
+list(APPEND TestFilenames test_math_functions)
 
 # Empty by default
 set(TEST_COMPILE_OPTIONS)
@@ -86,11 +66,25 @@ elseif (CMAKE_CXX_COMPILER_ID STREQUAL "Intel")
 elseif (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
 endif()
 
-foreach(target ${TestExecutables})
-    add_test(NAME ${target} COMMAND $<TARGET_FILE:${target}>)
-    target_link_libraries(${target} gmp gmpxx mpfr)
-    target_compile_options(${target} PRIVATE ${TEST_COMPILE_OPTIONS})
-    target_compile_definitions(${target} PRIVATE ${TEST_COMPILE_DEFINITIONS})
+foreach(target_filename ${TestFilenames})
+    string(CONCAT target_cpp_filename ${target_filename} ".cpp")
+    string(CONCAT target_cxx_17 "target_cxx_17_" ${target_filename})
+    string(CONCAT target_cxx_20 "target_cxx_20_" ${target_filename})
+
+    add_executable(${target_cxx_17} ${target_cpp_filename})
+    target_link_libraries(${target_cxx_17} gmp gmpxx mpfr)
+    target_compile_options(${target_cxx_17} PRIVATE ${TEST_COMPILE_OPTIONS})
+    target_compile_definitions(${target_cxx_17} PRIVATE ${TEST_COMPILE_DEFINITIONS})
+    set_target_properties(${target_cxx_17} PROPERTIES CXX_STANDARD 17 CXX_EXTENSIONS OFF CXX_STANDARD_REQUIRED ON)
+    add_test(NAME ${target_cxx_17} COMMAND $<TARGET_FILE:${target_cxx_17}>)
+
+    add_executable(${target_cxx_20} ${target_cpp_filename})
+    target_link_libraries(${target_cxx_20} gmp gmpxx mpfr)
+    target_compile_options(${target_cxx_20} PRIVATE ${TEST_COMPILE_OPTIONS})
+    target_compile_definitions(${target_cxx_20} PRIVATE ${TEST_COMPILE_DEFINITIONS})
+    set_target_properties(${target_cxx_20} PROPERTIES CXX_STANDARD 20 CXX_EXTENSIONS OFF CXX_STANDARD_REQUIRED ON)
+    add_test(NAME ${target_cxx_20} COMMAND $<TARGET_FILE:${target_cxx_20}>)
+
 endforeach()
 
 enable_testing()

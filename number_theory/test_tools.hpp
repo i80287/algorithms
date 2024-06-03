@@ -2,10 +2,12 @@
 
 #include <array>
 #include <cstdio>
-#include <source_location>
 #include <stdexcept>
 
 #include "config_macros.hpp"
+#if CONFIG_HAS_AT_LEAST_CXX_20
+#include <source_location>
+#endif
 
 namespace test_tools {
 namespace test_tools_detail {
@@ -33,11 +35,13 @@ ATTRIBUTE_COLD [[noreturn]] inline void throw_impl(const char* message_format, T
 
 }  // namespace test_tools_detail
 
+#if CONFIG_HAS_AT_LEAST_CXX_20
+
 template <class T>
 inline void throw_if_not(bool expr, const char* message_format, T arg,
                          const std::source_location src = std::source_location::current()) {
     if (unlikely(!expr)) {
-        test_tools_detail::throw_impl(message_format, arg, src.function_name(), src.line(),
+        test_tools_detail::throw_impl(message_format, arg, src.file_name(), src.line(),
                                       src.function_name());
     }
 }
@@ -46,6 +50,36 @@ ATTRIBUTE_ALWAYS_INLINE inline void log_tests_started(
     const std::source_location src = std::source_location::current()) noexcept {
     printf("Started tests in %s\n", src.function_name());
 }
+
+#else
+
+namespace test_tools_detail {
+
+template <class T>
+inline void throw_if_not_impl(bool expr, const char* message_format, T arg, const char* file_name,
+                              std::uint32_t line, const char* function_name) {
+    if (unlikely(!expr)) {
+        test_tools_detail::throw_impl(message_format, arg, file_name, line, function_name);
+    }
+}
+
+}  // namespace test_tools_detail
+
+#define throw_if_not(expr, message_format, arg)                                         \
+    test_tools_detail::throw_if_not_impl(expr, message_format, arg, __FILE__, __LINE__, \
+                                         FUNCTION_MACRO)
+
+namespace test_tools_detail {
+
+ATTRIBUTE_ALWAYS_INLINE inline void log_tests_started_impl(const char* function_name) noexcept {
+    printf("Started tests in %s\n", function_name);
+}
+
+}  // namespace test_tools_detail
+
+#define log_tests_started() test_tools_detail::log_tests_started_impl(FUNCTION_MACRO)
+
+#endif
 
 struct Wrapper final {
     FILE* const file;

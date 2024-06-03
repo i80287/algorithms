@@ -66,8 +66,8 @@ inline constexpr int32_t krnk[30][30] = {
 
 /// @brief First 30 odd prime numbers
 inline constexpr uint32_t odd_primes[30] = {3,  5,  7,  11, 13,  17,  19,  23,  29,  31,
-                                        37, 41, 43, 47, 53,  59,  61,  67,  71,  73,
-                                        79, 83, 89, 97, 101, 103, 107, 109, 113, 127};
+                                            37, 41, 43, 47, 53,  59,  61,  67,  71,  73,
+                                            79, 83, 89, 97, 101, 103, 107, 109, 113, 127};
 
 /// @brief Legendre symbols (a/p) for 1 <= a <= 30 and 3 <= p <= 127, p is prime
 inline constexpr int32_t lgnr[30][30] = {
