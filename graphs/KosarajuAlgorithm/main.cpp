@@ -66,16 +66,14 @@ graph_t strongly_connected_components(const graph_t& g) {
         }
     }
 
-    for (auto iter = order_stack.crbegin(), end = order_stack.crend(); iter != end;
-         ++iter) {
+    for (auto iter = order_stack.crbegin(), end = order_stack.crend(); iter != end; ++iter) {
         vertex_t v = *iter;
         if (!visited[v]) {
             impl::form_component_dfs(transposed_g, visited, current_component, v);
             // Use O(E) memory instead of O(V^2)
             std::vector<vertex_t>& new_component =
                 components.emplace_back(current_component.size());
-            std::copy(current_component.cbegin(), current_component.cend(),
-                      new_component.begin());
+            std::copy(current_component.cbegin(), current_component.cend(), new_component.begin());
             current_component.clear();
         }
     }
@@ -99,19 +97,26 @@ int main() {
     //   4
     //
     // 6
-    kosaraju_algorithm::graph_t g = {
-        {1, 2}, {2}, {0}, {4}, {5}, {3}, {},
-    };
-    auto components = kosaraju_algorithm::strongly_connected_components(g);
+    using namespace kosaraju_algorithm;
+    using component_t = std::vector<vertex_t>;
+
+    graph_t g = {{1, 2}, {2}, {0}, {4}, {5}, {3}, {}};
+    auto components               = strongly_connected_components(g);
     assert(components.size() == 3);
     for (auto& c : components) {
         std::sort(c.begin(), c.end());
     }
     std::sort(components.begin(), components.end());
-    bool r = components[0] == std::vector<kosaraju_algorithm::vertex_t>{ 0, 1, 2 };
-    assert(r);
-    r = components[1] == std::vector<kosaraju_algorithm::vertex_t>{ 3, 4, 5 };
-    assert(r);
-    r = components[2] == std::vector<kosaraju_algorithm::vertex_t>{ 6 };
-    assert(r);
+    assert((components[0] == component_t{0, 1, 2}));
+    assert((components[1] == component_t{3, 4, 5}));
+    assert((components[2] == component_t{6}));
+
+    g = {
+        {}, {2}, {1, 3}, {2}, {4},
+    };
+    components = kosaraju_algorithm::strongly_connected_components(g);
+    assert(components.size() == 3);
+    assert(components[0] == component_t{4});
+    assert((components[1] == component_t{1, 2, 3}));
+    assert(components[2] == component_t{0});
 }
