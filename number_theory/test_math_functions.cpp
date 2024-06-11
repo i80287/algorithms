@@ -413,10 +413,6 @@ static_assert(uabs(std::numeric_limits<long long>::min()) ==
                   -static_cast<unsigned long long>(std::numeric_limits<long long>::min()),
               "uabs");
 
-#ifndef __clang__
-#error "NOTCLANG"
-#endif
-
 static_assert(uabs(int8_t(0)) == 0, "uabs");
 static_assert(uabs(int32_t(0)) == 0, "uabs");
 static_assert(uabs(int64_t(0)) == 0, "uabs");
