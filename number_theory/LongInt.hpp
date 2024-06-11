@@ -31,7 +31,7 @@ namespace longint_allocator {
 
 namespace inner_impl {
 
-inline constexpr size_t kPageMemoryOffsetInBytes = sizeof(void*);
+inline constexpr std::size_t kPageMemoryOffsetInBytes = sizeof(void*);
 
 enum PageCapacity {
     kSmall  = 32 * sizeof(uint32_t) - kPageMemoryOffsetInBytes,
@@ -51,8 +51,8 @@ struct MiddlePage {
 static_assert((sizeof(SmallPage) & (sizeof(SmallPage) - 1)) == 0, "");
 static_assert((sizeof(MiddlePage) & (sizeof(MiddlePage) - 1)) == 0, "");
 
-inline constexpr size_t kTotalSmallPages  = 32;
-inline constexpr size_t kTotalMiddlePages = 8;
+inline constexpr std::size_t kTotalSmallPages  = 32;
+inline constexpr std::size_t kTotalMiddlePages = 8;
 
 static SmallPage first_small_page[kTotalSmallPages]    = {};
 static MiddlePage first_middle_page[kTotalMiddlePages] = {};
@@ -61,14 +61,14 @@ static SmallPage* free_small_pages_head   = nullptr;
 static MiddlePage* free_middle_pages_head = nullptr;
 
 #ifdef DEBUG_LI_ALLOC_PRINTING
-static size_t total_small_pages_used     = 0;
-static int32_t current_small_pages_used  = 0;
-static int32_t max_small_pages_used      = -(1 << 30);
-static size_t total_middle_pages_used    = 0;
-static int32_t current_middle_pages_used = 0;
-static int32_t max_middle_pages_used     = -(1 << 30);
-static ssize_t bytes_allocated           = 0;
-static int32_t malloc_free_count         = 0;
+static std::size_t total_small_pages_used  = 0;
+static int32_t current_small_pages_used    = 0;
+static int32_t max_small_pages_used        = -(1 << 30);
+static std::size_t total_middle_pages_used = 0;
+static int32_t current_middle_pages_used   = 0;
+static int32_t max_middle_pages_used       = -(1 << 30);
+static std::size_t bytes_allocated         = 0;
+static int32_t malloc_free_count           = 0;
 #endif
 
 static void InitSmallPages() noexcept {
@@ -134,17 +134,17 @@ __attribute__((destructor(101))) static void DeinitPages() noexcept {
 
 static bool IsSmallPage(const std::byte* offset_memory) noexcept {
     const std::byte* fsp = reinterpret_cast<const std::byte*>(&first_small_page[0]);
-    return static_cast<size_t>(offset_memory - fsp) < kTotalSmallPages * sizeof(SmallPage);
+    return static_cast<std::size_t>(offset_memory - fsp) < kTotalSmallPages * sizeof(SmallPage);
 }
 
 static bool IsMiddlePage(const std::byte* offset_memory) noexcept {
     const std::byte* fmp = reinterpret_cast<const std::byte*>(&first_middle_page[0]);
-    return static_cast<size_t>(offset_memory - fmp) < kTotalMiddlePages * sizeof(MiddlePage);
+    return static_cast<std::size_t>(offset_memory - fmp) < kTotalMiddlePages * sizeof(MiddlePage);
 }
 
 }  // namespace inner_impl
 
-void* Allocate(size_t size) noexcept(false) {
+void* Allocate(std::size_t size) noexcept(false) {
     if (size <= inner_impl::PageCapacity::kSmall && inner_impl::free_small_pages_head != nullptr) {
         inner_impl::SmallPage* p = inner_impl::free_small_pages_head;
 #ifdef DEBUG_LI_ALLOC_PRINTING
@@ -176,7 +176,7 @@ void* Allocate(size_t size) noexcept(false) {
 
     void* p = operator new(size);
 #ifdef DEBUG_LI_ALLOC_PRINTING
-    inner_impl::bytes_allocated += static_cast<ssize_t>(size);
+    inner_impl::bytes_allocated += static_cast<std::size_t>(size);
     inner_impl::malloc_free_count++;
 #endif
     return p;
@@ -220,12 +220,12 @@ void Deallocate(void* memory) noexcept {
 }  // namespace longint_allocator
 
 struct LongInt {
-    static constexpr size_t kDefaultLINumsCapacity = 2;
-    static constexpr uint32_t kStrConvBase         = 1'000'000'000;
-    static constexpr uint32_t kStrConvBaseDigits   = math_functions::base_b_len(kStrConvBase - 1);
-    static constexpr uint32_t kNumsBits            = 32;
-    static constexpr uint64_t kNumsBase            = uint64_t(1) << kNumsBits;
-    static constexpr size_t kFFTPrecisionBorder    = 262144;
+    static constexpr std::size_t kDefaultLINumsCapacity = 2;
+    static constexpr uint32_t kStrConvBase              = 1'000'000'000;
+    static constexpr uint32_t kStrConvBaseDigits     = math_functions::base_b_len(kStrConvBase - 1);
+    static constexpr uint32_t kNumsBits              = 32;
+    static constexpr uint64_t kNumsBase              = uint64_t(1) << kNumsBits;
+    static constexpr std::size_t kFFTPrecisionBorder = 262144;
 
     uint32_t* nums_ = nullptr;
     /**
@@ -284,7 +284,7 @@ struct LongInt {
     }
 #endif
 
-    LongInt& pow(size_t p) {
+    LongInt& pow(std::size_t p) {
         LongInt res = uint32_t(1);
         Reserve(uint32_t(USize() * p));
         while (true) {
@@ -302,22 +302,22 @@ struct LongInt {
     }
 
     void SquareThisTo(LongInt& other) const {
-        size_t usize = USize();
+        std::size_t usize = USize();
         if (unlikely(usize == 0)) {
             other.size_ = 0;
             return;
         }
         const uint32_t* nums_ptr = nums_;
-        size_t prod_size         = usize + usize;
+        std::size_t prod_size    = usize + usize;
         if (prod_size <= 16) {
             other.capacity_ = uint32_t(prod_size);
             uint32_t* ans =
                 static_cast<uint32_t*>(longint_allocator::Allocate(prod_size * sizeof(uint32_t)));
             std::memset(ans, 0, prod_size * sizeof(uint32_t));
-            for (size_t j = 0; j < usize; j++) {
+            for (std::size_t j = 0; j < usize; j++) {
                 uint64_t b_j   = nums_ptr[j];
                 uint64_t carry = 0;
-                for (size_t i = 0; i < usize; i++) {
+                for (std::size_t i = 0; i < usize; i++) {
                     uint64_t a_i = nums_ptr[i];
                     uint64_t res = a_i * b_j + uint64_t(ans[j + i]) + carry;
                     ans[j + i]   = uint32_t(res);
@@ -330,7 +330,7 @@ struct LongInt {
             longint_allocator::Deallocate(other.nums_);
             other.nums_ = ans;
         } else {
-            size_t n                  = 2 * math_functions::nearest_pow2_ge(prod_size);
+            std::size_t n             = 2 * math_functions::nearest_pow2_ge(prod_size);
             const bool high_precision = n > kFFTPrecisionBorder;
             n <<= high_precision;
             // Allocate n complex numbers for p1 and n complex numbers for p2
@@ -338,7 +338,7 @@ struct LongInt {
                 longint_allocator::Allocate(2 * n * sizeof(fft::complex)));
             fft::complex* p = p1;
             if (likely(!high_precision)) {
-                for (size_t i = 0; i < usize; i++) {
+                for (std::size_t i = 0; i < usize; i++) {
                     uint32_t value = nums_ptr[i];
                     *p             = fft::complex(value & 0xFFFF, value & 0xFFFF);
                     p++;
@@ -347,7 +347,7 @@ struct LongInt {
                     p++;
                 }
             } else {
-                for (size_t i = 0; i < usize; i++) {
+                for (std::size_t i = 0; i < usize; i++) {
                     uint32_t value = nums_ptr[i];
                     *p             = fft::complex(uint8_t(value), uint8_t(value));
                     p++;
@@ -416,11 +416,11 @@ struct LongInt {
     }
 
     LongInt(const LongInt& other) : nums_(nullptr), size_(other.size_), capacity_(other.capacity_) {
-        if (capacity_ != 0) {
+        if (capacity_ > 0) {
             nums_ =
                 static_cast<uint32_t*>(longint_allocator::Allocate(capacity_ * sizeof(uint32_t)));
-            size_t bsz = USize() * sizeof(uint32_t);
-            if (bsz != 0) {
+            std::size_t bsz = USize() * sizeof(uint32_t);
+            if (bsz > 0) {
                 std::memcpy(nums_, other.nums_, bsz);
             }
         }
@@ -522,13 +522,13 @@ struct LongInt {
     }
 #endif
 
-    constexpr uint32_t operator[](size_t pos) const noexcept {
+    constexpr uint32_t operator[](std::size_t pos) const noexcept {
         return nums_[pos];
     }
 
     LongInt& operator*=(const LongInt& other) {
-        size_t k = USize();
-        size_t m = other.USize();
+        std::size_t k = USize();
+        std::size_t m = other.USize();
         const uint32_t* k_ptr;
         const uint32_t* m_ptr;
 
@@ -546,16 +546,16 @@ struct LongInt {
             return *this;
         }
 
-        size_t prod_size = m + k;
+        std::size_t prod_size = m + k;
         if (m <= 16 || m * k <= 1024) {
             capacity_ = uint32_t(prod_size);
             uint32_t* ans =
                 static_cast<uint32_t*>(longint_allocator::Allocate(prod_size * sizeof(uint32_t)));
             std::memset(ans, 0, prod_size * sizeof(uint32_t));
-            for (size_t j = 0; j < m; j++) {
+            for (std::size_t j = 0; j < m; j++) {
                 uint64_t b_j   = m_ptr[j];
                 uint64_t carry = 0;
-                for (size_t i = 0; i < k; i++) {
+                for (std::size_t i = 0; i < k; i++) {
                     uint64_t a_i = k_ptr[i];
                     uint64_t res = a_i * b_j + uint64_t(ans[j + i]) + carry;
                     ans[j + i]   = uint32_t(res);
@@ -568,7 +568,7 @@ struct LongInt {
             longint_allocator::Deallocate(nums_);
             nums_ = ans;
         } else {
-            size_t n                  = 2 * math_functions::nearest_pow2_ge(prod_size);
+            std::size_t n             = 2 * math_functions::nearest_pow2_ge(prod_size);
             const bool high_precision = n > kFFTPrecisionBorder;
             n <<= high_precision;
             // Allocate n complex numbers for p1 and n complex numbers for p2
@@ -576,7 +576,7 @@ struct LongInt {
                 longint_allocator::Allocate(2 * n * sizeof(fft::complex)));
             fft::complex* p = p1;
             if (likely(!high_precision)) {
-                for (size_t i = 0; i < m; i++) {
+                for (std::size_t i = 0; i < m; i++) {
                     uint32_t m_value = m_ptr[i];
                     uint32_t k_value = k_ptr[i];
                     *p               = fft::complex(m_value & 0xFFFF, k_value & 0xFFFF);
@@ -584,7 +584,7 @@ struct LongInt {
                     *p = fft::complex(m_value >> 16, k_value >> 16);
                     p++;
                 }
-                for (size_t i = m; i < k; i++) {
+                for (std::size_t i = m; i < k; i++) {
                     uint32_t k_value = k_ptr[i];
                     *p               = fft::complex(0, k_value & 0xFFFF);
                     p++;
@@ -592,7 +592,7 @@ struct LongInt {
                     p++;
                 }
             } else {
-                for (size_t i = 0; i < m; i++) {
+                for (std::size_t i = 0; i < m; i++) {
                     uint32_t m_value = m_ptr[i];
                     uint32_t k_value = k_ptr[i];
                     *p               = fft::complex(uint8_t(m_value), uint8_t(k_value));
@@ -610,7 +610,7 @@ struct LongInt {
                     *p = fft::complex(uint8_t(m_value), uint8_t(k_value));
                     p++;
                 }
-                for (size_t i = m; i < k; i++) {
+                for (std::size_t i = m; i < k; i++) {
                     uint32_t k_value = k_ptr[i];
                     *p               = fft::complex(0, uint8_t(k_value));
                     p++;
@@ -681,8 +681,8 @@ struct LongInt {
         /**
          * See Hackers Delight 9-2.
          */
-        size_t m = USize();
-        size_t n = other.USize();
+        std::size_t m = USize();
+        std::size_t n = other.USize();
         if (m < n) {
             rem   = std::move(*this);
             size_ = 0;
@@ -712,21 +712,21 @@ struct LongInt {
         // 0 <= s < kNumsBits = 32
         uint32_t s   = static_cast<uint32_t>(math_functions::countl_zero(v[n - 1]));
         uint32_t* vn = static_cast<uint32_t*>(longint_allocator::Allocate(2 * n));
-        for (size_t i = n - 1; i > 0; i--) {
+        for (std::size_t i = n - 1; i > 0; i--) {
             vn[i] = (v[i] << s) | (v[i - 1] >> (kNumsBase - s));
         }
         vn[0] = v[0] << s;
 
         uint32_t* un = static_cast<uint32_t*>(longint_allocator::Allocate(2 * (m + 1)));
         un[m]        = u[m - 1] >> (kNumsBase - s);
-        for (size_t i = m - 1; i > 0; i--) {
+        for (std::size_t i = m - 1; i > 0; i--) {
             un[i] = (u[i] << s) | (u[i - 1] >> (kNumsBase - s));
         }
         un[0] = u[0] << s;
 
         uint32_t* quot = nums_;
 
-        for (size_t j = m - n; static_cast<ssize_t>(j) >= 0; j--) {
+        for (std::size_t j = m - n; static_cast<std::ptrdiff_t>(j) >= 0; j--) {
             // Compute estimate qhat of q[j].
             uint64_t cur     = (uint64_t(un[j + n]) << kNumsBits) | un[j + n - 1];
             uint32_t last_vn = vn[n - 1];
@@ -743,7 +743,7 @@ struct LongInt {
 
             // Multiply and subtract
             uint64_t carry = 0;
-            for (size_t i = 0; i < n; i++) {
+            for (std::size_t i = 0; i < n; i++) {
                 uint64_t p = qhat * vn[i];
                 uint64_t t = uint64_t(un[i + j]) - carry - uint32_t(p);
                 un[i + j]  = uint32_t(t);
@@ -757,7 +757,7 @@ struct LongInt {
                 // If we subtracted too much, add back
                 quot[j]--;
                 carry = 0;
-                for (size_t i = 0; i < n; i++) {
+                for (std::size_t i = 0; i < n; i++) {
                     t         = uint64_t(un[i + j]) + uint64_t(vn[i]) + carry;
                     un[i + j] = uint32_t(t);
                     carry     = t >> kNumsBits;
@@ -767,7 +767,7 @@ struct LongInt {
         }
 
         // Unnormalize remainder
-        for (size_t i = 0; i < n; i++) {
+        for (std::size_t i = 0; i < n; i++) {
             rem.nums_[i] = (un[i] >> s) | (un[i + 1] << (16 - s));
         }
 
@@ -780,18 +780,18 @@ struct LongInt {
     }
 
     LongInt& operator+=(const LongInt& other) {
-        size_t usize2 = other.USize();
+        std::size_t usize2 = other.USize();
         if ((size_ ^ other.size_) >= 0) {
-            size_t usize1               = SetSizeAtLeast(usize2 + 1);
+            std::size_t usize1          = SetSizeAtLeast(usize2 + 1);
             uint64_t add_overflow_carry = LongIntAdd(nums_, other.nums_, usize1, usize2);
             if (likely(add_overflow_carry == 0)) {
                 PopLeadingZeros();
             } else {
-                size_t new_usize1     = GrowSizeByOne();
-                nums_[new_usize1 - 1] = uint32_t(add_overflow_carry);
+                std::size_t new_usize1 = GrowSizeByOne();
+                nums_[new_usize1 - 1]  = uint32_t(add_overflow_carry);
             }
         } else {
-            assert(false);
+            throw std::runtime_error("Summation of two LongInts is not implemented");
             // LongIntSubtract(*this, other.nums_, usize2);
         }
 
@@ -903,7 +903,7 @@ struct LongInt {
             return size_ <=> other.size_;
         }
 
-        size_t usize                 = USize();
+        std::size_t usize            = USize();
         const uint32_t* r_end        = nums_ - 1;
         const uint32_t* r_nums       = r_end + usize;
         const uint32_t* r_other_nums = other.nums_ - 1 + usize;
@@ -921,7 +921,7 @@ struct LongInt {
             return size_ < other.size_;
         }
 
-        size_t usize                 = USize();
+        std::size_t usize            = USize();
         const uint32_t* r_end        = nums_ - 1;
         const uint32_t* r_nums       = r_end + usize;
         const uint32_t* r_other_nums = other.nums_ - 1 + usize;
@@ -1031,6 +1031,7 @@ struct LongInt {
 #endif
         {
             if (n == 0) {
+                [[maybe_unused]] const auto diverror = 0 / n;
                 assert(false && "Division by zero in LongInt::operator/=");
             } else if (n > 1) {
                 operator>>=(uint32_t(math_functions::countl_zero(n)));
@@ -1059,7 +1060,7 @@ struct LongInt {
     }
 
     constexpr LongInt& operator>>=(uint32_t shift) noexcept {
-        size_t usize        = USize();
+        std::size_t usize   = USize();
         uint32_t uints_move = shift / 32;
         if (uints_move >= usize) {
             size_ = 0;
@@ -1077,7 +1078,7 @@ struct LongInt {
 
         shift %= 32;
         uint32_t* nums_iter            = nums_;
-        uint32_t* const nums_iter_last = nums_iter + ssize_t(usize) - 1;
+        uint32_t* const nums_iter_last = nums_iter + std::ptrdiff_t(usize) - 1;
         for (; nums_iter != nums_iter_last; ++nums_iter) {
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
             // *nums_iter = uint32_t(*reinterpret_cast<uint64_t*>(nums_iter) >> shift);
@@ -1099,7 +1100,7 @@ struct LongInt {
     }
 
     constexpr void PopLeadingZeros() noexcept {
-        size_t usize = USize();
+        std::size_t usize = USize();
         while (usize != 0 && nums_[usize - 1] == 0) {
             usize--;
         }
@@ -1149,9 +1150,9 @@ struct LongInt {
     constexpr std::reverse_iterator<const uint32_t*> rend() const noexcept {
         return std::make_reverse_iterator(begin());
     }
-    constexpr size_t USize() const noexcept {
+    constexpr std::size_t USize() const noexcept {
         // std::abs is not used in order to make method constexpr
-        return size_t(math_functions::uabs(size_));
+        return std::size_t(math_functions::uabs(size_));
     }
     constexpr int32_t sign() const noexcept {
         return int32_t(size_ > 0) - int32_t(size_ < 0);
@@ -1178,7 +1179,7 @@ struct LongInt {
             ++str_iter;
         }
 
-        size_t digits_count = static_cast<size_t>(str_end - str_iter);
+        const auto digits_count = static_cast<std::size_t>(str_end - str_iter);
         if (digits_count <= 19) {
             uint64_t num = 0;
             for (; str_iter != str_end; ++str_iter) {
@@ -1192,9 +1193,9 @@ struct LongInt {
             return;
         }
 
-        const size_t str_conv_digits_size =
+        const std::size_t str_conv_digits_size =
             (digits_count + kStrConvBaseDigits - 1) / kStrConvBaseDigits;
-        const size_t aligned_str_conv_digits_size =
+        const std::size_t aligned_str_conv_digits_size =
             math_functions::nearest_pow2_ge(str_conv_digits_size);
         uint32_t* str_conv_digits;
         ReserveWithoutCopy(uint32_t(aligned_str_conv_digits_size));
@@ -1204,7 +1205,7 @@ struct LongInt {
             uint32_t* str_conv_digits_iter = str_conv_digits + str_conv_digits_size;
             std::memset(str_conv_digits_iter, 0,
                         (aligned_str_conv_digits_size - str_conv_digits_size) * sizeof(uint32_t));
-            if (size_t offset = digits_count % kStrConvBaseDigits) {
+            if (std::size_t offset = digits_count % kStrConvBaseDigits) {
                 uint32_t current = 0;
                 do {
                     current = current * 10 + uint32_t(*str_iter) - '0';
@@ -1237,12 +1238,12 @@ struct LongInt {
             } while (str_iter != str_end);
         }
 
-        size_t m = 2 * aligned_str_conv_digits_size;
+        std::size_t m = 2 * aligned_str_conv_digits_size;
         if (m > kFFTPrecisionBorder) {
             m *= 2;
         }
         // Allocate m complex numbers for p1 and m complex numbers for p2
-        size_t max_fft_poly_length = 2 * m;
+        std::size_t max_fft_poly_length = 2 * m;
         uint32_t* mult_add_buffer =
             static_cast<uint32_t*>(operator new(aligned_str_conv_digits_size * sizeof(uint32_t) +
                                                 max_fft_poly_length * sizeof(fft::complex)));
@@ -1251,17 +1252,17 @@ struct LongInt {
         EnsureDecBasePowsCapacity(
             math_functions::log2_floor(uint64_t(aligned_str_conv_digits_size)));
         const LongInt* conv_dec_base_pows_iter = conv_dec_base_pows.data();
-        for (size_t half_len = 1; half_len != aligned_str_conv_digits_size;
+        for (std::size_t half_len = 1; half_len != aligned_str_conv_digits_size;
              half_len *= 2, ++conv_dec_base_pows_iter) {
-            for (size_t pos = 0; pos != aligned_str_conv_digits_size; pos += 2 * half_len) {
+            for (std::size_t pos = 0; pos != aligned_str_conv_digits_size; pos += 2 * half_len) {
                 ConvertDecBaseMultAdd(str_conv_digits + pos, half_len, conv_dec_base_pows_iter,
                                       mult_add_buffer, fft_poly_buffer);
             }
         }
         operator delete(mult_add_buffer);
 
-        size_t usize = aligned_str_conv_digits_size;
-        while (usize != 0 && nums_[usize - 1] == 0) {
+        std::size_t usize = aligned_str_conv_digits_size;
+        while (usize > 0 && nums_[usize - 1] == 0) {
             usize--;
         }
         this->size_ = sgn * int32_t(usize);
@@ -1279,7 +1280,7 @@ struct LongInt {
             ans.push_back('-');
         }
 
-        size_t usize = USize();
+        std::size_t usize = USize();
         switch (usize) {
             case 0:
                 ans = "0";
@@ -1292,7 +1293,7 @@ struct LongInt {
                 return;
         }
 
-        size_t n = math_functions::nearest_pow2_ge(usize);
+        std::size_t n = math_functions::nearest_pow2_ge(usize);
         EnsureBinBasePowsCapacity(math_functions::log2_floor(n));
         uint32_t* knums = static_cast<uint32_t*>(longint_allocator::Allocate(n * sizeof(uint32_t)));
         std::memcpy(knums, nums_, usize * sizeof(uint32_t));
@@ -1300,15 +1301,15 @@ struct LongInt {
         Decimal result = ConvertBinBase(knums, n);
         longint_allocator::Deallocate(knums);
         assert(result.size_ >= 3);
-        size_t full_blocks = result.size_ - 1;
-        uint32_t last_a_i  = result.digits_[full_blocks];
-        size_t string_size =
+        std::size_t full_blocks = result.size_ - 1;
+        uint32_t last_a_i       = result.digits_[full_blocks];
+        std::size_t string_size =
             full_blocks * kStrConvBaseDigits + math_functions::base_10_len(last_a_i);
         ans.resize((size_ < 0) + string_size);
         uint8_t* ptr = reinterpret_cast<uint8_t*>(&ans[ans.size() - 1]);
-        for (size_t i = 0; i < full_blocks; i++) {
+        for (std::size_t i = 0; i < full_blocks; i++) {
             uint32_t a_i = result.digits_[i];
-            for (size_t j = kStrConvBaseDigits; j != 0; j--) {
+            for (std::size_t j = kStrConvBaseDigits; j > 0; j--) {
                 *ptr = uint8_t('0' + a_i % 10);
                 a_i /= 10;
                 ptr--;
@@ -1367,7 +1368,7 @@ struct LongInt {
         static constexpr uint32_t kFftDecimalBase = 1'000;
 
         uint32_t* digits_ = nullptr;
-        size_t size_      = 0;
+        std::size_t size_ = 0;
 
         constexpr Decimal() noexcept = default;
 
@@ -1455,8 +1456,8 @@ struct LongInt {
         }
 
         Decimal& operator*=(const Decimal& other) {
-            size_t k = size_;
-            size_t m = other.size_;
+            std::size_t k = size_;
+            std::size_t m = other.size_;
             const uint32_t* k_ptr;
             const uint32_t* m_ptr;
 
@@ -1474,15 +1475,15 @@ struct LongInt {
                 return *this;
             }
 
-            size_t new_size = m + k;
+            std::size_t new_size = m + k;
             if (m <= 16 || m * k <= 1024) {
                 uint32_t* ans = static_cast<uint32_t*>(
                     longint_allocator::Allocate(new_size * sizeof(uint32_t)));
                 std::memset(ans, 0, new_size * sizeof(uint32_t));
-                for (size_t j = 0; j < m; j++) {
+                for (std::size_t j = 0; j < m; j++) {
                     uint64_t b_j   = m_ptr[j];
                     uint64_t carry = 0;
-                    for (size_t i = 0; i < k; i++) {
+                    for (std::size_t i = 0; i < k; i++) {
                         uint64_t a_i = k_ptr[i];
                         uint64_t res = a_i * b_j + uint64_t(ans[j + i]) + carry;
                         ans[j + i]   = uint32_t(res % kDecimalBase);
@@ -1494,14 +1495,14 @@ struct LongInt {
                 longint_allocator::Deallocate(this->digits_);
                 this->digits_ = ans;
             } else {
-                size_t n = math_functions::nearest_pow2_ge(3 * new_size);
+                std::size_t n = math_functions::nearest_pow2_ge(3 * new_size);
                 static_assert(kFftDecimalBase * kFftDecimalBase * kFftDecimalBase == kDecimalBase,
                               "");
                 // Allocate n for the first polynomial
                 //  and n for the second one
                 auto p1         = std::make_unique<fft::complex[]>(n + n);
                 fft::complex* p = p1.get();
-                for (size_t i = 0; i < m; i++) {
+                for (std::size_t i = 0; i < m; i++) {
                     uint32_t m_value = m_ptr[i];
                     uint32_t k_value = k_ptr[i];
                     uint32_t r1      = m_value % kFftDecimalBase;
@@ -1519,7 +1520,7 @@ struct LongInt {
                     *p = fft::complex(m_value, k_value);
                     p++;
                 }
-                for (size_t i = m; i < k; i++) {
+                for (std::size_t i = m; i < k; i++) {
                     uint32_t k_value = k_ptr[i];
                     uint32_t r2      = k_value % kFftDecimalBase;
                     k_value /= kFftDecimalBase;
@@ -1567,10 +1568,10 @@ struct LongInt {
         }
 
         Decimal& operator+=(const Decimal& other) {
-            uint64_t carry = 0;
-            const size_t m = std::min(this->size_, other.size_);
-            uint32_t* p    = this->digits_;
-            for (size_t i = 0; i < m; i++) {
+            uint64_t carry      = 0;
+            const std::size_t m = std::min(this->size_, other.size_);
+            uint32_t* p         = this->digits_;
+            for (std::size_t i = 0; i < m; i++) {
                 uint64_t res = uint64_t(p[i]) + uint64_t(other.digits_[i]) + carry;
                 p[i]         = uint32_t(res % kDecimalBase);
                 carry        = res / kDecimalBase;
@@ -1587,9 +1588,9 @@ struct LongInt {
                 size_         = other.size_;
             }
 
-            p                      = this->digits_;
-            const size_t this_size = size_;
-            for (size_t i = m; carry != 0 && i < this_size; i++) {
+            p                           = this->digits_;
+            const std::size_t this_size = size_;
+            for (std::size_t i = m; carry != 0 && i < this_size; i++) {
                 uint64_t res = uint64_t(p[i]) + carry;
                 p[i]         = uint32_t(res % kDecimalBase);
                 carry        = res / kDecimalBase;
@@ -1611,22 +1612,22 @@ struct LongInt {
         }
 
         void SquareThisTo(Decimal& other) const {
-            size_t digits_size = size_;
+            std::size_t digits_size = size_;
             if (unlikely(digits_size == 0)) {
                 other.size_ = 0;
                 return;
             }
 
             const uint32_t* digits_ptr = this->digits_;
-            size_t prod_size           = digits_size + digits_size;
+            std::size_t prod_size      = digits_size + digits_size;
             if (prod_size <= 16) {
                 uint32_t* ans = static_cast<uint32_t*>(
                     longint_allocator::Allocate(prod_size * sizeof(uint32_t)));
                 std::memset(ans, 0, prod_size * sizeof(uint32_t));
-                for (size_t j = 0; j < digits_size; j++) {
+                for (std::size_t j = 0; j < digits_size; j++) {
                     uint64_t b_j   = digits_ptr[j];
                     uint64_t carry = 0;
-                    for (size_t i = 0; i < digits_size; i++) {
+                    for (std::size_t i = 0; i < digits_size; i++) {
                         uint64_t a_i = digits_ptr[i];
                         uint64_t res = a_i * b_j + uint64_t(ans[j + i]) + carry;
                         ans[j + i]   = uint32_t(res % kDecimalBase);
@@ -1638,14 +1639,14 @@ struct LongInt {
                 longint_allocator::Deallocate(other.digits_);
                 other.digits_ = ans;
             } else {
-                size_t n = math_functions::nearest_pow2_ge(3 * prod_size);
+                std::size_t n = math_functions::nearest_pow2_ge(3 * prod_size);
                 static_assert(kFftDecimalBase * kFftDecimalBase * kFftDecimalBase == kDecimalBase,
                               "");
                 // Allocate n for the first polynomial
                 //  and n for the second one
                 auto p1         = std::make_unique<fft::complex[]>(n + n);
                 fft::complex* p = p1.get();
-                for (size_t i = 0; i < digits_size; i++) {
+                for (std::size_t i = 0; i < digits_size; i++) {
                     uint32_t value = digits_ptr[i];
                     uint32_t r1    = value % kFftDecimalBase;
                     value /= kFftDecimalBase;
@@ -1744,9 +1745,9 @@ struct LongInt {
         }
 
         constexpr void PopLeadingZeros() noexcept {
-            size_t usize = size_;
+            std::size_t usize = size_;
             // std::find_first_of(std::make_reverse_iterator(begin))
-            while (usize != 0 && digits_[usize - 1] == 0) {
+            while (usize > 0 && digits_[usize - 1] == 0) {
                 usize--;
             }
 
@@ -1763,8 +1764,8 @@ private:
 
     static std::vector<LongInt> conv_dec_base_pows;
 
-    static void EnsureDecBasePowsCapacity(size_t pows_size) {
-        size_t i = conv_dec_base_pows.size();
+    static void EnsureDecBasePowsCapacity(std::size_t pows_size) {
+        std::size_t i = conv_dec_base_pows.size();
         if (i >= pows_size) {
             return;
         }
@@ -1775,20 +1776,20 @@ private:
         } while (++i != pows_size);
     }
 
-    static void ConvertDecBaseMultAdd(uint32_t conv_digits[], size_t half_len,
+    static void ConvertDecBaseMultAdd(uint32_t conv_digits[], std::size_t half_len,
                                       const LongInt* conv_base_pow, uint32_t mult_add_buffer[],
                                       fft::complex fft_poly_buffer[]) {
         const uint32_t* num_hi = conv_digits + half_len;
-        size_t m               = uint32_t(conv_base_pow->size_);
-        assert(m != 0 && m <= half_len);
+        std::size_t m          = uint32_t(conv_base_pow->size_);
+        assert(m > 0 && m <= half_len);
         const uint32_t* m_ptr = conv_base_pow->nums_;
-        size_t prod_size      = m + half_len;
+        std::size_t prod_size = m + half_len;
         std::memset(mult_add_buffer, 0, (half_len + half_len) * sizeof(uint32_t));
         if (half_len <= 32) {
-            for (size_t j = 0; j < m; j++) {
+            for (std::size_t j = 0; j < m; j++) {
                 uint64_t b_j   = m_ptr[j];
                 uint64_t carry = 0;
-                for (size_t i = 0; i < half_len; i++) {
+                for (std::size_t i = 0; i < half_len; i++) {
                     uint64_t a_i           = num_hi[i];
                     uint64_t res           = a_i * b_j + uint64_t(mult_add_buffer[j + i]) + carry;
                     mult_add_buffer[j + i] = uint32_t(res);
@@ -1798,13 +1799,13 @@ private:
                 mult_add_buffer[j + half_len] = uint32_t(carry);
             }
         } else {
-            size_t n                  = 2 * math_functions::nearest_pow2_ge(prod_size);
+            std::size_t n             = 2 * math_functions::nearest_pow2_ge(prod_size);
             const bool high_precision = n > kFFTPrecisionBorder;
             n <<= high_precision;
             fft::complex* p1 = fft_poly_buffer;
             fft::complex* p  = p1;
             if (likely(!high_precision)) {
-                for (size_t i = 0; i < m; i++) {
+                for (std::size_t i = 0; i < m; i++) {
                     uint32_t m_value = m_ptr[i];
                     uint32_t k_value = num_hi[i];
                     *p               = fft::complex(m_value & 0xFFFF, k_value & 0xFFFF);
@@ -1812,7 +1813,7 @@ private:
                     *p = fft::complex(m_value >> 16, k_value >> 16);
                     p++;
                 }
-                for (size_t i = m; i < half_len; i++) {
+                for (std::size_t i = m; i < half_len; i++) {
                     uint32_t k_value = num_hi[i];
                     *p               = fft::complex(0, k_value & 0xFFFF);
                     p++;
@@ -1820,7 +1821,7 @@ private:
                     p++;
                 }
             } else {
-                for (size_t i = 0; i < m; i++) {
+                for (std::size_t i = 0; i < m; i++) {
                     uint32_t m_value = m_ptr[i];
                     uint32_t k_value = num_hi[i];
                     *p               = fft::complex(uint8_t(m_value), uint8_t(k_value));
@@ -1838,7 +1839,7 @@ private:
                     *p = fft::complex(m_value, k_value);
                     p++;
                 }
-                for (size_t i = m; i < half_len; i++) {
+                for (std::size_t i = m; i < half_len; i++) {
                     uint32_t k_value = num_hi[i];
                     *p               = fft::complex(0, uint8_t(k_value));
                     p++;
@@ -1893,12 +1894,12 @@ private:
 
         // Now mult_add_buffer == num_hi * CONV_BASE^half_len
         uint64_t carry = 0;
-        for (size_t i = half_len; i != 0; i--, conv_digits++, mult_add_buffer++) {
+        for (std::size_t i = half_len; i > 0; i--, conv_digits++, mult_add_buffer++) {
             uint64_t res = uint64_t(*conv_digits) + uint64_t(*mult_add_buffer) + carry;
             *conv_digits = uint32_t(res);
             carry        = res >> kNumsBits;
         }
-        for (size_t i = half_len; i != 0; i--, conv_digits++, mult_add_buffer++) {
+        for (std::size_t i = half_len; i > 0; i--, conv_digits++, mult_add_buffer++) {
             uint64_t res = uint64_t(*mult_add_buffer) + carry;
             *conv_digits = uint32_t(res);
             carry        = res >> kNumsBits;
@@ -1906,7 +1907,7 @@ private:
         assert(carry == 0);
     }
 
-    static Decimal ConvertBinBase(const uint32_t* nums, size_t size) {
+    static Decimal ConvertBinBase(const uint32_t* nums, std::size_t size) {
         assert(math_functions::is_pow2(size));
         ATTRIBUTE_ASSUME(math_functions::is_pow2(size));
         switch (size) {
@@ -1927,8 +1928,8 @@ private:
         return high_dec;
     }
 
-    static void EnsureBinBasePowsCapacity(size_t pows_size) {
-        size_t i = conv_bin_base_pows.size();
+    static void EnsureBinBasePowsCapacity(std::size_t pows_size) {
+        std::size_t i = conv_bin_base_pows.size();
         if (i >= pows_size) {
             return;
         }
@@ -1951,8 +1952,8 @@ private:
         capacity_ = new_capacity;
     }
 
-    ATTRIBUTE_NOINLINE size_t GrowSizeByOne() {
-        size_t usize = USize();
+    ATTRIBUTE_NOINLINE std::size_t GrowSizeByOne() {
+        std::size_t usize = USize();
         if (unlikely(usize == capacity_)) {
             GrowCapacity();
         }
@@ -1961,8 +1962,8 @@ private:
         return usize + 1;
     }
 
-    size_t SetSizeAtLeast(size_t new_size) {
-        size_t cur_size = USize();
+    std::size_t SetSizeAtLeast(std::size_t new_size) {
+        std::size_t cur_size = USize();
         if (new_size <= cur_size) {
             return cur_size;
         }
@@ -1996,8 +1997,8 @@ private:
         capacity_ = kDefaultLINumsCapacity;
     }
 
-    static constexpr uint64_t LongIntAdd(uint32_t nums1[], const uint32_t nums2[], size_t usize1,
-                                         size_t usize2) noexcept {
+    static constexpr uint64_t LongIntAdd(uint32_t nums1[], const uint32_t nums2[],
+                                         std::size_t usize1, std::size_t usize2) noexcept {
         uint64_t carry            = 0;
         const uint32_t* nums1_end = nums1 + usize1;
         for (const uint32_t* nums2_end = nums2 + usize2; nums2 != nums2_end; ++nums2, ++nums1) {
@@ -2034,7 +2035,7 @@ private:
         } while (it != end_iter);
 
         if (carry != 0) {
-            size_t usize = USize();
+            std::size_t usize = USize();
             if (unlikely(usize == capacity_)) {
                 GrowCapacity();
             }
@@ -2046,7 +2047,7 @@ private:
     }
 
     constexpr void NonZeroSizeSubUInt(uint32_t n) {
-        size_t usize        = USize();
+        std::size_t usize   = USize();
         uint32_t* nums_iter = nums_;
         uint32_t low_num    = nums_iter[0];
         if (usize != 1) {
