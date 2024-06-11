@@ -32,7 +32,7 @@ static_assert(bin_pow_mod(uint64_t(999999999999999487ull), uint64_t(184467440737
               "bin_pow_mod");
 #endif
 
-#if HAS_AT_LEAST_CXX_20
+#if CONFIG_HAS_AT_LEAST_CXX_20
 
 static_assert(isqrt(0u) == 0, "isqrt");
 static_assert(isqrt(1u) == 1, "isqrt");
@@ -390,6 +390,46 @@ static_assert(!same_sign_strict(0, -1), "same_sign_strict");
 static_assert(!same_sign_strict(-1, 1), "same_sign_strict");
 static_assert(!same_sign_strict(-1, 0), "same_sign_strict");
 static_assert(same_sign_strict(-1, -1), "same_sign_strict");
+
+static_assert(uabs(static_cast<char>(0)) == 0, "uabs");
+static_assert(uabs(static_cast<short>(0)) == 0, "uabs");
+static_assert(uabs(static_cast<int>(0)) == 0, "uabs");
+static_assert(uabs(static_cast<long>(0)) == 0, "uabs");
+static_assert(uabs(static_cast<long long>(0)) == 0, "uabs");
+
+static_assert(uabs(static_cast<char>(-1)) == 1, "uabs");
+static_assert(uabs(static_cast<short>(-1)) == 1, "uabs");
+static_assert(uabs(static_cast<int>(-1)) == 1, "uabs");
+static_assert(uabs(static_cast<long>(-1)) == 1, "uabs");
+static_assert(uabs(static_cast<long long>(-1)) == 1, "uabs");
+
+static_assert(uabs(static_cast<char>(-128)) == 128, "uabs");
+static_assert(uabs(static_cast<short>(-128)) == 128, "uabs");
+static_assert(uabs(static_cast<int>(-128)) == 128, "uabs");
+static_assert(uabs(static_cast<long>(-128)) == 128, "uabs");
+static_assert(uabs(static_cast<long long>(-128)) == 128, "uabs");
+
+static_assert(uabs(std::numeric_limits<long long>::min()) ==
+                  -static_cast<unsigned long long>(std::numeric_limits<long long>::min()),
+              "uabs");
+
+#ifndef __clang__
+#error "NOTCLANG"
+#endif
+
+static_assert(uabs(int8_t(0)) == 0, "uabs");
+static_assert(uabs(int32_t(0)) == 0, "uabs");
+static_assert(uabs(int64_t(0)) == 0, "uabs");
+static_assert(uabs(int8_t(-1)) == 1, "uabs");
+static_assert(uabs(int32_t(-1)) == 1, "uabs");
+static_assert(uabs(int64_t(-1)) == 1, "uabs");
+static_assert(uabs(int8_t(-128)) == 128, "uabs");
+static_assert(uabs(int32_t(-128)) == 128, "uabs");
+static_assert(uabs(int64_t(-128)) == 128, "uabs");
+
+static_assert(uabs(std::numeric_limits<int64_t>::min()) ==
+                  -static_cast<uint64_t>(std::numeric_limits<int64_t>::min()),
+              "uabs");
 
 #if defined(HAS_I128_CONSTEXPR) && HAS_I128_CONSTEXPR
 static_assert(uabs(int128_t(0)) == 0, "uabs");

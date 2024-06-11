@@ -603,6 +603,22 @@ ATTRIBUTE_CONST constexpr bool same_sign_strict(long long a, long long b) noexce
     return sign(a) == sign(b);
 }
 
+ATTRIBUTE_CONST constexpr unsigned char uabs(signed char n) noexcept {
+    return n >= 0 ? static_cast<unsigned char>(n) : -static_cast<unsigned char>(n);
+}
+
+ATTRIBUTE_CONST constexpr unsigned char uabs(char n) noexcept {
+    if constexpr (std::is_signed_v<char>) {
+        return uabs(static_cast<signed char>(n));
+    } else {
+        return static_cast<unsigned char>(n);
+    }
+}
+
+ATTRIBUTE_CONST constexpr unsigned short uabs(short n) noexcept {
+    return n >= 0 ? static_cast<unsigned short>(n) : -static_cast<unsigned short>(n);
+}
+
 ATTRIBUTE_CONST constexpr unsigned uabs(int n) noexcept {
     return n >= 0 ? static_cast<unsigned>(n) : -static_cast<unsigned>(n);
 }
@@ -1049,24 +1065,36 @@ constexpr uint32_t next_n_bits_permutation(uint32_t x) noexcept {
     return (t + 1) | (((~t & -~t) - 1) >> (countr_zero(x) + 1));
 }
 
+ATTRIBUTE_CONST constexpr bool is_pow2(signed char n) noexcept {
+    // Cast to unsigned to avoid potential overflow (ub for signed char)
+    uint32_t m = static_cast<unsigned char>(n);
+    return (m & (m - 1)) == 0 && n > 0;
+}
+
+ATTRIBUTE_CONST constexpr bool is_pow2(unsigned char n) noexcept {
+    return (n & (n - 1)) == 0 && n != 0;
+}
+
+ATTRIBUTE_CONST constexpr bool is_pow2(char n) noexcept {
+    using corr_char_t = std::conditional_t<std::is_signed_v<char>, signed char, unsigned char>;
+    return is_pow2(static_cast<corr_char_t>(n));
+}
+
 ATTRIBUTE_CONST constexpr bool is_pow2(int n) noexcept {
-    // Cast to unsigned to avoid potential overflow
+    // Cast to unsigned to avoid potential overflow (ub for int)
     unsigned m = static_cast<unsigned>(n);
-    // To check (m & (m - 1)) == 0 first is necessary
     return (m & (m - 1)) == 0 && n > 0;
 }
 
 ATTRIBUTE_CONST constexpr bool is_pow2(long n) noexcept {
-    // Cast to unsigned to avoid potential overflow
+    // Cast to unsigned to avoid potential overflow (ub for long)
     unsigned long m = static_cast<unsigned long>(n);
-    // To check (m & (m - 1)) == 0 first is necessary
     return (m & (m - 1)) == 0 && n > 0;
 }
 
 ATTRIBUTE_CONST constexpr bool is_pow2(long long n) noexcept {
-    // Cast to unsigned to avoid potential overflow
+    // Cast to unsigned to avoid potential overflow (ub for long long)
     unsigned long long m = static_cast<unsigned long long>(n);
-    // To check (m & (m - 1)) == 0 first is necessary
     return (m & (m - 1)) == 0 && n > 0;
 }
 
