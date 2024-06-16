@@ -1,0 +1,3 @@
+[submodule "string-switch-map"]
+	path = string-switch-map
+	url = https://github.com/i80287/string-switch-map.git
