@@ -14,6 +14,7 @@
 #define INTEGERS_128_BIT_HPP 1
 
 #include <cstdint>
+#include <cstddef>
 #include <ostream>
 #include <string>
 #include <string_view>
@@ -66,8 +67,8 @@ static_assert(std::char_traits<char>::length("3402823669209384634633746074317682
 // -170141183460469231731687303715884105728 == -2^127
 static_assert(std::char_traits<char>::length("-170141183460469231731687303715884105728") == 40, "");
 #endif
-inline constexpr size_t kMaxStringLengthU128 = 39;
-inline constexpr size_t kMaxStringLengthI128 = 40;
+inline constexpr std::size_t kMaxStringLengthU128 = 39;
+inline constexpr std::size_t kMaxStringLengthI128 = 40;
 
 /// @brief Realization taken from the gcc libstdc++ __to_chars_10_impl
 /// @param number
@@ -83,14 +84,14 @@ inline I128_CONSTEXPR char* uint128_t_format_fill_chars_buffer(uint128_t number,
         "8081828384858687888990919293949596979899";
 
     while (number >= 100) {
-        const size_t remainder_index = size_t(number % 100) * 2;
+        const auto remainder_index = std::size_t(number % 100) * 2;
         number /= 100;
         *--buffer_ptr = char(remainders[remainder_index + 1]);
         *--buffer_ptr = char(remainders[remainder_index]);
     }
 
     if (number >= 10) {
-        const size_t remainder_index = size_t(number) * 2;
+        const auto remainder_index = std::size_t(number) * 2;
         *--buffer_ptr                = char(remainders[remainder_index + 1]);
         *--buffer_ptr                = char(remainders[remainder_index]);
     } else {
@@ -243,11 +244,11 @@ inline ostream& operator<<(ostream& out, uint128_t number) {
     char digits[buffer_size];
     digits[buffer_size - 1] = '\0';
     const char* ptr         = uint128_t_format_fill_chars_buffer(number, &digits[buffer_size - 1]);
-    size_t length           = static_cast<size_t>(&digits[buffer_size - 1] - ptr);
+    const auto length           = static_cast<std::size_t>(&digits[buffer_size - 1] - ptr);
     return out << string_view(ptr, length);
 }
 
-inline int fprint_u128(uint128_t number, FILE* filestream) noexcept {
+inline int fprint_u128(uint128_t number, std::FILE* filestream) noexcept {
     using namespace format_impl_uint128_t;
 
     // + 1 for '\0'
@@ -262,7 +263,7 @@ inline int print_u128(uint128_t number) noexcept {
     return fprint_u128(number, stdout);
 }
 
-inline int fprint_u128_newline(uint128_t number, FILE* filestream) noexcept {
+inline int fprint_u128_newline(uint128_t number, std::FILE* filestream) noexcept {
     using namespace format_impl_uint128_t;
 
     // + 1 for '\0', + 1 for '\n'
@@ -294,8 +295,12 @@ inline string to_string(uint128_t number) {
     digits[buffer_size - 1] = '\0';
 
     const char* ptr = uint128_t_format_fill_chars_buffer(number, &digits[buffer_size - 1]);
-    size_t length   = static_cast<size_t>(&digits[buffer_size - 1] - ptr);
-
+    const auto length   = static_cast<std::size_t>(&digits[buffer_size - 1] - ptr);
+#if defined(__GNUC__) && CONFIG_HAS_BUILTIN(__builtin_unreachable)
+    if (length > buffer_size) {
+        __builtin_unreachable();
+    }
+#endif
     return string(ptr, length);
 }
 
@@ -312,8 +317,12 @@ inline string to_string(int128_t number) {
     if (number < 0) {
         *--ptr = '-';
     }
-    size_t length = static_cast<size_t>(&digits[buffer_size - 1] - ptr);
-
+    const auto length = static_cast<std::size_t>(&digits[buffer_size - 1] - ptr);
+#if defined(__GNUC__) && CONFIG_HAS_BUILTIN(__builtin_unreachable)
+    if (length > buffer_size) {
+        __builtin_unreachable();
+    }
+#endif
     return string(ptr, length);
 }
 
@@ -334,8 +343,12 @@ inline ostream& operator<<(ostream& out, int128_t number) {
     if (negative) {
         *--ptr = '-';
     }
-    size_t length = static_cast<size_t>(&digits[buffer_size - 1] - ptr);
-
+    const auto length = static_cast<std::size_t>(&digits[buffer_size - 1] - ptr);
+#if defined(__GNUC__) && CONFIG_HAS_BUILTIN(__builtin_unreachable)
+    if (length > buffer_size) {
+        __builtin_unreachable();
+    }
+#endif
     return out << string_view(ptr, length);
 }
 
