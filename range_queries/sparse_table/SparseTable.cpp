@@ -1,5 +1,8 @@
+#include <cassert>
 #include <cstdint>
+#include <new>
 #include <vector>
+#include <cstdlib>
 
 #if __cplusplus >= 202002L
 #include <bit>
@@ -7,34 +10,32 @@
 
 template <class value_t = int64_t>
 struct SparseTable {
-    value_t** table = nullptr;
-    size_t* floored_log_table = nullptr;
-
     constexpr SparseTable() noexcept = default;
 
-    SparseTable(const std::vector<value_t>& data)
-        : SparseTable(data.data(), data.size()) {}
+    SparseTable(const std::vector<value_t>& data) : SparseTable(data.data(), data.size()) {}
 
     SparseTable(const value_t* data, size_t n) {
         const size_t row_len = log2_floored(n) + 1;
 
-        size_t table_with_double_index_size = n * sizeof(value_t*) + (n * row_len) * sizeof(value_t);
-        size_t log_table_size = (n + 1) * sizeof(size_t);
-        char* raw_bytes = static_cast<char*>(operator new(table_with_double_index_size + log_table_size));
+        size_t table_with_double_index_size =
+            align_size(n * sizeof(value_t*) + (n * row_len) * sizeof(value_t));
+        size_t log_table_size = align_size((n + 1) * sizeof(size_t));
+        void* raw_bytes = operator new(table_with_double_index_size + log_table_size);
 
-        table = reinterpret_cast<value_t**>(raw_bytes);
-        floored_log_table = reinterpret_cast<size_t*>(raw_bytes + table_with_double_index_size);
+        table = static_cast<value_t**>(raw_bytes);
+        floored_log_table =
+            std::launder(reinterpret_cast<size_t*>(static_cast<std::byte*>(raw_bytes) + table_with_double_index_size));
 
-        value_t* table_data_row = reinterpret_cast<value_t*>(table + n);
+        value_t* table_data_row = std::launder(reinterpret_cast<value_t*>(table + n));
         for (size_t i = 0; i < n; i++) {
-            table[i] = table_data_row;
+            table[i]    = table_data_row;
             table[i][0] = data[i];
             table_data_row += row_len;
         }
 
         for (size_t j = 1; j < row_len; j++) {
             size_t jmp = 1u << (j - 1);
-            size_t i = 0;
+            size_t i   = 0;
             for (; i + jmp < n; i++) {
                 table[i][j] = std::min(table[i][j - 1], table[i + jmp][j - 1]);
             }
@@ -49,20 +50,22 @@ struct SparseTable {
         }
     }
 
-    SparseTable(const SparseTable& other) = delete;
+    SparseTable(const SparseTable& other)            = delete;
     SparseTable& operator=(const SparseTable& other) = delete;
 
-    SparseTable(SparseTable&& other) noexcept {
-        *this = std::move(other);
+    constexpr SparseTable(SparseTable&& other) noexcept
+        : table(other.table), floored_log_table(other.floored_log_table) {
+        other.table             = nullptr;
+        other.floored_log_table = nullptr;
     }
 
     SparseTable& operator=(SparseTable&& other) noexcept {
-        auto t1 = other.table;
-        auto t2 = other.floored_log_table;
-        other.table = nullptr;
+        auto t1                 = other.table;
+        auto t2                 = other.floored_log_table;
+        other.table             = nullptr;
         other.floored_log_table = nullptr;
         this->~SparseTable();
-        table = t1;
+        table             = t1;
         floored_log_table = t2;
         return *this;
     }
@@ -71,18 +74,26 @@ struct SparseTable {
         operator delete(table);
     }
 
-    value_t operator()(size_t l, size_t r) noexcept {
+    value_t operator()(size_t l, size_t r) const noexcept {
         assert(l <= r);
         size_t j = floored_log_table[r - l + 1];
         return std::min(table[l][j], table[r - (1u << j) + 1][j]);
     }
+
 private:
     static constexpr size_t log2_floored(size_t n) noexcept {
-    #if __cplusplus >= 202002L
+#if __cplusplus >= 202002L
         const uint32_t lz_count = uint32_t(std::countl_zero(n | 1));
-    #else
+#else
         const uint32_t lz_count = uint32_t(__builtin_clzll(n | 1));
-    #endif
+#endif
         return 63 ^ lz_count;
     }
+
+    static constexpr size_t align_size(size_t size) noexcept {
+        return (size + 15) & ~size_t(15);
+    }
+
+    value_t** table           = nullptr;
+    size_t* floored_log_table = nullptr;
 };
