@@ -13,8 +13,8 @@
 #ifndef INTEGERS_128_BIT_HPP
 #define INTEGERS_128_BIT_HPP 1
 
-#include <cstdint>
 #include <cstddef>
+#include <cstdint>
 #include <ostream>
 #include <string>
 #include <string_view>
@@ -92,8 +92,8 @@ inline I128_CONSTEXPR char* uint128_t_format_fill_chars_buffer(uint128_t number,
 
     if (number >= 10) {
         const auto remainder_index = std::size_t(number) * 2;
-        *--buffer_ptr                = char(remainders[remainder_index + 1]);
-        *--buffer_ptr                = char(remainders[remainder_index]);
+        *--buffer_ptr              = char(remainders[remainder_index + 1]);
+        *--buffer_ptr              = char(remainders[remainder_index]);
     } else {
         *--buffer_ptr = char('0' + number);
     }
@@ -244,7 +244,7 @@ inline ostream& operator<<(ostream& out, uint128_t number) {
     char digits[buffer_size];
     digits[buffer_size - 1] = '\0';
     const char* ptr         = uint128_t_format_fill_chars_buffer(number, &digits[buffer_size - 1]);
-    const auto length           = static_cast<std::size_t>(&digits[buffer_size - 1] - ptr);
+    const auto length       = static_cast<std::size_t>(&digits[buffer_size - 1] - ptr);
     return out << string_view(ptr, length);
 }
 
@@ -294,8 +294,8 @@ inline string to_string(uint128_t number) {
     char digits[buffer_size];
     digits[buffer_size - 1] = '\0';
 
-    const char* ptr = uint128_t_format_fill_chars_buffer(number, &digits[buffer_size - 1]);
-    const auto length   = static_cast<std::size_t>(&digits[buffer_size - 1] - ptr);
+    const char* ptr   = uint128_t_format_fill_chars_buffer(number, &digits[buffer_size - 1]);
+    const auto length = static_cast<std::size_t>(&digits[buffer_size - 1] - ptr);
 #if defined(__GNUC__) && CONFIG_HAS_BUILTIN(__builtin_unreachable)
     if (length > buffer_size) {
         __builtin_unreachable();
