@@ -3,7 +3,6 @@ cmake_minimum_required(VERSION 3.5)
 project(math_tests VERSION 0.1.0 LANGUAGES CXX)
 
 set(TestFilenames)
-list(APPEND TestFilenames test_eratosthene_sieve)
 list(APPEND TestFilenames test_fibonacci_num)
 list(APPEND TestFilenames test_gosper_algorithm)
 list(APPEND TestFilenames test_integers_128_bit)

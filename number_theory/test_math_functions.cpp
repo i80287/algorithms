@@ -1212,6 +1212,58 @@ static void test_visit_all_submasks() noexcept {
     assert((vec == std::vector<uint64_t>{0b111, 0b110, 0b101, 0b100, 0b011, 0b010, 0b001}));
 }
 
+static void test_prime_bitarrays() {
+    log_tests_started();
+
+    constexpr size_t N                    = 1000;
+    std::vector<bool> primes_as_bvector   = math_functions::primes_sieve_as_bvector(N);
+    const std::bitset<N + 1>& primes_bset = math_functions::primes_sieve_as_bitset<N>();
+    constexpr uint32_t primes[]           = {
+        2,   3,   5,   7,   11,  13,  17,  19,  23,  29,  31,  37,  41,  43,  47,  53,   59,
+        61,  67,  71,  73,  79,  83,  89,  97,  101, 103, 107, 109, 113, 127, 131, 137,  139,
+        149, 151, 157, 163, 167, 173, 179, 181, 191, 193, 197, 199, 211, 223, 227, 229,  233,
+        239, 241, 251, 257, 263, 269, 271, 277, 281, 283, 293, 307, 311, 313, 317, 331,  337,
+        347, 349, 353, 359, 367, 373, 379, 383, 389, 397, 401, 409, 419, 421, 431, 433,  439,
+        443, 449, 457, 461, 463, 467, 479, 487, 491, 499, 503, 509, 521, 523, 541, 547,  557,
+        563, 569, 571, 577, 587, 593, 599, 601, 607, 613, 617, 619, 631, 641, 643, 647,  653,
+        659, 661, 673, 677, 683, 691, 701, 709, 719, 727, 733, 739, 743, 751, 757, 761,  769,
+        773, 787, 797, 809, 811, 821, 823, 827, 829, 839, 853, 857, 859, 863, 877, 881,  883,
+        887, 907, 911, 919, 929, 937, 941, 947, 953, 967, 971, 977, 983, 991, 997, 1009,
+    };
+    static_assert(primes[std::size(primes) - 1] >= N);
+    size_t i = 0;
+    assert(primes_as_bvector.size() == N + 1);
+    for (uint32_t n = 0; n <= N; n++) {
+        if (primes[i] < n) {
+            i++;
+        }
+        bool is_prime = primes[i] == n;
+        assert(primes_as_bvector[n] == is_prime);
+        assert(primes_bset[n] == is_prime);
+    }
+}
+
+static void test_factorizer() {
+    log_tests_started();
+
+    constexpr auto N = uint32_t(1e7);
+    Factorizer fact(N);
+    const auto is_prime = primes_sieve_as_bvector(N);
+    assert(is_prime.size() == N + 1);
+    for (std::uint32_t i = 0; i <= N; i++) {
+        assert(is_prime[i] == fact.is_prime(i));
+    }
+#if CONFIG_HAS_AT_LEAST_CXX_20
+    for (std::uint32_t i = 0; i <= N; i++) {
+        assert(std::ranges::equal(fact.prime_factors(i), prime_factors_as_pairs(i),
+                                  [](auto pf1, auto pf2) constexpr noexcept {
+                                      return pf1.factor == pf2.factor &&
+                                             pf1.factor_power == pf2.factor_power;
+                                  }));
+    }
+#endif
+}
+
 int main() {
     test_isqrt();
     test_icbrt();
@@ -1219,4 +1271,6 @@ int main() {
     test_bit_reverse();
     test_sin_cos_sum();
     test_visit_all_submasks();
+    test_prime_bitarrays();
+    test_factorizer();
 }
