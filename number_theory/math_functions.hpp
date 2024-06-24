@@ -164,8 +164,17 @@ ATTRIBUTE_CONST inline I128_CONSTEXPR uint64_t bin_pow_mod(uint64_t n, uint64_t 
 ATTRIBUTE_CONST constexpr uint32_t isqrt(uint32_t n) noexcept {
     uint32_t y = 0;
 
+#if (defined(__cpp_lib_is_constant_evaluated) && __cpp_lib_is_constant_evaluated >= 201811L) || \
+    CONFIG_HAS_BUILTIN(__builtin_is_constant_evaluated) ||                                      \
+    CONFIG_HAS_BUILTIN(__builtin_constant_p)
 #if defined(__cpp_lib_is_constant_evaluated) && __cpp_lib_is_constant_evaluated >= 201811L
-    if (std::is_constant_evaluated()) {
+    if (std::is_constant_evaluated())
+#elif CONFIG_HAS_BUILTIN(__builtin_is_constant_evaluated)
+    if (__builtin_is_constant_evaluated())
+#else
+    if (__builtin_constant_p(n))
+#endif
+    {
         /**
          * See Hackers Delight Chapter 11.
          */
@@ -1738,9 +1747,9 @@ constexpr
             std::bitset<std::size_t(N) + 1> primes_bs;
             if constexpr (N + 1 > 2) {
                 primes_bs.set();
-                primes_bs[0]            = false;
-                primes_bs[1]            = false;
-                constexpr uint32_t root = math_functions::isqrt(N);
+                primes_bs[0]        = false;
+                primes_bs[1]        = false;
+                const uint32_t root = math_functions::isqrt(N);
                 for (uint32_t i = 2; i <= root; i++) {
                     if (primes_bs[i]) {
                         for (std::size_t j = i * i; j <= N; j += i) {
