@@ -1480,11 +1480,9 @@ ATTRIBUTE_CONST constexpr std::uint32_t max_number_of_prime_divisors(std::uint32
 }  // namespace detail
 
 template <class NumericType>
-struct PrimeFactor {
-#if !CONFIG_HAS_AT_LEAST_CXX_20
+struct PrimeFactor final {
     constexpr PrimeFactor(NumericType prime_factor, std::uint32_t prime_factor_power) noexcept
         : factor(prime_factor), factor_power(prime_factor_power) {}
-#endif
     NumericType factor;
     std::uint32_t factor_power;
 };
