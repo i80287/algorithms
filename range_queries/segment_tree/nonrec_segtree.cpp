@@ -1,11 +1,17 @@
+#include <algorithm>
+#include <array>
 #include <cassert>
 #include <cstdint>
 #include <cstring>
-#include <vector>
 #include <limits>
+#include <memory>
+#include <type_traits>
+#include <utility>
+#include <vector>
 
 #if __cplusplus >= 202002L
 #include <bit>
+#include <span>
 #endif
 
 enum class UpdateOperation {
@@ -21,11 +27,11 @@ enum class GetOperation {
     min,
 };
 
-static constexpr bool is_2_pow(size_t n) noexcept {
+static constexpr bool is_2_pow(std::size_t n) noexcept {
     return (n & (n - 1)) == 0;
 }
 
-static constexpr size_t log2_ceiled(size_t n) noexcept {
+static constexpr std::size_t log2_ceiled(std::size_t n) noexcept {
 #if __cplusplus >= 202002L
     const uint32_t lz_count = uint32_t(std::countl_zero(n | 1));
 #else
@@ -34,58 +40,59 @@ static constexpr size_t log2_ceiled(size_t n) noexcept {
     return (63 ^ lz_count) + !is_2_pow(n);
 }
 
-static constexpr size_t nearest_two_pow(size_t n) noexcept {
-    return size_t(1u) << log2_ceiled(n);
+static constexpr std::size_t nearest_two_pow(std::size_t n) noexcept {
+    return std::size_t(1u) << log2_ceiled(n);
 }
 
 template <GetOperation get_op, UpdateOperation upd_op, typename value_t = int64_t>
-class SegmentTree {
+class SegmentTree final {
+    static_assert(std::is_arithmetic_v<value_t>);
+
     value_t* tree_ = nullptr;
     // Number of nodes above last layer with actual data
-    size_t n_ = 0;
-public:
-    constexpr SegmentTree() noexcept = default;
+    std::size_t n_{};
 
+public:
     explicit SegmentTree(const std::vector<value_t>& data)
         : SegmentTree(data.data(), data.size()) {}
 
-    SegmentTree(const value_t* data, size_t data_size) {
-        Build(data, data_size);
-    }
+    template <std::size_t N>
+    explicit SegmentTree(const value_t (&data)[N])
+        : SegmentTree(static_cast<const value_t*>(data), N) {}
 
-    void Build(const std::vector<value_t>& data) {
-        Build(data.data(), data.size());
-    }
+    template <std::size_t N>
+    explicit SegmentTree(const std::array<value_t, N>& data)
+        : SegmentTree(data.data(), data.size()) {}
 
-    void Build(const value_t* data, size_t data_size) {
-        n_ = nearest_two_pow(data_size);
+#if __cplusplus >= 202002L
+    template <std::size_t Extent>
+    explicit SegmentTree(std::span<const value_t, Extent> data)
+        : SegmentTree(data.data(), data.size()) {}
+#endif
+
+#if __cplusplus >= 202002L
+    constexpr
+#endif
+        SegmentTree(const value_t* data, std::size_t data_size)
+        : n_(nearest_two_pow(data_size)) {
         // Node with index 0 is not used, number of used nodes = 2 * n - 1
-        size_t tree_size = 2 * n_;
-        tree_ = static_cast<value_t*>(operator new(tree_size * sizeof(value_t)));
+        tree_ = std::allocator<value_t>().allocate(tree_size());
 
-        memcpy(tree_ + n_, data, data_size * sizeof(value_t));
-
-        value_t* copy_end = tree_ + n_ + data_size;
-        size_t tree_unused_size = n_ - data_size;
+        value_t* copy_end            = std::copy(data, data + data_size, tree_ + n_);
+        std::size_t tree_unused_size = n_ - data_size;
         if constexpr (get_op == GetOperation::sum) {
-            memset(copy_end, 0, tree_unused_size * sizeof(value_t));
+            std::fill_n(copy_end, tree_unused_size, value_t{0});
         } else if constexpr (get_op == GetOperation::product) {
-            for (size_t i = 0; i < tree_unused_size; i++) {
-                copy_end[i] = 1;
-            }
+            std::fill_n(copy_end, tree_unused_size, value_t{1});
         } else if constexpr (get_op == GetOperation::max) {
-            for (size_t i = 0; i < tree_unused_size; i++) {
-                copy_end[i] = std::numeric_limits<value_t>::min();
-            }
+            std::fill_n(copy_end, tree_unused_size, std::numeric_limits<value_t>::min());
         } else if constexpr (get_op == GetOperation::min) {
-            for (size_t i = 0; i < tree_unused_size; i++) {
-                copy_end[i] = std::numeric_limits<value_t>::max();
-            }
+            std::fill_n(copy_end, tree_unused_size, std::numeric_limits<value_t>::max());
         }
 
-        for (size_t i = n_ - 1; i != 0; i--) {
-            size_t l = 2 * i;
-            size_t r = l | 1;
+        for (std::size_t i = n_ - 1; i != 0; i--) {
+            std::size_t l = 2 * i;
+            std::size_t r = l | 1;
 
             if constexpr (get_op == GetOperation::sum) {
                 tree_[i] = tree_[l] + tree_[r];
@@ -99,10 +106,52 @@ public:
         }
     }
 
-    /// @brief 
+#if __cplusplus >= 202002L
+    constexpr
+#endif
+        SegmentTree(const SegmentTree& other)
+        : tree_(std::allocator<value_t>{}.allocate(other.tree_size())), n_(other.n_) {
+        std::copy_n(other.tree_, other.tree_size(), tree_);
+    }
+
+#if __cplusplus >= 202002L
+    constexpr
+#endif
+        SegmentTree&
+        operator=(const SegmentTree& other) {
+        return *this = SegmentTree(other);
+    }
+
+#if __cplusplus >= 202002L
+    constexpr
+#endif
+        SegmentTree(SegmentTree&& other) noexcept
+        : tree_(std::exchange(other.tree_, nullptr)), n_(std::exchange(other.n_, nullptr)) {
+    }
+
+#if __cplusplus >= 202002L
+    constexpr
+#endif
+        SegmentTree&
+        operator=(SegmentTree&& other) noexcept {
+        swap(*this, other);
+        return *this;
+    }
+
+#if __cplusplus >= 202002L
+    constexpr
+#endif
+        friend void
+        swap(SegmentTree& lhs, SegmentTree& rhs) noexcept {
+        using std::swap;
+        swap(lhs.tree_, rhs.tree_);
+        swap(lhs.n_, rhs.n_);
+    }
+
+    /// @brief Update in the zero based index i (add, multiply or set equal)
     /// @param i zero based index in the array
     /// @param upd_value
-    void Update(size_t i, value_t upd_value) noexcept {
+    void Update(std::size_t i, value_t upd_value) noexcept {
         assert(i < n_);
         i += n_;
 
@@ -115,8 +164,8 @@ public:
         }
 
         for (i /= 2; i != 0; i /= 2) {
-            size_t l = 2 * i;
-            size_t r = l | 1;
+            std::size_t l = 2 * i;
+            std::size_t r = l | 1;
 
             if constexpr (get_op == GetOperation::sum) {
                 tree_[i] = tree_[l] + tree_[r];
@@ -130,13 +179,14 @@ public:
         }
     }
 
-    /// @brief get on the data[l; r]
+    /// @brief get on the [l; r]
     /// @param l left index (including)
     /// @param r right index (including)
-    /// @return 
-    value_t Get(size_t l, size_t r) noexcept {
+    /// @return value (sum, product, min or max) on the [l; r]
+    value_t Get(std::size_t l, std::size_t r) const noexcept {
         assert(l <= r && r < n_);
-        l += n_, r += n_;
+        l += n_;
+        r += n_;
         value_t res;
         if constexpr (get_op == GetOperation::sum) {
             res = 0;
@@ -183,16 +233,19 @@ public:
     }
 
     ~SegmentTree() {
-        operator delete(tree_);
-        tree_ = nullptr;
+        std::allocator<value_t>{}.deallocate(tree_, tree_size());
+    }
+
+private:
+    constexpr auto tree_size() const noexcept {
+        return 2 * n_;
     }
 };
 
 int main() {
-    int arr[10] = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
-    constexpr size_t arr_len = sizeof(arr) / sizeof(arr[0]);
-
-    SegmentTree<GetOperation::product, UpdateOperation::set_equal, int> tree(arr, arr_len);
+    const int64_t arr[10] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
+    SegmentTree<GetOperation::product, UpdateOperation::set_equal> tree(arr);
     tree.Update(0, 2);
-    assert(tree.Get(0, 4) == 240);
+    assert(tree.Get(0, 4) == 2 * 2 * 3 * 4 * 5);
+    assert(tree.Get(0, 9) == 2 * 2 * 3 * 4 * 5 * 6 * 7 * 8 * 9 * 10);
 }
