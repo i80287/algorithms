@@ -15,58 +15,53 @@
 #endif
 
 enum class UpdateOperation {
-    add,
-    multiply,
-    set_equal,
+    kAdd,
+    kMultiply,
+    kSetEqual,
 };
 
 enum class GetOperation {
-    sum,
-    product,
-    max,
-    min,
+    kSum,
+    kProduct,
+    kMax,
+    kMin,
 };
 
-static constexpr bool is_2_pow(std::size_t n) noexcept {
-    return (n & (n - 1)) == 0;
-}
-
-static constexpr std::size_t log2_ceiled(std::size_t n) noexcept {
-#if __cplusplus >= 202002L
-    const uint32_t lz_count = uint32_t(std::countl_zero(n | 1));
-#else
-    const uint32_t lz_count = uint32_t(__builtin_clzll(n | 1));
-#endif
-    return (63 ^ lz_count) + !is_2_pow(n);
-}
-
-static constexpr std::size_t nearest_two_pow(std::size_t n) noexcept {
-    return std::size_t(1u) << log2_ceiled(n);
-}
-
 template <GetOperation get_op, UpdateOperation upd_op, typename value_t = int64_t>
-class SegmentTree final {
+class [[nodiscard]] SegmentTree final {
     static_assert(std::is_arithmetic_v<value_t>);
 
     value_t* tree_ = nullptr;
     // Number of nodes above last layer with actual data
-    std::size_t n_{};
+    std::size_t n_ = 0;
 
 public:
-    explicit SegmentTree(const std::vector<value_t>& data)
-        : SegmentTree(data.data(), data.size()) {}
+#if __cplusplus >= 202002L
+    constexpr
+#endif
+        explicit SegmentTree(const std::vector<value_t>& data)
+        : SegmentTree(data.data(), data.size()) {
+    }
 
     template <std::size_t N>
-    explicit SegmentTree(const value_t (&data)[N])
-        : SegmentTree(static_cast<const value_t*>(data), N) {}
+#if __cplusplus >= 202002L
+    constexpr
+#endif
+        explicit SegmentTree(const value_t (&data)[N])
+        : SegmentTree(static_cast<const value_t*>(data), N) {
+    }
 
     template <std::size_t N>
-    explicit SegmentTree(const std::array<value_t, N>& data)
-        : SegmentTree(data.data(), data.size()) {}
+#if __cplusplus >= 202002L
+    constexpr
+#endif
+        explicit SegmentTree(const std::array<value_t, N>& data)
+        : SegmentTree(data.data(), data.size()) {
+    }
 
 #if __cplusplus >= 202002L
     template <std::size_t Extent>
-    explicit SegmentTree(std::span<const value_t, Extent> data)
+    constexpr explicit SegmentTree(std::span<const value_t, Extent> data)
         : SegmentTree(data.data(), data.size()) {}
 #endif
 
@@ -80,13 +75,13 @@ public:
 
         value_t* copy_end            = std::copy(data, data + data_size, tree_ + n_);
         std::size_t tree_unused_size = n_ - data_size;
-        if constexpr (get_op == GetOperation::sum) {
+        if constexpr (get_op == GetOperation::kSum) {
             std::fill_n(copy_end, tree_unused_size, value_t{0});
-        } else if constexpr (get_op == GetOperation::product) {
+        } else if constexpr (get_op == GetOperation::kProduct) {
             std::fill_n(copy_end, tree_unused_size, value_t{1});
-        } else if constexpr (get_op == GetOperation::max) {
+        } else if constexpr (get_op == GetOperation::kMax) {
             std::fill_n(copy_end, tree_unused_size, std::numeric_limits<value_t>::min());
-        } else if constexpr (get_op == GetOperation::min) {
+        } else if constexpr (get_op == GetOperation::kMin) {
             std::fill_n(copy_end, tree_unused_size, std::numeric_limits<value_t>::max());
         }
 
@@ -94,13 +89,13 @@ public:
             std::size_t l = 2 * i;
             std::size_t r = l | 1;
 
-            if constexpr (get_op == GetOperation::sum) {
+            if constexpr (get_op == GetOperation::kSum) {
                 tree_[i] = tree_[l] + tree_[r];
-            } else if constexpr (get_op == GetOperation::product) {
+            } else if constexpr (get_op == GetOperation::kProduct) {
                 tree_[i] = tree_[l] * tree_[r];
-            } else if constexpr (get_op == GetOperation::max) {
+            } else if constexpr (get_op == GetOperation::kMax) {
                 tree_[i] = std::max(tree_[l], tree_[r]);
-            } else if constexpr (get_op == GetOperation::min) {
+            } else if constexpr (get_op == GetOperation::kMin) {
                 tree_[i] = std::min(tree_[l], tree_[r]);
             }
         }
@@ -151,15 +146,15 @@ public:
     /// @brief Update in the zero based index i (add, multiply or set equal)
     /// @param i zero based index in the array
     /// @param upd_value
-    void Update(std::size_t i, value_t upd_value) noexcept {
+    constexpr void Update(std::size_t i, value_t upd_value) noexcept {
         assert(i < n_);
         i += n_;
 
-        if constexpr (upd_op == UpdateOperation::add) {
+        if constexpr (upd_op == UpdateOperation::kAdd) {
             tree_[i] += upd_value;
-        } else if constexpr (upd_op == UpdateOperation::multiply) {
+        } else if constexpr (upd_op == UpdateOperation::kMultiply) {
             tree_[i] *= upd_value;
-        } else if constexpr (upd_op == UpdateOperation::set_equal) {
+        } else if constexpr (upd_op == UpdateOperation::kSetEqual) {
             tree_[i] = upd_value;
         }
 
@@ -167,13 +162,13 @@ public:
             std::size_t l = 2 * i;
             std::size_t r = l | 1;
 
-            if constexpr (get_op == GetOperation::sum) {
+            if constexpr (get_op == GetOperation::kSum) {
                 tree_[i] = tree_[l] + tree_[r];
-            } else if constexpr (get_op == GetOperation::product) {
+            } else if constexpr (get_op == GetOperation::kProduct) {
                 tree_[i] = tree_[l] * tree_[r];
-            } else if constexpr (get_op == GetOperation::max) {
+            } else if constexpr (get_op == GetOperation::kMax) {
                 tree_[i] = std::max(tree_[l], tree_[r]);
-            } else if constexpr (get_op == GetOperation::min) {
+            } else if constexpr (get_op == GetOperation::kMin) {
                 tree_[i] = std::min(tree_[l], tree_[r]);
             }
         }
@@ -183,18 +178,18 @@ public:
     /// @param l left index (including)
     /// @param r right index (including)
     /// @return value (sum, product, min or max) on the [l; r]
-    value_t Get(std::size_t l, std::size_t r) const noexcept {
+    [[nodiscard]] constexpr value_t Get(std::size_t l, std::size_t r) const noexcept {
         assert(l <= r && r < n_);
         l += n_;
         r += n_;
-        value_t res;
-        if constexpr (get_op == GetOperation::sum) {
+        value_t res{};
+        if constexpr (get_op == GetOperation::kSum) {
             res = 0;
-        } else if constexpr (get_op == GetOperation::product) {
+        } else if constexpr (get_op == GetOperation::kProduct) {
             res = 1;
-        } else if constexpr (get_op == GetOperation::max) {
+        } else if constexpr (get_op == GetOperation::kMax) {
             res = std::max(tree_[l], tree_[r]);
-        } else if constexpr (get_op == GetOperation::min) {
+        } else if constexpr (get_op == GetOperation::kMin) {
             res = std::min(tree_[l], tree_[r]);
         }
 
@@ -202,13 +197,13 @@ public:
             assert(l != 0);
             if (l % 2 != 0) {
                 // l is right son
-                if constexpr (get_op == GetOperation::sum) {
+                if constexpr (get_op == GetOperation::kSum) {
                     res += tree_[l];
-                } else if constexpr (get_op == GetOperation::product) {
+                } else if constexpr (get_op == GetOperation::kProduct) {
                     res *= tree_[l];
-                } else if constexpr (get_op == GetOperation::max) {
+                } else if constexpr (get_op == GetOperation::kMax) {
                     res = std::max(res, tree_[l]);
-                } else if constexpr (get_op == GetOperation::min) {
+                } else if constexpr (get_op == GetOperation::kMin) {
                     res = std::min(res, tree_[l]);
                 }
                 l++;
@@ -216,13 +211,13 @@ public:
 
             if (r % 2 == 0) {
                 // r is left son
-                if constexpr (get_op == GetOperation::sum) {
+                if constexpr (get_op == GetOperation::kSum) {
                     res += tree_[r];
-                } else if constexpr (get_op == GetOperation::product) {
+                } else if constexpr (get_op == GetOperation::kProduct) {
                     res *= tree_[r];
-                } else if constexpr (get_op == GetOperation::max) {
+                } else if constexpr (get_op == GetOperation::kMax) {
                     res = std::max(res, tree_[r]);
-                } else if constexpr (get_op == GetOperation::min) {
+                } else if constexpr (get_op == GetOperation::kMin) {
                     res = std::min(res, tree_[r]);
                 }
                 r--;
@@ -232,19 +227,39 @@ public:
         return res;
     }
 
-    ~SegmentTree() {
+#if __cplusplus >= 202002L
+    constexpr
+#endif
+        ~SegmentTree() {
         std::allocator<value_t>{}.deallocate(tree_, tree_size());
     }
 
 private:
-    constexpr auto tree_size() const noexcept {
+    [[nodiscard]] constexpr auto tree_size() const noexcept {
         return 2 * n_;
+    }
+
+    [[nodiscard]] static constexpr bool is_2_pow(std::size_t n) noexcept {
+        return (n & (n - 1)) == 0;
+    }
+
+    [[nodiscard]] static constexpr std::size_t log2_ceiled(std::size_t n) noexcept {
+#if __cplusplus >= 202002L
+        const uint32_t lz_count = uint32_t(std::countl_zero(n | 1));
+#else
+        const uint32_t lz_count = uint32_t(__builtin_clzll(n | 1));
+#endif
+        return (63 ^ lz_count) + !is_2_pow(n);
+    }
+
+    [[nodiscard]] constexpr std::size_t nearest_two_pow(std::size_t n) noexcept {
+        return std::size_t(1u) << log2_ceiled(n);
     }
 };
 
 int main() {
     const int64_t arr[10] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
-    SegmentTree<GetOperation::product, UpdateOperation::set_equal> tree(arr);
+    SegmentTree<GetOperation::kProduct, UpdateOperation::kSetEqual> tree(arr);
     tree.Update(0, 2);
     assert(tree.Get(0, 4) == 2 * 2 * 3 * 4 * 5);
     assert(tree.Get(0, 9) == 2 * 2 * 3 * 4 * 5 * 6 * 7 * 8 * 9 * 10);
