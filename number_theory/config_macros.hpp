@@ -193,10 +193,32 @@
  *  See https://gcc.gnu.org/onlinedocs/gcc/Common-Function-Attributes.html for more info
  */
 #if CONFIG_GNUC_PREREQ(10, 0)
-#define ATTRIBUTE_ACCESS(mode, memory_argument_pos, range_size_argument_pos) \
+#define ATTRIBUTE_ACCESS(mode, memory_argument_pos) \
+    __attribute__((access(mode, memory_argument_pos)))
+#define ATTRIBUTE_SIZED_ACCESS(mode, memory_argument_pos, range_size_argument_pos) \
     __attribute__((access(mode, memory_argument_pos, range_size_argument_pos)))
 #else
-#define ATTRIBUTE_ACCESS(mode, memory_argument_pos, range_size_argument_pos)
+#define ATTRIBUTE_ACCESS(mode, memory_argument_pos)
+#define ATTRIBUTE_SIZED_ACCESS(mode, memory_argument_pos, range_size_argument_pos)
+#endif
+
+/**
+ *  See https://gcc.gnu.org/onlinedocs/gcc/Common-Function-Attributes.html for more info
+ */
+#if CONFIG_GNUC_PREREQ(3, 3)
+#define ATTRIBUTE_NONNULL(...) __attribute__((nonnull(__VA_ARGS__)))
+#else
+#define ATTRIBUTE_NONNULL(...)
+#endif
+
+/**
+ * See https://gcc.gnu.org/onlinedocs/gcc/Common-Function-Attributes.html for more info
+ * function_arg_position >= 1
+ */
+#if CONFIG_GNUC_PREREQ(10, 0)
+#define ATTRIBUTE_NULL_TERMINATED_STRING(function_arg_position) __attribute__((null_terminated_string_arg(function_arg_position)))
+#else
+#define ATTRIBUTE_NULL_TERMINATED_STRING(function_arg_position)
 #endif
 
 #if defined(__clang__) && CONFIG_HAS_AT_LEAST_CXX_17
