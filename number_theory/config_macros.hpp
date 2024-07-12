@@ -211,26 +211,10 @@
 #define ATTRIBUTE_NONNULL(...)
 #endif
 
-/**
- * See https://gcc.gnu.org/onlinedocs/gcc/Common-Function-Attributes.html for more info
- * function_arg_position >= 1
- */
-#if CONFIG_GNUC_PREREQ(10, 0)
-#define ATTRIBUTE_NULL_TERMINATED_STRING(function_arg_position) __attribute__((null_terminated_string_arg(function_arg_position)))
-#else
-#define ATTRIBUTE_NULL_TERMINATED_STRING(function_arg_position)
-#endif
-
 #if defined(__clang__) && CONFIG_HAS_AT_LEAST_CXX_17
 #define ATTRIBUTE_LIFETIME_BOUND [[clang::lifetimebound]]
 #else
 #define ATTRIBUTE_LIFETIME_BOUND
-#endif
-
-#if defined(__clang__) && CONFIG_HAS_ATTRIBUTE(diagnose_if)
-#define CONFIG_DIAGNOSE_IF(...) __attribute__((diagnose_if(__VA_ARGS__)));
-#else
-#define CONFIG_DIAGNOSE_IF(...)
 #endif
 
 /* ===-- int_endianness.h - configuration header for compiler-rt ------------===
