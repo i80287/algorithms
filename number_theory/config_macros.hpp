@@ -189,12 +189,26 @@
  *
  *  memory_argument_pos >= 1
  *  range_size_argument_pos >= 1
+ * 
+ *  See https://gcc.gnu.org/onlinedocs/gcc/Common-Function-Attributes.html for more info
  */
 #if CONFIG_GNUC_PREREQ(10, 0)
 #define ATTRIBUTE_ACCESS(mode, memory_argument_pos, range_size_argument_pos) \
     __attribute__((access(mode, memory_argument_pos, range_size_argument_pos)))
 #else
 #define ATTRIBUTE_ACCESS(mode, memory_argument_pos, range_size_argument_pos)
+#endif
+
+#if defined(__clang__) && CONFIG_HAS_AT_LEAST_CXX_17
+#define ATTRIBUTE_LIFETIME_BOUND [[clang::lifetimebound]]
+#else
+#define ATTRIBUTE_LIFETIME_BOUND
+#endif
+
+#if defined(__clang__) && CONFIG_HAS_ATTRIBUTE(diagnose_if)
+#define CONFIG_DIAGNOSE_IF(...) __attribute__((diagnose_if(__VA_ARGS__)));
+#else
+#define CONFIG_DIAGNOSE_IF(...)
 #endif
 
 /* ===-- int_endianness.h - configuration header for compiler-rt ------------===
