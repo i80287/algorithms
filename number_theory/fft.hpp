@@ -25,19 +25,20 @@ namespace fft_detail {
  * used (fft_roots[0] never used btw, because in fft step >= 1, so it can be
  * anything)
  */
-static std::vector<complex> fft_roots = {complex(0, 0), complex(1, 0)};
+inline static std::vector<complex> fft_roots = {complex(0, 0), complex(1, 0)};
 
 template <bool IsBackwardFFT = false /* Forward of backward FFT */>
-#if CONFIG_HAS_AT_LEAST_CXX_20 && !defined(_GLIBCXX_DEBUG)
+ATTRIBUTE_SIZED_ACCESS(read_write, 1, 2)
+ATTRIBUTE_NONNULL(1)
+#if CONFIG_HAS_AT_LEAST_CXX_20
 constexpr
 #endif
-    inline void
-    forward_or_backward_fft(complex* p, const size_t k) noexcept {
+inline void forward_or_backward_fft(complex* p, const std::size_t k) noexcept {
     ATTRIBUTE_ASSUME(k > 0 && (k & (k - 1)) == 0);
 
-    for (size_t i = 1, k_reversed_i = 0; i < k; i++) {
+    for (std::size_t i = 1, k_reversed_i = 0; i < k; i++) {
         // 'Increase' k_reversed_i by one
-        size_t bit = k >> 1;
+        std::size_t bit = k >> 1;
         for (; k_reversed_i >= bit; bit >>= 1) {
             k_reversed_i -= bit;
         }
@@ -51,17 +52,17 @@ constexpr
     const complex* const points = fft_roots.data();
 
     // Unrolled loop for step = 1
-    for (size_t block_start = 0; block_start < k; block_start += 2) {
+    for (std::size_t block_start = 0; block_start < k; block_start += 2) {
         const complex p0_i = p[block_start];
         complex w_j_p1_i   = p[block_start + 1];
         p[block_start]     = p0_i + w_j_p1_i;
         p[block_start + 1] = p0_i - w_j_p1_i;
     }
 
-    for (size_t step = 2; step < k; step *= 2) {
-        for (size_t block_start = 0; block_start < k;) {
-            size_t block_end = block_start + step;
-            for (size_t pos_in_block = block_start, point_index = step; pos_in_block < block_end;
+    for (std::size_t step = 2; step < k; step *= 2) {
+        for (std::size_t block_start = 0; block_start < k;) {
+            std::size_t block_end = block_start + step;
+            for (std::size_t pos_in_block = block_start, point_index = step; pos_in_block < block_end;
                  pos_in_block++, point_index++) {
                 const complex p0_i = p[pos_in_block];
                 complex w_j_p1_i{};
@@ -88,13 +89,13 @@ constexpr
 
 };  // namespace fft_detail
 
-inline void ensure_roots_capacity(const size_t n) {
+inline void ensure_roots_capacity(const std::size_t n) {
     assert((n & (n - 1)) == 0);
     ATTRIBUTE_ASSUME((n & (n - 1)) == 0);
 
     using fft_detail::fft_roots;
 
-    size_t current_len = fft_roots.size();
+    std::size_t current_len = fft_roots.size();
     assert(current_len >= 2 && (current_len & (current_len - 1)) == 0);
     ATTRIBUTE_ASSUME(current_len >= 2 && (current_len & (current_len - 1)) == 0);
     if (current_len >= n) {
@@ -111,7 +112,7 @@ inline void ensure_roots_capacity(const size_t n) {
     const f64 kPi = std::acos(f64(-1));
 #endif
 
-    auto add_point = [&](size_t i) noexcept {
+    auto add_point = [&](std::size_t i) noexcept {
         assert(fft_roots.size() < fft_roots.capacity());
         ATTRIBUTE_ASSUME(fft_roots.size() < fft_roots.capacity());
         fft_roots.emplace_back(fft_roots[i]);
@@ -122,7 +123,7 @@ inline void ensure_roots_capacity(const size_t n) {
         fft_roots.emplace_back(std::cos(phi), std::sin(phi));
     };
     do {
-        for (size_t i = current_len / 2; i != current_len; i++) {
+        for (std::size_t i = current_len / 2; i != current_len; i++) {
             add_point(i);
         }
         current_len *= 2;
@@ -131,7 +132,11 @@ inline void ensure_roots_capacity(const size_t n) {
     assert(current_len == n);
 }
 
-inline void forward_backward_fft(complex* p1, complex* p2, const size_t n) {
+ATTRIBUTE_SIZED_ACCESS(read_write, 1, 3)
+ATTRIBUTE_SIZED_ACCESS(read_write, 2, 3)
+ATTRIBUTE_NONNULL(1)
+ATTRIBUTE_NONNULL(2)
+inline void forward_backward_fft(complex* p1, complex* p2, const std::size_t n) {
     assert(n > 0 && (n & (n - 1)) == 0);
     ATTRIBUTE_ASSUME(n > 0 && (n & (n - 1)) == 0);
 
@@ -167,8 +172,8 @@ inline void forward_backward_fft(complex* p1, complex* p2, const size_t n) {
      * / (4 * i) =
      */
     constexpr complex one_quat_i = complex(0, -0.25);  // 1 / (4 * i) == -i / 4
-    for (size_t j = 0; j < n; j++) {
-        size_t n_j      = (n - j) & (n - 1);  // <=> mod n because n is power of two
+    for (std::size_t j = 0; j < n; j++) {
+        std::size_t n_j      = (n - j) & (n - 1);  // <=> mod n because n is power of two
         complex p_w_j   = p1[j];
         complex p_w_n_j = std::conj(p1[n_j]);
         p2[j]           = (p_w_j + p_w_n_j) * (p_w_j - p_w_n_j) * one_quat_i;

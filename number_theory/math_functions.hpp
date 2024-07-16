@@ -1654,10 +1654,11 @@ public:
             }
             for (std::size_t prime_index = 0; std::size_t(primes[prime_index]) * i <= n;
                  prime_index++) {
-                least_prime_factor[primes[prime_index] * i] = primes[prime_index];
-                // assert(primes[prime_index] <= least_prime_factor[i]);
-                ATTRIBUTE_ASSUME(primes[prime_index] <= least_prime_factor[i]);
-                if (primes[prime_index] == least_prime_factor[i]) {
+                const auto p = primes[prime_index];
+                least_prime_factor[p * i] = primes[prime_index];
+                const auto lpf = least_prime_factor[i];
+                ATTRIBUTE_ASSUME(p <= lpf);
+                if (p == lpf) {
                     break;
                 }
             }
