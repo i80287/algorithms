@@ -1,187 +1,10 @@
-#include <bitset>
-#include <cassert>
-#include <cstddef>
-#include <cstdint>
-#include <iostream>
+#include "test_tools.hpp"
+#include "bitmatrix.hpp"
+
 #include <random>
+#include <iostream>
 
-#include "config_macros.hpp"
-
-/// @brief Transposes 8x8 matrix in `src` and puts it in into `dst`. `src` may
-/// be equal to `dst` (inplace transposition)
-/// @details See Hackers Delight for more info.
-/// @tparam AgainstMinorDiagonal
-/// @param src source 8x8 matrix
-/// @param dst destination 8x8 matrix
-template <bool AgainstMinorDiagonal = false>
-constexpr void transpose8(const uint8_t src[8], uint8_t dst[8]) noexcept {
-    uint64_t x = 0;
-
-    /**
-     * To unroll loops is important here (one can check it via godbolt)
-     *
-     * if AgainstMinorDiagonal == false, all 8 lines above can be done using 1
-     * instruction: mov %register_for_x, QWORD PTR[%register_with_src]
-     *
-     *  movq %register_for_x %register_with_src
-     *
-     * Otherwise, if AgainstMinorDiagonal == true, it can be done using 2 instructions:
-     *  mov %register_for_x, QWORD PTR[%register_with_src]
-     *  bswap %register_for_x
-     *
-     * Or using 1 instruction if target has `movbe`:
-     *  movbe %register_for_x, QWORD PTR[%register_with_src]
-     */
-    if constexpr (!AgainstMinorDiagonal) {
-        x = src[7];
-        x = (x << 8) | src[6];
-        x = (x << 8) | src[5];
-        x = (x << 8) | src[4];
-        x = (x << 8) | src[3];
-        x = (x << 8) | src[2];
-        x = (x << 8) | src[1];
-        x = (x << 8) | src[0];
-    } else {
-        x = src[0];
-        x = (x << 8) | src[1];
-        x = (x << 8) | src[2];
-        x = (x << 8) | src[3];
-        x = (x << 8) | src[4];
-        x = (x << 8) | src[5];
-        x = (x << 8) | src[6];
-        x = (x << 8) | src[7];
-    }
-
-    x = (x & 0xAA55AA55AA55AA55ULL) | ((x & 0x00AA00AA00AA00AAULL) << 7) |
-        ((x >> 7) & 0x00AA00AA00AA00AAULL);
-    x = (x & 0xCCCC3333CCCC3333ULL) | ((x & 0x0000CCCC0000CCCCULL) << 14) |
-        ((x >> 14) & 0x0000CCCC0000CCCCULL);
-    x = (x & 0xF0F0F0F00F0F0F0FULL) | ((x & 0x00000000F0F0F0F0ULL) << 28) |
-        ((x >> 28) & 0x00000000F0F0F0F0ULL);
-
-    if constexpr (!AgainstMinorDiagonal) {
-        dst[0] = uint8_t(x);
-        x >>= 8;
-        dst[1] = uint8_t(x);
-        x >>= 8;
-        dst[2] = uint8_t(x);
-        x >>= 8;
-        dst[3] = uint8_t(x);
-        x >>= 8;
-        dst[4] = uint8_t(x);
-        x >>= 8;
-        dst[5] = uint8_t(x);
-        x >>= 8;
-        dst[6] = uint8_t(x);
-        x >>= 8;
-        dst[7] = uint8_t(x);
-    } else {
-        dst[7] = uint8_t(x);
-        x >>= 8;
-        dst[6] = uint8_t(x);
-        x >>= 8;
-        dst[5] = uint8_t(x);
-        x >>= 8;
-        dst[4] = uint8_t(x);
-        x >>= 8;
-        dst[3] = uint8_t(x);
-        x >>= 8;
-        dst[2] = uint8_t(x);
-        x >>= 8;
-        dst[1] = uint8_t(x);
-        x >>= 8;
-        dst[0] = uint8_t(x);
-    }
-}
-
-/// @brief Transposes 32x32 matrix in `src` inplace.
-/// If AgainstMinorDiagonal = false, the function is equivalent to:
-///     for (std::size_t i = 0; i < 32; i++) {
-///         for (std::size_t j = i + 1; j < 32; j++) {
-///             auto aij = (src[i] & (1u << j)) >> j;
-///             auto aji = (src[j] & (1u << i)) >> i;
-///             src[i] &= ~(1u << j);
-///             src[i] |= aji << j;
-///             src[j] &= ~(1u << i);
-///             src[j] |= aij << i;
-///         }
-///     }
-/// @details See Hackers Delight for more info.
-/// @tparam AgainstMinorDiagonal
-/// @param src source 32x32 matrix
-template <bool AgainstMinorDiagonal = false>
-constexpr void transpose32(uint32_t src[32]) noexcept {
-    uint32_t m = 0x0000FFFFU;
-    /**
-     * mask m values are {
-     *  0x0000FFFF for j = 16
-     *  0x00FF00FF for j = 8
-     *  0x0F0F0F0F for j = 4
-     *  0x33333333 for j = 2
-     *  0x55555555 for j = 1
-     * }
-     */
-    for (std::size_t j = 16; j != 0; j >>= 1, m ^= (m << j)) {
-        for (std::size_t k = 0; k < 32; k = (k + j + 1) & ~j) {
-            if constexpr (!AgainstMinorDiagonal) {
-                uint32_t t = (src[k + j] ^ (src[k] >> j)) & m;
-                src[k + j] ^= t;
-                src[k] ^= (t << j);
-            } else {
-                uint32_t t = (src[k] ^ (src[k + j] >> j)) & m;
-                src[k] ^= t;
-                src[k + j] ^= (t << j);
-            }
-        }
-    }
-}
-
-/// @brief Transposes 32x32 matrix in `src` and puts it in into `dst`. `src` and
-/// `dst` can not overlap (otherwise, behaviour is undefined)
-/// @param src
-/// @param dst
-constexpr void transpose32(const uint32_t RESTRICT_QUALIFIER src[32],
-                           uint32_t RESTRICT_QUALIFIER dst[32]) noexcept {
-    if (likely(dst != src)) {
-        std::copy(&src[0], &src[32], &dst[0]);
-    }
-    transpose32(dst);
-}
-
-/// @brief Transposes 64x64 matrix in `src` inplace.
-/// @details See Hackers Delight for more info.
-/// @tparam AgainstMinorDiagonal
-/// @param src source 64x64 matrix
-template <bool AgainstMinorDiagonal = false>
-constexpr void transpose64(uint64_t src[64]) noexcept {
-    uint64_t m = 0x00000000FFFFFFFFULL;
-    /**
-     * mask m values are {
-     *  0x00000000FFFFFFFF for j = 32
-     *  0x0000FFFF0000FFFF for j = 16
-     *  0x00FF00FF00FF00FF for j = 8
-     *  0x0F0F0F0F0F0F0F0F for j = 4
-     *  0x3333333333333333 for j = 2
-     *  0x5555555555555555 for j = 1
-     * }
-     */
-    for (std::size_t j = 32; j != 0; j >>= 1, m ^= (m << j)) {
-        for (std::size_t k = 0; k < 64; k = (k + j + 1) & ~j) {
-            assert(k + j < 64);
-            if constexpr (!AgainstMinorDiagonal) {
-                uint64_t t = (src[k + j] ^ (src[k] >> j)) & m;
-                src[k + j] ^= t;
-                src[k] ^= (t << j);
-            } else {
-                uint64_t t = (src[k] ^ (src[k + j] >> j)) & m;
-                src[k] ^= t;
-                src[k + j] ^= (t << j);
-            }
-        }
-    }
-}
-
-constexpr bool test_8x8() {
+ATTRIBUTE_CONST constexpr bool test_8x8() {
     // clang-format off
     uint8_t a[8] = {
         0b00011000,
@@ -229,7 +52,7 @@ constexpr bool test_8x8() {
     return f1 && f2;
 }
 
-constexpr bool test_32x32() {
+ATTRIBUTE_CONST constexpr bool test_32x32() {
     // clang-format off
     uint32_t a[32] = {
         0b00011000000000000000000000000001U,
@@ -349,7 +172,7 @@ constexpr bool test_32x32() {
     return f1 && f2;
 }
 
-constexpr bool test_64x64() {
+ATTRIBUTE_CONST constexpr bool test_64x64() {
     // clang-format off
     uint64_t a[64] = {
         0b0000000000000000000000000000000000000000000000000000000000010101,
@@ -560,29 +383,23 @@ constexpr bool test_64x64() {
     transpose64(a);
 
     transpose64<true>(a);
-    bool f2 = std::equal(&a[0], &a[32], &b2[0]);
+    bool f2 = std::equal(&a[0], &a[64], &b2[0]);
 
-    class {
-    public:
-        constexpr uint64_t operator()() noexcept {
-            constexpr uint64_t A = std::minstd_rand0::multiplier;
-            constexpr uint64_t C = std::minstd_rand0::increment;
-            constexpr uint64_t M = std::minstd_rand0::modulus;
-            state                = (A * state + C) % M;
-            return state;
-        }
-
-    private:
-        uint64_t state = 872189u;
-    } gen;
+    auto random_gen = [random_state = uint64_t(872189)]() mutable constexpr noexcept {
+        constexpr uint64_t A = std::minstd_rand0::multiplier;
+        constexpr uint64_t C = std::minstd_rand0::increment;
+        constexpr uint64_t M = std::minstd_rand0::modulus;
+        random_state         = (A * random_state + C) % M;
+        return random_state;
+    };
 
     if (!std::is_constant_evaluated()) {
-        // Here we manually set too many operations for compile time check
+        // This test has too many operations for the compile time check
         uint64_t src[64] = {};
         static_assert(sizeof(a) == sizeof(src));
-        for (std::size_t iter = 1 << 20; iter > 0; iter--) {
+        for (std::size_t iter = 1u << 20; iter > 0; iter--) {
             for (std::size_t i = 0; i < 32; i++) {
-                uint64_t w   = gen();
+                uint64_t w   = random_gen();
                 a[i * 2]     = uint32_t(w);
                 a[i * 2 + 1] = uint32_t(w >> 32);
             }
@@ -605,29 +422,6 @@ constexpr bool test_64x64() {
     }
 
     return f1 && f2;
-}
-
-#include <bitset>
-
-void transpose_4096(std::bitset<4096> (&m)[4096]) {
-    assert(std::bit_cast<uintptr_t>(&m[0]) % 8 == 0);
-    assert(std::bit_cast<uintptr_t>(&m[4095]) % 8 == 0);
-    uint64_t tmp1[64]{};
-    uint64_t tmp2[64]{};
-    for (std::size_t i = 0; i < 64; i++) {
-        for (std::size_t j = i; j < 64; j++) {
-            for (std::size_t k = 0; k < 64; k++) {
-                tmp1[k] = *(std::bit_cast<const uint64_t*>(&m[i * 64 + k]) + j);
-                tmp2[k] = *(std::bit_cast<const uint64_t*>(&m[j * 64 + k]) + i);
-            }
-            transpose64(tmp1);
-            transpose64(tmp2);
-            for (std::size_t k = 0; k < 64; k++) {
-                *(std::bit_cast<uint64_t*>(&m[i * 64 + k]) + j) = tmp2[k];
-                *(std::bit_cast<uint64_t*>(&m[j * 64 + k]) + i) = tmp1[k];
-            }
-        }
-    }
 }
 
 int main() {
