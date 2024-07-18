@@ -1,11 +1,13 @@
 #pragma once
 
 #ifdef NDEBUG
-#warning "Can't test properly with NDEBUG macro defined (macro won't be undefined manually)"
+#warning("Can't test properly with NDEBUG macro defined (macro won't be undefined manually)")
 #endif
 
 #include <array>
+#include <cerrno>
 #include <cstdio>
+#include <cstring>
 #include <stdexcept>
 
 #include "config_macros.hpp"
@@ -20,12 +22,12 @@ template <class T>
 [[noreturn]] ATTRIBUTE_COLD inline void throw_impl(const char* message_format, T arg,
                                                    const char* file_name, uint32_t line,
                                                    const char* function_name) {
-    std::array<char, 1024> buffer;
+    std::array<char, 1024> buffer{};
     int bytes_written     = std::snprintf(buffer.data(), buffer.size(),
                                           "Check failed at %s:%u %s\nError messssage: ", file_name,
                                           line, function_name);
     size_t err_msg_offset = uint32_t(bytes_written);
-    if (bytes_written < 0 || err_msg_offset > buffer.size()) {
+    if (err_msg_offset > buffer.size()) {
         perror("std::snprintf");
         err_msg_offset = 0;
     }
@@ -102,11 +104,11 @@ struct Wrapper final {
 
 private:
     [[noreturn]] ATTRIBUTE_COLD static void ThrowOnFOpenFail(const char* fname, const char* mode) {
-        std::array<char, 1024> buffer;
+        std::array<char, 1024> buffer{};
         int bytes_written = std::snprintf(
             buffer.data(), buffer.size(),
-            "Wrapper::Wrapper(const char* fname, const char* mode): std::fopen(%s, %s) failed",
-            fname, mode);
+            "Wrapper::Wrapper(const char* fname, const char* mode): std::fopen(\"%s\", \"%s\") failed: %s",
+            fname, mode, strerror(errno));
         if (bytes_written < 0) [[unlikely]] {
             constexpr std::string_view msg =
                 "Wrapper::Wrapper(const char* fname,const char* mode): "
@@ -114,9 +116,7 @@ private:
             static_assert(msg.size() <= std::size(buffer),
                           "Wrapper::Wrapper(const char*,const char*)");
             std::char_traits<char>::copy(buffer.data(), msg.data(), msg.size());
-            perror(buffer.data());
         }
-        perror(buffer.data());
         throw std::runtime_error(buffer.data());
     }
 };

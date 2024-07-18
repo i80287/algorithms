@@ -1,16 +1,6 @@
 #ifndef CONFIG_MACROS_HPP
 #define CONFIG_MACROS_HPP 1
 
-#ifdef __has_include
-#if __has_include(<version>)
-#include <version>
-#elif __has_include(<ciso646>)
-#include <ciso646>
-#elif __has_include(<iso646.h>)
-#include <iso646.h>
-#endif
-#endif
-
 /* Test for gcc >= maj.min, as per __GNUC_PREREQ in glibc */
 #if defined(__GNUC__) && defined(__GNUC_MINOR__)
 #define CONFIG_GNUC_PREREQ(maj, min) ((__GNUC__ << 16) + __GNUC_MINOR__ >= ((maj) << 16) + (min))
@@ -70,12 +60,18 @@
 #define CONFIG_HAS_BUILTIN(name) 0
 #endif
 
+#if CONFIG_HAS_INCLUDE(<version>)
+#include <version>
+#elif CONFIG_HAS_INCLUDE(<ciso646>)
+#include <ciso646>
+#elif CONFIG_HAS_INCLUDE(<iso646.h>)
+#include <iso646.h>
+#endif
+
 /**
  * Restrict qualifier for the C++ (C has `restrict` keyword since C99)
  */
-#if defined(__GNUC__)
-#define RESTRICT_QUALIFIER __restrict__
-#elif defined(__clang__)
+#if defined(__GNUC__) || defined(__clang__)
 #define RESTRICT_QUALIFIER __restrict__
 #elif defined(_MSC_VER)
 #define RESTRICT_QUALIFIER __restrict

@@ -13,10 +13,8 @@ using namespace test_tools;
 static std::vector<uint64_t> read_primes() {
     std::vector<uint64_t> nums;
     nums.reserve(1065000zu);
-    Wrapper fin("u64-primes.txt", "r");
-    while (true) {
-        uint64_t n = 0;
-        switch (fscanf(fin.file, "%" PRIu64, &n)) {
+    for (Wrapper fin("u64-primes.txt", "r");;) {
+        switch (uint64_t n = 0; fscanf(fin.file, "%" PRIu64, &n)) {
             [[likely]] case 1:
                 nums.push_back(n);
                 break;
