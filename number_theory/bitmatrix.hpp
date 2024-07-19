@@ -149,7 +149,7 @@ constexpr void transpose8(uint8_t src[8]) noexcept {
     transpose8<AgainstMinorDiagonal>(src, src);
 }
 
-/// @brief Transposes 32x32 matrix @a src inplace.
+/// @brief Transposes 32x32 matrix @a src inplace
 /// @details See Hackers Delight for more info
 /// @tparam AgainstMinorDiagonal
 /// @param src source 32x32 matrix
@@ -183,8 +183,8 @@ constexpr void transpose32(uint32_t src[32]) noexcept {
     }
 }
 
-/// @brief Transposes 32x32 matrix @a src and puts it in into @a dst .
-///        @a src and @a dst may overlap.
+/// @brief Transposes 32x32 matrix @a src and puts it in into @a dst
+///        @a src and @a dst may overlap
 /// @tparam AgainstMinorDiagonal 
 /// @param src
 /// @param dst
@@ -201,10 +201,11 @@ constexpr void transpose32(const uint32_t src[32], uint32_t dst[32]) noexcept {
     transpose32(dst);
 }
 
-/// @brief Transposes 64x64 matrix in `src` inplace.
-/// @details See Hackers Delight for more info.
+/// @brief Transposes 64x64 matrix in @a src inplace
+/// @details See Hackers Delight for more info
 /// @tparam AgainstMinorDiagonal
 /// @param src source 64x64 matrix
+/// @note see @c transpose8(const uint8_t[8], uint8_t[8]) for the explanation of @a AgainstMinorDiagonal
 template <bool AgainstMinorDiagonal = false>
 ATTRIBUTE_ACCESS(read_write, 1)
 ATTRIBUTE_NONNULL(1)
@@ -237,104 +238,126 @@ constexpr void transpose64(uint64_t src[64]) noexcept {
 
 // clang-format on
 
-#include <cassert>
-
-inline void transpose_4096(std::bitset<4096> (&m)[4096]) noexcept {
-    assert(std::bit_cast<uintptr_t>(std::addressof(m[0])) % 8 == 0);
-    assert(std::bit_cast<uintptr_t>(std::addressof(m[4095])) % 8 == 0);
-    uint64_t tmp1[64]{};
-    uint64_t tmp2[64]{};
-    for (std::size_t i = 0; i < 64; i++) {
-        for (std::size_t j = i; j < 64; j++) {
-            for (std::size_t k = 0; k < 64; k++) {
-                tmp1[k] = *(std::bit_cast<const uint64_t*>(std::addressof(m[i * 64 + k])) + j);
-                tmp2[k] = *(std::bit_cast<const uint64_t*>(std::addressof(m[j * 64 + k])) + i);
-            }
-            transpose64(tmp1);
-            transpose64(tmp2);
-            for (std::size_t k = 0; k < 64; k++) {
-                *(std::bit_cast<uint64_t*>(std::addressof(m[i * 64 + k])) + j) = tmp2[k];
-                *(std::bit_cast<uint64_t*>(std::addressof(m[j * 64 + k])) + i) = tmp1[k];
-            }
-        }
-    }
-}
-
-template <std::size_t N>
 #if defined(__cpp_lib_constexpr_bitset) && __cpp_lib_constexpr_bitset >= 202207L
-constexpr
-#endif
-    inline auto
-    multiply_f2(const std::bitset<N> (&lhs)[N], const std::bitset<N> (&rhs)[N]) noexcept {
-    std::array<std::bitset<N>, N> result{};
-    for (std::size_t i = 0; i < N; i++) {
-        for (std::size_t j = 0; j < N; j++) {
-            if (lhs[i][j]) {
-                result[i] ^= rhs[j];
-            }
-        }
-    }
-    return result;
-}
-
-#if defined(__cpp_lib_constexpr_bitset) && __cpp_lib_constexpr_bitset >= 202207L
-#define CONSTEXPR_BITSET_CXX_23 constexpr
+#define CONSTEXPR_BITSET_OPS constexpr
 #else
-#define CONSTEXPR_BITSET_CXX_23
+#define CONSTEXPR_BITSET_OPS
+#endif
+#if defined(__cpp_constexpr) && __cpp_constexpr >= 202306L
+#define CONSTEXPR_POINTER_CAST constexpr
+#else
+#define CONSTEXPR_POINTER_CAST
 #endif
 
+namespace detail::square_matrix_detail {
+
+inline constexpr std::size_t kAlignmentBits = 64;
+
+}  // namespace detail::square_matrix_detail
+
 template <std::size_t N>
-class square_bitmatrix {
+class alignas(detail::square_matrix_detail::kAlignmentBits) square_bitmatrix {
 private:
-    static constexpr std::size_t kAlignmentBits = 1 << 6;
-    static constexpr std::size_t NBits          = (N + kAlignmentBits - 1) & ~kAlignmentBits;
+    static constexpr std::size_t kAlignmentBits = detail::square_matrix_detail::kAlignmentBits;
+    static constexpr std::size_t kBits          = (N + kAlignmentBits - 1) & ~kAlignmentBits;
 
 public:
-    using container_type         = typename std::array<std::bitset<NBits>, NBits>;
-    using value_type             = typename container_type::value_type;
-    using pointer                = typename container_type::pointer;
-    using const_pointer          = typename container_type::const_pointer;
-    using reference              = typename container_type::reference;
-    using const_reference        = typename container_type::const_reference;
-    using iterator               = typename container_type::iterator;
-    using const_iterator         = typename container_type::const_iterator;
-    using size_type              = typename container_type::size_type;
-    using difference_type        = typename container_type::difference_type;
-    using reverse_iterator       = typename container_type::reverse_iterator;
-    using const_reverse_iterator = typename container_type::const_reverse_iterator;
+    using matrix_type            = typename std::array<std::bitset<kBits>, kBits>;
+    using value_type             = typename matrix_type::value_type;
+    using pointer                = typename matrix_type::pointer;
+    using const_pointer          = typename matrix_type::const_pointer;
+    using reference              = typename matrix_type::reference;
+    using const_reference        = typename matrix_type::const_reference;
+    using iterator               = typename matrix_type::iterator;
+    using const_iterator         = typename matrix_type::const_iterator;
+    using size_type              = typename matrix_type::size_type;
+    using difference_type        = typename matrix_type::difference_type;
+    using reverse_iterator       = typename matrix_type::reverse_iterator;
+    using const_reverse_iterator = typename matrix_type::const_reverse_iterator;
     using row_type               = value_type;
 
-    constexpr reference operator[](size_type index) noexcept {
+    [[nodiscard]] constexpr reference operator[](size_type index) noexcept {
         return data_[index];
     }
-    constexpr const_reference operator[](size_type index) const noexcept {
+    [[nodiscard]] constexpr const_reference operator[](size_type index) const noexcept {
         return data_[index];
     }
-    CONSTEXPR_BITSET_CXX_23 auto operator[](std::pair<size_type, size_type> indexes) noexcept {
+    [[nodiscard]] CONSTEXPR_BITSET_OPS auto operator[](
+        std::pair<size_type, size_type> indexes) noexcept {
         return data_[indexes.first][indexes.second];
     }
-    constexpr bool operator[](std::pair<size_type, size_type> indexes) const noexcept {
+    [[nodiscard]] constexpr bool operator[](
+        std::pair<size_type, size_type> indexes) const noexcept {
         return data_[indexes.first][indexes.second];
     }
 
-    CONSTEXPR_BITSET_CXX_23 square_bitmatrix& operator*=(const square_bitmatrix& other) noexcept {
-        for (auto& row : data_) {
-            row_type row_mult(row);
-            for (std::size_t j = 0; j < N; j++) {
-                if (row[j]) {
-                    row_mult ^= other.data_[j];
-                }
-            }
-            row = row_mult;
-        }
+    CONSTEXPR_BITSET_OPS square_bitmatrix& operator*=(const square_bitmatrix& other) noexcept {
+        do_multiply_lhs_inplace(data_, other.data_);
         return *this;
     }
-    ATTRIBUTE_PURE CONSTEXPR_BITSET_CXX_23 square_bitmatrix operator*(const square_bitmatrix& other) const noexcept {
+    [[nodiscard]] ATTRIBUTE_PURE CONSTEXPR_BITSET_OPS square_bitmatrix
+    operator*(const square_bitmatrix& other) const noexcept {
         square_bitmatrix copy(*this);
         copy *= other;
         return copy;
     }
+    CONSTEXPR_POINTER_CAST square_bitmatrix& transpose_inplace() noexcept {
+        do_transpose_inplace(data_);
+        return *this;
+    }
+    [[nodiscard]] ATTRIBUTE_PURE CONSTEXPR_POINTER_CAST square_bitmatrix
+    transpose() const noexcept {
+        square_bitmatrix copy(*this);
+        copy.transpose_inplace();
+        return copy;
+    }
+    [[nodiscard]] ATTRIBUTE_PURE CONSTEXPR_POINTER_CAST square_bitmatrix T() const noexcept {
+        return transpose();
+    }
 
 private:
-    container_type data_{};
+    CONSTEXPR_BITSET_OPS void do_multiply_lhs_inplace(matrix_type& lhs,
+                                                      const matrix_type& rhs) noexcept {
+        auto iter           = lhs.begin();
+        const auto iter_end = iter + N;
+        for (; iter != iter_end; ++iter) {
+            const row_type& row = *iter;
+            row_type row_mult(row);
+            for (std::size_t j = 0; j < N; j++) {
+                if (row[j]) {
+                    row_mult ^= rhs[j];
+                }
+            }
+            *iter = row_mult;
+        }
+    }
+    CONSTEXPR_POINTER_CAST void do_transpose_inplace(matrix_type& matrix) noexcept {
+        static_assert(kAlignmentBits == 64);
+        uint64_t tmp1[kAlignmentBits]{};
+        uint64_t tmp2[kAlignmentBits]{};
+
+        for (std::size_t i = 0; i < kBits / kAlignmentBits; i++) {
+            for (std::size_t j = i; j < kBits / kAlignmentBits; j++) {
+                for (std::size_t k = 0; k < kAlignmentBits; k++) {
+                    tmp1[k] = std::bit_cast<const uint64_t*>(
+                        std::addressof(matrix[i * kAlignmentBits + k]))[j];
+                    tmp2[k] = std::bit_cast<const uint64_t*>(
+                        std::addressof(matrix[j * kAlignmentBits + k]))[i];
+                }
+                transpose64(tmp1);
+                transpose64(tmp2);
+                for (std::size_t k = 0; k < 64; k++) {
+                    std::bit_cast<uint64_t*>(std::addressof(matrix[i * kAlignmentBits + k]))[j] =
+                        tmp2[k];
+                    std::bit_cast<uint64_t*>(std::addressof(matrix[j * kAlignmentBits + k]))[i] =
+                        tmp1[k];
+                }
+            }
+        }
+    }
+
+    matrix_type data_{};
 };
+
+#undef CONSTEXPR_POINTER_CAST
+#undef CONSTEXPR_BITSET_OPS
