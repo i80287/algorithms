@@ -300,6 +300,19 @@ private:
     static constexpr std::size_t kBits          = (N + kAlignmentBits - 1) & ~(kAlignmentBits - 1);
     static_assert(sizeof(std::bitset<N>) == sizeof(std::bitset<kBits>));
 
+    template <class TFunction>
+    static constexpr bool is_noexcept_index_fn() noexcept {
+        return noexcept(std::declval<TFunction>()(size_type{}));
+    }
+    template <class TFunction>
+    static constexpr bool is_noexcept_coords_fn() noexcept {
+        return noexcept(std::declval<TFunction>()(size_type{}, size_type{}));
+    }
+    template <class TFunction>
+    static constexpr bool is_noexcept_bit_reference_fn() noexcept {
+        return noexcept(std::declval<TFunction>()(std::declval<bit_reference>()));
+    }
+
 public:
     using matrix_type            = typename std::array<std::bitset<N>, kBits>;
     using value_type             = typename matrix_type::value_type;
@@ -627,18 +640,6 @@ private:
 #else
         false;
 #endif
-    template <class TFunction>
-    static constexpr bool is_noexcept_index_fn() noexcept {
-        return noexcept(std::declval<TFunction>()(size_type{}));
-    }
-    template <class TFunction>
-    static constexpr bool is_noexcept_coords_fn() noexcept {
-        return noexcept(std::declval<TFunction>()(size_type{}, size_type{}));
-    }
-    template <class TFunction>
-    static constexpr bool is_noexcept_bit_reference_fn() noexcept {
-        return noexcept(std::declval<TFunction>()(std::declval<bit_reference>()));
-    }
     template <class TFunction>
     ATTRIBUTE_ALWAYS_INLINE static constexpr void for_each_row_set_bit(
         const row_type& row, TFunction fn) noexcept(is_noexcept_index_fn<TFunction>()) {
