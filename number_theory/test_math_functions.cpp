@@ -749,13 +749,18 @@ static_assert(least_bit_set(0b10000000000) == 0b10000000000, "least_bit_set");
 static_assert(least_bit_set(0b100000000u) == 0b100000000u, "least_bit_set");
 static_assert(least_bit_set(0b1000000000u) == 0b1000000000u, "least_bit_set");
 static_assert(least_bit_set(0b10000000000u) == 0b10000000000u, "least_bit_set");
-static_assert(least_bit_set(0b1000000000000000000000000000000000000000000000000000000000000000ull) == 0b1000000000000000000000000000000000000000000000000000000000000000ull, "least_bit_set");
+static_assert(
+    least_bit_set(0b1000000000000000000000000000000000000000000000000000000000000000ull) ==
+        0b1000000000000000000000000000000000000000000000000000000000000000ull,
+    "least_bit_set");
 static_assert(least_bit_set(0b110101010101010101011001) == 0b1, "least_bit_set");
 static_assert(least_bit_set(0b1010101011001101011100010100000ll) == 0b100000ll, "least_bit_set");
-static_assert(least_bit_set(0b1010111001010101101010110101001101011100110011000ll) == 0b1000ll, "least_bit_set");
+static_assert(least_bit_set(0b1010111001010101101010110101001101011100110011000ll) == 0b1000ll,
+              "least_bit_set");
 static_assert(least_bit_set(0b110101010101010101011001u) == 0b1u, "least_bit_set");
 static_assert(least_bit_set(0b1010101011001101011100010100000llu) == 0b100000llu, "least_bit_set");
-static_assert(least_bit_set(0b1010111001010101101010110101001101011100110011000llu) == 0b1000llu, "least_bit_set");
+static_assert(least_bit_set(0b1010111001010101101010110101001101011100110011000llu) == 0b1000llu,
+              "least_bit_set");
 
 static_assert(log2_floor(uint32_t(0)) == uint32_t(-1), "log2_floor");
 static_assert(log2_floor(uint32_t(1)) == 0, "log2_floor");
@@ -1266,8 +1271,8 @@ static void test_prime_bitarrays() {
     log_tests_started();
 
     constexpr size_t N                    = 1000;
-    std::vector<bool> primes_as_bvector   = math_functions::primes_sieve_as_bvector(N);
-    const std::bitset<N + 1>& primes_bset = math_functions::primes_sieve_as_bitset<N>();
+    std::vector primes_as_bvector         = math_functions::dynamic_primes_sieve(N);
+    const std::bitset<N + 1>& primes_bset = math_functions::fixed_primes_sieve<N>();
     constexpr uint32_t primes[]           = {
         2,   3,   5,   7,   11,  13,  17,  19,  23,  29,  31,  37,  41,  43,  47,  53,   59,
         61,  67,  71,  73,  79,  83,  89,  97,  101, 103, 107, 109, 113, 127, 131, 137,  139,
@@ -1298,7 +1303,7 @@ static void test_factorizer() {
 
     constexpr auto N = uint32_t(1e7);
     Factorizer fact(N);
-    const auto is_prime = primes_sieve_as_bvector(N);
+    const auto is_prime = dynamic_primes_sieve(N);
     assert(is_prime.size() == N + 1);
     for (std::uint32_t i = 0; i <= N; i++) {
         assert(is_prime[i] == fact.is_prime(i));
