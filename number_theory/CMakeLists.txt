@@ -15,38 +15,19 @@ list(APPEND TestFilenames test_math_functions)
 set(TEST_COMPILE_OPTIONS)
 set(TEST_COMPILE_DEFINITIONS)
 
-if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
-    if (CMAKE_CXX_COMPILER_FRONTEND_VARIANT STREQUAL "MSVC")
-    elseif (CMAKE_CXX_COMPILER_FRONTEND_VARIANT STREQUAL "GNU")
-        if (NOT (CMAKE_BUILD_TYPE STREQUAL "Debug"))
-            set(TEST_COMPILE_OPTIONS ${TEST_COMPILE_OPTIONS} -UNDEBUG)
-        endif()
-
-        set(TEST_COMPILE_DEFINITIONS
-            ${TEST_COMPILE_DEFINITIONS}
-            _LIBCPP_ENABLE_ASSERTIONS=1)
-    elseif (CMAKE_CXX_COMPILER_FRONTEND_VARIANT STREQUAL "AppleClang")
-    endif()
-elseif (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-    if (NOT (CMAKE_BUILD_TYPE STREQUAL "Debug"))
-        set(TEST_COMPILE_OPTIONS ${TEST_COMPILE_OPTIONS} -UNDEBUG)
-    endif()
-
+function(configure_gcc_or_clang_gcc_options)
     set(TEST_COMPILE_OPTIONS
         ${TEST_COMPILE_OPTIONS}
-        -fstack-protector-all
-        -mshstk
+        -fstack-protector-strong
         -fno-omit-frame-pointer
+        -mshstk
         -Wall
         -Wextra
-        -Wlogical-op
         -Wcast-qual
         -Wpedantic
-        -Wshift-overflow=2
-        -Wduplicated-cond
+        -Wshift-overflow
         -Wunused
         -Wconversion
-        -Wunsafe-loop-optimizations
         -Wshadow
         -Wnull-dereference
         -Wundef
@@ -55,18 +36,49 @@ elseif (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
         -Wmissing-noreturn
         -Wunreachable-code
         -Wcast-align
-        -Warray-bounds=2
-        -Wformat=2)
-
+        -Warray-bounds
+        -Wformat=2
+        PARENT_SCOPE)
+    if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+        set(TEST_COMPILE_OPTIONS
+            ${TEST_COMPILE_OPTIONS}
+            -Wlogical-op
+            -Wunsafe-loop-optimizations
+            -Wduplicated-cond
+            PARENT_SCOPE)
+    endif()
+    if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+        set(TEST_COMPILE_DEFINITIONS
+            ${TEST_COMPILE_DEFINITIONS}
+            _LIBCPP_ENABLE_ASSERTIONS=1
+            PARENT_SCOPE)
+    endif()
     set(TEST_COMPILE_DEFINITIONS
         ${TEST_COMPILE_DEFINITIONS}
-        _GLIBCXX_DEBUG
-        _GLIBCXX_DEBUG_PEDANTIC
-        _GLIBCXX_CONCEPT_CHECKS)
+        _GLIBCXX_DEBUG=1
+        _GLIBCXX_DEBUG_PEDANTIC=1
+        _GLIBCXX_CONCEPT_CHECKS=1
+        PARENT_SCOPE)
+    set(TEST_COMPILE_OPTIONS
+        ${TEST_COMPILE_OPTIONS}
+        -UNDEBUG
+        PARENT_SCOPE)
+endfunction()
 
+if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+    if (CMAKE_CXX_COMPILER_FRONTEND_VARIANT STREQUAL "MSVC")
+    elseif (CMAKE_CXX_COMPILER_FRONTEND_VARIANT STREQUAL "GNU")
+        configure_gcc_or_clang_gcc_options()
+    elseif (CMAKE_CXX_COMPILER_FRONTEND_VARIANT STREQUAL "AppleClang")
+    endif()
+elseif (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+    configure_gcc_or_clang_gcc_options()
 elseif (CMAKE_CXX_COMPILER_ID STREQUAL "Intel")
 elseif (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
 endif()
+
+message(TEST_COMPILE_DEFINITIONS=${TEST_COMPILE_DEFINITIONS})
+message(TEST_COMPILE_OPTIONS=${TEST_COMPILE_OPTIONS})
 
 foreach(target_filename ${TestFilenames})
     string(CONCAT target_cpp_filename ${target_filename} ".cpp")
