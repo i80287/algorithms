@@ -28,7 +28,7 @@
 #include <type_traits>
 #include <utility>
 #include <vector>
-
+#include <cfenv>
 #include "config_macros.hpp"
 
 #if CONFIG_HAS_AT_LEAST_CXX_20
@@ -226,21 +226,18 @@ ATTRIBUTE_CONST inline I128_CONSTEXPR uint64_t isqrt(uint128_t n) noexcept {
 #endif
 
 ATTRIBUTE_CONST constexpr uint32_t icbrt(uint32_t n) noexcept {
+    // Can't use std::cbrt(double(n)) here because uint32_t(std::cbrt(3375)) = 14
     uint32_t y = 0;
-    if (config_is_constant_evaluated()) {
-        /**
-         * See Hackers Delight Chapter 11.
-         */
-        for (int32_t s = 30; s >= 0; s -= 3) {
-            y *= 2;
-            uint32_t b = (3 * y * (y + 1) | 1) << s;
-            if (n >= b) {
-                n -= b;
-                y++;
-            }
+    /**
+     * See Hackers Delight Chapter 11.
+     */
+    for (int32_t s = 30; s >= 0; s -= 3) {
+        y *= 2;
+        uint32_t b = (3 * y * (y + 1) | 1) << s;
+        if (n >= b) {
+            n -= b;
+            y++;
         }
-    } else {
-        y = static_cast<uint32_t>(std::cbrt(static_cast<double>(n)));
     }
     // 1625^3 = 4291015625 < 2^32 - 1 = 4294967295 < 4298942376 = 1626^3
     ATTRIBUTE_ASSUME(y <= 1625u);
