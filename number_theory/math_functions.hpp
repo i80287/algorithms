@@ -1145,6 +1145,27 @@ ATTRIBUTE_CONST constexpr uint64_t nearest_pow2_ge(uint64_t n) noexcept {
     return uint64_t(1ull) << (k - uint32_t(countl_zero(n | 1)) - ((n & (n - 1)) == 0));
 }
 
+/// @brief If @a n != 0, return number that is power of 2 and
+///         whose only bit is the lowest bit set in the @a n
+///        Otherwise, return 0
+/// @tparam TInt 
+/// @param[in] n 
+/// @return 
+template <class TInt>
+ATTRIBUTE_CONST constexpr TInt least_bit_set(TInt n) noexcept {
+    namespace helper_ns =
+#ifdef INTEGERS_128_BIT_HPP
+    type_traits_helper_int128_t;
+#else
+    std;
+#endif
+    static_assert(helper_ns::is_integral_v<TInt>, "integral type expected");
+    using TUInt = helper_ns::make_unsigned_t<TInt>;
+    using TUIntAtLeastUInt = std::common_type_t<TUInt, uint32_t>;
+    auto unsigned_n = static_cast<TUIntAtLeastUInt>(static_cast<TUInt>(n));
+    return static_cast<TInt>(unsigned_n & -unsigned_n);
+}
+
 ATTRIBUTE_CONST constexpr uint32_t base_2_len(uint32_t n) noexcept {
     // " | 1" operation does not affect answer for all
     //  numbers except n = 0. For n = 0 answer is 1.
