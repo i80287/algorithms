@@ -10,6 +10,7 @@ list(APPEND TestFilenames test_is_prime_bpsw)
 list(APPEND TestFilenames test_kronecker_symbol)
 list(APPEND TestFilenames test_long_int)
 list(APPEND TestFilenames test_math_functions)
+list(APPEND TestFilenames test_bitmatrix)
 
 # Empty by default
 set(TEST_COMPILE_OPTIONS)

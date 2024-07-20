@@ -1,10 +1,16 @@
-#include "test_tools.hpp"
-#include "bitmatrix.hpp"
-
-#include <random>
+#include <cassert>
 #include <iostream>
+#include <random>
 
-ATTRIBUTE_CONST constexpr bool test_8x8() {
+#include "bitmatrix.hpp"
+#include "test_tools.hpp"
+
+ATTRIBUTE_CONST
+#if CONFIG_HAS_AT_LEAST_CXX_20
+constexpr
+#endif
+    bool
+    test_transpose_8x8() {
     // clang-format off
     uint8_t a[8] = {
         0b00011000,
@@ -52,7 +58,12 @@ ATTRIBUTE_CONST constexpr bool test_8x8() {
     return f1 && f2;
 }
 
-ATTRIBUTE_CONST constexpr bool test_32x32() {
+ATTRIBUTE_CONST
+#if CONFIG_HAS_AT_LEAST_CXX_20
+constexpr
+#endif
+    bool
+    test_transpose_32x32() {
     // clang-format off
     uint32_t a[32] = {
         0b00011000000000000000000000000001U,
@@ -172,7 +183,12 @@ ATTRIBUTE_CONST constexpr bool test_32x32() {
     return f1 && f2;
 }
 
-ATTRIBUTE_CONST constexpr bool test_64x64() {
+ATTRIBUTE_CONST
+#if CONFIG_HAS_AT_LEAST_CXX_20
+constexpr
+#endif
+    bool
+    test_transpose_64x64() {
     // clang-format off
     uint64_t a[64] = {
         0b0000000000000000000000000000000000000000000000000000000000010101,
@@ -393,7 +409,7 @@ ATTRIBUTE_CONST constexpr bool test_64x64() {
         return random_state;
     };
 
-    if (!std::is_constant_evaluated()) {
+    if (!config_is_constant_evaluated()) {
         // This test has too many operations for the compile time check
         uint64_t src[64] = {};
         static_assert(sizeof(a) == sizeof(src));
@@ -424,9 +440,64 @@ ATTRIBUTE_CONST constexpr bool test_64x64() {
     return f1 && f2;
 }
 
+#if CONFIG_HAS_AT_LEAST_CXX_20
+template <class TWordType>
+inline void test_for_word_type() {
+    auto for_size = []<std::size_t Size>() {
+        const auto m = square_bitmatrix<Size, TWordType>::identity();
+        auto n       = m * m;
+        assert(n == m);
+        assert(n.any());
+        assert(!n.none());
+        if constexpr (Size >= 2) {
+            assert(!n.all());
+        } else {
+            assert(n.all());
+        }
+        assert(n.count() == Size);
+        n.for_each_set_bit([](auto i, auto j) { assert(i == j); });
+        n.reset();
+        assert(!n.any());
+        assert(n.none());
+        assert(!n.all());
+        assert(n.count() == 0);
+        n.for_each_set_bit([](auto, auto) { assert(false); });
+    };
+    for_size.template operator()<1>();
+    for_size.template operator()<2>();
+    for_size.template operator()<7>();
+    for_size.template operator()<8>();
+    for_size.template operator()<9>();
+    for_size.template operator()<15>();
+    for_size.template operator()<16>();
+    for_size.template operator()<17>();
+    for_size.template operator()<31>();
+    for_size.template operator()<32>();
+    for_size.template operator()<33>();
+    for_size.template operator()<63>();
+    for_size.template operator()<64>();
+    for_size.template operator()<65>();
+    for_size.template operator()<127>();
+    for_size.template operator()<128>();
+    for_size.template operator()<129>();
+    for_size.template operator()<255>();
+    for_size.template operator()<256>();
+    for_size.template operator()<257>();
+}
+#endif
+
 int main() {
-    static_assert(test_8x8());
-    static_assert(test_32x32());
-    static_assert(test_64x64());
-    assert(test_64x64());
+#if CONFIG_HAS_AT_LEAST_CXX_20
+    static_assert(test_transpose_8x8());
+    static_assert(test_transpose_32x32());
+    static_assert(test_transpose_64x64());
+#endif
+    assert(test_transpose_8x8());
+    assert(test_transpose_32x32());
+    assert(test_transpose_64x64());
+#if CONFIG_HAS_AT_LEAST_CXX_20
+    test_for_word_type<std::uint8_t>();
+    test_for_word_type<std::uint32_t>();
+    test_for_word_type<std::uint64_t>();
+#endif
 }
