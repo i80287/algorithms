@@ -91,7 +91,12 @@ ATTRIBUTE_ALWAYS_INLINE inline void log_tests_started_impl(const char* function_
 struct Wrapper final {
     FILE* const file;
     Wrapper(const char* fname, const char* mode) : file(std::fopen(fname, mode)) {
-        if (file == nullptr) [[unlikely]] {
+#if CONFIG_HAS_AT_LEAST_CXX_20
+        if (file == nullptr) [[unlikely]]
+#else
+        if (unlikely(file == nullptr))
+#endif
+        {
             ThrowOnFOpenFail(fname, mode);
         }
     }
@@ -110,7 +115,12 @@ private:
                                           "Wrapper::Wrapper(const char* fname, const char* mode): "
                                           "std::fopen(\"%s\", \"%s\") failed: %s",
                                           fname, mode, std::strerror(errno));
-        if (bytes_written < 0) [[unlikely]] {
+#if CONFIG_HAS_AT_LEAST_CXX_20
+        if (bytes_written < 0) [[unlikely]]
+#else
+        if (bytes_written < 0)
+#endif
+        {
             constexpr std::string_view msg =
                 "Wrapper::Wrapper(const char* fname,const char* mode): "
                 "std::snprintf failed after std::fopen failed";
