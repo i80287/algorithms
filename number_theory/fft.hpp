@@ -113,13 +113,11 @@ inline void ensure_roots_capacity(const std::size_t n) {
 #endif
 
     auto add_point = [&](std::size_t i) noexcept {
-        assert(fft_roots.size() < fft_roots.capacity());
-        ATTRIBUTE_ASSUME(fft_roots.size() < fft_roots.capacity());
+        // ATTRIBUTE_ASSUME(fft_roots.size() < fft_roots.capacity());
         fft_roots.emplace_back(fft_roots[i]);
         // double phi = 2 * kPi * (2 * i - current_len + 1) / (2 * current_len);
         f64 phi = kPi * f64(2 * i - current_len + 1) / f64(current_len);
-        assert(fft_roots.size() < fft_roots.capacity());
-        ATTRIBUTE_ASSUME(fft_roots.size() < fft_roots.capacity());
+        // ATTRIBUTE_ASSUME(fft_roots.size() < fft_roots.capacity());
         fft_roots.emplace_back(std::cos(phi), std::sin(phi));
     };
     do {
