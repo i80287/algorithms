@@ -185,7 +185,7 @@
  *
  *  memory_argument_pos >= 1
  *  range_size_argument_pos >= 1
- * 
+ *
  *  See https://gcc.gnu.org/onlinedocs/gcc/Common-Function-Attributes.html for more info
  */
 #if CONFIG_GNUC_PREREQ(10, 0)
@@ -322,5 +322,22 @@
 #if !defined(CONFIG_BYTE_ORDER_LITTLE_ENDIAN) || !defined(CONFIG_BYTE_ORDER_BIG_ENDIAN)
 #error Unable to determine endian
 #endif /* Check we found an endianness correctly. */
+
+#if CONFIG_HAS_INCLUDE(<type_traits>)
+#include <type_traits>
+#endif
+
+ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_CONST constexpr bool config_is_constant_evaluated() noexcept {
+#if defined(__cpp_lib_is_constant_evaluated) && __cpp_lib_is_constant_evaluated >= 201811L && \
+    CONFIG_HAS_INCLUDE(<type_traits>)
+    return std::is_constant_evaluated();
+#else
+#if CONFIG_HAS_BUILTIN(__builtin_is_constant_evaluated)
+    return __builtin_is_constant_evaluated();
+#else
+    return false;
+#endif
+#endif
+}
 
 #endif  // !CONFIG_MACROS_HPP
