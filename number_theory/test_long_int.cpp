@@ -434,25 +434,25 @@ static void TestLongIntSquare() {
     constexpr uint64_t K = 8192;
     for (uint32_t i = 0; i <= K; i++) {
         n = i;
-        n.Square();
+        n.SquareInplace();
         assert(n == i * i);
     }
 
     for (uint32_t i = uint32_t(-1) - K; i != 0; i++) {
         n = i;
-        n.Square();
+        n.SquareInplace();
         assert(n == uint64_t(i) * i);
     }
 
     for (uint64_t i = uint64_t(-1) - K; i != 0; i++) {
         n = i;
-        n.Square();
+        n.SquareInplace();
         assert(n == uint128_t(i) * i);
     }
 
     for (uint32_t p = 32; p <= 96; p += 32) {
         n = uint128_t(1) << p;
-        n.Square();
+        n.SquareInplace();
         assert(n.size_ == int32_t((p + p) / 32 + 1));
         for (std::size_t i = 0; i < (p + p) / 32; i++) {
             assert(n[i] == 0);
@@ -463,7 +463,7 @@ static void TestLongIntSquare() {
     n.set_string(
         "5210644015679228794060694325390955853335898483908056458352183851018372"
         "555735221");
-    n.Square();
+    n.SquareInplace();
     LongInt m(
         "2715081105813375912663740062136683840750740328631800602665129147391424"
         "5617262278768667220143322390759183606834362732983828281970077858087036"
@@ -474,7 +474,7 @@ static void TestLongIntSquare() {
         "3987458973628574634853764897536498753648546347568931275834617531694764"
         "8753619457374157823617426913817847816718871267134057345147516847576813"
         "468751364056130456875613458136745");
-    n.Square();
+    n.SquareInplace();
     m.set_string(
         "1589982906637104586529079283861021897318944415573791408939111302044687"
         "2962918001208253201768214465836884044728300271809369841097032223695932"
@@ -487,7 +487,7 @@ static void TestLongIntSquare() {
         "5387142880920439806100373072696674167138705550241027216564196797793749"
         "2381352744656633329902311958853296032765516041667295265055226543806948"
         "0844921279178590685230852805810043617124500309990368055562957");
-    n.Square();
+    n.SquareInplace();
     m.set_string(
         "2902130841945177589665162016449731365749359124301015936787287192073762"
         "3928354379418542107057097772342111195376512765827019338736271117291725"
@@ -501,7 +501,7 @@ static void TestLongIntSquare() {
     std::string long_ten_pow(k + 1, '0');
     long_ten_pow[0] = '1';
     n.set_string(long_ten_pow);
-    n.Square();
+    n.SquareInplace();
 
     std::string long_ten_pow_square(2 * k + 1, '0');
     long_ten_pow_square[0] = '1';
@@ -957,7 +957,7 @@ static void TestToString() {
     constexpr std::size_t k             = std::size_t(1e6);
     constexpr std::size_t kSquareDigits = 2 * k;
     n.set_string(std::string(k, '9'));
-    n.Square();
+    n.SquareInplace();
 
     std::string ans(kSquareDigits, '\0');
     std::memset(&ans[0], '9', (k - 1) * sizeof(char));
@@ -1233,11 +1233,60 @@ static void TestDecimal() {
     }
 }
 
+static void TestToIntTypes() {
+    test_tools::log_tests_started();
+    constexpr uint32_t kC = 1000000;
+
+    LongInt n(LongInt::Reserve(4));
+    auto test = [&](auto i) {
+        n = i;
+        if constexpr (sizeof(i) <= sizeof(uint32_t)) {
+            assert(n.fits_in_uint32());
+            assert(n.to_uint32() == i);
+            uint32_t j = n;
+            if constexpr (sizeof(i) == 4) {
+                if (i != j) {
+                    printf("%u %u %zu %d\n", i, j, n.USize(), n.size());
+                }
+            }
+            assert(j == i);
+        }
+        if constexpr (sizeof(i) <= sizeof(uint64_t)) {
+            assert(n.fits_in_uint64());
+            assert(n.to_uint64() == i);
+            uint64_t j = n;
+            assert(j == i);
+        }
+        if constexpr (sizeof(i) <= sizeof(uint128_t)) {
+            assert(n.fits_in_uint128());
+            assert(n.to_uint128() == i);
+            uint128_t j = n;
+            assert(j == i);
+        }
+    };
+    for (uint32_t i = 0; i <= kC; i++) {
+        test(i);
+    }
+    for (uint32_t i = uint32_t(-1) - kC; i != 0; i++) {
+        test(i);
+    }
+    for (uint64_t i = 0; i <= kC; i++) {
+        test(i);
+    }
+    for (uint64_t i = uint64_t(-1) - kC; i != 0; i++) {
+        test(i);
+    }
+    for (uint128_t i = 0; i <= kC; i++) {
+        test(i);
+    }
+    for (uint128_t i = uint128_t(-1) - kC; i != 0; i++) {
+        test(i);
+    }
+}
+
 }  // namespace long_int_tests
 
 int main() {
-    LongInt n = 0;
-    n /= uint32_t(0);
     using namespace long_int_tests;
     TestOperatorEqualsInt();
     TestUIntMult();
@@ -1251,6 +1300,7 @@ int main() {
     TestDecimal();
     TestSetString();
     TestToString();
+    TestToIntTypes();
 
     // std::ios::sync_with_stdio(false);
     // std::cin.tie(nullptr);
