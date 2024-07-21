@@ -213,6 +213,18 @@
 #define ATTRIBUTE_LIFETIME_BOUND
 #endif
 
+#if defined(__cpp_lib_unreachable) && __cpp_lib_unreachable >= 202202L
+#define CONFIG_UNREACHABLE() std::unreachable()
+#elif CONFIG_HAS_BUILTIN(__builtin_unreachable)
+#define CONFIG_UNREACHABLE() __builtin_unreachable()
+#elif CONFIG_HAS_BUILTIN(__builtin_assume)
+#define CONFIG_UNREACHABLE() __builtin_assume(false)
+#elif CONFIG_GNUC_PREREQ(13, 0) && CONFIG_HAS_ATTRIBUTE(assume)
+#define CONFIG_UNREACHABLE() __attribute__((assume(false)))
+#elif CONFIG_HAS_AT_LEAST_CXX_23 && CONFIG_HAS_CPP_ATTRIBUTE(assume)
+#define CONFIG_UNREACHABLE() [[assume(false)]]
+#endif
+
 /* ===-- int_endianness.h - configuration header for compiler-rt ------------===
  *
  *		       The LLVM Compiler Infrastructure
