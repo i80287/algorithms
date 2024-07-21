@@ -223,6 +223,8 @@
 #define CONFIG_UNREACHABLE() __attribute__((assume(false)))
 #elif CONFIG_HAS_AT_LEAST_CXX_23 && CONFIG_HAS_CPP_ATTRIBUTE(assume)
 #define CONFIG_UNREACHABLE() [[assume(false)]]
+#else
+#define CONFIG_UNREACHABLE()
 #endif
 
 /* ===-- int_endianness.h - configuration header for compiler-rt ------------===

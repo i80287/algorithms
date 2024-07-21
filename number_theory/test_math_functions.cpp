@@ -1,5 +1,3 @@
-#include <mpfr.h>
-
 #include <cassert>
 #include <cinttypes>
 #include <limits>
@@ -7,6 +5,13 @@
 #include "config_macros.hpp"
 #include "math_functions.hpp"
 #include "test_tools.hpp"
+
+#if CONFIG_HAS_INCLUDE(<mpfr.h>)
+#include <mpfr.h>
+#define HAS_MPFR_DURING_TESTING 1
+#else
+#define HAS_MPFR_DURING_TESTING 0
+#endif
 
 using namespace math_functions;
 using namespace test_tools;
@@ -548,7 +553,8 @@ static_assert(is_pow2(1ull << 61), "is_pow2");
 static_assert(is_pow2(1ull << 62), "is_pow2");
 static_assert(is_pow2(1ull << 63), "is_pow2");
 
-#if defined(INTEGERS_128_BIT_HPP)
+#if defined(INTEGERS_128_BIT_HPP) && HAS_I128_CONSTEXPR
+
 static_assert(!is_pow2(uint128_t(0)), "is_pow2");
 static_assert(is_pow2(uint128_t(1) << 0), "is_pow2");
 static_assert(is_pow2(uint128_t(1) << 1), "is_pow2");
@@ -871,7 +877,7 @@ static_assert(base_b_len(100ull) == 3, "base_b_len");
 static_assert(base_b_len(101ull) == 3, "base_b_len");
 static_assert(base_b_len(uint64_t(-1)) == 20, "base_b_len");
 
-#if defined(INTEGERS_128_BIT_HPP)
+#if defined(INTEGERS_128_BIT_HPP) && HAS_I128_CONSTEXPR
 
 static_assert(base_b_len(uint128_t(0)) == 1, "base_b_len");
 static_assert(base_b_len(uint128_t(1)) == 1, "base_b_len");
@@ -1158,6 +1164,8 @@ static void test_bit_reverse() noexcept {
     }
 }
 
+#if defined(HAS_MPFR_DURING_TESTING) && HAS_MPFR_DURING_TESTING
+
 static const mpfr_rnd_t kRoundMode = mpfr_get_default_rounding_mode();
 
 template <class FloatType>
@@ -1273,6 +1281,7 @@ static void test_sin_cos_sum_generic() noexcept {
     mpfr_clear(alpha);
 }
 
+
 static void test_sin_cos_sum() noexcept {
     log_tests_started();
 
@@ -1280,6 +1289,8 @@ static void test_sin_cos_sum() noexcept {
     test_sin_cos_sum_generic<double>();
     test_sin_cos_sum_generic<long double>();
 }
+
+#endif
 
 static void test_visit_all_submasks() noexcept {
     log_tests_started();
@@ -1302,7 +1313,7 @@ static void test_prime_bitarrays() {
     log_tests_started();
 
     constexpr size_t N                    = 1000;
-    std::vector primes_as_bvector         = math_functions::dynamic_primes_sieve(N);
+    const std::vector primes_as_bvector   = math_functions::dynamic_primes_sieve(N);
     const std::bitset<N + 1>& primes_bset = math_functions::fixed_primes_sieve<N>();
     constexpr uint32_t primes[]           = {
         2,   3,   5,   7,   11,  13,  17,  19,  23,  29,  31,  37,  41,  43,  47,  53,   59,
@@ -1353,10 +1364,12 @@ static void test_factorizer() {
 int main() {
     test_isqrt();
     test_icbrt();
-    // test_log2();
-    // test_bit_reverse();
-    // test_sin_cos_sum();
-    // test_visit_all_submasks();
-    // test_prime_bitarrays();
-    // test_factorizer();
+    test_log2();
+    test_bit_reverse();
+#if defined(HAS_MPFR_DURING_TESTING) && HAS_MPFR_DURING_TESTING
+    test_sin_cos_sum();
+#endif
+    test_visit_all_submasks();
+    test_prime_bitarrays();
+    test_factorizer();
 }
