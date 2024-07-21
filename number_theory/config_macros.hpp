@@ -340,6 +340,8 @@ ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_CONST constexpr bool config_is_constant_evalua
 #endif
 }
 
+#include <utility>
+
 template <class T>
 ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_CONST constexpr bool config_is_gcc_constant_p([[maybe_unused]] T&& expr) noexcept {
 #if CONFIG_HAS_BUILTIN(__builtin_constant_p)
