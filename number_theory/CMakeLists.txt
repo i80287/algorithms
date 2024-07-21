@@ -17,8 +17,12 @@ set(TEST_COMPILE_OPTIONS)
 set(TEST_COMPILE_DEFINITIONS)
 
 function(configure_gcc_or_clang_gcc_options)
-    set(TEST_COMPILE_OPTIONS
-        ${TEST_COMPILE_OPTIONS}
+    set(LOCAL_FN_TEST_COMPILE_OPTIONS
+        ${TEST_COMPILE_OPTIONS})
+    set(LOCAL_FN_TEST_COMPILE_DEFINITIONS
+        ${TEST_COMPILE_DEFINITIONS})
+    set(LOCAL_FN_TEST_COMPILE_OPTIONS
+        ${LOCAL_FN_TEST_COMPILE_OPTIONS}
         -fstack-protector-strong
         -fno-omit-frame-pointer
         -mshstk
@@ -38,31 +42,32 @@ function(configure_gcc_or_clang_gcc_options)
         -Wunreachable-code
         -Wcast-align
         -Warray-bounds
-        -Wformat=2
-        PARENT_SCOPE)
+        -Wformat=2)
     if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-        set(TEST_COMPILE_OPTIONS
-            ${TEST_COMPILE_OPTIONS}
+        set(LOCAL_FN_TEST_COMPILE_OPTIONS
+            ${LOCAL_FN_TEST_COMPILE_OPTIONS}
             -Wlogical-op
             -Wunsafe-loop-optimizations
-            -Wduplicated-cond
-            PARENT_SCOPE)
+            -Wduplicated-cond)
     endif()
     if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
-        set(TEST_COMPILE_DEFINITIONS
-            ${TEST_COMPILE_DEFINITIONS}
-            _LIBCPP_ENABLE_ASSERTIONS=1
-            PARENT_SCOPE)
+        set(LOCAL_FN_TEST_COMPILE_DEFINITIONS
+            ${LOCAL_FN_TEST_COMPILE_DEFINITIONS}
+            _LIBCPP_ENABLE_ASSERTIONS=1)
     endif()
-    set(TEST_COMPILE_DEFINITIONS
-        ${TEST_COMPILE_DEFINITIONS}
+    set(LOCAL_FN_TEST_COMPILE_DEFINITIONS
+        ${LOCAL_FN_TEST_COMPILE_DEFINITIONS}
         _GLIBCXX_DEBUG=1
         _GLIBCXX_DEBUG_PEDANTIC=1
-        _GLIBCXX_CONCEPT_CHECKS=1
-        PARENT_SCOPE)
+        _GLIBCXX_CONCEPT_CHECKS=1)
+    set(LOCAL_FN_TEST_COMPILE_OPTIONS
+        ${LOCAL_FN_TEST_COMPILE_OPTIONS}
+        -UNDEBUG)
     set(TEST_COMPILE_OPTIONS
-        ${TEST_COMPILE_OPTIONS}
-        -UNDEBUG
+        ${LOCAL_FN_TEST_COMPILE_OPTIONS}
+        PARENT_SCOPE)
+    set(TEST_COMPILE_DEFINITIONS
+        ${LOCAL_FN_TEST_COMPILE_DEFINITIONS}
         PARENT_SCOPE)
 endfunction()
 
