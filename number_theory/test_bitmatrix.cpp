@@ -498,6 +498,9 @@ int main() {
 #if CONFIG_HAS_AT_LEAST_CXX_20
     test_for_word_type<std::uint8_t>();
     test_for_word_type<std::uint32_t>();
-    test_for_word_type<std::uint64_t>();
+    // std::bitset uses unsigned long which is std::uint32_t on Windows.
+    if constexpr (sizeof(std::bitset<64 + 1>) == sizeof(std::bitset<64 + 64>)) {
+        test_for_word_type<std::uint64_t>();
+    }
 #endif
 }

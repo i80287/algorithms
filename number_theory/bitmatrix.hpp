@@ -256,12 +256,11 @@ constexpr void transpose64(uint64_t (&src)[64]) noexcept {
 namespace detail {
 struct square_bitmatrix_helper {
 private:
-    static constexpr bool kUseUInt64 =
-        false && sizeof(std::bitset<64 + 1>) == sizeof(std::bitset<64 + 64>);
+    static constexpr bool kUseUInt64 = sizeof(std::bitset<64 + 1>) == sizeof(std::bitset<64 + 64>);
     static constexpr bool kUseUInt32 =
-        false && !kUseUInt64 && sizeof(std::bitset<32 + 1>) == sizeof(std::bitset<32 + 32>);
+        !kUseUInt64 && sizeof(std::bitset<32 + 1>) == sizeof(std::bitset<32 + 32>);
     static constexpr bool kUseUInt8 = !kUseUInt64 && !kUseUInt32;
-    static_assert(!kUseUInt8 || sizeof(std::bitset<8 + 1>) == sizeof(std::bitset<8 + 8>));
+    static_assert(!kUseUInt8 || sizeof(std::bitset<8 + 1>) == sizeof(std::bitset<8 + 8>), "Unsupported platform");
 
 public:
     using word_type =
