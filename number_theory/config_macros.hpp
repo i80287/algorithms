@@ -340,4 +340,13 @@ ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_CONST constexpr bool config_is_constant_evalua
 #endif
 }
 
+template <class T>
+ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_CONST constexpr bool config_is_gcc_constant_p([[maybe_unused]] T&& expr) noexcept {
+#if CONFIG_HAS_BUILTIN(__builtin_constant_p)
+    return static_cast<bool>(__builtin_constant_p(std::forward<T>(expr)));
+#else
+    return false;
+#endif
+}
+
 #endif  // !CONFIG_MACROS_HPP
