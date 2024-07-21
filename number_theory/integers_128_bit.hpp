@@ -62,13 +62,16 @@ namespace format_impl_uint128_t {
 
 #if __cplusplus >= 202002L
 // 340282366920938463463374607431768211455 == 2^128 - 1
-static_assert(std::char_traits<char>::length("340282366920938463463374607431768211455") == 39, "");
+inline constexpr std::size_t kMaxStringLengthU128 = std::char_traits<char>::length("340282366920938463463374607431768211455");
+static_assert(kMaxStringLengthU128 == 39, "");
 //  170141183460469231731687303715884105727 ==  2^127 - 1
 // -170141183460469231731687303715884105728 == -2^127
-static_assert(std::char_traits<char>::length("-170141183460469231731687303715884105728") == 40, "");
+inline constexpr std::size_t kMaxStringLengthI128 = std::char_traits<char>::length("-170141183460469231731687303715884105728");
+static_assert(kMaxStringLengthI128 == 40, "");
+#else
+constexpr std::size_t kMaxStringLengthU128 = 39;
+constexpr std::size_t kMaxStringLengthI128 = 40;
 #endif
-inline constexpr std::size_t kMaxStringLengthU128 = 39;
-inline constexpr std::size_t kMaxStringLengthI128 = 40;
 
 /// @brief Realization taken from the gcc libstdc++ __to_chars_10_impl
 /// @param number
@@ -296,11 +299,9 @@ inline string to_string(uint128_t number) {
 
     const char* ptr   = uint128_t_format_fill_chars_buffer(number, &digits[buffer_size - 1]);
     const auto length = static_cast<std::size_t>(&digits[buffer_size - 1] - ptr);
-#if defined(__GNUC__) && CONFIG_HAS_BUILTIN(__builtin_unreachable)
     if (length > buffer_size) {
-        __builtin_unreachable();
+        CONFIG_UNREACHABLE();
     }
-#endif
     return string(ptr, length);
 }
 
@@ -318,11 +319,9 @@ inline string to_string(int128_t number) {
         *--ptr = '-';
     }
     const auto length = static_cast<std::size_t>(&digits[buffer_size - 1] - ptr);
-#if defined(__GNUC__) && CONFIG_HAS_BUILTIN(__builtin_unreachable)
     if (length > buffer_size) {
-        __builtin_unreachable();
+        CONFIG_UNREACHABLE();
     }
-#endif
     return string(ptr, length);
 }
 
@@ -344,11 +343,9 @@ inline ostream& operator<<(ostream& out, int128_t number) {
         *--ptr = '-';
     }
     const auto length = static_cast<std::size_t>(&digits[buffer_size - 1] - ptr);
-#if defined(__GNUC__) && CONFIG_HAS_BUILTIN(__builtin_unreachable)
     if (length > buffer_size) {
-        __builtin_unreachable();
+        CONFIG_UNREACHABLE();
     }
-#endif
     return out << string_view(ptr, length);
 }
 
