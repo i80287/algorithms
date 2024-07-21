@@ -163,7 +163,7 @@ ATTRIBUTE_CONST inline I128_CONSTEXPR uint64_t bin_pow_mod(uint64_t n, uint64_t 
 
 ATTRIBUTE_CONST constexpr uint32_t isqrt(uint32_t n) noexcept {
     uint32_t y = 0;
-    if (config_is_constant_evaluated()) {
+    if (config_is_constant_evaluated() || config_is_gcc_constant_p(n)) {
         /**
          * See Hackers Delight Chapter 11.
          */
