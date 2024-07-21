@@ -184,22 +184,29 @@ ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_CONST constexpr uint32_t isqrt(uint32_t n) noe
     return y;
 }
 
-ATTRIBUTE_CONST constexpr uint32_t isqrt(uint64_t n) noexcept {
-    /**
-     * See Hackers Delight Chapter 11.
-     */
-    uint64_t l = 1;
-    uint64_t r = std::min((n >> 5) + 8, uint64_t(0xFFFFFFFFull));
-    do {
-        uint64_t m = (l + r) / 2;
-        if (n >= m * m) {
-            l = m + 1;
-        } else {
-            r = m - 1;
-        }
-    } while (r >= l);
-    ATTRIBUTE_ASSUME(((l - 1) >> 32) == 0);
-    return uint32_t(l - 1);
+ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_CONST constexpr uint32_t isqrt(uint64_t n) noexcept {
+    if (config_is_constant_evaluated() || config_is_gcc_constant_p(n) || sizeof(long double) < 15) {
+        /**
+         * See Hackers Delight Chapter 11.
+         */
+        uint64_t l = 1;
+        uint64_t r = std::min((n >> 5) + 8, uint64_t(0xFFFFFFFFull));
+        do {
+            ATTRIBUTE_ASSUME(l <= r);
+            ATTRIBUTE_ASSUME((r >> 32) == 0);
+            uint64_t m = (l + r) / 2;
+            ATTRIBUTE_ASSUME((m >> 32) == 0);
+            if (n >= m * m) {
+                l = m + 1;
+            } else {
+                r = m - 1;
+            }
+        } while (r >= l);
+        ATTRIBUTE_ASSUME(((l - 1) >> 32) == 0);
+        return uint32_t(l - 1);
+    } else {
+        return static_cast<uint32_t>(std::sqrt(static_cast<long double>(n)));
+    }
 }
 
 #if defined(INTEGERS_128_BIT_HPP)
@@ -1724,7 +1731,7 @@ private:
 /// @brief Find all prime numbers in [2; n]
 /// @param n inclusive upper bound
 /// @return vector bvec, for which bvec[n] == true \iff n is prime
-[[nodiscard]] CONSTEXPR_VECTOR auto dynamic_primes_sieve(uint32_t n) {
+[[nodiscard]] CONSTEXPR_VECTOR inline auto dynamic_primes_sieve(uint32_t n) {
     std::vector<std::uint8_t> primes(std::size_t(n) + 1, true);
     primes[0] = false;
     if (likely(n > 0)) {
@@ -1765,7 +1772,7 @@ private:
 /// @tparam N exclusive upper bound
 /// @return bitset, for which bset[n] == true \iff n is prime
 template <uint32_t N>
-[[nodiscard]] CONSTEXPR_FIXED_PRIMES_SIEVE const auto& fixed_primes_sieve() noexcept {
+[[nodiscard]] CONSTEXPR_FIXED_PRIMES_SIEVE inline const auto& fixed_primes_sieve() noexcept {
     constexpr auto kSize                                    = std::size_t(N) + 1;
     static CONSTEXPR_PRIMES_SIEVE std::bitset<kSize> primes = []() CONSTEXPR_BITSET_OPS noexcept {
         std::bitset<kSize> primes_bs{};

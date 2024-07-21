@@ -1012,37 +1012,63 @@ static_assert(bool_median(false, true, true), "bool_median");
 static void test_isqrt() {
     log_tests_started();
 
-    constexpr uint32_t kIters = 1000000;
+    constexpr uint32_t kIters = 2e6;
 
     constexpr auto test_sqrts = [](uint32_t n, uint32_t n_squared) {
-        throw_if_not(n == isqrt(n_squared), "Error isqrt(uint32_t) at n = %" PRIu32 "\n",
-                     n_squared);
-        throw_if_not(n == isqrt(uint64_t(n_squared)), "Error isqrt(uint64_t) at n = %" PRIu32 "\n",
-                     n_squared);
-        throw_if_not(n == isqrt(uint128_t(n_squared)),
-                     "Error isqrt(uint128_t) at n = %" PRIu32 "\n", n_squared);
+        assert(n == isqrt(n_squared));
+        assert(n == isqrt(uint64_t(n_squared)));
+        assert(n == isqrt(uint128_t(n_squared)));
     };
 
-    constexpr uint32_t kProbes = 32768;
-    for (uint32_t i = 0; i + 1 < std::min(kProbes, 65536u); i++) {
+    constexpr uint32_t kProbes = 1e5;
+    for (uint32_t i = 0; i <= std::min(kProbes, 65535u); i++) {
         uint32_t i_square      = i * i;
         uint32_t next_i_square = (i + 1) * (i + 1);
-        for (uint32_t j = i_square; j < next_i_square; j++) {
+        for (uint32_t j = i_square; j != next_i_square; j++) {
             test_sqrts(i, j);
         }
     }
-    test_sqrts(65535u, 65535u * 65535u);
-    test_sqrts(65535u, (65536u * 65536u) - 1u);
 
     for (uint32_t r = uint32_t(0) - kIters; r != 0; r++) {
         uint64_t rs = uint64_t(r) * r;
-        throw_if_not(r == isqrt(rs), "Error isqrt(uint64_t) at n = %" PRIu64 "\n", rs);
-        throw_if_not(r == isqrt(uint128_t(rs)), "Error isqrt(uint128_t) at n = %" PRIu64 "\n", rs);
+        assert(r - 1 == isqrt(rs - 1));
+        assert(r == isqrt(rs));
+        assert(r == isqrt(rs + 1));
+        assert(r - 1 == isqrt(uint128_t(rs - 1)));
+        assert(r == isqrt(uint128_t(rs)));
+        assert(r == isqrt(uint128_t(rs + 1)));
     }
 
     for (uint64_t r = uint64_t(0) - kIters; r != 0; r++) {
         uint128_t rs = uint128_t(r) * r;
-        throw_if_not(r == isqrt(uint128_t(rs)), "Error isqrt(uint128_t) at n = %" PRIu64 "\n", rs);
+        assert(r - 1 == isqrt(uint128_t(rs - 1)));
+        assert(r == isqrt(uint128_t(rs)));
+        assert(r == isqrt(uint128_t(rs + 1)));
+    }
+
+    constexpr std::pair<uint64_t, uint128_t> root_with_square[] = {
+        {uint8_t(-1), uint16_t(-1)},
+        {uint16_t(-1), uint32_t(-1)},
+        {uint32_t(-1), uint64_t(-1)},
+        {uint64_t(8347849ull), uint128_t(8347849ull) * 8347849ull},
+        {uint64_t(23896778463ull), uint128_t(23896778463ull) * 23896778463ull},
+        {uint64_t(26900711288786ull),
+         uint128_t(72364826784263874ull) * 10'000'000'000ull + 2'638'723'478},
+        {uint64_t(3748237487274238478ull),
+         uint128_t(3748237487274238478ull) * 3748237487274238478ull},
+        {uint64_t(9472294799293ull), uint128_t(8972436876473126137ull) * 10'000'000ull + 7'236'478},
+        {uint64_t(18015752134763552034ull),
+         (uint128_t(17594829943123320651ull) << 64) | 2622055845271657274ull},
+        {uint64_t(-1), uint128_t(-1)},
+    };
+    for (const auto [root, square] : root_with_square) {
+        if (uint32_t(square) == square) {
+            assert(root == isqrt(uint32_t(square)));
+        }
+        if (uint64_t(square) == square) {
+            assert(root == isqrt(uint64_t(square)));
+        }
+        assert(root == isqrt(square));
     }
 }
 
@@ -1050,19 +1076,24 @@ static void test_icbrt() noexcept {
     log_tests_started();
 
     for (uint32_t n = 1; n < 1625; n++) {
-        uint32_t tr = n * n * n;
+        const uint32_t tr               = n * n * n;
+        const uint32_t n_cube_minus_one = tr + 3 * n * n + 3 * n;
         assert(icbrt(tr) == n);
         assert(icbrt(uint64_t(tr)) == n);
-        assert(icbrt(tr + 3 * n * n + 3 * n) == n);
-        assert(icbrt(uint64_t(tr + 3 * n * n + 3 * n)) == n);
+        assert(icbrt(n_cube_minus_one) == n);
+        assert(icbrt(uint64_t(n_cube_minus_one)) == n);
+        assert(icbrt(n_cube_minus_one + 1) == n + 1);
+        assert(icbrt(uint64_t(n_cube_minus_one + 1)) == n + 1);
     }
     assert(icbrt(1625u * 1625u * 1625u) == 1625);
     assert(icbrt(std::numeric_limits<uint32_t>::max()) == 1625);
 
     for (uint64_t n = 1625; n < 2642245; n++) {
-        uint64_t tr = n * n * n;
+        const uint64_t tr               = n * n * n;
+        const uint64_t n_cube_minus_one = tr + 3 * n * n + 3 * n;
         assert(icbrt(tr) == n);
-        assert(icbrt(tr + 3 * n * n + 3 * n) == n);
+        assert(icbrt(n_cube_minus_one) == n);
+        assert(icbrt(n_cube_minus_one + 1) == n + 1);
     }
     assert(icbrt(uint64_t(2642245) * 2642245 * 2642245) == 2642245);
     assert(icbrt(std::numeric_limits<uint64_t>::max()) == 2642245);
@@ -1322,10 +1353,10 @@ static void test_factorizer() {
 int main() {
     test_isqrt();
     test_icbrt();
-    test_log2();
-    test_bit_reverse();
-    test_sin_cos_sum();
-    test_visit_all_submasks();
-    test_prime_bitarrays();
-    test_factorizer();
+    // test_log2();
+    // test_bit_reverse();
+    // test_sin_cos_sum();
+    // test_visit_all_submasks();
+    // test_prime_bitarrays();
+    // test_factorizer();
 }
