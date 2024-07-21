@@ -18,6 +18,7 @@
 
 #include <algorithm>
 #include <bitset>
+#include <cfenv>
 #include <climits>
 #include <cmath>
 #include <cstddef>
@@ -28,7 +29,7 @@
 #include <type_traits>
 #include <utility>
 #include <vector>
-#include <cfenv>
+
 #include "config_macros.hpp"
 
 #if CONFIG_HAS_AT_LEAST_CXX_20
@@ -161,7 +162,7 @@ ATTRIBUTE_CONST inline I128_CONSTEXPR uint64_t bin_pow_mod(uint64_t n, uint64_t 
 
 #endif
 
-ATTRIBUTE_CONST constexpr uint32_t isqrt(uint32_t n) noexcept {
+ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_CONST constexpr uint32_t isqrt(uint32_t n) noexcept {
     uint32_t y = 0;
     if (config_is_constant_evaluated() || config_is_gcc_constant_p(n)) {
         /**
@@ -225,7 +226,7 @@ ATTRIBUTE_CONST inline I128_CONSTEXPR uint64_t isqrt(uint128_t n) noexcept {
 
 #endif
 
-ATTRIBUTE_CONST constexpr uint32_t icbrt(uint32_t n) noexcept {
+ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_CONST constexpr uint32_t icbrt(uint32_t n) noexcept {
     uint32_t y = 0;
     if (config_is_constant_evaluated() || config_is_gcc_constant_p(n) || sizeof(long double) < 15) {
         /**
