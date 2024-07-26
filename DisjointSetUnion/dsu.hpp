@@ -1,85 +1,115 @@
 #pragma once
 
-#include <cassert>  // assert
-#include <cstdint>  // size_t, int64_t
-#include <cstring>  // std::memset
+#include <cassert>
+#include <cstdint>
+#include <cstddef>
 #if __cplusplus >= 202002L
-#include <concepts>  // std::convertible_to
+#include <concepts>
 #endif
-#include <utility>  // std::move
-#include <vector>   // std::vector
+#include <memory>
+#include <type_traits>
+#include <utility>
+#include <vector>
 
 namespace dsu_impl {
 
 // Node with rank heuristic
 struct dsu_node_t {
-    dsu_node_t* parent_;
-    size_t rank_;
+    dsu_node_t* parent_{};
+    size_t rank_{};
 };
 
 // Weighted node with rank heuristic
 struct wdsu_node_t {
-    wdsu_node_t* parent_;
-    size_t rank_;
-    int64_t weight_;
+    wdsu_node_t* parent_{};
+    size_t rank_{};
+    int64_t weight_{};
 };
 
-template <class node_t>
+template <class node_type>
 #if __cplusplus >= 202002L
-    requires requires(node_t* node) {
-        { node->parent_ } -> std::convertible_to<node_t*>;
+    requires requires(node_type* node) {
+        { node->parent_ } -> std::convertible_to<node_type*>;
     }
 #endif
 class dsu_base {
 public:
-    constexpr dsu_base(size_t nodes_count) noexcept
-        : nodes_(nullptr), nodes_count_(nodes_count), sets_count_(nodes_count) {}
+    using node_t          = node_type;
+    using value_type      = node_t;
+    using pointer         = value_type*;
+    using const_pointer   = const value_type*;
+    using reference       = node_t&;
+    using const_reference = const node_t&;
+    using size_type       = std::size_t;
+    using difference_type = std::ptrdiff_t;
+    using allocator_type  = typename std::allocator<value_type>;
 
-    dsu_base(const dsu_base& other) = delete;
-
-    dsu_base& operator=(const dsu_base& other) = delete;
-
-    // O(1)
-    constexpr dsu_base(dsu_base&& other) noexcept
-        : nodes_(other.nodes_),
-          nodes_count_(other.nodes_count_),
-          sets_count_(other.sets_count_) {
-        other.nodes_       = nullptr;
-        other.nodes_count_ = 0;
-        other.sets_count_  = 0;
+    constexpr size_type size() const noexcept {
+        return nodes_count_;
+    }
+    constexpr size_type sets() const noexcept {
+        return sets_count_;
     }
 
-    // O(1)
-    dsu_base& operator=(dsu_base&& other) noexcept {
-        auto nodes         = other.nodes_;
-        auto nodes_count   = other.nodes_count_;
-        auto sets_count    = other.sets_count_;
-        other.nodes_       = nullptr;
-        other.nodes_count_ = 0;
-        other.sets_count_  = 0;
-        this->~dsu_base();
-        nodes_       = nodes;
-        nodes_count_ = nodes_count;
-        sets_count_  = sets_count;
-        return *this;
-    }
-
-    constexpr const node_t* getNodes() const noexcept { return nodes_; }
-
-    constexpr node_t* getNodes() noexcept { return nodes_; }
-
-    constexpr size_t size() const noexcept { return nodes_count_; }
-
-    constexpr size_t sets() const noexcept { return sets_count_; }
-
-    ~dsu_base() {
-        operator delete(nodes_);
-        nodes_ = nullptr;
+private:
+    static constexpr allocator_type allocator() noexcept {
+        return {};
     }
 
 protected:
-    static node_t* findRoot(node_t* node) noexcept {
-        node_t* current_node = node;
+    constexpr dsu_base(size_t nodes_count)
+        : nodes_(allocator().allocate(nodes_count))
+        , nodes_count_(nodes_count)
+        , sets_count_(nodes_count) {
+        std::uninitialized_default_construct_n(nodes_, nodes_count_);
+    }
+    dsu_base(const dsu_base& other)
+        : nodes_(allocator().allocate(other.nodes_count_))
+        , nodes_count_(other.nodes_count_)
+        , sets_count_(other.sets_count_) {
+        std::uninitialized_copy_n(other.nodes_, other.nodes_count_, nodes_);
+    }
+    dsu_base& operator=(const dsu_base& other) {
+        return *this = dsu_base(other);
+    }
+    constexpr dsu_base(dsu_base&& other) noexcept
+        : nodes_(std::exchange(other.nodes_, nullptr))
+        , nodes_count_(std::exchange(other.nodes_count_, 0))
+        , sets_count_(std::exchange(other.sets_count_, 0))
+        {}
+    constexpr dsu_base& operator=(dsu_base&& other) noexcept {
+        swap(other);
+        return *this;
+    }
+    constexpr void swap(dsu_base& other) noexcept {
+        std::swap(nodes_, other.nodes_);
+        std::swap(nodes_count_, other.nodes_count_);
+        std::swap(sets_count_, other.sets_count_);
+    }
+    constexpr const_pointer data() const noexcept {
+        return nodes_;
+    }
+    constexpr pointer data() noexcept {
+        return nodes_;
+    }
+    void reset() noexcept(std::is_nothrow_default_constructible_v<value_type> && std::is_nothrow_copy_assignable_v<value_type>) {
+        std::fill_n(data(), size(), value_type{});
+        sets_count_ = nodes_count_;
+    }
+    void clear() noexcept {
+        std::destroy_n(nodes_, nodes_count_);
+        allocator().deallocate(nodes_, nodes_count_);
+        nodes_ = nullptr;
+    }
+    ~dsu_base() {
+        clear();
+    }
+
+    static bool equal(pointer lhs_node, pointer rhs_node) noexcept {
+        return findRoot(lhs_node) == findRoot(rhs_node);
+    }
+    static pointer findRoot(pointer node) noexcept {
+        pointer current_node = node;
         assert(current_node != nullptr);
         while (current_node->parent_ != nullptr) {
             assert(current_node != current_node->parent_);
@@ -89,7 +119,7 @@ protected:
 
         // Now 'current_node' points to the root
         while (node != current_node) {
-            node_t* next  = node->parent_;
+            pointer next  = node->parent_;
             node->parent_ = current_node;
             node          = next;
         }
@@ -97,53 +127,49 @@ protected:
         return current_node;
     }
 
-    node_t* nodes_;
-    size_t nodes_count_;
-    size_t sets_count_;
+    pointer nodes_;
+    size_type nodes_count_;
+    size_type sets_count_;
 };
 
 }  // namespace dsu_impl
 
 /// @brief See also https://www.youtube.com/watch?v=KFcpDTpoixo
 class dsu_t : public dsu_impl::dsu_base<dsu_impl::dsu_node_t> {
-    using node_t = dsu_impl::dsu_node_t;
-    using base   = dsu_impl::dsu_base<node_t>;
+    using base = dsu_impl::dsu_base<node_t>;
 
 public:
     dsu_t() = delete;
 
-    explicit dsu_t(size_t nodes_count) : base(nodes_count) {
-        nodes_ = static_cast<node_t*>(operator new(sizeof(node_t) * nodes_count));
-        std::memset(nodes_, 0, sizeof(node_t) * nodes_count);
-    }
+    explicit dsu_t(size_t nodes_count) : base(nodes_count) {}
 
     dsu_t(const dsu_t& other) : base(other.nodes_count_) {
-        node_t* const this_first_node = nodes_ =
-            static_cast<node_t*>(operator new(sizeof(node_t) * other.nodes_count_));
+        node_t* const this_first_node = nodes_;
 
         for (size_t i = 0; i < other.nodes_count_; ++i) {
             const node_t* other_i_node_parent = other.nodes_[i].parent_;
-            size_t parent_offset =
-                static_cast<size_t>(other_i_node_parent - other.nodes_);
-            this_first_node[i].parent_ =
-                other_i_node_parent ? this_first_node + parent_offset : nullptr;
+            this_first_node[i].parent_ = other_i_node_parent != nullptr
+                ? this_first_node + static_cast<difference_type>(other_i_node_parent - other.nodes_)
+                : nullptr;
             this_first_node[i].rank_ = other.nodes_[i].rank_;
         }
     }
-
-    dsu_t& operator=(const dsu_t& other) { return *this = dsu_t(other); }
-
+    dsu_t& operator=(const dsu_t& other) {
+        return *this = dsu_t(other);
+    }
     constexpr dsu_t(dsu_t&& other) noexcept : base(std::move(other)) {}
-
     dsu_t& operator=(dsu_t&& other) noexcept {
         base::operator=(std::move(other));
         return *this;
+    }
+    friend constexpr void swap(dsu_t& lhs, dsu_t& rhs) noexcept {
+        lhs.swap(rhs);
     }
 
     // O(log*(n)) = O(a(n))
     bool equal(size_t node_x_index, size_t node_y_index) noexcept {
         assert(node_x_index < nodes_count_ && node_y_index < nodes_count_);
-        return findRoot(&nodes_[node_x_index]) == findRoot(&nodes_[node_y_index]);
+        return base::equal(std::addressof(nodes_[node_x_index]), std::addressof(nodes_[node_y_index]));
     }
 
     // O(log*(n)) = O(a(n))
@@ -170,66 +196,49 @@ public:
             node_y_root_ptr->rank_++;
         }
     }
-
-    void resetData() {
-        std::memset(nodes_, 0, sizeof(node_t) * nodes_count_);
-        sets_count_ = nodes_count_;
-    }
 };
 
 /// @brief See also class dsu_t and
 /// https://youtu.be/MmemGjxsZTc?si=NHMBw-KJmxeXvkNA
-class weighted_dsu_t : public dsu_impl::dsu_base<dsu_impl::wdsu_node_t> {
-    using node_t = dsu_impl::wdsu_node_t;
-    using base   = dsu_base<node_t>;
+class weighted_dsu_t final : public dsu_impl::dsu_base<dsu_impl::wdsu_node_t> {
+    using base = dsu_base<node_t>;
 
 public:
     weighted_dsu_t() = delete;
 
     // O(n)
-    explicit weighted_dsu_t(size_t nodes_count) : base(nodes_count) {
-        nodes_ = static_cast<node_t*>(operator new(sizeof(node_t) * nodes_count));
-        std::memset(nodes_, 0, sizeof(node_t) * nodes_count);
-    }
-
+    explicit weighted_dsu_t(size_t nodes_count) : base(nodes_count) {}
     // O(n)
-    explicit weighted_dsu_t(const std::vector<int64_t>& weights) noexcept(false)
-        : base(weights.size()) {
-        nodes_ = static_cast<node_t*>(operator new(sizeof(node_t) * nodes_count_));
-        std::memset(nodes_, 0, sizeof(node_t) * nodes_count_);
-        node_t* nodes_iter = nodes_;
-        for (auto iter = weights.begin(), end = weights.end(); iter != end;
-             ++iter, ++nodes_iter) {
-            nodes_iter->weight_ = *iter;
+    explicit weighted_dsu_t(const std::vector<std::int64_t>& weights) : base(weights.size()) {
+        for (node_t* nodes_iter = nodes_; const auto weight : weights) {
+            nodes_iter->weight_ = weight;
+            ++nodes_iter;
         }
     }
-
     // O(n)
     weighted_dsu_t(const weighted_dsu_t& other) : base(other.nodes_count_) {
-        node_t* const this_first_node = nodes_ =
-            static_cast<node_t*>(operator new(sizeof(node_t) * other.nodes_count_));
+        node_t* const this_first_node = nodes_;
 
         for (size_t i = 0; i < other.nodes_count_; ++i) {
             const node_t* other_i_node_parent = other.nodes_[i].parent_;
-            size_t parent_offset =
-                static_cast<size_t>(other_i_node_parent - other.nodes_);
-            this_first_node[i].parent_ =
-                other_i_node_parent ? this_first_node + parent_offset : nullptr;
+            this_first_node[i].parent_ = other_i_node_parent != nullptr
+                ? this_first_node + static_cast<difference_type>(other_i_node_parent - other.nodes_)
+                : nullptr;
             this_first_node[i].rank_   = other.nodes_[i].rank_;
             this_first_node[i].weight_ = other.nodes_[i].weight_;
         }
     }
-
     // O(n)
     weighted_dsu_t& operator=(const weighted_dsu_t& other) {
         return *this = weighted_dsu_t(other);
     }
-
     constexpr weighted_dsu_t(weighted_dsu_t&& other) noexcept : base(std::move(other)) {}
-
-    weighted_dsu_t& operator=(weighted_dsu_t&& other) noexcept {
+    constexpr weighted_dsu_t& operator=(weighted_dsu_t&& other) noexcept {
         base::operator=(std::move(other));
         return *this;
+    }
+    friend constexpr void swap(weighted_dsu_t& lhs, weighted_dsu_t& rhs) noexcept {
+        lhs.swap(rhs);
     }
 
     // O(log*(n))
@@ -269,23 +278,18 @@ public:
     // O(log*(n))
     int64_t getWeightInSet(size_t node_index) noexcept {
         assert(node_index < nodes_count_);
-        return findRoot(&nodes_[node_index])->weight_;
+        return findRoot(std::addressof(nodes_[node_index]))->weight_;
     }
 
     // O(log*(n))
-    void addWeightInSet(size_t node_index, int64_t delta) {
+    void addWeightInSet(size_t node_index, int64_t delta) noexcept {
         assert(node_index < nodes_count_);
-        findRoot(&nodes_[node_index])->weight_ += delta;
+        findRoot(std::addressof(nodes_[node_index]))->weight_ += delta;
     }
 
     // O(log*(n))
-    void setWeightInSet(size_t node_index, int64_t weight) {
+    void setWeightInSet(size_t node_index, int64_t weight) noexcept {
         assert(node_index < nodes_count_);
-        findRoot(&nodes_[node_index])->weight_ = weight;
-    }
-
-    void resetData() {
-        std::memset(nodes_, 0, sizeof(node_t) * nodes_count_);
-        sets_count_ = nodes_count_;
+        findRoot(std::addressof(nodes_[node_index]))->weight_ = weight;
     }
 };
