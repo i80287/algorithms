@@ -10,7 +10,7 @@
 
 template <size_t DSUSize>
 struct slowdsu {
-    std::array<size_t, DSUSize> colors;
+    std::array<size_t, DSUSize> colors{};
     size_t sets = DSUSize;
 
     constexpr slowdsu() { resetData(); }
@@ -252,6 +252,8 @@ static void test_value_semantic() {
     d1.unite(0, 1);
     d1.unite(2, 3);
     auto d2 = d1;
+    assert(d2.size() == d1.size());
+    assert(d2.sets() == d1.sets());
     assert(d2.equal(0, 1));
     assert(d2.equal(2, 3));
     assert(!d2.equal(0, 2));
@@ -267,12 +269,68 @@ static void test_value_semantic() {
     assert(!d2.equal(1, 2));
     assert(!d2.equal(1, 3));
     d3 = d2;
+    assert(d2.size() == d3.size());
+    assert(d2.sets() == d3.sets());
     assert(d3.equal(0, 1));
     assert(d3.equal(2, 3));
     assert(!d3.equal(0, 2));
     assert(!d3.equal(0, 3));
     assert(!d3.equal(1, 2));
     assert(!d3.equal(1, 3));
+
+    constexpr std::size_t size_d4 = 9;
+    constexpr std::size_t size_d5 = 10;
+    DsuType d4(size_d4);
+    DsuType d5(size_d5);
+    assert(d4.size() == size_d4);
+    assert(d4.sets() == size_d4);
+    assert(d5.size() == size_d5);
+    assert(d5.sets() == size_d5);
+
+    constexpr std::pair<size_t, size_t> unites_d4[] = { 
+        {1, 2},
+        {3, 4},
+        {5, 6},
+        {0, 6},
+        {1, 7},
+    };
+    constexpr std::pair<size_t, size_t> unites_d5[] = { 
+        {1, 5},
+        {2, 4},
+        {5, 3},
+        {7, 8},
+        {6, 0},
+        {9, 2},
+    };
+    for (auto&& [x, y] : unites_d4) {
+        d4.unite(x, y);
+    }
+    for (auto&& [x, y] : unites_d5) {
+        d5.unite(x, y);
+    }
+
+    d4.swap(d5);
+    assert(d4.size() == size_d5);
+    assert(d5.size() == size_d4);
+
+    for (auto&& [x, y] : unites_d4) {
+        assert(d5.equal(x, y));
+    }
+    for (auto&& [x, y] : unites_d5) {
+        assert(d4.equal(x, y));
+    }
+
+    swap(d4, d5);
+    assert(d4.size() == size_d4);
+    assert(d5.size() == size_d5);
+
+    for (auto&& [x, y] : unites_d4) {
+        assert(d4.equal(x, y));
+    }
+    for (auto&& [x, y] : unites_d5) {
+        assert(d5.equal(x, y));
+    }
+
 }
 
 template <class DsuType>

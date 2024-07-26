@@ -105,10 +105,13 @@ protected:
         clear();
     }
 
-    bool equal(size_type lhs_node_index, size_type rhs_node_index) noexcept {
-        return findRoot(std::addressof(nodes_[lhs_node_index])) == findRoot(std::addressof(nodes_[rhs_node_index]));
+    constexpr bool equal(size_type lhs_node_index, size_type rhs_node_index) noexcept {
+        return findRoot(lhs_node_index) == findRoot(rhs_node_index);
     }
-    static pointer findRoot(pointer node) noexcept {
+    constexpr pointer findRoot(size_type node_index) noexcept {
+        return findRoot(std::addressof(nodes_[node_index]));
+    }
+    static constexpr pointer findRoot(pointer node) noexcept {
         pointer current_node = node;
         assert(current_node != nullptr);
         while (current_node->parent_ != nullptr) {
@@ -143,7 +146,7 @@ public:
 
     explicit dsu_t(size_type nodes_count) : base(nodes_count) {}
 
-    dsu_t(const dsu_t& other) : base(other.nodes_count_) {
+    dsu_t(const dsu_t& other) : base(other) {
         node_t* const this_first_node = nodes_;
 
         for (size_type i = 0; i < other.nodes_count_; ++i) {
@@ -151,7 +154,6 @@ public:
             this_first_node[i].parent_ = other_i_node_parent != nullptr
                 ? this_first_node + static_cast<difference_type>(other_i_node_parent - other.nodes_)
                 : nullptr;
-            this_first_node[i].rank_ = other.nodes_[i].rank_;
         }
     }
     dsu_t& operator=(const dsu_t& other) {
@@ -162,6 +164,9 @@ public:
         base::operator=(std::move(other));
         return *this;
     }
+    constexpr void swap(dsu_t& other) noexcept {
+        base::swap(other);
+    }
     friend constexpr void swap(dsu_t& lhs, dsu_t& rhs) noexcept {
         lhs.swap(rhs);
     }
@@ -171,12 +176,11 @@ public:
         assert(node_x_index < nodes_count_ && node_y_index < nodes_count_);
         return base::equal(node_x_index, node_y_index);
     }
-
     // O(log*(n)) = O(a(n))
     void unite(size_type node_x_index, size_type node_y_index) noexcept {
         assert(node_x_index < nodes_count_ && node_y_index < nodes_count_);
-        node_t* node_x_root_ptr = findRoot(&nodes_[node_x_index]);
-        node_t* node_y_root_ptr = findRoot(&nodes_[node_y_index]);
+        node_t* node_x_root_ptr = findRoot(node_x_index);
+        node_t* node_y_root_ptr = findRoot(node_y_index);
         if (node_x_root_ptr == node_y_root_ptr) {
             // Do not unite already united nodes so that for each root node:
             // root_node->parent_ == nullptr
@@ -216,7 +220,7 @@ public:
         }
     }
     // O(n)
-    weighted_dsu_t(const weighted_dsu_t& other) : base(other.nodes_count_) {
+    weighted_dsu_t(const weighted_dsu_t& other) : base(other) {
         node_t* const this_first_node = nodes_;
 
         for (size_type i = 0; i < other.nodes_count_; ++i) {
@@ -224,8 +228,6 @@ public:
             this_first_node[i].parent_ = other_i_node_parent != nullptr
                 ? this_first_node + static_cast<difference_type>(other_i_node_parent - other.nodes_)
                 : nullptr;
-            this_first_node[i].rank_   = other.nodes_[i].rank_;
-            this_first_node[i].weight_ = other.nodes_[i].weight_;
         }
     }
     // O(n)
@@ -237,6 +239,9 @@ public:
         base::operator=(std::move(other));
         return *this;
     }
+    constexpr void swap(weighted_dsu_t& other) noexcept {
+        base::swap(other);
+    }
     friend constexpr void swap(weighted_dsu_t& lhs, weighted_dsu_t& rhs) noexcept {
         lhs.swap(rhs);
     }
@@ -246,12 +251,11 @@ public:
         assert(node_x_index < nodes_count_ && node_y_index < nodes_count_);
         return base::equal(node_x_index, node_y_index);
     }
-
     // O(log*(n))
     void unite(size_type node_x_index, size_type node_y_index) noexcept {
         assert(node_x_index < nodes_count_ && node_y_index < nodes_count_);
-        node_t* node_x_root_ptr = findRoot(&nodes_[node_x_index]);
-        node_t* node_y_root_ptr = findRoot(&nodes_[node_y_index]);
+        node_t* node_x_root_ptr = findRoot(node_x_index);
+        node_t* node_y_root_ptr = findRoot(node_y_index);
         if (node_x_root_ptr == node_y_root_ptr) {
             // Do not unite already united nodes so that for each root node:
             // root_node->parent_ == nullptr
@@ -278,18 +282,18 @@ public:
     // O(log*(n))
     int64_t getWeightInSet(size_type node_index) noexcept {
         assert(node_index < nodes_count_);
-        return findRoot(std::addressof(nodes_[node_index]))->weight_;
+        return findRoot(node_index)->weight_;
     }
 
     // O(log*(n))
     void addWeightInSet(size_type node_index, int64_t delta) noexcept {
         assert(node_index < nodes_count_);
-        findRoot(std::addressof(nodes_[node_index]))->weight_ += delta;
+        findRoot(node_index)->weight_ += delta;
     }
 
     // O(log*(n))
     void setWeightInSet(size_type node_index, int64_t weight) noexcept {
         assert(node_index < nodes_count_);
-        findRoot(std::addressof(nodes_[node_index]))->weight_ = weight;
+        findRoot(node_index)->weight_ = weight;
     }
 };
