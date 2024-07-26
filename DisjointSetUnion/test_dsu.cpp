@@ -10,37 +10,50 @@
 
 template <size_t DSUSize>
 struct slowdsu {
-    std::array<size_t, DSUSize> colors{};
-    size_t sets = DSUSize;
+    using color_t = std::size_t;
+    std::array<color_t, DSUSize> colors{};
+    size_t sets_size = DSUSize;
 
-    constexpr slowdsu() { resetData(); }
-
-    constexpr bool equal(size_t x, size_t y) const noexcept {
+    constexpr slowdsu() {
+        resetData();
+    }
+    constexpr std::size_t size() const noexcept {
+        return colors.size();
+    }
+    constexpr bool equal(std::size_t x, std::size_t y) const noexcept {
+        assert(x < size() && y < size());
         return colors[x] == colors[y];
     }
-
-    constexpr void unite(size_t x, size_t y) noexcept {
-        size_t c1 = colors[x];
-        size_t c2 = colors[y];
+    constexpr void unite(std::size_t x, std::size_t y) noexcept {
+        assert(x < size() && y < size());
+        color_t c1 = colors[x];
+        color_t c2 = colors[y];
         if (c1 != c2) {
-            sets--;
+            sets_size--;
             std::replace_if(
                 colors.begin(), colors.end(),
-                [c2](size_t c) constexpr noexcept -> bool { return c == c2; }, c1);
+                [c2](color_t c) constexpr noexcept { return c == c2; }, c1);
         }
+    }
+    // O(1)
+    constexpr std::size_t set_size_of(std::size_t node_index) const noexcept {
+        assert(node_index < size());
+        const color_t node_color = colors[node_index];
+        return std::count_if(
+            colors.begin(), colors.end(),
+            [node_color](color_t c) constexpr noexcept { return c == node_color; });
     }
 
     constexpr void resetData() noexcept {
-        sets = DSUSize;
-        std::iota(colors.begin(), colors.end(), 0);
+        sets_size = DSUSize;
+        std::iota(colors.begin(), colors.end(), color_t{0});
     }
 };
 
 template <typename T>
 consteval std::string_view get_type_name() {
     const std::string_view func_name = std::source_location::current().function_name();
-    const char* p1 =
-        std::char_traits<char>::find(func_name.data(), func_name.size(), '[');
+    const char* p1 = std::char_traits<char>::find(func_name.data(), func_name.size(), '[');
     if (p1 == nullptr) {
         return "";
     }
@@ -253,7 +266,7 @@ static void test_value_semantic() {
     d1.unite(2, 3);
     auto d2 = d1;
     assert(d2.size() == d1.size());
-    assert(d2.sets() == d1.sets());
+    assert(d2.sets_size() == d1.sets_size());
     assert(d2.equal(0, 1));
     assert(d2.equal(2, 3));
     assert(!d2.equal(0, 2));
@@ -270,7 +283,7 @@ static void test_value_semantic() {
     assert(!d2.equal(1, 3));
     d3 = d2;
     assert(d2.size() == d3.size());
-    assert(d2.sets() == d3.sets());
+    assert(d2.sets_size() == d3.sets_size());
     assert(d3.equal(0, 1));
     assert(d3.equal(2, 3));
     assert(!d3.equal(0, 2));
@@ -283,24 +296,15 @@ static void test_value_semantic() {
     DsuType d4(size_d4);
     DsuType d5(size_d5);
     assert(d4.size() == size_d4);
-    assert(d4.sets() == size_d4);
+    assert(d4.sets_size() == size_d4);
     assert(d5.size() == size_d5);
-    assert(d5.sets() == size_d5);
+    assert(d5.sets_size() == size_d5);
 
-    constexpr std::pair<size_t, size_t> unites_d4[] = { 
-        {1, 2},
-        {3, 4},
-        {5, 6},
-        {0, 6},
-        {1, 7},
+    constexpr std::pair<size_t, size_t> unites_d4[] = {
+        {1, 2}, {3, 4}, {5, 6}, {0, 6}, {1, 7},
     };
-    constexpr std::pair<size_t, size_t> unites_d5[] = { 
-        {1, 5},
-        {2, 4},
-        {5, 3},
-        {7, 8},
-        {6, 0},
-        {9, 2},
+    constexpr std::pair<size_t, size_t> unites_d5[] = {
+        {1, 5}, {2, 4}, {5, 3}, {7, 8}, {6, 0}, {9, 2},
     };
     for (auto&& [x, y] : unites_d4) {
         d4.unite(x, y);
@@ -330,23 +334,29 @@ static void test_value_semantic() {
     for (auto&& [x, y] : unites_d5) {
         assert(d5.equal(x, y));
     }
-
 }
 
 template <class DsuType>
 static void test_random_with_check() {
-    constexpr size_t N = 1e3;
+    constexpr size_t N = 1024;
     DsuType dsu(N);
     assert(dsu.size() == N);
     slowdsu<N> checker;
     std::mt19937 rnd;
 
     auto compare = [&]() constexpr noexcept -> bool {
-        if (checker.sets != dsu.sets()) {
+        if (checker.sets_size != dsu.sets_size()) {
             return false;
         }
 
         for (size_t i = 0; i < N; i++) {
+            const auto s = checker.set_size_of(i);
+            if (s != dsu.set_size_of(i)) {
+                return false;
+            }
+            if (s != static_cast<const DsuType&>(dsu).set_size_of(i)) {
+                return false;
+            }
             for (size_t j = 0; j < N; j++) {
                 if (checker.equal(i, j) != dsu.equal(i, j)) {
                     return false;
