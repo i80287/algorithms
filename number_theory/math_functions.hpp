@@ -432,8 +432,7 @@ ATTRIBUTE_CONST inline I128_CONSTEXPR bool is_perfect_square(uint128_t n, uint64
 /// @param[in] b
 /// @return 8-bit number whose bits are reversed bits of the @a `b`.
 ATTRIBUTE_CONST constexpr uint8_t bit_reverse(uint8_t b) noexcept {
-    // See
-    // https://graphics.stanford.edu/~seander/bithacks.html#RoundUpPowerOf2
+    // See https://graphics.stanford.edu/~seander/bithacks.html#RoundUpPowerOf2
     return uint8_t(((b * 0x80200802ULL) & 0x0884422110ULL) * 0x0101010101ULL >> 32);
 }
 
@@ -536,13 +535,58 @@ ATTRIBUTE_CONST inline I128_CONSTEXPR int32_t sign(int128_t x) noexcept {
 /// @param[in] a
 /// @param[in] b
 /// @return
-ATTRIBUTE_CONST constexpr bool same_sign(int a, int b) noexcept {
+ATTRIBUTE_CONST constexpr bool same_sign_soft(int a, int b) noexcept {
     return (a ^ b) >= 0;
 }
 
 /// @brief a >= 0 and b > 0 => true
 ///        a >= 0 and b = 0 => true
 ///        a >= 0 and b < 0 => false
+///        a < 0 and b > 0 => false
+///        a < 0 and b = 0 => false
+///        a < 0 and b < 0 => true
+/// @param[in] a
+/// @param[in] b
+/// @return
+ATTRIBUTE_CONST constexpr bool same_sign_soft(long a, long b) noexcept {
+    return (a ^ b) >= 0;
+}
+
+/// @brief a >= 0 and b > 0 => true
+///        a >= 0 and b = 0 => true
+///        a >= 0 and b < 0 => false
+///        a < 0 and b > 0 => false
+///        a < 0 and b = 0 => false
+///        a < 0 and b < 0 => true
+/// @param[in] a
+/// @param[in] b
+/// @return
+ATTRIBUTE_CONST constexpr bool same_sign_soft(long long a, long long b) noexcept {
+    return (a ^ b) >= 0;
+}
+
+/// @brief a > 0 and b > 0 => true
+///        a > 0 and b = 0 => false
+///        a > 0 and b < 0 => false
+///        a = 0 and b > 0 => false
+///        a = 0 and b = 0 => true
+///        a = 0 and b < 0 => false
+///        a < 0 and b > 0 => false
+///        a < 0 and b = 0 => false
+///        a < 0 and b < 0 => true
+/// @param[in] a
+/// @param[in] b
+/// @return
+ATTRIBUTE_CONST constexpr bool same_sign(int a, int b) noexcept {
+    return sign(a) == sign(b);
+}
+
+/// @brief a > 0 and b > 0 => true
+///        a > 0 and b = 0 => false
+///        a > 0 and b < 0 => false
+///        a = 0 and b > 0 => false
+///        a = 0 and b = 0 => true
+///        a = 0 and b < 0 => false
 ///        a < 0 and b > 0 => false
 ///        a < 0 and b = 0 => false
 ///        a < 0 and b < 0 => true
@@ -550,12 +594,15 @@ ATTRIBUTE_CONST constexpr bool same_sign(int a, int b) noexcept {
 /// @param[in] b
 /// @return
 ATTRIBUTE_CONST constexpr bool same_sign(long a, long b) noexcept {
-    return (a ^ b) >= 0;
+    return sign(a) == sign(b);
 }
 
-/// @brief a >= 0 and b > 0 => true
-///        a >= 0 and b = 0 => true
-///        a >= 0 and b < 0 => false
+/// @brief a > 0 and b > 0 => true
+///        a > 0 and b = 0 => false
+///        a > 0 and b < 0 => false
+///        a = 0 and b > 0 => false
+///        a = 0 and b = 0 => true
+///        a = 0 and b < 0 => false
 ///        a < 0 and b > 0 => false
 ///        a < 0 and b = 0 => false
 ///        a < 0 and b < 0 => true
@@ -563,54 +610,6 @@ ATTRIBUTE_CONST constexpr bool same_sign(long a, long b) noexcept {
 /// @param[in] b
 /// @return
 ATTRIBUTE_CONST constexpr bool same_sign(long long a, long long b) noexcept {
-    return (a ^ b) >= 0;
-}
-
-/// @brief a > 0 and b > 0 => true
-///        a > 0 and b = 0 => false
-///        a > 0 and b < 0 => false
-///        a = 0 and b > 0 => false
-///        a = 0 and b = 0 => true
-///        a = 0 and b < 0 => false
-///        a < 0 and b > 0 => false
-///        a < 0 and b = 0 => false
-///        a < 0 and b < 0 => true
-/// @param[in] a
-/// @param[in] b
-/// @return
-ATTRIBUTE_CONST constexpr bool same_sign_strict(int a, int b) noexcept {
-    return sign(a) == sign(b);
-}
-
-/// @brief a > 0 and b > 0 => true
-///        a > 0 and b = 0 => false
-///        a > 0 and b < 0 => false
-///        a = 0 and b > 0 => false
-///        a = 0 and b = 0 => true
-///        a = 0 and b < 0 => false
-///        a < 0 and b > 0 => false
-///        a < 0 and b = 0 => false
-///        a < 0 and b < 0 => true
-/// @param[in] a
-/// @param[in] b
-/// @return
-ATTRIBUTE_CONST constexpr bool same_sign_strict(long a, long b) noexcept {
-    return sign(a) == sign(b);
-}
-
-/// @brief a > 0 and b > 0 => true
-///        a > 0 and b = 0 => false
-///        a > 0 and b < 0 => false
-///        a = 0 and b > 0 => false
-///        a = 0 and b = 0 => true
-///        a = 0 and b < 0 => false
-///        a < 0 and b > 0 => false
-///        a < 0 and b = 0 => false
-///        a < 0 and b < 0 => true
-/// @param[in] a
-/// @param[in] b
-/// @return
-ATTRIBUTE_CONST constexpr bool same_sign_strict(long long a, long long b) noexcept {
     return sign(a) == sign(b);
 }
 
@@ -1447,8 +1446,8 @@ ATTRIBUTE_CONST SumSinCos<FloatType> sum_of_sines_and_cosines(FloatType alpha, F
 
     const auto sin_numer_over_sin_denum = std::sin(nf * half_beta) / half_beta_sin;
     const auto arg                      = alpha + (nf - 1) * half_beta;
-    const auto sin_mult = std::sin(arg);
-    const auto cos_mult = std::cos(arg);
+    const auto sin_mult                 = std::sin(arg);
+    const auto cos_mult                 = std::cos(arg);
     return {
 #if CONFIG_HAS_AT_LEAST_CXX_20
         .sines_sum =

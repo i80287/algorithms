@@ -376,25 +376,25 @@ static_assert(sign(int128_t(-((uint128_t(1) << 127) - 1))) == -1, "sign");
 static_assert(sign(int128_t(-(uint128_t(1) << 127))) == -1, "sign");
 #endif
 
+static_assert(same_sign_soft(1, 1), "same_sign");
+static_assert(same_sign_soft(1, 0), "same_sign");
+static_assert(!same_sign_soft(1, -1), "same_sign");
+static_assert(same_sign_soft(0, 1), "same_sign");
+static_assert(same_sign_soft(0, 0), "same_sign");
+static_assert(!same_sign_soft(0, -1), "same_sign");
+static_assert(!same_sign_soft(-1, 1), "same_sign");
+static_assert(!same_sign_soft(-1, 0), "same_sign");
+static_assert(same_sign_soft(-1, -1), "same_sign");
+
 static_assert(same_sign(1, 1), "same_sign");
-static_assert(same_sign(1, 0), "same_sign");
+static_assert(!same_sign(1, 0), "same_sign");
 static_assert(!same_sign(1, -1), "same_sign");
-static_assert(same_sign(0, 1), "same_sign");
+static_assert(!same_sign(0, 1), "same_sign");
 static_assert(same_sign(0, 0), "same_sign");
 static_assert(!same_sign(0, -1), "same_sign");
 static_assert(!same_sign(-1, 1), "same_sign");
 static_assert(!same_sign(-1, 0), "same_sign");
 static_assert(same_sign(-1, -1), "same_sign");
-
-static_assert(same_sign_strict(1, 1), "same_sign_strict");
-static_assert(!same_sign_strict(1, 0), "same_sign_strict");
-static_assert(!same_sign_strict(1, -1), "same_sign_strict");
-static_assert(!same_sign_strict(0, 1), "same_sign_strict");
-static_assert(same_sign_strict(0, 0), "same_sign_strict");
-static_assert(!same_sign_strict(0, -1), "same_sign_strict");
-static_assert(!same_sign_strict(-1, 1), "same_sign_strict");
-static_assert(!same_sign_strict(-1, 0), "same_sign_strict");
-static_assert(same_sign_strict(-1, -1), "same_sign_strict");
 
 static_assert(uabs(static_cast<char>(0)) == 0, "uabs");
 static_assert(uabs(static_cast<short>(0)) == 0, "uabs");
