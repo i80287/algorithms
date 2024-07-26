@@ -16,14 +16,14 @@ namespace dsu_impl {
 // Node with rank heuristic
 struct dsu_node_t {
     dsu_node_t* parent_{};
-    size_t rank_{};
+    std::size_t rank_{};
 };
 
 // Weighted node with rank heuristic
 struct wdsu_node_t {
     wdsu_node_t* parent_{};
-    size_t rank_{};
-    int64_t weight_{};
+    std::size_t rank_{};
+    std::int64_t weight_{};
 };
 
 template <class node_type>
@@ -57,7 +57,7 @@ private:
     }
 
 protected:
-    constexpr dsu_base(size_t nodes_count)
+    constexpr dsu_base(size_type nodes_count)
         : nodes_(allocator().allocate(nodes_count))
         , nodes_count_(nodes_count)
         , sets_count_(nodes_count) {
@@ -105,8 +105,8 @@ protected:
         clear();
     }
 
-    static bool equal(pointer lhs_node, pointer rhs_node) noexcept {
-        return findRoot(lhs_node) == findRoot(rhs_node);
+    bool equal(size_type lhs_node_index, size_type rhs_node_index) noexcept {
+        return findRoot(std::addressof(nodes_[lhs_node_index])) == findRoot(std::addressof(nodes_[rhs_node_index]));
     }
     static pointer findRoot(pointer node) noexcept {
         pointer current_node = node;
@@ -141,12 +141,12 @@ class dsu_t : public dsu_impl::dsu_base<dsu_impl::dsu_node_t> {
 public:
     dsu_t() = delete;
 
-    explicit dsu_t(size_t nodes_count) : base(nodes_count) {}
+    explicit dsu_t(size_type nodes_count) : base(nodes_count) {}
 
     dsu_t(const dsu_t& other) : base(other.nodes_count_) {
         node_t* const this_first_node = nodes_;
 
-        for (size_t i = 0; i < other.nodes_count_; ++i) {
+        for (size_type i = 0; i < other.nodes_count_; ++i) {
             const node_t* other_i_node_parent = other.nodes_[i].parent_;
             this_first_node[i].parent_ = other_i_node_parent != nullptr
                 ? this_first_node + static_cast<difference_type>(other_i_node_parent - other.nodes_)
@@ -167,13 +167,13 @@ public:
     }
 
     // O(log*(n)) = O(a(n))
-    bool equal(size_t node_x_index, size_t node_y_index) noexcept {
+    bool equal(size_type node_x_index, size_type node_y_index) noexcept {
         assert(node_x_index < nodes_count_ && node_y_index < nodes_count_);
-        return base::equal(std::addressof(nodes_[node_x_index]), std::addressof(nodes_[node_y_index]));
+        return base::equal(node_x_index, node_y_index);
     }
 
     // O(log*(n)) = O(a(n))
-    void unite(size_t node_x_index, size_t node_y_index) noexcept {
+    void unite(size_type node_x_index, size_type node_y_index) noexcept {
         assert(node_x_index < nodes_count_ && node_y_index < nodes_count_);
         node_t* node_x_root_ptr = findRoot(&nodes_[node_x_index]);
         node_t* node_y_root_ptr = findRoot(&nodes_[node_y_index]);
@@ -183,8 +183,8 @@ public:
             return;
         }
         sets_count_--;
-        size_t node_x_root_rank = node_x_root_ptr->rank_;
-        size_t node_y_root_rank = node_y_root_ptr->rank_;
+        size_type node_x_root_rank = node_x_root_ptr->rank_;
+        size_type node_y_root_rank = node_y_root_ptr->rank_;
         if (node_x_root_rank > node_y_root_rank) {
             node_y_root_ptr->parent_ = node_x_root_ptr;
         } else if (node_x_root_rank != node_y_root_rank) {
@@ -207,7 +207,7 @@ public:
     weighted_dsu_t() = delete;
 
     // O(n)
-    explicit weighted_dsu_t(size_t nodes_count) : base(nodes_count) {}
+    explicit weighted_dsu_t(size_type nodes_count) : base(nodes_count) {}
     // O(n)
     explicit weighted_dsu_t(const std::vector<std::int64_t>& weights) : base(weights.size()) {
         for (node_t* nodes_iter = nodes_; const auto weight : weights) {
@@ -219,7 +219,7 @@ public:
     weighted_dsu_t(const weighted_dsu_t& other) : base(other.nodes_count_) {
         node_t* const this_first_node = nodes_;
 
-        for (size_t i = 0; i < other.nodes_count_; ++i) {
+        for (size_type i = 0; i < other.nodes_count_; ++i) {
             const node_t* other_i_node_parent = other.nodes_[i].parent_;
             this_first_node[i].parent_ = other_i_node_parent != nullptr
                 ? this_first_node + static_cast<difference_type>(other_i_node_parent - other.nodes_)
@@ -242,13 +242,13 @@ public:
     }
 
     // O(log*(n))
-    bool equal(size_t node_x_index, size_t node_y_index) noexcept {
+    bool equal(size_type node_x_index, size_type node_y_index) noexcept {
         assert(node_x_index < nodes_count_ && node_y_index < nodes_count_);
-        return findRoot(&nodes_[node_x_index]) == findRoot(&nodes_[node_y_index]);
+        return base::equal(node_x_index, node_y_index);
     }
 
     // O(log*(n))
-    void unite(size_t node_x_index, size_t node_y_index) noexcept {
+    void unite(size_type node_x_index, size_type node_y_index) noexcept {
         assert(node_x_index < nodes_count_ && node_y_index < nodes_count_);
         node_t* node_x_root_ptr = findRoot(&nodes_[node_x_index]);
         node_t* node_y_root_ptr = findRoot(&nodes_[node_y_index]);
@@ -258,8 +258,8 @@ public:
             return;
         }
         sets_count_--;
-        size_t node_x_root_rank = node_x_root_ptr->rank_;
-        size_t node_y_root_rank = node_y_root_ptr->rank_;
+        size_type node_x_root_rank = node_x_root_ptr->rank_;
+        size_type node_y_root_rank = node_y_root_ptr->rank_;
         if (node_x_root_rank > node_y_root_rank) {
             node_y_root_ptr->parent_ = node_x_root_ptr;
             node_x_root_ptr->weight_ += node_y_root_ptr->weight_;
@@ -276,19 +276,19 @@ public:
     }
 
     // O(log*(n))
-    int64_t getWeightInSet(size_t node_index) noexcept {
+    int64_t getWeightInSet(size_type node_index) noexcept {
         assert(node_index < nodes_count_);
         return findRoot(std::addressof(nodes_[node_index]))->weight_;
     }
 
     // O(log*(n))
-    void addWeightInSet(size_t node_index, int64_t delta) noexcept {
+    void addWeightInSet(size_type node_index, int64_t delta) noexcept {
         assert(node_index < nodes_count_);
         findRoot(std::addressof(nodes_[node_index]))->weight_ += delta;
     }
 
     // O(log*(n))
-    void setWeightInSet(size_t node_index, int64_t weight) noexcept {
+    void setWeightInSet(size_type node_index, int64_t weight) noexcept {
         assert(node_index < nodes_count_);
         findRoot(std::addressof(nodes_[node_index]))->weight_ = weight;
     }
