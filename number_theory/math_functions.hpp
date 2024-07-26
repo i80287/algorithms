@@ -162,7 +162,7 @@ ATTRIBUTE_CONST inline I128_CONSTEXPR uint64_t bin_pow_mod(uint64_t n, uint64_t 
 
 #endif
 
-ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_CONST constexpr uint32_t isqrt(uint32_t n) noexcept {
+ATTRIBUTE_CONST constexpr uint32_t isqrt(uint32_t n) noexcept {
     uint32_t y = 0;
     if (config_is_constant_evaluated() || config_is_gcc_constant_p(n)) {
         /**
@@ -184,8 +184,8 @@ ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_CONST constexpr uint32_t isqrt(uint32_t n) noe
     return y;
 }
 
-ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_CONST constexpr uint32_t isqrt(uint64_t n) noexcept {
-    if (config_is_constant_evaluated() || config_is_gcc_constant_p(n) || sizeof(long double) < 15) {
+ATTRIBUTE_CONST constexpr uint32_t isqrt(uint64_t n) noexcept {
+    if (config_is_constant_evaluated() || config_is_gcc_constant_p(n) || sizeof(long double) < 16) {
         /**
          * See Hackers Delight Chapter 11.
          */
@@ -233,9 +233,9 @@ ATTRIBUTE_CONST inline I128_CONSTEXPR uint64_t isqrt(uint128_t n) noexcept {
 
 #endif
 
-ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_CONST constexpr uint32_t icbrt(uint32_t n) noexcept {
+ATTRIBUTE_CONST constexpr uint32_t icbrt(uint32_t n) noexcept {
     uint32_t y = 0;
-    if (config_is_constant_evaluated() || config_is_gcc_constant_p(n) || sizeof(long double) < 15) {
+    if (config_is_constant_evaluated() || config_is_gcc_constant_p(n) || sizeof(long double) < 16) {
         /**
          * See Hackers Delight Chapter 11.
          */
@@ -1383,7 +1383,7 @@ ATTRIBUTE_CONST constexpr std::pair<T, uint32_t> extract_pow2(T n) noexcept {
 /// @param y y
 /// @param z z
 /// @return median of x, y and z
-constexpr bool bool_median(bool x, bool y, bool z) noexcept {
+ATTRIBUTE_CONST constexpr bool bool_median(bool x, bool y, bool z) noexcept {
     return (x | y) & (y | z) & (x | z);
 }
 
@@ -1431,7 +1431,7 @@ ATTRIBUTE_CONST SumSinCos<FloatType> sum_of_sines_and_cosines(FloatType alpha, F
     const FloatType nf       = static_cast<FloatType>(n);
     const auto half_beta     = beta / 2;
     const auto half_beta_sin = std::sin(half_beta);
-    if (unlikely(half_beta_sin == 0)) {
+    if (unlikely(std::abs(half_beta_sin) <= std::numeric_limits<FloatType>::epsilon())) {
         // If beta = 2 pi k, k \in Z
         return {
 #if CONFIG_HAS_AT_LEAST_CXX_20
@@ -1447,8 +1447,6 @@ ATTRIBUTE_CONST SumSinCos<FloatType> sum_of_sines_and_cosines(FloatType alpha, F
 
     const auto sin_numer_over_sin_denum = std::sin(nf * half_beta) / half_beta_sin;
     const auto arg                      = alpha + (nf - 1) * half_beta;
-    // Make arg const and call sin and cos close to each
-    //  other so that compiler can call sincos here.
     const auto sin_mult = std::sin(arg);
     const auto cos_mult = std::cos(arg);
     return {
