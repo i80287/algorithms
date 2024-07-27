@@ -160,7 +160,12 @@ private:
 
 void Deallocate(void* memory) noexcept;
 
-__attribute__((malloc, malloc(Deallocate, 1), returns_nonnull)) void* Allocate(std::size_t size) {
+#ifdef __clang__
+__attribute__((malloc, returns_nonnull))
+#else
+__attribute__((malloc, malloc(Deallocate, 1), returns_nonnull))
+#endif
+void* Allocate(std::size_t size) {
     if (size <= inner_impl::SmallPage::kCapacity && inner_impl::free_small_pages_head != nullptr) {
         inner_impl::SmallPage* p = inner_impl::free_small_pages_head;
 #ifdef DEBUG_LI_ALLOC_PRINTING
