@@ -444,24 +444,49 @@ constexpr
 template <class TWordType>
 inline void test_for_word_type() {
     auto for_size = []<std::size_t Size>() {
-        const auto m = square_bitmatrix<Size, TWordType>::identity();
-        auto n       = m * m;
-        assert(n == m);
-        assert(n.any());
-        assert(!n.none());
-        if constexpr (Size >= 2) {
+        {
+            const auto m = square_bitmatrix<Size, TWordType>::identity();
+            auto n       = m * m;
+            assert(n == m);
+            assert(n.any());
+            assert(!n.none());
+            if constexpr (Size >= 2) {
+                assert(!n.all());
+            } else {
+                assert(n.all());
+            }
+            assert(n.count() == Size);
+            n.for_each_set_bit([](auto i, auto j) { assert(i == j); });
+            auto counter = 0;
+            n.for_each_set_bit([&counter](auto, auto) { counter++; });
+            assert(counter == Size);
+
+            n.reset();
+            assert(!n.any());
+            assert(n.none());
             assert(!n.all());
-        } else {
-            assert(n.all());
+            assert(n.count() == 0);
+            n.for_each_set_bit([](auto, auto) { assert(false); });
         }
-        assert(n.count() == Size);
-        n.for_each_set_bit([](auto i, auto j) { assert(i == j); });
-        n.reset();
-        assert(!n.any());
-        assert(n.none());
-        assert(!n.all());
-        assert(n.count() == 0);
-        n.for_each_set_bit([](auto, auto) { assert(false); });
+
+        {
+            const auto m = square_bitmatrix<Size, TWordType>::allones();
+            assert(m.any());
+            assert(!m.none());
+            assert(m.all());
+            assert(m.count() == Size * Size);
+            auto counter = 0;
+            m.for_each_set_bit([&counter](auto, auto) { counter++; });
+            assert(counter == Size * Size);
+
+            auto n = m;
+            n *= n;
+            if constexpr (Size % 2 == 0) {
+                assert((n == square_bitmatrix<Size, TWordType>::allzeros()));
+            } else {
+                assert((n == square_bitmatrix<Size, TWordType>::allones()));
+            }
+        }
     };
     for_size.template operator()<1>();
     for_size.template operator()<2>();

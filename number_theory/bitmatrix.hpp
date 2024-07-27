@@ -11,6 +11,7 @@
 #include <fstream>
 #include <initializer_list>
 #include <memory>
+#include <numeric>
 #include <sstream>
 #include <type_traits>
 #include <utility>
@@ -287,17 +288,17 @@ concept Transposable8 = Size == 8 && requires(WordType (&m)[8]) {
 
 }  // namespace detail
 
-template <std::size_t N, class word_type = typename detail::square_bitmatrix_helper::word_type>
+template <std::size_t N, class word_type = typename ::detail::square_bitmatrix_helper::word_type>
 #if CONFIG_HAS_AT_LEAST_CXX_20
     requires(N > 0)
 #endif
 struct alignas(std::uint64_t) alignas(word_type) square_bitmatrix {
 private:
-    static_assert(N > 0);
+    static_assert(N > 0, "Matrix can't have zero size");
     static_assert(CHAR_BIT == 8, "Platform not supported");
     static constexpr std::size_t kAlignmentBits = sizeof(word_type) * CHAR_BIT;
     static constexpr std::size_t kBits          = (N + kAlignmentBits - 1) & ~(kAlignmentBits - 1);
-    static_assert(sizeof(std::bitset<N>) == sizeof(std::bitset<kBits>));
+    static_assert(sizeof(std::bitset<N>) == sizeof(std::bitset<kBits>), "Platform not supported");
 
     template <class TFunction>
     static constexpr bool is_noexcept_index_fn() noexcept {
@@ -425,14 +426,12 @@ public:
                     0b00000001u, 0b00000010u, 0b00000100u, 0b00001000u,
                     0b00010000u, 0b00100000u, 0b01000000u, 0b10000000u,
                 };
+            } else {
+                return create_identity_matrix_impl();
             }
+        } else {
+            return create_identity_matrix_impl();
         }
-
-        square_bitmatrix m{};
-        for (size_type i = 0; i < N; ++i) {
-            m[i][i] = true;
-        }
-        return m;
     }
     [[nodiscard]] ATTRIBUTE_CONST static constexpr square_bitmatrix allzeros() noexcept {
         return {};
@@ -541,7 +540,12 @@ public:
         return copy;
     }
     CONSTEXPR_BITSET_OPS square_bitmatrix& operator*=(const square_bitmatrix& other) noexcept {
-        do_multiply_over_z2(other.data());
+        if (unlikely(std::addressof(*this) == std::addressof(other))) {
+            square_bitmatrix copy(*this);
+            do_multiply_over_z2(copy.data());
+        } else {
+            do_multiply_over_z2(other.data());
+        }
         return *this;
     }
     [[nodiscard]] ATTRIBUTE_PURE CONSTEXPR_BITSET_OPS square_bitmatrix
@@ -588,14 +592,8 @@ public:
             return row.all();
         });
     }
-    CONSTEXPR_BITSET_OPS void reset() noexcept {
-        if (config_is_constant_evaluated()) {
-            for (row_type& row : data_) {
-                row.reset();
-            }
-        } else {
-            std::memset(reinterpret_cast<void*>(std::addressof(data_)), 0, sizeof(data_));
-        }
+    constexpr void reset() noexcept {
+        data_ = matrix_type{};
     }
     [[nodiscard]] ATTRIBUTE_PURE CONSTEXPR_BITSET_OPS bool operator==(
         const square_bitmatrix& other) const noexcept {
@@ -724,11 +722,11 @@ private:
     }
     template <class TWordType, std::size_t Size>
     static constexpr void transpose_block_helper(TWordType (&m)[Size]) noexcept {
-        if constexpr (detail::Transposable64<TWordType, Size>) {
+        if constexpr (::detail::Transposable64<TWordType, Size>) {
             transpose64(m);
-        } else if constexpr (detail::Transposable32<TWordType, Size>) {
+        } else if constexpr (::detail::Transposable32<TWordType, Size>) {
             transpose32(m);
-        } else if constexpr (detail::Transposable8<TWordType, Size>) {
+        } else if constexpr (::detail::Transposable8<TWordType, Size>) {
             transpose8(m);
         } else {
             static_assert([]() constexpr { return false; },
@@ -736,6 +734,13 @@ private:
         }
     }
 #endif
+    static constexpr square_bitmatrix create_identity_matrix_impl() noexcept {
+        square_bitmatrix m{};
+        for (size_type i = 0; i < N; ++i) {
+            m[i][i] = true;
+        }
+        return m;
+    }
 };
 
 template <std::size_t N>
