@@ -1077,71 +1077,77 @@ constexpr uint32_t next_n_bits_permutation(uint32_t x) noexcept {
     return (t + 1) | (((~t & -~t) - 1) >> (countr_zero(x) + 1));
 }
 
-ATTRIBUTE_CONST constexpr bool is_pow2(signed char n) noexcept {
+ATTRIBUTE_CONST constexpr bool is_power_of_two(signed char n) noexcept {
     // Cast to unsigned to avoid potential overflow (ub for signed char)
     uint32_t m = static_cast<unsigned char>(n);
     return (m & (m - 1)) == 0 && n > 0;
 }
 
-ATTRIBUTE_CONST constexpr bool is_pow2(unsigned char n) noexcept {
+ATTRIBUTE_CONST constexpr bool is_power_of_two(unsigned char n) noexcept {
     return (n & (n - 1)) == 0 && n != 0;
 }
 
-ATTRIBUTE_CONST constexpr bool is_pow2(char n) noexcept {
+ATTRIBUTE_CONST constexpr bool is_power_of_two(char n) noexcept {
     using corr_char_t = std::conditional_t<std::is_signed_v<char>, signed char, unsigned char>;
-    return is_pow2(static_cast<corr_char_t>(n));
+    return is_power_of_two(static_cast<corr_char_t>(n));
 }
 
-ATTRIBUTE_CONST constexpr bool is_pow2(int n) noexcept {
+ATTRIBUTE_CONST constexpr bool is_power_of_two(int n) noexcept {
     // Cast to unsigned to avoid potential overflow (ub for int)
     unsigned m = static_cast<unsigned>(n);
     return (m & (m - 1)) == 0 && n > 0;
 }
 
-ATTRIBUTE_CONST constexpr bool is_pow2(long n) noexcept {
+ATTRIBUTE_CONST constexpr bool is_power_of_two(long n) noexcept {
     // Cast to unsigned to avoid potential overflow (ub for long)
     unsigned long m = static_cast<unsigned long>(n);
     return (m & (m - 1)) == 0 && n > 0;
 }
 
-ATTRIBUTE_CONST constexpr bool is_pow2(long long n) noexcept {
+ATTRIBUTE_CONST constexpr bool is_power_of_two(long long n) noexcept {
     // Cast to unsigned to avoid potential overflow (ub for long long)
     unsigned long long m = static_cast<unsigned long long>(n);
     return (m & (m - 1)) == 0 && n > 0;
 }
 
-ATTRIBUTE_CONST constexpr bool is_pow2(unsigned int n) noexcept {
+ATTRIBUTE_CONST constexpr bool is_power_of_two(unsigned int n) noexcept {
     return (n & (n - 1)) == 0 && n != 0;
 }
 
-ATTRIBUTE_CONST constexpr bool is_pow2(unsigned long n) noexcept {
+ATTRIBUTE_CONST constexpr bool is_power_of_two(unsigned long n) noexcept {
     return (n & (n - 1)) == 0 && n != 0;
 }
 
-ATTRIBUTE_CONST constexpr bool is_pow2(unsigned long long n) noexcept {
+ATTRIBUTE_CONST constexpr bool is_power_of_two(unsigned long long n) noexcept {
     return (n & (n - 1)) == 0 && n != 0;
 }
 
 #if defined(INTEGERS_128_BIT_HPP)
 
-ATTRIBUTE_CONST inline I128_CONSTEXPR bool is_pow2(int128_t n) noexcept {
+ATTRIBUTE_CONST inline I128_CONSTEXPR bool is_power_of_two(int128_t n) noexcept {
     return (n & (n - 1)) == 0 && n > 0;
 }
 
-ATTRIBUTE_CONST inline I128_CONSTEXPR bool is_pow2(uint128_t n) noexcept {
+ATTRIBUTE_CONST inline I128_CONSTEXPR bool is_power_of_two(uint128_t n) noexcept {
     return (n & (n - 1)) == 0 && n != 0;
 }
 
 #endif
 
-ATTRIBUTE_CONST constexpr uint64_t nearest_pow2_ge(uint32_t n) noexcept {
-    constexpr uint32_t k = sizeof(uint32_t) * CHAR_BIT;
-    return uint64_t(1ull) << (k - uint32_t(countl_zero(n | 1)) - ((n & (n - 1)) == 0));
+ATTRIBUTE_CONST constexpr uint64_t nearest_greater_equal_power_of_two(uint32_t n) noexcept {
+    return uint64_t(1ull) << (32 - uint32_t(countl_zero(n | 1)) - ((n & (n - 1)) == 0));
 }
 
-ATTRIBUTE_CONST constexpr uint64_t nearest_pow2_ge(uint64_t n) noexcept {
-    constexpr uint32_t k = sizeof(uint64_t) * CHAR_BIT;
-    return uint64_t(1ull) << (k - uint32_t(countl_zero(n | 1)) - ((n & (n - 1)) == 0));
+ATTRIBUTE_CONST constexpr uint64_t nearest_greater_power_of_two(uint32_t n) noexcept {
+    return uint64_t(1ull) << (32 - uint32_t(countl_zero(n)));
+}
+
+ATTRIBUTE_CONST constexpr uint64_t nearest_greater_equal_power_of_two(uint64_t n) noexcept {
+    return uint64_t(1ull) << (64 - uint32_t(countl_zero(n | 1)) - ((n & (n - 1)) == 0));
+}
+
+ATTRIBUTE_CONST constexpr uint64_t nearest_greater_power_of_two(uint64_t n) noexcept {
+    return uint64_t(1ull) << (64 - uint32_t(countl_zero(n)));
 }
 
 /// @brief If @a n != 0, return number that is power of 2 and

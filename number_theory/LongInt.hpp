@@ -457,7 +457,7 @@ struct LongInt {
             deallocate(other.nums_);
             other.nums_ = ans;
         } else {
-            std::size_t n             = 2 * math_functions::nearest_pow2_ge(prod_size);
+            std::size_t n             = 2 * math_functions::nearest_greater_equal_power_of_two(prod_size);
             const bool high_precision = n > kFFTPrecisionBorder;
             n <<= high_precision;
             // Allocate n complex numbers for p1 and n complex numbers for p2
@@ -575,7 +575,7 @@ struct LongInt {
             deallocate(nums_);
             nums_ = ans;
         } else {
-            std::size_t n             = 2 * math_functions::nearest_pow2_ge(prod_size);
+            std::size_t n             = 2 * math_functions::nearest_greater_equal_power_of_two(prod_size);
             const bool high_precision = n > kFFTPrecisionBorder;
             n <<= high_precision;
             // Allocate n complex numbers for p1 and n complex numbers for p2
@@ -1208,7 +1208,7 @@ struct LongInt {
         const std::size_t str_conv_digits_size =
             (digits_count + kStrConvBaseDigits - 1) / kStrConvBaseDigits;
         const std::size_t aligned_str_conv_digits_size =
-            math_functions::nearest_pow2_ge(str_conv_digits_size);
+            math_functions::nearest_greater_equal_power_of_two(str_conv_digits_size);
         reserveUninitializedWithoutCopy(uint32_t(aligned_str_conv_digits_size));
         uint32_t* str_conv_digits = nums_;
 
@@ -1390,7 +1390,7 @@ struct LongInt {
                 return;
         }
 
-        std::size_t n = math_functions::nearest_pow2_ge(usize);
+        std::size_t n = math_functions::nearest_greater_equal_power_of_two(usize);
         ensureBinBasePowsCapacity(math_functions::log2_floor(n));
         uint32_t* knums = static_cast<uint32_t*>(allocate(n));
         std::fill_n(std::copy_n(nums_, usize, knums), n - usize, uint32_t(0));
@@ -1581,7 +1581,7 @@ struct LongInt {
                 deallocate(this->digits_);
                 this->digits_ = ans;
             } else {
-                std::size_t n = math_functions::nearest_pow2_ge(3 * new_size);
+                std::size_t n = math_functions::nearest_greater_equal_power_of_two(3 * new_size);
                 static_assert(kFftDecimalBase * kFftDecimalBase * kFftDecimalBase == kDecimalBase,
                               "");
                 // Allocate n for the first polynomial
@@ -1723,7 +1723,7 @@ struct LongInt {
                 deallocate(other.digits_);
                 other.digits_ = ans;
             } else {
-                std::size_t n = math_functions::nearest_pow2_ge(3 * prod_size);
+                std::size_t n = math_functions::nearest_greater_equal_power_of_two(3 * prod_size);
                 static_assert(kFftDecimalBase * kFftDecimalBase * kFftDecimalBase == kDecimalBase,
                               "");
                 // Allocate n for the first polynomial
@@ -1891,7 +1891,7 @@ private:
                 mult_add_buffer[j + half_len] = uint32_t(carry);
             }
         } else {
-            std::size_t n             = 2 * math_functions::nearest_pow2_ge(prod_size);
+            std::size_t n             = 2 * math_functions::nearest_greater_equal_power_of_two(prod_size);
             const bool high_precision = n > kFFTPrecisionBorder;
             n <<= high_precision;
             fft::complex* p1 = fft_poly_buffer;
@@ -2000,8 +2000,8 @@ private:
     }
 
     static Decimal convertBinBase(const uint32_t* nums, std::size_t size) {
-        assert(math_functions::is_pow2(size));
-        ATTRIBUTE_ASSUME(math_functions::is_pow2(size));
+        assert(math_functions::is_power_of_two(size));
+        ATTRIBUTE_ASSUME(math_functions::is_power_of_two(size));
         switch (size) {
             case 0:
             case 1:
