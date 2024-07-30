@@ -440,76 +440,116 @@ constexpr
     return f1 && f2;
 }
 
-#if CONFIG_HAS_AT_LEAST_CXX_20
-template <class TWordType>
-inline void test_for_word_type() {
-    auto for_size = []<std::size_t Size>() {
+template <std::size_t Size, class TWordType>
+static void test_for_size() {
+    using matrix_t = square_bitmatrix<Size, TWordType>;
+
+    auto test_identity_matrix = [](const matrix_t&n) {
+        assert((n == matrix_t::identity()));
+        assert(n.any());
+        assert(!n.none());
+        assert(n.size() == n.rows() && n.size() == n.columns());
+        if (n.size() >= 2) {
+            assert(!n.all());
+        } else {
+            assert(n.all());
+        }
         {
-            const auto m = square_bitmatrix<Size, TWordType>::identity();
-            auto n       = m * m;
-            assert(n == m);
-            assert(n.any());
-            assert(!n.none());
-            if constexpr (Size >= 2) {
-                assert(!n.all());
-            } else {
-                assert(n.all());
-            }
             assert(n.count() == Size);
             n.for_each_set_bit([](auto i, auto j) { assert(i == j); });
             auto counter = 0;
             n.for_each_set_bit([&counter](auto, auto) { counter++; });
             assert(counter == Size);
-
-            n.reset();
-            assert(!n.any());
-            assert(n.none());
-            assert(!n.all());
-            assert(n.count() == 0);
-            n.for_each_set_bit([](auto, auto) { assert(false); });
-        }
-
-        {
-            const auto m = square_bitmatrix<Size, TWordType>::allones();
-            assert(m.any());
-            assert(!m.none());
-            assert(m.all());
-            assert(m.count() == Size * Size);
-            auto counter = 0;
-            m.for_each_set_bit([&counter](auto, auto) { counter++; });
-            assert(counter == Size * Size);
-
-            auto n = m;
-            n *= n;
-            if constexpr (Size % 2 == 0) {
-                assert((n == square_bitmatrix<Size, TWordType>::allzeros()));
-            } else {
-                assert((n == square_bitmatrix<Size, TWordType>::allones()));
-            }
         }
     };
-    for_size.template operator()<1>();
-    for_size.template operator()<2>();
-    for_size.template operator()<7>();
-    for_size.template operator()<8>();
-    for_size.template operator()<9>();
-    for_size.template operator()<15>();
-    for_size.template operator()<16>();
-    for_size.template operator()<17>();
-    for_size.template operator()<31>();
-    for_size.template operator()<32>();
-    for_size.template operator()<33>();
-    for_size.template operator()<63>();
-    for_size.template operator()<64>();
-    for_size.template operator()<65>();
-    for_size.template operator()<127>();
-    for_size.template operator()<128>();
-    for_size.template operator()<129>();
-    for_size.template operator()<255>();
-    for_size.template operator()<256>();
-    for_size.template operator()<257>();
+    auto test_zero_matrix = [](const matrix_t& n) {
+        assert((n == matrix_t::allzeros()));
+        assert(!n.any());
+        assert(n.none());
+        assert(!n.all());
+        assert(n.count() == 0);
+        assert(n.size() == n.rows() && n.size() == n.columns());
+        n.for_each_set_bit([](auto, auto) { assert(false); });
+    };
+    auto test_ones_matrix = [](const matrix_t& n) {
+        assert((n == matrix_t::allones()));
+        assert(n.any());
+        assert(!n.none());
+        assert(n.all());
+        assert(n.count() == n.rows() * n.columns());
+        assert(n.size() == n.rows() && n.size() == n.columns());
+        std::uint32_t counter = 0;
+        n.for_each_set_bit([&counter](auto, auto) { counter++; });
+        assert(counter == n.rows() * n.columns());
+        auto m = n;
+        m *= m;
+        if constexpr (m.size() % 2 == 0) {
+            assert((m == matrix_t::allzeros()));
+        } else {
+            assert((m == matrix_t::allones()));
+        }
+    };
+
+    auto identity = matrix_t::identity();
+    test_identity_matrix(identity);
+    identity *= identity;
+    test_identity_matrix(identity);
+    identity *= matrix_t::identity();
+    test_identity_matrix(identity);
+    identity = identity * identity;
+    test_identity_matrix(identity);
+    identity.transpose();
+    identity.transpose();
+    test_identity_matrix(identity);
+    identity.reset();
+    test_zero_matrix(identity);
+
+    auto zero_matrix = matrix_t::allzeros();
+    test_zero_matrix(identity);
+    zero_matrix *= zero_matrix;
+    test_zero_matrix(identity);
+    zero_matrix *= matrix_t::allzeros();
+    test_zero_matrix(identity);
+    // zero_matrix = zero_matrix * zero_matrix;
+    // test_zero_matrix(identity);
+    identity.transpose();
+    test_zero_matrix(identity);
+    identity.reset();
+    test_zero_matrix(identity);
+
+    auto ones_matrix = matrix_t::allones();
+    test_ones_matrix(ones_matrix);
+    ones_matrix.transpose();
+    test_ones_matrix(ones_matrix);
+    ones_matrix *= matrix_t::identity();
+    test_ones_matrix(ones_matrix);
+    ones_matrix.reset();
+    test_zero_matrix(ones_matrix);
 }
-#endif
+
+template <class TWordType>
+static void test_for_word_type() {
+    test_for_size<1, TWordType>();
+    test_for_size<2, TWordType>();
+    test_for_size<7, TWordType>();
+    test_for_size<8, TWordType>();
+    test_for_size<9, TWordType>();
+    test_for_size<15, TWordType>();
+    test_for_size<16, TWordType>();
+    test_for_size<17, TWordType>();
+    test_for_size<31, TWordType>();
+    test_for_size<32, TWordType>();
+    test_for_size<33, TWordType>();
+    test_for_size<63, TWordType>();
+    test_for_size<64, TWordType>();
+    test_for_size<65, TWordType>();
+    test_for_size<127, TWordType>();
+    test_for_size<128, TWordType>();
+    test_for_size<129, TWordType>();
+    test_for_size<255, TWordType>();
+    test_for_size<256, TWordType>();
+    test_for_size<257, TWordType>();
+}
 
 int main() {
 #if CONFIG_HAS_AT_LEAST_CXX_20
@@ -520,12 +560,13 @@ int main() {
     assert(test_transpose_8x8());
     assert(test_transpose_32x32());
     assert(test_transpose_64x64());
-#if CONFIG_HAS_AT_LEAST_CXX_20
+
     test_for_word_type<std::uint8_t>();
-    test_for_word_type<std::uint32_t>();
     // std::bitset uses unsigned long which is std::uint32_t on Windows.
+    if constexpr (sizeof(std::bitset<32 + 1>) == sizeof(std::bitset<32 + 32>)) {
+        test_for_word_type<std::uint32_t>();
+    }
     if constexpr (sizeof(std::bitset<64 + 1>) == sizeof(std::bitset<64 + 64>)) {
         test_for_word_type<std::uint64_t>();
     }
-#endif
 }
