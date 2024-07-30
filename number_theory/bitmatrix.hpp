@@ -871,5 +871,6 @@ private:
 template <std::size_t N>
 using packed_square_bitmatrix = square_bitmatrix<N, std::uint8_t>;
 
+#undef NODISCARD_WITH_MESSAGE
 #undef CONSTEXPR_POINTER_CAST
 #undef CONSTEXPR_BITSET_OPS
