@@ -25,7 +25,7 @@
 #endif
 #endif
 
-#if defined(__GNUC__)
+#if defined(__GNUC__) || defined(__clang__)
 typedef __uint128_t uint128_t;
 typedef __int128_t int128_t;
 #elif defined(_MSC_VER)
@@ -33,7 +33,7 @@ typedef __int128_t int128_t;
 typedef std::_Unsigned128 uint128_t;
 typedef std::_Signed128 int128_t;
 #else
-#error "typedef 128-bit integer specific for your compiler"
+#error "Unsupported compiler, typedef 128-bit integer specific for your compiler"
 #endif
 
 #include "config_macros.hpp"
@@ -42,7 +42,8 @@ typedef std::_Signed128 int128_t;
  * Macro defined to 1 if current [u]int128_t supports constexpr
  * operations and 0 otherwise.
  */
-#if (__cplusplus >= 201703L && defined(__GNUC__)) || (__cplusplus >= 202002L && defined(_MSC_VER))
+#if (__cplusplus >= 201703L && (defined(__GNUG__) || defined(__clang__))) || \
+    (__cplusplus >= 202002L && defined(_MSC_VER))
 #define HAS_I128_CONSTEXPR 1
 #else
 #define HAS_I128_CONSTEXPR 0
@@ -62,11 +63,13 @@ namespace format_impl_uint128_t {
 
 #if __cplusplus >= 202002L
 // 340282366920938463463374607431768211455 == 2^128 - 1
-inline constexpr std::size_t kMaxStringLengthU128 = std::char_traits<char>::length("340282366920938463463374607431768211455");
+inline constexpr std::size_t kMaxStringLengthU128 =
+    std::char_traits<char>::length("340282366920938463463374607431768211455");
 static_assert(kMaxStringLengthU128 == 39, "");
 //  170141183460469231731687303715884105727 ==  2^127 - 1
 // -170141183460469231731687303715884105728 == -2^127
-inline constexpr std::size_t kMaxStringLengthI128 = std::char_traits<char>::length("-170141183460469231731687303715884105728");
+inline constexpr std::size_t kMaxStringLengthI128 =
+    std::char_traits<char>::length("-170141183460469231731687303715884105728");
 static_assert(kMaxStringLengthI128 == 40, "");
 #else
 constexpr std::size_t kMaxStringLengthU128 = 39;
@@ -251,7 +254,7 @@ inline ostream& operator<<(ostream& out, uint128_t number) {
     return out << string_view(ptr, length);
 }
 
-inline int fprint_u128(uint128_t number, std::FILE* filestream) noexcept {
+ATTRIBUTE_NONNULL(2) inline int fprint_u128(uint128_t number, std::FILE* filestream) noexcept {
     using namespace format_impl_uint128_t;
 
     // + 1 for '\0'
@@ -266,6 +269,7 @@ inline int print_u128(uint128_t number) noexcept {
     return fprint_u128(number, stdout);
 }
 
+ATTRIBUTE_NONNULL(2)
 inline int fprint_u128_newline(uint128_t number, std::FILE* filestream) noexcept {
     using namespace format_impl_uint128_t;
 
@@ -289,7 +293,7 @@ inline int print_u128_newline(uint128_t number) noexcept {
     return puts(ptr);
 }
 
-inline string to_string(uint128_t number) {
+[[nodiscard]] inline string to_string(uint128_t number) {
     using namespace format_impl_uint128_t;
 
     // + 1 for '\0'
@@ -305,7 +309,7 @@ inline string to_string(uint128_t number) {
     return string(ptr, length);
 }
 
-inline string to_string(int128_t number) {
+[[nodiscard]] inline string to_string(int128_t number) {
     using namespace format_impl_uint128_t;
 
     // + 1 for '\0'
