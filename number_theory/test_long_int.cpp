@@ -651,7 +651,7 @@ static void TestInt32Div() {
 
     LongInt n(LongInt::Reserve(4));
     constexpr uint32_t K = 6000;
-    
+
     for (uint32_t i = 0; i <= K; i++) {
         for (uint32_t j = 1; j <= K; j++) {
             n = i;

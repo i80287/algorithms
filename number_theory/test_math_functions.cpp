@@ -575,143 +575,277 @@ static_assert(is_power_of_two(uint128_t(1) << 65), "is_power_of_two");
 static_assert(is_power_of_two(uint128_t(1) << 127), "is_power_of_two");
 #endif
 
-static_assert(nearest_greater_equal_power_of_two(uint32_t(0u)) == 1u, "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint32_t(1u)) == 1u, "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint32_t(2u)) == 2u, "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint32_t(3u)) == 4u, "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint32_t(4u)) == 4u, "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint32_t(5u)) == 8u, "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint32_t(6u)) == 8u, "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint32_t(7u)) == 8u, "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint32_t(8u)) == 8u, "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint32_t(16u)) == 16u, "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint32_t(17u)) == 32u, "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint32_t(18u)) == 32u, "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint32_t(19u)) == 32u, "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint32_t(20u)) == 32u, "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint32_t(0x7FFFFFFFu)) == 0x80000000u, "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint32_t(0x80000000u)) == 0x80000000u, "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint32_t(0x80000001u)) == 0x100000000ull, "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint32_t(0xFFFFFFFFu)) == 0x100000000ull, "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint32_t(1) << 0) == uint32_t(1) << 0, "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint32_t(1) << 1) == uint32_t(1) << 1, "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint32_t(1) << 2) == uint32_t(1) << 2, "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint32_t(1) << 3) == uint32_t(1) << 3, "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint32_t(1) << 4) == uint32_t(1) << 4, "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint32_t(1) << 5) == uint32_t(1) << 5, "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint32_t(1) << 6) == uint32_t(1) << 6, "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint32_t(1) << 7) == uint32_t(1) << 7, "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint32_t(1) << 8) == uint32_t(1) << 8, "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint32_t(1) << 9) == uint32_t(1) << 9, "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint32_t(1) << 10) == uint32_t(1) << 10, "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint32_t(1) << 11) == uint32_t(1) << 11, "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint32_t(1) << 12) == uint32_t(1) << 12, "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint32_t(1) << 13) == uint32_t(1) << 13, "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint32_t(1) << 14) == uint32_t(1) << 14, "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint32_t(1) << 15) == uint32_t(1) << 15, "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint32_t(1) << 16) == uint32_t(1) << 16, "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint32_t(1) << 17) == uint32_t(1) << 17, "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint32_t(1) << 18) == uint32_t(1) << 18, "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint32_t(1) << 19) == uint32_t(1) << 19, "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint32_t(1) << 20) == uint32_t(1) << 20, "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint32_t(1) << 21) == uint32_t(1) << 21, "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint32_t(1) << 22) == uint32_t(1) << 22, "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint32_t(1) << 23) == uint32_t(1) << 23, "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint32_t(1) << 24) == uint32_t(1) << 24, "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint32_t(1) << 25) == uint32_t(1) << 25, "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint32_t(1) << 26) == uint32_t(1) << 26, "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint32_t(1) << 27) == uint32_t(1) << 27, "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint32_t(1) << 28) == uint32_t(1) << 28, "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint32_t(1) << 29) == uint32_t(1) << 29, "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint32_t(1) << 30) == uint32_t(1) << 30, "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint32_t(1) << 31) == uint32_t(1) << 31, "nearest_greater_equal_power_of_two");
+static_assert(nearest_greater_equal_power_of_two(uint32_t(0u)) == 1u,
+              "nearest_greater_equal_power_of_two");
+static_assert(nearest_greater_equal_power_of_two(uint32_t(1u)) == 1u,
+              "nearest_greater_equal_power_of_two");
+static_assert(nearest_greater_equal_power_of_two(uint32_t(2u)) == 2u,
+              "nearest_greater_equal_power_of_two");
+static_assert(nearest_greater_equal_power_of_two(uint32_t(3u)) == 4u,
+              "nearest_greater_equal_power_of_two");
+static_assert(nearest_greater_equal_power_of_two(uint32_t(4u)) == 4u,
+              "nearest_greater_equal_power_of_two");
+static_assert(nearest_greater_equal_power_of_two(uint32_t(5u)) == 8u,
+              "nearest_greater_equal_power_of_two");
+static_assert(nearest_greater_equal_power_of_two(uint32_t(6u)) == 8u,
+              "nearest_greater_equal_power_of_two");
+static_assert(nearest_greater_equal_power_of_two(uint32_t(7u)) == 8u,
+              "nearest_greater_equal_power_of_two");
+static_assert(nearest_greater_equal_power_of_two(uint32_t(8u)) == 8u,
+              "nearest_greater_equal_power_of_two");
+static_assert(nearest_greater_equal_power_of_two(uint32_t(16u)) == 16u,
+              "nearest_greater_equal_power_of_two");
+static_assert(nearest_greater_equal_power_of_two(uint32_t(17u)) == 32u,
+              "nearest_greater_equal_power_of_two");
+static_assert(nearest_greater_equal_power_of_two(uint32_t(18u)) == 32u,
+              "nearest_greater_equal_power_of_two");
+static_assert(nearest_greater_equal_power_of_two(uint32_t(19u)) == 32u,
+              "nearest_greater_equal_power_of_two");
+static_assert(nearest_greater_equal_power_of_two(uint32_t(20u)) == 32u,
+              "nearest_greater_equal_power_of_two");
+static_assert(nearest_greater_equal_power_of_two(uint32_t(0x7FFFFFFFu)) == 0x80000000u,
+              "nearest_greater_equal_power_of_two");
+static_assert(nearest_greater_equal_power_of_two(uint32_t(0x80000000u)) == 0x80000000u,
+              "nearest_greater_equal_power_of_two");
+static_assert(nearest_greater_equal_power_of_two(uint32_t(0x80000001u)) == 0x100000000ull,
+              "nearest_greater_equal_power_of_two");
+static_assert(nearest_greater_equal_power_of_two(uint32_t(0xFFFFFFFFu)) == 0x100000000ull,
+              "nearest_greater_equal_power_of_two");
+static_assert(nearest_greater_equal_power_of_two(uint32_t(1) << 0) == uint32_t(1) << 0,
+              "nearest_greater_equal_power_of_two");
+static_assert(nearest_greater_equal_power_of_two(uint32_t(1) << 1) == uint32_t(1) << 1,
+              "nearest_greater_equal_power_of_two");
+static_assert(nearest_greater_equal_power_of_two(uint32_t(1) << 2) == uint32_t(1) << 2,
+              "nearest_greater_equal_power_of_two");
+static_assert(nearest_greater_equal_power_of_two(uint32_t(1) << 3) == uint32_t(1) << 3,
+              "nearest_greater_equal_power_of_two");
+static_assert(nearest_greater_equal_power_of_two(uint32_t(1) << 4) == uint32_t(1) << 4,
+              "nearest_greater_equal_power_of_two");
+static_assert(nearest_greater_equal_power_of_two(uint32_t(1) << 5) == uint32_t(1) << 5,
+              "nearest_greater_equal_power_of_two");
+static_assert(nearest_greater_equal_power_of_two(uint32_t(1) << 6) == uint32_t(1) << 6,
+              "nearest_greater_equal_power_of_two");
+static_assert(nearest_greater_equal_power_of_two(uint32_t(1) << 7) == uint32_t(1) << 7,
+              "nearest_greater_equal_power_of_two");
+static_assert(nearest_greater_equal_power_of_two(uint32_t(1) << 8) == uint32_t(1) << 8,
+              "nearest_greater_equal_power_of_two");
+static_assert(nearest_greater_equal_power_of_two(uint32_t(1) << 9) == uint32_t(1) << 9,
+              "nearest_greater_equal_power_of_two");
+static_assert(nearest_greater_equal_power_of_two(uint32_t(1) << 10) == uint32_t(1) << 10,
+              "nearest_greater_equal_power_of_two");
+static_assert(nearest_greater_equal_power_of_two(uint32_t(1) << 11) == uint32_t(1) << 11,
+              "nearest_greater_equal_power_of_two");
+static_assert(nearest_greater_equal_power_of_two(uint32_t(1) << 12) == uint32_t(1) << 12,
+              "nearest_greater_equal_power_of_two");
+static_assert(nearest_greater_equal_power_of_two(uint32_t(1) << 13) == uint32_t(1) << 13,
+              "nearest_greater_equal_power_of_two");
+static_assert(nearest_greater_equal_power_of_two(uint32_t(1) << 14) == uint32_t(1) << 14,
+              "nearest_greater_equal_power_of_two");
+static_assert(nearest_greater_equal_power_of_two(uint32_t(1) << 15) == uint32_t(1) << 15,
+              "nearest_greater_equal_power_of_two");
+static_assert(nearest_greater_equal_power_of_two(uint32_t(1) << 16) == uint32_t(1) << 16,
+              "nearest_greater_equal_power_of_two");
+static_assert(nearest_greater_equal_power_of_two(uint32_t(1) << 17) == uint32_t(1) << 17,
+              "nearest_greater_equal_power_of_two");
+static_assert(nearest_greater_equal_power_of_two(uint32_t(1) << 18) == uint32_t(1) << 18,
+              "nearest_greater_equal_power_of_two");
+static_assert(nearest_greater_equal_power_of_two(uint32_t(1) << 19) == uint32_t(1) << 19,
+              "nearest_greater_equal_power_of_two");
+static_assert(nearest_greater_equal_power_of_two(uint32_t(1) << 20) == uint32_t(1) << 20,
+              "nearest_greater_equal_power_of_two");
+static_assert(nearest_greater_equal_power_of_two(uint32_t(1) << 21) == uint32_t(1) << 21,
+              "nearest_greater_equal_power_of_two");
+static_assert(nearest_greater_equal_power_of_two(uint32_t(1) << 22) == uint32_t(1) << 22,
+              "nearest_greater_equal_power_of_two");
+static_assert(nearest_greater_equal_power_of_two(uint32_t(1) << 23) == uint32_t(1) << 23,
+              "nearest_greater_equal_power_of_two");
+static_assert(nearest_greater_equal_power_of_two(uint32_t(1) << 24) == uint32_t(1) << 24,
+              "nearest_greater_equal_power_of_two");
+static_assert(nearest_greater_equal_power_of_two(uint32_t(1) << 25) == uint32_t(1) << 25,
+              "nearest_greater_equal_power_of_two");
+static_assert(nearest_greater_equal_power_of_two(uint32_t(1) << 26) == uint32_t(1) << 26,
+              "nearest_greater_equal_power_of_two");
+static_assert(nearest_greater_equal_power_of_two(uint32_t(1) << 27) == uint32_t(1) << 27,
+              "nearest_greater_equal_power_of_two");
+static_assert(nearest_greater_equal_power_of_two(uint32_t(1) << 28) == uint32_t(1) << 28,
+              "nearest_greater_equal_power_of_two");
+static_assert(nearest_greater_equal_power_of_two(uint32_t(1) << 29) == uint32_t(1) << 29,
+              "nearest_greater_equal_power_of_two");
+static_assert(nearest_greater_equal_power_of_two(uint32_t(1) << 30) == uint32_t(1) << 30,
+              "nearest_greater_equal_power_of_two");
+static_assert(nearest_greater_equal_power_of_two(uint32_t(1) << 31) == uint32_t(1) << 31,
+              "nearest_greater_equal_power_of_two");
 
-static_assert(nearest_greater_equal_power_of_two(uint64_t(0u)) == 1u, "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint64_t(1u)) == 1u, "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint64_t(2u)) == 2u, "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint64_t(3u)) == 4u, "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint64_t(4u)) == 4u, "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint64_t(5u)) == 8u, "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint64_t(6u)) == 8u, "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint64_t(7u)) == 8u, "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint64_t(8u)) == 8u, "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint64_t(16u)) == 16u, "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint64_t(17u)) == 32u, "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint64_t(18u)) == 32u, "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint64_t(19u)) == 32u, "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint64_t(20u)) == 32u, "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint64_t(0x7FFFFFFFu)) == 0x80000000u, "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint64_t(0x80000000u)) == 0x80000000u, "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint64_t(0x80000001u)) == 0x100000000ull, "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint64_t(0xFFFFFFFFu)) == 0x100000000ull, "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint64_t(0x7FFFFFFFFFFFFFFFull)) == 0x8000000000000000ull,
+static_assert(nearest_greater_equal_power_of_two(uint64_t(0u)) == 1u,
               "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint64_t(0x8000000000000000ull)) == 0x8000000000000000ull,
+static_assert(nearest_greater_equal_power_of_two(uint64_t(1u)) == 1u,
               "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint64_t(1) << 0) == uint64_t(1) << 0, "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint64_t(1) << 1) == uint64_t(1) << 1, "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint64_t(1) << 2) == uint64_t(1) << 2, "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint64_t(1) << 3) == uint64_t(1) << 3, "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint64_t(1) << 4) == uint64_t(1) << 4, "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint64_t(1) << 5) == uint64_t(1) << 5, "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint64_t(1) << 6) == uint64_t(1) << 6, "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint64_t(1) << 7) == uint64_t(1) << 7, "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint64_t(1) << 8) == uint64_t(1) << 8, "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint64_t(1) << 9) == uint64_t(1) << 9, "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint64_t(1) << 10) == uint64_t(1) << 10, "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint64_t(1) << 11) == uint64_t(1) << 11, "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint64_t(1) << 12) == uint64_t(1) << 12, "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint64_t(1) << 13) == uint64_t(1) << 13, "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint64_t(1) << 14) == uint64_t(1) << 14, "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint64_t(1) << 15) == uint64_t(1) << 15, "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint64_t(1) << 16) == uint64_t(1) << 16, "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint64_t(1) << 17) == uint64_t(1) << 17, "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint64_t(1) << 18) == uint64_t(1) << 18, "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint64_t(1) << 19) == uint64_t(1) << 19, "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint64_t(1) << 20) == uint64_t(1) << 20, "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint64_t(1) << 21) == uint64_t(1) << 21, "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint64_t(1) << 22) == uint64_t(1) << 22, "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint64_t(1) << 23) == uint64_t(1) << 23, "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint64_t(1) << 24) == uint64_t(1) << 24, "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint64_t(1) << 25) == uint64_t(1) << 25, "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint64_t(1) << 26) == uint64_t(1) << 26, "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint64_t(1) << 27) == uint64_t(1) << 27, "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint64_t(1) << 28) == uint64_t(1) << 28, "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint64_t(1) << 29) == uint64_t(1) << 29, "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint64_t(1) << 30) == uint64_t(1) << 30, "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint64_t(1) << 31) == uint64_t(1) << 31, "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint64_t(1) << 32) == uint64_t(1) << 32, "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint64_t(1) << 33) == uint64_t(1) << 33, "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint64_t(1) << 34) == uint64_t(1) << 34, "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint64_t(1) << 35) == uint64_t(1) << 35, "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint64_t(1) << 36) == uint64_t(1) << 36, "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint64_t(1) << 37) == uint64_t(1) << 37, "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint64_t(1) << 38) == uint64_t(1) << 38, "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint64_t(1) << 39) == uint64_t(1) << 39, "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint64_t(1) << 40) == uint64_t(1) << 40, "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint64_t(1) << 41) == uint64_t(1) << 41, "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint64_t(1) << 42) == uint64_t(1) << 42, "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint64_t(1) << 43) == uint64_t(1) << 43, "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint64_t(1) << 44) == uint64_t(1) << 44, "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint64_t(1) << 45) == uint64_t(1) << 45, "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint64_t(1) << 46) == uint64_t(1) << 46, "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint64_t(1) << 47) == uint64_t(1) << 47, "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint64_t(1) << 48) == uint64_t(1) << 48, "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint64_t(1) << 49) == uint64_t(1) << 49, "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint64_t(1) << 50) == uint64_t(1) << 50, "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint64_t(1) << 51) == uint64_t(1) << 51, "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint64_t(1) << 52) == uint64_t(1) << 52, "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint64_t(1) << 53) == uint64_t(1) << 53, "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint64_t(1) << 54) == uint64_t(1) << 54, "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint64_t(1) << 55) == uint64_t(1) << 55, "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint64_t(1) << 56) == uint64_t(1) << 56, "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint64_t(1) << 57) == uint64_t(1) << 57, "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint64_t(1) << 58) == uint64_t(1) << 58, "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint64_t(1) << 59) == uint64_t(1) << 59, "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint64_t(1) << 60) == uint64_t(1) << 60, "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint64_t(1) << 61) == uint64_t(1) << 61, "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint64_t(1) << 62) == uint64_t(1) << 62, "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint64_t(1) << 63) == uint64_t(1) << 63, "nearest_greater_equal_power_of_two");
+static_assert(nearest_greater_equal_power_of_two(uint64_t(2u)) == 2u,
+              "nearest_greater_equal_power_of_two");
+static_assert(nearest_greater_equal_power_of_two(uint64_t(3u)) == 4u,
+              "nearest_greater_equal_power_of_two");
+static_assert(nearest_greater_equal_power_of_two(uint64_t(4u)) == 4u,
+              "nearest_greater_equal_power_of_two");
+static_assert(nearest_greater_equal_power_of_two(uint64_t(5u)) == 8u,
+              "nearest_greater_equal_power_of_two");
+static_assert(nearest_greater_equal_power_of_two(uint64_t(6u)) == 8u,
+              "nearest_greater_equal_power_of_two");
+static_assert(nearest_greater_equal_power_of_two(uint64_t(7u)) == 8u,
+              "nearest_greater_equal_power_of_two");
+static_assert(nearest_greater_equal_power_of_two(uint64_t(8u)) == 8u,
+              "nearest_greater_equal_power_of_two");
+static_assert(nearest_greater_equal_power_of_two(uint64_t(16u)) == 16u,
+              "nearest_greater_equal_power_of_two");
+static_assert(nearest_greater_equal_power_of_two(uint64_t(17u)) == 32u,
+              "nearest_greater_equal_power_of_two");
+static_assert(nearest_greater_equal_power_of_two(uint64_t(18u)) == 32u,
+              "nearest_greater_equal_power_of_two");
+static_assert(nearest_greater_equal_power_of_two(uint64_t(19u)) == 32u,
+              "nearest_greater_equal_power_of_two");
+static_assert(nearest_greater_equal_power_of_two(uint64_t(20u)) == 32u,
+              "nearest_greater_equal_power_of_two");
+static_assert(nearest_greater_equal_power_of_two(uint64_t(0x7FFFFFFFu)) == 0x80000000u,
+              "nearest_greater_equal_power_of_two");
+static_assert(nearest_greater_equal_power_of_two(uint64_t(0x80000000u)) == 0x80000000u,
+              "nearest_greater_equal_power_of_two");
+static_assert(nearest_greater_equal_power_of_two(uint64_t(0x80000001u)) == 0x100000000ull,
+              "nearest_greater_equal_power_of_two");
+static_assert(nearest_greater_equal_power_of_two(uint64_t(0xFFFFFFFFu)) == 0x100000000ull,
+              "nearest_greater_equal_power_of_two");
+static_assert(nearest_greater_equal_power_of_two(uint64_t(0x7FFFFFFFFFFFFFFFull)) ==
+                  0x8000000000000000ull,
+              "nearest_greater_equal_power_of_two");
+static_assert(nearest_greater_equal_power_of_two(uint64_t(0x8000000000000000ull)) ==
+                  0x8000000000000000ull,
+              "nearest_greater_equal_power_of_two");
+static_assert(nearest_greater_equal_power_of_two(uint64_t(1) << 0) == uint64_t(1) << 0,
+              "nearest_greater_equal_power_of_two");
+static_assert(nearest_greater_equal_power_of_two(uint64_t(1) << 1) == uint64_t(1) << 1,
+              "nearest_greater_equal_power_of_two");
+static_assert(nearest_greater_equal_power_of_two(uint64_t(1) << 2) == uint64_t(1) << 2,
+              "nearest_greater_equal_power_of_two");
+static_assert(nearest_greater_equal_power_of_two(uint64_t(1) << 3) == uint64_t(1) << 3,
+              "nearest_greater_equal_power_of_two");
+static_assert(nearest_greater_equal_power_of_two(uint64_t(1) << 4) == uint64_t(1) << 4,
+              "nearest_greater_equal_power_of_two");
+static_assert(nearest_greater_equal_power_of_two(uint64_t(1) << 5) == uint64_t(1) << 5,
+              "nearest_greater_equal_power_of_two");
+static_assert(nearest_greater_equal_power_of_two(uint64_t(1) << 6) == uint64_t(1) << 6,
+              "nearest_greater_equal_power_of_two");
+static_assert(nearest_greater_equal_power_of_two(uint64_t(1) << 7) == uint64_t(1) << 7,
+              "nearest_greater_equal_power_of_two");
+static_assert(nearest_greater_equal_power_of_two(uint64_t(1) << 8) == uint64_t(1) << 8,
+              "nearest_greater_equal_power_of_two");
+static_assert(nearest_greater_equal_power_of_two(uint64_t(1) << 9) == uint64_t(1) << 9,
+              "nearest_greater_equal_power_of_two");
+static_assert(nearest_greater_equal_power_of_two(uint64_t(1) << 10) == uint64_t(1) << 10,
+              "nearest_greater_equal_power_of_two");
+static_assert(nearest_greater_equal_power_of_two(uint64_t(1) << 11) == uint64_t(1) << 11,
+              "nearest_greater_equal_power_of_two");
+static_assert(nearest_greater_equal_power_of_two(uint64_t(1) << 12) == uint64_t(1) << 12,
+              "nearest_greater_equal_power_of_two");
+static_assert(nearest_greater_equal_power_of_two(uint64_t(1) << 13) == uint64_t(1) << 13,
+              "nearest_greater_equal_power_of_two");
+static_assert(nearest_greater_equal_power_of_two(uint64_t(1) << 14) == uint64_t(1) << 14,
+              "nearest_greater_equal_power_of_two");
+static_assert(nearest_greater_equal_power_of_two(uint64_t(1) << 15) == uint64_t(1) << 15,
+              "nearest_greater_equal_power_of_two");
+static_assert(nearest_greater_equal_power_of_two(uint64_t(1) << 16) == uint64_t(1) << 16,
+              "nearest_greater_equal_power_of_two");
+static_assert(nearest_greater_equal_power_of_two(uint64_t(1) << 17) == uint64_t(1) << 17,
+              "nearest_greater_equal_power_of_two");
+static_assert(nearest_greater_equal_power_of_two(uint64_t(1) << 18) == uint64_t(1) << 18,
+              "nearest_greater_equal_power_of_two");
+static_assert(nearest_greater_equal_power_of_two(uint64_t(1) << 19) == uint64_t(1) << 19,
+              "nearest_greater_equal_power_of_two");
+static_assert(nearest_greater_equal_power_of_two(uint64_t(1) << 20) == uint64_t(1) << 20,
+              "nearest_greater_equal_power_of_two");
+static_assert(nearest_greater_equal_power_of_two(uint64_t(1) << 21) == uint64_t(1) << 21,
+              "nearest_greater_equal_power_of_two");
+static_assert(nearest_greater_equal_power_of_two(uint64_t(1) << 22) == uint64_t(1) << 22,
+              "nearest_greater_equal_power_of_two");
+static_assert(nearest_greater_equal_power_of_two(uint64_t(1) << 23) == uint64_t(1) << 23,
+              "nearest_greater_equal_power_of_two");
+static_assert(nearest_greater_equal_power_of_two(uint64_t(1) << 24) == uint64_t(1) << 24,
+              "nearest_greater_equal_power_of_two");
+static_assert(nearest_greater_equal_power_of_two(uint64_t(1) << 25) == uint64_t(1) << 25,
+              "nearest_greater_equal_power_of_two");
+static_assert(nearest_greater_equal_power_of_two(uint64_t(1) << 26) == uint64_t(1) << 26,
+              "nearest_greater_equal_power_of_two");
+static_assert(nearest_greater_equal_power_of_two(uint64_t(1) << 27) == uint64_t(1) << 27,
+              "nearest_greater_equal_power_of_two");
+static_assert(nearest_greater_equal_power_of_two(uint64_t(1) << 28) == uint64_t(1) << 28,
+              "nearest_greater_equal_power_of_two");
+static_assert(nearest_greater_equal_power_of_two(uint64_t(1) << 29) == uint64_t(1) << 29,
+              "nearest_greater_equal_power_of_two");
+static_assert(nearest_greater_equal_power_of_two(uint64_t(1) << 30) == uint64_t(1) << 30,
+              "nearest_greater_equal_power_of_two");
+static_assert(nearest_greater_equal_power_of_two(uint64_t(1) << 31) == uint64_t(1) << 31,
+              "nearest_greater_equal_power_of_two");
+static_assert(nearest_greater_equal_power_of_two(uint64_t(1) << 32) == uint64_t(1) << 32,
+              "nearest_greater_equal_power_of_two");
+static_assert(nearest_greater_equal_power_of_two(uint64_t(1) << 33) == uint64_t(1) << 33,
+              "nearest_greater_equal_power_of_two");
+static_assert(nearest_greater_equal_power_of_two(uint64_t(1) << 34) == uint64_t(1) << 34,
+              "nearest_greater_equal_power_of_two");
+static_assert(nearest_greater_equal_power_of_two(uint64_t(1) << 35) == uint64_t(1) << 35,
+              "nearest_greater_equal_power_of_two");
+static_assert(nearest_greater_equal_power_of_two(uint64_t(1) << 36) == uint64_t(1) << 36,
+              "nearest_greater_equal_power_of_two");
+static_assert(nearest_greater_equal_power_of_two(uint64_t(1) << 37) == uint64_t(1) << 37,
+              "nearest_greater_equal_power_of_two");
+static_assert(nearest_greater_equal_power_of_two(uint64_t(1) << 38) == uint64_t(1) << 38,
+              "nearest_greater_equal_power_of_two");
+static_assert(nearest_greater_equal_power_of_two(uint64_t(1) << 39) == uint64_t(1) << 39,
+              "nearest_greater_equal_power_of_two");
+static_assert(nearest_greater_equal_power_of_two(uint64_t(1) << 40) == uint64_t(1) << 40,
+              "nearest_greater_equal_power_of_two");
+static_assert(nearest_greater_equal_power_of_two(uint64_t(1) << 41) == uint64_t(1) << 41,
+              "nearest_greater_equal_power_of_two");
+static_assert(nearest_greater_equal_power_of_two(uint64_t(1) << 42) == uint64_t(1) << 42,
+              "nearest_greater_equal_power_of_two");
+static_assert(nearest_greater_equal_power_of_two(uint64_t(1) << 43) == uint64_t(1) << 43,
+              "nearest_greater_equal_power_of_two");
+static_assert(nearest_greater_equal_power_of_two(uint64_t(1) << 44) == uint64_t(1) << 44,
+              "nearest_greater_equal_power_of_two");
+static_assert(nearest_greater_equal_power_of_two(uint64_t(1) << 45) == uint64_t(1) << 45,
+              "nearest_greater_equal_power_of_two");
+static_assert(nearest_greater_equal_power_of_two(uint64_t(1) << 46) == uint64_t(1) << 46,
+              "nearest_greater_equal_power_of_two");
+static_assert(nearest_greater_equal_power_of_two(uint64_t(1) << 47) == uint64_t(1) << 47,
+              "nearest_greater_equal_power_of_two");
+static_assert(nearest_greater_equal_power_of_two(uint64_t(1) << 48) == uint64_t(1) << 48,
+              "nearest_greater_equal_power_of_two");
+static_assert(nearest_greater_equal_power_of_two(uint64_t(1) << 49) == uint64_t(1) << 49,
+              "nearest_greater_equal_power_of_two");
+static_assert(nearest_greater_equal_power_of_two(uint64_t(1) << 50) == uint64_t(1) << 50,
+              "nearest_greater_equal_power_of_two");
+static_assert(nearest_greater_equal_power_of_two(uint64_t(1) << 51) == uint64_t(1) << 51,
+              "nearest_greater_equal_power_of_two");
+static_assert(nearest_greater_equal_power_of_two(uint64_t(1) << 52) == uint64_t(1) << 52,
+              "nearest_greater_equal_power_of_two");
+static_assert(nearest_greater_equal_power_of_two(uint64_t(1) << 53) == uint64_t(1) << 53,
+              "nearest_greater_equal_power_of_two");
+static_assert(nearest_greater_equal_power_of_two(uint64_t(1) << 54) == uint64_t(1) << 54,
+              "nearest_greater_equal_power_of_two");
+static_assert(nearest_greater_equal_power_of_two(uint64_t(1) << 55) == uint64_t(1) << 55,
+              "nearest_greater_equal_power_of_two");
+static_assert(nearest_greater_equal_power_of_two(uint64_t(1) << 56) == uint64_t(1) << 56,
+              "nearest_greater_equal_power_of_two");
+static_assert(nearest_greater_equal_power_of_two(uint64_t(1) << 57) == uint64_t(1) << 57,
+              "nearest_greater_equal_power_of_two");
+static_assert(nearest_greater_equal_power_of_two(uint64_t(1) << 58) == uint64_t(1) << 58,
+              "nearest_greater_equal_power_of_two");
+static_assert(nearest_greater_equal_power_of_two(uint64_t(1) << 59) == uint64_t(1) << 59,
+              "nearest_greater_equal_power_of_two");
+static_assert(nearest_greater_equal_power_of_two(uint64_t(1) << 60) == uint64_t(1) << 60,
+              "nearest_greater_equal_power_of_two");
+static_assert(nearest_greater_equal_power_of_two(uint64_t(1) << 61) == uint64_t(1) << 61,
+              "nearest_greater_equal_power_of_two");
+static_assert(nearest_greater_equal_power_of_two(uint64_t(1) << 62) == uint64_t(1) << 62,
+              "nearest_greater_equal_power_of_two");
+static_assert(nearest_greater_equal_power_of_two(uint64_t(1) << 63) == uint64_t(1) << 63,
+              "nearest_greater_equal_power_of_two");
 
 static_assert(least_bit_set(0b0) == 0b0, "least_bit_set");
 static_assert(least_bit_set(0b1) == 0b1, "least_bit_set");
@@ -1280,7 +1414,6 @@ static void test_sin_cos_sum_generic() noexcept {
     mpfr_clear(beta);
     mpfr_clear(alpha);
 }
-
 
 static void test_sin_cos_sum() noexcept {
     log_tests_started();

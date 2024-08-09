@@ -31,9 +31,9 @@ template <bool IsBackwardFFT = false /* Forward of backward FFT */>
 ATTRIBUTE_SIZED_ACCESS(read_write, 1, 2)
 ATTRIBUTE_NONNULL(1)
 #if CONFIG_HAS_AT_LEAST_CXX_20
-constexpr
+    constexpr
 #endif
-inline void forward_or_backward_fft(complex* p, const std::size_t k) noexcept {
+    inline void forward_or_backward_fft(complex* p, const std::size_t k) noexcept {
     ATTRIBUTE_ASSUME(k > 0 && (k & (k - 1)) == 0);
 
     for (std::size_t i = 1, k_reversed_i = 0; i < k; i++) {
@@ -62,8 +62,8 @@ inline void forward_or_backward_fft(complex* p, const std::size_t k) noexcept {
     for (std::size_t step = 2; step < k; step *= 2) {
         for (std::size_t block_start = 0; block_start < k;) {
             std::size_t block_end = block_start + step;
-            for (std::size_t pos_in_block = block_start, point_index = step; pos_in_block < block_end;
-                 pos_in_block++, point_index++) {
+            for (std::size_t pos_in_block = block_start, point_index = step;
+                 pos_in_block < block_end; pos_in_block++, point_index++) {
                 const complex p0_i = p[pos_in_block];
                 complex w_j_p1_i{};
                 if constexpr (IsBackwardFFT) {
@@ -171,7 +171,7 @@ inline void forward_backward_fft(complex* p1, complex* p2, const std::size_t n) 
      */
     constexpr complex one_quat_i = complex(0, -0.25);  // 1 / (4 * i) == -i / 4
     for (std::size_t j = 0; j < n; j++) {
-        std::size_t n_j      = (n - j) & (n - 1);  // <=> mod n because n is power of two
+        std::size_t n_j = (n - j) & (n - 1);  // <=> mod n because n is power of two
         complex p_w_j   = p1[j];
         complex p_w_n_j = std::conj(p1[n_j]);
         p2[j]           = (p_w_j + p_w_n_j) * (p_w_j - p_w_n_j) * one_quat_i;

@@ -353,9 +353,8 @@ struct LongInt {
         std::uint32_t capacity_{};
     };
     explicit LongInt(Reserve reserve_tag)
-        : nums_(static_cast<uint32_t*>(allocate(reserve_tag.capacity_)))
-        , capacity_(reserve_tag.capacity_) {
-    }
+        : nums_(static_cast<uint32_t*>(allocate(reserve_tag.capacity_))),
+          capacity_(reserve_tag.capacity_) {}
     LongInt& operator=(int32_t n) {
         ensureDefaultCapacityOpEqCall();
         size_    = std::int32_t(n > 0) - std::int32_t(n < 0);
@@ -457,7 +456,7 @@ struct LongInt {
             deallocate(other.nums_);
             other.nums_ = ans;
         } else {
-            std::size_t n             = 2 * math_functions::nearest_greater_equal_power_of_two(prod_size);
+            std::size_t n = 2 * math_functions::nearest_greater_equal_power_of_two(prod_size);
             const bool high_precision = n > kFFTPrecisionBorder;
             n <<= high_precision;
             // Allocate n complex numbers for p1 and n complex numbers for p2
@@ -575,7 +574,7 @@ struct LongInt {
             deallocate(nums_);
             nums_ = ans;
         } else {
-            std::size_t n             = 2 * math_functions::nearest_greater_equal_power_of_two(prod_size);
+            std::size_t n = 2 * math_functions::nearest_greater_equal_power_of_two(prod_size);
             const bool high_precision = n > kFFTPrecisionBorder;
             n <<= high_precision;
             // Allocate n complex numbers for p1 and n complex numbers for p2
@@ -1664,8 +1663,7 @@ struct LongInt {
             }
 
             if (size_ < other.size_) {
-                uint32_t* new_digits =
-                    static_cast<uint32_t*>(allocate(other.size_));
+                uint32_t* new_digits = static_cast<uint32_t*>(allocate(other.size_));
                 std::copy_n(other.digits_ + size_, other.size_ - size_,
                             std::copy_n(digits_, size_, new_digits));
                 deallocate(this->digits_);
@@ -1684,8 +1682,8 @@ struct LongInt {
             if (carry == 0) {
                 popLeadingZeros();
             } else {
-                uint32_t* new_digits = static_cast<uint32_t*>(
-                    allocate((this_size + 1 + (this_size == 0))));
+                uint32_t* new_digits =
+                    static_cast<uint32_t*>(allocate((this_size + 1 + (this_size == 0))));
                 pointer new_digits_copy_end = std::copy_n(digits_, this_size, new_digits);
                 *new_digits_copy_end        = uint32_t(carry);
                 deallocate(this->digits_);
@@ -1891,7 +1889,7 @@ private:
                 mult_add_buffer[j + half_len] = uint32_t(carry);
             }
         } else {
-            std::size_t n             = 2 * math_functions::nearest_greater_equal_power_of_two(prod_size);
+            std::size_t n = 2 * math_functions::nearest_greater_equal_power_of_two(prod_size);
             const bool high_precision = n > kFFTPrecisionBorder;
             n <<= high_precision;
             fft::complex* p1 = fft_poly_buffer;
