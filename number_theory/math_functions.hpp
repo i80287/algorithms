@@ -163,9 +163,9 @@ ATTRIBUTE_CONST inline I128_CONSTEXPR uint64_t bin_pow_mod(uint64_t n, uint64_t 
 #endif
 
 ATTRIBUTE_CONST constexpr uint32_t isqrt(uint32_t n) noexcept {
-    /** 
+    /**
      * In the runtime `sqrt` is used.
-     * 
+     *
      * Quick Bench benchmark source code on the godbolt:
      *  https://godbolt.org/z/7jK8xcjjf
      */
@@ -192,7 +192,7 @@ ATTRIBUTE_CONST constexpr uint32_t isqrt(uint32_t n) noexcept {
 }
 
 ATTRIBUTE_CONST constexpr uint32_t isqrt(uint64_t n) noexcept {
-    /** 
+    /**
      * In the runtime `sqrtl` is used.
      */
 
@@ -282,9 +282,10 @@ ATTRIBUTE_CONST constexpr uint32_t icbrt(uint32_t n) noexcept {
     // 1625^3 = 4291015625 < 2^32 - 1 = 4294967295 < 4298942376 = 1626^3
     ATTRIBUTE_ASSUME(y <= 1625u);
 #if defined(__GNUG__) && !defined(__clang__)
-    // Clang ignores this assumption because it contains potential side effects (fpu register flags),
-    // when GCC has made almost all math functions constexpr long before the C++26
-    ATTRIBUTE_ASSUME(y == (static_cast<std::uint32_t>(std::cbrt(static_cast<long double>(n_original_value)))));
+    // Clang ignores this assumption because it contains potential side effects (fpu register
+    // flags), when GCC has made almost all math functions constexpr long before the C++26
+    ATTRIBUTE_ASSUME(
+        y == (static_cast<std::uint32_t>(std::cbrt(static_cast<long double>(n_original_value)))));
 #endif
     return y;
 }

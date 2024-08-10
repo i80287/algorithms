@@ -17,13 +17,14 @@
 #include <type_traits>
 #include <vector>
 
+#include "config_macros.hpp"
 #include "fft.hpp"
-#if defined(__has_include) && __has_include("integers_128_bit.hpp")
+#if CONFIG_HAS_INCLUDE("integers_128_bit.hpp")
 #include "integers_128_bit.hpp"
 #endif
 #include "math_functions.hpp"
 
-#if !defined(__GNUC__)
+#if !defined(__GNUG__)
 #error "Current implementation works only with GCC"
 #endif
 
@@ -158,7 +159,6 @@ private:
     friend void Deallocate(void* memory) noexcept;
 };
 
-
 void Deallocate(void* memory) noexcept {
     if (unlikely(memory == nullptr)) {
         return;
@@ -195,8 +195,8 @@ __attribute__((malloc))
 #else
 __attribute__((malloc, malloc(::longint_allocator::Deallocate, 1)))
 #endif
-ATTRIBUTE_RETURNS_NONNULL
-void* Allocate(std::size_t size) {
+ATTRIBUTE_RETURNS_NONNULL void*
+Allocate(std::size_t size) {
     if (size <= inner_impl::SmallPage::kCapacity && inner_impl::free_small_pages_head != nullptr) {
         inner_impl::SmallPage* p = inner_impl::free_small_pages_head;
 #ifdef DEBUG_LI_ALLOC_PRINTING
@@ -279,7 +279,7 @@ struct LongInt {
         other.size_     = 0;
         other.capacity_ = 0;
     }
-#if __cplusplus >= 202002L
+#if CONFIG_HAS_AT_LEAST_CXX_20
     constexpr
 #endif
         LongInt&
@@ -287,7 +287,7 @@ struct LongInt {
         swap(other);
         return *this;
     }
-#if __cplusplus >= 202002L
+#if CONFIG_HAS_AT_LEAST_CXX_20
     constexpr
 #endif
         void
@@ -296,7 +296,7 @@ struct LongInt {
         std::swap(size_, other.size_);
         std::swap(capacity_, other.capacity_);
     }
-#if __cplusplus >= 202002L
+#if CONFIG_HAS_AT_LEAST_CXX_20
     constexpr
 #endif
         friend void
@@ -794,7 +794,8 @@ struct LongInt {
                 nums_[new_usize1 - 1]  = uint32_t(add_overflow_carry);
             }
         } else {
-            throw std::runtime_error("Summation of two LongInts is not implemented");
+            throw std::runtime_error(
+                "Summation of two LongInts with different signs is not implemented");
             // LongIntSubtract(*this, other.nums_, usize2);
         }
 
@@ -947,8 +948,7 @@ struct LongInt {
     LongInt& operator+=(uint32_t n) {
         if (unlikely(size_ == 0)) {
             if (capacity_ == 0) {
-                nums_     = static_cast<uint32_t*>(allocate(2));
-                capacity_ = 2;
+                allocateDefaultCapacity();
             }
 
             nums_[0] = n;
@@ -969,8 +969,7 @@ struct LongInt {
     LongInt& operator-=(uint32_t n) {
         if (unlikely(size_ == 0)) {
             if (capacity_ == 0) {
-                nums_     = static_cast<uint32_t*>(allocate(2));
-                capacity_ = 2;
+                allocateDefaultCapacity();
             }
 
             nums_[0] = n;
@@ -1037,6 +1036,10 @@ struct LongInt {
         return *this;
     }
 
+    /// @brief Set *this = *this / n and return *this % n
+    /// @note  Behaviour is undefined if n equals 0
+    /// @param n
+    /// @return *this mod n
     [[nodiscard]] constexpr uint32_t divmod(uint32_t n) noexcept {
         uint64_t carry          = 0;
         uint32_t* nums_iter_end = nums_ - 1;
@@ -1074,7 +1077,7 @@ struct LongInt {
         uint32_t* nums_iter            = nums_;
         uint32_t* const nums_iter_last = nums_iter + std::ptrdiff_t(usize) - 1;
         for (; nums_iter != nums_iter_last; ++nums_iter) {
-#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+#if CONFIG_BYTE_ORDER_LITTLE_ENDIAN
             // *nums_iter = uint32_t(*reinterpret_cast<uint64_t*>(nums_iter) >> shift);
             *nums_iter = uint32_t(((*nums_iter) | (uint64_t(*(nums_iter + 1)) << 32)) >> shift);
 #else
@@ -1165,11 +1168,8 @@ struct LongInt {
         constexpr auto kMaxSSize = std::numeric_limits<decltype(LongInt::size_)>::max();
         static_assert(kMaxSSize > 0);
         constexpr auto kMaxUSize = std::numeric_limits<decltype(LongInt::capacity_)>::max();
-        return std::min({
-            static_cast<std::size_t>(kMaxSSize),
-            static_cast<std::size_t>(kMaxUSize),
-            std::numeric_limits<std::size_t>::max() / sizeof(digit_t)
-        });
+        return std::min({static_cast<std::size_t>(kMaxSSize), static_cast<std::size_t>(kMaxUSize),
+                         std::numeric_limits<std::size_t>::max() / sizeof(digit_t)});
     }
 
     void set_string(std::string_view s) {
@@ -1491,7 +1491,7 @@ struct LongInt {
         Decimal& operator=(const Decimal& other) {
             return *this = Decimal(other);
         }
-#if __cplusplus >= 202002L
+#if CONFIG_HAS_AT_LEAST_CXX_20
         constexpr
 #endif
             void
@@ -1499,7 +1499,7 @@ struct LongInt {
             std::swap(digits_, other.digits_);
             std::swap(size_, other.size_);
         }
-#if __cplusplus >= 202002L
+#if CONFIG_HAS_AT_LEAST_CXX_20
         constexpr
 #endif
             friend void
@@ -1510,7 +1510,7 @@ struct LongInt {
             other.digits_ = nullptr;
             other.size_   = 0;
         }
-#if __cplusplus >= 202002L
+#if CONFIG_HAS_AT_LEAST_CXX_20
         constexpr
 #endif
             Decimal&
@@ -2037,7 +2037,7 @@ private:
         reserve((std::size_t(capacity_) * 2) | (capacity_ == 0));
     }
 
-    ATTRIBUTE_NOINLINE std::size_t growSizeByOne() {
+    ATTRIBUTE_NOINLINE ATTRIBUTE_COLD std::size_t growSizeByOne() {
         std::size_t usize = USize();
         if (unlikely(usize == capacity_)) {
             growCapacity();

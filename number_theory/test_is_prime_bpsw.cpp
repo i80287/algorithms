@@ -45,16 +45,15 @@ static constexpr bool binsearch_contains(const uint64_t (&nums)[N], uint64_t val
     return r < N && nums[r] == value;
 }
 
-static void TestSmallPrimes() {
+static void TestSmallPrimes() noexcept {
     log_tests_started();
 
     for (uint64_t n = 0; n < 65536; n++) {
-        throw_if_not(is_prime_sqrt(n) == is_prime_bpsw(n),
-                     "Error bool is_prime_bpsw(uint64_t) at number = %" PRIu64 "\n", n);
+        assert(is_prime_sqrt(n) == is_prime_bpsw(n));
     }
 }
 
-static void TestMidPrimes() {
+static void TestMidPrimes() noexcept {
     log_tests_started();
 
     constexpr uint64_t primes[] = {
@@ -81,12 +80,11 @@ static void TestMidPrimes() {
     static_assert(primes[0] < primes[0] + 2);
 
     for (uint64_t n = primes[N - 1]; n <= primes[0]; n += 2) {
-        throw_if_not(is_prime_bpsw(n) == binsearch_contains(primes, n),
-                     "Error in bool is_prime_bpsw(uint64_t) at number = %" PRIu64 "\n", n);
+        assert(is_prime_bpsw(n) == binsearch_contains(primes, n));
     }
 }
 
-static void TestLargestU64Primes() {
+static void TestLargestU64Primes() noexcept {
     log_tests_started();
 
     constexpr uint64_t primes[] = {
@@ -365,8 +363,7 @@ static void TestLargestU64Primes() {
     static_assert(primes[0] < primes[0] + 2);
 
     for (uint64_t n = primes[N - 1]; n <= primes[0]; n += 2) {
-        throw_if_not(is_prime_bpsw(n) == binsearch_contains(primes, n),
-                     "Error in bool is_prime_bpsw(uint64_t) at number = %" PRIu64 "\n", n);
+        assert(is_prime_bpsw(n) == binsearch_contains(primes, n));
     }
 }
 
@@ -377,9 +374,8 @@ static void TestPrimesFromFile() {
     for (uint64_t prev_prime = uint64_t(-1), p = 0;; prev_prime = p) {
         switch (std::fscanf(fin.file, "%" PRIu64, &p)) {
             [[likely]] case 1:
-                throw_if_not(prev_prime > p,
-                             "Primes reversed ordering not held at p = %" PRIu64 "\n", p);
-                throw_if_not(is_prime_bpsw(p), "is_prime_bpsw error on n = %" PRIu64 "\n", p);
+                assert(prev_prime > p);
+                assert(is_prime_bpsw(p));
                 break;
             [[unlikely]] case std::char_traits<char>::eof():
                 return;
@@ -390,7 +386,7 @@ static void TestPrimesFromFile() {
     }
 }
 
-static void TestRandomPrimesGMP() {
+static void TestRandomPrimesGMP() noexcept {
     log_tests_started();
 
     constexpr size_t kTotalTests = 1u << 24;
@@ -401,8 +397,6 @@ static void TestRandomPrimesGMP() {
 
     mpz_t n_gmp;
     mpz_init(n_gmp);
-    uint64_t failed_prime = uint64_t(-1);
-
     static_assert(sizeof(mp_limb_t) >= sizeof(uint64_t) ||
                   sizeof(unsigned long) == sizeof(uint32_t));
     if constexpr (sizeof(mp_limb_t) >= sizeof(uint64_t)) {
@@ -414,11 +408,8 @@ static void TestRandomPrimesGMP() {
             n_gmp_array[0] = n;
             mpz_limbs_finish(n_gmp, 1);
 
-            bool is_prime = mpz_probab_prime_p(n_gmp, 30) != 0;
-            if (unlikely(is_prime_bpsw(n) != is_prime)) {
-                failed_prime = n;
-                break;
-            }
+            const bool is_prime = mpz_probab_prime_p(n_gmp, 30) != 0;
+            assert(is_prime_bpsw(n) == is_prime);
         }
     } else if constexpr (sizeof(unsigned long) == sizeof(uint32_t)) {
         for (size_t test = kTotalTests; test != 0; test--) {
@@ -429,17 +420,12 @@ static void TestRandomPrimesGMP() {
             mpz_mul_2exp(n_gmp, n_gmp, 32);
             mpz_add_ui(n_gmp, n_gmp, static_cast<unsigned long int>(n & 0xFFFFFFFFu));
 
-            bool is_prime = mpz_probab_prime_p(n_gmp, 30) != 0;
-            if (unlikely(is_prime_bpsw(n) != is_prime)) {
-                failed_prime = n;
-                break;
-            }
+            const bool is_prime = mpz_probab_prime_p(n_gmp, 30) != 0;
+            assert(is_prime_bpsw(n) == is_prime);
         }
     }
 
     mpz_clear(n_gmp);
-    throw_if_not(failed_prime == uint64_t(-1),
-                 "Error bool is_prime_bpsw(uint64_t) at number = %" PRIu64 "\n", failed_prime);
 }
 
 int main() {
@@ -455,6 +441,6 @@ int main() {
         return 1;
     } catch (...) {
         fputs("Unknown exception", stderr);
-        return 0;
+        return 1;
     }
 }

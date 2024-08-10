@@ -1202,7 +1202,7 @@ static void test_isqrt() {
          (uint128_t(17594829943123320651ull) << 64) | 2622055845271657274ull},
         {uint64_t(-1), uint128_t(-1)},
     };
-    for (const auto &[root, square] : root_with_square) {
+    for (const auto& [root, square] : root_with_square) {
         if (uint32_t(square) == square) {
             assert(root == isqrt(uint32_t(square)));
         }
