@@ -8,7 +8,7 @@ namespace long_int_tests {
 
 static void TestOperatorEqualsInt() {
     test_tools::log_tests_started();
-    LongInt n;
+    longint n;
 
     constexpr int32_t K = 131072;
     for (int32_t i = -K; i < 0; i++) {
@@ -83,8 +83,8 @@ static void TestOperatorEqualsInt() {
 static void TestLongIntMult() {
     test_tools::log_tests_started();
 
-    LongInt n1;
-    LongInt n2;
+    longint n1;
+    longint n2;
     constexpr uint64_t K = 6000;
     for (uint32_t i = 1; i <= K; i++) {
         for (uint32_t j = 1; j <= K; j++) {
@@ -429,7 +429,7 @@ static void TestLongIntMult() {
 static void TestLongIntSquare() {
     test_tools::log_tests_started();
 
-    LongInt n;
+    longint n;
     n.reserve(4);
     constexpr uint64_t K = 8192;
     for (uint32_t i = 0; i <= K; i++) {
@@ -464,7 +464,7 @@ static void TestLongIntSquare() {
         "5210644015679228794060694325390955853335898483908056458352183851018372"
         "555735221");
     n.SquareInplace();
-    LongInt m(
+    longint m(
         "2715081105813375912663740062136683840750740328631800602665129147391424"
         "5617262278768667220143322390759183606834362732983828281970077858087036"
         "385802059859918841");
@@ -512,7 +512,7 @@ static void TestLongIntSquare() {
 static void TestUIntMult() {
     test_tools::log_tests_started();
 
-    LongInt n;
+    longint n;
     constexpr uint64_t K = 6000;
     for (uint64_t i = 0; i <= K; i++) {
         for (uint32_t j = 0; j <= K; j++) {
@@ -550,7 +550,7 @@ static void TestUIntMult() {
 static void TestUIntAdd() {
     test_tools::log_tests_started();
 
-    LongInt n(LongInt::Reserve(4));
+    longint n(longint::Reserve(4));
     constexpr uint32_t K = 6000;
     for (uint32_t i = 0; i <= K; i++) {
         for (uint32_t j = 0; j <= K; j++) {
@@ -649,7 +649,7 @@ static void TestUIntAdd() {
 static void TestInt32Div() {
     test_tools::log_tests_started();
 
-    LongInt n(LongInt::Reserve(4));
+    longint n(longint::Reserve(4));
     constexpr uint32_t K = 6000;
 
     for (uint32_t i = 0; i <= K; i++) {
@@ -670,8 +670,8 @@ static void TestInt32Div() {
 
 static void TestLongIntAdd() {
     test_tools::log_tests_started();
-    LongInt n(LongInt::Reserve(4));
-    LongInt m(LongInt::Reserve(4));
+    longint n(longint::Reserve(4));
+    longint m(longint::Reserve(4));
     constexpr uint32_t K = 6000;
     for (uint32_t i = 0; i <= K; i++) {
         for (uint32_t j = 1; j <= K; j++) {
@@ -723,7 +723,7 @@ static void TestLongIntAdd() {
 static void TestLongUIntSub() {
     test_tools::log_tests_started();
 
-    LongInt n;
+    longint n;
     n -= std::numeric_limits<uint32_t>::max();
     assert(n == -int64_t(std::numeric_limits<uint32_t>::max()));
     constexpr uint32_t K = 6000;
@@ -777,7 +777,7 @@ static void TestSetString() {
         -9223372036854775807ll - 1,
     };
 
-    LongInt n;
+    longint n;
     for (int64_t number : numbersI64) {
         n.set_string(std::to_string(number));
         assert(n == number);
@@ -889,7 +889,7 @@ static void TestToString() {
         -9223372036854775807ll - 1,
     };
 
-    LongInt n;
+    longint n;
     for (int64_t number : numbersI64) {
         n = number;
         n.to_string(buffer);
@@ -979,7 +979,7 @@ static void TestToString() {
 static void TestBitShifts() {
     test_tools::log_tests_started();
     constexpr uint32_t k = 4096;
-    LongInt n;
+    longint n;
     n.reserve(4);
     for (uint32_t i = 0; i <= k; i++) {
         for (uint32_t shift = 0; shift <= 31; shift++) {
@@ -1009,7 +1009,7 @@ static void TestBitShifts() {
 
     // 1 << 255
     n.set_string("57896044618658097711785492504343953926634992332820282019728792003956564819968");
-    LongInt m;
+    longint m;
     m.reserve(uint32_t(n.usize()));
     for (uint32_t shift = 0; shift <= 127; shift++) {
         m = n;
@@ -1020,8 +1020,8 @@ static void TestBitShifts() {
 
 static void TestDecimal() {
     test_tools::log_tests_started();
-    LongInt::Decimal d1(0u);
-    LongInt::Decimal d2(0u);
+    longint::Decimal d1(0u);
+    longint::Decimal d2(0u);
     constexpr uint32_t kC = 2000;
 
     for (uint32_t i = 0; i <= kC; i++) {
@@ -1054,8 +1054,8 @@ static void TestDecimal() {
 
         d1 += d1;
         assert(d1.size_ == 4 && d1.digits_[0] == 0 && d1.digits_[1] == 0 &&
-               d1.digits_[2] == (1u << (k + 1)) % LongInt::Decimal::kDecimalBase &&
-               d1.digits_[3] == (1u << (k + 1)) / LongInt::Decimal::kDecimalBase);
+               d1.digits_[2] == (1u << (k + 1)) % longint::Decimal::kDecimalBase &&
+               d1.digits_[3] == (1u << (k + 1)) / longint::Decimal::kDecimalBase);
     }
 
     {
@@ -1237,7 +1237,7 @@ static void TestToIntTypes() {
     test_tools::log_tests_started();
     constexpr uint32_t kC = 1000000;
 
-    LongInt n(LongInt::Reserve(4));
+    longint n(longint::Reserve(4));
     auto test = [&](auto i) {
         n = i;
         if constexpr (sizeof(i) <= sizeof(uint32_t)) {
@@ -1304,8 +1304,8 @@ int main() {
 
     // std::ios::sync_with_stdio(false);
     // std::cin.tie(nullptr);
-    // LongInt n1;
-    // LongInt n2;
+    // longint n1;
+    // longint n2;
     // std::cin >> n1 >> n2;
     // n1 *= n2;
     // std::cout << n1;
