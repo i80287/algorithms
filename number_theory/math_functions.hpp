@@ -47,7 +47,7 @@
 #endif  // _MSC_VER
 
 #if MATH_FUNCTIONS_HPP_ENABLE_TARGET_OPTIONS
-#if defined(__GNUC__)
+#if defined(__GNUG__)
 #if !defined(__clang__)
 #pragma GCC push_options
 #pragma GCC target("lzcnt,bmi")
@@ -234,25 +234,46 @@ ATTRIBUTE_CONST inline I128_CONSTEXPR uint64_t isqrt(uint128_t n) noexcept {
 #endif
 
 ATTRIBUTE_CONST constexpr uint32_t icbrt(uint32_t n) noexcept {
+    /**
+     * cbrt and cbrtl are not used here because according
+     * to the Quick Bench results they are:
+     *  1.9 and 6.5 times slower accordingly on the GCC 13.2 + libstdc++
+     *  1.7 and 5.8 times slower accordingly on the Clang 17.0 + libstdc++ / libc++
+     *
+     * Benchmark source code on the godbolt:
+     *  https://godbolt.org/z/j3cnKT3vr
+     * Quick bench (not sure it will be kept for too long,
+     *  probably it's safer to use godbolt and open Quick Bench through it):
+     *  https://quick-bench.com/q/MZlkkxIvHTOWQV5__RPJnJS-WkM
+     *
+     * If in the future the results are changed (overloads of sqrt and sqrtl are
+     *  much faster then the isqrt implementation above used in the constexpr),
+     *  this should be taken into account: on the libstd++
+     *  `uint32_t(std::cbrt(static_cast<double>(3375)))` may be equal to 14
+     */
+
+#if defined(__GNUG__) && !defined(__clang__)
+    [[maybe_unused]] const auto n_original_value = n;
+#endif
+
     uint32_t y = 0;
-    if (config_is_constant_evaluated() || config_is_gcc_constant_p(n) || sizeof(long double) < 16) {
-        /**
-         * See Hackers Delight Chapter 11.
-         */
-        for (int32_t s = 30; s >= 0; s -= 3) {
-            y *= 2;
-            uint32_t b = (3 * y * (y + 1) | 1) << s;
-            if (n >= b) {
-                n -= b;
-                y++;
-            }
+    /**
+     * See Hackers Delight Chapter 11.
+     */
+    for (int32_t s = 30; s >= 0; s -= 3) {
+        y *= 2;
+        uint32_t b = (3 * y * (y + 1) | 1) << s;
+        if (n >= b) {
+            n -= b;
+            y++;
         }
-    } else {
-        // Can't use std::cbrt(double(n)) here because uint32_t(std::cbrt(3375)) may be equal to 14
-        y = static_cast<uint32_t>(std::cbrt(static_cast<long double>(n)));
     }
     // 1625^3 = 4291015625 < 2^32 - 1 = 4294967295 < 4298942376 = 1626^3
     ATTRIBUTE_ASSUME(y <= 1625u);
+#if defined(__GNUG__) && !defined(__clang__)
+    // Clang ignores this assumption because it contains potential side effects (fpu register flags)
+    ATTRIBUTE_ASSUME(y == (static_cast<std::uint32_t>(std::cbrt(static_cast<long double>(n_original_value)))));
+#endif
     return y;
 }
 
@@ -496,8 +517,8 @@ template <class Functor>
 #if CONFIG_HAS_AT_LEAST_CXX_20
     requires requires(Functor f) { f(uint64_t()); }
 #endif
-constexpr void visit_all_submasks(uint64_t mask,
-                                  Functor visiter) noexcept(noexcept(visiter(uint64_t()))) {
+ATTRIBUTE_ALWAYS_INLINE constexpr void visit_all_submasks(uint64_t mask, Functor visiter) noexcept(
+    noexcept(visiter(uint64_t()))) {
     uint64_t s = mask;
     do {
         visiter(s);
@@ -883,7 +904,7 @@ ATTRIBUTE_CONST constexpr int32_t countr_zero(T n) noexcept {
         if (low != 0) {
 #if CONFIG_HAS_AT_LEAST_CXX_20
             return std::countr_zero(low);
-#elif defined(__GNUC__)
+#elif defined(__GNUG__)
             return __builtin_ctzll(low);
 #else
             return static_cast<int32_t>(detail::tz_count_64_software(low));
@@ -894,7 +915,7 @@ ATTRIBUTE_CONST constexpr int32_t countr_zero(T n) noexcept {
         ATTRIBUTE_ASSUME(high != 0);
 #if CONFIG_HAS_AT_LEAST_CXX_20
         int32_t high_trailing_zeros_count = std::countr_zero(high);
-#elif defined(__GNUC__)
+#elif defined(__GNUG__)
         int32_t high_trailing_zeros_count = __builtin_ctzll(high);
 #else
         int32_t high_trailing_zeros_count =
@@ -908,13 +929,13 @@ ATTRIBUTE_CONST constexpr int32_t countr_zero(T n) noexcept {
         return std::countr_zero(n);
 #else
     if constexpr (std::is_same_v<T, unsigned long long>) {
-#if defined(__GNUC__)
+#if defined(__GNUG__)
         return __builtin_ctzll(n);
 #else
         return static_cast<int32_t>(detail::tz_count_64_software(n));
 #endif
     } else if constexpr (std::is_same_v<T, unsigned long>) {
-#if defined(__GNUC__)
+#if defined(__GNUG__)
         return __builtin_ctzl(n);
 #else
         return static_cast<int32_t>(
@@ -924,7 +945,7 @@ ATTRIBUTE_CONST constexpr int32_t countr_zero(T n) noexcept {
         static_assert(std::is_same_v<T, unsigned int> || std::is_same_v<T, unsigned short> ||
                           std::is_same_v<T, unsigned char>,
                       "Inappropriate integer type in countr_zero");
-#if defined(__GNUC__)
+#if defined(__GNUG__)
         return __builtin_ctz(n);
 #else
         return static_cast<int32_t>(detail::tz_count_32_software(n));
@@ -955,7 +976,7 @@ ATTRIBUTE_CONST constexpr int32_t countl_zero(T n) noexcept {
             // Avoid recursive call to countl_zero<uint64_t>
 #if CONFIG_HAS_AT_LEAST_CXX_20
             return std::countl_zero(high);
-#elif defined(__GNUC__)
+#elif defined(__GNUG__)
             return __builtin_clzll(high);
 #else
             return static_cast<int32_t>(detail::lz_count_64_software(high));
@@ -967,7 +988,7 @@ ATTRIBUTE_CONST constexpr int32_t countl_zero(T n) noexcept {
         // Avoid recursive call to countl_zero<uint64_t>
 #if CONFIG_HAS_AT_LEAST_CXX_20
         return 64 + std::countl_zero(low);
-#elif defined(__GNUC__)
+#elif defined(__GNUG__)
         return 64 + __builtin_clzll(low);
 #else
         return 64 + static_cast<int32_t>(detail::lz_count_64_software(low));
@@ -979,13 +1000,13 @@ ATTRIBUTE_CONST constexpr int32_t countl_zero(T n) noexcept {
         return std::countl_zero(n);
 #else
     if constexpr (std::is_same_v<T, unsigned long long>) {
-#if defined(__GNUC__)
+#if defined(__GNUG__)
         return __builtin_clzll(n);
 #else
         return static_cast<int32_t>(detail::lz_count_64_software(n));
 #endif
     } else if constexpr (std::is_same_v<T, unsigned long>) {
-#if defined(__GNUC__)
+#if defined(__GNUG__)
         return __builtin_clzl(n);
 #else
         return static_cast<int32_t>(detail::lz_count_64_software(n));
@@ -994,7 +1015,7 @@ ATTRIBUTE_CONST constexpr int32_t countl_zero(T n) noexcept {
         static_assert(std::is_same_v<T, unsigned int> || std::is_same_v<T, unsigned short> ||
                           std::is_same_v<T, unsigned char>,
                       "Inappropriate integer type in countl_zero");
-#if defined(__GNUC__)
+#if defined(__GNUG__)
         return __builtin_clz(n);
 #else
         return static_cast<int32_t>(detail::lz_count_32_software(n));
@@ -1017,7 +1038,7 @@ ATTRIBUTE_CONST constexpr int32_t popcount(T n) noexcept {
         uint64_t low  = static_cast<uint64_t>(n);
 #if CONFIG_HAS_AT_LEAST_CXX_20
         return std::popcount(high) + std::popcount(low);
-#elif defined(__GNUC__)
+#elif defined(__GNUG__)
         return __builtin_popcountll(high) + __builtin_popcountll(low);
 #else
         return static_cast<int32_t>(detail::pop_count_64_software(high) +
@@ -1030,13 +1051,13 @@ ATTRIBUTE_CONST constexpr int32_t popcount(T n) noexcept {
         return std::popcount(n);
 #else
     if constexpr (std::is_same_v<T, unsigned long long>) {
-#if defined(__GNUC__)
+#if defined(__GNUG__)
         return __builtin_popcountll(n);
 #else
         return static_cast<int32_t>(detail::pop_count_64_software(n));
 #endif
     } else if constexpr (std::is_same_v<T, unsigned long>) {
-#if defined(__GNUC__)
+#if defined(__GNUG__)
         return __builtin_popcountl(n);
 #else
         return static_cast<int32_t>(detail::pop_count_64_software(n));
@@ -1045,7 +1066,7 @@ ATTRIBUTE_CONST constexpr int32_t popcount(T n) noexcept {
         static_assert(std::is_same_v<T, unsigned int> || std::is_same_v<T, unsigned short> ||
                           std::is_same_v<T, unsigned char>,
                       "Inappropriate integer type in popcount");
-#if defined(__GNUC__)
+#if defined(__GNUG__)
         return __builtin_popcount(n);
 #else
         return static_cast<int32_t>(detail::pop_count_32_software(n));
@@ -1271,7 +1292,7 @@ ATTRIBUTE_CONST constexpr uint32_t log2_ceil(uint128_t n) noexcept {
 /// @param[in] n
 /// @return
 ATTRIBUTE_CONST
-#if defined(__cpp_constexpr) && __cpp_constexpr >= 202211L && defined(__GNUC__)
+#if defined(__cpp_constexpr) && __cpp_constexpr >= 202211L && defined(__GNUG__)
 constexpr
 #endif
     inline uint32_t
@@ -1279,7 +1300,7 @@ constexpr
     /**
      * See Hackers Delight 11-4
      */
-#if defined(__cpp_constexpr) && __cpp_constexpr >= 202211L && defined(__GNUC__)
+#if defined(__cpp_constexpr) && __cpp_constexpr >= 202211L && defined(__GNUG__)
     constexpr
 #elif defined(__cpp_constinit) && __cpp_constinit >= 201907L
     constinit
@@ -1288,7 +1309,7 @@ constexpr
             10, 9, 9, 8, 8, 8, 7, 7, 7, 6, 6, 6, 6, 5, 5, 5, 4,
             4,  4, 3, 3, 3, 3, 2, 2, 2, 1, 1, 1, 0, 0, 0, 0,
         };
-#if defined(__cpp_constexpr) && __cpp_constexpr >= 202211L && defined(__GNUC__)
+#if defined(__cpp_constexpr) && __cpp_constexpr >= 202211L && defined(__GNUG__)
     constexpr
 #elif defined(__cpp_constinit) && __cpp_constinit >= 201907L
     constinit
@@ -1306,7 +1327,7 @@ constexpr
 /// @param[in] n
 /// @return
 ATTRIBUTE_CONST
-#if defined(__cpp_constexpr) && __cpp_constexpr >= 202211L && defined(__GNUC__)
+#if defined(__cpp_constexpr) && __cpp_constexpr >= 202211L && defined(__GNUG__)
 constexpr
 #endif
     inline uint32_t
@@ -1314,7 +1335,7 @@ constexpr
     /**
      * See Hackers Delight 11-4
      */
-#if defined(__cpp_constexpr) && __cpp_constexpr >= 202211L && defined(__GNUC__)
+#if defined(__cpp_constexpr) && __cpp_constexpr >= 202211L && defined(__GNUG__)
     constexpr
 #elif defined(__cpp_constinit) && __cpp_constinit >= 201907L
     constinit
@@ -1349,7 +1370,7 @@ constexpr
 }
 
 ATTRIBUTE_CONST
-#if defined(__cpp_constexpr) && __cpp_constexpr >= 202211L && defined(__GNUC__)
+#if defined(__cpp_constexpr) && __cpp_constexpr >= 202211L && defined(__GNUG__)
 constexpr
 #endif
     inline uint32_t
@@ -1359,7 +1380,7 @@ constexpr
 }
 
 ATTRIBUTE_CONST
-#if defined(__cpp_constexpr) && __cpp_constexpr >= 202211L && defined(__GNUC__)
+#if defined(__cpp_constexpr) && __cpp_constexpr >= 202211L && defined(__GNUG__)
 constexpr
 #endif
     inline uint32_t
@@ -1433,6 +1454,7 @@ template <class FloatType>
 ATTRIBUTE_CONST SumSinCos<FloatType> sum_of_sines_and_cosines(FloatType alpha, FloatType beta,
                                                               uint32_t n) noexcept {
     static_assert(std::is_floating_point_v<FloatType>, "Invalid type in sum_of_sines_and_cosines");
+
     const FloatType nf       = static_cast<FloatType>(n);
     const auto half_beta     = beta / 2;
     const auto half_beta_sin = std::sin(half_beta);
@@ -1827,6 +1849,7 @@ ATTRIBUTE_CONST inline I128_CONSTEXPR uint128_t gcd(uint128_t a, uint128_t b) no
     b >>= rb;
     while (true) {
         if (a < b) {
+            // std::swap is not constexpr in C++17
             uint128_t tmp = a;
             a             = b;
             b             = tmp;
@@ -1867,7 +1890,7 @@ ATTRIBUTE_CONST inline I128_CONSTEXPR uint128_t gcd(uint64_t a, int128_t b) noex
 #endif  // INTEGERS_128_BIT_HPP
 
 #if MATH_FUNCTIONS_HPP_ENABLE_TARGET_OPTIONS
-#if defined(__GNUC__)
+#if defined(__GNUG__)
 #if !defined(__clang__)
 #pragma GCC pop_options
 #else

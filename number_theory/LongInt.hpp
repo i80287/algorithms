@@ -158,13 +158,44 @@ private:
     friend void Deallocate(void* memory) noexcept;
 };
 
-void Deallocate(void* memory) noexcept;
+
+void Deallocate(void* memory) noexcept {
+    if (unlikely(memory == nullptr)) {
+        return;
+    }
+
+    std::byte* p = static_cast<std::byte*>(memory);
+    if (inner_impl::IsSmallPage(p)) {
+#ifdef DEBUG_LI_ALLOC_PRINTING
+        inner_impl::current_small_pages_used--;
+#endif
+        inner_impl::SmallPage* page       = reinterpret_cast<inner_impl::SmallPage*>(p);
+        page->next                        = inner_impl::free_small_pages_head;
+        inner_impl::free_small_pages_head = page;
+        return;
+    }
+
+    if (inner_impl::IsMiddlePage(p)) {
+#ifdef DEBUG_LI_ALLOC_PRINTING
+        inner_impl::current_middle_pages_used--;
+#endif
+        inner_impl::MiddlePage* page       = reinterpret_cast<inner_impl::MiddlePage*>(p);
+        page->next                         = inner_impl::free_middle_pages_head;
+        inner_impl::free_middle_pages_head = page;
+        return;
+    }
+#ifdef DEBUG_LI_ALLOC_PRINTING
+    inner_impl::malloc_free_count--;
+#endif
+    ::operator delete(memory);
+}
 
 #ifdef __clang__
-__attribute__((malloc, returns_nonnull))
+__attribute__((malloc))
 #else
-__attribute__((malloc, malloc(Deallocate, 1), returns_nonnull))
+__attribute__((malloc, malloc(::longint_allocator::Deallocate, 1)))
 #endif
+ATTRIBUTE_RETURNS_NONNULL
 void* Allocate(std::size_t size) {
     if (size <= inner_impl::SmallPage::kCapacity && inner_impl::free_small_pages_head != nullptr) {
         inner_impl::SmallPage* p = inner_impl::free_small_pages_head;
@@ -200,37 +231,6 @@ void* Allocate(std::size_t size) {
     inner_impl::malloc_free_count++;
 #endif
     return p;
-}
-
-void Deallocate(void* memory) noexcept {
-    if (unlikely(memory == nullptr)) {
-        return;
-    }
-
-    std::byte* p = static_cast<std::byte*>(memory);
-    if (inner_impl::IsSmallPage(p)) {
-#ifdef DEBUG_LI_ALLOC_PRINTING
-        inner_impl::current_small_pages_used--;
-#endif
-        inner_impl::SmallPage* page       = reinterpret_cast<inner_impl::SmallPage*>(p);
-        page->next                        = inner_impl::free_small_pages_head;
-        inner_impl::free_small_pages_head = page;
-        return;
-    }
-
-    if (inner_impl::IsMiddlePage(p)) {
-#ifdef DEBUG_LI_ALLOC_PRINTING
-        inner_impl::current_middle_pages_used--;
-#endif
-        inner_impl::MiddlePage* page       = reinterpret_cast<inner_impl::MiddlePage*>(p);
-        page->next                         = inner_impl::free_middle_pages_head;
-        inner_impl::free_middle_pages_head = page;
-        return;
-    }
-#ifdef DEBUG_LI_ALLOC_PRINTING
-    inner_impl::malloc_free_count--;
-#endif
-    ::operator delete(memory);
 }
 
 #ifdef DEBUG_LI_ALLOC_PRINTING
@@ -2142,10 +2142,10 @@ private:
     }
 
     ATTRIBUTE_ALWAYS_INLINE static void* allocate(std::size_t nums) {
-        return longint_allocator::Allocate(nums * sizeof(std::uint32_t));
+        return ::longint_allocator::Allocate(nums * sizeof(std::uint32_t));
     }
     ATTRIBUTE_ALWAYS_INLINE static void deallocate(std::uint32_t* nums) noexcept {
-        longint_allocator::Deallocate(static_cast<void*>(nums));
+        ::longint_allocator::Deallocate(static_cast<void*>(nums));
     }
     struct ComplexDeleter {
         void operator()(fft::complex* memory) noexcept {

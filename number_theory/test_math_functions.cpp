@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <cassert>
 #include <cinttypes>
 #include <limits>
@@ -285,7 +286,7 @@ static_assert(bit_reverse(uint128_t(-1)) == uint128_t(-1), "bit_reverse");
 
 #endif
 
-#if __cplusplus >= 202002L
+#if CONFIG_HAS_AT_LEAST_CXX_20
 static_assert(int(detail::pop_count_32_software(0u)) == int(std::popcount(0u)),
               "pop_count_32_software");
 static_assert(int(detail::pop_count_32_software(1u)) == int(std::popcount(1u)),
@@ -307,7 +308,7 @@ static_assert(int(detail::pop_count_32_software(0xFFFFFFFFu)) == int(std::popcou
               "pop_count_32_software");
 #endif
 
-#if __cplusplus >= 202002L
+#if CONFIG_HAS_AT_LEAST_CXX_20
 static_assert(int(detail::pop_count_64_software(uint64_t(0))) == int(std::popcount(uint64_t(0))),
               "pop_count_64_software");
 static_assert(int(detail::pop_count_64_software(uint64_t(1))) == int(std::popcount(uint64_t(1))),
@@ -344,7 +345,7 @@ static_assert(int(detail::pop_count_64_software(uint64_t(0xFFFFFFFFFFFFFFFFull))
               "pop_count_64_software");
 #endif
 
-#if __cplusplus >= 202002L
+#if CONFIG_HAS_AT_LEAST_CXX_20
 static_assert(std::popcount(0u) - std::popcount(0u) == pop_diff(0, 0));
 static_assert(int(std::popcount(1u)) - int(std::popcount(0u)) == pop_diff(1, 0));
 static_assert(int(std::popcount(0u)) - int(std::popcount(1u)) == pop_diff(0, 1));
@@ -447,7 +448,7 @@ static_assert(uabs(int128_t(-((uint128_t(1) << 127) - 1))) == (uint128_t(1) << 1
 static_assert(uabs(int128_t(-(uint128_t(1) << 127))) == uint128_t(1) << 127, "uabs");
 #endif
 
-#if __cplusplus >= 202002L
+#if CONFIG_HAS_AT_LEAST_CXX_20
 
 static_assert(sign(std::popcount(0u) - std::popcount(0u)) == sign(pop_cmp(0, 0)), "pop_cmp");
 static_assert(sign(std::popcount(1u) - std::popcount(0u)) == sign(pop_cmp(1, 0)), "pop_cmp");
@@ -934,7 +935,7 @@ static_assert(log2_ceil(uint32_t(128)) == 7, "log2_ceil");
 static_assert(log2_ceil(uint32_t(129)) == 8, "log2_ceil");
 static_assert(log2_ceil(uint32_t(-1)) == 32, "log2_ceil");
 
-#if __cpp_constexpr >= 202211L && defined(__GNUC__)
+#if __cpp_constexpr >= 202211L && defined(__GNUG__)
 
 static_assert(log10_floor(uint32_t(0)) == uint32_t(-1), "log10_floor");
 static_assert(log10_floor(uint32_t(1)) == 0, "log10_floor");
@@ -997,9 +998,9 @@ static_assert(base_10_len(uint64_t(1e18)) == 19, "base_10_len");
 static_assert(base_10_len(uint64_t(1e19)) == 20, "base_10_len");
 static_assert(base_10_len(uint64_t(-1)) == 20, "log10_floor");
 
-#endif  // __cpp_constexpr >= 202211L && defined(__GNUC__)
+#endif  // __cpp_constexpr >= 202211L && defined(__GNUG__)
 
-#if __cplusplus >= 201703L
+#if CONFIG_HAS_AT_LEAST_CXX_17
 
 static_assert(base_b_len(0ull) == 1, "base_b_len");
 static_assert(base_b_len(1ull) == 1, "base_b_len");
@@ -1201,7 +1202,7 @@ static void test_isqrt() {
          (uint128_t(17594829943123320651ull) << 64) | 2622055845271657274ull},
         {uint64_t(-1), uint128_t(-1)},
     };
-    for (const auto [root, square] : root_with_square) {
+    for (const auto &[root, square] : root_with_square) {
         if (uint32_t(square) == square) {
             assert(root == isqrt(uint32_t(square)));
         }
@@ -1483,15 +1484,23 @@ static void test_factorizer() {
     for (std::uint32_t i = 0; i <= N; i++) {
         assert(is_prime[i] == fact.is_prime(i));
     }
-#if CONFIG_HAS_AT_LEAST_CXX_20
+
     for (std::uint32_t i = 0; i <= N; i++) {
+#if CONFIG_HAS_AT_LEAST_CXX_20
         assert(std::ranges::equal(fact.prime_factors(i), prime_factors_as_pairs(i),
                                   [](auto pf1, auto pf2) constexpr noexcept {
                                       return pf1.factor == pf2.factor &&
                                              pf1.factor_power == pf2.factor_power;
                                   }));
-    }
+#else
+        auto&& range1 = fact.prime_factors(i);
+        auto&& range2 = prime_factors_as_pairs(i);
+        assert(range1.size() == range2.size() &&
+               std::equal(range1.begin(), range1.end(), range2.begin(), [](auto pf1, auto pf2) {
+                   return pf1.factor == pf2.factor && pf1.factor_power == pf2.factor_power;
+               }));
 #endif
+    }
 }
 
 int main() {
