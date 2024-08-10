@@ -240,8 +240,9 @@ void* Allocate(std::size_t size) {
 }  // namespace longint_allocator
 
 struct LongInt {
-    using pointer        = std::uint32_t*;
-    using const_pointer  = const std::uint32_t*;
+    using digit_t        = std::uint32_t;
+    using pointer        = digit_t*;
+    using const_pointer  = const digit_t*;
     using iterator       = pointer;
     using const_iterator = const_pointer;
 
@@ -255,7 +256,7 @@ struct LongInt {
     static constexpr auto kFFTFloatRoundError =
         std::numeric_limits<typename fft::complex::value_type>::round_error();
 
-    uint32_t* nums_ = nullptr;
+    digit_t* nums_ = nullptr;
     /**
      * size_ < 0 <=> sign = -1; size_ == 0 <=> sign = 0; size > 0 <=> sign = 1
      */
@@ -1160,13 +1161,15 @@ struct LongInt {
     constexpr void change_sign() noexcept {
         size_ = -size_;
     }
-    [[nodiscard]] ATTRIBUTE_CONST static constexpr std::ptrdiff_t max_ssize() noexcept {
+    [[nodiscard]] ATTRIBUTE_CONST static constexpr std::size_t max_size() noexcept {
         constexpr auto kMaxSSize = std::numeric_limits<decltype(LongInt::size_)>::max();
         static_assert(kMaxSSize > 0);
-        return kMaxSSize;
-    }
-    [[nodiscard]] ATTRIBUTE_CONST static constexpr std::size_t max_size() noexcept {
-        return static_cast<std::size_t>(max_ssize());
+        constexpr auto kMaxUSize = std::numeric_limits<decltype(LongInt::capacity_)>::max();
+        return std::min({
+            static_cast<std::size_t>(kMaxSSize),
+            static_cast<std::size_t>(kMaxUSize),
+            std::numeric_limits<std::size_t>::max() / sizeof(digit_t)
+        });
     }
 
     void set_string(std::string_view s) {
