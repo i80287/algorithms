@@ -1108,7 +1108,8 @@ struct longint {
     [[nodiscard]] ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_PURE constexpr std::int32_t size()
         const noexcept {
         const auto value = size_;
-        if (value > static_cast<std::int64_t>(max_size())) {
+        if (value > static_cast<std::int64_t>(max_size()) ||
+            value > static_cast<std::int64_t>(capacity_)) {
             CONFIG_UNREACHABLE();
         }
         return value;
@@ -1117,6 +1118,14 @@ struct longint {
         const noexcept {
         // std::abs is not used in order to make method constexpr
         const auto value = std::size_t(math_functions::uabs(size_));
+        if (value > max_size() || value > capacity_) {
+            CONFIG_UNREACHABLE();
+        }
+        return value;
+    }
+    [[nodiscard]] ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_PURE constexpr std::uint32_t capacity()
+        const noexcept {
+        const auto value = capacity_;
         if (value > max_size()) {
             CONFIG_UNREACHABLE();
         }
@@ -1389,15 +1398,16 @@ struct longint {
 
     std::string to_string() const {
         std::string s;
-        to_string(s);
+        append_to_string(s);
         return s;
     }
-
     /// @brief Write 10-base representation of *this into the @a ans
-    /// @note  If !ans.empty() then the data will be appended to the
-    ///         end of the @a ans
     /// @param ans
-    void to_string(std::string& ans) const {
+    void to_string(std::string& s) const {
+        s.clear();
+        append_to_string(s);
+    }
+    void append_to_string(std::string& ans) const {
         if (size_ < 0) {
             ans.push_back('-');
         }
@@ -1459,19 +1469,16 @@ struct longint {
         return in;
     }
 
-    void reserve(std::size_t requested_capacity) {
-        if (unlikely(requested_capacity > max_size())) {
-            throw_size_error(requested_capacity, FUNCTION_MACRO);
-        }
-        auto capacity = static_cast<std::uint32_t>(requested_capacity);
-        if (capacity > capacity_) {
-            uint32_t* new_nums = static_cast<uint32_t*>(allocate(capacity));
+    void reserve(const std::size_t requested_capacity) {
+        const auto checked_capacity = check_capacity(requested_capacity);
+        if (checked_capacity > capacity_) {
+            uint32_t* new_nums = static_cast<uint32_t*>(allocate(checked_capacity));
             if (nums_) {
                 std::uninitialized_copy_n(nums_, usize(), new_nums);
                 deallocate(nums_);
             }
             nums_     = new_nums;
-            capacity_ = capacity;
+            capacity_ = checked_capacity;
         }
     }
 
@@ -2184,13 +2191,24 @@ private:
         const auto size_bytes = size * sizeof(fft::complex);
         return static_cast<fft::complex*>(::operator new(size_bytes));
     }
-
-    [[noreturn]] ATTRIBUTE_COLD static void throw_size_error(std::size_t new_size,
-                                                             const char* function_name) {
+    ATTRIBUTE_ALWAYS_INLINE static std::uint32_t check_capacity(
+        const std::size_t requested_capacity) {
+        if (unlikely(requested_capacity > max_size())) {
+            throw_size_error(requested_capacity, __FILE__, __LINE__, FUNCTION_MACRO);
+        }
+        const auto value = static_cast<std::uint32_t>(requested_capacity);
+        if (value > max_size()) {
+            CONFIG_UNREACHABLE();
+        }
+        return value;
+    }
+    [[noreturn]] ATTRIBUTE_NOINLINE ATTRIBUTE_COLD static void throw_size_error(
+        std::size_t new_size, const char* file_name, std::uint32_t line,
+        const char* function_name) {
         char message[1024] = {};
-        int bytes_written =
-            std::snprintf(message, std::size(message), "size error at %s: %zu > %zu", function_name,
-                          new_size, max_size());
+        int bytes_written  = std::snprintf(message, std::size(message),
+                                           "%s:%u: size error at %s: %zu > %zu = max_size()",
+                                           file_name, line, function_name, new_size, max_size());
         if (unlikely(bytes_written < 0)) {
             message[0] = '\0';
         }
