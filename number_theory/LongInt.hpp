@@ -267,7 +267,7 @@ struct LongInt {
     LongInt(const LongInt& other) : nums_(nullptr), size_(other.size_), capacity_(other.capacity_) {
         if (capacity_ > 0) {
             nums_ = static_cast<uint32_t*>(allocate(capacity_));
-            std::copy_n(other.nums_, USize(), nums_);
+            std::copy_n(other.nums_, usize(), nums_);
         }
     }
     LongInt& operator=(const LongInt& other) {
@@ -416,7 +416,7 @@ struct LongInt {
 
     LongInt& pow(std::size_t p) {
         LongInt res = uint32_t(1);
-        reserve((std::max(USize(), std::size_t{1}) - 1) * p);
+        reserve((std::max(usize(), std::size_t{1}) - 1) * p);
         while (true) {
             if (p & 1) {
                 res *= *this;
@@ -430,28 +430,28 @@ struct LongInt {
         return *this = std::move(res);
     }
     void SquareThisTo(LongInt& other) const {
-        std::size_t usize = USize();
-        if (unlikely(usize == 0)) {
+        const std::size_t usize_value = usize();
+        if (unlikely(usize_value == 0)) {
             other.size_ = 0;
             return;
         }
         const uint32_t* nums_ptr = nums_;
-        std::size_t prod_size    = usize + usize;
+        std::size_t prod_size    = usize_value + usize_value;
         if (prod_size <= 16) {
             other.capacity_ = uint32_t(prod_size);
             uint32_t* ans   = static_cast<uint32_t*>(allocate(prod_size));
             std::fill_n(ans, prod_size, uint32_t(0));
-            for (std::size_t j = 0; j < usize; j++) {
+            for (std::size_t j = 0; j < usize_value; j++) {
                 uint64_t b_j   = nums_ptr[j];
                 uint64_t carry = 0;
-                for (std::size_t i = 0; i < usize; i++) {
+                for (std::size_t i = 0; i < usize_value; i++) {
                     uint64_t a_i = nums_ptr[i];
                     uint64_t res = a_i * b_j + uint64_t(ans[j + i]) + carry;
                     ans[j + i]   = uint32_t(res);
                     carry        = res >> 32;
                 }
 
-                ans[j + usize] = uint32_t(carry);
+                ans[j + usize_value] = uint32_t(carry);
             }
 
             deallocate(other.nums_);
@@ -465,7 +465,7 @@ struct LongInt {
                 allocate_complex_array_for_unique_ptr(2 * n));
             fft::complex* p = p1.get();
             if (likely(!high_precision)) {
-                for (std::size_t i = 0; i < usize; i++) {
+                for (std::size_t i = 0; i < usize_value; i++) {
                     uint32_t value = nums_ptr[i];
                     *p             = fft::complex(value & 0xFFFF, value & 0xFFFF);
                     p++;
@@ -474,7 +474,7 @@ struct LongInt {
                     p++;
                 }
             } else {
-                for (std::size_t i = 0; i < usize; i++) {
+                for (std::size_t i = 0; i < usize_value; i++) {
                     uint32_t value = nums_ptr[i];
                     *p             = fft::complex(uint8_t(value), uint8_t(value));
                     p++;
@@ -539,8 +539,8 @@ struct LongInt {
         return nums_[pos];
     }
     LongInt& operator*=(const LongInt& other) {
-        std::size_t k         = USize();
-        std::size_t m         = other.USize();
+        std::size_t k         = usize();
+        std::size_t m         = other.usize();
         const uint32_t* k_ptr = nums_;
         const uint32_t* m_ptr = other.nums_;
 
@@ -685,8 +685,8 @@ struct LongInt {
         /**
          * See Hackers Delight 9-2.
          */
-        std::size_t m = USize();
-        std::size_t n = other.USize();
+        std::size_t m = usize();
+        std::size_t n = other.usize();
         if (m < n) {
             rem   = std::move(*this);
             size_ = 0;
@@ -783,7 +783,7 @@ struct LongInt {
         popLeadingZeros();
     }
     LongInt& operator+=(const LongInt& other) {
-        std::size_t usize2 = other.USize();
+        std::size_t usize2 = other.usize();
         if ((size_ ^ other.size_) >= 0) {
             std::size_t usize1          = setSizeAtLeast(usize2 + 1);
             uint64_t add_overflow_carry = longIntAdd(nums_, other.nums_, usize1, usize2);
@@ -892,7 +892,7 @@ struct LongInt {
 #endif
 
     [[nodiscard]] ATTRIBUTE_PURE constexpr bool operator==(const LongInt& other) const noexcept {
-        return size_ == other.size_ && std::equal(nums_, nums_ + USize(), other.nums_);
+        return size_ == other.size_ && std::equal(nums_, nums_ + usize(), other.nums_);
     }
 
 #if CONFIG_HAS_AT_LEAST_CXX_20
@@ -901,10 +901,10 @@ struct LongInt {
             return size_ <=> other.size_;
         }
 
-        std::size_t usize            = USize();
-        const uint32_t* r_end        = nums_ - 1;
-        const uint32_t* r_nums       = r_end + usize;
-        const uint32_t* r_other_nums = other.nums_ - 1 + usize;
+        const std::size_t usize_value = usize();
+        const uint32_t* const r_end   = nums_ - 1;
+        const uint32_t* r_nums        = r_end + usize_value;
+        const uint32_t* r_other_nums  = other.nums_ - 1 + usize_value;
         for (; r_nums != r_end; r_nums--, r_other_nums--) {
             if (*r_nums != *r_other_nums) {
                 return int64_t(*r_nums) * sign() <=> int64_t(*r_other_nums) * other.sign();
@@ -919,10 +919,10 @@ struct LongInt {
             return size_ < other.size_;
         }
 
-        std::size_t usize            = USize();
+        std::size_t usize_value      = USize();
         const uint32_t* r_end        = nums_ - 1;
-        const uint32_t* r_nums       = r_end + usize;
-        const uint32_t* r_other_nums = other.nums_ - 1 + usize;
+        const uint32_t* r_nums       = r_end + usize_value;
+        const uint32_t* r_other_nums = other.nums_ - 1 + ususize_valueize;
         for (; r_nums != r_end; r_nums--, r_other_nums--) {
             if (*r_nums != *r_other_nums) {
                 return int64_t(*r_nums) * sign() < int64_t(*r_other_nums) * other.sign();
@@ -1043,7 +1043,7 @@ struct LongInt {
     [[nodiscard]] constexpr uint32_t divmod(uint32_t n) noexcept {
         uint64_t carry          = 0;
         uint32_t* nums_iter_end = nums_ - 1;
-        uint32_t* nums_iter     = nums_iter_end + USize();
+        uint32_t* nums_iter     = nums_iter_end + usize();
         for (; nums_iter != nums_iter_end; --nums_iter) {
             uint64_t cur = (carry << 32) | uint64_t(*nums_iter);
             uint64_t q   = cur / n;
@@ -1057,25 +1057,25 @@ struct LongInt {
     }
 
     constexpr LongInt& operator>>=(uint32_t shift) noexcept {
-        std::size_t usize   = USize();
-        uint32_t uints_move = shift / 32;
-        if (uints_move >= usize) {
+        std::size_t usize_value = usize();
+        uint32_t uints_move     = shift / 32;
+        if (uints_move >= usize_value) {
             size_ = 0;
             return *this;
         }
 
         if (uints_move != 0) {
-            usize -= uints_move;
-            size_                          = size_ >= 0 ? std::int32_t(usize) : -int32_t(usize);
+            usize_value -= uints_move;
+            size_ = size_ >= 0 ? std::int32_t(usize_value) : -int32_t(usize_value);
             uint32_t* copy_dst_start       = nums_;
             const uint32_t* copy_src_start = copy_dst_start + uints_move;
-            const uint32_t* copy_src_end   = copy_src_start + usize;
+            const uint32_t* copy_src_end   = copy_src_start + usize_value;
             std::copy(copy_src_start, copy_src_end, copy_dst_start);
         }
 
         shift %= 32;
         uint32_t* nums_iter            = nums_;
-        uint32_t* const nums_iter_last = nums_iter + std::ptrdiff_t(usize) - 1;
+        uint32_t* const nums_iter_last = nums_iter + std::ptrdiff_t(usize_value) - 1;
         for (; nums_iter != nums_iter_last; ++nums_iter) {
 #if CONFIG_BYTE_ORDER_LITTLE_ENDIAN
             // *nums_iter = uint32_t(*reinterpret_cast<uint64_t*>(nums_iter) >> shift);
@@ -1097,14 +1097,35 @@ struct LongInt {
     }
 
     constexpr void popLeadingZeros() noexcept {
-        std::size_t usize = USize();
-        while (usize != 0 && nums_[usize - 1] == 0) {
-            usize--;
+        std::size_t usize_value = usize();
+        while (usize_value != 0 && nums_[usize_value - 1] == 0) {
+            usize_value--;
         }
 
-        size_ = size_ >= 0 ? std::int32_t(usize) : -int32_t(usize);
+        size_ = size_ >= 0 ? std::int32_t(usize_value) : -std::int32_t(usize_value);
     }
 
+    [[nodiscard]] ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_PURE constexpr std::int32_t size()
+        const noexcept {
+        const auto value = size_;
+        if (value > static_cast<std::int64_t>(max_size())) {
+            CONFIG_UNREACHABLE();
+        }
+        return value;
+    }
+    [[nodiscard]] ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_PURE constexpr std::size_t usize()
+        const noexcept {
+        // std::abs is not used in order to make method constexpr
+        const auto value = std::size_t(math_functions::uabs(size_));
+        if (value > max_size()) {
+            CONFIG_UNREACHABLE();
+        }
+        return value;
+    }
+    [[nodiscard]] ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_PURE constexpr std::int32_t sign()
+        const noexcept {
+        return math_functions::sign(size_);
+    }
     [[nodiscard]] ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_PURE constexpr bool iszero() const noexcept {
         return size_ == 0;
     }
@@ -1117,54 +1138,53 @@ struct LongInt {
     [[nodiscard]] ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_PURE constexpr bool operator!() const noexcept {
         return iszero();
     }
-    [[nodiscard]] constexpr std::int32_t size() const noexcept {
-        return size_;
-    }
-    [[nodiscard]] constexpr iterator begin() noexcept ATTRIBUTE_LIFETIME_BOUND {
+    [[nodiscard]] ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_PURE constexpr iterator begin() noexcept
+        ATTRIBUTE_LIFETIME_BOUND {
         return nums_;
     }
-    [[nodiscard]] constexpr iterator end() noexcept ATTRIBUTE_LIFETIME_BOUND {
-        return nums_ + USize();
+    [[nodiscard]] ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_PURE constexpr iterator end() noexcept
+        ATTRIBUTE_LIFETIME_BOUND {
+        return nums_ + usize();
     }
-    [[nodiscard]] constexpr const_iterator begin() const noexcept ATTRIBUTE_LIFETIME_BOUND {
+    [[nodiscard]] ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_PURE constexpr const_iterator begin()
+        const noexcept ATTRIBUTE_LIFETIME_BOUND {
         return nums_;
     }
-    [[nodiscard]] constexpr const_iterator end() const noexcept ATTRIBUTE_LIFETIME_BOUND {
-        return nums_ + USize();
+    [[nodiscard]] ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_PURE constexpr const_iterator end()
+        const noexcept ATTRIBUTE_LIFETIME_BOUND {
+        return nums_ + usize();
     }
-    [[nodiscard]] constexpr const_iterator cbegin() const noexcept ATTRIBUTE_LIFETIME_BOUND {
+    [[nodiscard]] ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_PURE constexpr const_iterator cbegin()
+        const noexcept ATTRIBUTE_LIFETIME_BOUND {
         return begin();
     }
-    [[nodiscard]] constexpr const_iterator cend() const noexcept ATTRIBUTE_LIFETIME_BOUND {
+    [[nodiscard]] ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_PURE constexpr const_iterator cend()
+        const noexcept ATTRIBUTE_LIFETIME_BOUND {
         return end();
     }
-    [[nodiscard]] constexpr std::reverse_iterator<iterator> rbegin() noexcept
-        ATTRIBUTE_LIFETIME_BOUND {
+    [[nodiscard]] ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_PURE constexpr std::reverse_iterator<iterator>
+    rbegin() noexcept ATTRIBUTE_LIFETIME_BOUND {
         return std::make_reverse_iterator(end());
     }
-    [[nodiscard]] constexpr std::reverse_iterator<iterator> rend() noexcept
-        ATTRIBUTE_LIFETIME_BOUND {
+    [[nodiscard]] ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_PURE constexpr std::reverse_iterator<iterator>
+    rend() noexcept ATTRIBUTE_LIFETIME_BOUND {
         return std::make_reverse_iterator(begin());
     }
-    [[nodiscard]] constexpr std::reverse_iterator<const_iterator> rbegin() const noexcept
-        ATTRIBUTE_LIFETIME_BOUND {
+    [[nodiscard]] ATTRIBUTE_ALWAYS_INLINE
+        ATTRIBUTE_PURE constexpr std::reverse_iterator<const_iterator>
+        rbegin() const noexcept ATTRIBUTE_LIFETIME_BOUND {
         return std::make_reverse_iterator(end());
     }
-    [[nodiscard]] constexpr std::reverse_iterator<const_iterator> rend() const noexcept
-        ATTRIBUTE_LIFETIME_BOUND {
+    [[nodiscard]] ATTRIBUTE_ALWAYS_INLINE
+        ATTRIBUTE_PURE constexpr std::reverse_iterator<const_iterator>
+        rend() const noexcept ATTRIBUTE_LIFETIME_BOUND {
         return std::make_reverse_iterator(begin());
-    }
-    [[nodiscard]] ATTRIBUTE_PURE constexpr std::size_t USize() const noexcept {
-        // std::abs is not used in order to make method constexpr
-        return std::size_t(math_functions::uabs(size_));
-    }
-    [[nodiscard]] ATTRIBUTE_PURE constexpr std::int32_t sign() const noexcept {
-        return math_functions::sign(size_);
     }
     constexpr void change_sign() noexcept {
         size_ = -size_;
     }
-    [[nodiscard]] ATTRIBUTE_CONST static constexpr std::size_t max_size() noexcept {
+    [[nodiscard]] ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_CONST static constexpr std::size_t
+    max_size() noexcept {
         constexpr auto kMaxSSize = std::numeric_limits<decltype(LongInt::size_)>::max();
         static_assert(kMaxSSize > 0);
         constexpr auto kMaxUSize = std::numeric_limits<decltype(LongInt::capacity_)>::max();
@@ -1274,11 +1294,11 @@ struct LongInt {
         }
         operator delete(mult_add_buffer);
 
-        std::size_t usize = aligned_str_conv_digits_size;
-        while (usize > 0 && nums_[usize - 1] == 0) {
-            usize--;
+        std::size_t usize_value = aligned_str_conv_digits_size;
+        while (usize_value > 0 && nums_[usize_value - 1] == 0) {
+            usize_value--;
         }
-        this->size_ = sgn * std::int32_t(usize);
+        this->size_ = sgn * std::int32_t(usize_value);
     }
 
     [[nodiscard]] ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_PURE constexpr bool fits_in_uint32()
@@ -1287,15 +1307,15 @@ struct LongInt {
     }
     [[nodiscard]] ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_PURE constexpr std::uint32_t to_uint32()
         const noexcept {
-        switch (size_) {
-            case 1:
-                return nums_[0];
-            case 0:
-                return 0;
+        switch (usize()) {
             default:
                 if (fits_in_uint32()) {
                     CONFIG_UNREACHABLE();
                 }
+                [[fallthrough]];
+            case 1:
+                return nums_[0];
+            case 0:
                 return 0;
         }
     }
@@ -1306,7 +1326,12 @@ struct LongInt {
     [[nodiscard]] ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_PURE constexpr std::uint64_t to_uint64()
         const noexcept {
         std::uint64_t value = 0;
-        switch (size_) {
+        switch (usize()) {
+            default:
+                if (fits_in_uint64()) {
+                    CONFIG_UNREACHABLE();
+                }
+                [[fallthrough]];
             case 2:
                 value |= std::uint64_t(nums_[1]) << 32;
                 [[fallthrough]];
@@ -1314,11 +1339,6 @@ struct LongInt {
                 value |= nums_[0];
                 break;
             case 0:
-                break;
-            default:
-                if (fits_in_uint64()) {
-                    CONFIG_UNREACHABLE();
-                }
                 break;
         }
         return value;
@@ -1339,7 +1359,12 @@ struct LongInt {
     [[nodiscard]] ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_PURE constexpr uint128_t to_uint128()
         const noexcept {
         uint128_t value = 0;
-        switch (size_) {
+        switch (usize()) {
+            default:
+                if (fits_in_uint128()) {
+                    CONFIG_UNREACHABLE();
+                }
+                [[fallthrough]];
             case 4:
                 value |= uint128_t(nums_[3]) << 96;
                 [[fallthrough]];
@@ -1353,11 +1378,6 @@ struct LongInt {
                 value |= nums_[0];
                 break;
             case 0:
-                break;
-            default:
-                if (fits_in_uint128()) {
-                    CONFIG_UNREACHABLE();
-                }
                 break;
         }
         return value;
@@ -1373,14 +1393,18 @@ struct LongInt {
         return s;
     }
 
+    /// @brief Write 10-base representation of *this into the @a ans
+    /// @note  If !ans.empty() then the data will be appended to the
+    ///         end of the @a ans
+    /// @param ans
     void to_string(std::string& ans) const {
-        ans.clear();
         if (size_ < 0) {
             ans.push_back('-');
         }
 
-        std::size_t usize = USize();
-        switch (usize) {
+        const std::size_t usize_value = usize();
+        assert(usize_value <= max_size());
+        switch (usize_value) {
             case 0:
                 ans = "0";
                 return;
@@ -1392,10 +1416,10 @@ struct LongInt {
                 return;
         }
 
-        std::size_t n = math_functions::nearest_greater_equal_power_of_two(usize);
+        std::size_t n = math_functions::nearest_greater_equal_power_of_two(usize_value);
         ensureBinBasePowsCapacity(math_functions::log2_floor(n));
         uint32_t* knums = static_cast<uint32_t*>(allocate(n));
-        std::fill_n(std::copy_n(nums_, usize, knums), n - usize, uint32_t(0));
+        std::fill_n(std::copy_n(nums_, usize_value, knums), n - usize_value, uint32_t(0));
         Decimal result = convertBinBase(knums, n);
         deallocate(knums);
         assert(result.size_ >= 3);
@@ -1443,7 +1467,7 @@ struct LongInt {
         if (capacity > capacity_) {
             uint32_t* new_nums = static_cast<uint32_t*>(allocate(capacity));
             if (nums_) {
-                std::uninitialized_copy_n(nums_, USize(), new_nums);
+                std::uninitialized_copy_n(nums_, usize(), new_nums);
                 deallocate(nums_);
             }
             nums_     = new_nums;
@@ -1830,13 +1854,13 @@ struct LongInt {
         }
 
         constexpr void popLeadingZeros() noexcept {
-            std::size_t usize = size_;
+            std::size_t usize_value = size_;
             // std::find_first_of(std::make_reverse_iterator(begin))
-            while (usize > 0 && digits_[usize - 1] == 0) {
-                usize--;
+            while (usize_value > 0 && digits_[usize_value - 1] == 0) {
+                usize_value--;
             }
 
-            size_ = usize;
+            size_ = usize_value;
         }
 
         ~Decimal() {
@@ -2038,17 +2062,17 @@ private:
     }
 
     ATTRIBUTE_NOINLINE ATTRIBUTE_COLD std::size_t growSizeByOne() {
-        std::size_t usize = USize();
-        if (unlikely(usize == capacity_)) {
+        std::size_t usize_value = usize();
+        if (unlikely(usize_value == capacity_)) {
             growCapacity();
         }
 
         size_ += sign();
-        return usize + 1;
+        return usize_value + 1;
     }
 
     std::size_t setSizeAtLeast(std::size_t new_size) {
-        std::size_t cur_size = USize();
+        std::size_t cur_size = usize();
         if (new_size <= cur_size) {
             return cur_size;
         }
@@ -2109,22 +2133,22 @@ private:
         } while (it != end_iter);
 
         if (carry != 0) {
-            std::size_t usize = USize();
-            if (unlikely(usize == capacity_)) {
+            std::size_t usize_value = usize();
+            if (unlikely(usize_value == capacity_)) {
                 growCapacity();
             }
 
-            assert(usize < capacity_);
-            nums_[usize] = uint32_t(carry);
+            assert(usize_value < capacity_);
+            nums_[usize_value] = uint32_t(carry);
             size_ += sign();
         }
     }
 
     constexpr void nonZeroSizeSubUInt(uint32_t n) {
-        std::size_t usize   = USize();
-        uint32_t* nums_iter = nums_;
-        uint32_t low_num    = nums_iter[0];
-        if (usize != 1) {
+        std::size_t usize_value = usize();
+        uint32_t* nums_iter     = nums_;
+        uint32_t low_num        = nums_iter[0];
+        if (usize_value != 1) {
             uint32_t res = low_num - n;
             bool carry   = res > low_num;
             nums_iter[0] = res;

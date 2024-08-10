@@ -1010,7 +1010,7 @@ static void TestBitShifts() {
     // 1 << 255
     n.set_string("57896044618658097711785492504343953926634992332820282019728792003956564819968");
     LongInt m;
-    m.reserve(uint32_t(n.USize()));
+    m.reserve(uint32_t(n.usize()));
     for (uint32_t shift = 0; shift <= 127; shift++) {
         m = n;
         m >>= (255 - shift);
@@ -1246,7 +1246,7 @@ static void TestToIntTypes() {
             uint32_t j = n;
             if constexpr (sizeof(i) == 4) {
                 if (i != j) {
-                    printf("%u %u %zu %d\n", i, j, n.USize(), n.size());
+                    printf("%u %u %zu %d\n", i, j, n.usize(), n.size());
                 }
             }
             assert(j == i);
