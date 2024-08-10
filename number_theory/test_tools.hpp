@@ -382,6 +382,30 @@ template <auto EnumValue, class EnumType = decltype(EnumValue)>
         function_name);
 }
 
+template <class Observed = void>
+struct EchoLogger {
+    EchoLogger() {
+        ::test_tools::log_location();
+    }
+    EchoLogger(const EchoLogger&) noexcept {
+        ::test_tools::log_location();
+    }
+    EchoLogger(EchoLogger&&) noexcept {
+        ::test_tools::log_location();
+    }
+    EchoLogger& operator=(const EchoLogger&) noexcept {
+        ::test_tools::log_location();
+        return *this;
+    }
+    EchoLogger& operator=(EchoLogger&&) noexcept {
+        ::test_tools::log_location();
+        return *this;
+    }
+    ~EchoLogger() {
+        ::test_tools::log_location();
+    }
+};
+
 }  // namespace test_tools
 
 #undef TEST_TOOLS_CONSTEVAL
