@@ -1,11 +1,11 @@
-#include "segment_trees.cpp"
-
+#include <array>
 #include <random>
 
-template <uint32_t n, uint32_t q, typename value_t>
-[[maybe_unused]] static inline void fillData(
-    std::vector<value_t>& values, std::vector<value_t>& update_values,
-    std::vector<uint32_t>& l_int, std::vector<uint32_t>& r_int) {
+#include "segment_trees.hpp"
+
+template <typename value_t, std::size_t n, std::size_t q>
+static void fillData(std::array<value_t, n>& values, std::array<value_t, q / 2>& update_values,
+                     std::array<std::uint32_t, q>& l_int, std::array<std::uint32_t, q>& r_int) {
     std::mt19937 rnd;
     for (value_t& a_i : values) {
         if constexpr (std::is_integral_v<value_t>) {
@@ -22,366 +22,46 @@ template <uint32_t n, uint32_t q, typename value_t>
         }
     }
     for (size_t i = 0; i < q; i++) {
-        uint32_t l = uint32_t(rnd() % n);
-        uint32_t r = uint32_t(rnd() % n);
-        if (l > r) {
-            std::swap(l, r);
-        }
-        l_int[i] = l;
-        r_int[i] = r;
+        const auto x = std::uint32_t(rnd() % n);
+        const auto y = std::uint32_t(rnd() % n);
+        l_int[i]     = std::min(x, y);
+        r_int[i]     = std::max(x, y);
     }
 }
 
-template <typename value_t>
-[[maybe_unused]] static inline void testMinAdd(
-    const std::vector<value_t>& values,
-    const std::vector<value_t>& update_values,
-    const std::vector<uint32_t>& l_int, const std::vector<uint32_t>& r_int) {
-    const uint32_t q = uint32_t(l_int.size());
+template <UpdateOperation update_op, GetOperation get_op, typename value_t, bool AllowFuzzyEquality,
+          std::size_t n, std::size_t q>
+[[maybe_unused]] static inline void test(const std::array<value_t, n>& values,
+                                         const std::array<value_t, q / 2>& update_values,
+                                         const std::array<std::uint32_t, q>& l_int,
+                                         const std::array<std::uint32_t, q>& r_int) {
     assert(q == r_int.size());
     assert(q / 2 == update_values.size());
-    SegTree<UpdateOperation::add, GetOperation::min, value_t> tree(values);
-    segtrees::SegTreeChecker<UpdateOperation::add, GetOperation::min, value_t>
-        checker(values);
-    for (uint32_t i = 0; i < q; i += 2) {
-        uint32_t l = l_int[i];
-        uint32_t r = r_int[i];
-        value_t upd_value = update_values[i / 2];
-        tree.Update(l, r, upd_value);
-        checker.Update(l, r, upd_value);
-        l = l_int[i + 1];
-        r = r_int[i + 1];
-        value_t tree_ans = tree.Get(l, r);
-        value_t checker_ans = checker.Get(l, r);
-        assert(tree_ans == checker_ans);
-    }
-}
+    SegTree<update_op, get_op, value_t> tree(values);
+    segtrees::SegTreeChecker<update_op, get_op, value_t> checker(values);
+    for (std::uint32_t i = 0; i < q; i += 2) {
+        const auto l_update     = l_int[i];
+        const auto r_update     = r_int[i];
+        const value_t upd_value = update_values[i / 2];
+        tree.update(l_update, r_update, upd_value);
+        checker.update(l_update, r_update, upd_value);
+        const auto l_get          = l_int[i + 1];
+        const auto r_get          = r_int[i + 1];
+        const value_t tree_ans    = tree.get(l_get, r_get);
+        const value_t checker_ans = checker.get(l_get, r_get);
 
-template <typename value_t>
-[[maybe_unused]] static inline void testMinSetEqual(
-    const std::vector<value_t>& values,
-    const std::vector<value_t>& update_values,
-    const std::vector<uint32_t>& l_int, const std::vector<uint32_t>& r_int) {
-    const uint32_t q = uint32_t(l_int.size());
-    assert(q == r_int.size());
-    assert(q / 2 == update_values.size());
-    SegTree<UpdateOperation::set_equal, GetOperation::min, value_t> tree(
-        values);
-    segtrees::SegTreeChecker<UpdateOperation::set_equal, GetOperation::min,
-                             value_t>
-        checker(values);
-    for (uint32_t i = 0; i < q; i += 2) {
-        uint32_t l = l_int[i];
-        uint32_t r = r_int[i];
-        value_t upd_value = update_values[i / 2];
-        tree.Update(l, r, upd_value);
-        checker.Update(l, r, upd_value);
-        l = l_int[i + 1];
-        r = r_int[i + 1];
-        value_t tree_ans = tree.Get(l, r);
-        value_t checker_ans = checker.Get(l, r);
-        assert(tree_ans == checker_ans);
-    }
-}
-
-template <typename value_t>
-[[maybe_unused]] static inline void testMaxAdd(
-    const std::vector<value_t>& values,
-    const std::vector<value_t>& update_values,
-    const std::vector<uint32_t>& l_int, const std::vector<uint32_t>& r_int) {
-    const uint32_t q = uint32_t(l_int.size());
-    assert(q == r_int.size());
-    assert(q / 2 == update_values.size());
-    SegTree<UpdateOperation::add, GetOperation::max, value_t> tree(values);
-    segtrees::SegTreeChecker<UpdateOperation::add, GetOperation::max, value_t>
-        checker(values);
-    for (uint32_t i = 0; i < q; i += 2) {
-        uint32_t l = l_int[i];
-        uint32_t r = r_int[i];
-        value_t upd_value = update_values[i / 2];
-        tree.Update(l, r, upd_value);
-        checker.Update(l, r, upd_value);
-        l = l_int[i + 1];
-        r = r_int[i + 1];
-        value_t tree_ans = tree.Get(l, r);
-        value_t checker_ans = checker.Get(l, r);
-        assert(tree_ans == checker_ans);
-    }
-}
-
-template <typename value_t>
-[[maybe_unused]] static inline void testMaxSetEqual(
-    const std::vector<value_t>& values,
-    const std::vector<value_t>& update_values,
-    const std::vector<uint32_t>& l_int, const std::vector<uint32_t>& r_int) {
-    const uint32_t q = uint32_t(l_int.size());
-    assert(q == r_int.size());
-    assert(q / 2 == update_values.size());
-    SegTree<UpdateOperation::set_equal, GetOperation::max, value_t> tree(
-        values);
-    segtrees::SegTreeChecker<UpdateOperation::set_equal, GetOperation::max,
-                             value_t>
-        checker(values);
-    for (uint32_t i = 0; i < q; i += 2) {
-        uint32_t l = l_int[i];
-        uint32_t r = r_int[i];
-        value_t upd_value = update_values[i / 2];
-        tree.Update(l, r, upd_value);
-        checker.Update(l, r, upd_value);
-        l = l_int[i + 1];
-        r = r_int[i + 1];
-        value_t tree_ans = tree.Get(l, r);
-        value_t checker_ans = checker.Get(l, r);
-        assert(tree_ans == checker_ans);
-    }
-}
-
-template <typename value_t>
-[[maybe_unused]] static inline void testSumMultiply(
-    const std::vector<value_t>& values,
-    const std::vector<value_t>& update_values,
-    const std::vector<uint32_t>& l_int, const std::vector<uint32_t>& r_int) {
-    const uint32_t q = uint32_t(l_int.size());
-    assert(q == r_int.size());
-    assert(q / 2 == update_values.size());
-    SegTree<UpdateOperation::multiply, GetOperation::sum, value_t> tree(values);
-    segtrees::SegTreeChecker<UpdateOperation::multiply, GetOperation::sum,
-                             value_t>
-        checker(values);
-    for (uint32_t i = 0; i < q; i += 2) {
-        uint32_t l = l_int[i];
-        uint32_t r = r_int[i];
-        value_t upd_value = update_values[i / 2];
-        tree.Update(l, r, upd_value);
-        checker.Update(l, r, upd_value);
-        l = l_int[i + 1];
-        r = r_int[i + 1];
-        value_t tree_ans = tree.Get(l, r);
-        value_t checker_ans = checker.Get(l, r);
-        if constexpr (std::is_floating_point_v<value_t>) {
-            bool overflow = std::isnan(tree_ans) || std::isinf(tree_ans);
-            assert(overflow ==
-                   (std::isnan(checker_ans) || std::isinf(checker_ans)));
-            if (overflow || tree_ans == checker_ans) {
+        if constexpr (AllowFuzzyEquality && std::is_floating_point_v<value_t>) {
+            bool overflow_in_tree    = std::isnan(tree_ans) || std::isinf(tree_ans);
+            bool overflow_in_checker = std::isnan(checker_ans) || std::isinf(checker_ans);
+            assert(overflow_in_tree == overflow_in_checker);
+            if (overflow_in_tree || tree_ans == checker_ans) {
                 continue;
             }
-            auto fraq = tree_ans / checker_ans;
-            assert(value_t(1.0L - 0.001L) <= fraq &&
-                   fraq <= value_t(1.0L + 0.001L));
-        } else {
-            assert(tree_ans == checker_ans);
-        }
-    }
-}
 
-template <typename value_t>
-[[maybe_unused]] static inline void testSumAdd(
-    const std::vector<value_t>& values,
-    const std::vector<value_t>& update_values,
-    const std::vector<uint32_t>& l_int, const std::vector<uint32_t>& r_int) {
-    const uint32_t q = uint32_t(l_int.size());
-    assert(q == r_int.size());
-    assert(q / 2 == update_values.size());
-    SegTree<UpdateOperation::add, GetOperation::sum, value_t> tree(values);
-    segtrees::SegTreeChecker<UpdateOperation::add, GetOperation::sum, value_t>
-        checker(values);
-    for (uint32_t i = 0; i < q; i += 2) {
-        uint32_t l = l_int[i];
-        uint32_t r = r_int[i];
-        value_t upd_value = update_values[i / 2];
-        tree.Update(l, r, upd_value);
-        checker.Update(l, r, upd_value);
-        l = l_int[i + 1];
-        r = r_int[i + 1];
-        value_t tree_ans = tree.Get(l, r);
-        value_t checker_ans = checker.Get(l, r);
-        assert(tree_ans == checker_ans);
-    }
-}
-
-template <typename value_t>
-[[maybe_unused]] static inline void testSumSetEqual(
-    const std::vector<value_t>& values,
-    const std::vector<value_t>& update_values,
-    const std::vector<uint32_t>& l_int, const std::vector<uint32_t>& r_int) {
-    const uint32_t q = uint32_t(l_int.size());
-    assert(q == r_int.size());
-    assert(q / 2 == update_values.size());
-    SegTree<UpdateOperation::set_equal, GetOperation::sum, value_t> tree(
-        values);
-    segtrees::SegTreeChecker<UpdateOperation::set_equal, GetOperation::sum,
-                             value_t>
-        checker(values);
-    for (uint32_t i = 0; i < q; i += 2) {
-        uint32_t l = l_int[i];
-        uint32_t r = r_int[i];
-        value_t upd_value = update_values[i / 2];
-        tree.Update(l, r, upd_value);
-        checker.Update(l, r, upd_value);
-        l = l_int[i + 1];
-        r = r_int[i + 1];
-        value_t tree_ans = tree.Get(l, r);
-        value_t checker_ans = checker.Get(l, r);
-        assert(tree_ans == checker_ans);
-    }
-}
-
-template <typename value_t>
-[[maybe_unused]] static inline void testProductSetEqual(
-    const std::vector<value_t>& values,
-    const std::vector<value_t>& update_values,
-    const std::vector<uint32_t>& l_int, const std::vector<uint32_t>& r_int) {
-    const uint32_t q = uint32_t(l_int.size());
-    assert(q == r_int.size());
-    assert(q / 2 == update_values.size());
-    SegTree<UpdateOperation::set_equal, GetOperation::product, value_t> tree(
-        values);
-    segtrees::SegTreeChecker<UpdateOperation::set_equal, GetOperation::product,
-                             value_t>
-        checker(values);
-    for (uint32_t i = 0; i < q; i += 2) {
-        uint32_t l = l_int[i];
-        uint32_t r = r_int[i];
-        value_t upd_value = update_values[i / 2];
-        tree.Update(l, r, upd_value);
-        checker.Update(l, r, upd_value);
-        l = l_int[i + 1];
-        r = r_int[i + 1];
-        value_t tree_ans = tree.Get(l, r);
-        value_t checker_ans = checker.Get(l, r);
-        if constexpr (std::is_floating_point_v<value_t>) {
-            bool overflow = std::isnan(tree_ans) || std::isinf(tree_ans);
-            assert(overflow ==
-                   (std::isnan(checker_ans) || std::isinf(checker_ans)));
-            if (overflow || tree_ans == checker_ans) {
-                continue;
-            }
-            auto fraq = tree_ans / checker_ans;
-            assert(value_t(1.0L - 0.001L) <= fraq &&
-                   fraq <= value_t(1.0L + 0.001L));
-        } else {
-            assert(tree_ans == checker_ans);
-        }
-    }
-}
-
-template <typename value_t>
-[[maybe_unused]] static inline void testProductMultiply(
-    const std::vector<value_t>& values,
-    const std::vector<value_t>& update_values,
-    const std::vector<uint32_t>& l_int, const std::vector<uint32_t>& r_int) {
-    const uint32_t q = uint32_t(l_int.size());
-    assert(q == r_int.size());
-    assert(q / 2 == update_values.size());
-    SegTree<UpdateOperation::multiply, GetOperation::product, value_t> tree(
-        values);
-    segtrees::SegTreeChecker<UpdateOperation::multiply, GetOperation::product,
-                             value_t>
-        checker(values);
-    for (uint32_t i = 0; i < q; i += 2) {
-        uint32_t l = l_int[i];
-        uint32_t r = r_int[i];
-        value_t upd_value = update_values[i / 2];
-        tree.Update(l, r, upd_value);
-        checker.Update(l, r, upd_value);
-        l = l_int[i + 1];
-        r = r_int[i + 1];
-        value_t tree_ans = tree.Get(l, r);
-        value_t checker_ans = checker.Get(l, r);
-        if constexpr (std::is_floating_point_v<value_t>) {
-            bool overflow = std::isnan(tree_ans) || std::isinf(tree_ans);
-            assert(overflow ==
-                   (std::isnan(checker_ans) || std::isinf(checker_ans)));
-            if (overflow || tree_ans == checker_ans) {
-                continue;
-            }
-            auto fraq = tree_ans / checker_ans;
-            assert(value_t(1.0L - 0.001L) <= fraq &&
-                   fraq <= value_t(1.0L + 0.001L));
-        } else {
-            assert(tree_ans == checker_ans);
-        }
-    }
-}
-
-template <typename value_t>
-[[maybe_unused]] static inline void testMinMultiply(
-    const std::vector<value_t>& values,
-    const std::vector<value_t>& update_values,
-    const std::vector<uint32_t>& l_int, const std::vector<uint32_t>& r_int) {
-    if (std::is_integral_v<value_t>) {
-        return;
-    }
-
-    const uint32_t q = uint32_t(l_int.size());
-    assert(q == r_int.size());
-    assert(q / 2 == update_values.size());
-    SegTree<UpdateOperation::multiply, GetOperation::min, value_t> tree(values);
-    segtrees::SegTreeChecker<UpdateOperation::multiply, GetOperation::min,
-                             value_t>
-        checker(values);
-    for (uint32_t i = 0; i < q; i += 2) {
-        uint32_t l = l_int[i];
-        uint32_t r = r_int[i];
-        value_t upd_value = update_values[i / 2];
-        tree.Update(l, r, upd_value);
-        checker.Update(l, r, upd_value);
-        l = l_int[i + 1];
-        r = r_int[i + 1];
-        value_t tree_ans = tree.Get(l, r);
-        value_t checker_ans = checker.Get(l, r);
-        if constexpr (std::is_floating_point_v<value_t>) {
-            bool overflow = std::isnan(tree_ans) || std::isinf(tree_ans);
-            assert(overflow ==
-                   (std::isnan(checker_ans) || std::isinf(checker_ans)));
-            if (overflow || tree_ans == checker_ans) {
-                continue;
-            }
-            auto fraq = tree_ans / checker_ans;
-            assert(value_t(1.0L - 0.001L) <= fraq &&
-                   fraq <= value_t(1.0L + 0.001L));
-        } else {
-            assert(tree_ans == checker_ans);
-        }
-    }
-}
-
-template <typename value_t>
-[[maybe_unused]] static inline void testMaxMultiply(
-    const std::vector<value_t>& values,
-    const std::vector<value_t>& update_values,
-    const std::vector<uint32_t>& l_int, const std::vector<uint32_t>& r_int) {
-    if (std::is_integral_v<value_t>) {
-        return;
-    }
-
-    const uint32_t q = uint32_t(l_int.size());
-    assert(q == r_int.size());
-    assert(q / 2 == update_values.size());
-    SegTree<UpdateOperation::multiply, GetOperation::max, value_t> tree(values);
-    segtrees::SegTreeChecker<UpdateOperation::multiply, GetOperation::max,
-                             value_t>
-        checker(values);
-    for (uint32_t i = 0; i < q; i += 2) {
-        uint32_t l = l_int[i];
-        uint32_t r = r_int[i];
-        value_t upd_value = update_values[i / 2];
-        tree.Update(l, r, upd_value);
-        checker.Update(l, r, upd_value);
-        l = l_int[i + 1];
-        r = r_int[i + 1];
-        value_t tree_ans = tree.Get(l, r);
-        value_t checker_ans = checker.Get(l, r);
-        if constexpr (std::is_floating_point_v<value_t>) {
-            bool overflow = std::isnan(tree_ans) || std::isinf(tree_ans);
-            assert(overflow ==
-                   (std::isnan(checker_ans) || std::isinf(checker_ans)));
-            if (overflow || tree_ans == checker_ans) {
-                continue;
-            }
-            auto fraq = tree_ans / checker_ans;
-            assert(value_t(1.0L - 0.001L) <= fraq &&
-                   fraq <= value_t(1.0L + 0.001L));
+            auto fuzzy_equal = [](value_t x, value_t y) noexcept {
+                return std::abs(x - y) <= value_t(0.001L) * std::min(std::abs(x), std::abs(y));
+            };
+            assert(fuzzy_equal(tree_ans, checker_ans));
         } else {
             assert(tree_ans == checker_ans);
         }
@@ -389,28 +69,39 @@ template <typename value_t>
 }
 
 template <typename value_t = int64_t>
-void tests() {
+static void tests() {
     constexpr uint32_t n = 65536;
     constexpr uint32_t q = 32768;
-    std::vector<value_t> values(n);
-    std::vector<value_t> update_values(q / 2);
-    std::vector<uint32_t> l_int(q);
-    std::vector<uint32_t> r_int(q);
-    fillData<n, q>(values, update_values, l_int, r_int);
-    testMinAdd(values, update_values, l_int, r_int);
-    testMinSetEqual(values, update_values, l_int, r_int);
-    testMaxAdd(values, update_values, l_int, r_int);
-    testMaxSetEqual(values, update_values, l_int, r_int);
-    testSumMultiply(values, update_values, l_int, r_int);
-    testSumAdd(values, update_values, l_int, r_int);
-    testSumSetEqual(values, update_values, l_int, r_int);
-    testProductSetEqual(values, update_values, l_int, r_int);
-    testProductMultiply(values, update_values, l_int, r_int);
-    testMinMultiply(values, update_values, l_int, r_int);
-    testMaxMultiply(values, update_values, l_int, r_int);
+    static constinit std::array<value_t, n> values{};
+    static constinit std::array<value_t, q / 2> update_values{};
+    static constinit std::array<uint32_t, q> l_int{};
+    static constinit std::array<uint32_t, q> r_int{};
+    fillData(values, update_values, l_int, r_int);
+
+    using enum UpdateOperation;
+    using enum GetOperation;
+
+    test<add, min, value_t, false>(values, update_values, l_int, r_int);
+    test<set_equal, min, value_t, false>(values, update_values, l_int, r_int);
+    test<add, max, value_t, false>(values, update_values, l_int, r_int);
+    test<set_equal, max, value_t, false>(values, update_values, l_int, r_int);
+    test<set_equal, max, value_t, false>(values, update_values, l_int, r_int);
+    test<multiply, sum, value_t, true>(values, update_values, l_int, r_int);
+    test<add, sum, value_t, false>(values, update_values, l_int, r_int);
+    test<set_equal, sum, value_t, false>(values, update_values, l_int, r_int);
+    test<set_equal, product, value_t, true>(values, update_values, l_int, r_int);
+    test<multiply, product, value_t, true>(values, update_values, l_int, r_int);
+    if constexpr (!std::is_integral_v<value_t>) {
+        test<multiply, min, value_t, true>(values, update_values, l_int, r_int);
+        test<multiply, max, value_t, true>(values, update_values, l_int, r_int);
+    }
 }
 
 int main() {
-    tests();
+    tests<std::int32_t>();
+    tests<std::uint32_t>();
+    tests<std::int64_t>();
+    tests<std::uint64_t>();
     tests<double>();
+    tests<long double>();
 }
