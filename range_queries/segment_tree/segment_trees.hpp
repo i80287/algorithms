@@ -64,20 +64,8 @@ constexpr
 }
 
 template <typename value_t, GetOperation get_op>
-class MinMaxSegTreeAdd {
-private:
+class [[nodiscard]] MinMaxSegTreeAdd {
     static_assert((get_op == GetOperation::max) || (get_op == GetOperation::min));
-    static constexpr value_t kNoPromise = 0;
-    struct Node {
-        value_t value{};
-        value_t promise = kNoPromise;
-    };
-
-    std::valarray<Node> nodes_;
-    uint32_t query_l_{};
-    uint32_t query_r_{};
-    value_t value_{};
-    uint32_t n_;
 
 public:
     explicit MinMaxSegTreeAdd(const std::vector<value_t>& data)
@@ -105,12 +93,19 @@ public:
         this->UpdateRecImpl(0, 0, n_ - 1);
     }
 
-    value_t get(uint32_t l, uint32_t r) noexcept {
+    [[nodiscard]] value_t get(uint32_t l, uint32_t r) noexcept {
         assert(l <= r && r < n_);
         return this->GetRecImpl(0, 0, n_ - 1, l, r);
     }
 
 private:
+    static constexpr value_t kNoPromise = 0;
+
+    struct Node {
+        value_t value{};
+        value_t promise = kNoPromise;
+    };
+
     void BuildRecImpl(const value_t* data, size_t node_index, uint32_t node_l,
                       uint32_t node_r) noexcept {
         assert(node_index < nodes_.size() && node_l <= node_r && node_r < n_);
@@ -209,23 +204,17 @@ private:
             return std::min(left_result, right_result);
         }
     }
-};
 
-template <typename value_t, GetOperation get_op>
-class MinMaxSegTreeMult {
-private:
-    static_assert((get_op == GetOperation::max) || (get_op == GetOperation::min));
-    static constexpr value_t kNoPromise = 1;
-    struct Node {
-        value_t min_value{};
-        value_t max_value{};
-        value_t promise = kNoPromise;
-    };
     std::valarray<Node> nodes_;
     uint32_t query_l_{};
     uint32_t query_r_{};
     value_t value_{};
     uint32_t n_;
+};
+
+template <typename value_t, GetOperation get_op>
+class [[nodiscard]] MinMaxSegTreeMult {
+    static_assert((get_op == GetOperation::max) || (get_op == GetOperation::min));
 
 public:
     explicit MinMaxSegTreeMult(const std::vector<value_t>& data)
@@ -263,12 +252,20 @@ public:
         this->UpdateRecImpl(0, 0, n_ - 1);
     }
 
-    value_t get(uint32_t l, uint32_t r) noexcept {
+    [[nodiscard]] value_t get(uint32_t l, uint32_t r) noexcept {
         assert(l <= r && r < n_);
         return this->GetRecImpl(0, 0, n_ - 1, l, r);
     }
 
 private:
+    static constexpr value_t kNoPromise = 1;
+
+    struct Node {
+        value_t min_value{};
+        value_t max_value{};
+        value_t promise = kNoPromise;
+    };
+
     void BuildRecImpl(const value_t* data, size_t node_index, uint32_t node_l,
                       uint32_t node_r) noexcept {
         assert(node_index < nodes_.size() && node_l <= node_r && node_r < n_);
@@ -381,23 +378,18 @@ private:
             return std::min(left_result, right_result);
         }
     }
-};
-
-template <typename value_t, GetOperation get_op>
-class MinMaxSegTreeSetEqual {
-private:
-    static_assert((get_op == GetOperation::max) || (get_op == GetOperation::min));
-    struct Node {
-        value_t value{};
-        value_t promise{};
-        bool has_promise = false;
-    };
 
     std::valarray<Node> nodes_;
     uint32_t query_l_{};
     uint32_t query_r_{};
     value_t value_{};
     uint32_t n_;
+};
+
+template <typename value_t, GetOperation get_op>
+class [[nodiscard]] MinMaxSegTreeSetEqual {
+private:
+    static_assert((get_op == GetOperation::max) || (get_op == GetOperation::min));
 
 public:
     explicit MinMaxSegTreeSetEqual(const std::vector<value_t>& data)
@@ -425,12 +417,18 @@ public:
         this->UpdateRecImpl(0, 0, n_ - 1);
     }
 
-    value_t get(uint32_t l, uint32_t r) noexcept {
+    [[nodiscard]] value_t get(uint32_t l, uint32_t r) noexcept {
         assert(l <= r && r < n_);
         return this->GetRecImpl(0, 0, n_ - 1, l, r);
     }
 
 private:
+    struct Node {
+        value_t value{};
+        value_t promise{};
+        bool has_promise = false;
+    };
+
     void BuildRecImpl(const value_t* data, size_t node_index, uint32_t node_l,
                       uint32_t node_r) noexcept {
         assert(node_index < nodes_.size() && node_l <= node_r && node_r < n_);
@@ -531,22 +529,16 @@ private:
             return std::min(left_result, right_result);
         }
     }
-};
 
-template <typename value_t>
-class SumSegTreeSetEqual {
-private:
-    struct Node {
-        value_t value{};
-        value_t promise{};
-        bool has_promise = false;
-    };
     std::valarray<Node> nodes_;
     uint32_t query_l_{};
     uint32_t query_r_{};
     value_t value_{};
     uint32_t n_;
+};
 
+template <typename value_t>
+class [[nodiscard]] SumSegTreeSetEqual {
 public:
     explicit SumSegTreeSetEqual(const std::vector<value_t>& data)
         : SumSegTreeSetEqual(data.data(), uint32_t(data.size())) {}
@@ -573,12 +565,18 @@ public:
         this->UpdateRecImpl(0, 0, n_ - 1);
     }
 
-    value_t get(uint32_t l, uint32_t r) noexcept {
+    [[nodiscard]] value_t get(uint32_t l, uint32_t r) noexcept {
         assert(l <= r && r < n_);
         return this->GetRecImpl(0, 0, n_ - 1, l, r);
     }
 
 private:
+    struct Node {
+        value_t value{};
+        value_t promise{};
+        bool has_promise = false;
+    };
+
     void BuildRecImpl(const value_t* data, size_t node_index, uint32_t node_l,
                       uint32_t node_r) noexcept {
         assert(node_index < nodes_.size() && node_l <= node_r && node_r < n_);
@@ -672,24 +670,16 @@ private:
             this->GetRecImpl(right_son, node_middle + 1, node_r, node_middle + 1, query_r);
         return left_result + right_result;
     }
-};
 
-template <typename value_t>
-class ProdSegTreeSetEqual {
-private:
-    struct Node {
-        value_t value{};
-        value_t promise{};
-        bool has_promise = false;
-        value_t cached_promise_x_count{};
-        bool has_cached_promise_x_count = false;
-    };
     std::valarray<Node> nodes_;
     uint32_t query_l_{};
     uint32_t query_r_{};
     value_t value_{};
     uint32_t n_;
+};
 
+template <typename value_t>
+class [[nodiscard]] ProdSegTreeSetEqual {
 public:
     explicit ProdSegTreeSetEqual(const std::vector<value_t>& data)
         : ProdSegTreeSetEqual(data.data(), uint32_t(data.size())) {}
@@ -733,12 +723,20 @@ public:
         this->UpdateRecImpl(0, 0, n_ - 1);
     }
 
-    value_t get(uint32_t l, uint32_t r) noexcept {
+    [[nodiscard]] value_t get(uint32_t l, uint32_t r) noexcept {
         assert(l <= r && r < n_);
         return this->GetRecImpl(0, 0, n_ - 1, l, r);
     }
 
 private:
+    struct Node {
+        value_t value{};
+        value_t promise{};
+        bool has_promise = false;
+        value_t cached_promise_x_count{};
+        bool has_cached_promise_x_count = false;
+    };
+
     void UpdateRecImpl(size_t node_index, uint32_t node_l, uint32_t node_r) noexcept {
         assert(node_index < nodes_.size() && node_l <= node_r && node_r < n_);
         if (query_l_ <= node_l && node_r <= query_r_) {
@@ -846,23 +844,16 @@ private:
             this->GetRecImpl(right_son, node_middle + 1, node_r, node_middle + 1, query_r);
         return left_result * right_result;
     }
-};
-
-template <typename value_t>
-class SumSegTreeMult {
-private:
-    static constexpr value_t kNoPromise = 1;
-    struct Node {
-        value_t value{};
-        value_t promise = kNoPromise;
-    };
 
     std::valarray<Node> nodes_;
     uint32_t query_l_{};
     uint32_t query_r_{};
     value_t value_{};
     uint32_t n_;
+};
 
+template <typename value_t>
+class [[nodiscard]] SumSegTreeMult {
 public:
     explicit SumSegTreeMult(const std::vector<value_t>& data)
         : SumSegTreeMult(data.data(), uint32_t(data.size())) {}
@@ -889,12 +880,19 @@ public:
         this->UpdateRecImpl(0, 0, n_ - 1);
     }
 
-    value_t get(uint32_t l, uint32_t r) noexcept {
+    [[nodiscard]] value_t get(uint32_t l, uint32_t r) noexcept {
         assert(l <= r && r < n_);
         return this->GetRecImpl(0, 0, n_ - 1, l, r);
     }
 
 private:
+    static constexpr value_t kNoPromise = 1;
+
+    struct Node {
+        value_t value{};
+        value_t promise = kNoPromise;
+    };
+
     void BuildRecImpl(const value_t* data, size_t node_index, uint32_t node_l,
                       uint32_t node_r) noexcept {
         assert(node_index < nodes_.size() && node_l <= node_r && node_r < n_);
@@ -975,22 +973,16 @@ private:
             this->GetRecImpl(right_son, node_middle + 1, node_r, node_middle + 1, query_r);
         return left_result + right_result;
     }
-};
 
-template <typename value_t>
-class SumSegTreeAdd {
-private:
-    static constexpr value_t kNoPromise = 0;
-    struct Node {
-        value_t value{};
-        value_t promise = kNoPromise;
-    };
     std::valarray<Node> nodes_;
     uint32_t query_l_{};
     uint32_t query_r_{};
     value_t value_{};
     uint32_t n_;
+};
 
+template <typename value_t>
+class [[nodiscard]] SumSegTreeAdd {
 public:
     explicit SumSegTreeAdd(const std::vector<value_t>& data)
         : SumSegTreeAdd(data.data(), uint32_t(data.size())) {}
@@ -1017,12 +1009,19 @@ public:
         this->UpdateRecImpl(0, 0, n_ - 1);
     }
 
-    value_t get(uint32_t l, uint32_t r) {
+    [[nodiscard]] value_t get(uint32_t l, uint32_t r) {
         assert(l <= r && r < n_);
         return this->GetRecImpl(0, 0, n_ - 1, l, r);
     }
 
 private:
+    static constexpr value_t kNoPromise = 0;
+
+    struct Node {
+        value_t value{};
+        value_t promise = kNoPromise;
+    };
+
     void BuildRecImpl(const value_t* data, size_t node_index, uint32_t node_l,
                       uint32_t node_r) noexcept {
         assert(node_index < nodes_.size() && node_l <= node_r && node_r < n_);
@@ -1106,24 +1105,16 @@ private:
             this->GetRecImpl(right_son, node_middle + 1, node_r, node_middle + 1, query_r);
         return left_result + right_result;
     }
-};
 
-template <typename value_t>
-class ProdSegTreeMult {
-private:
-    static constexpr value_t kNoPromise = 1;
-    struct Node {
-        value_t value{};
-        value_t promise                 = kNoPromise;
-        value_t cached_promise_x_count  = kNoPromise * 1;
-        bool has_cached_promise_x_count = true;
-    };
     std::valarray<Node> nodes_;
     uint32_t query_l_{};
     uint32_t query_r_{};
     value_t value_{};
     uint32_t n_;
+};
 
+template <typename value_t>
+class [[nodiscard]] ProdSegTreeMult {
 public:
     explicit ProdSegTreeMult(const std::vector<value_t>& data)
         : ProdSegTreeMult(data.data(), uint32_t(data.size())) {}
@@ -1150,12 +1141,21 @@ public:
         this->UpdateRecImpl(0, 0, n_ - 1);
     }
 
-    value_t get(uint32_t l, uint32_t r) noexcept {
+    [[nodiscard]] value_t get(uint32_t l, uint32_t r) noexcept {
         assert(l <= r && r < n_);
         return this->GetRecImpl(0, 0, n_ - 1, l, r);
     }
 
 private:
+    static constexpr value_t kNoPromise = 1;
+
+    struct Node {
+        value_t value{};
+        value_t promise                 = kNoPromise;
+        value_t cached_promise_x_count  = kNoPromise * 1;
+        bool has_cached_promise_x_count = true;
+    };
+
     void BuildRecImpl(const value_t* data, size_t node_index, uint32_t node_l,
                       uint32_t node_r) noexcept {
         assert(node_index < nodes_.size() && node_l <= node_r && node_r < n_);
@@ -1261,60 +1261,12 @@ private:
             this->GetRecImpl(right_son, node_middle + 1, node_r, node_middle + 1, query_r);
         return left_result * right_result;
     }
-};
 
-template <UpdateOperation upd_op, GetOperation get_op, typename value_t = int64_t>
-class SegTreeChecker {
-private:
-    std::valarray<value_t> values_;
-
-public:
-    explicit SegTreeChecker(const std::vector<value_t>& data)
-        : SegTreeChecker(data.data(), uint32_t(data.size())) {}
-    template <std::size_t N>
-    explicit SegTreeChecker(const std::array<value_t, N>& data)
-        : SegTreeChecker(data.data(), uint32_t(data.size())) {}
-    template <std::size_t N>
-    explicit SegTreeChecker(const value_t (&data)[N])
-        : SegTreeChecker(std::data(data), uint32_t(std::size(data))) {}
-    explicit SegTreeChecker(std::initializer_list<value_t> data)
-        : SegTreeChecker(std::data(data), uint32_t(std::size(data))) {}
-
-    SegTreeChecker(const value_t* data, uint32_t n) : values_(data, n) {
-        assert(data != nullptr);
-        assert(n > 0);
-    }
-
-    void update(uint32_t l, uint32_t r, value_t value) {
-        assert(l <= r && r < values_.size());
-        for (size_t i = l; i <= r; i++) {
-            if constexpr (upd_op == UpdateOperation::add) {
-                values_[i] += value;
-            } else if constexpr (upd_op == UpdateOperation::multiply) {
-                values_[i] *= value;
-            } else if constexpr (upd_op == UpdateOperation::set_equal) {
-                values_[i] = value;
-            }
-        }
-    }
-
-    value_t get(uint32_t l, uint32_t r) const {
-        assert(l <= r && r < values_.size());
-        value_t ans = values_[l];
-        for (size_t i = l + 1; i <= r; i++) {
-            if constexpr (get_op == GetOperation::sum) {
-                ans += values_[i];
-            } else if constexpr (get_op == GetOperation::product) {
-                ans *= values_[i];
-            } else if constexpr (get_op == GetOperation::max) {
-                ans = std::max(ans, values_[i]);
-            } else if constexpr (get_op == GetOperation::min) {
-                ans = std::min(ans, values_[i]);
-            }
-        }
-
-        return ans;
-    }
+    std::valarray<Node> nodes_;
+    uint32_t query_l_{};
+    uint32_t query_r_{};
+    value_t value_{};
+    uint32_t n_;
 };
 
 template <typename value_t, GetOperation get_op, UpdateOperation upd_op>
