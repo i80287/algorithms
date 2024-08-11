@@ -191,11 +191,11 @@ namespace test_tools_detail {
 TEST_TOOLS_CONSTEVAL std::size_t get_typename_end_pos_impl(const std::string_view s) {
     // Variables are not inside of the for init for
     //  the compatibility with C++17.
-    std::size_t opened_square_brackets = 0;
-    std::size_t opened_round_brackets = 0;
-    std::size_t opened_curly_brackets = 0;
+    std::size_t opened_square_brackets   = 0;
+    std::size_t opened_round_brackets    = 0;
+    std::size_t opened_curly_brackets    = 0;
     std::size_t opened_triangle_brackets = 0;
-    std::size_t i = 0;
+    std::size_t i                        = 0;
     for (const char c : s) {
         switch (static_cast<std::uint8_t>(c)) {
             case '(': {

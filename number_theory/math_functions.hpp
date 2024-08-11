@@ -1382,10 +1382,10 @@ constexpr
             9999999999999999999ull,
         };
     static_assert(countl_zero(uint64_t(0)) == 64, "countl_zero detail error");
-    int32_t digits = (19 * (63 - int32_t(countl_zero(n)))) >> 6;
-    ATTRIBUTE_ASSUME((-19 >> 6) <= digits && digits <= ((19 * 63) >> 6));
-    digits += int32_t((table2[uint32_t(digits + 1)] - n) >> 63);
-    return uint32_t(digits);
+    const int32_t approx_log10 = (19 * (63 - int32_t(countl_zero(n)))) >> 6;
+    ATTRIBUTE_ASSUME((-19 >> 6) <= approx_log10 && approx_log10 <= ((19 * 63) >> 6));
+    const auto adjustment = int32_t((table2[uint32_t(approx_log10 + 1)] - n) >> 63);
+    return uint32_t(approx_log10 + adjustment);
 }
 
 ATTRIBUTE_CONST
@@ -1867,31 +1867,30 @@ private:
 /// @return bitset, such that bitset[n] == true \iff n is prime
 template <uint32_t N>
 [[nodiscard]] CONSTEXPR_FIXED_PRIMES_SIEVE inline const auto& fixed_primes_sieve() noexcept {
-    constexpr auto kSize = std::size_t(N) + 1;
-    using TPrimesSet = std::bitset<kSize>;
-    static CONSTEXPR_PRIMES_SIEVE TPrimesSet primes_bs =
-        []() CONSTEXPR_BITSET_OPS noexcept {
-            TPrimesSet primes{};
-            primes.set();
-            primes[0] = false;
-            if constexpr (primes.size() > 1) {
-                primes[1]           = false;
-                const uint32_t root = math_functions::isqrt(N);
-                if (const uint32_t i = 2; i <= root) {
+    constexpr auto kSize                               = std::size_t(N) + 1;
+    using TPrimesSet                                   = std::bitset<kSize>;
+    static CONSTEXPR_PRIMES_SIEVE TPrimesSet primes_bs = []() CONSTEXPR_BITSET_OPS noexcept {
+        TPrimesSet primes{};
+        primes.set();
+        primes[0] = false;
+        if constexpr (primes.size() > 1) {
+            primes[1]           = false;
+            const uint32_t root = math_functions::isqrt(N);
+            if (const uint32_t i = 2; i <= root) {
+                for (std::size_t j = i * i; j <= N; j += i) {
+                    primes[j] = false;
+                }
+            }
+            for (uint32_t i = 3; i <= root; i += 2) {
+                if (primes[i]) {
                     for (std::size_t j = i * i; j <= N; j += i) {
                         primes[j] = false;
                     }
                 }
-                for (uint32_t i = 3; i <= root; i += 2) {
-                    if (primes[i]) {
-                        for (std::size_t j = i * i; j <= N; j += i) {
-                            primes[j] = false;
-                        }
-                    }
-                }
             }
-            return primes;
-        }();
+        }
+        return primes;
+    }();
     return primes_bs;
 }
 
@@ -2024,7 +2023,7 @@ ATTRIBUTE_CONST constexpr HelperRetType congruence_helper(const std::uint64_t a,
 ///          x_{0} < m / gcd(a, m), x_{i + 1} = x_{i} + m / gcd(a, m).
 ///         Otherwise, return empty vector.
 inline std::vector<std::uint32_t> solve_congruence_all_roots(std::uint64_t a, std::int64_t c,
-                                                      std::uint32_t m) {
+                                                             std::uint32_t m) {
     const auto [x0, d, m_] = detail::congruence_helper(a, c, m);
     std::vector<std::uint32_t> solutions(d);
     auto x = x0;

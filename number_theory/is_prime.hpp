@@ -87,8 +87,7 @@ ATTRIBUTE_CONST constexpr bool is_strong_prp(uint64_t n, uint64_t a) noexcept {
  * the Jacobi symbol]
  **********************************************************************************************/
 template <bool BasicChecks = true>
-ATTRIBUTE_CONST constexpr bool is_strong_lucas_prp(uint64_t n, uint32_t p,
-                                                          int32_t q) noexcept {
+ATTRIBUTE_CONST constexpr bool is_strong_lucas_prp(uint64_t n, uint32_t p, int32_t q) noexcept {
     int64_t d = int64_t(uint64_t(p) * p) - int64_t(q) * 4;
     if constexpr (BasicChecks) {
         /* Check if p*p - 4*q == 0. */

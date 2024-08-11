@@ -387,8 +387,8 @@ template <class IntType>
                   "");
     log_tests_started();
 
-    constexpr std::size_t kTotalTests          = 1ull << 30;
-    constexpr std::size_t kTotalThreads  = 4;
+    constexpr std::size_t kTotalTests     = 1ull << 30;
+    constexpr std::size_t kTotalThreads   = 4;
     constexpr std::size_t kTestsPerThread = kTotalTests / kTotalThreads;
 
     std::vector<std::thread> threads;
@@ -397,7 +397,8 @@ template <class IntType>
     for (size_t i = 0; i < kTotalThreads; ++i) {
         threads.emplace_back([thread_id = i, &result
 #if defined(_MSC_VER)
-    , kTestsPerThread
+                              ,
+                              kTestsPerThread
 #endif
         ]() noexcept {
             const auto seed = thread_id * 3'829'234'734ul + 27'273'489ul;
