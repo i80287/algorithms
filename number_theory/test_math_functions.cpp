@@ -25,1138 +25,6 @@ using namespace math_functions;
 using namespace test_tools;
 using std::gcd;
 
-static_assert(bin_pow_mod(uint32_t(7), uint32_t(483), uint32_t(1000000007u)) == 263145387u,
-              "bin_pow_mod");
-static_assert(bin_pow_mod(uint32_t(289), uint32_t(-1), uint32_t(2146514599u)) == 1349294778u,
-              "bin_pow_mod");
-static_assert(bin_pow_mod(uint32_t(2146526839u), uint32_t(578423432u), uint32_t(2147483629u)) ==
-                  281853233u,
-              "bin_pow_mod");
-
-#if defined(HAS_I128_CONSTEXPR) && HAS_I128_CONSTEXPR
-static_assert(bin_pow_mod(uint64_t(119999999927ull), uint64_t(18446744073709515329ull),
-                          uint64_t(100000000000000003ull)) == 85847679703545452ull,
-              "bin_pow_mod");
-static_assert(bin_pow_mod(uint64_t(72057594037927843ull), uint64_t(18446744073709515329ull),
-                          uint64_t(1000000000000000003ull)) == 404835689235904145ull,
-              "bin_pow_mod");
-static_assert(bin_pow_mod(uint64_t(999999999999999487ull), uint64_t(18446744073709551557ull),
-                          uint64_t(1000000000000000009ull)) == 802735487082721113ull,
-              "bin_pow_mod");
-#endif
-
-#if CONFIG_HAS_AT_LEAST_CXX_20
-
-static_assert(isqrt(0u) == 0, "isqrt");
-static_assert(isqrt(1u) == 1, "isqrt");
-static_assert(isqrt(4u) == 2, "isqrt");
-static_assert(isqrt(9u) == 3, "isqrt");
-static_assert(isqrt(10u) == 3, "isqrt");
-static_assert(isqrt(15u) == 3, "isqrt");
-static_assert(isqrt(16u) == 4, "isqrt");
-static_assert(isqrt(257u * 257u) == 257, "isqrt");
-static_assert(isqrt(257u * 257u + 1) == 257, "isqrt");
-static_assert(isqrt(258u * 258u - 1u) == 257, "isqrt");
-static_assert(isqrt(1u << 12) == 1 << 6, "isqrt");
-static_assert(isqrt(1u << 14) == 1 << 7, "isqrt");
-static_assert(isqrt(1u << 16) == 1 << 8, "isqrt");
-static_assert(isqrt(1u << 28) == 1 << 14, "isqrt");
-static_assert(isqrt(1u << 30) == 1 << 15, "isqrt");
-static_assert(isqrt(uint32_t(-1)) == (1u << 16) - 1, "isqrt");
-
-#endif
-
-static_assert(isqrt(uint64_t(0)) == 0, "isqrt");
-static_assert(isqrt(uint64_t(1)) == 1, "isqrt");
-static_assert(isqrt(uint64_t(4)) == 2, "isqrt");
-static_assert(isqrt(uint64_t(9)) == 3, "isqrt");
-static_assert(isqrt(uint64_t(10)) == 3, "isqrt");
-static_assert(isqrt(uint64_t(15)) == 3, "isqrt");
-static_assert(isqrt(uint64_t(16)) == 4, "isqrt");
-static_assert(isqrt(uint64_t(257 * 257)) == 257, "isqrt");
-static_assert(isqrt(uint64_t(257 * 257 + 1)) == 257, "isqrt");
-static_assert(isqrt(uint64_t(258 * 258 - 1)) == 257, "isqrt");
-static_assert(isqrt(uint64_t(1 << 12)) == 1 << 6, "isqrt");
-static_assert(isqrt(uint64_t(1 << 14)) == 1 << 7, "isqrt");
-static_assert(isqrt(uint64_t(1 << 16)) == 1 << 8, "isqrt");
-static_assert(isqrt(uint64_t(1 << 28)) == 1 << 14, "isqrt");
-static_assert(isqrt(uint64_t(1 << 30)) == 1 << 15, "isqrt");
-static_assert(isqrt(uint64_t(1) << 54) == uint64_t(1) << 27, "isqrt");
-static_assert(isqrt(uint64_t(1) << 56) == uint64_t(1) << 28, "isqrt");
-static_assert(isqrt(uint64_t(1) << 58) == uint64_t(1) << 29, "isqrt");
-static_assert(isqrt(uint64_t(1) << 60) == uint64_t(1) << 30, "isqrt");
-static_assert(isqrt(uint64_t(1) << 62) == uint64_t(1) << 31, "isqrt");
-static_assert(isqrt(uint64_t(-1)) == 0xFFFFFFFFu, "isqrt");
-static_assert(isqrt(uint64_t(1000000007) * 1000000007) == 1000000007u, "isqrt");
-
-#if defined(INTEGERS_128_BIT_HPP) && defined(HAS_I128_CONSTEXPR) && HAS_I128_CONSTEXPR
-
-static_assert(isqrt(uint128_t(0)) == 0, "isqrt");
-static_assert(isqrt(uint128_t(1)) == 1, "isqrt");
-static_assert(isqrt(uint128_t(4)) == 2, "isqrt");
-static_assert(isqrt(uint128_t(9)) == 3, "isqrt");
-static_assert(isqrt(uint128_t(10)) == 3, "isqrt");
-static_assert(isqrt(uint128_t(15)) == 3, "isqrt");
-static_assert(isqrt(uint128_t(16)) == 4, "isqrt");
-static_assert(isqrt(uint128_t(257 * 257)) == 257, "isqrt");
-static_assert(isqrt(uint128_t(257 * 257 + 1)) == 257, "isqrt");
-static_assert(isqrt(uint128_t(258 * 258 - 1)) == 257, "isqrt");
-static_assert(isqrt(uint128_t(1 << 12)) == 1 << 6, "isqrt");
-static_assert(isqrt(uint128_t(1 << 14)) == 1 << 7, "isqrt");
-static_assert(isqrt(uint128_t(1 << 16)) == 1 << 8, "isqrt");
-static_assert(isqrt(uint128_t(1 << 28)) == 1 << 14, "isqrt");
-static_assert(isqrt(uint128_t(1 << 30)) == 1 << 15, "isqrt");
-static_assert(isqrt(uint128_t(1) << 54) == uint64_t(1) << 27, "isqrt");
-static_assert(isqrt(uint128_t(1) << 56) == uint64_t(1) << 28, "isqrt");
-static_assert(isqrt(uint128_t(1) << 58) == uint64_t(1) << 29, "isqrt");
-static_assert(isqrt(uint128_t(1) << 60) == uint64_t(1) << 30, "isqrt");
-static_assert(isqrt(uint128_t(1) << 62) == uint64_t(1) << 31, "isqrt");
-static_assert(isqrt(uint128_t(uint64_t(-1))) == (uint64_t(1) << 32) - 1, "isqrt");
-static_assert(isqrt(uint128_t(1) << 126) == uint64_t(1) << 63, "isqrt");
-static_assert(isqrt(uint128_t(-1)) == (uint128_t(1) << 64) - 1, "isqrt");
-static_assert(isqrt(uint128_t(1000000007) * 1000000007) == 1000000007, "isqrt");
-static_assert(isqrt(uint128_t(1000000000000000003ull) * 1000000000000000003ull) ==
-                  1000000000000000003ull,
-              "isqrt");
-static_assert(isqrt(uint128_t(1000000000000000009ull) * 1000000000000000009ull) ==
-                  1000000000000000009ull,
-              "isqrt");
-static_assert(isqrt(uint128_t(18446744073709551521ull) * 18446744073709551521ull) ==
-                  18446744073709551521ull,
-              "isqrt");
-static_assert(isqrt(uint128_t(18446744073709551533ull) * 18446744073709551533ull) ==
-                  18446744073709551533ull,
-              "isqrt");
-static_assert(isqrt(uint128_t(18446744073709551557ull) * 18446744073709551557ull) ==
-                  18446744073709551557ull,
-              "isqrt");
-static_assert(isqrt(uint128_t(18446744073709551557ull) * 18446744073709551557ull + 1) ==
-                  18446744073709551557ull,
-              "isqrt");
-static_assert(isqrt(uint128_t(18446744073709551558ull) * 18446744073709551558ull - 1) ==
-                  18446744073709551557ull,
-              "isqrt");
-static_assert(isqrt(uint128_t(18446744073709551558ull) * 18446744073709551558ull) ==
-                  18446744073709551558ull,
-              "isqrt");
-#endif
-
-static_assert(icbrt(0u) == 0, "icbrt");
-static_assert(icbrt(1u) == 1, "icbrt");
-static_assert(icbrt(8u) == 2, "icbrt");
-static_assert(icbrt(27u) == 3, "icbrt");
-static_assert(icbrt(64u) == 4, "icbrt");
-static_assert(icbrt(257u * 257u * 257u) == 257u, "icbrt");
-static_assert(icbrt(257u * 257u * 257u + 1) == 257u, "icbrt");
-static_assert(icbrt(258u * 258u * 258u - 1) == 257u, "icbrt");
-static_assert(icbrt(258u * 258u * 258u) == 258u, "icbrt");
-static_assert(icbrt(1u << 15) == 1u << 5, "icbrt");
-static_assert(icbrt(1u << 18) == 1u << 6, "icbrt");
-static_assert(icbrt(1u << 21) == 1u << 7, "icbrt");
-static_assert(icbrt(1u << 24) == 1u << 8, "icbrt");
-static_assert(icbrt(1u << 27) == 1u << 9, "icbrt");
-static_assert(icbrt(1u << 30) == 1u << 10, "icbrt");
-static_assert(icbrt(uint32_t(-1)) == 1625u, "icbrt");
-
-static_assert(icbrt(uint64_t(0)) == 0, "icbrt");
-static_assert(icbrt(uint64_t(1)) == 1, "icbrt");
-static_assert(icbrt(uint64_t(8)) == 2, "icbrt");
-static_assert(icbrt(uint64_t(27)) == 3, "icbrt");
-static_assert(icbrt(uint64_t(64)) == 4, "icbrt");
-static_assert(icbrt(uint64_t(65)) == 4, "icbrt");
-static_assert(icbrt(uint64_t(124)) == 4, "icbrt");
-static_assert(icbrt(uint64_t(125)) == 5, "icbrt");
-static_assert(icbrt(uint64_t(289) * 289 * 289) == 289, "icbrt");
-static_assert(icbrt(uint64_t(289) * 289 * 289 + 1) == 289, "icbrt");
-static_assert(icbrt(uint64_t(290) * 290 * 290 - 1) == 289, "icbrt");
-static_assert(icbrt(uint64_t(290) * 290 * 290) == 290, "icbrt");
-static_assert(icbrt(uint64_t(1) << 30) == 1 << 10, "icbrt");
-static_assert(icbrt(uint64_t(1) << 33) == 1 << 11, "icbrt");
-static_assert(icbrt(uint64_t(1) << 36) == 1 << 12, "icbrt");
-static_assert(icbrt(uint64_t(1) << 39) == 1 << 13, "icbrt");
-static_assert(icbrt(uint64_t(1) << 42) == 1 << 14, "icbrt");
-static_assert(icbrt(uint64_t(1) << 45) == 1 << 15, "icbrt");
-static_assert(icbrt(uint64_t(1) << 48) == 1 << 16, "icbrt");
-static_assert(icbrt(uint64_t(1) << 51) == 1 << 17, "icbrt");
-static_assert(icbrt(uint64_t(1) << 54) == 1 << 18, "icbrt");
-static_assert(icbrt(uint64_t(1) << 57) == 1 << 19, "icbrt");
-static_assert(icbrt(uint64_t(1) << 60) == 1 << 20, "icbrt");
-static_assert(icbrt(uint64_t(1) << 63) == 1 << 21, "icbrt");
-static_assert(icbrt((uint64_t(1) << 63) | (uint64_t(1) << 32)) == 2097152, "icbrt");
-static_assert(icbrt(uint64_t(1'367'631'000'000'000ull)) == 111'000, "icbrt");
-static_assert(icbrt(uint64_t(1'000'000'000'000'000'000ull)) == 1'000'000, "icbrt");
-static_assert(icbrt(uint64_t(1'331'000'000'000'000'000ull)) == 1'100'000, "icbrt");
-static_assert(icbrt(uint64_t(8'000'000'000'000'000'000ull)) == 2'000'000, "icbrt");
-static_assert(icbrt(uint64_t(15'625'000'000'000'000'000ull)) == 2'500'000, "icbrt");
-static_assert(icbrt(uint64_t(-1)) == 2642245, "icbrt");
-
-static_assert(is_perfect_square(uint64_t(0)), "is_perfect_square");
-static_assert(is_perfect_square(uint64_t(1)), "is_perfect_square");
-static_assert(!is_perfect_square(uint64_t(2)), "is_perfect_square");
-static_assert(!is_perfect_square(uint64_t(3)), "is_perfect_square");
-static_assert(is_perfect_square(uint64_t(4)), "is_perfect_square");
-static_assert(!is_perfect_square(uint64_t(5)), "is_perfect_square");
-static_assert(is_perfect_square(uint64_t(9)), "is_perfect_square");
-static_assert(!is_perfect_square(uint64_t(15)), "is_perfect_square");
-static_assert(is_perfect_square(uint64_t(16)), "is_perfect_square");
-static_assert(is_perfect_square(uint64_t(324)), "is_perfect_square");
-static_assert(is_perfect_square(uint64_t(1 << 16)), "is_perfect_square");
-static_assert(is_perfect_square(uint64_t(1 << 24)), "is_perfect_square");
-static_assert(is_perfect_square(uint64_t(1) << 32), "is_perfect_square");
-static_assert(is_perfect_square(uint64_t(1) << 40), "is_perfect_square");
-static_assert(is_perfect_square(uint64_t(1) << 48), "is_perfect_square");
-static_assert(is_perfect_square(uint64_t(1) << 56), "is_perfect_square");
-static_assert(is_perfect_square(uint64_t(1) << 60), "is_perfect_square");
-
-#if defined(HAS_I128_CONSTEXPR) && HAS_I128_CONSTEXPR
-static_assert(is_perfect_square(uint128_t(0)), "is_perfect_square");
-static_assert(is_perfect_square(uint128_t(1)), "is_perfect_square");
-static_assert(!is_perfect_square(uint128_t(2)), "is_perfect_square");
-static_assert(!is_perfect_square(uint128_t(3)), "is_perfect_square");
-static_assert(is_perfect_square(uint128_t(4)), "is_perfect_square");
-static_assert(!is_perfect_square(uint128_t(5)), "is_perfect_square");
-static_assert(is_perfect_square(uint128_t(9)), "is_perfect_square");
-static_assert(!is_perfect_square(uint128_t(15)), "is_perfect_square");
-static_assert(is_perfect_square(uint128_t(16)), "is_perfect_square");
-static_assert(is_perfect_square(uint128_t(324)), "is_perfect_square");
-static_assert(is_perfect_square(uint128_t(1 << 16)), "is_perfect_square");
-static_assert(is_perfect_square(uint128_t(1 << 24)), "is_perfect_square");
-static_assert(is_perfect_square(uint128_t(1) << 32), "is_perfect_square");
-static_assert(is_perfect_square(uint128_t(1) << 40), "is_perfect_square");
-static_assert(is_perfect_square(uint128_t(1) << 48), "is_perfect_square");
-static_assert(is_perfect_square(uint128_t(1) << 56), "is_perfect_square");
-static_assert(is_perfect_square(uint128_t(1) << 60), "is_perfect_square");
-#endif
-
-static_assert(bit_reverse(uint8_t(0b00000000)) == 0b00000000, "bit_reverse");
-static_assert(bit_reverse(uint8_t(0b00000010)) == 0b01000000, "bit_reverse");
-static_assert(bit_reverse(uint8_t(0b00001100)) == 0b00110000, "bit_reverse");
-static_assert(bit_reverse(uint8_t(0b10101010)) == 0b01010101, "bit_reverse");
-static_assert(bit_reverse(uint8_t(0b01010101)) == 0b10101010, "bit_reverse");
-static_assert(bit_reverse(uint8_t(0b11111111)) == 0b11111111, "bit_reverse");
-
-static_assert(bit_reverse(0b00000000'00000000'00000000'00000000u) ==
-                  0b00000000'00000000'00000000'00000000u,
-              "bit_reverse");
-static_assert(bit_reverse(0b00000000'00000000'00000000'00000001u) ==
-                  0b10000000'00000000'00000000'00000000u,
-              "bit_reverse");
-static_assert(bit_reverse(0b10000000'00000000'00000000'00000000u) ==
-                  0b00000000'00000000'00000000'00000001u,
-              "bit_reverse");
-static_assert(bit_reverse(0b00000000'11111111'00000000'00000000u) ==
-                  0b00000000'00000000'11111111'00000000u,
-              "bit_reverse");
-static_assert(bit_reverse(0b00000000'00000000'11111111'00000000u) ==
-                  0b00000000'11111111'00000000'00000000u,
-              "bit_reverse");
-static_assert(bit_reverse(0b10101010'10101010'10101010'10101010u) ==
-                  0b01010101'01010101'01010101'01010101u,
-              "bit_reverse");
-static_assert(bit_reverse(0b11111111'00000000'11111111'00000000u) ==
-                  0b00000000'11111111'00000000'11111111u,
-              "bit_reverse");
-
-static_assert(bit_reverse(uint64_t(
-                  0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00000000ULL)) ==
-                  0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00000000ULL,
-              "bit_reverse");
-static_assert(bit_reverse(uint64_t(
-                  0b10000001'00000000'10000001'00000000'10000001'00000000'10000001'00000000ULL)) ==
-                  0b00000000'10000001'00000000'10000001'00000000'10000001'00000000'10000001ULL,
-              "bit_reverse");
-static_assert(bit_reverse(uint64_t(
-                  0b00001111'00000000'11110000'00000000'10101010'00000000'00000000'00000000ULL)) ==
-                  0b00000000'00000000'00000000'01010101'00000000'00001111'00000000'11110000ULL,
-              "bit_reverse");
-static_assert(bit_reverse(uint64_t(
-                  0b00000000'00000000'00000000'10101010'10101010'00000000'00000000'00000000ULL)) ==
-                  0b00000000'00000000'00000000'01010101'01010101'00000000'00000000'00000000ULL,
-              "bit_reverse");
-static_assert(bit_reverse(uint64_t(
-                  0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00000000ULL)) ==
-                  0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00000000ULL,
-              "bit_reverse");
-static_assert(bit_reverse(uint64_t(
-                  0b11111111'00000000'11111111'00000000'11111111'00000000'11111111'00000000ULL)) ==
-                  0b00000000'11111111'00000000'11111111'00000000'11111111'00000000'11111111ULL,
-              "bit_reverse");
-static_assert(bit_reverse(uint64_t(
-                  0b11111111'11111111'11111111'11111111'00000000'00000000'00000000'00000000ULL)) ==
-                  0b00000000'00000000'00000000'00000000'11111111'11111111'11111111'11111111ULL,
-              "bit_reverse");
-
-#if defined(HAS_I128_CONSTEXPR) && HAS_I128_CONSTEXPR
-
-static_assert(bit_reverse(uint128_t(0)) == 0, "bit_reverse");
-static_assert(bit_reverse(uint128_t(-1)) == uint128_t(-1), "bit_reverse");
-
-#endif
-
-#if CONFIG_HAS_AT_LEAST_CXX_20
-static_assert(int(detail::pop_count_32_software(0u)) == int(std::popcount(0u)),
-              "pop_count_32_software");
-static_assert(int(detail::pop_count_32_software(1u)) == int(std::popcount(1u)),
-              "pop_count_32_software");
-static_assert(int(detail::pop_count_32_software(2u)) == int(std::popcount(2u)),
-              "pop_count_32_software");
-static_assert(int(detail::pop_count_32_software(3u)) == int(std::popcount(3u)),
-              "pop_count_32_software");
-static_assert(int(detail::pop_count_32_software(4u)) == int(std::popcount(4u)),
-              "pop_count_32_software");
-static_assert(int(detail::pop_count_32_software(0x4788743u)) == int(std::popcount(0x4788743u)),
-              "pop_count_32_software");
-static_assert(int(detail::pop_count_32_software(0x2D425B23u)) == int(std::popcount(0x2D425B23u)),
-              "pop_count_32_software");
-static_assert(int(detail::pop_count_32_software(0xFFFFFFFFu - 1)) ==
-                  int(std::popcount(0xFFFFFFFFu - 1)),
-              "pop_count_32_software");
-static_assert(int(detail::pop_count_32_software(0xFFFFFFFFu)) == int(std::popcount(0xFFFFFFFFu)),
-              "pop_count_32_software");
-#endif
-
-#if CONFIG_HAS_AT_LEAST_CXX_20
-static_assert(int(detail::pop_count_64_software(uint64_t(0))) == int(std::popcount(uint64_t(0))),
-              "pop_count_64_software");
-static_assert(int(detail::pop_count_64_software(uint64_t(1))) == int(std::popcount(uint64_t(1))),
-              "pop_count_64_software");
-static_assert(int(detail::pop_count_64_software(uint64_t(2))) == int(std::popcount(uint64_t(2))),
-              "pop_count_64_software");
-static_assert(int(detail::pop_count_64_software(uint64_t(3))) == int(std::popcount(uint64_t(3))),
-              "pop_count_64_software");
-static_assert(int(detail::pop_count_64_software(uint64_t(4))) == int(std::popcount(uint64_t(4))),
-              "pop_count_64_software");
-static_assert(int(detail::pop_count_64_software(uint64_t(0x4788743u))) ==
-                  int(std::popcount(uint64_t(0x4788743u))),
-              "pop_count_64_software");
-static_assert(int(detail::pop_count_64_software(uint64_t(0x2D425B23u))) ==
-                  int(std::popcount(uint64_t(0x2D425B23u))),
-              "pop_count_64_software");
-static_assert(int(detail::pop_count_64_software(uint64_t(0xFFFFFFFFu - 1))) ==
-                  int(std::popcount(uint64_t(0xFFFFFFFFu - 1))),
-              "pop_count_64_software");
-static_assert(int(detail::pop_count_64_software(uint64_t(0xFFFFFFFFu))) ==
-                  int(std::popcount(uint64_t(0xFFFFFFFFu))),
-              "pop_count_64_software");
-static_assert(int(detail::pop_count_64_software(uint64_t(0x5873485893484ull))) ==
-                  int(std::popcount(uint64_t(0x5873485893484ull))),
-              "pop_count_64_software");
-static_assert(int(detail::pop_count_64_software(uint64_t(0x85923489853245ull))) ==
-                  int(std::popcount(uint64_t(0x85923489853245ull))),
-              "pop_count_64_software");
-static_assert(int(detail::pop_count_64_software(uint64_t(0xFFFFFFFFFFFFFFFFull - 1))) ==
-                  int(std::popcount(uint64_t(0xFFFFFFFFFFFFFFFFull - 1))),
-              "pop_count_64_software");
-static_assert(int(detail::pop_count_64_software(uint64_t(0xFFFFFFFFFFFFFFFFull))) ==
-                  int(std::popcount(uint64_t(0xFFFFFFFFFFFFFFFFull))),
-              "pop_count_64_software");
-#endif
-
-#if CONFIG_HAS_AT_LEAST_CXX_20
-static_assert(std::popcount(0u) - std::popcount(0u) == pop_diff(0, 0));
-static_assert(int(std::popcount(1u)) - int(std::popcount(0u)) == pop_diff(1, 0));
-static_assert(int(std::popcount(0u)) - int(std::popcount(1u)) == pop_diff(0, 1));
-static_assert(int(std::popcount(0xABCDEFu)) - int(std::popcount(4u)) == pop_diff(0xABCDEF, 4));
-static_assert(int(std::popcount(uint32_t(uint16_t(-1)))) - int(std::popcount(314u)) ==
-              pop_diff(uint16_t(-1), 314));
-static_assert(int(std::popcount(uint32_t(-1))) - int(std::popcount(0u)) ==
-              pop_diff(uint32_t(-1), 0));
-static_assert(int(std::popcount(0u)) - int(std::popcount(uint32_t(-1))) ==
-              pop_diff(0, uint32_t(-1)));
-static_assert(int(std::popcount(uint32_t(-1))) - int(std::popcount(uint32_t(-1))) ==
-              pop_diff(uint32_t(-1), uint32_t(-1)));
-#endif
-
-#if defined(HAS_I128_CONSTEXPR) && HAS_I128_CONSTEXPR
-static_assert(sign(int128_t(0)) == 0, "sign");
-static_assert(sign(int128_t(1)) == 1, "sign");
-static_assert(sign(int128_t(-1)) == -1, "sign");
-static_assert(sign(int128_t(2)) == 1, "sign");
-static_assert(sign(int128_t(-2)) == -1, "sign");
-static_assert(sign(int128_t(18446744073709551615ull)) == 1, "sign");
-static_assert(sign(-int128_t(18446744073709551615ull)) == -1, "sign");
-static_assert(sign(int128_t(1) << 63) == 1, "sign");
-static_assert(sign(-(int128_t(1) << 63)) == -1, "sign");
-static_assert(sign(int128_t(1) << 126) == 1, "sign");
-static_assert(sign(-(int128_t(1) << 126)) == -1, "sign");
-static_assert(sign(int128_t((uint128_t(1) << 127) - 1)) == 1, "sign");
-static_assert(sign(int128_t(-((uint128_t(1) << 127) - 1))) == -1, "sign");
-static_assert(sign(int128_t(-(uint128_t(1) << 127))) == -1, "sign");
-#endif
-
-static_assert(same_sign_soft(1, 1), "same_sign");
-static_assert(same_sign_soft(1, 0), "same_sign");
-static_assert(!same_sign_soft(1, -1), "same_sign");
-static_assert(same_sign_soft(0, 1), "same_sign");
-static_assert(same_sign_soft(0, 0), "same_sign");
-static_assert(!same_sign_soft(0, -1), "same_sign");
-static_assert(!same_sign_soft(-1, 1), "same_sign");
-static_assert(!same_sign_soft(-1, 0), "same_sign");
-static_assert(same_sign_soft(-1, -1), "same_sign");
-
-static_assert(same_sign(1, 1), "same_sign");
-static_assert(!same_sign(1, 0), "same_sign");
-static_assert(!same_sign(1, -1), "same_sign");
-static_assert(!same_sign(0, 1), "same_sign");
-static_assert(same_sign(0, 0), "same_sign");
-static_assert(!same_sign(0, -1), "same_sign");
-static_assert(!same_sign(-1, 1), "same_sign");
-static_assert(!same_sign(-1, 0), "same_sign");
-static_assert(same_sign(-1, -1), "same_sign");
-
-static_assert(uabs(static_cast<char>(0)) == 0, "uabs");
-static_assert(uabs(static_cast<short>(0)) == 0, "uabs");
-static_assert(uabs(static_cast<int>(0)) == 0, "uabs");
-static_assert(uabs(static_cast<long>(0)) == 0, "uabs");
-static_assert(uabs(static_cast<long long>(0)) == 0, "uabs");
-
-static_assert(uabs(static_cast<char>(-1)) == 1, "uabs");
-static_assert(uabs(static_cast<short>(-1)) == 1, "uabs");
-static_assert(uabs(static_cast<int>(-1)) == 1, "uabs");
-static_assert(uabs(static_cast<long>(-1)) == 1, "uabs");
-static_assert(uabs(static_cast<long long>(-1)) == 1, "uabs");
-
-static_assert(uabs(static_cast<char>(-128)) == 128, "uabs");
-static_assert(uabs(static_cast<short>(-128)) == 128, "uabs");
-static_assert(uabs(static_cast<int>(-128)) == 128, "uabs");
-static_assert(uabs(static_cast<long>(-128)) == 128, "uabs");
-static_assert(uabs(static_cast<long long>(-128)) == 128, "uabs");
-
-static_assert(uabs(std::numeric_limits<long long>::min()) ==
-                  -static_cast<unsigned long long>(std::numeric_limits<long long>::min()),
-              "uabs");
-
-static_assert(uabs(int8_t(0)) == 0, "uabs");
-static_assert(uabs(int32_t(0)) == 0, "uabs");
-static_assert(uabs(int64_t(0)) == 0, "uabs");
-static_assert(uabs(int8_t(-1)) == 1, "uabs");
-static_assert(uabs(int32_t(-1)) == 1, "uabs");
-static_assert(uabs(int64_t(-1)) == 1, "uabs");
-static_assert(uabs(int8_t(-128)) == 128, "uabs");
-static_assert(uabs(int32_t(-128)) == 128, "uabs");
-static_assert(uabs(int64_t(-128)) == 128, "uabs");
-
-static_assert(uabs(std::numeric_limits<int64_t>::min()) ==
-                  -static_cast<uint64_t>(std::numeric_limits<int64_t>::min()),
-              "uabs");
-
-#if defined(HAS_I128_CONSTEXPR) && HAS_I128_CONSTEXPR
-static_assert(uabs(int128_t(0)) == 0, "uabs");
-static_assert(uabs(int128_t(1)) == 1, "uabs");
-static_assert(uabs(int128_t(-1)) == 1, "uabs");
-static_assert(uabs(int128_t(4)) == 4, "uabs");
-static_assert(uabs(int128_t(-4)) == 4, "uabs");
-static_assert(uabs(int128_t(18446744073709551615ull)) == 18446744073709551615ull, "uabs");
-static_assert(uabs(-int128_t(18446744073709551615ull)) == 18446744073709551615ull, "uabs");
-static_assert(uabs(int128_t(1) << 126) == uint128_t(1) << 126, "uabs");
-static_assert(uabs(-(int128_t(1) << 126)) == uint128_t(1) << 126, "uabs");
-static_assert(uabs(int128_t((uint128_t(1) << 127) - 1)) == (uint128_t(1) << 127) - 1, "uabs");
-static_assert(uabs(int128_t(-((uint128_t(1) << 127) - 1))) == (uint128_t(1) << 127) - 1, "uabs");
-static_assert(uabs(int128_t(-(uint128_t(1) << 127))) == uint128_t(1) << 127, "uabs");
-#endif
-
-#if CONFIG_HAS_AT_LEAST_CXX_20
-
-static_assert(sign(std::popcount(0u) - std::popcount(0u)) == sign(pop_cmp(0, 0)), "pop_cmp");
-static_assert(sign(std::popcount(1u) - std::popcount(0u)) == sign(pop_cmp(1, 0)), "pop_cmp");
-static_assert(sign(std::popcount(0u) - std::popcount(1u)) == sign(pop_cmp(0, 1)), "pop_cmp");
-static_assert(sign(std::popcount(0xABCDEFu) - std::popcount(4u)) == pop_cmp(0xABCDEF, 4),
-              "pop_cmp");
-static_assert(sign(std::popcount(uint32_t(uint16_t(-1))) - std::popcount(314u)) ==
-                  sign(pop_cmp(uint16_t(-1), 314)),
-              "pop_cmp");
-static_assert(sign(std::popcount(uint32_t(-1)) - std::popcount(0u)) ==
-                  sign(pop_cmp(uint32_t(-1), 0)),
-              "pop_cmp");
-static_assert(sign(std::popcount(0u) - std::popcount(uint32_t(-1))) ==
-                  sign(pop_cmp(0, uint32_t(-1))),
-              "pop_cmp");
-static_assert(sign(std::popcount(uint32_t(-1)) - std::popcount(uint32_t(-1))) ==
-                  sign(pop_cmp(uint32_t(-1), uint32_t(-1))),
-              "pop_cmp");
-#endif
-
-static_assert(detail::lz_count_32_software(0) == 32, "lz_count_32_software");
-static_assert(detail::lz_count_32_software(1) == 31, "lz_count_32_software");
-static_assert(detail::lz_count_32_software(2) == 30, "lz_count_32_software");
-static_assert(detail::lz_count_32_software(4) == 29, "lz_count_32_software");
-static_assert(detail::lz_count_32_software(8) == 28, "lz_count_32_software");
-static_assert(detail::lz_count_32_software(12) == 28, "lz_count_32_software");
-static_assert(detail::lz_count_32_software(16) == 27, "lz_count_32_software");
-static_assert(detail::lz_count_32_software(32) == 26, "lz_count_32_software");
-static_assert(detail::lz_count_32_software(48) == 26, "lz_count_32_software");
-static_assert(detail::lz_count_32_software(uint32_t(1) << 30) == 1, "lz_count_32_software");
-static_assert(detail::lz_count_32_software(uint32_t(1) << 31) == 0, "lz_count_32_software");
-static_assert(detail::lz_count_32_software(~uint32_t(1)) == 0, "lz_count_32_software");
-
-static_assert(detail::lz_count_64_software(0) == 64, "lz_count_64_software");
-static_assert(detail::lz_count_64_software(1) == 63, "lz_count_64_software");
-static_assert(detail::lz_count_64_software(2) == 62, "lz_count_64_software");
-static_assert(detail::lz_count_64_software(4) == 61, "lz_count_64_software");
-static_assert(detail::lz_count_64_software(8) == 60, "lz_count_64_software");
-static_assert(detail::lz_count_64_software(12) == 60, "lz_count_64_software");
-static_assert(detail::lz_count_64_software(16) == 59, "lz_count_64_software");
-static_assert(detail::lz_count_64_software(32) == 58, "lz_count_64_software");
-static_assert(detail::lz_count_64_software(48) == 58, "lz_count_64_software");
-static_assert(detail::lz_count_64_software(uint32_t(1) << 30) == 33, "lz_count_64_software");
-static_assert(detail::lz_count_64_software(uint32_t(1) << 31) == 32, "lz_count_64_software");
-static_assert(detail::lz_count_64_software(~uint32_t(1)) == 32, "lz_count_64_software");
-static_assert(detail::lz_count_64_software(uint64_t(1) << 62) == 1, "lz_count_64_software");
-static_assert(detail::lz_count_64_software(uint64_t(1) << 63) == 0, "lz_count_64_software");
-static_assert(detail::lz_count_64_software(uint64_t(-1)) == 0, "lz_count_64_software");
-
-static_assert(detail::tz_count_32_software(0u) == 32, "tz_count_32_software");
-static_assert(detail::tz_count_32_software(1u) == 0, "tz_count_32_software");
-static_assert(detail::tz_count_32_software(2u) == 1, "tz_count_32_software");
-static_assert(detail::tz_count_32_software(4u) == 2, "tz_count_32_software");
-static_assert(detail::tz_count_32_software(8u) == 3, "tz_count_32_software");
-static_assert(detail::tz_count_32_software(12u) == 2, "tz_count_32_software");
-static_assert(detail::tz_count_32_software(16u) == 4, "tz_count_32_software");
-static_assert(detail::tz_count_32_software(32u) == 5, "tz_count_32_software");
-static_assert(detail::tz_count_32_software(48u) == 4, "tz_count_32_software");
-static_assert(detail::tz_count_32_software(1u << 30) == 30, "tz_count_32_software");
-static_assert(detail::tz_count_32_software(1u << 31) == 31, "tz_count_32_software");
-static_assert(detail::tz_count_32_software(~1u) == 1, "tz_count_32_software");
-static_assert(detail::tz_count_32_software(uint32_t(-1)) == 0, "tz_count_32_software");
-
-static_assert(detail::tz_count_64_software(0u) == 64, "tz_count_64_software");
-static_assert(detail::tz_count_64_software(1u) == 0, "tz_count_64_software");
-static_assert(detail::tz_count_64_software(2u) == 1, "tz_count_64_software");
-static_assert(detail::tz_count_64_software(4u) == 2, "tz_count_64_software");
-static_assert(detail::tz_count_64_software(8u) == 3, "tz_count_64_software");
-static_assert(detail::tz_count_64_software(12u) == 2, "tz_count_64_software");
-static_assert(detail::tz_count_64_software(16u) == 4, "tz_count_64_software");
-static_assert(detail::tz_count_64_software(32u) == 5, "tz_count_64_software");
-static_assert(detail::tz_count_64_software(48u) == 4, "tz_count_64_software");
-static_assert(detail::tz_count_64_software(1u << 30) == 30, "tz_count_64_software");
-static_assert(detail::tz_count_64_software(1u << 31) == 31, "tz_count_64_software");
-static_assert(detail::tz_count_64_software(~1u) == 1, "tz_count_64_software");
-static_assert(detail::tz_count_64_software(uint32_t(-1)) == 0, "tz_count_64_software");
-
-static_assert(next_n_bits_permutation(0b0010011) == 0b0010101, "next_n_bits_permutation");
-static_assert(next_n_bits_permutation(0b0010101) == 0b0010110, "next_n_bits_permutation");
-static_assert(next_n_bits_permutation(0b0010110) == 0b0011001, "next_n_bits_permutation");
-static_assert(next_n_bits_permutation(0b0011001) == 0b0011010, "next_n_bits_permutation");
-static_assert(next_n_bits_permutation(0b0011010) == 0b0011100, "next_n_bits_permutation");
-static_assert(next_n_bits_permutation(0b0011100) == 0b0100011, "next_n_bits_permutation");
-static_assert(next_n_bits_permutation(0b0100011) == 0b0100101, "next_n_bits_permutation");
-
-static_assert(next_n_bits_permutation(0b01) == 0b10, "next_n_bits_permutation");
-
-static_assert(next_n_bits_permutation(0b1111111) == 0b10111111, "next_n_bits_permutation");
-
-static_assert(!is_power_of_two(0ull), "is_power_of_two");
-static_assert(is_power_of_two(1ull << 0), "is_power_of_two");
-static_assert(is_power_of_two(1ull << 1), "is_power_of_two");
-static_assert(is_power_of_two(1ull << 2), "is_power_of_two");
-static_assert(is_power_of_two(1ull << 3), "is_power_of_two");
-static_assert(is_power_of_two(1ull << 4), "is_power_of_two");
-static_assert(is_power_of_two(1ull << 5), "is_power_of_two");
-static_assert(is_power_of_two(1ull << 6), "is_power_of_two");
-static_assert(is_power_of_two(1ull << 7), "is_power_of_two");
-static_assert(is_power_of_two(1ull << 8), "is_power_of_two");
-static_assert(is_power_of_two(1ull << 9), "is_power_of_two");
-static_assert(is_power_of_two(1ull << 60), "is_power_of_two");
-static_assert(is_power_of_two(1ull << 61), "is_power_of_two");
-static_assert(is_power_of_two(1ull << 62), "is_power_of_two");
-static_assert(is_power_of_two(1ull << 63), "is_power_of_two");
-
-#if defined(INTEGERS_128_BIT_HPP) && HAS_I128_CONSTEXPR
-
-static_assert(!is_power_of_two(uint128_t(0)), "is_power_of_two");
-static_assert(is_power_of_two(uint128_t(1) << 0), "is_power_of_two");
-static_assert(is_power_of_two(uint128_t(1) << 1), "is_power_of_two");
-static_assert(is_power_of_two(uint128_t(1) << 2), "is_power_of_two");
-static_assert(is_power_of_two(uint128_t(1) << 3), "is_power_of_two");
-static_assert(is_power_of_two(uint128_t(1) << 4), "is_power_of_two");
-static_assert(is_power_of_two(uint128_t(1) << 5), "is_power_of_two");
-static_assert(is_power_of_two(uint128_t(1) << 6), "is_power_of_two");
-static_assert(is_power_of_two(uint128_t(1) << 7), "is_power_of_two");
-static_assert(is_power_of_two(uint128_t(1) << 8), "is_power_of_two");
-static_assert(is_power_of_two(uint128_t(1) << 9), "is_power_of_two");
-static_assert(is_power_of_two(uint128_t(1) << 60), "is_power_of_two");
-static_assert(is_power_of_two(uint128_t(1) << 61), "is_power_of_two");
-static_assert(is_power_of_two(uint128_t(1) << 62), "is_power_of_two");
-static_assert(is_power_of_two(uint128_t(1) << 63), "is_power_of_two");
-static_assert(is_power_of_two(uint128_t(1) << 64), "is_power_of_two");
-static_assert(is_power_of_two(uint128_t(1) << 65), "is_power_of_two");
-static_assert(is_power_of_two(uint128_t(1) << 127), "is_power_of_two");
-#endif
-
-static_assert(nearest_greater_equal_power_of_two(uint32_t(0u)) == 1u,
-              "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint32_t(1u)) == 1u,
-              "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint32_t(2u)) == 2u,
-              "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint32_t(3u)) == 4u,
-              "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint32_t(4u)) == 4u,
-              "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint32_t(5u)) == 8u,
-              "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint32_t(6u)) == 8u,
-              "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint32_t(7u)) == 8u,
-              "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint32_t(8u)) == 8u,
-              "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint32_t(16u)) == 16u,
-              "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint32_t(17u)) == 32u,
-              "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint32_t(18u)) == 32u,
-              "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint32_t(19u)) == 32u,
-              "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint32_t(20u)) == 32u,
-              "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint32_t(0x7FFFFFFFu)) == 0x80000000u,
-              "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint32_t(0x80000000u)) == 0x80000000u,
-              "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint32_t(0x80000001u)) == 0x100000000ull,
-              "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint32_t(0xFFFFFFFFu)) == 0x100000000ull,
-              "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint32_t(1) << 0) == uint32_t(1) << 0,
-              "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint32_t(1) << 1) == uint32_t(1) << 1,
-              "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint32_t(1) << 2) == uint32_t(1) << 2,
-              "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint32_t(1) << 3) == uint32_t(1) << 3,
-              "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint32_t(1) << 4) == uint32_t(1) << 4,
-              "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint32_t(1) << 5) == uint32_t(1) << 5,
-              "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint32_t(1) << 6) == uint32_t(1) << 6,
-              "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint32_t(1) << 7) == uint32_t(1) << 7,
-              "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint32_t(1) << 8) == uint32_t(1) << 8,
-              "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint32_t(1) << 9) == uint32_t(1) << 9,
-              "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint32_t(1) << 10) == uint32_t(1) << 10,
-              "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint32_t(1) << 11) == uint32_t(1) << 11,
-              "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint32_t(1) << 12) == uint32_t(1) << 12,
-              "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint32_t(1) << 13) == uint32_t(1) << 13,
-              "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint32_t(1) << 14) == uint32_t(1) << 14,
-              "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint32_t(1) << 15) == uint32_t(1) << 15,
-              "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint32_t(1) << 16) == uint32_t(1) << 16,
-              "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint32_t(1) << 17) == uint32_t(1) << 17,
-              "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint32_t(1) << 18) == uint32_t(1) << 18,
-              "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint32_t(1) << 19) == uint32_t(1) << 19,
-              "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint32_t(1) << 20) == uint32_t(1) << 20,
-              "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint32_t(1) << 21) == uint32_t(1) << 21,
-              "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint32_t(1) << 22) == uint32_t(1) << 22,
-              "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint32_t(1) << 23) == uint32_t(1) << 23,
-              "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint32_t(1) << 24) == uint32_t(1) << 24,
-              "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint32_t(1) << 25) == uint32_t(1) << 25,
-              "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint32_t(1) << 26) == uint32_t(1) << 26,
-              "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint32_t(1) << 27) == uint32_t(1) << 27,
-              "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint32_t(1) << 28) == uint32_t(1) << 28,
-              "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint32_t(1) << 29) == uint32_t(1) << 29,
-              "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint32_t(1) << 30) == uint32_t(1) << 30,
-              "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint32_t(1) << 31) == uint32_t(1) << 31,
-              "nearest_greater_equal_power_of_two");
-
-static_assert(nearest_greater_equal_power_of_two(uint64_t(0u)) == 1u,
-              "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint64_t(1u)) == 1u,
-              "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint64_t(2u)) == 2u,
-              "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint64_t(3u)) == 4u,
-              "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint64_t(4u)) == 4u,
-              "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint64_t(5u)) == 8u,
-              "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint64_t(6u)) == 8u,
-              "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint64_t(7u)) == 8u,
-              "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint64_t(8u)) == 8u,
-              "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint64_t(16u)) == 16u,
-              "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint64_t(17u)) == 32u,
-              "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint64_t(18u)) == 32u,
-              "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint64_t(19u)) == 32u,
-              "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint64_t(20u)) == 32u,
-              "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint64_t(0x7FFFFFFFu)) == 0x80000000u,
-              "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint64_t(0x80000000u)) == 0x80000000u,
-              "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint64_t(0x80000001u)) == 0x100000000ull,
-              "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint64_t(0xFFFFFFFFu)) == 0x100000000ull,
-              "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint64_t(0x7FFFFFFFFFFFFFFFull)) ==
-                  0x8000000000000000ull,
-              "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint64_t(0x8000000000000000ull)) ==
-                  0x8000000000000000ull,
-              "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint64_t(1) << 0) == uint64_t(1) << 0,
-              "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint64_t(1) << 1) == uint64_t(1) << 1,
-              "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint64_t(1) << 2) == uint64_t(1) << 2,
-              "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint64_t(1) << 3) == uint64_t(1) << 3,
-              "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint64_t(1) << 4) == uint64_t(1) << 4,
-              "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint64_t(1) << 5) == uint64_t(1) << 5,
-              "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint64_t(1) << 6) == uint64_t(1) << 6,
-              "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint64_t(1) << 7) == uint64_t(1) << 7,
-              "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint64_t(1) << 8) == uint64_t(1) << 8,
-              "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint64_t(1) << 9) == uint64_t(1) << 9,
-              "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint64_t(1) << 10) == uint64_t(1) << 10,
-              "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint64_t(1) << 11) == uint64_t(1) << 11,
-              "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint64_t(1) << 12) == uint64_t(1) << 12,
-              "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint64_t(1) << 13) == uint64_t(1) << 13,
-              "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint64_t(1) << 14) == uint64_t(1) << 14,
-              "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint64_t(1) << 15) == uint64_t(1) << 15,
-              "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint64_t(1) << 16) == uint64_t(1) << 16,
-              "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint64_t(1) << 17) == uint64_t(1) << 17,
-              "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint64_t(1) << 18) == uint64_t(1) << 18,
-              "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint64_t(1) << 19) == uint64_t(1) << 19,
-              "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint64_t(1) << 20) == uint64_t(1) << 20,
-              "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint64_t(1) << 21) == uint64_t(1) << 21,
-              "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint64_t(1) << 22) == uint64_t(1) << 22,
-              "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint64_t(1) << 23) == uint64_t(1) << 23,
-              "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint64_t(1) << 24) == uint64_t(1) << 24,
-              "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint64_t(1) << 25) == uint64_t(1) << 25,
-              "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint64_t(1) << 26) == uint64_t(1) << 26,
-              "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint64_t(1) << 27) == uint64_t(1) << 27,
-              "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint64_t(1) << 28) == uint64_t(1) << 28,
-              "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint64_t(1) << 29) == uint64_t(1) << 29,
-              "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint64_t(1) << 30) == uint64_t(1) << 30,
-              "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint64_t(1) << 31) == uint64_t(1) << 31,
-              "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint64_t(1) << 32) == uint64_t(1) << 32,
-              "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint64_t(1) << 33) == uint64_t(1) << 33,
-              "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint64_t(1) << 34) == uint64_t(1) << 34,
-              "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint64_t(1) << 35) == uint64_t(1) << 35,
-              "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint64_t(1) << 36) == uint64_t(1) << 36,
-              "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint64_t(1) << 37) == uint64_t(1) << 37,
-              "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint64_t(1) << 38) == uint64_t(1) << 38,
-              "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint64_t(1) << 39) == uint64_t(1) << 39,
-              "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint64_t(1) << 40) == uint64_t(1) << 40,
-              "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint64_t(1) << 41) == uint64_t(1) << 41,
-              "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint64_t(1) << 42) == uint64_t(1) << 42,
-              "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint64_t(1) << 43) == uint64_t(1) << 43,
-              "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint64_t(1) << 44) == uint64_t(1) << 44,
-              "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint64_t(1) << 45) == uint64_t(1) << 45,
-              "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint64_t(1) << 46) == uint64_t(1) << 46,
-              "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint64_t(1) << 47) == uint64_t(1) << 47,
-              "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint64_t(1) << 48) == uint64_t(1) << 48,
-              "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint64_t(1) << 49) == uint64_t(1) << 49,
-              "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint64_t(1) << 50) == uint64_t(1) << 50,
-              "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint64_t(1) << 51) == uint64_t(1) << 51,
-              "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint64_t(1) << 52) == uint64_t(1) << 52,
-              "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint64_t(1) << 53) == uint64_t(1) << 53,
-              "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint64_t(1) << 54) == uint64_t(1) << 54,
-              "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint64_t(1) << 55) == uint64_t(1) << 55,
-              "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint64_t(1) << 56) == uint64_t(1) << 56,
-              "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint64_t(1) << 57) == uint64_t(1) << 57,
-              "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint64_t(1) << 58) == uint64_t(1) << 58,
-              "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint64_t(1) << 59) == uint64_t(1) << 59,
-              "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint64_t(1) << 60) == uint64_t(1) << 60,
-              "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint64_t(1) << 61) == uint64_t(1) << 61,
-              "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint64_t(1) << 62) == uint64_t(1) << 62,
-              "nearest_greater_equal_power_of_two");
-static_assert(nearest_greater_equal_power_of_two(uint64_t(1) << 63) == uint64_t(1) << 63,
-              "nearest_greater_equal_power_of_two");
-
-static_assert(least_bit_set(0b0) == 0b0, "least_bit_set");
-static_assert(least_bit_set(0b1) == 0b1, "least_bit_set");
-static_assert(least_bit_set(0b10) == 0b10, "least_bit_set");
-static_assert(least_bit_set(0b100) == 0b100, "least_bit_set");
-static_assert(least_bit_set(0b1000) == 0b1000, "least_bit_set");
-static_assert(least_bit_set(0b10000) == 0b10000, "least_bit_set");
-static_assert(least_bit_set(0b100000) == 0b100000, "least_bit_set");
-static_assert(least_bit_set(0b1000000) == 0b1000000, "least_bit_set");
-static_assert(least_bit_set(0b10000000) == 0b10000000, "least_bit_set");
-static_assert(least_bit_set(0b0u) == 0b0u, "least_bit_set");
-static_assert(least_bit_set(0b1u) == 0b1u, "least_bit_set");
-static_assert(least_bit_set(0b10u) == 0b10u, "least_bit_set");
-static_assert(least_bit_set(0b100u) == 0b100u, "least_bit_set");
-static_assert(least_bit_set(0b1000u) == 0b1000u, "least_bit_set");
-static_assert(least_bit_set(0b10000u) == 0b10000u, "least_bit_set");
-static_assert(least_bit_set(0b100000u) == 0b100000u, "least_bit_set");
-static_assert(least_bit_set(0b1000000u) == 0b1000000u, "least_bit_set");
-static_assert(least_bit_set(0b10000000u) == 0b10000000u, "least_bit_set");
-static_assert(least_bit_set(int8_t(0b0)) == int8_t(0b0), "least_bit_set");
-static_assert(least_bit_set(int8_t(0b1)) == int8_t(0b1), "least_bit_set");
-static_assert(least_bit_set(int8_t(0b10)) == int8_t(0b10), "least_bit_set");
-static_assert(least_bit_set(int8_t(0b100)) == int8_t(0b100), "least_bit_set");
-static_assert(least_bit_set(int8_t(0b1000)) == int8_t(0b1000), "least_bit_set");
-static_assert(least_bit_set(int8_t(0b10000)) == int8_t(0b10000), "least_bit_set");
-static_assert(least_bit_set(int8_t(0b100000)) == int8_t(0b100000), "least_bit_set");
-static_assert(least_bit_set(int8_t(0b1000000)) == int8_t(0b1000000), "least_bit_set");
-static_assert(least_bit_set(int8_t(0b10000000)) == int8_t(0b10000000), "least_bit_set");
-static_assert(least_bit_set(uint8_t(0b0)) == uint8_t(0b0), "least_bit_set");
-static_assert(least_bit_set(uint8_t(0b1)) == uint8_t(0b1), "least_bit_set");
-static_assert(least_bit_set(uint8_t(0b10)) == uint8_t(0b10), "least_bit_set");
-static_assert(least_bit_set(uint8_t(0b100)) == uint8_t(0b100), "least_bit_set");
-static_assert(least_bit_set(uint8_t(0b1000)) == uint8_t(0b1000), "least_bit_set");
-static_assert(least_bit_set(uint8_t(0b10000)) == uint8_t(0b10000), "least_bit_set");
-static_assert(least_bit_set(uint8_t(0b100000)) == uint8_t(0b100000), "least_bit_set");
-static_assert(least_bit_set(uint8_t(0b1000000)) == uint8_t(0b1000000), "least_bit_set");
-static_assert(least_bit_set(uint8_t(0b10000000)) == uint8_t(0b10000000), "least_bit_set");
-static_assert(least_bit_set(0b100000000) == 0b100000000, "least_bit_set");
-static_assert(least_bit_set(0b1000000000) == 0b1000000000, "least_bit_set");
-static_assert(least_bit_set(0b10000000000) == 0b10000000000, "least_bit_set");
-static_assert(least_bit_set(0b100000000u) == 0b100000000u, "least_bit_set");
-static_assert(least_bit_set(0b1000000000u) == 0b1000000000u, "least_bit_set");
-static_assert(least_bit_set(0b10000000000u) == 0b10000000000u, "least_bit_set");
-static_assert(
-    least_bit_set(0b1000000000000000000000000000000000000000000000000000000000000000ull) ==
-        0b1000000000000000000000000000000000000000000000000000000000000000ull,
-    "least_bit_set");
-static_assert(least_bit_set(0b110101010101010101011001) == 0b1, "least_bit_set");
-static_assert(least_bit_set(0b1010101011001101011100010100000ll) == 0b100000ll, "least_bit_set");
-static_assert(least_bit_set(0b1010111001010101101010110101001101011100110011000ll) == 0b1000ll,
-              "least_bit_set");
-static_assert(least_bit_set(0b110101010101010101011001u) == 0b1u, "least_bit_set");
-static_assert(least_bit_set(0b1010101011001101011100010100000llu) == 0b100000llu, "least_bit_set");
-static_assert(least_bit_set(0b1010111001010101101010110101001101011100110011000llu) == 0b1000llu,
-              "least_bit_set");
-
-static_assert(log2_floor(uint32_t(0)) == uint32_t(-1), "log2_floor");
-static_assert(log2_floor(uint32_t(1)) == 0, "log2_floor");
-static_assert(log2_floor(uint32_t(2)) == 1, "log2_floor");
-static_assert(log2_floor(uint32_t(4)) == 2, "log2_floor");
-static_assert(log2_floor(uint32_t(8)) == 3, "log2_floor");
-static_assert(log2_floor(uint32_t(9)) == 3, "log2_floor");
-static_assert(log2_floor(uint32_t(10)) == 3, "log2_floor");
-static_assert(log2_floor(uint32_t(15)) == 3, "log2_floor");
-static_assert(log2_floor(uint32_t(16)) == 4, "log2_floor");
-static_assert(log2_floor(uint32_t(99)) == 6, "log2_floor");
-static_assert(log2_floor(uint32_t(100)) == 6, "log2_floor");
-static_assert(log2_floor(uint32_t(127)) == 6, "log2_floor");
-static_assert(log2_floor(uint32_t(128)) == 7, "log2_floor");
-static_assert(log2_floor(uint32_t(129)) == 7, "log2_floor");
-static_assert(log2_floor(uint32_t(-1)) == 31, "log2_floor");
-
-static_assert(log2_ceil(uint32_t(0)) == uint32_t(-1), "log2_ceil");
-static_assert(log2_ceil(uint32_t(1)) == 0, "log2_ceil");
-static_assert(log2_ceil(uint32_t(2)) == 1, "log2_ceil");
-static_assert(log2_ceil(uint32_t(4)) == 2, "log2_ceil");
-static_assert(log2_ceil(uint32_t(8)) == 3, "log2_ceil");
-static_assert(log2_ceil(uint32_t(9)) == 4, "log2_ceil");
-static_assert(log2_ceil(uint32_t(10)) == 4, "log2_ceil");
-static_assert(log2_ceil(uint32_t(15)) == 4, "log2_ceil");
-static_assert(log2_ceil(uint32_t(16)) == 4, "log2_ceil");
-static_assert(log2_ceil(uint32_t(99)) == 7, "log2_ceil");
-static_assert(log2_ceil(uint32_t(100)) == 7, "log2_ceil");
-static_assert(log2_ceil(uint32_t(127)) == 7, "log2_ceil");
-static_assert(log2_ceil(uint32_t(128)) == 7, "log2_ceil");
-static_assert(log2_ceil(uint32_t(129)) == 8, "log2_ceil");
-static_assert(log2_ceil(uint32_t(-1)) == 32, "log2_ceil");
-
-#if __cpp_constexpr >= 202211L && defined(__GNUG__)
-
-static_assert(log10_floor(uint32_t(0)) == uint32_t(-1), "log10_floor");
-static_assert(log10_floor(uint32_t(1)) == 0, "log10_floor");
-static_assert(log10_floor(uint32_t(9)) == 0, "log10_floor");
-static_assert(log10_floor(uint32_t(10)) == 1, "log10_floor");
-static_assert(log10_floor(uint32_t(11)) == 1, "log10_floor");
-static_assert(log10_floor(uint32_t(99)) == 1, "log10_floor");
-static_assert(log10_floor(uint32_t(100)) == 2, "log10_floor");
-static_assert(log10_floor(uint32_t(101)) == 2, "log10_floor");
-static_assert(log10_floor(uint32_t(1000000000)) == 9, "log10_floor");
-static_assert(log10_floor(uint32_t(2000000000)) == 9, "log10_floor");
-static_assert(log10_floor(uint32_t(4294967294u)) == 9, "log10_floor");
-static_assert(log10_floor(uint32_t(1e8)) == 8, "log10_floor");
-static_assert(log10_floor(uint32_t(1e9)) == 9, "log10_floor");
-static_assert(log10_floor(uint32_t(-1)) == 9, "log10_floor");
-
-static_assert(log10_floor(uint64_t(0)) == uint32_t(-1), "log10_floor");
-static_assert(log10_floor(uint64_t(1)) == 0, "log10_floor");
-static_assert(log10_floor(uint64_t(9)) == 0, "log10_floor");
-static_assert(log10_floor(uint64_t(10)) == 1, "log10_floor");
-static_assert(log10_floor(uint64_t(11)) == 1, "log10_floor");
-static_assert(log10_floor(uint64_t(99)) == 1, "log10_floor");
-static_assert(log10_floor(uint64_t(100)) == 2, "log10_floor");
-static_assert(log10_floor(uint64_t(101)) == 2, "log10_floor");
-static_assert(log10_floor(uint64_t(1e8)) == 8, "log10_floor");
-static_assert(log10_floor(uint64_t(1e9)) == 9, "log10_floor");
-static_assert(log10_floor(uint64_t(1e18)) == 18, "log10_floor");
-static_assert(log10_floor(uint64_t(1e19)) == 19, "log10_floor");
-static_assert(log10_floor(uint64_t(-1)) == 19, "log10_floor");
-
-static_assert(base_10_len(uint32_t(0)) == 1, "base_10_len");
-static_assert(base_10_len(uint32_t(1)) == 1, "base_10_len");
-static_assert(base_10_len(uint32_t(9)) == 1, "base_10_len");
-static_assert(base_10_len(uint32_t(10)) == 2, "base_10_len");
-static_assert(base_10_len(uint32_t(11)) == 2, "base_10_len");
-static_assert(base_10_len(uint32_t(99)) == 2, "base_10_len");
-static_assert(base_10_len(uint32_t(100)) == 3, "base_10_len");
-static_assert(base_10_len(uint32_t(101)) == 3, "base_10_len");
-static_assert(base_10_len(uint32_t(1000000000)) == 10, "base_10_len");
-static_assert(base_10_len(uint32_t(2000000000)) == 10, "base_10_len");
-static_assert(base_10_len(uint32_t(4294967294u)) == 10, "base_10_len");
-static_assert(base_10_len(uint32_t(1e8)) == 9, "base_10_len");
-static_assert(base_10_len(uint32_t(1e9)) == 10, "base_10_len");
-static_assert(base_10_len(uint32_t(-1)) == 10, "log10_floor");
-
-static_assert(base_10_len(uint64_t(0)) == 1, "base_10_len");
-static_assert(base_10_len(uint64_t(1)) == 1, "base_10_len");
-static_assert(base_10_len(uint64_t(9)) == 1, "base_10_len");
-static_assert(base_10_len(uint64_t(10)) == 2, "base_10_len");
-static_assert(base_10_len(uint64_t(11)) == 2, "base_10_len");
-static_assert(base_10_len(uint64_t(99)) == 2, "base_10_len");
-static_assert(base_10_len(uint64_t(100)) == 3, "base_10_len");
-static_assert(base_10_len(uint64_t(101)) == 3, "base_10_len");
-static_assert(base_10_len(uint64_t(1000000000)) == 10, "base_10_len");
-static_assert(base_10_len(uint64_t(2000000000)) == 10, "base_10_len");
-static_assert(base_10_len(uint64_t(4294967294u)) == 10, "base_10_len");
-static_assert(base_10_len(uint64_t(1e8)) == 9, "base_10_len");
-static_assert(base_10_len(uint64_t(1e9)) == 10, "base_10_len");
-static_assert(base_10_len(uint64_t(1e18)) == 19, "base_10_len");
-static_assert(base_10_len(uint64_t(1e19)) == 20, "base_10_len");
-static_assert(base_10_len(uint64_t(-1)) == 20, "log10_floor");
-
-#endif  // __cpp_constexpr >= 202211L && defined(__GNUG__)
-
-#if CONFIG_HAS_AT_LEAST_CXX_17
-
-static_assert(base_b_len(0ull) == 1, "base_b_len");
-static_assert(base_b_len(1ull) == 1, "base_b_len");
-static_assert(base_b_len(9ull) == 1, "base_b_len");
-static_assert(base_b_len(10ull) == 2, "base_b_len");
-static_assert(base_b_len(11ull) == 2, "base_b_len");
-static_assert(base_b_len(99ull) == 2, "base_b_len");
-static_assert(base_b_len(100ull) == 3, "base_b_len");
-static_assert(base_b_len(101ull) == 3, "base_b_len");
-static_assert(base_b_len(uint64_t(-1)) == 20, "base_b_len");
-
-#if defined(INTEGERS_128_BIT_HPP) && HAS_I128_CONSTEXPR
-
-static_assert(base_b_len(uint128_t(0)) == 1, "base_b_len");
-static_assert(base_b_len(uint128_t(1)) == 1, "base_b_len");
-static_assert(base_b_len(uint128_t(9)) == 1, "base_b_len");
-static_assert(base_b_len(uint128_t(10)) == 2, "base_b_len");
-static_assert(base_b_len(uint128_t(11)) == 2, "base_b_len");
-static_assert(base_b_len(uint128_t(99)) == 2, "base_b_len");
-static_assert(base_b_len(uint128_t(100)) == 3, "base_b_len");
-static_assert(base_b_len(uint128_t(101)) == 3, "base_b_len");
-static_assert(base_b_len(uint128_t(-1)) == 39, "base_b_len");
-
-#endif  // INTEGERS_128_BIT_HPP
-
-#endif  // __cplusplus >= 201703L
-
-#if defined(HAS_I128_CONSTEXPR) && HAS_I128_CONSTEXPR
-
-static_assert(gcd(uint128_t(1), uint128_t(1)) == 1, "gcd");
-static_assert(gcd(uint128_t(3), uint128_t(7)) == 1, "gcd");
-static_assert(gcd(uint128_t(0), uint128_t(112378432)) == 112378432, "gcd");
-static_assert(gcd(uint128_t(112378432), uint128_t(0)) == 112378432, "gcd");
-static_assert(gcd(uint128_t(429384832), uint128_t(324884)) == 4, "gcd");
-static_assert(gcd(uint128_t(18446744073709551521ull), uint128_t(18446744073709551533ull)) == 1,
-              "gcd");
-static_assert(gcd(uint128_t(18446744073709551521ull) * 18446744073709551521ull,
-                  uint128_t(18446744073709551521ull)) == 18446744073709551521ull,
-              "gcd");
-static_assert(gcd(uint128_t(23999993441ull) * 23999993377ull,
-                  uint128_t(23999992931ull) * 23999539633ull) == 1,
-              "gcd");
-static_assert(gcd(uint128_t(2146514599u) * 2146514603u * 2146514611u,
-                  uint128_t(2146514611u) * 2146514621u * 2146514647u) == 2146514611ull,
-              "gcd");
-static_assert(gcd(uint128_t(2146514599u) * 2146514603u * 2146514611u * 2,
-                  uint128_t(2146514599u) * 2146514603u * 2146514611u * 3) ==
-                  uint128_t(2146514599u) * 2146514603u * 2146514611u,
-              "gcd");
-static_assert(gcd(uint128_t(100000000000000003ull) * 1000000000000000003ull,
-                  uint128_t(1000000000000000003ull) * 1000000000000000009ull) ==
-                  1000000000000000003ull,
-              "gcd");
-static_assert(gcd(uint128_t(3 * 2 * 5 * 7 * 11 * 13 * 17 * 19),
-                  uint128_t(18446744073709551557ull) * 3) == 3,
-              "gcd");
-static_assert(gcd(uint128_t(1000000000000000009ull),
-                  uint128_t(1000000000000000009ull) * 1000000000000000009ull) ==
-                  1000000000000000009ull,
-              "gcd");
-static_assert(gcd(uint128_t(0), uint128_t(1000000000000000009ull) * 1000000000000000009ull) ==
-                  uint128_t(1000000000000000009ull) * 1000000000000000009ull,
-              "gcd");
-static_assert(gcd(uint128_t(18446744073709551557ull), uint128_t(0)) == 18446744073709551557ull,
-              "gcd");
-
-static_assert(gcd(uint64_t(2), int128_t(4)) == 2, "gcd");
-static_assert(gcd(uint64_t(2), int128_t(-4)) == 2, "gcd");
-static_assert(gcd(uint64_t(3), int128_t(7)) == 1, "gcd");
-static_assert(gcd(uint64_t(3), int128_t(-7)) == 1, "gcd");
-static_assert(gcd(uint64_t(3), int128_t(18446744073709551557ull) * 3) == 3, "gcd");
-static_assert(gcd(uint64_t(3), int128_t(18446744073709551557ull) * (-3)) == 3, "gcd");
-static_assert(gcd(uint64_t(3) * 2 * 5 * 7 * 11 * 13 * 17 * 19,
-                  int128_t(18446744073709551557ull) * 3) == 3,
-              "gcd");
-static_assert(gcd(uint64_t(1000000000000000009ull),
-                  int128_t(1000000000000000009ll) * 1000000000000000009ll) ==
-                  1000000000000000009ull,
-              "gcd");
-static_assert(gcd(uint64_t(0), int128_t(1000000000000000009ll) * 1000000000000000009ll) ==
-                  uint128_t(1000000000000000009ll) * 1000000000000000009ull,
-              "gcd");
-static_assert(gcd(uint64_t(18446744073709551557ull), int128_t(0)) == 18446744073709551557ull,
-              "gcd");
-
-static_assert(math_functions::popcount(0u) == 0, "popcount");
-static_assert(math_functions::popcount(1u << 1) == 1, "popcount");
-static_assert(math_functions::popcount(1u << 2) == 1, "popcount");
-static_assert(math_functions::popcount(1u << 3) == 1, "popcount");
-static_assert(math_functions::popcount(1u << 4) == 1, "popcount");
-static_assert(math_functions::popcount(1u << 5) == 1, "popcount");
-static_assert(math_functions::popcount(1u << 6) == 1, "popcount");
-static_assert(math_functions::popcount(1u << 7) == 1, "popcount");
-static_assert(math_functions::popcount(1u << 8) == 1, "popcount");
-static_assert(math_functions::popcount(1u << 9) == 1, "popcount");
-static_assert(math_functions::popcount(1u << 10) == 1, "popcount");
-static_assert(math_functions::popcount(1u << 12) == 1, "popcount");
-static_assert(math_functions::popcount(1u << 13) == 1, "popcount");
-static_assert(math_functions::popcount(1u << 14) == 1, "popcount");
-static_assert(math_functions::popcount(1u << 30) == 1, "popcount");
-static_assert(math_functions::popcount(1u << 31) == 1, "popcount");
-
-static_assert(math_functions::popcount(0ul) == 0, "popcount");
-static_assert(math_functions::popcount(1ul << 1) == 1, "popcount");
-static_assert(math_functions::popcount(1ul << 2) == 1, "popcount");
-static_assert(math_functions::popcount(1ul << 3) == 1, "popcount");
-static_assert(math_functions::popcount(1ul << 4) == 1, "popcount");
-static_assert(math_functions::popcount(1ul << 5) == 1, "popcount");
-static_assert(math_functions::popcount(1ul << 6) == 1, "popcount");
-static_assert(math_functions::popcount(1ul << 7) == 1, "popcount");
-static_assert(math_functions::popcount(1ul << 8) == 1, "popcount");
-static_assert(math_functions::popcount(1ul << 9) == 1, "popcount");
-static_assert(math_functions::popcount(1ul << 10) == 1, "popcount");
-static_assert(math_functions::popcount(1ul << 12) == 1, "popcount");
-static_assert(math_functions::popcount(1ul << 13) == 1, "popcount");
-static_assert(math_functions::popcount(1ul << 14) == 1, "popcount");
-static_assert(math_functions::popcount(1ul << 30) == 1, "popcount");
-static_assert(math_functions::popcount(1ul << 31) == 1, "popcount");
-
-static_assert(math_functions::popcount(0ull) == 0, "popcount");
-static_assert(math_functions::popcount(1ull << 1) == 1, "popcount");
-static_assert(math_functions::popcount(1ull << 2) == 1, "popcount");
-static_assert(math_functions::popcount(1ull << 3) == 1, "popcount");
-static_assert(math_functions::popcount(1ull << 4) == 1, "popcount");
-static_assert(math_functions::popcount(1ull << 5) == 1, "popcount");
-static_assert(math_functions::popcount(1ull << 6) == 1, "popcount");
-static_assert(math_functions::popcount(1ull << 7) == 1, "popcount");
-static_assert(math_functions::popcount(1ull << 8) == 1, "popcount");
-static_assert(math_functions::popcount(1ull << 9) == 1, "popcount");
-static_assert(math_functions::popcount(1ull << 10) == 1, "popcount");
-static_assert(math_functions::popcount(1ull << 12) == 1, "popcount");
-static_assert(math_functions::popcount(1ull << 13) == 1, "popcount");
-static_assert(math_functions::popcount(1ull << 14) == 1, "popcount");
-static_assert(math_functions::popcount(1ull << 30) == 1, "popcount");
-static_assert(math_functions::popcount(1ull << 31) == 1, "popcount");
-static_assert(math_functions::popcount(1ull << 62) == 1, "popcount");
-static_assert(math_functions::popcount(1ull << 63) == 1, "popcount");
-
-static_assert(!bool_median(false, false, false), "bool_median");
-static_assert(!bool_median(false, false, true), "bool_median");
-static_assert(!bool_median(false, true, false), "bool_median");
-static_assert(bool_median(false, true, true), "bool_median");
-static_assert(!bool_median(true, false, false), "bool_median");
-static_assert(bool_median(true, false, true), "bool_median");
-static_assert(bool_median(true, true, false), "bool_median");
-static_assert(bool_median(false, true, true), "bool_median");
-
-#endif  // defined(HAS_I128_CONSTEXPR) && HAS_I128_CONSTEXPR
-
 static void test_isqrt() {
     log_tests_started();
 
@@ -1468,7 +336,10 @@ static void test_prime_bitarrays() {
         773, 787, 797, 809, 811, 821, 823, 827, 829, 839, 853, 857, 859, 863, 877, 881,  883,
         887, 907, 911, 919, 929, 937, 941, 947, 953, 967, 971, 977, 983, 991, 997, 1009,
     };
-    static_assert(primes[std::size(primes) - 1] >= N);
+    static_assert(primes[std::size(primes) - 1] >= N, "");
+#if CONFIG_HAS_AT_LEAST_CXX_20
+    static_assert(std::ranges::is_sorted(primes));
+#endif
     size_t i = 0;
     assert(primes_as_bvector.size() == N + 1);
     for (uint32_t n = 0; n <= N; n++) {
@@ -1667,6 +538,955 @@ template <class IntType>
     return true;
 }
 
+static void test_static_asserts_conditions_in_runtime() {
+#define STRINGIFY(expr) #expr
+#define ASSERT_THAT(expr)                       \
+    do {                                        \
+        assert((expr));                         \
+        static_assert((expr), STRINGIFY(expr)); \
+    } while (false)
+
+#if defined(__cpp_constexpr) && __cpp_constexpr >= 202211L && defined(__GNUG__)
+#define LOG10_ASSERT_THAT(expr)                 \
+    do {                                        \
+        assert((expr));                         \
+        static_assert((expr), STRINGIFY(expr)); \
+    } while (false)
+#else
+#define LOG10_ASSERT_THAT(expr) \
+    do {                        \
+        assert((expr));         \
+    } while (false)
+#endif
+
+    ASSERT_THAT(bin_pow_mod(uint32_t(7), uint32_t(483), uint32_t(1000000007u)) == 263145387u);
+    ASSERT_THAT(bin_pow_mod(uint32_t(289), uint32_t(-1), uint32_t(2146514599u)) == 1349294778u);
+    ASSERT_THAT(bin_pow_mod(uint32_t(2146526839u), uint32_t(578423432u), uint32_t(2147483629u)) ==
+                281853233u);
+
+#if defined(HAS_I128_CONSTEXPR) && HAS_I128_CONSTEXPR
+    ASSERT_THAT(bin_pow_mod(uint64_t(119999999927ull), uint64_t(18446744073709515329ull),
+                            uint64_t(100000000000000003ull)) == 85847679703545452ull);
+    ASSERT_THAT(bin_pow_mod(uint64_t(72057594037927843ull), uint64_t(18446744073709515329ull),
+                            uint64_t(1000000000000000003ull)) == 404835689235904145ull);
+    ASSERT_THAT(bin_pow_mod(uint64_t(999999999999999487ull), uint64_t(18446744073709551557ull),
+                            uint64_t(1000000000000000009ull)) == 802735487082721113ull);
+#endif
+
+#if CONFIG_HAS_AT_LEAST_CXX_20
+
+    ASSERT_THAT(isqrt(0u) == 0);
+    ASSERT_THAT(isqrt(1u) == 1);
+    ASSERT_THAT(isqrt(4u) == 2);
+    ASSERT_THAT(isqrt(9u) == 3);
+    ASSERT_THAT(isqrt(10u) == 3);
+    ASSERT_THAT(isqrt(15u) == 3);
+    ASSERT_THAT(isqrt(16u) == 4);
+    ASSERT_THAT(isqrt(257u * 257u) == 257);
+    ASSERT_THAT(isqrt(257u * 257u + 1) == 257);
+    ASSERT_THAT(isqrt(258u * 258u - 1u) == 257);
+    ASSERT_THAT(isqrt(1u << 12) == 1 << 6);
+    ASSERT_THAT(isqrt(1u << 14) == 1 << 7);
+    ASSERT_THAT(isqrt(1u << 16) == 1 << 8);
+    ASSERT_THAT(isqrt(1u << 28) == 1 << 14);
+    ASSERT_THAT(isqrt(1u << 30) == 1 << 15);
+    ASSERT_THAT(isqrt(uint32_t(-1)) == (1u << 16) - 1);
+
+#endif
+
+    ASSERT_THAT(isqrt(uint64_t(0)) == 0);
+    ASSERT_THAT(isqrt(uint64_t(1)) == 1);
+    ASSERT_THAT(isqrt(uint64_t(4)) == 2);
+    ASSERT_THAT(isqrt(uint64_t(9)) == 3);
+    ASSERT_THAT(isqrt(uint64_t(10)) == 3);
+    ASSERT_THAT(isqrt(uint64_t(15)) == 3);
+    ASSERT_THAT(isqrt(uint64_t(16)) == 4);
+    ASSERT_THAT(isqrt(uint64_t(257 * 257)) == 257);
+    ASSERT_THAT(isqrt(uint64_t(257 * 257 + 1)) == 257);
+    ASSERT_THAT(isqrt(uint64_t(258 * 258 - 1)) == 257);
+    ASSERT_THAT(isqrt(uint64_t(1 << 12)) == 1 << 6);
+    ASSERT_THAT(isqrt(uint64_t(1 << 14)) == 1 << 7);
+    ASSERT_THAT(isqrt(uint64_t(1 << 16)) == 1 << 8);
+    ASSERT_THAT(isqrt(uint64_t(1 << 28)) == 1 << 14);
+    ASSERT_THAT(isqrt(uint64_t(1 << 30)) == 1 << 15);
+    ASSERT_THAT(isqrt(uint64_t(1) << 54) == uint64_t(1) << 27);
+    ASSERT_THAT(isqrt(uint64_t(1) << 56) == uint64_t(1) << 28);
+    ASSERT_THAT(isqrt(uint64_t(1) << 58) == uint64_t(1) << 29);
+    ASSERT_THAT(isqrt(uint64_t(1) << 60) == uint64_t(1) << 30);
+    ASSERT_THAT(isqrt(uint64_t(1) << 62) == uint64_t(1) << 31);
+    ASSERT_THAT(isqrt(uint64_t(-1)) == 0xFFFFFFFFu);
+    ASSERT_THAT(isqrt(uint64_t(1000000007) * 1000000007) == 1000000007u);
+
+#if defined(INTEGERS_128_BIT_HPP) && defined(HAS_I128_CONSTEXPR) && HAS_I128_CONSTEXPR
+
+    ASSERT_THAT(isqrt(uint128_t(0)) == 0);
+    ASSERT_THAT(isqrt(uint128_t(1)) == 1);
+    ASSERT_THAT(isqrt(uint128_t(4)) == 2);
+    ASSERT_THAT(isqrt(uint128_t(9)) == 3);
+    ASSERT_THAT(isqrt(uint128_t(10)) == 3);
+    ASSERT_THAT(isqrt(uint128_t(15)) == 3);
+    ASSERT_THAT(isqrt(uint128_t(16)) == 4);
+    ASSERT_THAT(isqrt(uint128_t(257 * 257)) == 257);
+    ASSERT_THAT(isqrt(uint128_t(257 * 257 + 1)) == 257);
+    ASSERT_THAT(isqrt(uint128_t(258 * 258 - 1)) == 257);
+    ASSERT_THAT(isqrt(uint128_t(1 << 12)) == 1 << 6);
+    ASSERT_THAT(isqrt(uint128_t(1 << 14)) == 1 << 7);
+    ASSERT_THAT(isqrt(uint128_t(1 << 16)) == 1 << 8);
+    ASSERT_THAT(isqrt(uint128_t(1 << 28)) == 1 << 14);
+    ASSERT_THAT(isqrt(uint128_t(1 << 30)) == 1 << 15);
+    ASSERT_THAT(isqrt(uint128_t(1) << 54) == uint64_t(1) << 27);
+    ASSERT_THAT(isqrt(uint128_t(1) << 56) == uint64_t(1) << 28);
+    ASSERT_THAT(isqrt(uint128_t(1) << 58) == uint64_t(1) << 29);
+    ASSERT_THAT(isqrt(uint128_t(1) << 60) == uint64_t(1) << 30);
+    ASSERT_THAT(isqrt(uint128_t(1) << 62) == uint64_t(1) << 31);
+    ASSERT_THAT(isqrt(uint128_t(uint64_t(-1))) == (uint64_t(1) << 32) - 1);
+    ASSERT_THAT(isqrt(uint128_t(1) << 126) == uint64_t(1) << 63);
+    ASSERT_THAT(isqrt(uint128_t(-1)) == (uint128_t(1) << 64) - 1);
+    ASSERT_THAT(isqrt(uint128_t(1000000007) * 1000000007) == 1000000007);
+    ASSERT_THAT(isqrt(uint128_t(1000000000000000003ull) * 1000000000000000003ull) ==
+                1000000000000000003ull);
+    ASSERT_THAT(isqrt(uint128_t(1000000000000000009ull) * 1000000000000000009ull) ==
+                1000000000000000009ull);
+    ASSERT_THAT(isqrt(uint128_t(18446744073709551521ull) * 18446744073709551521ull) ==
+                18446744073709551521ull);
+    ASSERT_THAT(isqrt(uint128_t(18446744073709551533ull) * 18446744073709551533ull) ==
+                18446744073709551533ull);
+    ASSERT_THAT(isqrt(uint128_t(18446744073709551557ull) * 18446744073709551557ull) ==
+                18446744073709551557ull);
+    ASSERT_THAT(isqrt(uint128_t(18446744073709551557ull) * 18446744073709551557ull + 1) ==
+                18446744073709551557ull);
+    ASSERT_THAT(isqrt(uint128_t(18446744073709551558ull) * 18446744073709551558ull - 1) ==
+                18446744073709551557ull);
+    ASSERT_THAT(isqrt(uint128_t(18446744073709551558ull) * 18446744073709551558ull) ==
+                18446744073709551558ull);
+#endif
+
+    ASSERT_THAT(icbrt(0u) == 0);
+    ASSERT_THAT(icbrt(1u) == 1);
+    ASSERT_THAT(icbrt(8u) == 2);
+    ASSERT_THAT(icbrt(27u) == 3);
+    ASSERT_THAT(icbrt(64u) == 4);
+    ASSERT_THAT(icbrt(257u * 257u * 257u) == 257u);
+    ASSERT_THAT(icbrt(257u * 257u * 257u + 1) == 257u);
+    ASSERT_THAT(icbrt(258u * 258u * 258u - 1) == 257u);
+    ASSERT_THAT(icbrt(258u * 258u * 258u) == 258u);
+    ASSERT_THAT(icbrt(1u << 15) == 1u << 5);
+    ASSERT_THAT(icbrt(1u << 18) == 1u << 6);
+    ASSERT_THAT(icbrt(1u << 21) == 1u << 7);
+    ASSERT_THAT(icbrt(1u << 24) == 1u << 8);
+    ASSERT_THAT(icbrt(1u << 27) == 1u << 9);
+    ASSERT_THAT(icbrt(1u << 30) == 1u << 10);
+    ASSERT_THAT(icbrt(uint32_t(-1)) == 1625u);
+
+    ASSERT_THAT(icbrt(uint64_t(0)) == 0);
+    ASSERT_THAT(icbrt(uint64_t(1)) == 1);
+    ASSERT_THAT(icbrt(uint64_t(8)) == 2);
+    ASSERT_THAT(icbrt(uint64_t(27)) == 3);
+    ASSERT_THAT(icbrt(uint64_t(64)) == 4);
+    ASSERT_THAT(icbrt(uint64_t(65)) == 4);
+    ASSERT_THAT(icbrt(uint64_t(124)) == 4);
+    ASSERT_THAT(icbrt(uint64_t(125)) == 5);
+    ASSERT_THAT(icbrt(uint64_t(289) * 289 * 289) == 289);
+    ASSERT_THAT(icbrt(uint64_t(289) * 289 * 289 + 1) == 289);
+    ASSERT_THAT(icbrt(uint64_t(290) * 290 * 290 - 1) == 289);
+    ASSERT_THAT(icbrt(uint64_t(290) * 290 * 290) == 290);
+    ASSERT_THAT(icbrt(uint64_t(1) << 30) == 1 << 10);
+    ASSERT_THAT(icbrt(uint64_t(1) << 33) == 1 << 11);
+    ASSERT_THAT(icbrt(uint64_t(1) << 36) == 1 << 12);
+    ASSERT_THAT(icbrt(uint64_t(1) << 39) == 1 << 13);
+    ASSERT_THAT(icbrt(uint64_t(1) << 42) == 1 << 14);
+    ASSERT_THAT(icbrt(uint64_t(1) << 45) == 1 << 15);
+    ASSERT_THAT(icbrt(uint64_t(1) << 48) == 1 << 16);
+    ASSERT_THAT(icbrt(uint64_t(1) << 51) == 1 << 17);
+    ASSERT_THAT(icbrt(uint64_t(1) << 54) == 1 << 18);
+    ASSERT_THAT(icbrt(uint64_t(1) << 57) == 1 << 19);
+    ASSERT_THAT(icbrt(uint64_t(1) << 60) == 1 << 20);
+    ASSERT_THAT(icbrt(uint64_t(1) << 63) == 1 << 21);
+    ASSERT_THAT(icbrt((uint64_t(1) << 63) | (uint64_t(1) << 32)) == 2097152);
+    ASSERT_THAT(icbrt(uint64_t(1'367'631'000'000'000ull)) == 111'000);
+    ASSERT_THAT(icbrt(uint64_t(1'000'000'000'000'000'000ull)) == 1'000'000);
+    ASSERT_THAT(icbrt(uint64_t(1'331'000'000'000'000'000ull)) == 1'100'000);
+    ASSERT_THAT(icbrt(uint64_t(8'000'000'000'000'000'000ull)) == 2'000'000);
+    ASSERT_THAT(icbrt(uint64_t(15'625'000'000'000'000'000ull)) == 2'500'000);
+    ASSERT_THAT(icbrt(uint64_t(-1)) == 2642245);
+
+    ASSERT_THAT(is_perfect_square(uint64_t(0)));
+    ASSERT_THAT(is_perfect_square(uint64_t(1)));
+    ASSERT_THAT(!is_perfect_square(uint64_t(2)));
+    ASSERT_THAT(!is_perfect_square(uint64_t(3)));
+    ASSERT_THAT(is_perfect_square(uint64_t(4)));
+    ASSERT_THAT(!is_perfect_square(uint64_t(5)));
+    ASSERT_THAT(is_perfect_square(uint64_t(9)));
+    ASSERT_THAT(!is_perfect_square(uint64_t(15)));
+    ASSERT_THAT(is_perfect_square(uint64_t(16)));
+    ASSERT_THAT(is_perfect_square(uint64_t(324)));
+    ASSERT_THAT(is_perfect_square(uint64_t(1 << 16)));
+    ASSERT_THAT(is_perfect_square(uint64_t(1 << 24)));
+    ASSERT_THAT(is_perfect_square(uint64_t(1) << 32));
+    ASSERT_THAT(is_perfect_square(uint64_t(1) << 40));
+    ASSERT_THAT(is_perfect_square(uint64_t(1) << 48));
+    ASSERT_THAT(is_perfect_square(uint64_t(1) << 56));
+    ASSERT_THAT(is_perfect_square(uint64_t(1) << 60));
+
+#if defined(HAS_I128_CONSTEXPR) && HAS_I128_CONSTEXPR
+    ASSERT_THAT(is_perfect_square(uint128_t(0)));
+    ASSERT_THAT(is_perfect_square(uint128_t(1)));
+    ASSERT_THAT(!is_perfect_square(uint128_t(2)));
+    ASSERT_THAT(!is_perfect_square(uint128_t(3)));
+    ASSERT_THAT(is_perfect_square(uint128_t(4)));
+    ASSERT_THAT(!is_perfect_square(uint128_t(5)));
+    ASSERT_THAT(is_perfect_square(uint128_t(9)));
+    ASSERT_THAT(!is_perfect_square(uint128_t(15)));
+    ASSERT_THAT(is_perfect_square(uint128_t(16)));
+    ASSERT_THAT(is_perfect_square(uint128_t(324)));
+    ASSERT_THAT(is_perfect_square(uint128_t(1 << 16)));
+    ASSERT_THAT(is_perfect_square(uint128_t(1 << 24)));
+    ASSERT_THAT(is_perfect_square(uint128_t(1) << 32));
+    ASSERT_THAT(is_perfect_square(uint128_t(1) << 40));
+    ASSERT_THAT(is_perfect_square(uint128_t(1) << 48));
+    ASSERT_THAT(is_perfect_square(uint128_t(1) << 56));
+    ASSERT_THAT(is_perfect_square(uint128_t(1) << 60));
+#endif
+
+    ASSERT_THAT(bit_reverse(uint8_t(0b00000000)) == 0b00000000);
+    ASSERT_THAT(bit_reverse(uint8_t(0b00000010)) == 0b01000000);
+    ASSERT_THAT(bit_reverse(uint8_t(0b00001100)) == 0b00110000);
+    ASSERT_THAT(bit_reverse(uint8_t(0b10101010)) == 0b01010101);
+    ASSERT_THAT(bit_reverse(uint8_t(0b01010101)) == 0b10101010);
+    ASSERT_THAT(bit_reverse(uint8_t(0b11111111)) == 0b11111111);
+
+    ASSERT_THAT(bit_reverse(0b00000000'00000000'00000000'00000000u) ==
+                0b00000000'00000000'00000000'00000000u);
+    ASSERT_THAT(bit_reverse(0b00000000'00000000'00000000'00000001u) ==
+                0b10000000'00000000'00000000'00000000u);
+    ASSERT_THAT(bit_reverse(0b10000000'00000000'00000000'00000000u) ==
+                0b00000000'00000000'00000000'00000001u);
+    ASSERT_THAT(bit_reverse(0b00000000'11111111'00000000'00000000u) ==
+                0b00000000'00000000'11111111'00000000u);
+    ASSERT_THAT(bit_reverse(0b00000000'00000000'11111111'00000000u) ==
+                0b00000000'11111111'00000000'00000000u);
+    ASSERT_THAT(bit_reverse(0b10101010'10101010'10101010'10101010u) ==
+                0b01010101'01010101'01010101'01010101u);
+    ASSERT_THAT(bit_reverse(0b11111111'00000000'11111111'00000000u) ==
+                0b00000000'11111111'00000000'11111111u);
+
+    ASSERT_THAT(
+        bit_reverse(uint64_t(
+            0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00000000ULL)) ==
+        0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00000000ULL);
+    ASSERT_THAT(
+        bit_reverse(uint64_t(
+            0b10000001'00000000'10000001'00000000'10000001'00000000'10000001'00000000ULL)) ==
+        0b00000000'10000001'00000000'10000001'00000000'10000001'00000000'10000001ULL);
+    ASSERT_THAT(
+        bit_reverse(uint64_t(
+            0b00001111'00000000'11110000'00000000'10101010'00000000'00000000'00000000ULL)) ==
+        0b00000000'00000000'00000000'01010101'00000000'00001111'00000000'11110000ULL);
+    ASSERT_THAT(
+        bit_reverse(uint64_t(
+            0b00000000'00000000'00000000'10101010'10101010'00000000'00000000'00000000ULL)) ==
+        0b00000000'00000000'00000000'01010101'01010101'00000000'00000000'00000000ULL);
+    ASSERT_THAT(
+        bit_reverse(uint64_t(
+            0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00000000ULL)) ==
+        0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00000000ULL);
+    ASSERT_THAT(
+        bit_reverse(uint64_t(
+            0b11111111'00000000'11111111'00000000'11111111'00000000'11111111'00000000ULL)) ==
+        0b00000000'11111111'00000000'11111111'00000000'11111111'00000000'11111111ULL);
+    ASSERT_THAT(
+        bit_reverse(uint64_t(
+            0b11111111'11111111'11111111'11111111'00000000'00000000'00000000'00000000ULL)) ==
+        0b00000000'00000000'00000000'00000000'11111111'11111111'11111111'11111111ULL);
+
+#if defined(HAS_I128_CONSTEXPR) && HAS_I128_CONSTEXPR
+
+    ASSERT_THAT(bit_reverse(uint128_t(0)) == 0);
+    ASSERT_THAT(bit_reverse(uint128_t(-1)) == uint128_t(-1));
+
+#endif
+
+#if CONFIG_HAS_AT_LEAST_CXX_20
+    ASSERT_THAT(int(detail::pop_count_32_software(0u)) == int(std::popcount(0u)));
+    ASSERT_THAT(int(detail::pop_count_32_software(1u)) == int(std::popcount(1u)));
+    ASSERT_THAT(int(detail::pop_count_32_software(2u)) == int(std::popcount(2u)));
+    ASSERT_THAT(int(detail::pop_count_32_software(3u)) == int(std::popcount(3u)));
+    ASSERT_THAT(int(detail::pop_count_32_software(4u)) == int(std::popcount(4u)));
+    ASSERT_THAT(int(detail::pop_count_32_software(0x4788743u)) == int(std::popcount(0x4788743u)));
+    ASSERT_THAT(int(detail::pop_count_32_software(0x2D425B23u)) == int(std::popcount(0x2D425B23u)));
+    ASSERT_THAT(int(detail::pop_count_32_software(0xFFFFFFFFu - 1)) ==
+                int(std::popcount(0xFFFFFFFFu - 1)));
+    ASSERT_THAT(int(detail::pop_count_32_software(0xFFFFFFFFu)) == int(std::popcount(0xFFFFFFFFu)));
+#endif
+
+#if CONFIG_HAS_AT_LEAST_CXX_20
+    ASSERT_THAT(int(detail::pop_count_64_software(uint64_t(0))) == int(std::popcount(uint64_t(0))));
+    ASSERT_THAT(int(detail::pop_count_64_software(uint64_t(1))) == int(std::popcount(uint64_t(1))));
+    ASSERT_THAT(int(detail::pop_count_64_software(uint64_t(2))) == int(std::popcount(uint64_t(2))));
+    ASSERT_THAT(int(detail::pop_count_64_software(uint64_t(3))) == int(std::popcount(uint64_t(3))));
+    ASSERT_THAT(int(detail::pop_count_64_software(uint64_t(4))) == int(std::popcount(uint64_t(4))));
+    ASSERT_THAT(int(detail::pop_count_64_software(uint64_t(0x4788743u))) ==
+                int(std::popcount(uint64_t(0x4788743u))));
+    ASSERT_THAT(int(detail::pop_count_64_software(uint64_t(0x2D425B23u))) ==
+                int(std::popcount(uint64_t(0x2D425B23u))));
+    ASSERT_THAT(int(detail::pop_count_64_software(uint64_t(0xFFFFFFFFu - 1))) ==
+                int(std::popcount(uint64_t(0xFFFFFFFFu - 1))));
+    ASSERT_THAT(int(detail::pop_count_64_software(uint64_t(0xFFFFFFFFu))) ==
+                int(std::popcount(uint64_t(0xFFFFFFFFu))));
+    ASSERT_THAT(int(detail::pop_count_64_software(uint64_t(0x5873485893484ull))) ==
+                int(std::popcount(uint64_t(0x5873485893484ull))));
+    ASSERT_THAT(int(detail::pop_count_64_software(uint64_t(0x85923489853245ull))) ==
+                int(std::popcount(uint64_t(0x85923489853245ull))));
+    ASSERT_THAT(int(detail::pop_count_64_software(uint64_t(0xFFFFFFFFFFFFFFFFull - 1))) ==
+                int(std::popcount(uint64_t(0xFFFFFFFFFFFFFFFFull - 1))));
+    ASSERT_THAT(int(detail::pop_count_64_software(uint64_t(0xFFFFFFFFFFFFFFFFull))) ==
+                int(std::popcount(uint64_t(0xFFFFFFFFFFFFFFFFull))));
+#endif
+
+#if CONFIG_HAS_AT_LEAST_CXX_20
+    ASSERT_THAT(std::popcount(0u) - std::popcount(0u) == pop_diff(0, 0));
+    ASSERT_THAT(int(std::popcount(1u)) - int(std::popcount(0u)) == pop_diff(1, 0));
+    ASSERT_THAT(int(std::popcount(0u)) - int(std::popcount(1u)) == pop_diff(0, 1));
+    ASSERT_THAT(int(std::popcount(0xABCDEFu)) - int(std::popcount(4u)) == pop_diff(0xABCDEF, 4));
+    ASSERT_THAT(int(std::popcount(uint32_t(uint16_t(-1)))) - int(std::popcount(314u)) ==
+                pop_diff(uint16_t(-1), 314));
+    ASSERT_THAT(int(std::popcount(uint32_t(-1))) - int(std::popcount(0u)) ==
+                pop_diff(uint32_t(-1), 0));
+    ASSERT_THAT(int(std::popcount(0u)) - int(std::popcount(uint32_t(-1))) ==
+                pop_diff(0, uint32_t(-1)));
+    ASSERT_THAT(int(std::popcount(uint32_t(-1))) - int(std::popcount(uint32_t(-1))) ==
+                pop_diff(uint32_t(-1), uint32_t(-1)));
+#endif
+
+#if defined(HAS_I128_CONSTEXPR) && HAS_I128_CONSTEXPR
+    ASSERT_THAT(sign(int128_t(0)) == 0);
+    ASSERT_THAT(sign(int128_t(1)) == 1);
+    ASSERT_THAT(sign(int128_t(-1)) == -1);
+    ASSERT_THAT(sign(int128_t(2)) == 1);
+    ASSERT_THAT(sign(int128_t(-2)) == -1);
+    ASSERT_THAT(sign(int128_t(18446744073709551615ull)) == 1);
+    ASSERT_THAT(sign(-int128_t(18446744073709551615ull)) == -1);
+    ASSERT_THAT(sign(int128_t(1) << 63) == 1);
+    ASSERT_THAT(sign(-(int128_t(1) << 63)) == -1);
+    ASSERT_THAT(sign(int128_t(1) << 126) == 1);
+    ASSERT_THAT(sign(-(int128_t(1) << 126)) == -1);
+    ASSERT_THAT(sign(int128_t((uint128_t(1) << 127) - 1)) == 1);
+    ASSERT_THAT(sign(int128_t(-((uint128_t(1) << 127) - 1))) == -1);
+    ASSERT_THAT(sign(int128_t(-(uint128_t(1) << 127))) == -1);
+#endif
+
+    ASSERT_THAT(same_sign_soft(1, 1));
+    ASSERT_THAT(same_sign_soft(1, 0));
+    ASSERT_THAT(!same_sign_soft(1, -1));
+    ASSERT_THAT(same_sign_soft(0, 1));
+    ASSERT_THAT(same_sign_soft(0, 0));
+    ASSERT_THAT(!same_sign_soft(0, -1));
+    ASSERT_THAT(!same_sign_soft(-1, 1));
+    ASSERT_THAT(!same_sign_soft(-1, 0));
+    ASSERT_THAT(same_sign_soft(-1, -1));
+
+    ASSERT_THAT(same_sign(1, 1));
+    ASSERT_THAT(!same_sign(1, 0));
+    ASSERT_THAT(!same_sign(1, -1));
+    ASSERT_THAT(!same_sign(0, 1));
+    ASSERT_THAT(same_sign(0, 0));
+    ASSERT_THAT(!same_sign(0, -1));
+    ASSERT_THAT(!same_sign(-1, 1));
+    ASSERT_THAT(!same_sign(-1, 0));
+    ASSERT_THAT(same_sign(-1, -1));
+
+    ASSERT_THAT(uabs(static_cast<char>(0)) == 0);
+    ASSERT_THAT(uabs(static_cast<short>(0)) == 0);
+    ASSERT_THAT(uabs(static_cast<int>(0)) == 0);
+    ASSERT_THAT(uabs(static_cast<long>(0)) == 0);
+    ASSERT_THAT(uabs(static_cast<long long>(0)) == 0);
+
+    ASSERT_THAT(uabs(static_cast<char>(-1)) == 1);
+    ASSERT_THAT(uabs(static_cast<short>(-1)) == 1);
+    ASSERT_THAT(uabs(static_cast<int>(-1)) == 1);
+    ASSERT_THAT(uabs(static_cast<long>(-1)) == 1);
+    ASSERT_THAT(uabs(static_cast<long long>(-1)) == 1);
+
+    ASSERT_THAT(uabs(static_cast<char>(-128)) == 128);
+    ASSERT_THAT(uabs(static_cast<short>(-128)) == 128);
+    ASSERT_THAT(uabs(static_cast<int>(-128)) == 128);
+    ASSERT_THAT(uabs(static_cast<long>(-128)) == 128);
+    ASSERT_THAT(uabs(static_cast<long long>(-128)) == 128);
+
+    ASSERT_THAT(uabs(std::numeric_limits<long long>::min()) ==
+                -static_cast<unsigned long long>(std::numeric_limits<long long>::min()));
+
+    ASSERT_THAT(uabs(int8_t(0)) == 0);
+    ASSERT_THAT(uabs(int32_t(0)) == 0);
+    ASSERT_THAT(uabs(int64_t(0)) == 0);
+    ASSERT_THAT(uabs(int8_t(-1)) == 1);
+    ASSERT_THAT(uabs(int32_t(-1)) == 1);
+    ASSERT_THAT(uabs(int64_t(-1)) == 1);
+    ASSERT_THAT(uabs(int8_t(-128)) == 128);
+    ASSERT_THAT(uabs(int32_t(-128)) == 128);
+    ASSERT_THAT(uabs(int64_t(-128)) == 128);
+
+    ASSERT_THAT(uabs(std::numeric_limits<int64_t>::min()) ==
+                -static_cast<uint64_t>(std::numeric_limits<int64_t>::min()));
+
+#if defined(HAS_I128_CONSTEXPR) && HAS_I128_CONSTEXPR
+    ASSERT_THAT(uabs(int128_t(0)) == 0);
+    ASSERT_THAT(uabs(int128_t(1)) == 1);
+    ASSERT_THAT(uabs(int128_t(-1)) == 1);
+    ASSERT_THAT(uabs(int128_t(4)) == 4);
+    ASSERT_THAT(uabs(int128_t(-4)) == 4);
+    ASSERT_THAT(uabs(int128_t(18446744073709551615ull)) == 18446744073709551615ull);
+    ASSERT_THAT(uabs(-int128_t(18446744073709551615ull)) == 18446744073709551615ull);
+    ASSERT_THAT(uabs(int128_t(1) << 126) == uint128_t(1) << 126);
+    ASSERT_THAT(uabs(-(int128_t(1) << 126)) == uint128_t(1) << 126);
+    ASSERT_THAT(uabs(int128_t((uint128_t(1) << 127) - 1)) == (uint128_t(1) << 127) - 1);
+    ASSERT_THAT(uabs(int128_t(-((uint128_t(1) << 127) - 1))) == (uint128_t(1) << 127) - 1);
+    ASSERT_THAT(uabs(int128_t(-(uint128_t(1) << 127))) == uint128_t(1) << 127);
+#endif
+
+#if CONFIG_HAS_AT_LEAST_CXX_20
+
+    ASSERT_THAT(sign(std::popcount(0u) - std::popcount(0u)) == sign(pop_cmp(0, 0)));
+    ASSERT_THAT(sign(std::popcount(1u) - std::popcount(0u)) == sign(pop_cmp(1, 0)));
+    ASSERT_THAT(sign(std::popcount(0u) - std::popcount(1u)) == sign(pop_cmp(0, 1)));
+    ASSERT_THAT(sign(std::popcount(0xABCDEFu) - std::popcount(4u)) == pop_cmp(0xABCDEF, 4));
+    ASSERT_THAT(sign(std::popcount(uint32_t(uint16_t(-1))) - std::popcount(314u)) ==
+                sign(pop_cmp(uint16_t(-1), 314)));
+    ASSERT_THAT(sign(std::popcount(uint32_t(-1)) - std::popcount(0u)) ==
+                sign(pop_cmp(uint32_t(-1), 0)));
+    ASSERT_THAT(sign(std::popcount(0u) - std::popcount(uint32_t(-1))) ==
+                sign(pop_cmp(0, uint32_t(-1))));
+    ASSERT_THAT(sign(std::popcount(uint32_t(-1)) - std::popcount(uint32_t(-1))) ==
+                sign(pop_cmp(uint32_t(-1), uint32_t(-1))));
+#endif
+
+    ASSERT_THAT(detail::lz_count_32_software(0) == 32);
+    ASSERT_THAT(detail::lz_count_32_software(1) == 31);
+    ASSERT_THAT(detail::lz_count_32_software(2) == 30);
+    ASSERT_THAT(detail::lz_count_32_software(4) == 29);
+    ASSERT_THAT(detail::lz_count_32_software(8) == 28);
+    ASSERT_THAT(detail::lz_count_32_software(12) == 28);
+    ASSERT_THAT(detail::lz_count_32_software(16) == 27);
+    ASSERT_THAT(detail::lz_count_32_software(32) == 26);
+    ASSERT_THAT(detail::lz_count_32_software(48) == 26);
+    ASSERT_THAT(detail::lz_count_32_software(uint32_t(1) << 30) == 1);
+    ASSERT_THAT(detail::lz_count_32_software(uint32_t(1) << 31) == 0);
+    ASSERT_THAT(detail::lz_count_32_software(~uint32_t(1)) == 0);
+
+    ASSERT_THAT(detail::lz_count_64_software(0) == 64);
+    ASSERT_THAT(detail::lz_count_64_software(1) == 63);
+    ASSERT_THAT(detail::lz_count_64_software(2) == 62);
+    ASSERT_THAT(detail::lz_count_64_software(4) == 61);
+    ASSERT_THAT(detail::lz_count_64_software(8) == 60);
+    ASSERT_THAT(detail::lz_count_64_software(12) == 60);
+    ASSERT_THAT(detail::lz_count_64_software(16) == 59);
+    ASSERT_THAT(detail::lz_count_64_software(32) == 58);
+    ASSERT_THAT(detail::lz_count_64_software(48) == 58);
+    ASSERT_THAT(detail::lz_count_64_software(uint32_t(1) << 30) == 33);
+    ASSERT_THAT(detail::lz_count_64_software(uint32_t(1) << 31) == 32);
+    ASSERT_THAT(detail::lz_count_64_software(~uint32_t(1)) == 32);
+    ASSERT_THAT(detail::lz_count_64_software(uint64_t(1) << 62) == 1);
+    ASSERT_THAT(detail::lz_count_64_software(uint64_t(1) << 63) == 0);
+    ASSERT_THAT(detail::lz_count_64_software(uint64_t(-1)) == 0);
+
+    ASSERT_THAT(detail::tz_count_32_software(0u) == 32);
+    ASSERT_THAT(detail::tz_count_32_software(1u) == 0);
+    ASSERT_THAT(detail::tz_count_32_software(2u) == 1);
+    ASSERT_THAT(detail::tz_count_32_software(4u) == 2);
+    ASSERT_THAT(detail::tz_count_32_software(8u) == 3);
+    ASSERT_THAT(detail::tz_count_32_software(12u) == 2);
+    ASSERT_THAT(detail::tz_count_32_software(16u) == 4);
+    ASSERT_THAT(detail::tz_count_32_software(32u) == 5);
+    ASSERT_THAT(detail::tz_count_32_software(48u) == 4);
+    ASSERT_THAT(detail::tz_count_32_software(1u << 30) == 30);
+    ASSERT_THAT(detail::tz_count_32_software(1u << 31) == 31);
+    ASSERT_THAT(detail::tz_count_32_software(~1u) == 1);
+    ASSERT_THAT(detail::tz_count_32_software(uint32_t(-1)) == 0);
+
+    ASSERT_THAT(detail::tz_count_64_software(0u) == 64);
+    ASSERT_THAT(detail::tz_count_64_software(1u) == 0);
+    ASSERT_THAT(detail::tz_count_64_software(2u) == 1);
+    ASSERT_THAT(detail::tz_count_64_software(4u) == 2);
+    ASSERT_THAT(detail::tz_count_64_software(8u) == 3);
+    ASSERT_THAT(detail::tz_count_64_software(12u) == 2);
+    ASSERT_THAT(detail::tz_count_64_software(16u) == 4);
+    ASSERT_THAT(detail::tz_count_64_software(32u) == 5);
+    ASSERT_THAT(detail::tz_count_64_software(48u) == 4);
+    ASSERT_THAT(detail::tz_count_64_software(1u << 30) == 30);
+    ASSERT_THAT(detail::tz_count_64_software(1u << 31) == 31);
+    ASSERT_THAT(detail::tz_count_64_software(~1u) == 1);
+    ASSERT_THAT(detail::tz_count_64_software(uint32_t(-1)) == 0);
+
+    ASSERT_THAT(next_n_bits_permutation(0b0010011) == 0b0010101);
+    ASSERT_THAT(next_n_bits_permutation(0b0010101) == 0b0010110);
+    ASSERT_THAT(next_n_bits_permutation(0b0010110) == 0b0011001);
+    ASSERT_THAT(next_n_bits_permutation(0b0011001) == 0b0011010);
+    ASSERT_THAT(next_n_bits_permutation(0b0011010) == 0b0011100);
+    ASSERT_THAT(next_n_bits_permutation(0b0011100) == 0b0100011);
+    ASSERT_THAT(next_n_bits_permutation(0b0100011) == 0b0100101);
+
+    ASSERT_THAT(next_n_bits_permutation(0b01) == 0b10);
+
+    ASSERT_THAT(next_n_bits_permutation(0b1111111) == 0b10111111);
+
+    ASSERT_THAT(!is_power_of_two(0ull));
+    ASSERT_THAT(is_power_of_two(1ull << 0));
+    ASSERT_THAT(is_power_of_two(1ull << 1));
+    ASSERT_THAT(is_power_of_two(1ull << 2));
+    ASSERT_THAT(is_power_of_two(1ull << 3));
+    ASSERT_THAT(is_power_of_two(1ull << 4));
+    ASSERT_THAT(is_power_of_two(1ull << 5));
+    ASSERT_THAT(is_power_of_two(1ull << 6));
+    ASSERT_THAT(is_power_of_two(1ull << 7));
+    ASSERT_THAT(is_power_of_two(1ull << 8));
+    ASSERT_THAT(is_power_of_two(1ull << 9));
+    ASSERT_THAT(is_power_of_two(1ull << 60));
+    ASSERT_THAT(is_power_of_two(1ull << 61));
+    ASSERT_THAT(is_power_of_two(1ull << 62));
+    ASSERT_THAT(is_power_of_two(1ull << 63));
+
+#if defined(INTEGERS_128_BIT_HPP) && HAS_I128_CONSTEXPR
+
+    ASSERT_THAT(!is_power_of_two(uint128_t(0)));
+    ASSERT_THAT(is_power_of_two(uint128_t(1) << 0));
+    ASSERT_THAT(is_power_of_two(uint128_t(1) << 1));
+    ASSERT_THAT(is_power_of_two(uint128_t(1) << 2));
+    ASSERT_THAT(is_power_of_two(uint128_t(1) << 3));
+    ASSERT_THAT(is_power_of_two(uint128_t(1) << 4));
+    ASSERT_THAT(is_power_of_two(uint128_t(1) << 5));
+    ASSERT_THAT(is_power_of_two(uint128_t(1) << 6));
+    ASSERT_THAT(is_power_of_two(uint128_t(1) << 7));
+    ASSERT_THAT(is_power_of_two(uint128_t(1) << 8));
+    ASSERT_THAT(is_power_of_two(uint128_t(1) << 9));
+    ASSERT_THAT(is_power_of_two(uint128_t(1) << 60));
+    ASSERT_THAT(is_power_of_two(uint128_t(1) << 61));
+    ASSERT_THAT(is_power_of_two(uint128_t(1) << 62));
+    ASSERT_THAT(is_power_of_two(uint128_t(1) << 63));
+    ASSERT_THAT(is_power_of_two(uint128_t(1) << 64));
+    ASSERT_THAT(is_power_of_two(uint128_t(1) << 65));
+    ASSERT_THAT(is_power_of_two(uint128_t(1) << 127));
+#endif
+
+    ASSERT_THAT(nearest_greater_equal_power_of_two(uint32_t(0u)) == 1u);
+    ASSERT_THAT(nearest_greater_equal_power_of_two(uint32_t(1u)) == 1u);
+    ASSERT_THAT(nearest_greater_equal_power_of_two(uint32_t(2u)) == 2u);
+    ASSERT_THAT(nearest_greater_equal_power_of_two(uint32_t(3u)) == 4u);
+    ASSERT_THAT(nearest_greater_equal_power_of_two(uint32_t(4u)) == 4u);
+    ASSERT_THAT(nearest_greater_equal_power_of_two(uint32_t(5u)) == 8u);
+    ASSERT_THAT(nearest_greater_equal_power_of_two(uint32_t(6u)) == 8u);
+    ASSERT_THAT(nearest_greater_equal_power_of_two(uint32_t(7u)) == 8u);
+    ASSERT_THAT(nearest_greater_equal_power_of_two(uint32_t(8u)) == 8u);
+    ASSERT_THAT(nearest_greater_equal_power_of_two(uint32_t(16u)) == 16u);
+    ASSERT_THAT(nearest_greater_equal_power_of_two(uint32_t(17u)) == 32u);
+    ASSERT_THAT(nearest_greater_equal_power_of_two(uint32_t(18u)) == 32u);
+    ASSERT_THAT(nearest_greater_equal_power_of_two(uint32_t(19u)) == 32u);
+    ASSERT_THAT(nearest_greater_equal_power_of_two(uint32_t(20u)) == 32u);
+    ASSERT_THAT(nearest_greater_equal_power_of_two(uint32_t(0x7FFFFFFFu)) == 0x80000000u);
+    ASSERT_THAT(nearest_greater_equal_power_of_two(uint32_t(0x80000000u)) == 0x80000000u);
+    ASSERT_THAT(nearest_greater_equal_power_of_two(uint32_t(0x80000001u)) == 0x100000000ull);
+    ASSERT_THAT(nearest_greater_equal_power_of_two(uint32_t(0xFFFFFFFFu)) == 0x100000000ull);
+    ASSERT_THAT(nearest_greater_equal_power_of_two(uint32_t(1) << 0) == uint32_t(1) << 0);
+    ASSERT_THAT(nearest_greater_equal_power_of_two(uint32_t(1) << 1) == uint32_t(1) << 1);
+    ASSERT_THAT(nearest_greater_equal_power_of_two(uint32_t(1) << 2) == uint32_t(1) << 2);
+    ASSERT_THAT(nearest_greater_equal_power_of_two(uint32_t(1) << 3) == uint32_t(1) << 3);
+    ASSERT_THAT(nearest_greater_equal_power_of_two(uint32_t(1) << 4) == uint32_t(1) << 4);
+    ASSERT_THAT(nearest_greater_equal_power_of_two(uint32_t(1) << 5) == uint32_t(1) << 5);
+    ASSERT_THAT(nearest_greater_equal_power_of_two(uint32_t(1) << 6) == uint32_t(1) << 6);
+    ASSERT_THAT(nearest_greater_equal_power_of_two(uint32_t(1) << 7) == uint32_t(1) << 7);
+    ASSERT_THAT(nearest_greater_equal_power_of_two(uint32_t(1) << 8) == uint32_t(1) << 8);
+    ASSERT_THAT(nearest_greater_equal_power_of_two(uint32_t(1) << 9) == uint32_t(1) << 9);
+    ASSERT_THAT(nearest_greater_equal_power_of_two(uint32_t(1) << 10) == uint32_t(1) << 10);
+    ASSERT_THAT(nearest_greater_equal_power_of_two(uint32_t(1) << 11) == uint32_t(1) << 11);
+    ASSERT_THAT(nearest_greater_equal_power_of_two(uint32_t(1) << 12) == uint32_t(1) << 12);
+    ASSERT_THAT(nearest_greater_equal_power_of_two(uint32_t(1) << 13) == uint32_t(1) << 13);
+    ASSERT_THAT(nearest_greater_equal_power_of_two(uint32_t(1) << 14) == uint32_t(1) << 14);
+    ASSERT_THAT(nearest_greater_equal_power_of_two(uint32_t(1) << 15) == uint32_t(1) << 15);
+    ASSERT_THAT(nearest_greater_equal_power_of_two(uint32_t(1) << 16) == uint32_t(1) << 16);
+    ASSERT_THAT(nearest_greater_equal_power_of_two(uint32_t(1) << 17) == uint32_t(1) << 17);
+    ASSERT_THAT(nearest_greater_equal_power_of_two(uint32_t(1) << 18) == uint32_t(1) << 18);
+    ASSERT_THAT(nearest_greater_equal_power_of_two(uint32_t(1) << 19) == uint32_t(1) << 19);
+    ASSERT_THAT(nearest_greater_equal_power_of_two(uint32_t(1) << 20) == uint32_t(1) << 20);
+    ASSERT_THAT(nearest_greater_equal_power_of_two(uint32_t(1) << 21) == uint32_t(1) << 21);
+    ASSERT_THAT(nearest_greater_equal_power_of_two(uint32_t(1) << 22) == uint32_t(1) << 22);
+    ASSERT_THAT(nearest_greater_equal_power_of_two(uint32_t(1) << 23) == uint32_t(1) << 23);
+    ASSERT_THAT(nearest_greater_equal_power_of_two(uint32_t(1) << 24) == uint32_t(1) << 24);
+    ASSERT_THAT(nearest_greater_equal_power_of_two(uint32_t(1) << 25) == uint32_t(1) << 25);
+    ASSERT_THAT(nearest_greater_equal_power_of_two(uint32_t(1) << 26) == uint32_t(1) << 26);
+    ASSERT_THAT(nearest_greater_equal_power_of_two(uint32_t(1) << 27) == uint32_t(1) << 27);
+    ASSERT_THAT(nearest_greater_equal_power_of_two(uint32_t(1) << 28) == uint32_t(1) << 28);
+    ASSERT_THAT(nearest_greater_equal_power_of_two(uint32_t(1) << 29) == uint32_t(1) << 29);
+    ASSERT_THAT(nearest_greater_equal_power_of_two(uint32_t(1) << 30) == uint32_t(1) << 30);
+    ASSERT_THAT(nearest_greater_equal_power_of_two(uint32_t(1) << 31) == uint32_t(1) << 31);
+
+    ASSERT_THAT(nearest_greater_equal_power_of_two(uint64_t(0u)) == 1u);
+    ASSERT_THAT(nearest_greater_equal_power_of_two(uint64_t(1u)) == 1u);
+    ASSERT_THAT(nearest_greater_equal_power_of_two(uint64_t(2u)) == 2u);
+    ASSERT_THAT(nearest_greater_equal_power_of_two(uint64_t(3u)) == 4u);
+    ASSERT_THAT(nearest_greater_equal_power_of_two(uint64_t(4u)) == 4u);
+    ASSERT_THAT(nearest_greater_equal_power_of_two(uint64_t(5u)) == 8u);
+    ASSERT_THAT(nearest_greater_equal_power_of_two(uint64_t(6u)) == 8u);
+    ASSERT_THAT(nearest_greater_equal_power_of_two(uint64_t(7u)) == 8u);
+    ASSERT_THAT(nearest_greater_equal_power_of_two(uint64_t(8u)) == 8u);
+    ASSERT_THAT(nearest_greater_equal_power_of_two(uint64_t(16u)) == 16u);
+    ASSERT_THAT(nearest_greater_equal_power_of_two(uint64_t(17u)) == 32u);
+    ASSERT_THAT(nearest_greater_equal_power_of_two(uint64_t(18u)) == 32u);
+    ASSERT_THAT(nearest_greater_equal_power_of_two(uint64_t(19u)) == 32u);
+    ASSERT_THAT(nearest_greater_equal_power_of_two(uint64_t(20u)) == 32u);
+    ASSERT_THAT(nearest_greater_equal_power_of_two(uint64_t(0x7FFFFFFFu)) == 0x80000000u);
+    ASSERT_THAT(nearest_greater_equal_power_of_two(uint64_t(0x80000000u)) == 0x80000000u);
+    ASSERT_THAT(nearest_greater_equal_power_of_two(uint64_t(0x80000001u)) == 0x100000000ull);
+    ASSERT_THAT(nearest_greater_equal_power_of_two(uint64_t(0xFFFFFFFFu)) == 0x100000000ull);
+    ASSERT_THAT(nearest_greater_equal_power_of_two(uint64_t(0x7FFFFFFFFFFFFFFFull)) ==
+                0x8000000000000000ull);
+    ASSERT_THAT(nearest_greater_equal_power_of_two(uint64_t(0x8000000000000000ull)) ==
+                0x8000000000000000ull);
+    ASSERT_THAT(nearest_greater_equal_power_of_two(uint64_t(1) << 0) == uint64_t(1) << 0);
+    ASSERT_THAT(nearest_greater_equal_power_of_two(uint64_t(1) << 1) == uint64_t(1) << 1);
+    ASSERT_THAT(nearest_greater_equal_power_of_two(uint64_t(1) << 2) == uint64_t(1) << 2);
+    ASSERT_THAT(nearest_greater_equal_power_of_two(uint64_t(1) << 3) == uint64_t(1) << 3);
+    ASSERT_THAT(nearest_greater_equal_power_of_two(uint64_t(1) << 4) == uint64_t(1) << 4);
+    ASSERT_THAT(nearest_greater_equal_power_of_two(uint64_t(1) << 5) == uint64_t(1) << 5);
+    ASSERT_THAT(nearest_greater_equal_power_of_two(uint64_t(1) << 6) == uint64_t(1) << 6);
+    ASSERT_THAT(nearest_greater_equal_power_of_two(uint64_t(1) << 7) == uint64_t(1) << 7);
+    ASSERT_THAT(nearest_greater_equal_power_of_two(uint64_t(1) << 8) == uint64_t(1) << 8);
+    ASSERT_THAT(nearest_greater_equal_power_of_two(uint64_t(1) << 9) == uint64_t(1) << 9);
+    ASSERT_THAT(nearest_greater_equal_power_of_two(uint64_t(1) << 10) == uint64_t(1) << 10);
+    ASSERT_THAT(nearest_greater_equal_power_of_two(uint64_t(1) << 11) == uint64_t(1) << 11);
+    ASSERT_THAT(nearest_greater_equal_power_of_two(uint64_t(1) << 12) == uint64_t(1) << 12);
+    ASSERT_THAT(nearest_greater_equal_power_of_two(uint64_t(1) << 13) == uint64_t(1) << 13);
+    ASSERT_THAT(nearest_greater_equal_power_of_two(uint64_t(1) << 14) == uint64_t(1) << 14);
+    ASSERT_THAT(nearest_greater_equal_power_of_two(uint64_t(1) << 15) == uint64_t(1) << 15);
+    ASSERT_THAT(nearest_greater_equal_power_of_two(uint64_t(1) << 16) == uint64_t(1) << 16);
+    ASSERT_THAT(nearest_greater_equal_power_of_two(uint64_t(1) << 17) == uint64_t(1) << 17);
+    ASSERT_THAT(nearest_greater_equal_power_of_two(uint64_t(1) << 18) == uint64_t(1) << 18);
+    ASSERT_THAT(nearest_greater_equal_power_of_two(uint64_t(1) << 19) == uint64_t(1) << 19);
+    ASSERT_THAT(nearest_greater_equal_power_of_two(uint64_t(1) << 20) == uint64_t(1) << 20);
+    ASSERT_THAT(nearest_greater_equal_power_of_two(uint64_t(1) << 21) == uint64_t(1) << 21);
+    ASSERT_THAT(nearest_greater_equal_power_of_two(uint64_t(1) << 22) == uint64_t(1) << 22);
+    ASSERT_THAT(nearest_greater_equal_power_of_two(uint64_t(1) << 23) == uint64_t(1) << 23);
+    ASSERT_THAT(nearest_greater_equal_power_of_two(uint64_t(1) << 24) == uint64_t(1) << 24);
+    ASSERT_THAT(nearest_greater_equal_power_of_two(uint64_t(1) << 25) == uint64_t(1) << 25);
+    ASSERT_THAT(nearest_greater_equal_power_of_two(uint64_t(1) << 26) == uint64_t(1) << 26);
+    ASSERT_THAT(nearest_greater_equal_power_of_two(uint64_t(1) << 27) == uint64_t(1) << 27);
+    ASSERT_THAT(nearest_greater_equal_power_of_two(uint64_t(1) << 28) == uint64_t(1) << 28);
+    ASSERT_THAT(nearest_greater_equal_power_of_two(uint64_t(1) << 29) == uint64_t(1) << 29);
+    ASSERT_THAT(nearest_greater_equal_power_of_two(uint64_t(1) << 30) == uint64_t(1) << 30);
+    ASSERT_THAT(nearest_greater_equal_power_of_two(uint64_t(1) << 31) == uint64_t(1) << 31);
+    ASSERT_THAT(nearest_greater_equal_power_of_two(uint64_t(1) << 32) == uint64_t(1) << 32);
+    ASSERT_THAT(nearest_greater_equal_power_of_two(uint64_t(1) << 33) == uint64_t(1) << 33);
+    ASSERT_THAT(nearest_greater_equal_power_of_two(uint64_t(1) << 34) == uint64_t(1) << 34);
+    ASSERT_THAT(nearest_greater_equal_power_of_two(uint64_t(1) << 35) == uint64_t(1) << 35);
+    ASSERT_THAT(nearest_greater_equal_power_of_two(uint64_t(1) << 36) == uint64_t(1) << 36);
+    ASSERT_THAT(nearest_greater_equal_power_of_two(uint64_t(1) << 37) == uint64_t(1) << 37);
+    ASSERT_THAT(nearest_greater_equal_power_of_two(uint64_t(1) << 38) == uint64_t(1) << 38);
+    ASSERT_THAT(nearest_greater_equal_power_of_two(uint64_t(1) << 39) == uint64_t(1) << 39);
+    ASSERT_THAT(nearest_greater_equal_power_of_two(uint64_t(1) << 40) == uint64_t(1) << 40);
+    ASSERT_THAT(nearest_greater_equal_power_of_two(uint64_t(1) << 41) == uint64_t(1) << 41);
+    ASSERT_THAT(nearest_greater_equal_power_of_two(uint64_t(1) << 42) == uint64_t(1) << 42);
+    ASSERT_THAT(nearest_greater_equal_power_of_two(uint64_t(1) << 43) == uint64_t(1) << 43);
+    ASSERT_THAT(nearest_greater_equal_power_of_two(uint64_t(1) << 44) == uint64_t(1) << 44);
+    ASSERT_THAT(nearest_greater_equal_power_of_two(uint64_t(1) << 45) == uint64_t(1) << 45);
+    ASSERT_THAT(nearest_greater_equal_power_of_two(uint64_t(1) << 46) == uint64_t(1) << 46);
+    ASSERT_THAT(nearest_greater_equal_power_of_two(uint64_t(1) << 47) == uint64_t(1) << 47);
+    ASSERT_THAT(nearest_greater_equal_power_of_two(uint64_t(1) << 48) == uint64_t(1) << 48);
+    ASSERT_THAT(nearest_greater_equal_power_of_two(uint64_t(1) << 49) == uint64_t(1) << 49);
+    ASSERT_THAT(nearest_greater_equal_power_of_two(uint64_t(1) << 50) == uint64_t(1) << 50);
+    ASSERT_THAT(nearest_greater_equal_power_of_two(uint64_t(1) << 51) == uint64_t(1) << 51);
+    ASSERT_THAT(nearest_greater_equal_power_of_two(uint64_t(1) << 52) == uint64_t(1) << 52);
+    ASSERT_THAT(nearest_greater_equal_power_of_two(uint64_t(1) << 53) == uint64_t(1) << 53);
+    ASSERT_THAT(nearest_greater_equal_power_of_two(uint64_t(1) << 54) == uint64_t(1) << 54);
+    ASSERT_THAT(nearest_greater_equal_power_of_two(uint64_t(1) << 55) == uint64_t(1) << 55);
+    ASSERT_THAT(nearest_greater_equal_power_of_two(uint64_t(1) << 56) == uint64_t(1) << 56);
+    ASSERT_THAT(nearest_greater_equal_power_of_two(uint64_t(1) << 57) == uint64_t(1) << 57);
+    ASSERT_THAT(nearest_greater_equal_power_of_two(uint64_t(1) << 58) == uint64_t(1) << 58);
+    ASSERT_THAT(nearest_greater_equal_power_of_two(uint64_t(1) << 59) == uint64_t(1) << 59);
+    ASSERT_THAT(nearest_greater_equal_power_of_two(uint64_t(1) << 60) == uint64_t(1) << 60);
+    ASSERT_THAT(nearest_greater_equal_power_of_two(uint64_t(1) << 61) == uint64_t(1) << 61);
+    ASSERT_THAT(nearest_greater_equal_power_of_two(uint64_t(1) << 62) == uint64_t(1) << 62);
+    ASSERT_THAT(nearest_greater_equal_power_of_two(uint64_t(1) << 63) == uint64_t(1) << 63);
+
+    ASSERT_THAT(least_bit_set(0b0) == 0b0);
+    ASSERT_THAT(least_bit_set(0b1) == 0b1);
+    ASSERT_THAT(least_bit_set(0b10) == 0b10);
+    ASSERT_THAT(least_bit_set(0b100) == 0b100);
+    ASSERT_THAT(least_bit_set(0b1000) == 0b1000);
+    ASSERT_THAT(least_bit_set(0b10000) == 0b10000);
+    ASSERT_THAT(least_bit_set(0b100000) == 0b100000);
+    ASSERT_THAT(least_bit_set(0b1000000) == 0b1000000);
+    ASSERT_THAT(least_bit_set(0b10000000) == 0b10000000);
+    ASSERT_THAT(least_bit_set(0b0u) == 0b0u);
+    ASSERT_THAT(least_bit_set(0b1u) == 0b1u);
+    ASSERT_THAT(least_bit_set(0b10u) == 0b10u);
+    ASSERT_THAT(least_bit_set(0b100u) == 0b100u);
+    ASSERT_THAT(least_bit_set(0b1000u) == 0b1000u);
+    ASSERT_THAT(least_bit_set(0b10000u) == 0b10000u);
+    ASSERT_THAT(least_bit_set(0b100000u) == 0b100000u);
+    ASSERT_THAT(least_bit_set(0b1000000u) == 0b1000000u);
+    ASSERT_THAT(least_bit_set(0b10000000u) == 0b10000000u);
+    ASSERT_THAT(least_bit_set(int8_t(0b0)) == int8_t(0b0));
+    ASSERT_THAT(least_bit_set(int8_t(0b1)) == int8_t(0b1));
+    ASSERT_THAT(least_bit_set(int8_t(0b10)) == int8_t(0b10));
+    ASSERT_THAT(least_bit_set(int8_t(0b100)) == int8_t(0b100));
+    ASSERT_THAT(least_bit_set(int8_t(0b1000)) == int8_t(0b1000));
+    ASSERT_THAT(least_bit_set(int8_t(0b10000)) == int8_t(0b10000));
+    ASSERT_THAT(least_bit_set(int8_t(0b100000)) == int8_t(0b100000));
+    ASSERT_THAT(least_bit_set(int8_t(0b1000000)) == int8_t(0b1000000));
+    ASSERT_THAT(least_bit_set(int8_t(0b10000000)) == int8_t(0b10000000));
+    ASSERT_THAT(least_bit_set(uint8_t(0b0)) == uint8_t(0b0));
+    ASSERT_THAT(least_bit_set(uint8_t(0b1)) == uint8_t(0b1));
+    ASSERT_THAT(least_bit_set(uint8_t(0b10)) == uint8_t(0b10));
+    ASSERT_THAT(least_bit_set(uint8_t(0b100)) == uint8_t(0b100));
+    ASSERT_THAT(least_bit_set(uint8_t(0b1000)) == uint8_t(0b1000));
+    ASSERT_THAT(least_bit_set(uint8_t(0b10000)) == uint8_t(0b10000));
+    ASSERT_THAT(least_bit_set(uint8_t(0b100000)) == uint8_t(0b100000));
+    ASSERT_THAT(least_bit_set(uint8_t(0b1000000)) == uint8_t(0b1000000));
+    ASSERT_THAT(least_bit_set(uint8_t(0b10000000)) == uint8_t(0b10000000));
+    ASSERT_THAT(least_bit_set(0b100000000) == 0b100000000);
+    ASSERT_THAT(least_bit_set(0b1000000000) == 0b1000000000);
+    ASSERT_THAT(least_bit_set(0b10000000000) == 0b10000000000);
+    ASSERT_THAT(least_bit_set(0b100000000u) == 0b100000000u);
+    ASSERT_THAT(least_bit_set(0b1000000000u) == 0b1000000000u);
+    ASSERT_THAT(least_bit_set(0b10000000000u) == 0b10000000000u);
+    ASSERT_THAT(
+        least_bit_set(0b1000000000000000000000000000000000000000000000000000000000000000ull) ==
+        0b1000000000000000000000000000000000000000000000000000000000000000ull);
+    ASSERT_THAT(least_bit_set(0b110101010101010101011001) == 0b1);
+    ASSERT_THAT(least_bit_set(0b1010101011001101011100010100000ll) == 0b100000ll);
+    ASSERT_THAT(least_bit_set(0b1010111001010101101010110101001101011100110011000ll) == 0b1000ll);
+    ASSERT_THAT(least_bit_set(0b110101010101010101011001u) == 0b1u);
+    ASSERT_THAT(least_bit_set(0b1010101011001101011100010100000llu) == 0b100000llu);
+    ASSERT_THAT(least_bit_set(0b1010111001010101101010110101001101011100110011000llu) == 0b1000llu);
+
+    ASSERT_THAT(log2_floor(uint32_t(0)) == uint32_t(-1));
+    ASSERT_THAT(log2_floor(uint32_t(1)) == 0);
+    ASSERT_THAT(log2_floor(uint32_t(2)) == 1);
+    ASSERT_THAT(log2_floor(uint32_t(4)) == 2);
+    ASSERT_THAT(log2_floor(uint32_t(8)) == 3);
+    ASSERT_THAT(log2_floor(uint32_t(9)) == 3);
+    ASSERT_THAT(log2_floor(uint32_t(10)) == 3);
+    ASSERT_THAT(log2_floor(uint32_t(15)) == 3);
+    ASSERT_THAT(log2_floor(uint32_t(16)) == 4);
+    ASSERT_THAT(log2_floor(uint32_t(99)) == 6);
+    ASSERT_THAT(log2_floor(uint32_t(100)) == 6);
+    ASSERT_THAT(log2_floor(uint32_t(127)) == 6);
+    ASSERT_THAT(log2_floor(uint32_t(128)) == 7);
+    ASSERT_THAT(log2_floor(uint32_t(129)) == 7);
+    ASSERT_THAT(log2_floor(uint32_t(-1)) == 31);
+
+    ASSERT_THAT(log2_ceil(uint32_t(0)) == uint32_t(-1));
+    ASSERT_THAT(log2_ceil(uint32_t(1)) == 0);
+    ASSERT_THAT(log2_ceil(uint32_t(2)) == 1);
+    ASSERT_THAT(log2_ceil(uint32_t(4)) == 2);
+    ASSERT_THAT(log2_ceil(uint32_t(8)) == 3);
+    ASSERT_THAT(log2_ceil(uint32_t(9)) == 4);
+    ASSERT_THAT(log2_ceil(uint32_t(10)) == 4);
+    ASSERT_THAT(log2_ceil(uint32_t(15)) == 4);
+    ASSERT_THAT(log2_ceil(uint32_t(16)) == 4);
+    ASSERT_THAT(log2_ceil(uint32_t(99)) == 7);
+    ASSERT_THAT(log2_ceil(uint32_t(100)) == 7);
+    ASSERT_THAT(log2_ceil(uint32_t(127)) == 7);
+    ASSERT_THAT(log2_ceil(uint32_t(128)) == 7);
+    ASSERT_THAT(log2_ceil(uint32_t(129)) == 8);
+    ASSERT_THAT(log2_ceil(uint32_t(-1)) == 32);
+
+    LOG10_ASSERT_THAT(log10_floor(uint32_t(0)) == uint32_t(-1));
+    LOG10_ASSERT_THAT(log10_floor(uint32_t(1)) == 0);
+    LOG10_ASSERT_THAT(log10_floor(uint32_t(9)) == 0);
+    LOG10_ASSERT_THAT(log10_floor(uint32_t(10)) == 1);
+    LOG10_ASSERT_THAT(log10_floor(uint32_t(11)) == 1);
+    LOG10_ASSERT_THAT(log10_floor(uint32_t(99)) == 1);
+    LOG10_ASSERT_THAT(log10_floor(uint32_t(100)) == 2);
+    LOG10_ASSERT_THAT(log10_floor(uint32_t(101)) == 2);
+    LOG10_ASSERT_THAT(log10_floor(uint32_t(1000000000)) == 9);
+    LOG10_ASSERT_THAT(log10_floor(uint32_t(2000000000)) == 9);
+    LOG10_ASSERT_THAT(log10_floor(uint32_t(4294967294u)) == 9);
+    LOG10_ASSERT_THAT(log10_floor(uint32_t(1e8)) == 8);
+    LOG10_ASSERT_THAT(log10_floor(uint32_t(1e9)) == 9);
+    LOG10_ASSERT_THAT(log10_floor(uint32_t(-1)) == 9);
+
+    LOG10_ASSERT_THAT(log10_floor(uint64_t(0)) == uint32_t(-1));
+    LOG10_ASSERT_THAT(log10_floor(uint64_t(1)) == 0);
+    LOG10_ASSERT_THAT(log10_floor(uint64_t(9)) == 0);
+    LOG10_ASSERT_THAT(log10_floor(uint64_t(10)) == 1);
+    LOG10_ASSERT_THAT(log10_floor(uint64_t(11)) == 1);
+    LOG10_ASSERT_THAT(log10_floor(uint64_t(99)) == 1);
+    LOG10_ASSERT_THAT(log10_floor(uint64_t(100)) == 2);
+    LOG10_ASSERT_THAT(log10_floor(uint64_t(101)) == 2);
+    LOG10_ASSERT_THAT(log10_floor(uint64_t(1e8)) == 8);
+    LOG10_ASSERT_THAT(log10_floor(uint64_t(1e9)) == 9);
+    LOG10_ASSERT_THAT(log10_floor(uint64_t(1e18)) == 18);
+    LOG10_ASSERT_THAT(log10_floor(uint64_t(1e19)) == 19);
+    LOG10_ASSERT_THAT(log10_floor(uint64_t(-1)) == 19);
+
+    LOG10_ASSERT_THAT(base_10_len(uint32_t(0)) == 1);
+    LOG10_ASSERT_THAT(base_10_len(uint32_t(1)) == 1);
+    LOG10_ASSERT_THAT(base_10_len(uint32_t(9)) == 1);
+    LOG10_ASSERT_THAT(base_10_len(uint32_t(10)) == 2);
+    LOG10_ASSERT_THAT(base_10_len(uint32_t(11)) == 2);
+    LOG10_ASSERT_THAT(base_10_len(uint32_t(99)) == 2);
+    LOG10_ASSERT_THAT(base_10_len(uint32_t(100)) == 3);
+    LOG10_ASSERT_THAT(base_10_len(uint32_t(101)) == 3);
+    LOG10_ASSERT_THAT(base_10_len(uint32_t(1000000000)) == 10);
+    LOG10_ASSERT_THAT(base_10_len(uint32_t(2000000000)) == 10);
+    LOG10_ASSERT_THAT(base_10_len(uint32_t(4294967294u)) == 10);
+    LOG10_ASSERT_THAT(base_10_len(uint32_t(1e8)) == 9);
+    LOG10_ASSERT_THAT(base_10_len(uint32_t(1e9)) == 10);
+    LOG10_ASSERT_THAT(base_10_len(uint32_t(-1)) == 10);
+
+    LOG10_ASSERT_THAT(base_10_len(uint64_t(0)) == 1);
+    LOG10_ASSERT_THAT(base_10_len(uint64_t(1)) == 1);
+    LOG10_ASSERT_THAT(base_10_len(uint64_t(9)) == 1);
+    LOG10_ASSERT_THAT(base_10_len(uint64_t(10)) == 2);
+    LOG10_ASSERT_THAT(base_10_len(uint64_t(11)) == 2);
+    LOG10_ASSERT_THAT(base_10_len(uint64_t(99)) == 2);
+    LOG10_ASSERT_THAT(base_10_len(uint64_t(100)) == 3);
+    LOG10_ASSERT_THAT(base_10_len(uint64_t(101)) == 3);
+    LOG10_ASSERT_THAT(base_10_len(uint64_t(1000000000)) == 10);
+    LOG10_ASSERT_THAT(base_10_len(uint64_t(2000000000)) == 10);
+    LOG10_ASSERT_THAT(base_10_len(uint64_t(4294967294u)) == 10);
+    LOG10_ASSERT_THAT(base_10_len(uint64_t(1e8)) == 9);
+    LOG10_ASSERT_THAT(base_10_len(uint64_t(1e9)) == 10);
+    LOG10_ASSERT_THAT(base_10_len(uint64_t(1e18)) == 19);
+    LOG10_ASSERT_THAT(base_10_len(uint64_t(1e19)) == 20);
+    LOG10_ASSERT_THAT(base_10_len(uint64_t(-1)) == 20);
+
+#if CONFIG_HAS_AT_LEAST_CXX_17
+
+    ASSERT_THAT(base_b_len(0ull) == 1);
+    ASSERT_THAT(base_b_len(1ull) == 1);
+    ASSERT_THAT(base_b_len(9ull) == 1);
+    ASSERT_THAT(base_b_len(10ull) == 2);
+    ASSERT_THAT(base_b_len(11ull) == 2);
+    ASSERT_THAT(base_b_len(99ull) == 2);
+    ASSERT_THAT(base_b_len(100ull) == 3);
+    ASSERT_THAT(base_b_len(101ull) == 3);
+    ASSERT_THAT(base_b_len(uint64_t(-1)) == 20);
+
+#if defined(INTEGERS_128_BIT_HPP) && HAS_I128_CONSTEXPR
+
+    ASSERT_THAT(base_b_len(uint128_t(0)) == 1);
+    ASSERT_THAT(base_b_len(uint128_t(1)) == 1);
+    ASSERT_THAT(base_b_len(uint128_t(9)) == 1);
+    ASSERT_THAT(base_b_len(uint128_t(10)) == 2);
+    ASSERT_THAT(base_b_len(uint128_t(11)) == 2);
+    ASSERT_THAT(base_b_len(uint128_t(99)) == 2);
+    ASSERT_THAT(base_b_len(uint128_t(100)) == 3);
+    ASSERT_THAT(base_b_len(uint128_t(101)) == 3);
+    ASSERT_THAT(base_b_len(uint128_t(-1)) == 39);
+
+#endif  // INTEGERS_128_BIT_HPP
+
+#endif  // CONFIG_HAS_AT_LEAST_CXX_17
+
+#if defined(HAS_I128_CONSTEXPR) && HAS_I128_CONSTEXPR
+
+    ASSERT_THAT(gcd(uint128_t(1), uint128_t(1)) == 1);
+    ASSERT_THAT(gcd(uint128_t(3), uint128_t(7)) == 1);
+    ASSERT_THAT(gcd(uint128_t(0), uint128_t(112378432)) == 112378432);
+    ASSERT_THAT(gcd(uint128_t(112378432), uint128_t(0)) == 112378432);
+    ASSERT_THAT(gcd(uint128_t(429384832), uint128_t(324884)) == 4);
+    ASSERT_THAT(gcd(uint128_t(18446744073709551521ull), uint128_t(18446744073709551533ull)) == 1);
+    ASSERT_THAT(gcd(uint128_t(18446744073709551521ull) * 18446744073709551521ull,
+                    uint128_t(18446744073709551521ull)) == 18446744073709551521ull);
+    ASSERT_THAT(gcd(uint128_t(23999993441ull) * 23999993377ull,
+                    uint128_t(23999992931ull) * 23999539633ull) == 1);
+    ASSERT_THAT(gcd(uint128_t(2146514599u) * 2146514603u * 2146514611u,
+                    uint128_t(2146514611u) * 2146514621u * 2146514647u) == 2146514611ull);
+    ASSERT_THAT(gcd(uint128_t(2146514599u) * 2146514603u * 2146514611u * 2,
+                    uint128_t(2146514599u) * 2146514603u * 2146514611u * 3) ==
+                uint128_t(2146514599u) * 2146514603u * 2146514611u);
+    ASSERT_THAT(gcd(uint128_t(100000000000000003ull) * 1000000000000000003ull,
+                    uint128_t(1000000000000000003ull) * 1000000000000000009ull) ==
+                1000000000000000003ull);
+    ASSERT_THAT(gcd(uint128_t(3 * 2 * 5 * 7 * 11 * 13 * 17 * 19),
+                    uint128_t(18446744073709551557ull) * 3) == 3);
+    ASSERT_THAT(gcd(uint128_t(1000000000000000009ull),
+                    uint128_t(1000000000000000009ull) * 1000000000000000009ull) ==
+                1000000000000000009ull);
+    ASSERT_THAT(gcd(uint128_t(0), uint128_t(1000000000000000009ull) * 1000000000000000009ull) ==
+                uint128_t(1000000000000000009ull) * 1000000000000000009ull);
+    ASSERT_THAT(gcd(uint128_t(18446744073709551557ull), uint128_t(0)) == 18446744073709551557ull);
+
+    ASSERT_THAT(gcd(uint64_t(2), int128_t(4)) == 2);
+    ASSERT_THAT(gcd(uint64_t(2), int128_t(-4)) == 2);
+    ASSERT_THAT(gcd(uint64_t(3), int128_t(7)) == 1);
+    ASSERT_THAT(gcd(uint64_t(3), int128_t(-7)) == 1);
+    ASSERT_THAT(gcd(uint64_t(3), int128_t(18446744073709551557ull) * 3) == 3);
+    ASSERT_THAT(gcd(uint64_t(3), int128_t(18446744073709551557ull) * (-3)) == 3);
+    ASSERT_THAT(gcd(uint64_t(3) * 2 * 5 * 7 * 11 * 13 * 17 * 19,
+                    int128_t(18446744073709551557ull) * 3) == 3);
+    ASSERT_THAT(gcd(uint64_t(1000000000000000009ull),
+                    int128_t(1000000000000000009ll) * 1000000000000000009ll) ==
+                1000000000000000009ull);
+    ASSERT_THAT(gcd(uint64_t(0), int128_t(1000000000000000009ll) * 1000000000000000009ll) ==
+                uint128_t(1000000000000000009ll) * 1000000000000000009ull);
+    ASSERT_THAT(gcd(uint64_t(18446744073709551557ull), int128_t(0)) == 18446744073709551557ull);
+
+    ASSERT_THAT(math_functions::popcount(0u) == 0);
+    ASSERT_THAT(math_functions::popcount(1u << 1) == 1);
+    ASSERT_THAT(math_functions::popcount(1u << 2) == 1);
+    ASSERT_THAT(math_functions::popcount(1u << 3) == 1);
+    ASSERT_THAT(math_functions::popcount(1u << 4) == 1);
+    ASSERT_THAT(math_functions::popcount(1u << 5) == 1);
+    ASSERT_THAT(math_functions::popcount(1u << 6) == 1);
+    ASSERT_THAT(math_functions::popcount(1u << 7) == 1);
+    ASSERT_THAT(math_functions::popcount(1u << 8) == 1);
+    ASSERT_THAT(math_functions::popcount(1u << 9) == 1);
+    ASSERT_THAT(math_functions::popcount(1u << 10) == 1);
+    ASSERT_THAT(math_functions::popcount(1u << 12) == 1);
+    ASSERT_THAT(math_functions::popcount(1u << 13) == 1);
+    ASSERT_THAT(math_functions::popcount(1u << 14) == 1);
+    ASSERT_THAT(math_functions::popcount(1u << 30) == 1);
+    ASSERT_THAT(math_functions::popcount(1u << 31) == 1);
+
+    ASSERT_THAT(math_functions::popcount(0ul) == 0);
+    ASSERT_THAT(math_functions::popcount(1ul << 1) == 1);
+    ASSERT_THAT(math_functions::popcount(1ul << 2) == 1);
+    ASSERT_THAT(math_functions::popcount(1ul << 3) == 1);
+    ASSERT_THAT(math_functions::popcount(1ul << 4) == 1);
+    ASSERT_THAT(math_functions::popcount(1ul << 5) == 1);
+    ASSERT_THAT(math_functions::popcount(1ul << 6) == 1);
+    ASSERT_THAT(math_functions::popcount(1ul << 7) == 1);
+    ASSERT_THAT(math_functions::popcount(1ul << 8) == 1);
+    ASSERT_THAT(math_functions::popcount(1ul << 9) == 1);
+    ASSERT_THAT(math_functions::popcount(1ul << 10) == 1);
+    ASSERT_THAT(math_functions::popcount(1ul << 12) == 1);
+    ASSERT_THAT(math_functions::popcount(1ul << 13) == 1);
+    ASSERT_THAT(math_functions::popcount(1ul << 14) == 1);
+    ASSERT_THAT(math_functions::popcount(1ul << 30) == 1);
+    ASSERT_THAT(math_functions::popcount(1ul << 31) == 1);
+
+    ASSERT_THAT(math_functions::popcount(0ull) == 0);
+    ASSERT_THAT(math_functions::popcount(1ull << 1) == 1);
+    ASSERT_THAT(math_functions::popcount(1ull << 2) == 1);
+    ASSERT_THAT(math_functions::popcount(1ull << 3) == 1);
+    ASSERT_THAT(math_functions::popcount(1ull << 4) == 1);
+    ASSERT_THAT(math_functions::popcount(1ull << 5) == 1);
+    ASSERT_THAT(math_functions::popcount(1ull << 6) == 1);
+    ASSERT_THAT(math_functions::popcount(1ull << 7) == 1);
+    ASSERT_THAT(math_functions::popcount(1ull << 8) == 1);
+    ASSERT_THAT(math_functions::popcount(1ull << 9) == 1);
+    ASSERT_THAT(math_functions::popcount(1ull << 10) == 1);
+    ASSERT_THAT(math_functions::popcount(1ull << 12) == 1);
+    ASSERT_THAT(math_functions::popcount(1ull << 13) == 1);
+    ASSERT_THAT(math_functions::popcount(1ull << 14) == 1);
+    ASSERT_THAT(math_functions::popcount(1ull << 30) == 1);
+    ASSERT_THAT(math_functions::popcount(1ull << 31) == 1);
+    ASSERT_THAT(math_functions::popcount(1ull << 62) == 1);
+    ASSERT_THAT(math_functions::popcount(1ull << 63) == 1);
+
+    ASSERT_THAT(!bool_median(false, false, false));
+    ASSERT_THAT(!bool_median(false, false, true));
+    ASSERT_THAT(!bool_median(false, true, false));
+    ASSERT_THAT(bool_median(false, true, true));
+    ASSERT_THAT(!bool_median(true, false, false));
+    ASSERT_THAT(bool_median(true, false, true));
+    ASSERT_THAT(bool_median(true, true, false));
+    ASSERT_THAT(bool_median(false, true, true));
+
+#endif  // defined(HAS_I128_CONSTEXPR) && HAS_I128_CONSTEXPR
+}
+
 int main() {
     test_isqrt();
     test_icbrt();
@@ -1681,4 +1501,5 @@ int main() {
     assert(multi_thread_test_extended_euclid_algorithm<std::uint32_t>());
     assert(multi_thread_test_extended_euclid_algorithm<std::int64_t>());
     assert(test_solve_congruence_all_roots());
+    test_static_asserts_conditions_in_runtime();
 }

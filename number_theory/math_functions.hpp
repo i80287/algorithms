@@ -18,7 +18,6 @@
 
 #include <algorithm>
 #include <bitset>
-#include <cfenv>
 #include <climits>
 #include <cmath>
 #include <cstddef>
@@ -908,7 +907,7 @@ template <typename T>
 #endif
 ATTRIBUTE_CONST constexpr int32_t countr_zero(T n) noexcept {
     if (unlikely(n == 0)) {
-        return sizeof(n) * 8;
+        return sizeof(n) * CHAR_BIT;
     }
 
 #if defined(INTEGERS_128_BIT_HPP)
@@ -979,7 +978,7 @@ template <typename T>
 #endif
 ATTRIBUTE_CONST constexpr int32_t countl_zero(T n) noexcept {
     if (unlikely(n == 0)) {
-        return sizeof(n) * 8;
+        return sizeof(n) * CHAR_BIT;
     }
 
 #if defined(INTEGERS_128_BIT_HPP)
@@ -1662,13 +1661,14 @@ inline auto prime_factors_as_map(NumericType n) {
 template <class NumericType>
 #if CONFIG_HAS_AT_LEAST_CXX_20
     requires(sizeof(NumericType) >= sizeof(int)) &&
-            (std::is_integral_v<NumericType>
 #ifdef INTEGERS_128_BIT_HPP
-             || type_traits_helper_int128_t::is_integral_v<NumericType>
+            type_traits_helper_int128_t::is_integral_v<NumericType>
+#else
+            std::is_integral_v<NumericType>
 #endif
-             )
 #endif
-inline void prime_divisors_to_map(NumericType n, std::map<NumericType, uint32_t>& divisors) {
+            inline
+void prime_divisors_to_map(NumericType n, std::map<NumericType, uint32_t>& divisors) {
     if (n % 2 == 0 && n > 0) {
         // n = s * 2^pow_of_2, where s is odd
         using UnsignedNumericType =
@@ -1768,16 +1768,21 @@ private:
 
 /// @brief Find all prime numbers in [2; n]
 /// @param n inclusive upper bound
-/// @return vector bvec, for which bvec[n] == true \iff n is prime
+/// @return vector, such that vector[n] == true \iff n is prime
 [[nodiscard]] CONSTEXPR_VECTOR inline auto dynamic_primes_sieve(uint32_t n) {
     std::vector<std::uint8_t> primes(std::size_t(n) + 1, true);
     primes[0] = false;
     if (likely(n > 0)) {
         primes[1]           = false;
         const uint32_t root = math_functions::isqrt(n);
-        for (uint32_t i = 2; i <= root; ++i) {
+        if (const uint32_t i = 2; i <= root) {
+            for (std::size_t j = i * i; j <= n; j += i) {
+                primes[j] = false;
+            }
+        }
+        for (uint32_t i = 3; i <= root; i += 2) {
             if (primes[i]) {
-                for (uint32_t j = uint32_t(i) * uint32_t(i); j <= n; j += i) {
+                for (std::size_t j = i * i; j <= n; j += i) {
                     primes[j] = false;
                 }
             }
@@ -1808,28 +1813,34 @@ private:
 
 /// @brief Find all prime numbers in [2; N]
 /// @tparam N exclusive upper bound
-/// @return bitset, for which bset[n] == true \iff n is prime
+/// @return bitset, such that bitset[n] == true \iff n is prime
 template <uint32_t N>
 [[nodiscard]] CONSTEXPR_FIXED_PRIMES_SIEVE inline const auto& fixed_primes_sieve() noexcept {
-    constexpr auto kSize                                    = std::size_t(N) + 1;
-    static CONSTEXPR_PRIMES_SIEVE std::bitset<kSize> primes = []() CONSTEXPR_BITSET_OPS noexcept {
-        std::bitset<kSize> primes_bs{};
-        primes_bs.set();
-        primes_bs[0] = false;
-        if constexpr (kSize > 1) {
-            primes_bs[1]        = false;
-            const uint32_t root = math_functions::isqrt(N);
-            for (uint32_t i = 2; i <= root; i++) {
-                if (primes_bs[i]) {
+    constexpr auto kSize = std::size_t(N) + 1;
+    static CONSTEXPR_PRIMES_SIEVE std::bitset<kSize> primes_bs =
+        []() CONSTEXPR_BITSET_OPS noexcept {
+            std::bitset<kSize> primes{};
+            primes.set();
+            primes[0] = false;
+            if constexpr (kSize > 1) {
+                primes[1]           = false;
+                const uint32_t root = math_functions::isqrt(N);
+                if (const uint32_t i = 2; i <= root) {
                     for (std::size_t j = i * i; j <= N; j += i) {
-                        primes_bs[j] = false;
+                        primes[j] = false;
+                    }
+                }
+                for (uint32_t i = 3; i <= root; i += 2) {
+                    if (primes[i]) {
+                        for (std::size_t j = i * i; j <= N; j += i) {
+                            primes[j] = false;
+                        }
                     }
                 }
             }
-        }
-        return primes_bs;
-    }();
-    return primes;
+            return primes;
+        }();
+    return primes_bs;
 }
 
 #undef CONSTEXPR_PRIMES_SIEVE
@@ -1909,31 +1920,38 @@ struct HelperRetType {
     std::uint32_t m_                  = 0;            // m / d
 };
 
-ATTRIBUTE_CONST ATTRIBUTE_ALWAYS_INLINE constexpr HelperRetType congruence_helper(
-    std::uint64_t a, std::int64_t c, std::uint32_t m) noexcept {
-    const std::uint32_t d = static_cast<std::uint32_t>(std::gcd(a, m));
+ATTRIBUTE_CONST constexpr HelperRetType congruence_helper(const std::uint64_t a,
+                                                          const std::int64_t c,
+                                                          const std::uint32_t m) noexcept {
+    const auto d = static_cast<std::uint32_t>(std::gcd(a, m));
     if (m == 0 || c % static_cast<int64_t>(d) != 0) {
         return {};
     }
 
+    ATTRIBUTE_ASSUME(d > 0);
+    ATTRIBUTE_ASSUME(a % d == 0);
+    ATTRIBUTE_ASSUME(m % d == 0);
+
     /*
      * Solves a_ * x === c_ (mod m_) as gcd(a_, m_) == 1
      */
+    const auto c_          = c / static_cast<int64_t>(d);
     const std::uint64_t a_ = a / d;
+    ATTRIBUTE_ASSUME(a_ > 0);
     const std::uint32_t m_ = m / d;
+    ATTRIBUTE_ASSUME(m_ > 0);
     // a_ * u_ + m_ * v_ == 1
-    const std::int64_t u_           = extended_euclid_algorithm<std::uint64_t>(a_, m_).u_value;
-    const std::uint64_t unsigned_u_ = std::uint64_t(u_ + (m_ * (u_ < 0)));
+    const std::int64_t u_  = extended_euclid_algorithm<std::uint64_t>(a_, m_).u_value;
+    const auto unsigned_u_ = static_cast<std::uint64_t>(u_ + (m_ * (u_ < 0)));
 
     // a_ * (u_ * c_) + m_ * (v_ * c_) == c_
     // a * (u_ * c_) + m * (v_ * c_) == c
-    const std::int64_t c_           = c / std::int64_t(d);
-    const std::int64_t signed_m_    = std::int64_t(m_);
-    const std::uint64_t unsigned_c_ = std::uint64_t((c_ % signed_m_) + signed_m_) % m_;
+    const auto signed_m_   = static_cast<std::int64_t>(m_);
+    const auto unsigned_c_ = static_cast<std::uint64_t>((c_ % signed_m_) + signed_m_) % m_;
     // x0 = u_ * c_
     // now 0 <= unsigned_u_ < m_ && 0 <= unsigned_c_ < m_ =>
-    // => unsigned_u_ * unsigned_c_ wont cause overflow (since m_ <= m < 2^32)
-    const std::uint32_t x0 = std::uint32_t((unsigned_u_ * unsigned_c_) % m_);
+    // => unsigned_u_ * unsigned_c_ won't cause overflow (since m_ <= m < 2^32)
+    const auto x0 = static_cast<std::uint32_t>((unsigned_u_ * unsigned_c_) % m_);
     ATTRIBUTE_ASSUME(x0 != HelperRetType::kNoSolution);
 
     return {x0, d, m_};
@@ -1992,6 +2010,9 @@ ATTRIBUTE_CONST constexpr std::uint32_t solve_congruence(std::uint64_t a, std::i
 ATTRIBUTE_CONST constexpr std::uint64_t solve_binary_congruence(std::uint32_t k,
                                                                 const std::uint32_t c,
                                                                 const std::uint32_t m) noexcept {
+    ATTRIBUTE_ASSUME(m % 2 == 1);
+    ATTRIBUTE_ASSUME(m % 4 == 1 || m % 4 == 3);
+
     /**
      * The algorithm can be modified by checking:
      * if c % 4 = 1, then if m % 4 = 3, c += m, else c -= m
