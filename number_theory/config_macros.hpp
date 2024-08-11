@@ -8,6 +8,41 @@
 #define CONFIG_GNUC_PREREQ(maj, min) 0
 #endif
 
+#if (defined(__GNUC__) || defined(__GNUG__) || defined(__clang__)) && \
+    (defined(__has_attribute) &&                                      \
+     (!defined(__clang_major__) || 3 < __clang_major__ + (5 <= __clang_minor__)))
+/* Test for __has_attribute as per __glibc_has_attribute in glibc */
+#define CONFIG_HAS_GCC_ATTRIBUTE(attr) __has_attribute(attr)
+#else
+#define CONFIG_HAS_GCC_ATTRIBUTE(attr) 0
+#endif
+
+#ifdef __has_cpp_attribute
+#define CONFIG_HAS_CPP_ATTRIBUTE(attr) __has_cpp_attribute(attr)
+#else
+#define CONFIG_HAS_CPP_ATTRIBUTE(attr) 0
+#endif
+
+#if defined(__has_builtin)
+#define CONFIG_HAS_BUILTIN(name) __has_builtin(name)
+#else
+#define CONFIG_HAS_BUILTIN(name) 0
+#endif
+
+#if defined(__has_include)
+#define CONFIG_HAS_INCLUDE(include_string) __has_include(include_string)
+#else
+#define CONFIG_HAS_INCLUDE(include_string) 0
+#endif
+
+#if CONFIG_HAS_INCLUDE(<version>)
+#include <version>
+#elif CONFIG_HAS_INCLUDE(<ciso646>)
+#include <ciso646>
+#elif CONFIG_HAS_INCLUDE(<iso646.h>)
+#include <iso646.h>
+#endif
+
 // https://en.cppreference.com/w/cpp/feature_test
 #if defined(__cplusplus) && __cplusplus >= 201703L
 #define CONFIG_HAS_AT_LEAST_CXX_17 1
@@ -34,41 +69,6 @@
 #define CONFIG_HAS_CONCEPTS 0
 #endif
 
-#if defined(__has_include)
-#define CONFIG_HAS_INCLUDE(include_string) __has_include(include_string)
-#else
-#define CONFIG_HAS_INCLUDE(include_string) 0
-#endif
-
-#if (defined(__GNUC__) || defined(__GNUG__) || defined(__clang__)) && \
-    (defined(__has_attribute) &&                                      \
-     (!defined(__clang_major__) || 3 < __clang_major__ + (5 <= __clang_minor__)))
-/* Test for __has_attribute as per __glibc_has_attribute in glibc */
-#define CONFIG_HAS_GCC_ATTRIBUTE(attr) __has_attribute(attr)
-#else
-#define CONFIG_HAS_GCC_ATTRIBUTE(attr) 0
-#endif
-
-#ifdef __has_cpp_attribute
-#define CONFIG_HAS_CPP_ATTRIBUTE(attr) __has_cpp_attribute(attr)
-#else
-#define CONFIG_HAS_CPP_ATTRIBUTE(attr) 0
-#endif
-
-#if defined(__has_builtin)
-#define CONFIG_HAS_BUILTIN(name) __has_builtin(name)
-#else
-#define CONFIG_HAS_BUILTIN(name) 0
-#endif
-
-#if CONFIG_HAS_INCLUDE(<version>)
-#include <version>
-#elif CONFIG_HAS_INCLUDE(<ciso646>)
-#include <ciso646>
-#elif CONFIG_HAS_INCLUDE(<iso646.h>)
-#include <iso646.h>
-#endif
-
 /**
  * Restrict qualifier for the C++ (C has `restrict` keyword since C99)
  */
@@ -88,9 +88,31 @@
 #define FUNCTION_MACRO __func__
 #endif
 
+#if CONFIG_HAS_INCLUDE(<utility>)
+#include <utility>
+#endif
+
+#if defined(__cpp_lib_unreachable) && __cpp_lib_unreachable >= 202202L
+#define CONFIG_UNREACHABLE() std::unreachable()
+#elif CONFIG_HAS_AT_LEAST_CXX_23 && CONFIG_HAS_CPP_ATTRIBUTE(assume)
+#define CONFIG_UNREACHABLE() [[assume(false)]]
+#elif CONFIG_HAS_BUILTIN(__builtin_unreachable)
+#define CONFIG_UNREACHABLE() __builtin_unreachable()
+#elif CONFIG_HAS_BUILTIN(__builtin_assume)
+#define CONFIG_UNREACHABLE() __builtin_assume(false)
+#elif CONFIG_GNUC_PREREQ(13, 0) && CONFIG_HAS_GCC_ATTRIBUTE(assume)
+#define CONFIG_UNREACHABLE() __attribute__((assume(false)))
+#elif defined(_MSC_VER)
+#define CONFIG_UNREACHABLE() __assume(false)
+#else
+#define CONFIG_UNREACHABLE() \
+    do {                     \
+    } while (false)
+#endif
+
 #if CONFIG_HAS_AT_LEAST_CXX_23 && CONFIG_HAS_CPP_ATTRIBUTE(assume)
 #define ATTRIBUTE_ASSUME(expr) [[assume(expr)]]
-#elif CONFIG_GNUC_PREREQ(13, 0) && !defined(__clang__)
+#elif CONFIG_GNUC_PREREQ(13, 0) && CONFIG_HAS_GCC_ATTRIBUTE(assume)
 #define ATTRIBUTE_ASSUME(expr) __attribute__((assume(expr)))
 #elif defined(__clang__) && CONFIG_HAS_BUILTIN(__builtin_assume)
 // Side effect of expr is discarded
@@ -98,7 +120,12 @@
 #elif defined(_MSC_VER)
 #define ATTRIBUTE_ASSUME(expr) __assume(expr)
 #else
-#define ATTRIBUTE_ASSUME(expr)
+#define ATTRIBUTE_ASSUME(expr)    \
+    do {                          \
+        if (!(expr)) {            \
+            CONFIG_UNREACHABLE(); \
+        }                         \
+    } while (false)
 #endif
 
 /* __builtin_expect is in gcc 3.0 */
@@ -167,7 +194,7 @@
 #elif CONFIG_HAS_AT_LEAST_CXX_17 && defined(__clang__)
 #define ATTRIBUTE_NOINLINE [[clang::noinline]]
 #elif CONFIG_HAS_AT_LEAST_CXX_17 && defined(__GNUG__)
-#define ATTRIBUTE_NOINLINE [[clang::noinline]]
+#define ATTRIBUTE_NOINLINE [[gnu::noinline]]
 #elif CONFIG_HAS_AT_LEAST_CXX_17 && defined(_MSC_VER)
 #define ATTRIBUTE_NOINLINE [[msvc::noinline]]
 #else
@@ -176,6 +203,10 @@
 
 #if CONFIG_GNUC_PREREQ(3, 2) || CONFIG_HAS_GCC_ATTRIBUTE(__always_inline__)
 #define ATTRIBUTE_ALWAYS_INLINE __attribute__((__always_inline__))
+#elif CONFIG_HAS_AT_LEAST_CXX_17 && defined(__clang__)
+#define ATTRIBUTE_ALWAYS_INLINE [[clang::always_inline]]
+#elif CONFIG_HAS_AT_LEAST_CXX_17 && defined(__GNUG__)
+#define ATTRIBUTE_ALWAYS_INLINE [[gnu::always_inline]]
 #elif defined(_MSC_VER)
 #define ATTRIBUTE_ALWAYS_INLINE [[msvc::forceinline]]
 #else
@@ -184,16 +215,32 @@
 
 #if CONFIG_GNUC_PREREQ(4, 3) || CONFIG_HAS_GCC_ATTRIBUTE(__cold__)
 #define ATTRIBUTE_COLD __attribute__((__cold__))
+#elif CONFIG_HAS_AT_LEAST_CXX_17 && (defined(__GNUG__) || defined(__clang__))
+#define ATTRIBUTE_COLD [[gnu::cold]]
 #else
 #define ATTRIBUTE_COLD
 #endif
 
-#if CONFIG_GNUC_PREREQ(4, 2) && CONFIG_HAS_GCC_ATTRIBUTE(hot)
+#if CONFIG_GNUC_PREREQ(4, 3) && CONFIG_HAS_GCC_ATTRIBUTE(hot)
 #define ATTRIBUTE_HOT __attribute__((hot))
 #elif CONFIG_HAS_AT_LEAST_CXX_17 && (defined(__GNUG__) || defined(__clang__))
 #define ATTRIBUTE_HOT [[gnu::hot]]
 #else
 #define ATTRIBUTE_HOT
+#endif
+
+/**
+ * From glibc:
+ * Tell the compiler which arguments to an allocation function
+ *  indicate the size of the allocation.
+ * Clang docs: https://clang.llvm.org/docs/AttributeReference.html#alloc-size
+ */
+#if CONFIG_GNUC_PREREQ(4, 3) || CONFIG_HAS_GCC_ATTRIBUTE(__alloc_size__)
+#define ATTRIBUTE_ALLOC_SIZE(params) __attribute__((__alloc_size__(params)))
+#elif CONFIG_HAS_AT_LEAST_CXX_17 && (defined(__GNUG__) || defined(__clang__))
+#define ATTRIBUTE_ALLOC_SIZE [[gnu::alloc_size]]
+#else
+#define ATTRIBUTE_ALLOC_SIZE(params)
 #endif
 
 /**
@@ -247,19 +294,7 @@
 #define ATTRIBUTE_REINITIALIZES
 #endif
 
-#if defined(__cpp_lib_unreachable) && __cpp_lib_unreachable >= 202202L
-#define CONFIG_UNREACHABLE() std::unreachable()
-#elif CONFIG_HAS_BUILTIN(__builtin_unreachable)
-#define CONFIG_UNREACHABLE() __builtin_unreachable()
-#elif CONFIG_HAS_BUILTIN(__builtin_assume)
-#define CONFIG_UNREACHABLE() __builtin_assume(false)
-#elif CONFIG_GNUC_PREREQ(13, 0) && CONFIG_HAS_GCC_ATTRIBUTE(assume)
-#define CONFIG_UNREACHABLE() __attribute__((assume(false)))
-#elif CONFIG_HAS_AT_LEAST_CXX_23 && CONFIG_HAS_CPP_ATTRIBUTE(assume)
-#define CONFIG_UNREACHABLE() [[assume(false)]]
-#else
-#define CONFIG_UNREACHABLE()
-#endif
+// Copypasted from LLVM's int_endianness.h
 
 /* ===-- int_endianness.h - configuration header for compiler-rt ------------===
  *
@@ -386,7 +421,9 @@ ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_CONST constexpr bool config_is_constant_evalua
 #endif
 }
 
+#if CONFIG_HAS_INCLUDE(<utility>)
 #include <utility>
+#endif
 
 template <class T>
 ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_CONST constexpr bool config_is_gcc_constant_p(
