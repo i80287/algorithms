@@ -387,22 +387,26 @@ template <class IntType>
                   "");
     log_tests_started();
 
-    constexpr std::size_t Limit          = 1ull << 30;
+    constexpr std::size_t kTotalTests          = 1ull << 30;
     constexpr std::size_t kTotalThreads  = 4;
-    constexpr std::size_t TestsPerThread = Limit / kTotalThreads;
+    constexpr std::size_t kTestsPerThread = kTotalTests / kTotalThreads;
 
     std::vector<std::thread> threads;
     threads.reserve(kTotalThreads);
     std::atomic_flag result = ATOMIC_FLAG_INIT;
     for (size_t i = 0; i < kTotalThreads; ++i) {
-        threads.emplace_back([thread_id = i, &result]() noexcept {
+        threads.emplace_back([thread_id = i, &result
+#if defined(_MSC_VER)
+    , kTestsPerThread
+#endif
+        ]() noexcept {
             const auto seed = thread_id * 3'829'234'734ul + 27'273'489ul;
             // printf("Thread %zu started, seed = %zu\n", thread_id, seed);
             using rnt_t = std::conditional_t<sizeof(IntType) == sizeof(std::uint32_t), std::mt19937,
                                              std::mt19937_64>;
             rnt_t mrs_rnd(seed);
 
-            for (size_t test_iter = TestsPerThread; test_iter != 0; --test_iter) {
+            for (size_t test_iter = kTestsPerThread; test_iter != 0; --test_iter) {
                 IntType a = static_cast<IntType>(mrs_rnd());
                 IntType b = static_cast<IntType>(mrs_rnd());
 

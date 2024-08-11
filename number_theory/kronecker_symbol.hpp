@@ -1,16 +1,17 @@
 #ifndef KRONECKER_SYMBOL_HPP
-#define KRONECKER_SYMBOL_HPP
+#define KRONECKER_SYMBOL_HPP 1
 
 #include <type_traits>
 
 #include "integers_128_bit.hpp"
 #include "math_functions.hpp"
+
 namespace math_functions {
 
 namespace detail {
 
 template <typename Uint>
-#if __cplusplus >= 202002L
+#if CONFIG_HAS_AT_LEAST_CXX_20
     requires type_traits_helper_int128_t::is_unsigned_v<Uint>
 #endif
 ATTRIBUTE_CONST static constexpr int32_t kronecker_symb_ui(Uint a, Uint n) noexcept {
@@ -87,7 +88,7 @@ ATTRIBUTE_CONST static constexpr int32_t kronecker_symb_ui(Uint a, Uint n) noexc
 }
 
 template <typename Sint>
-#if __cplusplus >= 202002L
+#if CONFIG_HAS_AT_LEAST_CXX_20
     requires type_traits_helper_int128_t::is_signed_v<Sint>
 #endif
 ATTRIBUTE_CONST static constexpr int32_t kronecker_symbol_si(Sint a, Sint n) noexcept {
@@ -167,7 +168,7 @@ ATTRIBUTE_CONST static constexpr int32_t kronecker_symbol_si(Sint a, Sint n) noe
 }
 
 template <class Sint, class Uint>
-#if __cplusplus >= 202002L
+#if CONFIG_HAS_AT_LEAST_CXX_20
     requires type_traits_helper_int128_t::is_signed_v<Sint> &&
              type_traits_helper_int128_t::is_unsigned_v<Uint>
 #endif
@@ -257,7 +258,7 @@ ATTRIBUTE_CONST static constexpr int32_t kronecker_symbol_ui(Sint a, Uint n) noe
 /// @return Kronecker symbol of (a/n) (-1, 0 or 1)
 template <typename IntegerT1, typename IntegerT2>
 ATTRIBUTE_CONST static constexpr int32_t kronecker_symbol(IntegerT1 a, IntegerT2 n) noexcept {
-#if __cplusplus >= 202002L
+#if CONFIG_HAS_AT_LEAST_CXX_20
     using T1 = std::remove_cvref_t<IntegerT1>;
     using T2 = std::remove_cvref_t<IntegerT2>;
 #else

@@ -170,7 +170,9 @@ ATTRIBUTE_CONST constexpr uint32_t isqrt(uint32_t n) noexcept {
      */
 
     uint32_t y = 0;
+#if defined(__GNUG__) || CONFIG_HAS_AT_LEAST_CXX_20
     if (config_is_constant_evaluated() || config_is_gcc_constant_p(n)) {
+#endif
         /**
          * See Hackers Delight Chapter 11.
          */
@@ -182,9 +184,11 @@ ATTRIBUTE_CONST constexpr uint32_t isqrt(uint32_t n) noexcept {
                 y |= m;
             }
         }
+#if defined(__GNUG__) || CONFIG_HAS_AT_LEAST_CXX_20
     } else {
         y = static_cast<uint32_t>(std::sqrt(static_cast<double>(n)));
     }
+#endif
 
     ATTRIBUTE_ASSUME(y < (1u << 16));
     return y;
@@ -194,8 +198,9 @@ ATTRIBUTE_CONST constexpr uint32_t isqrt(uint64_t n) noexcept {
     /**
      * In the runtime `sqrtl` is used.
      */
-
+#if defined(__GNUG__) || CONFIG_HAS_AT_LEAST_CXX_20
     if (config_is_constant_evaluated() || config_is_gcc_constant_p(n) || sizeof(long double) < 16) {
+#endif
         /**
          * See Hackers Delight Chapter 11.
          */
@@ -214,9 +219,11 @@ ATTRIBUTE_CONST constexpr uint32_t isqrt(uint64_t n) noexcept {
         } while (r >= l);
         ATTRIBUTE_ASSUME(((l - 1) >> 32) == 0);
         return uint32_t(l - 1);
+#if defined(__GNUG__) || CONFIG_HAS_AT_LEAST_CXX_20
     } else {
         return static_cast<uint32_t>(std::sqrt(static_cast<long double>(n)));
     }
+#endif
 }
 
 #if defined(INTEGERS_128_BIT_HPP)
@@ -1861,12 +1868,13 @@ private:
 template <uint32_t N>
 [[nodiscard]] CONSTEXPR_FIXED_PRIMES_SIEVE inline const auto& fixed_primes_sieve() noexcept {
     constexpr auto kSize = std::size_t(N) + 1;
-    static CONSTEXPR_PRIMES_SIEVE std::bitset<kSize> primes_bs =
+    using TPrimesSet = std::bitset<kSize>;
+    static CONSTEXPR_PRIMES_SIEVE TPrimesSet primes_bs =
         []() CONSTEXPR_BITSET_OPS noexcept {
-            std::bitset<kSize> primes{};
+            TPrimesSet primes{};
             primes.set();
             primes[0] = false;
-            if constexpr (kSize > 1) {
+            if constexpr (primes.size() > 1) {
                 primes[1]           = false;
                 const uint32_t root = math_functions::isqrt(N);
                 if (const uint32_t i = 2; i <= root) {
@@ -2015,7 +2023,7 @@ ATTRIBUTE_CONST constexpr HelperRetType congruence_helper(const std::uint64_t a,
 ///          such that 0 <= x_{0} < x_{1} < ... < x_{gcd(a, m)-1} < m,
 ///          x_{0} < m / gcd(a, m), x_{i + 1} = x_{i} + m / gcd(a, m).
 ///         Otherwise, return empty vector.
-std::vector<std::uint32_t> solve_congruence_all_roots(std::uint64_t a, std::int64_t c,
+inline std::vector<std::uint32_t> solve_congruence_all_roots(std::uint64_t a, std::int64_t c,
                                                       std::uint32_t m) {
     const auto [x0, d, m_] = detail::congruence_helper(a, c, m);
     std::vector<std::uint32_t> solutions(d);

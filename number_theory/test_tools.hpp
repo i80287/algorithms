@@ -189,9 +189,14 @@ private:
 namespace test_tools_detail {
 
 TEST_TOOLS_CONSTEVAL std::size_t get_typename_end_pos_impl(const std::string_view s) {
-    for (std::size_t opened_square_brackets = 0, opened_round_brackets = 0,
-                     opened_curly_brackets = 0, opened_triangle_brackets = 0, i = 0;
-         char c : s) {
+    // Variables are not inside of the for init for
+    //  the compatibility with C++17.
+    std::size_t opened_square_brackets = 0;
+    std::size_t opened_round_brackets = 0;
+    std::size_t opened_curly_brackets = 0;
+    std::size_t opened_triangle_brackets = 0;
+    std::size_t i = 0;
+    for (const char c : s) {
         switch (static_cast<std::uint8_t>(c)) {
             case '(': {
                 opened_round_brackets++;
@@ -294,7 +299,12 @@ TEST_TOOLS_CONSTEVAL std::string_view get_typename_impl(const std::string_view f
             typename_start_pos++;
         }
         for (const auto keyword : kKeywords) {
-            if (piece.starts_with(keyword)) {
+#if CONFIG_HAS_AT_LEAST_CXX_20
+            if (piece.starts_with(keyword))
+#else
+            if (keyword.size() <= piece.size() && keyword == piece.substr(0, keyword.size()))
+#endif
+            {
                 piece.remove_prefix(keyword.size());
                 typename_start_pos += keyword.size();
                 continue_cut = true;

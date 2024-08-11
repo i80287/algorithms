@@ -195,7 +195,7 @@
 #define ATTRIBUTE_NOINLINE [[clang::noinline]]
 #elif CONFIG_HAS_AT_LEAST_CXX_17 && defined(__GNUG__)
 #define ATTRIBUTE_NOINLINE [[gnu::noinline]]
-#elif CONFIG_HAS_AT_LEAST_CXX_17 && defined(_MSC_VER)
+#elif CONFIG_HAS_AT_LEAST_CXX_20 && defined(_MSC_VER)
 #define ATTRIBUTE_NOINLINE [[msvc::noinline]]
 #else
 #define ATTRIBUTE_NOINLINE
@@ -207,7 +207,7 @@
 #define ATTRIBUTE_ALWAYS_INLINE [[clang::always_inline]]
 #elif CONFIG_HAS_AT_LEAST_CXX_17 && defined(__GNUG__)
 #define ATTRIBUTE_ALWAYS_INLINE [[gnu::always_inline]]
-#elif defined(_MSC_VER)
+#elif CONFIG_HAS_AT_LEAST_CXX_20 && defined(_MSC_VER)
 #define ATTRIBUTE_ALWAYS_INLINE [[msvc::forceinline]]
 #else
 #define ATTRIBUTE_ALWAYS_INLINE

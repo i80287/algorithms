@@ -28,9 +28,10 @@ static void test_fib_u64() noexcept {
 template <uint32_t k>
 static void test_fib_u128() noexcept {
     log_tests_started();
-
+#if HAS_I128_CONSTEXPR
     static_assert(math_functions::fibonacci_num_u128(0) == 1);
     static_assert(math_functions::fibonacci_num_u128(1) == 1);
+#endif
     uint128_t prev_prev_fib = 1;
     uint128_t prev_fib      = 1;
     for (uint32_t i = 2; i < k; i++) {
