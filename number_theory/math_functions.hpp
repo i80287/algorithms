@@ -122,7 +122,8 @@ constexpr T bin_pow(T n, int64_t p) noexcept {
 /// @param[in] p
 /// @param[in] mod
 /// @return (n ^ p) % mod
-ATTRIBUTE_CONST constexpr uint32_t bin_pow_mod(uint32_t n, uint32_t p, uint32_t mod) noexcept {
+[[nodiscard]] ATTRIBUTE_CONST constexpr uint32_t bin_pow_mod(uint32_t n, uint32_t p,
+                                                             uint32_t mod) noexcept {
     uint64_t res   = mod != 1;
     uint64_t wdn_n = n;
     while (true) {
@@ -144,8 +145,8 @@ ATTRIBUTE_CONST constexpr uint32_t bin_pow_mod(uint32_t n, uint32_t p, uint32_t 
 /// @param[in] p
 /// @param[in] mod
 /// @return (n ^ p) % mod
-ATTRIBUTE_CONST inline I128_CONSTEXPR uint64_t bin_pow_mod(uint64_t n, uint64_t p,
-                                                           uint64_t mod) noexcept {
+[[nodiscard]] ATTRIBUTE_CONST inline I128_CONSTEXPR uint64_t bin_pow_mod(uint64_t n, uint64_t p,
+                                                                         uint64_t mod) noexcept {
     uint64_t res = mod != 1;
     while (true) {
         if (p & 1) {
@@ -161,7 +162,7 @@ ATTRIBUTE_CONST inline I128_CONSTEXPR uint64_t bin_pow_mod(uint64_t n, uint64_t 
 
 #endif
 
-ATTRIBUTE_CONST constexpr uint32_t isqrt(uint32_t n) noexcept {
+[[nodiscard]] ATTRIBUTE_CONST constexpr uint32_t isqrt(uint32_t n) noexcept {
     /**
      * In the runtime `sqrt` is used.
      *
@@ -194,7 +195,7 @@ ATTRIBUTE_CONST constexpr uint32_t isqrt(uint32_t n) noexcept {
     return y;
 }
 
-ATTRIBUTE_CONST constexpr uint32_t isqrt(uint64_t n) noexcept {
+[[nodiscard]] ATTRIBUTE_CONST constexpr uint32_t isqrt(uint64_t n) noexcept {
     /**
      * In the runtime `sqrtl` is used.
      */
@@ -228,7 +229,7 @@ ATTRIBUTE_CONST constexpr uint32_t isqrt(uint64_t n) noexcept {
 
 #if defined(INTEGERS_128_BIT_HPP)
 
-ATTRIBUTE_CONST inline I128_CONSTEXPR uint64_t isqrt(uint128_t n) noexcept {
+[[nodiscard]] ATTRIBUTE_CONST inline I128_CONSTEXPR uint64_t isqrt(uint128_t n) noexcept {
     /**
      * See Hackers Delight Chapter 11.
      */
@@ -250,7 +251,7 @@ ATTRIBUTE_CONST inline I128_CONSTEXPR uint64_t isqrt(uint128_t n) noexcept {
 
 #endif
 
-ATTRIBUTE_CONST constexpr uint32_t icbrt(uint32_t n) noexcept {
+[[nodiscard]] ATTRIBUTE_CONST constexpr uint32_t icbrt(uint32_t n) noexcept {
     /**
      * cbrt and cbrtl are not used here because according
      * to the Quick Bench results they are:
@@ -296,7 +297,7 @@ ATTRIBUTE_CONST constexpr uint32_t icbrt(uint32_t n) noexcept {
     return y;
 }
 
-ATTRIBUTE_CONST constexpr uint32_t icbrt(uint64_t n) noexcept {
+[[nodiscard]] ATTRIBUTE_CONST constexpr uint32_t icbrt(uint64_t n) noexcept {
     /**
      * See Hackers Delight Chapter 11.
      */
@@ -328,7 +329,7 @@ ATTRIBUTE_CONST constexpr uint32_t icbrt(uint64_t n) noexcept {
 ///         It can be shown that ⌊n^0.25⌋ = ⌊⌊n^0.5⌋^0.5⌋
 /// @param[in] n
 /// @return
-ATTRIBUTE_CONST constexpr uint32_t ifrrt(uint64_t n) noexcept {
+[[nodiscard]] ATTRIBUTE_CONST constexpr uint32_t ifrrt(uint64_t n) noexcept {
     return isqrt(isqrt(n));
 }
 
@@ -338,7 +339,7 @@ ATTRIBUTE_CONST constexpr uint32_t ifrrt(uint64_t n) noexcept {
 ///         It can be shown that ⌊n^0.25⌋ = ⌊⌊n^0.5⌋^0.5⌋
 /// @param[in] n
 /// @return
-ATTRIBUTE_CONST inline I128_CONSTEXPR uint32_t ifrrt(uint128_t n) noexcept {
+[[nodiscard]] ATTRIBUTE_CONST inline I128_CONSTEXPR uint32_t ifrrt(uint128_t n) noexcept {
     return isqrt(isqrt(n));
 }
 
@@ -347,7 +348,7 @@ ATTRIBUTE_CONST inline I128_CONSTEXPR uint32_t ifrrt(uint128_t n) noexcept {
 /// @brief Checks whether @a `n` is perfect square or not.
 /// @param[in] n
 /// @return `true` if @a `n` is perfect square and `false` otherwise.
-ATTRIBUTE_CONST constexpr bool is_perfect_square(uint64_t n) noexcept {
+[[nodiscard]] ATTRIBUTE_CONST constexpr bool is_perfect_square(uint64_t n) noexcept {
     // clang-format off
     /**
      * +------------+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+
@@ -378,7 +379,8 @@ ATTRIBUTE_CONST constexpr bool is_perfect_square(uint64_t n) noexcept {
 /// @param[in] n
 /// @param[out] root
 /// @return `true` if @a `n` is perfect square and `false` otherwise.
-ATTRIBUTE_CONST constexpr bool is_perfect_square(uint64_t n, uint32_t& root) noexcept {
+[[nodiscard]] ATTRIBUTE_CONST constexpr bool is_perfect_square(uint64_t n,
+                                                               uint32_t& root) noexcept {
     // clang-format off
     /**
      * +------------+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+
@@ -409,7 +411,7 @@ ATTRIBUTE_CONST constexpr bool is_perfect_square(uint64_t n, uint32_t& root) noe
 /// @brief Checks whether @a `n` is perfect square or not.
 /// @param[in] n
 /// @return `true` if @a `n` is perfect square and `false` otherwise.
-ATTRIBUTE_CONST inline I128_CONSTEXPR bool is_perfect_square(uint128_t n) noexcept {
+[[nodiscard]] ATTRIBUTE_CONST inline I128_CONSTEXPR bool is_perfect_square(uint128_t n) noexcept {
     // clang-format off
     /**
      * +------------+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+
@@ -440,7 +442,8 @@ ATTRIBUTE_CONST inline I128_CONSTEXPR bool is_perfect_square(uint128_t n) noexce
 /// @param[in] n
 /// @param[out] root
 /// @return `true` if @a `n` is perfect square and `false` otherwise.
-ATTRIBUTE_CONST inline I128_CONSTEXPR bool is_perfect_square(uint128_t n, uint64_t& root) noexcept {
+[[nodiscard]] ATTRIBUTE_CONST inline I128_CONSTEXPR bool is_perfect_square(
+    uint128_t n, uint64_t& root) noexcept {
     // clang-format off
     /**
      * +------------+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+
@@ -471,7 +474,7 @@ ATTRIBUTE_CONST inline I128_CONSTEXPR bool is_perfect_square(uint128_t n, uint64
 /// @brief This function reverses bits of the @a `b`
 /// @param[in] b
 /// @return 8-bit number whose bits are reversed bits of the @a `b`.
-ATTRIBUTE_CONST constexpr uint8_t bit_reverse(uint8_t b) noexcept {
+[[nodiscard]] ATTRIBUTE_CONST constexpr uint8_t bit_reverse(uint8_t b) noexcept {
     // See https://graphics.stanford.edu/~seander/bithacks.html#RoundUpPowerOf2
     return uint8_t(((b * 0x80200802ULL) & 0x0884422110ULL) * 0x0101010101ULL >> 32);
 }
@@ -479,7 +482,7 @@ ATTRIBUTE_CONST constexpr uint8_t bit_reverse(uint8_t b) noexcept {
 /// @brief This function reverses bits of the @a `n`
 /// @param[in] b
 /// @return 32-bit number whose bits are reversed bits of the @a `n`.
-ATTRIBUTE_CONST constexpr uint32_t bit_reverse(uint32_t n) noexcept {
+[[nodiscard]] ATTRIBUTE_CONST constexpr uint32_t bit_reverse(uint32_t n) noexcept {
     // clang-format off
     /**
      * See Hackers Delight 7.1
@@ -497,7 +500,7 @@ ATTRIBUTE_CONST constexpr uint32_t bit_reverse(uint32_t n) noexcept {
 /// @brief This function reverses bits of the @a `n`
 /// @param[in] b
 /// @return 64-bit number whose bits are reversed bits of the @a `n`.
-ATTRIBUTE_CONST constexpr uint64_t bit_reverse(uint64_t n) noexcept {
+[[nodiscard]] ATTRIBUTE_CONST constexpr uint64_t bit_reverse(uint64_t n) noexcept {
     // clang-format off
     /**
      * See Knuth's algorithm in Hackers Delight 7.4
@@ -521,7 +524,7 @@ ATTRIBUTE_CONST constexpr uint64_t bit_reverse(uint64_t n) noexcept {
 /// @brief This function reverses bits of the @a `n`
 /// @param[in] b
 /// @return 128-bit number whose bits are reversed bits of the @a `n`.
-ATTRIBUTE_CONST inline I128_CONSTEXPR uint128_t bit_reverse(uint128_t n) noexcept {
+[[nodiscard]] ATTRIBUTE_CONST inline I128_CONSTEXPR uint128_t bit_reverse(uint128_t n) noexcept {
     uint128_t m = ~uint128_t(0);
     for (uint32_t s = sizeof(uint128_t) * CHAR_BIT; s >>= 1;) {
         m ^= m << s;
@@ -545,21 +548,21 @@ ATTRIBUTE_ALWAYS_INLINE constexpr void visit_all_submasks(uint64_t mask, Functor
     } while (s != 0);
 }
 
-ATTRIBUTE_CONST constexpr int32_t sign(int x) noexcept {
+[[nodiscard]] ATTRIBUTE_CONST constexpr int32_t sign(int x) noexcept {
     return int32_t(x > 0) - int32_t(x < 0);
 }
 
-ATTRIBUTE_CONST constexpr int32_t sign(long x) noexcept {
+[[nodiscard]] ATTRIBUTE_CONST constexpr int32_t sign(long x) noexcept {
     return int32_t(x > 0) - int32_t(x < 0);
 }
 
-ATTRIBUTE_CONST constexpr int32_t sign(long long x) noexcept {
+[[nodiscard]] ATTRIBUTE_CONST constexpr int32_t sign(long long x) noexcept {
     return int32_t(x > 0) - int32_t(x < 0);
 }
 
 #if defined(INTEGERS_128_BIT_HPP)
 
-ATTRIBUTE_CONST inline I128_CONSTEXPR int32_t sign(int128_t x) noexcept {
+[[nodiscard]] ATTRIBUTE_CONST inline I128_CONSTEXPR int32_t sign(int128_t x) noexcept {
     uint32_t sign_bit = uint32_t(uint128_t(x) >> 127);
     return int32_t(x != 0) - int32_t(2 * sign_bit);
 }
@@ -575,7 +578,7 @@ ATTRIBUTE_CONST inline I128_CONSTEXPR int32_t sign(int128_t x) noexcept {
 /// @param[in] a
 /// @param[in] b
 /// @return
-ATTRIBUTE_CONST constexpr bool same_sign_soft(int a, int b) noexcept {
+[[nodiscard]] ATTRIBUTE_CONST constexpr bool same_sign_soft(int a, int b) noexcept {
     return (a ^ b) >= 0;
 }
 
@@ -588,7 +591,7 @@ ATTRIBUTE_CONST constexpr bool same_sign_soft(int a, int b) noexcept {
 /// @param[in] a
 /// @param[in] b
 /// @return
-ATTRIBUTE_CONST constexpr bool same_sign_soft(long a, long b) noexcept {
+[[nodiscard]] ATTRIBUTE_CONST constexpr bool same_sign_soft(long a, long b) noexcept {
     return (a ^ b) >= 0;
 }
 
@@ -601,7 +604,7 @@ ATTRIBUTE_CONST constexpr bool same_sign_soft(long a, long b) noexcept {
 /// @param[in] a
 /// @param[in] b
 /// @return
-ATTRIBUTE_CONST constexpr bool same_sign_soft(long long a, long long b) noexcept {
+[[nodiscard]] ATTRIBUTE_CONST constexpr bool same_sign_soft(long long a, long long b) noexcept {
     return (a ^ b) >= 0;
 }
 
@@ -617,7 +620,7 @@ ATTRIBUTE_CONST constexpr bool same_sign_soft(long long a, long long b) noexcept
 /// @param[in] a
 /// @param[in] b
 /// @return
-ATTRIBUTE_CONST constexpr bool same_sign(int a, int b) noexcept {
+[[nodiscard]] ATTRIBUTE_CONST constexpr bool same_sign(int a, int b) noexcept {
     return sign(a) == sign(b);
 }
 
@@ -633,7 +636,7 @@ ATTRIBUTE_CONST constexpr bool same_sign(int a, int b) noexcept {
 /// @param[in] a
 /// @param[in] b
 /// @return
-ATTRIBUTE_CONST constexpr bool same_sign(long a, long b) noexcept {
+[[nodiscard]] ATTRIBUTE_CONST constexpr bool same_sign(long a, long b) noexcept {
     return sign(a) == sign(b);
 }
 
@@ -649,16 +652,18 @@ ATTRIBUTE_CONST constexpr bool same_sign(long a, long b) noexcept {
 /// @param[in] a
 /// @param[in] b
 /// @return
-ATTRIBUTE_CONST constexpr bool same_sign(long long a, long long b) noexcept {
+[[nodiscard]] ATTRIBUTE_CONST constexpr bool same_sign(long long a, long long b) noexcept {
     return sign(a) == sign(b);
 }
 
-ATTRIBUTE_CONST constexpr unsigned char uabs(signed char n) noexcept {
+constexpr bool uabs(bool n) = delete;
+
+[[nodiscard]] [[nodiscard]] ATTRIBUTE_CONST constexpr unsigned char uabs(signed char n) noexcept {
     return n >= 0 ? static_cast<unsigned char>(n)
                   : static_cast<unsigned char>(-static_cast<unsigned char>(n));
 }
 
-ATTRIBUTE_CONST constexpr unsigned char uabs(char n) noexcept {
+[[nodiscard]] [[nodiscard]] ATTRIBUTE_CONST constexpr unsigned char uabs(char n) noexcept {
     if constexpr (std::is_signed_v<char>) {
         return uabs(static_cast<signed char>(n));
     } else {
@@ -666,26 +671,26 @@ ATTRIBUTE_CONST constexpr unsigned char uabs(char n) noexcept {
     }
 }
 
-ATTRIBUTE_CONST constexpr unsigned short uabs(short n) noexcept {
+[[nodiscard]] [[nodiscard]] ATTRIBUTE_CONST constexpr unsigned short uabs(short n) noexcept {
     return n >= 0 ? static_cast<unsigned short>(n)
                   : static_cast<unsigned short>(-static_cast<unsigned short>(n));
 }
 
-ATTRIBUTE_CONST constexpr unsigned uabs(int n) noexcept {
+[[nodiscard]] ATTRIBUTE_CONST constexpr unsigned uabs(int n) noexcept {
     return n >= 0 ? static_cast<unsigned>(n) : -static_cast<unsigned>(n);
 }
 
-ATTRIBUTE_CONST constexpr unsigned long uabs(long n) noexcept {
+[[nodiscard]] ATTRIBUTE_CONST constexpr unsigned long uabs(long n) noexcept {
     return n >= 0 ? static_cast<unsigned long>(n) : -static_cast<unsigned long>(n);
 }
 
-ATTRIBUTE_CONST constexpr unsigned long long uabs(long long n) noexcept {
+[[nodiscard]] ATTRIBUTE_CONST constexpr unsigned long long uabs(long long n) noexcept {
     return n >= 0 ? static_cast<unsigned long long>(n) : -static_cast<unsigned long long>(n);
 }
 
 #if defined(INTEGERS_128_BIT_HPP)
 
-ATTRIBUTE_CONST inline I128_CONSTEXPR uint128_t uabs(int128_t n) noexcept {
+[[nodiscard]] ATTRIBUTE_CONST inline I128_CONSTEXPR uint128_t uabs(int128_t n) noexcept {
     uint128_t t = uint128_t(n >> 127);
     return (uint128_t(n) ^ t) - t;
 }
@@ -694,7 +699,7 @@ ATTRIBUTE_CONST inline I128_CONSTEXPR uint128_t uabs(int128_t n) noexcept {
 
 namespace detail {
 
-ATTRIBUTE_CONST inline uint32_t log2_floor_software(uint64_t n) {
+[[nodiscard]] ATTRIBUTE_CONST inline uint32_t log2_floor_software(uint64_t n) {
     static const uint64_t t[6] = {0xFFFFFFFF00000000ull, 0x00000000FFFF0000ull,
                                   0x000000000000FF00ull, 0x00000000000000F0ull,
                                   0x000000000000000Cull, 0x0000000000000002ull};
@@ -712,7 +717,7 @@ ATTRIBUTE_CONST inline uint32_t log2_floor_software(uint64_t n) {
     return y;
 }
 
-ATTRIBUTE_CONST inline uint32_t log2_ceil_software(uint64_t n) {
+[[nodiscard]] ATTRIBUTE_CONST inline uint32_t log2_ceil_software(uint64_t n) {
     return log2_floor_software(n) + ((n & (n - 1)) != 0);
 }
 
@@ -721,7 +726,7 @@ ATTRIBUTE_CONST inline uint32_t log2_ceil_software(uint64_t n) {
  *  Note that by convention, input value 0 returns 0 since log(0) is
  * undefined.
  */
-ATTRIBUTE_CONST inline uint32_t de_bruijn_log2(uint32_t value) {
+[[nodiscard]] ATTRIBUTE_CONST inline uint32_t de_bruijn_log2(uint32_t value) {
     // See
     // https://graphics.stanford.edu/~seander/bithacks.html#RoundUpPowerOf2
 
@@ -741,7 +746,7 @@ ATTRIBUTE_CONST inline uint32_t de_bruijn_log2(uint32_t value) {
     return MultiplyDeBruijnBitPosition[((value * 0x07C4ACDDu) >> 27)];
 }
 
-ATTRIBUTE_CONST constexpr uint32_t lz_count_32_software(uint32_t n) noexcept {
+[[nodiscard]] ATTRIBUTE_CONST constexpr uint32_t lz_count_32_software(uint32_t n) noexcept {
     /**
      * See Hackers Delight Chapter 5
      */
@@ -770,7 +775,7 @@ ATTRIBUTE_CONST constexpr uint32_t lz_count_32_software(uint32_t n) noexcept {
     return m;
 }
 
-ATTRIBUTE_CONST constexpr uint32_t lz_count_64_software(uint64_t n) noexcept {
+[[nodiscard]] ATTRIBUTE_CONST constexpr uint32_t lz_count_64_software(uint64_t n) noexcept {
     /**
      * See Hackers Delight Chapter 5
      */
@@ -803,7 +808,7 @@ ATTRIBUTE_CONST constexpr uint32_t lz_count_64_software(uint64_t n) noexcept {
     return m;
 }
 
-ATTRIBUTE_CONST constexpr uint32_t tz_count_32_software(uint32_t n) noexcept {
+[[nodiscard]] ATTRIBUTE_CONST constexpr uint32_t tz_count_32_software(uint32_t n) noexcept {
     /**
      * See Hackers Delight Chapter 5
      */
@@ -832,7 +837,7 @@ ATTRIBUTE_CONST constexpr uint32_t tz_count_32_software(uint32_t n) noexcept {
     return m;
 }
 
-ATTRIBUTE_CONST constexpr uint32_t tz_count_64_software(uint64_t n) noexcept {
+[[nodiscard]] ATTRIBUTE_CONST constexpr uint32_t tz_count_64_software(uint64_t n) noexcept {
     uint32_t m = 0;
     for (n = ~n & (n - 1); n != 0; n >>= 1) {
         m++;
@@ -841,7 +846,7 @@ ATTRIBUTE_CONST constexpr uint32_t tz_count_64_software(uint64_t n) noexcept {
     return m;
 }
 
-ATTRIBUTE_CONST constexpr uint32_t pop_count_32_software(uint32_t n) noexcept {
+[[nodiscard]] ATTRIBUTE_CONST constexpr uint32_t pop_count_32_software(uint32_t n) noexcept {
     /**
      * See Hackers Delight Chapter 5.
      */
@@ -854,7 +859,7 @@ ATTRIBUTE_CONST constexpr uint32_t pop_count_32_software(uint32_t n) noexcept {
     return n;
 }
 
-ATTRIBUTE_CONST constexpr uint64_t pop_count_64_software(uint64_t n) noexcept {
+[[nodiscard]] ATTRIBUTE_CONST constexpr uint64_t pop_count_64_software(uint64_t n) noexcept {
     /**
      * See Hackers Delight Chapter 5.
      */
@@ -870,7 +875,7 @@ ATTRIBUTE_CONST constexpr uint64_t pop_count_64_software(uint64_t n) noexcept {
 
 }  // namespace detail
 
-ATTRIBUTE_CONST constexpr int32_t pop_diff(uint32_t x, uint32_t y) noexcept {
+[[nodiscard]] ATTRIBUTE_CONST constexpr int32_t pop_diff(uint32_t x, uint32_t y) noexcept {
     /**
      * See Hackers Delight Chapter 5.
      */
@@ -886,7 +891,7 @@ ATTRIBUTE_CONST constexpr int32_t pop_diff(uint32_t x, uint32_t y) noexcept {
     return static_cast<int32_t>(x & 0x0000007F) - 32;
 }
 
-ATTRIBUTE_CONST constexpr int32_t pop_cmp(uint32_t x, uint32_t y) noexcept {
+[[nodiscard]] ATTRIBUTE_CONST constexpr int32_t pop_cmp(uint32_t x, uint32_t y) noexcept {
     /**
      * See Hackers Delight Chapter 5.
      */
@@ -912,7 +917,7 @@ template <typename T>
              || std::is_same_v<T, uint128_t>
 #endif
 #endif
-ATTRIBUTE_CONST constexpr int32_t countr_zero(T n) noexcept {
+[[nodiscard]] ATTRIBUTE_CONST constexpr int32_t countr_zero(T n) noexcept {
     if (unlikely(n == 0)) {
         return sizeof(n) * CHAR_BIT;
     }
@@ -983,7 +988,7 @@ template <typename T>
              || std::is_same_v<T, uint128_t>
 #endif
 #endif
-ATTRIBUTE_CONST constexpr int32_t countl_zero(T n) noexcept {
+[[nodiscard]] ATTRIBUTE_CONST constexpr int32_t countl_zero(T n) noexcept {
     if (unlikely(n == 0)) {
         return sizeof(n) * CHAR_BIT;
     }
@@ -1050,7 +1055,7 @@ template <class T>
              || std::is_same_v<T, uint128_t>
 #endif
 #endif
-ATTRIBUTE_CONST constexpr int32_t popcount(T n) noexcept {
+[[nodiscard]] ATTRIBUTE_CONST constexpr int32_t popcount(T n) noexcept {
 #if defined(INTEGERS_128_BIT_HPP)
     if constexpr (std::is_same_v<T, uint128_t>) {
         uint64_t high = static_cast<uint64_t>(n >> 64);
@@ -1117,76 +1122,78 @@ constexpr uint32_t next_n_bits_permutation(uint32_t x) noexcept {
     return (t + 1) | (((~t & -~t) - 1) >> (countr_zero(x) + 1));
 }
 
-ATTRIBUTE_CONST constexpr bool is_power_of_two(signed char n) noexcept {
+[[nodiscard]] ATTRIBUTE_CONST constexpr bool is_power_of_two(signed char n) noexcept {
     // Cast to unsigned to avoid potential overflow (ub for signed char)
     uint32_t m = static_cast<unsigned char>(n);
     return (m & (m - 1)) == 0 && n > 0;
 }
 
-ATTRIBUTE_CONST constexpr bool is_power_of_two(unsigned char n) noexcept {
+[[nodiscard]] ATTRIBUTE_CONST constexpr bool is_power_of_two(unsigned char n) noexcept {
     return (n & (n - 1)) == 0 && n != 0;
 }
 
-ATTRIBUTE_CONST constexpr bool is_power_of_two(char n) noexcept {
+[[nodiscard]] ATTRIBUTE_CONST constexpr bool is_power_of_two(char n) noexcept {
     using corr_char_t = std::conditional_t<std::is_signed_v<char>, signed char, unsigned char>;
     return is_power_of_two(static_cast<corr_char_t>(n));
 }
 
-ATTRIBUTE_CONST constexpr bool is_power_of_two(int n) noexcept {
+[[nodiscard]] ATTRIBUTE_CONST constexpr bool is_power_of_two(int n) noexcept {
     // Cast to unsigned to avoid potential overflow (ub for int)
     unsigned m = static_cast<unsigned>(n);
     return (m & (m - 1)) == 0 && n > 0;
 }
 
-ATTRIBUTE_CONST constexpr bool is_power_of_two(long n) noexcept {
+[[nodiscard]] ATTRIBUTE_CONST constexpr bool is_power_of_two(long n) noexcept {
     // Cast to unsigned to avoid potential overflow (ub for long)
     unsigned long m = static_cast<unsigned long>(n);
     return (m & (m - 1)) == 0 && n > 0;
 }
 
-ATTRIBUTE_CONST constexpr bool is_power_of_two(long long n) noexcept {
+[[nodiscard]] ATTRIBUTE_CONST constexpr bool is_power_of_two(long long n) noexcept {
     // Cast to unsigned to avoid potential overflow (ub for long long)
     unsigned long long m = static_cast<unsigned long long>(n);
     return (m & (m - 1)) == 0 && n > 0;
 }
 
-ATTRIBUTE_CONST constexpr bool is_power_of_two(unsigned int n) noexcept {
+[[nodiscard]] ATTRIBUTE_CONST constexpr bool is_power_of_two(unsigned int n) noexcept {
     return (n & (n - 1)) == 0 && n != 0;
 }
 
-ATTRIBUTE_CONST constexpr bool is_power_of_two(unsigned long n) noexcept {
+[[nodiscard]] ATTRIBUTE_CONST constexpr bool is_power_of_two(unsigned long n) noexcept {
     return (n & (n - 1)) == 0 && n != 0;
 }
 
-ATTRIBUTE_CONST constexpr bool is_power_of_two(unsigned long long n) noexcept {
+[[nodiscard]] ATTRIBUTE_CONST constexpr bool is_power_of_two(unsigned long long n) noexcept {
     return (n & (n - 1)) == 0 && n != 0;
 }
 
 #if defined(INTEGERS_128_BIT_HPP)
 
-ATTRIBUTE_CONST inline I128_CONSTEXPR bool is_power_of_two(int128_t n) noexcept {
+[[nodiscard]] ATTRIBUTE_CONST inline I128_CONSTEXPR bool is_power_of_two(int128_t n) noexcept {
     return (n & (n - 1)) == 0 && n > 0;
 }
 
-ATTRIBUTE_CONST inline I128_CONSTEXPR bool is_power_of_two(uint128_t n) noexcept {
+[[nodiscard]] ATTRIBUTE_CONST inline I128_CONSTEXPR bool is_power_of_two(uint128_t n) noexcept {
     return (n & (n - 1)) == 0 && n != 0;
 }
 
 #endif
 
-ATTRIBUTE_CONST constexpr uint64_t nearest_greater_equal_power_of_two(uint32_t n) noexcept {
+[[nodiscard]] ATTRIBUTE_CONST constexpr uint64_t nearest_greater_equal_power_of_two(
+    uint32_t n) noexcept {
     return uint64_t(1ull) << (32 - uint32_t(countl_zero(n | 1)) - ((n & (n - 1)) == 0));
 }
 
-ATTRIBUTE_CONST constexpr uint64_t nearest_greater_power_of_two(uint32_t n) noexcept {
+[[nodiscard]] ATTRIBUTE_CONST constexpr uint64_t nearest_greater_power_of_two(uint32_t n) noexcept {
     return uint64_t(1ull) << (32 - uint32_t(countl_zero(n)));
 }
 
-ATTRIBUTE_CONST constexpr uint64_t nearest_greater_equal_power_of_two(uint64_t n) noexcept {
+[[nodiscard]] ATTRIBUTE_CONST constexpr uint64_t nearest_greater_equal_power_of_two(
+    uint64_t n) noexcept {
     return uint64_t(1ull) << (64 - uint32_t(countl_zero(n | 1)) - ((n & (n - 1)) == 0));
 }
 
-ATTRIBUTE_CONST constexpr uint64_t nearest_greater_power_of_two(uint64_t n) noexcept {
+[[nodiscard]] ATTRIBUTE_CONST constexpr uint64_t nearest_greater_power_of_two(uint64_t n) noexcept {
     return uint64_t(1ull) << (64 - uint32_t(countl_zero(n)));
 }
 
@@ -1197,7 +1204,7 @@ ATTRIBUTE_CONST constexpr uint64_t nearest_greater_power_of_two(uint64_t n) noex
 /// @param[in] n
 /// @return
 template <class TInt>
-ATTRIBUTE_CONST constexpr TInt least_bit_set(TInt n) noexcept {
+[[nodiscard]] ATTRIBUTE_CONST constexpr TInt least_bit_set(TInt n) noexcept {
     namespace helper_ns =
 #ifdef INTEGERS_128_BIT_HPP
         type_traits_helper_int128_t;
@@ -1211,13 +1218,13 @@ ATTRIBUTE_CONST constexpr TInt least_bit_set(TInt n) noexcept {
     return static_cast<TInt>(unsigned_n & -unsigned_n);
 }
 
-ATTRIBUTE_CONST constexpr uint32_t base_2_len(uint32_t n) noexcept {
+[[nodiscard]] ATTRIBUTE_CONST constexpr uint32_t base_2_len(uint32_t n) noexcept {
     // " | 1" operation does not affect answer for all
     //  numbers except n = 0. For n = 0 answer is 1.
     return 32 - uint32_t(countl_zero(n | 1));
 }
 
-ATTRIBUTE_CONST constexpr uint32_t base_2_len(uint64_t n) noexcept {
+[[nodiscard]] ATTRIBUTE_CONST constexpr uint32_t base_2_len(uint64_t n) noexcept {
     // " | 1" operation does not affect answer for all
     //  numbers except n = 0. For n = 0 answer is 1.
     return 64 - uint32_t(countl_zero(n | 1));
@@ -1235,7 +1242,7 @@ template <typename T>
              || std::is_same_v<T, uint128_t>
 #endif
 #endif
-ATTRIBUTE_CONST constexpr uint32_t base_b_len(T value, uint8_t base = 10) noexcept {
+[[nodiscard]] ATTRIBUTE_CONST constexpr uint32_t base_b_len(T value, uint8_t base = 10) noexcept {
     const uint32_t b  = base;
     const uint32_t b2 = b * b;
     const uint32_t b3 = b2 * b;
@@ -1264,28 +1271,28 @@ ATTRIBUTE_CONST constexpr uint32_t base_b_len(T value, uint8_t base = 10) noexce
 /// @brief For n > 0 returns ⌊log_2(n)⌋. For n = 0 returns (uint32_t)-1
 /// @param[in] n
 /// @return
-ATTRIBUTE_CONST constexpr uint32_t log2_floor(uint32_t n) noexcept {
+[[nodiscard]] ATTRIBUTE_CONST constexpr uint32_t log2_floor(uint32_t n) noexcept {
     return 31 - uint32_t(countl_zero(n));
 }
 
 /// @brief For n > 0 returns ⌈log_2(n)⌉. For n = 0 returns (uint32_t)-1
 /// @param[in] n
 /// @return
-ATTRIBUTE_CONST constexpr uint32_t log2_ceil(uint32_t n) noexcept {
+[[nodiscard]] ATTRIBUTE_CONST constexpr uint32_t log2_ceil(uint32_t n) noexcept {
     return log2_floor(n) + ((n & (n - 1)) != 0);
 }
 
 /// @brief For n > 0 returns ⌊log_2(n)⌋. For n = 0 returns (uint32_t)-1
 /// @param[in] n
 /// @return
-ATTRIBUTE_CONST constexpr uint32_t log2_floor(uint64_t n) noexcept {
+[[nodiscard]] ATTRIBUTE_CONST constexpr uint32_t log2_floor(uint64_t n) noexcept {
     return 63 - uint32_t(countl_zero(n));
 }
 
 /// @brief For n > 0 returns ⌈log_2(n)⌉. For n = 0 returns (uint32_t)-1
 /// @param[in] n
 /// @return
-ATTRIBUTE_CONST constexpr uint32_t log2_ceil(uint64_t n) noexcept {
+[[nodiscard]] ATTRIBUTE_CONST constexpr uint32_t log2_ceil(uint64_t n) noexcept {
     return log2_floor(n) + ((n & (n - 1)) != 0);
 }
 
@@ -1293,7 +1300,7 @@ ATTRIBUTE_CONST constexpr uint32_t log2_ceil(uint64_t n) noexcept {
 /// @brief For n > 0 returns ⌊log_2(n)⌋. For n = 0 returns (uint32_t)-1
 /// @param[in] n
 /// @return
-ATTRIBUTE_CONST constexpr uint32_t log2_floor(uint128_t n) noexcept {
+[[nodiscard]] ATTRIBUTE_CONST constexpr uint32_t log2_floor(uint128_t n) noexcept {
     uint64_t hi = uint64_t(n >> 64);
     return hi != 0 ? (127 - uint32_t(countl_zero(hi))) : (log2_floor(uint64_t(n)));
 }
@@ -1301,7 +1308,7 @@ ATTRIBUTE_CONST constexpr uint32_t log2_floor(uint128_t n) noexcept {
 /// @brief For n > 0 returns ⌈log_2(n)⌉. For n = 0 returns (uint32_t)-1
 /// @param[in] n
 /// @return
-ATTRIBUTE_CONST constexpr uint32_t log2_ceil(uint128_t n) noexcept {
+[[nodiscard]] ATTRIBUTE_CONST constexpr uint32_t log2_ceil(uint128_t n) noexcept {
     return log2_floor(n) + ((n & (n - 1)) != 0);
 }
 
@@ -1310,9 +1317,9 @@ ATTRIBUTE_CONST constexpr uint32_t log2_ceil(uint128_t n) noexcept {
 /// @brief For n > 0 returns ⌊log_10(n)⌋. For n = 0 returns (uint32_t)-1
 /// @param[in] n
 /// @return
-ATTRIBUTE_CONST
+[[nodiscard]] ATTRIBUTE_CONST
 #if defined(__cpp_constexpr) && __cpp_constexpr >= 202211L && defined(__GNUG__)
-constexpr
+    constexpr
 #endif
     inline uint32_t
     log10_floor(uint32_t n) noexcept {
@@ -1345,9 +1352,9 @@ constexpr
 /// (uint32_t)-1
 /// @param[in] n
 /// @return
-ATTRIBUTE_CONST
+[[nodiscard]] ATTRIBUTE_CONST
 #if defined(__cpp_constexpr) && __cpp_constexpr >= 202211L && defined(__GNUG__)
-constexpr
+    constexpr
 #endif
     inline uint32_t
     log10_floor(uint64_t n) noexcept {
@@ -1388,9 +1395,9 @@ constexpr
     return uint32_t(approx_log10 + adjustment);
 }
 
-ATTRIBUTE_CONST
+[[nodiscard]] ATTRIBUTE_CONST
 #if defined(__cpp_constexpr) && __cpp_constexpr >= 202211L && defined(__GNUG__)
-constexpr
+    constexpr
 #endif
     inline uint32_t
     base_10_len(uint32_t n) noexcept {
@@ -1398,9 +1405,9 @@ constexpr
     return log10_floor(n | 1) + 1;
 }
 
-ATTRIBUTE_CONST
+[[nodiscard]] ATTRIBUTE_CONST
 #if defined(__cpp_constexpr) && __cpp_constexpr >= 202211L && defined(__GNUG__)
-constexpr
+    constexpr
 #endif
     inline uint32_t
     base_10_len(uint64_t n) noexcept {
@@ -1418,7 +1425,7 @@ template <typename T>
              || std::is_same_v<T, uint128_t>
 #endif
 #endif
-ATTRIBUTE_CONST constexpr std::pair<T, uint32_t> extract_pow2(T n) noexcept {
+[[nodiscard]] ATTRIBUTE_CONST constexpr std::pair<T, uint32_t> extract_pow2(T n) noexcept {
     uint32_t r = uint32_t(countr_zero(n));
     return {n >> r, r};
 }
@@ -1428,7 +1435,7 @@ ATTRIBUTE_CONST constexpr std::pair<T, uint32_t> extract_pow2(T n) noexcept {
 /// @param y y
 /// @param z z
 /// @return median of x, y and z
-ATTRIBUTE_CONST constexpr bool bool_median(bool x, bool y, bool z) noexcept {
+[[nodiscard]] ATTRIBUTE_CONST constexpr bool bool_median(bool x, bool y, bool z) noexcept {
     return (x | y) & (y | z) & (x | z);
 }
 
@@ -1470,8 +1477,9 @@ template <class FloatType>
 #if CONFIG_HAS_AT_LEAST_CXX_20
     requires std::is_floating_point_v<FloatType>
 #endif
-ATTRIBUTE_CONST SumSinCos<FloatType> sum_of_sines_and_cosines(FloatType alpha, FloatType beta,
-                                                              uint32_t n) noexcept {
+[[nodiscard]] ATTRIBUTE_CONST SumSinCos<FloatType> sum_of_sines_and_cosines(FloatType alpha,
+                                                                            FloatType beta,
+                                                                            uint32_t n) noexcept {
     static_assert(std::is_floating_point_v<FloatType>, "Invalid type in sum_of_sines_and_cosines");
 
     const FloatType nf       = static_cast<FloatType>(n);
@@ -1515,7 +1523,8 @@ namespace detail {
 ///         number of different prime divisors of @a `n`.
 /// @param[in] n
 /// @return
-ATTRIBUTE_CONST constexpr std::uint32_t max_number_of_prime_divisors(std::uint32_t n) noexcept {
+[[nodiscard]] ATTRIBUTE_CONST constexpr std::uint32_t max_number_of_prime_divisors(
+    std::uint32_t n) noexcept {
     constexpr std::uint32_t kBoundary2 = 2 * 3;
     constexpr std::uint32_t kBoundary3 = 2 * 3 * 5;
     constexpr std::uint32_t kBoundary4 = 2 * 3 * 5 * 7;
@@ -1598,7 +1607,7 @@ ATTRIBUTE_CONST constexpr std::uint32_t max_number_of_prime_divisors(std::uint32
 }  // namespace detail
 
 template <class NumericType>
-struct PrimeFactor final {
+struct [[nodiscard]] PrimeFactor final {
     constexpr PrimeFactor(NumericType prime_factor, std::uint32_t prime_factor_power) noexcept
         : factor(prime_factor), factor_power(prime_factor_power) {}
     NumericType factor;
@@ -1619,7 +1628,7 @@ template <class NumericType>
 #endif
              )
 #endif
-inline auto prime_factors_as_pairs(NumericType n) {
+[[nodiscard]] inline auto prime_factors_as_pairs(NumericType n) {
     std::vector<PrimeFactor<NumericType>> divisors;
     if constexpr (std::is_same_v<NumericType, std::uint32_t>) {
         divisors.reserve(detail::max_number_of_prime_divisors(n));
@@ -1669,7 +1678,7 @@ template <class NumericType>
 #endif
              )
 #endif
-inline auto prime_factors_as_map(NumericType n) {
+[[nodiscard]] inline auto prime_factors_as_map(NumericType n) {
     std::map<NumericType, uint32_t> divisors;
     auto hint_iterator = divisors.begin();
 
@@ -1899,7 +1908,7 @@ template <uint32_t N>
 #undef CONSTEXPR_BITSET_OPS
 
 template <class UIntType>
-struct ExtEuclidAlgoRet {
+struct [[nodiscard]] ExtEuclidAlgoRet {
     std::int64_t u_value;
     std::int64_t v_value;
     UIntType gcd_value;
@@ -1918,7 +1927,8 @@ struct ExtEuclidAlgoRet {
 /// @param b b value
 /// @return {u, v, gcd(a, b)}
 template <typename IntType>
-ATTRIBUTE_CONST constexpr auto extended_euclid_algorithm(IntType a, IntType b) noexcept {
+[[nodiscard]] ATTRIBUTE_CONST constexpr auto extended_euclid_algorithm(IntType a,
+                                                                       IntType b) noexcept {
     static_assert(std::is_integral_v<IntType>, "Integral type expected");
 
     std::int64_t u_previous = a != 0;
@@ -2022,8 +2032,9 @@ ATTRIBUTE_CONST constexpr HelperRetType congruence_helper(const std::uint64_t a,
 ///          such that 0 <= x_{0} < x_{1} < ... < x_{gcd(a, m)-1} < m,
 ///          x_{0} < m / gcd(a, m), x_{i + 1} = x_{i} + m / gcd(a, m).
 ///         Otherwise, return empty vector.
-inline std::vector<std::uint32_t> solve_congruence_all_roots(std::uint64_t a, std::int64_t c,
-                                                             std::uint32_t m) {
+[[nodiscard]] inline std::vector<std::uint32_t> solve_congruence_all_roots(std::uint64_t a,
+                                                                           std::int64_t c,
+                                                                           std::uint32_t m) {
     const auto [x0, d, m_] = detail::congruence_helper(a, c, m);
     std::vector<std::uint32_t> solutions(d);
     auto x = x0;
@@ -2044,8 +2055,9 @@ inline std::vector<std::uint32_t> solve_congruence_all_roots(std::uint64_t a, st
 /// @param m
 /// @return If roots exist, return root x such that 0 <= x < m / gcd(a, m).
 ///         Otherwise, return uint32_t(-1)
-ATTRIBUTE_CONST constexpr std::uint32_t solve_congruence(std::uint64_t a, std::int64_t c,
-                                                         std::uint32_t m) noexcept {
+[[nodiscard]] ATTRIBUTE_CONST constexpr std::uint32_t solve_congruence(std::uint64_t a,
+                                                                       std::int64_t c,
+                                                                       std::uint32_t m) noexcept {
     return detail::congruence_helper(a, c, m).x0;
 }
 
@@ -2058,9 +2070,8 @@ ATTRIBUTE_CONST constexpr std::uint32_t solve_congruence(std::uint64_t a, std::i
 /// @param c
 /// @param m
 /// @return
-ATTRIBUTE_CONST constexpr std::uint64_t solve_binary_congruence(std::uint32_t k,
-                                                                const std::uint32_t c,
-                                                                const std::uint32_t m) noexcept {
+[[nodiscard]] ATTRIBUTE_CONST constexpr std::uint64_t solve_binary_congruence(
+    std::uint32_t k, const std::uint32_t c, const std::uint32_t m) noexcept {
     ATTRIBUTE_ASSUME(m % 2 == 1);
     ATTRIBUTE_ASSUME(m % 4 == 1 || m % 4 == 3);
 
@@ -2094,7 +2105,8 @@ namespace std {
 /// @param[in] a
 /// @param[in] b
 /// @return gcd(a, b)
-ATTRIBUTE_CONST inline I128_CONSTEXPR uint128_t gcd(uint128_t a, uint128_t b) noexcept {
+[[nodiscard]] ATTRIBUTE_CONST inline I128_CONSTEXPR uint128_t gcd(uint128_t a,
+                                                                  uint128_t b) noexcept {
     if (unlikely(a == 0)) {
         return b;
     }
@@ -2124,7 +2136,7 @@ ATTRIBUTE_CONST inline I128_CONSTEXPR uint128_t gcd(uint128_t a, uint128_t b) no
     }
 }
 
-ATTRIBUTE_CONST inline I128_CONSTEXPR uint128_t gcd(uint64_t a, int128_t b) noexcept {
+[[nodiscard]] ATTRIBUTE_CONST inline I128_CONSTEXPR uint128_t gcd(uint64_t a, int128_t b) noexcept {
     uint128_t b0 = math_functions::uabs(b);
     if (unlikely(b0 == 0)) {
         return a;
