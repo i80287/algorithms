@@ -1509,10 +1509,53 @@ namespace detail {
 /// @param[in] n
 /// @return
 ATTRIBUTE_CONST constexpr std::uint32_t max_number_of_prime_divisors(std::uint32_t n) noexcept {
-    if (n >= 2 * 3 * 5 * 7 * 11) {
-        if (n >= 2 * 3 * 5 * 7 * 11 * 13 * 17) {
-            if (n >= 2 * 3 * 5 * 7 * 11 * 13 * 17 * 19) {
-                if (n >= 2 * 3 * 5 * 7 * 11 * 13 * 17 * 19 * 23) {
+    constexpr std::uint32_t kBoundary2 = 2 * 3;
+    constexpr std::uint32_t kBoundary3 = 2 * 3 * 5;
+    constexpr std::uint32_t kBoundary4 = 2 * 3 * 5 * 7;
+    constexpr std::uint32_t kBoundary5 = 2 * 3 * 5 * 7 * 11;
+    constexpr std::uint32_t kBoundary6 = 2 * 3 * 5 * 7 * 11 * 13;
+    constexpr std::uint32_t kBoundary7 = 2 * 3 * 5 * 7 * 11 * 13 * 17;
+    constexpr std::uint32_t kBoundary8 = 2 * 3 * 5 * 7 * 11 * 13 * 17 * 19;
+    constexpr std::uint32_t kBoundary9 = 2 * 3 * 5 * 7 * 11 * 13 * 17 * 19 * 23;
+
+#if defined(__GNUG__) || defined(__clang__)
+#if defined(__clang__)
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wgnu-case-range"
+#else
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wpedantic"
+#endif
+    switch (n) {
+        case 0 ... kBoundary2 - 1:
+            return 1;
+        case kBoundary2 ... kBoundary3 - 1:
+            return 2;
+        case kBoundary3 ... kBoundary4 - 1:
+            return 3;
+        case kBoundary4 ... kBoundary5 - 1:
+            return 4;
+        case kBoundary5 ... kBoundary6 - 1:
+            return 5;
+        case kBoundary6 ... kBoundary7 - 1:
+            return 6;
+        case kBoundary7 ... kBoundary8 - 1:
+            return 7;
+        case kBoundary8 ... kBoundary9 - 1:
+            return 8;
+        default:
+            return 9;
+    }
+#if defined(__clang__)
+#pragma clang diagnostic pop
+#else
+#pragma GCC diagnostic pop
+#endif
+#else
+    if (n >= kBoundary5) {
+        if (n >= kBoundary7) {
+            if (n >= kBoundary8) {
+                if (n >= kBoundary9) {
                     return 9;
                 } else {
                     return 8;
@@ -1521,27 +1564,28 @@ ATTRIBUTE_CONST constexpr std::uint32_t max_number_of_prime_divisors(std::uint32
                 return 7;
             }
         } else {
-            if (n >= 2 * 3 * 5 * 7 * 11 * 13) {
+            if (n >= kBoundary6) {
                 return 6;
             } else {
                 return 5;
             }
         }
     } else {
-        if (n >= 2 * 3 * 5) {
-            if (n >= 2 * 3 * 5 * 7) {
+        if (n >= kBoundary3) {
+            if (n >= kBoundary4) {
                 return 4;
             } else {
                 return 3;
             }
         } else {
-            if (n >= 2 * 3) {
+            if (n >= kBoundary2) {
                 return 2;
             } else {
                 return 1;
             }
         }
     }
+#endif
 }
 
 }  // namespace detail

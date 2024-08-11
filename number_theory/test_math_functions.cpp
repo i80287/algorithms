@@ -167,7 +167,7 @@ static void test_bit_reverse() noexcept {
                                      37, 41, 43, 47,  53,  59,  61,  67,  71,  73, 79,
                                      83, 89, 97, 101, 103, 107, 109, 113, 127, 131};
     uint128_t n                   = uint64_t(-1);
-    for (uint32_t k = uint32_t(1e7); k != 0; k--) {
+    for (uint32_t k = uint32_t(1e7); k > 0; k--) {
         uint128_t b = (uint128_t(bit_reverse(uint64_t(n))) << 64) | bit_reverse(uint64_t(n >> 64));
         assert(bit_reverse(n) == b);
         n += shifts[k % 32];
@@ -538,24 +538,24 @@ template <class IntType>
     return true;
 }
 
-static void test_static_asserts_conditions_in_runtime() {
+static void test_general_asserts() {
 #define STRINGIFY(expr) #expr
 #define ASSERT_THAT(expr)                       \
     do {                                        \
-        assert((expr));                         \
+        assert(expr);                           \
         static_assert((expr), STRINGIFY(expr)); \
     } while (false)
 
 #if defined(__cpp_constexpr) && __cpp_constexpr >= 202211L && defined(__GNUG__)
 #define LOG10_ASSERT_THAT(expr)                 \
     do {                                        \
-        assert((expr));                         \
+        assert(expr);                           \
         static_assert((expr), STRINGIFY(expr)); \
     } while (false)
 #else
 #define LOG10_ASSERT_THAT(expr) \
     do {                        \
-        assert((expr));         \
+        assert(expr);           \
     } while (false)
 #endif
 
@@ -1485,9 +1485,14 @@ static void test_static_asserts_conditions_in_runtime() {
     ASSERT_THAT(bool_median(false, true, true));
 
 #endif  // defined(HAS_I128_CONSTEXPR) && HAS_I128_CONSTEXPR
+
+#undef STRINGIFY
+#undef ASSERT_THAT
+#undef LOG10_ASSERT_THAT
 }
 
 int main() {
+    test_general_asserts();
     test_isqrt();
     test_icbrt();
     test_log2();
@@ -1501,5 +1506,4 @@ int main() {
     assert(multi_thread_test_extended_euclid_algorithm<std::uint32_t>());
     assert(multi_thread_test_extended_euclid_algorithm<std::int64_t>());
     assert(test_solve_congruence_all_roots());
-    test_static_asserts_conditions_in_runtime();
 }
