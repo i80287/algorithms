@@ -1836,6 +1836,181 @@ template <uint32_t N>
 #undef CONSTEXPR_FIXED_PRIMES_SIEVE
 #undef CONSTEXPR_BITSET_OPS
 
+template <class UIntType>
+struct ExtEuclidAlgoRet {
+    std::int64_t u_value;
+    std::int64_t v_value;
+    UIntType gcd_value;
+};
+
+/// @brief
+/// Finds such integer u and v so that `a * u + b * v = gcd(a, b)`
+/// let gcd(a, b) >= 0
+/// if a == 0 => u == 0 && v == 1 && (a * u + b * v = b = gcd(0, b))
+/// if b == 0 => u == 1 && v == 0 && (a * u + b * v = a = gcd(a, 0))
+/// if a != 0 => |v| <= |a|
+/// if b != 0 => |u| <= |b|
+/// Works in O(log(min(a, b)))
+/// @tparam IntType integer type
+/// @param a a value
+/// @param b b value
+/// @return {u, v, gcd(a, b)}
+template <typename IntType>
+ATTRIBUTE_CONST constexpr auto extended_euclid_algorithm(IntType a, IntType b) noexcept {
+    static_assert(std::is_integral_v<IntType>, "Integral type expected");
+
+    std::int64_t u_previous = a != 0;
+    std::int64_t u_current  = 0;
+    std::int64_t v_previous = 0;
+    std::int64_t v_current  = 1;
+
+    using CompIntType = std::conditional_t<sizeof(IntType) >= sizeof(int), IntType, std::int64_t>;
+
+    CompIntType r_previous = a;
+    CompIntType r_current  = b;
+    while (r_current != 0) {
+        const std::int64_t q_current = static_cast<std::int64_t>(r_previous / r_current);
+        const CompIntType r_next     = r_previous % r_current;
+
+        r_previous = r_current;
+        r_current  = r_next;
+
+        const std::int64_t u_next = u_previous - u_current * q_current;
+        u_previous                = u_current;
+        u_current                 = u_next;
+
+        const std::int64_t v_next = v_previous - v_current * q_current;
+        v_previous                = v_current;
+        v_current                 = v_next;
+    }
+
+    if constexpr (std::is_signed_v<CompIntType>) {
+        if (r_previous < 0) {
+            u_previous = -u_previous;
+            v_previous = -v_previous;
+            r_previous = -r_previous;
+        }
+    }
+
+    using RetUIntType = std::make_unsigned_t<CompIntType>;
+    return ExtEuclidAlgoRet<RetUIntType>{
+        u_previous,
+        v_previous,
+        static_cast<RetUIntType>(r_previous),
+    };
+}
+
+namespace detail {
+
+struct HelperRetType {
+    static constexpr auto kNoSolution = std::uint32_t(-1);
+    std::uint32_t x0                  = kNoSolution;  // first solution of congruence
+    std::uint32_t d                   = 0;            // gcd(a, m)
+    std::uint32_t m_                  = 0;            // m / d
+};
+
+ATTRIBUTE_CONST ATTRIBUTE_ALWAYS_INLINE constexpr HelperRetType congruence_helper(
+    std::uint64_t a, std::int64_t c, std::uint32_t m) noexcept {
+    const std::uint32_t d = static_cast<std::uint32_t>(std::gcd(a, m));
+    if (m == 0 || c % static_cast<int64_t>(d) != 0) {
+        return {};
+    }
+
+    /*
+     * Solves a_ * x === c_ (mod m_) as gcd(a_, m_) == 1
+     */
+    const std::uint64_t a_ = a / d;
+    const std::uint32_t m_ = m / d;
+    // a_ * u_ + m_ * v_ == 1
+    const std::int64_t u_           = extended_euclid_algorithm<std::uint64_t>(a_, m_).u_value;
+    const std::uint64_t unsigned_u_ = std::uint64_t(u_ + (m_ * (u_ < 0)));
+
+    // a_ * (u_ * c_) + m_ * (v_ * c_) == c_
+    // a * (u_ * c_) + m * (v_ * c_) == c
+    const std::int64_t c_           = c / std::int64_t(d);
+    const std::int64_t signed_m_    = std::int64_t(m_);
+    const std::uint64_t unsigned_c_ = std::uint64_t((c_ % signed_m_) + signed_m_) % m_;
+    // x0 = u_ * c_
+    // now 0 <= unsigned_u_ < m_ && 0 <= unsigned_c_ < m_ =>
+    // => unsigned_u_ * unsigned_c_ wont cause overflow (since m_ <= m < 2^32)
+    const std::uint32_t x0 = std::uint32_t((unsigned_u_ * unsigned_c_) % m_);
+    ATTRIBUTE_ASSUME(x0 != HelperRetType::kNoSolution);
+
+    return {x0, d, m_};
+}
+
+}  // namespace detail
+
+/// @brief Solves congruence a * x ≡ c (mod m)
+/// @note Roots exist <=> c % gcd(a, m) == 0.
+///       If roots exist, then exactly gcd(a, m)
+///        roots are returned (see @return section).
+///       Works in O(log(min(a, m)) + gcd(a, m)).
+/// @param a
+/// @param c
+/// @param m
+/// @return If roots exist, return vector of gcd(a, m) roots
+///          such that 0 <= x_{0} < x_{1} < ... < x_{gcd(a, m)-1} < m,
+///          x_{0} < m / gcd(a, m), x_{i + 1} = x_{i} + m / gcd(a, m).
+///         Otherwise, return empty vector.
+std::vector<std::uint32_t> solve_congruence_all_roots(std::uint64_t a, std::int64_t c,
+                                                      std::uint32_t m) {
+    const auto [x0, d, m_] = detail::congruence_helper(a, c, m);
+    std::vector<std::uint32_t> solutions(d);
+    auto x = x0;
+    for (std::uint32_t& ith_solution : solutions) {
+        ith_solution = x;
+        x += m_;
+    }
+    return solutions;
+}
+
+/// @brief Solves congruence a * x ≡ c (mod m)
+/// @note Roots exist <=> c % gcd(a, m) == 0.
+///       If roots exist, then exactly 1 root is returned, and
+///        it is the least of all roots (see @fn solve_congruence_all_roots).
+///       Works in O(log(min(a, m))
+/// @param a
+/// @param c
+/// @param m
+/// @return If roots exist, return root x such that 0 <= x < m / gcd(a, m).
+///         Otherwise, return uint32_t(-1)
+ATTRIBUTE_CONST constexpr std::uint32_t solve_congruence(std::uint64_t a, std::int64_t c,
+                                                         std::uint32_t m) noexcept {
+    return detail::congruence_helper(a, c, m).x0;
+}
+
+/// @brief Solve congruence 2^k * x ≡ c (mod m),
+///        Where gcd(c, m) = 1 and m ≡ 1 mod 2
+///        Works in O(k)
+/// @note  Faster implementation of @fn solve_congruence
+///        for a = 2^k.
+/// @param k
+/// @param c
+/// @param m
+/// @return
+ATTRIBUTE_CONST constexpr std::uint64_t solve_binary_congruence(std::uint32_t k,
+                                                                const std::uint32_t c,
+                                                                const std::uint32_t m) noexcept {
+    /**
+     * The algorithm can be modified by checking:
+     * if c % 4 = 1, then if m % 4 = 3, c += m, else c -= m
+     * or
+     * if c % 4 = 3, then if m % 4 = 3, c -= m, else c += m
+     * then
+     * k -= 2, c /= 4
+     */
+    std::uint64_t c64 = c;
+    while (k != 0) {
+        if (c64 % 2 != 0) {
+            c64 += m;
+        }
+        c64 /= 2;
+        k--;
+    }
+    return c64;
+}
+
 }  // namespace math_functions
 
 #if defined(INTEGERS_128_BIT_HPP)
