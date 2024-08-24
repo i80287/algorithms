@@ -173,6 +173,8 @@
 
 #if CONFIG_GNUC_PREREQ(2, 6) || CONFIG_HAS_GCC_ATTRIBUTE(__const__)
 #define ATTRIBUTE_CONST __attribute__((__const__))
+#elif CONFIG_HAS_AT_LEAST_CXX_17 && (defined(__GNUG__) || defined(__clang__))
+#define ATTRIBUTE_COLD [[gnu::const]]
 #else
 #define ATTRIBUTE_CONST
 #endif
