@@ -434,10 +434,46 @@ static void TestRandomPrimesGMP() noexcept {
     mpz_clear(n_gmp);
 }
 
+static void TestMersennePrimeNumbers() noexcept {
+    for (const auto n : {0, 1, 2, 5, 11, 13, 17, 19, 23, 29}) {
+        assert(!math_functions::is_mersenne_prime(std::uint64_t(n)));
+        assert(!math_functions::is_mersenne_prime(uint128_t(n)));
+    }
+    for (const uint128_t n : {
+             uint128_t(3),
+             uint128_t(7),
+             uint128_t(31),
+             uint128_t(127),
+             uint128_t(8191),
+             uint128_t(131071),
+             uint128_t(524287),
+             uint128_t(2147483647),
+             uint128_t(2) * 1'000'000'000'000'000'000ull + 305'843'009'213'693'951ull,
+             uint128_t(618970019) * 1'000'000'000'000'000'000ull + 642'690'137'449'562'111ull,
+             uint128_t(162259276829213) * 1'000'000'000'000'000'000ull + 363'391'578'010'288'127ull,
+             (uint128_t(1) << 127) - 1,
+         }) {
+        if (n <= std::numeric_limits<std::uint64_t>::max()) {
+            assert(!math_functions::is_mersenne_prime(static_cast<std::uint64_t>(n - 2)));
+            assert(!math_functions::is_mersenne_prime(static_cast<std::uint64_t>(n - 1)));
+            assert(math_functions::is_mersenne_prime(static_cast<std::uint64_t>(n)));
+            assert(!math_functions::is_mersenne_prime(static_cast<std::uint64_t>(n + 1)));
+            assert(!math_functions::is_mersenne_prime(static_cast<std::uint64_t>(n + 2)));
+            assert(math_functions::is_prime_bpsw(static_cast<std::uint64_t>(n)));
+        }
+        assert(!math_functions::is_mersenne_prime(n - 2));
+        assert(!math_functions::is_mersenne_prime(n - 1));
+        assert(math_functions::is_mersenne_prime(n));
+        assert(!math_functions::is_mersenne_prime(n + 1));
+        assert(!math_functions::is_mersenne_prime(n + 2));
+    }
+}
+
 int main() {
     TestSmallPrimes();
     TestMidPrimes();
     TestLargestU64Primes();
     TestPrimesFromFile();
     TestRandomPrimesGMP();
+    TestMersennePrimeNumbers();
 }

@@ -22,7 +22,7 @@ using std::uint64_t;
  * some integer t, with 0 <= t < r.
  **********************************************************************************************/
 template <bool BasicChecks = true>
-ATTRIBUTE_CONST constexpr bool is_strong_prp(uint64_t n, uint64_t a) noexcept {
+ATTRIBUTE_CONST inline I128_CONSTEXPR bool is_strong_prp(uint64_t n, uint64_t a) noexcept {
     if constexpr (BasicChecks) {
         if (unlikely(a < 2)) {
             // is_strong_prp requires 'a' greater than or equal to 2
@@ -87,7 +87,8 @@ ATTRIBUTE_CONST constexpr bool is_strong_prp(uint64_t n, uint64_t a) noexcept {
  * the Jacobi symbol]
  **********************************************************************************************/
 template <bool BasicChecks = true>
-ATTRIBUTE_CONST constexpr bool is_strong_lucas_prp(uint64_t n, uint32_t p, int32_t q) noexcept {
+ATTRIBUTE_CONST inline I128_CONSTEXPR bool is_strong_lucas_prp(uint64_t n, uint32_t p,
+                                                               int32_t q) noexcept {
     int64_t d = int64_t(uint64_t(p) * p) - int64_t(q) * 4;
     if constexpr (BasicChecks) {
         /* Check if p*p - 4*q == 0. */
@@ -298,7 +299,7 @@ ATTRIBUTE_CONST constexpr bool is_strong_lucas_prp(uint64_t n, uint32_t p, int32
  * perfect square, otherwise the search for D will only stop when D=n.
  ***********************************************************************************************************/
 template <bool BasicChecks = true>
-ATTRIBUTE_CONST constexpr bool is_strong_selfridge_prp(uint64_t n) noexcept {
+ATTRIBUTE_CONST inline I128_CONSTEXPR bool is_strong_selfridge_prp(uint64_t n) noexcept {
     if constexpr (BasicChecks) {
         if (unlikely(n == 1)) {
             return false;
@@ -350,7 +351,7 @@ ATTRIBUTE_CONST constexpr bool is_strong_selfridge_prp(uint64_t n) noexcept {
 /// operations )
 /// @param n number to test
 /// @return true if n is prime and false otherwise
-ATTRIBUTE_CONST constexpr bool is_prime_bpsw(uint64_t n) noexcept {
+ATTRIBUTE_CONST inline I128_CONSTEXPR bool is_prime_bpsw(uint64_t n) noexcept {
     if (n % 2 == 0) {
         return n == 2;
     }
@@ -425,7 +426,7 @@ ATTRIBUTE_CONST constexpr bool is_prime_sqrt(uint64_t n) noexcept {
     return true;
 }
 
-ATTRIBUTE_CONST constexpr bool is_prime_sqrt(uint128_t n) noexcept {
+ATTRIBUTE_CONST inline I128_CONSTEXPR bool is_prime_sqrt(uint128_t n) noexcept {
     if (n % 2 == 0) {
         return n == 2;
     }
@@ -510,10 +511,7 @@ ATTRIBUTE_CONST constexpr bool is_prime_u16(uint16_t m) noexcept {
     }
 }
 
-namespace detail {
-
-ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_CONST constexpr bool is_mersenne_prime_impl(
-    const std::uint64_t n) noexcept {
+ATTRIBUTE_CONST constexpr bool is_mersenne_prime(const std::uint64_t n) noexcept {
     const auto [q, p] = math_functions::extract_pow2(n + 1);
     if (q != 1) {
         return false;
@@ -525,6 +523,7 @@ ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_CONST constexpr bool is_mersenne_prime_impl(
         case 5:
         case 7:
         case 13:
+        case 17:
         case 19:
         case 31:
         case 61:
@@ -534,46 +533,31 @@ ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_CONST constexpr bool is_mersenne_prime_impl(
     }
 }
 
-};  // namespace detail
-
-ATTRIBUTE_CONST constexpr bool is_mersenne_prime(const std::uint64_t n) noexcept {
-    const bool res = detail::is_mersenne_prime_impl(n);
-
-    if (res) {
-        switch (n) {
-            case 3:
-            case 7:
-            case 31:
-            case 127:
-            case 8191:
-            case 524287:
-            case 2147483647:
-            case 2305843009213693951ull:
-                break;
-            default:
-                CONFIG_UNREACHABLE();
-                break;
-        }
-        ATTRIBUTE_ASSUME(is_prime_bpsw(n) && is_prime_sqrt(n));
-    } else {
-        switch (n) {
-            case 3:
-            case 7:
-            case 31:
-            case 127:
-            case 8191:
-            case 524287:
-            case 2147483647:
-            case 2305843009213693951ull:
-                CONFIG_UNREACHABLE();
-                break;
-            default:
-                break;
-        }
-        ATTRIBUTE_ASSUME(!is_prime_bpsw(n) && !is_prime_sqrt(n));
+ATTRIBUTE_CONST inline I128_CONSTEXPR bool is_mersenne_prime(const uint128_t n) noexcept {
+    const auto np1 = n + 1;
+    if (!is_power_of_two(np1)) {
+        return false;
     }
+    const auto [q, p] = math_functions::extract_pow2(np1);
+    ATTRIBUTE_ASSUME(q == 1);
 
-    return res;
+    switch (p) {
+        case 2:
+        case 3:
+        case 5:
+        case 7:
+        case 13:
+        case 17:
+        case 19:
+        case 31:
+        case 61:
+        case 89:
+        case 107:
+        case 127:
+            return true;
+        default:
+            return false;
+    }
 }
 
 }  // namespace math_functions

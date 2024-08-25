@@ -1433,6 +1433,7 @@ template <typename T>
 #endif
 [[nodiscard]] ATTRIBUTE_CONST constexpr ExtractPow2Result<T> extract_pow2(T n) noexcept {
     auto r = static_cast<std::uint32_t>(countr_zero(n));
+    ATTRIBUTE_ASSUME(r <= sizeof(n) * CHAR_BIT);
     return {n >> r, r};
 }
 
@@ -2180,7 +2181,7 @@ ATTRIBUTE_CONST constexpr HelperRetType congruence_helper(const std::uint64_t a,
 
 #if defined(INTEGERS_128_BIT_HPP)
 
-[[nodiscard]] ATTRIBUTE_CONST I128_CONSTEXPR bool is_perfect_number(uint128_t n) noexcept {
+[[nodiscard]] ATTRIBUTE_CONST inline I128_CONSTEXPR bool is_perfect_number(uint128_t n) noexcept {
     return n > std::numeric_limits<uint64_t>::max()
                ? n == (((uint128_t(1) << 61) - 1) << (61 - 1))
                : is_perfect_number(static_cast<std::uint64_t>(n));
