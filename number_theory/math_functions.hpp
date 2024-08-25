@@ -81,7 +81,7 @@ template <InplaceMultipliable T>
 #else
 template <class T>
 #endif
-constexpr T bin_pow(T n, size_t p) noexcept {
+[[nodiscard]] constexpr T bin_pow(T n, uint64_t p) noexcept {
     T res = 1;
     while (true) {
         if (p & 1) {
@@ -100,8 +100,12 @@ constexpr T bin_pow(T n, size_t p) noexcept {
 /// @param[in] n
 /// @param[in] p
 /// @return T ^ p
+#if CONFIG_HAS_CONCEPTS
+template <InplaceMultipliable T>
+#else
 template <class T>
-constexpr T bin_pow(T n, int64_t p) noexcept {
+#endif
+[[nodiscard]] constexpr T bin_pow(T n, int64_t p) noexcept {
     const bool not_inverse = p >= 0;
     uint64_t p_u           = p >= 0 ? static_cast<uint64_t>(p) : -static_cast<uint64_t>(p);
     T res                  = 1;
@@ -125,16 +129,19 @@ constexpr T bin_pow(T n, int64_t p) noexcept {
 [[nodiscard]] ATTRIBUTE_CONST constexpr uint32_t bin_pow_mod(uint32_t n, uint32_t p,
                                                              uint32_t mod) noexcept {
     uint64_t res   = mod != 1;
-    uint64_t wdn_n = n;
+    uint64_t widen_n = n;
     while (true) {
         if (p & 1) {
-            res = (res * wdn_n) % mod;
+            ATTRIBUTE_ASSUME(widen_n < (1ull << 32));
+            res = (res * widen_n) % mod;
         }
         p >>= 1;
         if (p == 0) {
             return static_cast<uint32_t>(res);
         }
-        wdn_n = (wdn_n * wdn_n) % mod;
+        ATTRIBUTE_ASSUME(widen_n < (1ull << 32));
+        widen_n = (widen_n * widen_n) % mod;
+        ATTRIBUTE_ASSUME(widen_n < (1ull << 32));
     }
 }
 
@@ -164,7 +171,7 @@ constexpr T bin_pow(T n, int64_t p) noexcept {
 
 [[nodiscard]] ATTRIBUTE_CONST constexpr uint32_t isqrt(uint32_t n) noexcept {
     /**
-     * In the runtime `sqrt` is used (but not for the msvc c++17).
+     * In the runtime `sqrt` is used (but not for the msvc prior to the c++20).
      *
      * Quick Bench benchmark source code on the godbolt:
      *  https://godbolt.org/z/7jK8xcjjf
@@ -197,7 +204,7 @@ constexpr T bin_pow(T n, int64_t p) noexcept {
 
 [[nodiscard]] ATTRIBUTE_CONST constexpr uint32_t isqrt(uint64_t n) noexcept {
     /**
-     * In the runtime `sqrtl` is used (but not for the msvc c++17).
+     * In the runtime `sqrtl` is used (but not for the msvc prior to the c++20).
      */
 #if defined(__GNUG__) || defined(__clang__) || CONFIG_HAS_AT_LEAST_CXX_20
     if (config_is_constant_evaluated() || config_is_gcc_constant_p(n) || sizeof(long double) < 16) {
@@ -251,6 +258,10 @@ constexpr T bin_pow(T n, int64_t p) noexcept {
 
 #endif
 
+/// @brief Return integer part of the cube root of n, i.e. ⌊n^(1/3)⌋
+/// @note  See Hackers Delight Chapter 11, section 11-2.
+/// @param[in] n
+/// @return ⌊n^(1/3)⌋
 [[nodiscard]] ATTRIBUTE_CONST constexpr uint32_t icbrt(uint32_t n) noexcept {
     /**
      * cbrt and cbrtl are not used here because according
@@ -266,8 +277,8 @@ constexpr T bin_pow(T n, int64_t p) noexcept {
      *
      * If in the future the results are changed (overloads of sqrt and sqrtl are
      *  much faster then the isqrt implementation above used in the constexpr),
-     *  this should be taken into account: on the libstdc++
-     *  `uint32_t(std::cbrt(static_cast<double>(3375)))` may be equal to 14
+     *  this should be taken into account: when using the libstdc++,
+     *  `uint32_t(std::cbrt(3375.0))` may be equal to 14
      */
 
 #if defined(__GNUG__) && !defined(__clang__)
@@ -275,9 +286,6 @@ constexpr T bin_pow(T n, int64_t p) noexcept {
 #endif
 
     uint32_t y = 0;
-    /**
-     * See Hackers Delight Chapter 11.
-     */
     for (int32_t s = 30; s >= 0; s -= 3) {
         y *= 2;
         uint32_t b = (3 * y * (y + 1) | 1) << s;
@@ -288,19 +296,20 @@ constexpr T bin_pow(T n, int64_t p) noexcept {
     }
     // 1625^3 = 4291015625 < 2^32 - 1 = 4294967295 < 4298942376 = 1626^3
     ATTRIBUTE_ASSUME(y <= 1625u);
-#if defined(__GNUG__) && !defined(__clang__)
+#if defined(__GNUG__) && !defined(__clang__) && CONFIG_HAS_AT_LEAST_CXX_17
     // Clang ignores this assumption because it contains potential side effects (fpu register
-    // flags), when GCC has made almost all math functions constexpr long before the C++26
+    // flags), while GCC has made almost all math functions constexpr long before the C++26
     ATTRIBUTE_ASSUME(
         y == (static_cast<std::uint32_t>(std::cbrt(static_cast<long double>(n_original_value)))));
 #endif
     return y;
 }
 
+/// @brief Return integer part of the cube root of n, i.e. ⌊n^(1/3)⌋
+/// @note  See Hackers Delight Chapter Chapter 11, ex. 2.
+/// @param[in] n
+/// @return ⌊n^(1/3)⌋
 [[nodiscard]] ATTRIBUTE_CONST constexpr uint32_t icbrt(uint64_t n) noexcept {
-    /**
-     * See Hackers Delight Chapter 11.
-     */
     uint64_t y = 0;
     if (n >= 0x1000000000000000ull) {
         if (n >= 0x8000000000000000ull) {
@@ -325,10 +334,10 @@ constexpr T bin_pow(T n, int64_t p) noexcept {
     return uint32_t(y);
 }
 
-/// @brief Return integer part of the fourth root of n, that is ⌊n^0.25⌋
-///         It can be shown that ⌊n^0.25⌋ = ⌊⌊n^0.5⌋^0.5⌋
+/// @brief Return integer part of the fourth root of n, i.e. ⌊n^0.25⌋
+/// @note ⌊n^0.25⌋ = ⌊⌊n^0.5⌋^0.5⌋ (see Hackers Delight Chapter 11, ex.1)
 /// @param[in] n
-/// @return
+/// @return ⌊n^0.25⌋
 [[nodiscard]] ATTRIBUTE_CONST constexpr uint32_t ifrrt(uint64_t n) noexcept {
     return isqrt(isqrt(n));
 }
@@ -379,7 +388,7 @@ constexpr T bin_pow(T n, int64_t p) noexcept {
 /// @param[in] n
 /// @param[out] root
 /// @return `true` if @a `n` is perfect square and `false` otherwise.
-[[nodiscard]] ATTRIBUTE_CONST constexpr bool is_perfect_square(uint64_t n,
+[[nodiscard]] ATTRIBUTE_PURE constexpr bool is_perfect_square(uint64_t n,
                                                                uint32_t& root) noexcept {
     // clang-format off
     /**
@@ -442,7 +451,7 @@ constexpr T bin_pow(T n, int64_t p) noexcept {
 /// @param[in] n
 /// @param[out] root
 /// @return `true` if @a `n` is perfect square and `false` otherwise.
-[[nodiscard]] ATTRIBUTE_CONST inline I128_CONSTEXPR bool is_perfect_square(
+[[nodiscard]] ATTRIBUTE_PURE inline I128_CONSTEXPR bool is_perfect_square(
     uint128_t n, uint64_t& root) noexcept {
     // clang-format off
     /**
@@ -658,12 +667,12 @@ ATTRIBUTE_ALWAYS_INLINE constexpr void visit_all_submasks(uint64_t mask, Functor
 
 constexpr bool uabs(bool n) = delete;
 
-[[nodiscard]] [[nodiscard]] ATTRIBUTE_CONST constexpr unsigned char uabs(signed char n) noexcept {
+[[nodiscard]] ATTRIBUTE_CONST constexpr unsigned char uabs(signed char n) noexcept {
     return n >= 0 ? static_cast<unsigned char>(n)
                   : static_cast<unsigned char>(-static_cast<unsigned char>(n));
 }
 
-[[nodiscard]] [[nodiscard]] ATTRIBUTE_CONST constexpr unsigned char uabs(char n) noexcept {
+[[nodiscard]] ATTRIBUTE_CONST constexpr unsigned char uabs(char n) noexcept {
     if constexpr (std::is_signed_v<char>) {
         return uabs(static_cast<signed char>(n));
     } else {
@@ -671,21 +680,41 @@ constexpr bool uabs(bool n) = delete;
     }
 }
 
-[[nodiscard]] [[nodiscard]] ATTRIBUTE_CONST constexpr unsigned short uabs(short n) noexcept {
+[[nodiscard]] ATTRIBUTE_CONST constexpr unsigned char uabs(unsigned char n) noexcept {
+    return n;
+}
+
+[[nodiscard]] ATTRIBUTE_CONST constexpr unsigned short uabs(short n) noexcept {
     return n >= 0 ? static_cast<unsigned short>(n)
                   : static_cast<unsigned short>(-static_cast<unsigned short>(n));
+}
+
+[[nodiscard]] ATTRIBUTE_CONST constexpr unsigned short uabs(unsigned short n) noexcept {
+    return n;
 }
 
 [[nodiscard]] ATTRIBUTE_CONST constexpr unsigned uabs(int n) noexcept {
     return n >= 0 ? static_cast<unsigned>(n) : -static_cast<unsigned>(n);
 }
 
+[[nodiscard]] ATTRIBUTE_CONST constexpr unsigned uabs(unsigned n) noexcept {
+    return n;
+}
+
 [[nodiscard]] ATTRIBUTE_CONST constexpr unsigned long uabs(long n) noexcept {
     return n >= 0 ? static_cast<unsigned long>(n) : -static_cast<unsigned long>(n);
 }
 
+[[nodiscard]] ATTRIBUTE_CONST constexpr unsigned long uabs(unsigned long n) noexcept {
+    return n;
+}
+
 [[nodiscard]] ATTRIBUTE_CONST constexpr unsigned long long uabs(long long n) noexcept {
     return n >= 0 ? static_cast<unsigned long long>(n) : -static_cast<unsigned long long>(n);
+}
+
+[[nodiscard]] ATTRIBUTE_CONST constexpr unsigned long long uabs(unsigned long long n) noexcept {
+    return n;
 }
 
 #if defined(INTEGERS_128_BIT_HPP)
@@ -693,6 +722,10 @@ constexpr bool uabs(bool n) = delete;
 [[nodiscard]] ATTRIBUTE_CONST inline I128_CONSTEXPR uint128_t uabs(int128_t n) noexcept {
     uint128_t t = uint128_t(n >> 127);
     return (uint128_t(n) ^ t) - t;
+}
+
+[[nodiscard]] ATTRIBUTE_CONST inline I128_CONSTEXPR uint128_t uabs(uint128_t n) noexcept {
+    return n;
 }
 
 #endif
@@ -1422,6 +1455,7 @@ struct ExtractPow2Result {
 };
 
 /// @brief Find q and r such n = q * (2 ^ r), q is odd if n != 0
+/// @note  For n = 0 answer is { q = 0, r = sizeof(n) * CHAR_BIT }
 /// @param[in] n
 /// @return Pair of q and r
 template <typename T>
@@ -1434,7 +1468,7 @@ template <typename T>
 [[nodiscard]] ATTRIBUTE_CONST constexpr ExtractPow2Result<T> extract_pow2(T n) noexcept {
     auto r = static_cast<std::uint32_t>(countr_zero(n));
     ATTRIBUTE_ASSUME(r <= sizeof(n) * CHAR_BIT);
-    return {n >> r, r};
+    return { n != 0 ? (n >> r) : 0, r};
 }
 
 /// @brief Returns median of boolean variables x, y and z

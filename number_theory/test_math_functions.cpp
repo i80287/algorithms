@@ -666,22 +666,33 @@ static void test_general_asserts() {
                 18446744073709551558ull);
 #endif
 
-    ASSERT_THAT(icbrt(0u) == 0);
-    ASSERT_THAT(icbrt(1u) == 1);
-    ASSERT_THAT(icbrt(8u) == 2);
-    ASSERT_THAT(icbrt(27u) == 3);
-    ASSERT_THAT(icbrt(64u) == 4);
-    ASSERT_THAT(icbrt(257u * 257u * 257u) == 257u);
-    ASSERT_THAT(icbrt(257u * 257u * 257u + 1) == 257u);
-    ASSERT_THAT(icbrt(258u * 258u * 258u - 1) == 257u);
-    ASSERT_THAT(icbrt(258u * 258u * 258u) == 258u);
-    ASSERT_THAT(icbrt(1u << 15) == 1u << 5);
-    ASSERT_THAT(icbrt(1u << 18) == 1u << 6);
-    ASSERT_THAT(icbrt(1u << 21) == 1u << 7);
-    ASSERT_THAT(icbrt(1u << 24) == 1u << 8);
-    ASSERT_THAT(icbrt(1u << 27) == 1u << 9);
-    ASSERT_THAT(icbrt(1u << 30) == 1u << 10);
-    ASSERT_THAT(icbrt(uint32_t(-1)) == 1625u);
+    ASSERT_THAT(icbrt(uint32_t(0)) == 0);
+    ASSERT_THAT(icbrt(uint32_t(1)) == 1);
+    ASSERT_THAT(icbrt(uint32_t(8)) == 2);
+    ASSERT_THAT(icbrt(uint32_t(27)) == 3);
+    ASSERT_THAT(icbrt(uint32_t(64)) == 4);
+    ASSERT_THAT(icbrt(uint32_t(65)) == 4);
+    ASSERT_THAT(icbrt(uint32_t(124)) == 4);
+    ASSERT_THAT(icbrt(uint32_t(125)) == 5);
+    ASSERT_THAT(icbrt(uint32_t(126)) == 5);
+    ASSERT_THAT(icbrt(uint32_t(3375)) == 15);
+    ASSERT_THAT(icbrt(uint32_t(257 * 257 * 257 - 1)) == 256);
+    ASSERT_THAT(icbrt(uint32_t(257 * 257 * 257)) == 257);
+    ASSERT_THAT(icbrt(uint32_t(257 * 257 * 257 + 1)) == 257);
+    ASSERT_THAT(icbrt(uint32_t(258 * 258 * 258 - 1)) == 257);
+    ASSERT_THAT(icbrt(uint32_t(258 * 258 * 258)) == 258);
+    ASSERT_THAT(icbrt(uint32_t(258 * 258 * 258 + 1)) == 258);
+    ASSERT_THAT(icbrt(uint32_t(289) * 289 * 289) == 289);
+    ASSERT_THAT(icbrt(uint32_t(289) * 289 * 289 + 1) == 289);
+    ASSERT_THAT(icbrt(uint32_t(290) * 290 * 290 - 1) == 289);
+    ASSERT_THAT(icbrt(uint32_t(290) * 290 * 290) == 290);
+    ASSERT_THAT(icbrt(uint32_t(1) << 15) == 1 << 5);
+    ASSERT_THAT(icbrt(uint32_t(1) << 18) == 1 << 6);
+    ASSERT_THAT(icbrt(uint32_t(1) << 21) == 1 << 7);
+    ASSERT_THAT(icbrt(uint32_t(1) << 24) == 1 << 8);
+    ASSERT_THAT(icbrt(uint32_t(1) << 27) == 1 << 9);
+    ASSERT_THAT(icbrt(uint32_t(1) << 30) == 1 << 10);
+    ASSERT_THAT(icbrt(uint32_t(-1)) == 1625);
 
     ASSERT_THAT(icbrt(uint64_t(0)) == 0);
     ASSERT_THAT(icbrt(uint64_t(1)) == 1);
@@ -691,11 +702,25 @@ static void test_general_asserts() {
     ASSERT_THAT(icbrt(uint64_t(65)) == 4);
     ASSERT_THAT(icbrt(uint64_t(124)) == 4);
     ASSERT_THAT(icbrt(uint64_t(125)) == 5);
+    ASSERT_THAT(icbrt(uint64_t(126)) == 5);
+    ASSERT_THAT(icbrt(uint64_t(3375)) == 15);
+    ASSERT_THAT(icbrt(uint64_t(257 * 257 * 257 - 1)) == 256);
+    ASSERT_THAT(icbrt(uint64_t(257 * 257 * 257)) == 257);
+    ASSERT_THAT(icbrt(uint64_t(257 * 257 * 257 + 1)) == 257);
+    ASSERT_THAT(icbrt(uint64_t(258 * 258 * 258 - 1)) == 257);
+    ASSERT_THAT(icbrt(uint64_t(258 * 258 * 258)) == 258);
+    ASSERT_THAT(icbrt(uint64_t(258 * 258 * 258 + 1)) == 258);
     ASSERT_THAT(icbrt(uint64_t(289) * 289 * 289) == 289);
     ASSERT_THAT(icbrt(uint64_t(289) * 289 * 289 + 1) == 289);
     ASSERT_THAT(icbrt(uint64_t(290) * 290 * 290 - 1) == 289);
     ASSERT_THAT(icbrt(uint64_t(290) * 290 * 290) == 290);
+    ASSERT_THAT(icbrt(uint64_t(1) << 15) == 1 << 5);
+    ASSERT_THAT(icbrt(uint64_t(1) << 18) == 1 << 6);
+    ASSERT_THAT(icbrt(uint64_t(1) << 21) == 1 << 7);
+    ASSERT_THAT(icbrt(uint64_t(1) << 24) == 1 << 8);
+    ASSERT_THAT(icbrt(uint64_t(1) << 27) == 1 << 9);
     ASSERT_THAT(icbrt(uint64_t(1) << 30) == 1 << 10);
+    ASSERT_THAT(icbrt(uint64_t(uint32_t(-1))) == 1625);
     ASSERT_THAT(icbrt(uint64_t(1) << 33) == 1 << 11);
     ASSERT_THAT(icbrt(uint64_t(1) << 36) == 1 << 12);
     ASSERT_THAT(icbrt(uint64_t(1) << 39) == 1 << 13);
@@ -732,6 +757,7 @@ static void test_general_asserts() {
     ASSERT_THAT(is_perfect_square(uint64_t(1) << 48));
     ASSERT_THAT(is_perfect_square(uint64_t(1) << 56));
     ASSERT_THAT(is_perfect_square(uint64_t(1) << 60));
+    ASSERT_THAT(is_perfect_square(uint64_t(1) << 62));
 
 #if defined(HAS_I128_CONSTEXPR) && HAS_I128_CONSTEXPR
     ASSERT_THAT(is_perfect_square(uint128_t(0)));
@@ -751,6 +777,17 @@ static void test_general_asserts() {
     ASSERT_THAT(is_perfect_square(uint128_t(1) << 48));
     ASSERT_THAT(is_perfect_square(uint128_t(1) << 56));
     ASSERT_THAT(is_perfect_square(uint128_t(1) << 60));
+    ASSERT_THAT(is_perfect_square(uint128_t(1) << 62));
+    ASSERT_THAT(is_perfect_square(uint128_t(1) << 64));
+    ASSERT_THAT(is_perfect_square(uint128_t(1) << 66));
+    ASSERT_THAT(is_perfect_square(uint128_t(1) << 68));
+    ASSERT_THAT(is_perfect_square(uint128_t(1) << 70));
+    ASSERT_THAT(is_perfect_square(uint128_t(1) << 72));
+    ASSERT_THAT(is_perfect_square(uint128_t(1) << 74));
+    ASSERT_THAT(is_perfect_square(uint128_t(1) << 76));
+    ASSERT_THAT(is_perfect_square(uint128_t(1) << 78));
+    ASSERT_THAT(is_perfect_square(uint128_t(1) << 80));
+    ASSERT_THAT(is_perfect_square(uint128_t(1) << 126));
 #endif
 
     ASSERT_THAT(bit_reverse(uint8_t(0b00000000)) == 0b00000000);
@@ -807,6 +844,8 @@ static void test_general_asserts() {
 #if defined(HAS_I128_CONSTEXPR) && HAS_I128_CONSTEXPR
 
     ASSERT_THAT(bit_reverse(uint128_t(0)) == 0);
+    ASSERT_THAT(bit_reverse(uint128_t(uint64_t(-1)) << 64) == uint64_t(-1));
+    ASSERT_THAT(bit_reverse((uint128_t(uint64_t(-1)) << 64) | 1) == ((uint128_t(1) << 127) | uint64_t(-1)));
     ASSERT_THAT(bit_reverse(uint128_t(-1)) == uint128_t(-1));
 
 #endif
@@ -1480,16 +1519,45 @@ static void test_general_asserts() {
     ASSERT_THAT(math_functions::popcount(1ull << 62) == 1);
     ASSERT_THAT(math_functions::popcount(1ull << 63) == 1);
 
-    ASSERT_THAT(!bool_median(false, false, false));
-    ASSERT_THAT(!bool_median(false, false, true));
-    ASSERT_THAT(!bool_median(false, true, false));
-    ASSERT_THAT(bool_median(false, true, true));
-    ASSERT_THAT(!bool_median(true, false, false));
-    ASSERT_THAT(bool_median(true, false, true));
-    ASSERT_THAT(bool_median(true, true, false));
-    ASSERT_THAT(bool_median(false, true, true));
+    ASSERT_THAT(!math_functions::bool_median(false, false, false));
+    ASSERT_THAT(!math_functions::bool_median(false, false, true));
+    ASSERT_THAT(!math_functions::bool_median(false, true, false));
+    ASSERT_THAT(math_functions::bool_median(false, true, true));
+    ASSERT_THAT(!math_functions::bool_median(true, false, false));
+    ASSERT_THAT(math_functions::bool_median(true, false, true));
+    ASSERT_THAT(math_functions::bool_median(true, true, false));
+    ASSERT_THAT(math_functions::bool_median(false, true, true));
 
 #endif  // defined(HAS_I128_CONSTEXPR) && HAS_I128_CONSTEXPR
+
+    ASSERT_THAT(([]() constexpr noexcept {
+        const auto [q, r] = math_functions::extract_pow2(uint32_t(0));
+        return q == 0 && r == 32;
+    }()));
+    ASSERT_THAT(([]() constexpr noexcept {
+        const auto [q, r] = math_functions::extract_pow2(uint32_t(1) << 31);
+        return q == 1 && r == 31;
+    }()));
+    ASSERT_THAT(([]() constexpr noexcept {
+        const auto [q, r] = math_functions::extract_pow2(uint64_t(0));
+        return q == 0 && r == 64;
+    }()));
+    ASSERT_THAT(([]() constexpr noexcept {
+        const auto [q, r] = math_functions::extract_pow2(uint64_t(1) << 31);
+        return q == 1 && r == 31;
+    }()));
+    ASSERT_THAT(([]() constexpr noexcept {
+        const auto [q, r] = math_functions::extract_pow2(uint64_t(1) << 63);
+        return q == 1 && r == 63;
+    }()));
+    ASSERT_THAT(([]() constexpr noexcept {
+        const auto [q, r] = math_functions::extract_pow2(uint64_t(9221685055305285632ull));
+        return q == 2147090867 && r == 32;
+    }()));
+    ASSERT_THAT(([]() constexpr noexcept {
+        const auto [q, r] = math_functions::extract_pow2(uint64_t(4610842527652642816ull));
+        return q == 2147090867 && r == 31;
+    }()));
 
 #undef STRINGIFY
 #undef ASSERT_THAT

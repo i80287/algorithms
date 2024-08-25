@@ -24,7 +24,6 @@ function(configure_gcc_or_clang_gcc_options)
     set(LOCAL_FN_TEST_COMPILE_OPTIONS
         ${LOCAL_FN_TEST_COMPILE_OPTIONS}
         -fstack-protector-strong
-        -fno-omit-frame-pointer
         -mshstk
         -Wall
         -Wextra
@@ -69,6 +68,9 @@ function(configure_gcc_or_clang_gcc_options)
     set(TEST_COMPILE_DEFINITIONS
         ${LOCAL_FN_TEST_COMPILE_DEFINITIONS}
         PARENT_SCOPE)
+    set(CMAKE_CXX_FLAGS
+        ${CMAKE_CXX_FLAGS}
+        -fsanitize=address,undefined PARENT_SCOPE)
 endfunction()
 
 if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")

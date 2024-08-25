@@ -511,6 +511,28 @@ ATTRIBUTE_CONST constexpr bool is_prime_u16(uint16_t m) noexcept {
     }
 }
 
+ATTRIBUTE_CONST constexpr bool is_mersenne_prime(const std::uint32_t n) noexcept {
+    const auto [q, p] = math_functions::extract_pow2(n + 1);
+    if (q != 1) {
+        return false;
+    }
+
+    switch (p) {
+        case 2:
+        case 3:
+        case 5:
+        case 7:
+        case 13:
+        case 17:
+        case 19:
+        case 31:
+        case 61:
+            return true;
+        default:
+            return false;
+    }
+}
+
 ATTRIBUTE_CONST constexpr bool is_mersenne_prime(const std::uint64_t n) noexcept {
     const auto [q, p] = math_functions::extract_pow2(n + 1);
     if (q != 1) {
