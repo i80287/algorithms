@@ -19,7 +19,7 @@ jobs:
     - name: Install dependencies
       run: |
         sudo dnf -y update
-        sudo dnf -y install gcc-c++ cmake make gmp gmp-devel gmp-c++ gmp-devel gmp-static mpfr-devel
+        sudo dnf -y install gcc cmake make gmp gmp-devel gmp-c++ gmp-devel gmp-static mpfr-devel
         sudo dnf upgrade
     - name: Run tests
       run: |
@@ -39,7 +39,7 @@ jobs:
     - name: Install dependencies
       run: |
         sudo dnf -y update
-        sudo dnf -y install clang cmake make gmp gmp-devel gmp-c++ gmp-devel gmp-static mpfr-devel
+        sudo dnf -y install gcc llvm cmake make gmp gmp-devel gmp-c++ gmp-devel gmp-static mpfr-devel
         sudo dnf upgrade
     - name: Run tests
       run: |
