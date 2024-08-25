@@ -164,14 +164,14 @@ constexpr T bin_pow(T n, int64_t p) noexcept {
 
 [[nodiscard]] ATTRIBUTE_CONST constexpr uint32_t isqrt(uint32_t n) noexcept {
     /**
-     * In the runtime `sqrt` is used.
+     * In the runtime `sqrt` is used (but not for the msvc c++17).
      *
      * Quick Bench benchmark source code on the godbolt:
      *  https://godbolt.org/z/7jK8xcjjf
      */
 
     uint32_t y = 0;
-#if defined(__GNUG__) || CONFIG_HAS_AT_LEAST_CXX_20
+#if defined(__GNUG__) || defined(__clang__) || CONFIG_HAS_AT_LEAST_CXX_20
     if (config_is_constant_evaluated() || config_is_gcc_constant_p(n)) {
 #endif
         /**
@@ -185,7 +185,7 @@ constexpr T bin_pow(T n, int64_t p) noexcept {
                 y |= m;
             }
         }
-#if defined(__GNUG__) || CONFIG_HAS_AT_LEAST_CXX_20
+#if defined(__GNUG__) || defined(__clang__) || CONFIG_HAS_AT_LEAST_CXX_20
     } else {
         y = static_cast<uint32_t>(std::sqrt(static_cast<double>(n)));
     }
@@ -197,9 +197,9 @@ constexpr T bin_pow(T n, int64_t p) noexcept {
 
 [[nodiscard]] ATTRIBUTE_CONST constexpr uint32_t isqrt(uint64_t n) noexcept {
     /**
-     * In the runtime `sqrtl` is used.
+     * In the runtime `sqrtl` is used (but not for the msvc c++17).
      */
-#if defined(__GNUG__) || CONFIG_HAS_AT_LEAST_CXX_20
+#if defined(__GNUG__) || defined(__clang__) || CONFIG_HAS_AT_LEAST_CXX_20
     if (config_is_constant_evaluated() || config_is_gcc_constant_p(n) || sizeof(long double) < 16) {
 #endif
         /**
@@ -220,7 +220,7 @@ constexpr T bin_pow(T n, int64_t p) noexcept {
         } while (r >= l);
         ATTRIBUTE_ASSUME(((l - 1) >> 32) == 0);
         return uint32_t(l - 1);
-#if defined(__GNUG__) || CONFIG_HAS_AT_LEAST_CXX_20
+#if defined(__GNUG__) || defined(__clang__) || CONFIG_HAS_AT_LEAST_CXX_20
     } else {
         return static_cast<uint32_t>(std::sqrt(static_cast<long double>(n)));
     }
@@ -1415,6 +1415,12 @@ template <typename T>
     return log10_floor(n | 1) + 1;
 }
 
+template <class T>
+struct ExtractPow2Result {
+    T q;
+    std::uint32_t r;
+};
+
 /// @brief Find q and r such n = q * (2 ^ r), q is odd if n != 0
 /// @param[in] n
 /// @return Pair of q and r
@@ -1425,8 +1431,8 @@ template <typename T>
              || std::is_same_v<T, uint128_t>
 #endif
 #endif
-[[nodiscard]] ATTRIBUTE_CONST constexpr std::pair<T, uint32_t> extract_pow2(T n) noexcept {
-    uint32_t r = uint32_t(countr_zero(n));
+[[nodiscard]] ATTRIBUTE_CONST constexpr ExtractPow2Result<T> extract_pow2(T n) noexcept {
+    auto r = static_cast<std::uint32_t>(countr_zero(n));
     return {n >> r, r};
 }
 
@@ -2093,6 +2099,94 @@ ATTRIBUTE_CONST constexpr HelperRetType congruence_helper(const std::uint64_t a,
     }
     return c64;
 }
+
+[[nodiscard]] ATTRIBUTE_CONST constexpr bool is_perfect_number(std::uint32_t n) noexcept {
+    switch (n) {
+        case 6:
+        case 28:
+        case 496:
+        case 8128:
+        case 33550336:
+            return true;
+        default:
+            return false;
+    }
+}
+
+[[nodiscard]] ATTRIBUTE_CONST constexpr bool is_perfect_number(const std::uint64_t n) noexcept {
+    // See https://en.wikipedia.org/wiki/List_of_Mersenne_primes_and_perfect_numbers
+#if MATH_FUNCTIONS_HPP_ENABLE_TARGET_OPTIONS
+    const auto [q, pm1] = extract_pow2(n);
+    const auto p        = pm1 + 1;
+    if (q != (1ull << p) - 1) {
+        return false;
+    }
+    switch (p) {
+        case 2:
+        case 3:
+        case 5:
+        case 7:
+        case 13:
+        case 19:
+        case 31:
+            switch (n) {
+                case 6:
+                case 28:
+                case 496:
+                case 8128:
+                case 33550336:
+                case 8589869056ull:
+                case 137438691328ull:
+                case 2305843008139952128ull:
+                    break;
+                default:
+                    CONFIG_UNREACHABLE();
+                    break;
+            }
+            return true;
+        default:
+            switch (n) {
+                case 6:
+                case 28:
+                case 496:
+                case 8128:
+                case 33550336:
+                case 8589869056ull:
+                case 137438691328ull:
+                case 2305843008139952128ull:
+                    CONFIG_UNREACHABLE();
+                    break;
+                default:
+                    break;
+            }
+            return false;
+    }
+#else
+    switch (n) {
+        case 6:
+        case 28:
+        case 496:
+        case 8128:
+        case 33550336:
+        case 8589869056ull:
+        case 137438691328ull:
+        case 2305843008139952128ull:
+            return true;
+        default:
+            return false;
+    }
+#endif
+}
+
+#if defined(INTEGERS_128_BIT_HPP)
+
+[[nodiscard]] ATTRIBUTE_CONST I128_CONSTEXPR bool is_perfect_number(uint128_t n) noexcept {
+    return n > std::numeric_limits<uint64_t>::max()
+               ? n == (((uint128_t(1) << 61) - 1) << (61 - 1))
+               : is_perfect_number(static_cast<std::uint64_t>(n));
+}
+
+#endif
 
 }  // namespace math_functions
 

@@ -16,7 +16,6 @@
 
 using namespace test_tools;
 using math_functions::is_prime_bpsw;
-using math_functions::is_prime_sqrt;
 using std::printf;
 using std::size_t;
 using std::uint64_t;
@@ -49,7 +48,11 @@ static void TestSmallPrimes() noexcept {
     log_tests_started();
 
     for (uint64_t n = 0; n < 65536; n++) {
-        assert(is_prime_sqrt(n) == is_prime_bpsw(n));
+        const bool is_prime = is_prime_bpsw(n);
+        assert(is_prime == math_functions::is_prime_u16(static_cast<std::uint16_t>(n)));
+        assert(is_prime == math_functions::is_prime_sqrt(static_cast<std::uint32_t>(n)));
+        assert(is_prime == math_functions::is_prime_sqrt(static_cast<std::uint64_t>(n)));
+        assert(is_prime == math_functions::is_prime_sqrt(static_cast<uint128_t>(n)));
     }
 }
 
@@ -70,12 +73,12 @@ static void TestMidPrimes() noexcept {
         999999999999999079ull,  999999999999999073ull,  999999999999999023ull,
         999999999999998989ull,  999999999999998939ull,  999999999999998929ull,
         999999999999998927ull,  999999999999998867ull,  999999999999998759ull,
-        999999999999998743ull};
+        999999999999998743ull,
+    };
     constexpr size_t N = std::size(primes);
-
-    static_assert(binsearch_contains(primes, primes[0]));
-    static_assert(binsearch_contains(primes, primes[N / 2]));
-    static_assert(binsearch_contains(primes, primes[N - 1]));
+#if CONFIG_HAS_AT_LEAST_CXX_20
+    static_assert(std::is_sorted(std::begin(primes), std::end(primes), std::greater<>{}));
+#endif
     static_assert(primes[N - 1] < primes[0]);
     static_assert(primes[0] < primes[0] + 2);
 
@@ -356,10 +359,12 @@ static void TestLargestU64Primes() noexcept {
     };
     constexpr size_t N = std::size(primes);
 
+#if CONFIG_HAS_AT_LEAST_CXX_20
+    static_assert(std::is_sorted(std::begin(primes), std::end(primes), std::greater<>{}));
+#endif
     static_assert(binsearch_contains(primes, primes[0]));
     static_assert(binsearch_contains(primes, primes[N / 2]));
     static_assert(binsearch_contains(primes, primes[N - 1]));
-    static_assert(primes[N - 1] < primes[0]);
     static_assert(primes[0] < primes[0] + 2);
 
     for (uint64_t n = primes[N - 1]; n <= primes[0]; n += 2) {
@@ -394,6 +399,7 @@ static void TestRandomPrimesGMP() noexcept {
     const auto rnd_seed =
         std::uint_fast64_t(std::random_device{}()) ^ std::uint_fast64_t(std::time(nullptr));
     std::mt19937_64 rnd(rnd_seed);
+    fprintf(stderr, "Random seed = %" PRIuFAST64 "\n", rnd_seed);
 
     mpz_t n_gmp;
     mpz_init(n_gmp);
@@ -429,18 +435,9 @@ static void TestRandomPrimesGMP() noexcept {
 }
 
 int main() {
-    try {
-        TestSmallPrimes();
-        TestMidPrimes();
-        TestLargestU64Primes();
-        TestPrimesFromFile();
-        TestRandomPrimesGMP();
-        return 0;
-    } catch (const std::exception& ex) {
-        fputs(ex.what(), stderr);
-        return 1;
-    } catch (...) {
-        fputs("Unknown exception", stderr);
-        return 1;
-    }
+    TestSmallPrimes();
+    TestMidPrimes();
+    TestLargestU64Primes();
+    TestPrimesFromFile();
+    TestRandomPrimesGMP();
 }

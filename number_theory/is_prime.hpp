@@ -464,7 +464,7 @@ ATTRIBUTE_CONST constexpr bool is_prime_sqrt(uint128_t n) noexcept {
 /// @brief Funny realization that works in log(n)
 /// @param m
 /// @return true if n is prime and false otherwise
-ATTRIBUTE_CONST static constexpr bool is_prime_u16(uint16_t m) noexcept {
+ATTRIBUTE_CONST constexpr bool is_prime_u16(uint16_t m) noexcept {
     uint32_t n = m;
     if (n % 2 == 0) {
         return n == 2;
@@ -508,6 +508,72 @@ ATTRIBUTE_CONST static constexpr bool is_prime_u16(uint16_t m) noexcept {
         default:
             return math_functions::bin_pow_mod(2, n - 1, n) == 1;
     }
+}
+
+namespace detail {
+
+ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_CONST constexpr bool is_mersenne_prime_impl(
+    const std::uint64_t n) noexcept {
+    const auto [q, p] = math_functions::extract_pow2(n + 1);
+    if (q != 1) {
+        return false;
+    }
+
+    switch (p) {
+        case 2:
+        case 3:
+        case 5:
+        case 7:
+        case 13:
+        case 19:
+        case 31:
+        case 61:
+            return true;
+        default:
+            return false;
+    }
+}
+
+};  // namespace detail
+
+ATTRIBUTE_CONST constexpr bool is_mersenne_prime(const std::uint64_t n) noexcept {
+    const bool res = detail::is_mersenne_prime_impl(n);
+
+    if (res) {
+        switch (n) {
+            case 3:
+            case 7:
+            case 31:
+            case 127:
+            case 8191:
+            case 524287:
+            case 2147483647:
+            case 2305843009213693951ull:
+                break;
+            default:
+                CONFIG_UNREACHABLE();
+                break;
+        }
+        ATTRIBUTE_ASSUME(is_prime_bpsw(n) && is_prime_sqrt(n));
+    } else {
+        switch (n) {
+            case 3:
+            case 7:
+            case 31:
+            case 127:
+            case 8191:
+            case 524287:
+            case 2147483647:
+            case 2305843009213693951ull:
+                CONFIG_UNREACHABLE();
+                break;
+            default:
+                break;
+        }
+        ATTRIBUTE_ASSUME(!is_prime_bpsw(n) && !is_prime_sqrt(n));
+    }
+
+    return res;
 }
 
 }  // namespace math_functions
