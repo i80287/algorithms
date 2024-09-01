@@ -5,6 +5,7 @@
 #include <random>
 #include <source_location>
 #include <string_view>
+#include <utility>
 
 #include "dsu.hpp"
 
@@ -15,7 +16,7 @@ struct slowdsu {
     size_t sets_size = DSUSize;
 
     constexpr slowdsu() {
-        resetData();
+        reset();
     }
     constexpr std::size_t size() const noexcept {
         return colors.size();
@@ -39,12 +40,12 @@ struct slowdsu {
     constexpr std::size_t set_size_of(std::size_t node_index) const noexcept {
         assert(node_index < size());
         const color_t node_color = colors[node_index];
-        return std::count_if(
-            colors.begin(), colors.end(),
-            [node_color](color_t c) constexpr noexcept { return c == node_color; });
+        return static_cast<std::size_t>(
+            std::count_if(colors.begin(), colors.end(),
+                          [node_color](color_t c) constexpr noexcept { return c == node_color; }));
     }
 
-    constexpr void resetData() noexcept {
+    constexpr void reset() noexcept {
         sets_size = DSUSize;
         std::iota(colors.begin(), colors.end(), color_t{0});
     }
@@ -338,7 +339,7 @@ static void test_value_semantic() {
 
 template <class DsuType>
 static void test_random_with_check() {
-    constexpr size_t N = 1024;
+    constexpr size_t N = 3000;
     DsuType dsu(N);
     assert(dsu.size() == N);
     slowdsu<N> checker;
@@ -354,7 +355,7 @@ static void test_random_with_check() {
             if (s != dsu.set_size_of(i)) {
                 return false;
             }
-            if (s != static_cast<const DsuType&>(dsu).set_size_of(i)) {
+            if (s != std::as_const(dsu).set_size_of(i)) {
                 return false;
             }
             for (size_t j = 0; j < N; j++) {
@@ -379,8 +380,8 @@ template <class DsuType>
 static void test_dsu() {
     constexpr std::string_view tname = get_type_name<DsuType>();
     printf("Started testing type \"%.*s\"\n", int(tname.size()), tname.data());
-    test_value_semantic<DsuType>();
     test_manual<DsuType>();
+    test_value_semantic<DsuType>();
     test_random_with_check<DsuType>();
 }
 
