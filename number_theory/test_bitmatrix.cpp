@@ -409,7 +409,7 @@ constexpr
         return random_state;
     };
 
-    if (!config_is_constant_evaluated()) {
+    if (!config::is_constant_evaluated()) {
         // This test has too many operations for the compile time check
         uint64_t src[64] = {};
         static_assert(sizeof(a) == sizeof(src));

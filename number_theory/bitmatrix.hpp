@@ -512,6 +512,12 @@ public:
         return {rows(), columns()};
 #endif
     }
+    [[nodiscard]] ATTRIBUTE_ALWAYS_INLINE constexpr size_type flat_size() const noexcept {
+        return rows() * columns();
+    }
+    ATTRIBUTE_REINITIALIZES constexpr void clear() noexcept {
+        *this = allzeros();
+    }
 
     [[nodiscard]] ATTRIBUTE_ALWAYS_INLINE constexpr reference operator[](size_type index) noexcept
         ATTRIBUTE_LIFETIME_BOUND {
