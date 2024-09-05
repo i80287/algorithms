@@ -141,7 +141,6 @@ void test_on_range(const Range1 &nums, const Range2 &not_in_nums) {
     assert(t.size() == 0);
     assert(t.find({}) == t.end());
     assert(t.lower_bound({}) == t.end());
-
     for (const T &num : nums) {
         assert(t.is_rbtree());
         t.insert(num);
@@ -152,6 +151,30 @@ void test_on_range(const Range1 &nums, const Range2 &not_in_nums) {
         compare(t, checker);
 
         static_assert(std::is_same_v<decltype(std::move(t)), RBTree<T> &&>);
+        RBTree<T> t1(std::move(t));
+        compare(t1, checker);
+        t = std::move(t1);
+        compare(t, checker);
+        t1.swap(t);
+        compare(t1, checker);
+        t.swap(t1);
+        compare(t, checker);
+    }
+
+    for (const T &elem : nums) {
+        if constexpr (std::is_same_v<T, int>) {
+            if (nums.size() == 5 && nums[0] == 1 && nums[1] == 2) {
+                putchar('\0');
+            }
+        }
+
+        assert(t.is_rbtree());
+        assert(t.erase(elem) == checker.erase(elem));
+        assert(t.size() <= t.max_size());
+        assert(t.is_rbtree());
+
+        compare(t, checker);
+
         RBTree<T> t1(std::move(t));
         compare(t1, checker);
         t = std::move(t1);

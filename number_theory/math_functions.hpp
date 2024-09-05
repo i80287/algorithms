@@ -81,8 +81,8 @@ template <InplaceMultipliable T>
 #else
 template <class T>
 #endif
-[[nodiscard]] constexpr T bin_pow(T n, uint64_t p) noexcept {
-    T res = 1;
+[[nodiscard]] ATTRIBUTE_CONST constexpr T bin_pow(T n, uint64_t p) noexcept {
+    T res(1);
     while (true) {
         if (p & 1) {
             res *= n;
@@ -105,10 +105,10 @@ template <InplaceMultipliable T>
 #else
 template <class T>
 #endif
-[[nodiscard]] constexpr T bin_pow(T n, int64_t p) noexcept {
+[[nodiscard]] ATTRIBUTE_CONST constexpr T bin_pow(T n, int64_t p) noexcept {
     const bool not_inverse = p >= 0;
     uint64_t p_u           = p >= 0 ? static_cast<uint64_t>(p) : -static_cast<uint64_t>(p);
-    T res                  = 1;
+    T res(1);
     while (true) {
         if (p_u & 1) {
             res *= n;
@@ -128,7 +128,7 @@ template <class T>
 /// @return (n ^ p) % mod
 [[nodiscard]] ATTRIBUTE_CONST constexpr uint32_t bin_pow_mod(uint32_t n, uint32_t p,
                                                              uint32_t mod) noexcept {
-    uint64_t res   = mod != 1;
+    uint64_t res     = mod != 1;
     uint64_t widen_n = n;
     while (true) {
         if (p & 1) {
@@ -179,7 +179,7 @@ template <class T>
 
     uint32_t y = 0;
 #if defined(__GNUG__) || defined(__clang__) || CONFIG_HAS_AT_LEAST_CXX_20
-    if (config_is_constant_evaluated() || config_is_gcc_constant_p(n)) {
+    if (config::is_constant_evaluated() || config::is_gcc_constant_p(n)) {
 #endif
         /**
          * See Hackers Delight Chapter 11.
@@ -207,7 +207,8 @@ template <class T>
      * In the runtime `sqrtl` is used (but not for the msvc prior to the c++20).
      */
 #if defined(__GNUG__) || defined(__clang__) || CONFIG_HAS_AT_LEAST_CXX_20
-    if (config_is_constant_evaluated() || config_is_gcc_constant_p(n) || sizeof(long double) < 16) {
+    if (config::is_constant_evaluated() || config::is_gcc_constant_p(n) ||
+        sizeof(long double) < 16) {
 #endif
         /**
          * See Hackers Delight Chapter 11.
@@ -388,8 +389,7 @@ template <class T>
 /// @param[in] n
 /// @param[out] root
 /// @return `true` if @a `n` is perfect square and `false` otherwise.
-[[nodiscard]] ATTRIBUTE_PURE constexpr bool is_perfect_square(uint64_t n,
-                                                               uint32_t& root) noexcept {
+[[nodiscard]] ATTRIBUTE_PURE constexpr bool is_perfect_square(uint64_t n, uint32_t& root) noexcept {
     // clang-format off
     /**
      * +------------+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+
@@ -451,8 +451,8 @@ template <class T>
 /// @param[in] n
 /// @param[out] root
 /// @return `true` if @a `n` is perfect square and `false` otherwise.
-[[nodiscard]] ATTRIBUTE_PURE inline I128_CONSTEXPR bool is_perfect_square(
-    uint128_t n, uint64_t& root) noexcept {
+[[nodiscard]] ATTRIBUTE_PURE inline I128_CONSTEXPR bool is_perfect_square(uint128_t n,
+                                                                          uint64_t& root) noexcept {
     // clang-format off
     /**
      * +------------+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+
@@ -1144,7 +1144,7 @@ template <class T>
 /// x = 0 => undefined behaviour (shift by 33 bits)
 /// @param[in] x
 /// @return
-constexpr uint32_t next_n_bits_permutation(uint32_t x) noexcept {
+[[nodiscard]] ATTRIBUTE_CONST constexpr uint32_t next_n_bits_permutation(uint32_t x) noexcept {
     // See
     // https://graphics.stanford.edu/~seander/bithacks.html#RoundUpPowerOf2
 
@@ -1275,7 +1275,8 @@ template <typename T>
              || std::is_same_v<T, uint128_t>
 #endif
 #endif
-[[nodiscard]] ATTRIBUTE_CONST constexpr uint32_t base_b_len(T value, uint8_t base = 10) noexcept {
+[[nodiscard]] ATTRIBUTE_CONST constexpr uint32_t base_b_len(T value,
+                                                            const uint8_t base = 10) noexcept {
     const uint32_t b  = base;
     const uint32_t b2 = b * b;
     const uint32_t b3 = b2 * b;
@@ -1468,7 +1469,7 @@ template <typename T>
 [[nodiscard]] ATTRIBUTE_CONST constexpr ExtractPow2Result<T> extract_pow2(T n) noexcept {
     auto r = static_cast<std::uint32_t>(countr_zero(n));
     ATTRIBUTE_ASSUME(r <= sizeof(n) * CHAR_BIT);
-    return { n != 0 ? (n >> r) : 0, r};
+    return {n != 0 ? (n >> r) : 0, r};
 }
 
 /// @brief Returns median of boolean variables x, y and z
@@ -1915,18 +1916,17 @@ private:
 /// @brief Find all prime numbers in [2; N]
 /// @tparam N exclusive upper bound
 /// @return bitset, such that bitset[n] == true \iff n is prime
-template <uint32_t N>
+template <std::uint32_t N>
 [[nodiscard]] CONSTEXPR_FIXED_PRIMES_SIEVE inline const auto& fixed_primes_sieve() noexcept {
-    constexpr auto kSize                               = std::size_t(N) + 1;
-    using TPrimesSet                                   = std::bitset<kSize>;
-    static CONSTEXPR_PRIMES_SIEVE TPrimesSet primes_bs = []() CONSTEXPR_BITSET_OPS noexcept {
-        TPrimesSet primes{};
+    using PrimesSet                                   = std::bitset<std::size_t(N) + 1>;
+    static CONSTEXPR_PRIMES_SIEVE PrimesSet primes_bs = []() CONSTEXPR_BITSET_OPS noexcept {
+        PrimesSet primes{};
         primes.set();
         primes[0] = false;
         if constexpr (primes.size() > 1) {
             primes[1]           = false;
-            const uint32_t root = math_functions::isqrt(N);
-            if (const uint32_t i = 2; i <= root) {
+            const std::uint32_t root = math_functions::isqrt(N);
+            if (const std::uint32_t i = 2; i <= root) {
                 for (std::size_t j = i * i; j <= N; j += i) {
                     primes[j] = false;
                 }

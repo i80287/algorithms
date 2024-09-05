@@ -48,9 +48,9 @@ function(configure_gcc_compile_options)
     endif ()
     set(LOCAL_FN_TEST_COMPILE_DEFINITIONS
             ${LOCAL_FN_TEST_COMPILE_DEFINITIONS}
-            _GLIBCXX_DEBUG=1
-            _GLIBCXX_DEBUG_PEDANTIC=1
-            _GLIBCXX_CONCEPT_CHECKS=1
+            #            _GLIBCXX_DEBUG=1
+            #            _GLIBCXX_DEBUG_PEDANTIC=1
+            #            _GLIBCXX_CONCEPT_CHECKS=1
             #            _GLIBCXX_DEBUG_BACKTRACE=1
     )
     set(LOCAL_FN_TEST_COMPILE_OPTIONS

@@ -168,7 +168,7 @@
 
 /* Copied from the cdefs.h from the glibc */
 #if !(defined(__GNUC__) || defined(__clang__))
-#define __attribute__(anything)
+#define __attribute__(...)
 #endif
 
 #if CONFIG_GNUC_PREREQ(2, 6) || CONFIG_HAS_GCC_ATTRIBUTE(__const__)
@@ -412,7 +412,9 @@
 #include <type_traits>
 #endif
 
-ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_CONST constexpr bool config_is_constant_evaluated() noexcept {
+namespace config {
+
+ATTRIBUTE_ALWAYS_INLINE constexpr bool is_constant_evaluated() noexcept {
 #if defined(__cpp_lib_is_constant_evaluated) && __cpp_lib_is_constant_evaluated >= 201811L && \
     CONFIG_HAS_INCLUDE(<type_traits>)
     return std::is_constant_evaluated();
@@ -423,12 +425,16 @@ ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_CONST constexpr bool config_is_constant_evalua
 #endif
 }
 
+}  // namespace config
+
 #if CONFIG_HAS_INCLUDE(<utility>)
 #include <utility>
 #endif
 
+namespace config {
+
 template <class T>
-ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_CONST constexpr bool config_is_gcc_constant_p(
+ATTRIBUTE_ALWAYS_INLINE constexpr bool is_gcc_constant_p(
     [[maybe_unused]] T&& expr) noexcept {
 #if CONFIG_HAS_BUILTIN(__builtin_constant_p)
     return static_cast<bool>(__builtin_constant_p(std::forward<T>(expr)));
@@ -436,5 +442,7 @@ ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_CONST constexpr bool config_is_gcc_constant_p(
     return false;
 #endif
 }
+
+}  // namespace config
 
 #endif  // !CONFIG_MACROS_HPP

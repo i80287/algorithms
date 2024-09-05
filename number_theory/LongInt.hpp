@@ -1018,7 +1018,7 @@ struct longint {
     }
 
     constexpr longint& operator/=(uint32_t n) noexcept {
-        if ((config_is_constant_evaluated() || config_is_gcc_constant_p(n)) && (n & (n - 1)) == 0) {
+        if ((config::is_constant_evaluated() || config::is_gcc_constant_p(n)) && (n & (n - 1)) == 0) {
             if (n > 1) {
                 operator>>=(uint32_t(math_functions::countl_zero(n)));
             }
