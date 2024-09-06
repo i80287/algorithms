@@ -32,6 +32,8 @@ static void test_fib_u128() noexcept {
     static_assert(math_functions::fibonacci_num_u128(0) == 1);
     static_assert(math_functions::fibonacci_num_u128(1) == 1);
 #endif
+    assert(math_functions::fibonacci_num_u128(0) == 1);
+    assert(math_functions::fibonacci_num_u128(1) == 1);
     uint128_t prev_prev_fib = 1;
     uint128_t prev_fib      = 1;
     for (uint32_t i = 2; i < k; i++) {
