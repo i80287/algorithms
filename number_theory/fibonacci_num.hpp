@@ -8,7 +8,9 @@ namespace math_functions {
 
 namespace detail {
 
-static constexpr void matrix_mul(uint64_t (&m1)[2][2], const uint64_t (&m2)[2][2]) noexcept {
+ATTRIBUTE_ACCESS(read_write, 1)
+ATTRIBUTE_ACCESS(read_only, 2)
+constexpr void matrix_mul(uint64_t (&m1)[2][2], const uint64_t (&m2)[2][2]) noexcept {
     const uint64_t tmp[2][2] = {
         {m1[0][0] * m2[0][0] + m1[0][1] * m2[1][0], m1[0][0] * m2[0][1] + m1[0][1] * m2[1][1]},
         {m1[1][0] * m2[0][0] + m1[1][1] * m2[1][0], m1[1][0] * m2[0][1] + m1[1][1] * m2[1][1]},
@@ -86,7 +88,9 @@ inline constexpr uint32_t kMaxFibNonOverflowU64 = 92;
 /// @brief Helper namespace in order not to pollute math_functions namespace
 namespace detail {
 
-static inline I128_CONSTEXPR void matrix_mul(uint128_t m1[2][2],
+ATTRIBUTE_ACCESS(read_write, 1)
+ATTRIBUTE_ACCESS(read_only, 2)
+inline I128_CONSTEXPR void matrix_mul(uint128_t m1[2][2],
                                              const uint128_t m2[2][2]) noexcept {
     const uint128_t tmp[2][2] = {
         {m1[0][0] * m2[0][0] + m1[0][1] * m2[1][0], m1[0][0] * m2[0][1] + m1[0][1] * m2[1][1]},
