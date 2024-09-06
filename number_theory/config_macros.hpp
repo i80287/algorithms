@@ -199,6 +199,8 @@
 #define ATTRIBUTE_NOINLINE [[gnu::noinline]]
 #elif CONFIG_HAS_AT_LEAST_CXX_20 && defined(_MSC_VER)
 #define ATTRIBUTE_NOINLINE [[msvc::noinline]]
+#elif defined(_MSC_VER)
+#define ATTRIBUTE_NOINLINE __declspec(noinline)
 #else
 #define ATTRIBUTE_NOINLINE
 #endif
@@ -408,6 +410,35 @@
 #error Unable to determine endian
 #endif /* Check we found an endianness correctly. */
 
+#if (defined(_MSC_VER) || defined(__MINGW32__)) && CONFIG_HAS_INCLUDE(<intrin.h>)
+#include <intrin.h>  // for _ReadWriteBarrier
+#endif
+
+namespace config::detail {
+
+#if (defined(_MSC_VER) || defined(__MINGW32__)) && CONFIG_HAS_INCLUDE(<intrin.h>)
+inline void ATTRIBUTE_NOINLINE sink_char_ptr(char const volatile*) {}
+#endif
+
+template <class T>
+ATTRIBUTE_ALWAYS_INLINE static inline void no_opt_impl(T&& expr) {
+#if (defined(_MSC_VER) || defined(__MINGW32__)) && CONFIG_HAS_INCLUDE(<intrin.h>)
+    ::config::detail::sink_char_ptr(&reinterpret_cast<volatile const char&>(expr));
+    _ReadWriteBarrier();
+#elif defined(__GNUC__)
+    asm volatile("" ::"r,m,i"(expr));
+#else
+    __asm__("" ::"r,m,i"(expr));
+#endif
+}
+
+template <class T>
+static inline void no_opt_impl(const T& expr) = delete;
+
+}
+
+#define CONFIG_DO_NOT_OPTIMIZE_AWAY(expr) ::config::detail::no_opt_impl(expr)
+
 #if CONFIG_HAS_INCLUDE(<type_traits>)
 #include <type_traits>
 #endif
@@ -434,8 +465,7 @@ ATTRIBUTE_ALWAYS_INLINE constexpr bool is_constant_evaluated() noexcept {
 namespace config {
 
 template <class T>
-ATTRIBUTE_ALWAYS_INLINE constexpr bool is_gcc_constant_p(
-    [[maybe_unused]] T&& expr) noexcept {
+ATTRIBUTE_ALWAYS_INLINE constexpr bool is_gcc_constant_p([[maybe_unused]] T&& expr) noexcept {
 #if CONFIG_HAS_BUILTIN(__builtin_constant_p)
     return static_cast<bool>(__builtin_constant_p(std::forward<T>(expr)));
 #else
