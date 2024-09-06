@@ -246,7 +246,7 @@
 #endif
 
 /**
- *  mode in { "read_only", "read_only", "read_write", "write_only", "none" },
+ *  mode in { "read_only", "read_write", "write_only", "none" },
  *  mode "none" is valid iff CONFIG_GNUC_PREREQ(11, 0)
  *
  *  memory_argument_pos >= 1
