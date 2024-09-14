@@ -1348,18 +1348,23 @@ template <typename T>
 
 #endif
 
-/// @brief For n > 0 returns ⌊log_10(n)⌋. For n = 0 returns (uint32_t)-1
-/// @param[in] n
-/// @return
-[[nodiscard]] ATTRIBUTE_CONST
-#if defined(__cpp_constexpr) && __cpp_constexpr >= 202211L && defined(__GNUG__)
-    constexpr
-#endif
-    inline uint32_t
-    log10_floor(uint32_t n) noexcept {
-    /**
-     * See Hackers Delight 11-4
-     */
+namespace detail {
+
+ATTRIBUTE_CONST constexpr uint32_t log10_floor_compile_time_impl(uint32_t n) noexcept {
+    constexpr uint8_t table1[33] = {
+        10, 9, 9, 8, 8, 8, 7, 7, 7, 6, 6, 6, 6, 5, 5, 5, 4,
+        4,  4, 3, 3, 3, 3, 2, 2, 2, 1, 1, 1, 0, 0, 0, 0,
+    };
+
+    constexpr uint32_t table2[11] = {
+        1, 10, 100, 1000, 10000, 100000, 1000000, 10000000, 100000000, 1000000000, 0,
+    };
+    uint32_t digits = table1[countl_zero(n)];
+    digits -= ((n - table2[digits]) >> 31);
+    return digits;
+}
+
+ATTRIBUTE_CONST static inline uint32_t log10_floor_runtime_impl(uint32_t n) noexcept {
 #if defined(__cpp_constexpr) && __cpp_constexpr >= 202211L && defined(__GNUG__)
     constexpr
 #elif defined(__cpp_constinit) && __cpp_constinit >= 201907L
@@ -1377,24 +1382,64 @@ template <typename T>
         static const uint32_t table2[11] = {
             1, 10, 100, 1000, 10000, 100000, 1000000, 10000000, 100000000, 1000000000, 0,
         };
+
     uint32_t digits = table1[countl_zero(n)];
     digits -= ((n - table2[digits]) >> 31);
     return digits;
 }
 
-/// @brief For @a `n` > 0 returns ⌊log_10(n)⌋. For @a `n` = 0 returns
-/// (uint32_t)-1
+}  // namespace detail
+
+/// @brief For n > 0 returns ⌊log_10(n)⌋. For n = 0 returns (uint32_t)-1
 /// @param[in] n
 /// @return
-[[nodiscard]] ATTRIBUTE_CONST
-#if defined(__cpp_constexpr) && __cpp_constexpr >= 202211L && defined(__GNUG__)
-    constexpr
-#endif
-    inline uint32_t
-    log10_floor(uint64_t n) noexcept {
+[[nodiscard]] ATTRIBUTE_CONST constexpr uint32_t log10_floor(uint32_t n) noexcept {
     /**
      * See Hackers Delight 11-4
      */
+
+#if defined(__GNUG__) || defined(__clang__) || CONFIG_HAS_AT_LEAST_CXX_20
+    if (config::is_constant_evaluated() || config::is_gcc_constant_p(n)) {
+        return ::math_functions::detail::log10_floor_compile_time_impl(n);
+    } else
+#endif
+    {
+        return ::math_functions::detail::log10_floor_runtime_impl(n);
+    }
+}
+
+namespace detail {
+
+ATTRIBUTE_CONST constexpr uint32_t log10_floor_compile_time_impl(uint64_t n,
+                                                                 int32_t approx_log10) noexcept {
+    constexpr uint64_t table2[20] = {
+        0ull,
+        9ull,
+        99ull,
+        999ull,
+        9999ull,
+        99999ull,
+        999999ull,
+        9999999ull,
+        99999999ull,
+        999999999ull,
+        9999999999ull,
+        99999999999ull,
+        999999999999ull,
+        9999999999999ull,
+        99999999999999ull,
+        999999999999999ull,
+        9999999999999999ull,
+        99999999999999999ull,
+        999999999999999999ull,
+        9999999999999999999ull,
+    };
+    const auto adjustment = int32_t((table2[uint32_t(approx_log10 + 1)] - n) >> 63);
+    return uint32_t(approx_log10 + adjustment);
+}
+
+ATTRIBUTE_CONST static inline uint32_t log10_floor_runtime_impl(uint64_t n,
+                                                                int32_t approx_log10) noexcept {
 #if defined(__cpp_constexpr) && __cpp_constexpr >= 202211L && defined(__GNUG__)
     constexpr
 #elif defined(__cpp_constinit) && __cpp_constinit >= 201907L
@@ -1422,30 +1467,42 @@ template <typename T>
             999999999999999999ull,
             9999999999999999999ull,
         };
-    static_assert(countl_zero(uint64_t(0)) == 64, "countl_zero detail error");
-    const int32_t approx_log10 = (19 * (63 - int32_t(countl_zero(n)))) >> 6;
-    ATTRIBUTE_ASSUME((-19 >> 6) <= approx_log10 && approx_log10 <= ((19 * 63) >> 6));
     const auto adjustment = int32_t((table2[uint32_t(approx_log10 + 1)] - n) >> 63);
     return uint32_t(approx_log10 + adjustment);
 }
 
-[[nodiscard]] ATTRIBUTE_CONST
-#if defined(__cpp_constexpr) && __cpp_constexpr >= 202211L && defined(__GNUG__)
-    constexpr
+}  // namespace detail
+
+/// @brief For @a `n` > 0 returns ⌊log_10(n)⌋. For @a `n` = 0 returns
+/// (uint32_t)-1
+/// @param[in] n
+/// @return
+[[nodiscard]] ATTRIBUTE_CONST constexpr uint32_t log10_floor(uint64_t n) noexcept {
+    /**
+     * See Hackers Delight 11-4
+     */
+
+    static_assert(countl_zero(uint64_t(0)) == 64, "countl_zero detail error");
+    const int32_t approx_log10 = (19 * (63 - int32_t(countl_zero(n)))) >> 6;
+    ATTRIBUTE_ASSUME((-19 >> 6) <= approx_log10 && approx_log10 <= ((19 * 63) >> 6));
+
+#if defined(__GNUG__) || defined(__clang__) || CONFIG_HAS_AT_LEAST_CXX_20
+    if (config::is_constant_evaluated() || config::is_gcc_constant_p(n)) {
+        return ::math_functions::detail::log10_floor_compile_time_impl(n, approx_log10);
+    } else
 #endif
-    inline uint32_t
-    base_10_len(uint32_t n) noexcept {
-    // log10_floor(0 | 1) = 0
+    {
+        return ::math_functions::detail::log10_floor_runtime_impl(n, approx_log10);
+    }
+}
+
+[[nodiscard]] ATTRIBUTE_CONST constexpr uint32_t base_10_len(uint32_t n) noexcept {
+    // or `n` with 1 so that base_10_len(0) = 1
     return log10_floor(n | 1) + 1;
 }
 
-[[nodiscard]] ATTRIBUTE_CONST
-#if defined(__cpp_constexpr) && __cpp_constexpr >= 202211L && defined(__GNUG__)
-    constexpr
-#endif
-    inline uint32_t
-    base_10_len(uint64_t n) noexcept {
-    // log10_floor(0 | 1) = 0
+[[nodiscard]] ATTRIBUTE_CONST constexpr uint32_t base_10_len(uint64_t n) noexcept {
+    // or `n` with 1 so that base_10_len(0) = 1
     return log10_floor(n | 1) + 1;
 }
 
