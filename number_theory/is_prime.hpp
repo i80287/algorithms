@@ -22,7 +22,7 @@ using std::uint64_t;
  * some integer t, with 0 <= t < r.
  **********************************************************************************************/
 template <bool BasicChecks = true>
-ATTRIBUTE_CONST inline I128_CONSTEXPR bool is_strong_prp(uint64_t n, uint64_t a) noexcept {
+ATTRIBUTE_CONST I128_CONSTEXPR bool is_strong_prp(uint64_t n, uint64_t a) noexcept {
     if constexpr (BasicChecks) {
         if (unlikely(a < 2)) {
             // is_strong_prp requires 'a' greater than or equal to 2
@@ -87,8 +87,8 @@ ATTRIBUTE_CONST inline I128_CONSTEXPR bool is_strong_prp(uint64_t n, uint64_t a)
  * the Jacobi symbol]
  **********************************************************************************************/
 template <bool BasicChecks = true>
-ATTRIBUTE_CONST inline I128_CONSTEXPR bool is_strong_lucas_prp(uint64_t n, uint32_t p,
-                                                               int32_t q) noexcept {
+ATTRIBUTE_CONST I128_CONSTEXPR bool is_strong_lucas_prp(uint64_t n, uint32_t p,
+                                                        int32_t q) noexcept {
     int64_t d = int64_t(uint64_t(p) * p) - int64_t(q) * 4;
     if constexpr (BasicChecks) {
         /* Check if p*p - 4*q == 0. */
@@ -299,7 +299,7 @@ ATTRIBUTE_CONST inline I128_CONSTEXPR bool is_strong_lucas_prp(uint64_t n, uint3
  * perfect square, otherwise the search for D will only stop when D=n.
  ***********************************************************************************************************/
 template <bool BasicChecks = true>
-ATTRIBUTE_CONST inline I128_CONSTEXPR bool is_strong_selfridge_prp(uint64_t n) noexcept {
+ATTRIBUTE_CONST I128_CONSTEXPR bool is_strong_selfridge_prp(uint64_t n) noexcept {
     if constexpr (BasicChecks) {
         if (unlikely(n == 1)) {
             return false;
@@ -351,7 +351,7 @@ ATTRIBUTE_CONST inline I128_CONSTEXPR bool is_strong_selfridge_prp(uint64_t n) n
 /// operations )
 /// @param n number to test
 /// @return true if n is prime and false otherwise
-ATTRIBUTE_CONST inline I128_CONSTEXPR bool is_prime_bpsw(uint64_t n) noexcept {
+ATTRIBUTE_CONST I128_CONSTEXPR bool is_prime_bpsw(uint64_t n) noexcept {
     if (n % 2 == 0) {
         return n == 2;
     }
@@ -426,7 +426,7 @@ ATTRIBUTE_CONST constexpr bool is_prime_sqrt(uint64_t n) noexcept {
     return true;
 }
 
-ATTRIBUTE_CONST inline I128_CONSTEXPR bool is_prime_sqrt(uint128_t n) noexcept {
+ATTRIBUTE_CONST I128_CONSTEXPR bool is_prime_sqrt(uint128_t n) noexcept {
     if (n % 2 == 0) {
         return n == 2;
     }
@@ -555,7 +555,7 @@ ATTRIBUTE_CONST constexpr bool is_mersenne_prime(const std::uint64_t n) noexcept
     }
 }
 
-ATTRIBUTE_CONST inline I128_CONSTEXPR bool is_mersenne_prime(const uint128_t n) noexcept {
+ATTRIBUTE_CONST I128_CONSTEXPR bool is_mersenne_prime(const uint128_t n) noexcept {
     const auto np1 = n + 1;
     if (!is_power_of_two(np1)) {
         return false;

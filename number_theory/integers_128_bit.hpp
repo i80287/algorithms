@@ -56,7 +56,7 @@ typedef std::_Signed128 int128_t;
 #if HAS_I128_CONSTEXPR
 #define I128_CONSTEXPR constexpr
 #else
-#define I128_CONSTEXPR
+#define I128_CONSTEXPR inline
 #endif
 
 namespace format_impl_uint128_t {
@@ -80,8 +80,8 @@ constexpr std::size_t kMaxStringLengthI128 = 40;
 /// @param number
 /// @param buffer_ptr
 /// @return
-inline I128_CONSTEXPR char* uint128_t_format_fill_chars_buffer(uint128_t number,
-                                                               char* buffer_ptr) noexcept {
+I128_CONSTEXPR char* uint128_t_format_fill_chars_buffer(uint128_t number,
+                                                        char* buffer_ptr) noexcept {
     constexpr uint8_t remainders[201] =
         "0001020304050607080910111213141516171819"
         "2021222324252627282930313233343536373839"

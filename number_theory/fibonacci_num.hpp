@@ -90,8 +90,7 @@ namespace detail {
 
 ATTRIBUTE_ACCESS(read_write, 1)
 ATTRIBUTE_ACCESS(read_only, 2)
-inline I128_CONSTEXPR void matrix_mul(uint128_t m1[2][2],
-                                             const uint128_t m2[2][2]) noexcept {
+I128_CONSTEXPR void matrix_mul(uint128_t m1[2][2], const uint128_t m2[2][2]) noexcept {
     const uint128_t tmp[2][2] = {
         {m1[0][0] * m2[0][0] + m1[0][1] * m2[1][0], m1[0][0] * m2[0][1] + m1[0][1] * m2[1][1]},
         {m1[1][0] * m2[0][0] + m1[1][1] * m2[1][0], m1[1][0] * m2[0][1] + m1[1][1] * m2[1][1]},
@@ -116,7 +115,7 @@ struct fibs_pair_u128 {
 ///        Here we suppose that F_{-1} = 0, F_0 = 1, F_1 = 1.
 /// @param n
 /// @return (F_{n - 1}, F_n)
-ATTRIBUTE_CONST inline I128_CONSTEXPR fibs_pair_u128 fibonacci_nums_u128(uint32_t n) noexcept {
+ATTRIBUTE_CONST I128_CONSTEXPR fibs_pair_u128 fibonacci_nums_u128(uint32_t n) noexcept {
     uint128_t p[2][2] = {
         {0, 1},
         {1, 1},
@@ -146,7 +145,7 @@ ATTRIBUTE_CONST inline I128_CONSTEXPR fibs_pair_u128 fibonacci_nums_u128(uint32_
 ///        Here we suppose that F_{-1} = 0, F_0 = 1, F_1 = 1.
 /// @param n
 /// @return F_n
-ATTRIBUTE_CONST inline I128_CONSTEXPR uint128_t fibonacci_num_u128(uint32_t n) noexcept {
+ATTRIBUTE_CONST I128_CONSTEXPR uint128_t fibonacci_num_u128(uint32_t n) noexcept {
     return fibonacci_nums_u128(n).fib_n;
 }
 

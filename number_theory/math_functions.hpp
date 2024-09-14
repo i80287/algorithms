@@ -152,8 +152,8 @@ template <class T>
 /// @param[in] p
 /// @param[in] mod
 /// @return (n ^ p) % mod
-[[nodiscard]] ATTRIBUTE_CONST inline I128_CONSTEXPR uint64_t bin_pow_mod(uint64_t n, uint64_t p,
-                                                                         uint64_t mod) noexcept {
+[[nodiscard]] ATTRIBUTE_CONST I128_CONSTEXPR uint64_t bin_pow_mod(uint64_t n, uint64_t p,
+                                                                  uint64_t mod) noexcept {
     uint64_t res = mod != 1;
     while (true) {
         if (p & 1) {
@@ -237,7 +237,7 @@ template <class T>
 
 #if defined(INTEGERS_128_BIT_HPP)
 
-[[nodiscard]] ATTRIBUTE_CONST inline I128_CONSTEXPR uint64_t isqrt(uint128_t n) noexcept {
+[[nodiscard]] ATTRIBUTE_CONST I128_CONSTEXPR uint64_t isqrt(uint128_t n) noexcept {
     /**
      * See Hackers Delight Chapter 11.
      */
@@ -349,7 +349,7 @@ template <class T>
 ///         It can be shown that ⌊n^0.25⌋ = ⌊⌊n^0.5⌋^0.5⌋
 /// @param[in] n
 /// @return
-[[nodiscard]] ATTRIBUTE_CONST inline I128_CONSTEXPR uint32_t ifrrt(uint128_t n) noexcept {
+[[nodiscard]] ATTRIBUTE_CONST I128_CONSTEXPR uint32_t ifrrt(uint128_t n) noexcept {
     return isqrt(isqrt(n));
 }
 
@@ -430,8 +430,8 @@ struct IsPerfectSquareResult {
 /// @brief Checks whether @a `n` is perfect square or not.
 /// @param[in] n
 /// @return {true, sqrt(n)} if @a `n` is perfect square and {false, undefined value} otherwise.
-[[nodiscard]] ATTRIBUTE_CONST inline I128_CONSTEXPR IsPerfectSquareResult<uint128_t>
-is_perfect_square(uint128_t n) noexcept {
+[[nodiscard]] ATTRIBUTE_CONST I128_CONSTEXPR IsPerfectSquareResult<uint128_t> is_perfect_square(
+    uint128_t n) noexcept {
     // clang-format off
     /**
      * +------------+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+
@@ -512,7 +512,7 @@ is_perfect_square(uint128_t n) noexcept {
 /// @brief This function reverses bits of the @a `n`
 /// @param[in] b
 /// @return 128-bit number whose bits are reversed bits of the @a `n`.
-[[nodiscard]] ATTRIBUTE_CONST inline I128_CONSTEXPR uint128_t bit_reverse(uint128_t n) noexcept {
+[[nodiscard]] ATTRIBUTE_CONST I128_CONSTEXPR uint128_t bit_reverse(uint128_t n) noexcept {
     uint128_t m = ~uint128_t(0);
     for (uint32_t s = sizeof(uint128_t) * CHAR_BIT; s >>= 1;) {
         m ^= m << s;
@@ -550,7 +550,7 @@ ATTRIBUTE_ALWAYS_INLINE constexpr void visit_all_submasks(uint64_t mask, Functor
 
 #if defined(INTEGERS_128_BIT_HPP)
 
-[[nodiscard]] ATTRIBUTE_CONST inline I128_CONSTEXPR int32_t sign(int128_t x) noexcept {
+[[nodiscard]] ATTRIBUTE_CONST I128_CONSTEXPR int32_t sign(int128_t x) noexcept {
     uint32_t sign_bit = uint32_t(uint128_t(x) >> 127);
     return int32_t(x != 0) - int32_t(2 * sign_bit);
 }
@@ -698,12 +698,12 @@ constexpr bool uabs(bool n) = delete;
 
 #if defined(INTEGERS_128_BIT_HPP)
 
-[[nodiscard]] ATTRIBUTE_CONST inline I128_CONSTEXPR uint128_t uabs(int128_t n) noexcept {
+[[nodiscard]] ATTRIBUTE_CONST I128_CONSTEXPR uint128_t uabs(int128_t n) noexcept {
     uint128_t t = uint128_t(n >> 127);
     return (uint128_t(n) ^ t) - t;
 }
 
-[[nodiscard]] ATTRIBUTE_CONST inline I128_CONSTEXPR uint128_t uabs(uint128_t n) noexcept {
+[[nodiscard]] ATTRIBUTE_CONST I128_CONSTEXPR uint128_t uabs(uint128_t n) noexcept {
     return n;
 }
 
@@ -1181,11 +1181,11 @@ template <class T>
 
 #if defined(INTEGERS_128_BIT_HPP)
 
-[[nodiscard]] ATTRIBUTE_CONST inline I128_CONSTEXPR bool is_power_of_two(int128_t n) noexcept {
+[[nodiscard]] ATTRIBUTE_CONST I128_CONSTEXPR bool is_power_of_two(int128_t n) noexcept {
     return (n & (n - 1)) == 0 && n > 0;
 }
 
-[[nodiscard]] ATTRIBUTE_CONST inline I128_CONSTEXPR bool is_power_of_two(uint128_t n) noexcept {
+[[nodiscard]] ATTRIBUTE_CONST I128_CONSTEXPR bool is_power_of_two(uint128_t n) noexcept {
     return (n & (n - 1)) == 0 && n != 0;
 }
 
@@ -1301,7 +1301,7 @@ template <typename T>
 /// @brief For n > 0 returns ⌊log_2(n)⌋. For n = 0 returns (uint32_t)-1
 /// @param[in] n
 /// @return
-[[nodiscard]] ATTRIBUTE_CONST inline I128_CONSTEXPR uint32_t log2_floor(uint128_t n) noexcept {
+[[nodiscard]] ATTRIBUTE_CONST I128_CONSTEXPR uint32_t log2_floor(uint128_t n) noexcept {
     uint64_t hi = uint64_t(n >> 64);
     return hi != 0 ? (127 - uint32_t(countl_zero(hi))) : (log2_floor(uint64_t(n)));
 }
@@ -1309,7 +1309,7 @@ template <typename T>
 /// @brief For n > 0 returns ⌈log_2(n)⌉. For n = 0 returns (uint32_t)-1
 /// @param[in] n
 /// @return
-[[nodiscard]] ATTRIBUTE_CONST inline I128_CONSTEXPR uint32_t log2_ceil(uint128_t n) noexcept {
+[[nodiscard]] ATTRIBUTE_CONST I128_CONSTEXPR uint32_t log2_ceil(uint128_t n) noexcept {
     return log2_floor(n) + ((n & (n - 1)) != 0);
 }
 
@@ -1329,7 +1329,7 @@ template <typename T>
 
 #if defined(INTEGERS_128_BIT_HPP)
 
-[[nodiscard]] ATTRIBUTE_CONST inline I128_CONSTEXPR uint32_t base_2_len(uint128_t n) noexcept {
+[[nodiscard]] ATTRIBUTE_CONST I128_CONSTEXPR uint32_t base_2_len(uint128_t n) noexcept {
     // " | 1" operation does not affect answer for all
     //  numbers except n = 0. For n = 0 answer is 1.
     return ::math_functions::log2_floor(n | 1) + 1;
@@ -2261,7 +2261,7 @@ ATTRIBUTE_CONST constexpr HelperRetType congruence_helper(const std::uint64_t a,
 
 #if defined(INTEGERS_128_BIT_HPP)
 
-[[nodiscard]] ATTRIBUTE_CONST inline I128_CONSTEXPR bool is_perfect_number(uint128_t n) noexcept {
+[[nodiscard]] ATTRIBUTE_CONST I128_CONSTEXPR bool is_perfect_number(uint128_t n) noexcept {
     return n > std::numeric_limits<uint64_t>::max()
                ? n == (((uint128_t(1) << 61) - 1) << (61 - 1))
                : is_perfect_number(static_cast<std::uint64_t>(n));
@@ -2280,8 +2280,7 @@ namespace std {
 /// @param[in] a
 /// @param[in] b
 /// @return gcd(a, b)
-[[nodiscard]] ATTRIBUTE_CONST inline I128_CONSTEXPR uint128_t gcd(uint128_t a,
-                                                                  uint128_t b) noexcept {
+[[nodiscard]] ATTRIBUTE_CONST I128_CONSTEXPR uint128_t gcd(uint128_t a, uint128_t b) noexcept {
     if (unlikely(a == 0)) {
         return b;
     }
@@ -2311,7 +2310,7 @@ namespace std {
     }
 }
 
-[[nodiscard]] ATTRIBUTE_CONST inline I128_CONSTEXPR uint128_t gcd(uint64_t a, int128_t b) noexcept {
+[[nodiscard]] ATTRIBUTE_CONST I128_CONSTEXPR uint128_t gcd(uint64_t a, int128_t b) noexcept {
     uint128_t b0 = math_functions::uabs(b);
     if (unlikely(b0 == 0)) {
         return a;
