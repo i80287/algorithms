@@ -417,7 +417,7 @@
 namespace config::detail {
 
 #if (defined(_MSC_VER) || defined(__MINGW32__)) && CONFIG_HAS_INCLUDE(<intrin.h>)
-inline void ATTRIBUTE_NOINLINE sink_char_ptr(char const volatile*) {}
+static inline void ATTRIBUTE_NOINLINE sink_char_ptr(char const volatile*) {}
 #endif
 
 template <class T>
@@ -431,9 +431,6 @@ ATTRIBUTE_ALWAYS_INLINE static inline void no_opt_impl(T&& expr) {
     __asm__("" ::"r,m,i"(expr));
 #endif
 }
-
-template <class T>
-static inline void no_opt_impl(const T& expr) = delete;
 
 }
 
