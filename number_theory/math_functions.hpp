@@ -355,10 +355,51 @@ template <class T>
 
 #endif
 
+template <class T>
+struct IsPerfectSquareResult {
+    bool is_perfect_square;
+    T root;
+
+    [[nodiscard]] constexpr explicit operator bool() const noexcept {
+        return is_perfect_square;
+    }
+};
+
 /// @brief Checks whether @a `n` is perfect square or not.
 /// @param[in] n
-/// @return `true` if @a `n` is perfect square and `false` otherwise.
-[[nodiscard]] ATTRIBUTE_CONST constexpr bool is_perfect_square(uint64_t n) noexcept {
+/// @return {true, sqrt(n)} if @a `n` is perfect square and {false, undefined value} otherwise.
+[[nodiscard]] ATTRIBUTE_CONST constexpr IsPerfectSquareResult<uint32_t> is_perfect_square(
+    uint32_t n) noexcept {
+    // clang-format off
+    /**
+     * +------------+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+
+     * |   n mod 16 |  0 |  1 |  2 |  3 |  4 |  5 |  6 |  7 |  8 |  9 | 10 | 11 | 12 | 13 | 14 | 15 |
+     * +------------+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+
+     * | n*n mod 16 |  0 |  1 |  4 |  9 |  0 |  9 |  4 |  1 |  0 |  1 |  4 |  9 |  0 |  9 |  4 |  1 |
+     * +------------+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+
+     *
+     * If we peek mod 32, then we should check only for n & 31 in { 0, 1, 4, 9, 16, 17, 25 },
+     * but switch statement could be less efficient in this case
+     */
+    // clang-format on
+    switch (n & 15) {
+        case 0:
+        case 1:
+        case 4:
+        case 9: {
+            uint32_t root = isqrt(n);
+            return {root * root == n, root};
+        }
+        default:
+            return {false, 0};
+    }
+}
+
+/// @brief Checks whether @a `n` is perfect square or not.
+/// @param[in] n
+/// @return {true, sqrt(n)} if @a `n` is perfect square and {false, undefined value} otherwise.
+[[nodiscard]] ATTRIBUTE_CONST constexpr IsPerfectSquareResult<uint64_t> is_perfect_square(
+    uint64_t n) noexcept {
     // clang-format off
     /**
      * +------------+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+
@@ -377,41 +418,10 @@ template <class T>
         case 4:
         case 9: {
             uint64_t root = isqrt(n);
-            return root * root == n;
+            return {root * root == n, root};
         }
         default:
-            return false;
-    }
-}
-
-/// @brief Checks whether @a `n` is perfect square or not.
-///        If it is, stores square root of @a `n` into the @a `root`.
-/// @param[in] n
-/// @param[out] root
-/// @return `true` if @a `n` is perfect square and `false` otherwise.
-[[nodiscard]] ATTRIBUTE_PURE constexpr bool is_perfect_square(uint64_t n, uint32_t& root) noexcept {
-    // clang-format off
-    /**
-     * +------------+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+
-     * |   n mod 16 |  0 |  1 |  2 |  3 |  4 |  5 |  6 |  7 |  8 |  9 | 10 | 11 | 12 | 13 | 14 | 15 |
-     * +------------+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+
-     * | n*n mod 16 |  0 |  1 |  4 |  9 |  0 |  9 |  4 |  1 |  0 |  1 |  4 |  9 |  0 |  9 |  4 |  1 |
-     * +------------+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+
-     *
-     * If we peek mod 32, then we should check only for n & 31 in { 0, 1, 4, 9, 16, 17, 25 },
-     * but switch statement could be less efficient in this case
-     */
-    // clang-format on
-    switch (n & 15) {
-        case 0:
-        case 1:
-        case 4:
-        case 9: {
-            uint64_t r = root = isqrt(n);
-            return r * r == n;
-        }
-        default:
-            return false;
+            return {false, 0};
     }
 }
 
@@ -419,8 +429,9 @@ template <class T>
 
 /// @brief Checks whether @a `n` is perfect square or not.
 /// @param[in] n
-/// @return `true` if @a `n` is perfect square and `false` otherwise.
-[[nodiscard]] ATTRIBUTE_CONST inline I128_CONSTEXPR bool is_perfect_square(uint128_t n) noexcept {
+/// @return {true, sqrt(n)} if @a `n` is perfect square and {false, undefined value} otherwise.
+[[nodiscard]] ATTRIBUTE_CONST inline I128_CONSTEXPR IsPerfectSquareResult<uint128_t>
+is_perfect_square(uint128_t n) noexcept {
     // clang-format off
     /**
      * +------------+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+
@@ -439,42 +450,10 @@ template <class T>
         case 4:
         case 9: {
             uint64_t root = isqrt(n);
-            return uint128_t(root) * root == n;
+            return {uint128_t(root) * root == n, root};
         }
         default:
-            return false;
-    }
-}
-
-/// @brief Checks whether @a `n` is perfect square or not.
-///        If it is, stores square root of @a `n` into the @a `root`.
-/// @param[in] n
-/// @param[out] root
-/// @return `true` if @a `n` is perfect square and `false` otherwise.
-[[nodiscard]] ATTRIBUTE_PURE inline I128_CONSTEXPR bool is_perfect_square(uint128_t n,
-                                                                          uint64_t& root) noexcept {
-    // clang-format off
-    /**
-     * +------------+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+
-     * |   n mod 16 |  0 |  1 |  2 |  3 |  4 |  5 |  6 |  7 |  8 |  9 | 10 | 11 | 12 | 13 | 14 | 15 |
-     * +------------+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+
-     * | n*n mod 16 |  0 |  1 |  4 |  9 |  0 |  9 |  4 |  1 |  0 |  1 |  4 |  9 |  0 |  9 |  4 |  1 |
-     * +------------+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+
-     *
-     * If we peek mod 32, then we should check only for n & 31 in { 0, 1, 4, 9, 16, 17, 25 },
-     * but switch statement could be less efficient in this case
-     */
-    // clang-format on
-    switch (uint64_t(n) & 15) {
-        case 0:
-        case 1:
-        case 4:
-        case 9: {
-            root = isqrt(n);
-            return uint128_t(root) * root == n;
-        }
-        default:
-            return false;
+            return {false, 0};
     }
 }
 
