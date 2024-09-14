@@ -1251,18 +1251,6 @@ template <class TInt>
     return static_cast<TInt>(unsigned_n & -unsigned_n);
 }
 
-[[nodiscard]] ATTRIBUTE_CONST constexpr uint32_t base_2_len(uint32_t n) noexcept {
-    // " | 1" operation does not affect answer for all
-    //  numbers except n = 0. For n = 0 answer is 1.
-    return 32 - uint32_t(countl_zero(n | 1));
-}
-
-[[nodiscard]] ATTRIBUTE_CONST constexpr uint32_t base_2_len(uint64_t n) noexcept {
-    // " | 1" operation does not affect answer for all
-    //  numbers except n = 0. For n = 0 answer is 1.
-    return 64 - uint32_t(countl_zero(n | 1));
-}
-
 /// @brief Realization taken from the gcc libstdc++ __to_chars_len
 /// @tparam T
 /// @param[in] value
@@ -1334,7 +1322,7 @@ template <typename T>
 /// @brief For n > 0 returns ⌊log_2(n)⌋. For n = 0 returns (uint32_t)-1
 /// @param[in] n
 /// @return
-[[nodiscard]] ATTRIBUTE_CONST constexpr uint32_t log2_floor(uint128_t n) noexcept {
+[[nodiscard]] ATTRIBUTE_CONST inline I128_CONSTEXPR uint32_t log2_floor(uint128_t n) noexcept {
     uint64_t hi = uint64_t(n >> 64);
     return hi != 0 ? (127 - uint32_t(countl_zero(hi))) : (log2_floor(uint64_t(n)));
 }
@@ -1342,8 +1330,30 @@ template <typename T>
 /// @brief For n > 0 returns ⌈log_2(n)⌉. For n = 0 returns (uint32_t)-1
 /// @param[in] n
 /// @return
-[[nodiscard]] ATTRIBUTE_CONST constexpr uint32_t log2_ceil(uint128_t n) noexcept {
+[[nodiscard]] ATTRIBUTE_CONST inline I128_CONSTEXPR uint32_t log2_ceil(uint128_t n) noexcept {
     return log2_floor(n) + ((n & (n - 1)) != 0);
+}
+
+#endif
+
+[[nodiscard]] ATTRIBUTE_CONST constexpr uint32_t base_2_len(uint32_t n) noexcept {
+    // " | 1" operation does not affect answer for all
+    //  numbers except n = 0. For n = 0 answer is 1.
+    return ::math_functions::log2_floor(n | 1) + 1;
+}
+
+[[nodiscard]] ATTRIBUTE_CONST constexpr uint32_t base_2_len(uint64_t n) noexcept {
+    // " | 1" operation does not affect answer for all
+    //  numbers except n = 0. For n = 0 answer is 1.
+    return ::math_functions::log2_floor(n | 1) + 1;
+}
+
+#if defined(INTEGERS_128_BIT_HPP)
+
+[[nodiscard]] ATTRIBUTE_CONST inline I128_CONSTEXPR uint32_t base_2_len(uint128_t n) noexcept {
+    // " | 1" operation does not affect answer for all
+    //  numbers except n = 0. For n = 0 answer is 1.
+    return ::math_functions::log2_floor(n | 1) + 1;
 }
 
 #endif
