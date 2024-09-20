@@ -432,7 +432,7 @@ ATTRIBUTE_ALWAYS_INLINE static inline void no_opt_impl(T&& expr) {
 #endif
 }
 
-}
+}  // namespace config::detail
 
 #define CONFIG_DO_NOT_OPTIMIZE_AWAY(expr) ::config::detail::no_opt_impl(expr)
 
