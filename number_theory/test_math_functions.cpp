@@ -405,7 +405,7 @@ template <class IntType>
             // printf("Thread %zu started, seed = %zu\n", thread_id, seed);
             using rnt_t = std::conditional_t<sizeof(IntType) == sizeof(std::uint32_t), std::mt19937,
                                              std::mt19937_64>;
-            rnt_t mrs_rnd(seed);
+            rnt_t mrs_rnd(static_cast<typename rnt_t::result_type>(seed));
 
             for (size_t test_iter = kTestsPerThread; test_iter != 0; --test_iter) {
                 IntType a = static_cast<IntType>(mrs_rnd());
@@ -845,7 +845,8 @@ static void test_general_asserts() {
 
     ASSERT_THAT(bit_reverse(uint128_t(0)) == 0);
     ASSERT_THAT(bit_reverse(uint128_t(uint64_t(-1)) << 64) == uint64_t(-1));
-    ASSERT_THAT(bit_reverse((uint128_t(uint64_t(-1)) << 64) | 1) == ((uint128_t(1) << 127) | uint64_t(-1)));
+    ASSERT_THAT(bit_reverse((uint128_t(uint64_t(-1)) << 64) | 1) ==
+                ((uint128_t(1) << 127) | uint64_t(-1)));
     ASSERT_THAT(bit_reverse(uint128_t(-1)) == uint128_t(-1));
 
 #endif
@@ -1396,6 +1397,34 @@ static void test_general_asserts() {
 
 #if CONFIG_HAS_AT_LEAST_CXX_17
 
+    ASSERT_THAT(base_b_len(0u) == 1);
+    ASSERT_THAT(base_b_len(1u) == 1);
+    ASSERT_THAT(base_b_len(9u) == 1);
+    ASSERT_THAT(base_b_len(10u) == 2);
+    ASSERT_THAT(base_b_len(11u) == 2);
+    ASSERT_THAT(base_b_len(99u) == 2);
+    ASSERT_THAT(base_b_len(100u) == 3);
+    ASSERT_THAT(base_b_len(101u) == 3);
+    ASSERT_THAT(base_b_len(uint32_t(-1)) == 10);
+
+    ASSERT_THAT(base_b_len(0) == 1);
+    ASSERT_THAT(base_b_len(1) == 1);
+    ASSERT_THAT(base_b_len(9) == 1);
+    ASSERT_THAT(base_b_len(10) == 2);
+    ASSERT_THAT(base_b_len(11) == 2);
+    ASSERT_THAT(base_b_len(99) == 2);
+    ASSERT_THAT(base_b_len(100) == 3);
+    ASSERT_THAT(base_b_len(101) == 3);
+    ASSERT_THAT(base_b_len(-0) == 1);
+    ASSERT_THAT(base_b_len(-1) == 2);
+    ASSERT_THAT(base_b_len(-9) == 2);
+    ASSERT_THAT(base_b_len(-10) == 3);
+    ASSERT_THAT(base_b_len(-11) == 3);
+    ASSERT_THAT(base_b_len(-99) == 3);
+    ASSERT_THAT(base_b_len(-100) == 4);
+    ASSERT_THAT(base_b_len(-101) == 4);
+    ASSERT_THAT(base_b_len(int32_t(uint32_t(1) << 31)) == 11);
+
     ASSERT_THAT(base_b_len(0ull) == 1);
     ASSERT_THAT(base_b_len(1ull) == 1);
     ASSERT_THAT(base_b_len(9ull) == 1);
@@ -1405,6 +1434,24 @@ static void test_general_asserts() {
     ASSERT_THAT(base_b_len(100ull) == 3);
     ASSERT_THAT(base_b_len(101ull) == 3);
     ASSERT_THAT(base_b_len(uint64_t(-1)) == 20);
+
+    ASSERT_THAT(base_b_len(0ll) == 1);
+    ASSERT_THAT(base_b_len(1ll) == 1);
+    ASSERT_THAT(base_b_len(9ll) == 1);
+    ASSERT_THAT(base_b_len(10ll) == 2);
+    ASSERT_THAT(base_b_len(11ll) == 2);
+    ASSERT_THAT(base_b_len(99ll) == 2);
+    ASSERT_THAT(base_b_len(100ll) == 3);
+    ASSERT_THAT(base_b_len(101ll) == 3);
+    ASSERT_THAT(base_b_len(-0ll) == 1);
+    ASSERT_THAT(base_b_len(-1ll) == 2);
+    ASSERT_THAT(base_b_len(-9ll) == 2);
+    ASSERT_THAT(base_b_len(-10ll) == 3);
+    ASSERT_THAT(base_b_len(-11ll) == 3);
+    ASSERT_THAT(base_b_len(-99ll) == 3);
+    ASSERT_THAT(base_b_len(-100ll) == 4);
+    ASSERT_THAT(base_b_len(-101ll) == 4);
+    ASSERT_THAT(base_b_len(int64_t(uint64_t(1) << 63)) == 20);
 
 #if defined(INTEGERS_128_BIT_HPP) && HAS_I128_CONSTEXPR
 
@@ -1417,6 +1464,24 @@ static void test_general_asserts() {
     ASSERT_THAT(base_b_len(uint128_t(100)) == 3);
     ASSERT_THAT(base_b_len(uint128_t(101)) == 3);
     ASSERT_THAT(base_b_len(uint128_t(-1)) == 39);
+
+    ASSERT_THAT(base_b_len(int128_t(0)) == 1);
+    ASSERT_THAT(base_b_len(int128_t(1)) == 1);
+    ASSERT_THAT(base_b_len(int128_t(9)) == 1);
+    ASSERT_THAT(base_b_len(int128_t(10)) == 2);
+    ASSERT_THAT(base_b_len(int128_t(11)) == 2);
+    ASSERT_THAT(base_b_len(int128_t(99)) == 2);
+    ASSERT_THAT(base_b_len(int128_t(100)) == 3);
+    ASSERT_THAT(base_b_len(int128_t(101)) == 3);
+    ASSERT_THAT(base_b_len(-int128_t(0)) == 1);
+    ASSERT_THAT(base_b_len(-int128_t(1)) == 2);
+    ASSERT_THAT(base_b_len(-int128_t(9)) == 2);
+    ASSERT_THAT(base_b_len(-int128_t(10)) == 3);
+    ASSERT_THAT(base_b_len(-int128_t(11)) == 3);
+    ASSERT_THAT(base_b_len(-int128_t(99)) == 3);
+    ASSERT_THAT(base_b_len(-int128_t(100)) == 4);
+    ASSERT_THAT(base_b_len(-int128_t(101)) == 4);
+    ASSERT_THAT(base_b_len(int128_t(uint128_t(1) << 127)) == 40);
 
 #endif  // INTEGERS_128_BIT_HPP
 
