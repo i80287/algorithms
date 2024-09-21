@@ -10,9 +10,7 @@ cp ./u64-primes.txt ./$build_dir/u64-primes.txt
 cp ./u128-primes.txt ./$build_dir/u128-primes.txt
 cd ./$build_dir || return 1
 
-set -e
-
-cmake -D CMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=i686-w64-mingw32-gcc-posix -DCMAKE_CXX_COMPILER=i686-w64-mingw32-g++-posix -S .. -B . &&
+cmake -D CMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_C_COMPILER=i686-w64-mingw32-gcc-posix -DCMAKE_CXX_COMPILER=i686-w64-mingw32-g++-posix -S .. -B . &&
     make clean &&
     make all --jobs "$(nproc)"
 
