@@ -36,11 +36,11 @@ if (NOT USING_MINGW_GCC_32)
     list(APPEND TestOptionalDependencies "")
 endif()
 
-list(APPEND TestFilenames test_gosper_algorithm)
-list(APPEND TestDependencies "")
-list(APPEND TestOptionalDependencies "")
-
 if (NOT USING_MINGW_GCC_32)
+    list(APPEND TestFilenames test_gosper_algorithm)
+    list(APPEND TestDependencies "")
+    list(APPEND TestOptionalDependencies "")
+
     list(APPEND TestFilenames test_integers_128_bit)
     list(APPEND TestDependencies "")
     list(APPEND TestOptionalDependencies "")
@@ -151,13 +151,24 @@ elseif (CMAKE_CXX_COMPILER_ID STREQUAL "Intel")
 elseif (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
 endif()
 
-message(STATUS "|- TEST_COMPILE_DEFINITIONS = ${TEST_COMPILE_DEFINITIONS}")
-message(STATUS "|- TEST_COMPILE_OPTIONS = ${TEST_COMPILE_OPTIONS}")
-message(STATUS "|- USING_MINGW_GCC = ${USING_MINGW_GCC}")
-message(STATUS "|- USING_MINGW_GCC_32 = ${USING_MINGW_GCC_32}")
-message(STATUS "|- USING_MSYS2_MINGW_GCC = ${USING_MSYS2_MINGW_GCC}")
+message(STATUS "+-")
+message(STATUS "| TEST_COMPILE_DEFINITIONS = ${TEST_COMPILE_DEFINITIONS}")
+message(STATUS "| TEST_COMPILE_OPTIONS = ${TEST_COMPILE_OPTIONS}")
+message(STATUS "| USING_MINGW_GCC = ${USING_MINGW_GCC}")
+message(STATUS "| USING_MINGW_GCC_32 = ${USING_MINGW_GCC_32}")
+message(STATUS "| USING_MSYS2_MINGW_GCC = ${USING_MSYS2_MINGW_GCC}")
+message(STATUS "+-")
 
-foreach(target_filename target_dependencies target_optional_dependencies IN ZIP_LISTS TestFilenames TestDependencies TestOptionalDependencies)
+function(
+    add_test_target
+    target_filename
+    target_dependencies
+    target_optional_dependencies
+    target_cxx_version
+)
+    string(CONCAT target_cpp_filename ${target_filename} ".cpp")
+    string(CONCAT target "target_cxx_" ${target_cxx_version} "_" ${target_filename})
+
     string(COMPARE EQUAL "${target_dependencies}" "" empty_dependencies)
     if (NOT empty_dependencies)
         string(REPLACE " " ";" target_dependencies ${target_dependencies})
@@ -168,7 +179,12 @@ foreach(target_filename target_dependencies target_optional_dependencies IN ZIP_
         string(REPLACE " " ";" target_optional_dependencies ${target_optional_dependencies})
     endif()
 
-    message(STATUS "target_filename = ${target_filename}, target_dependencies = ${target_dependencies}")
+    message(STATUS "+-")
+    message(STATUS "| target_filename = ${target_filename}")
+    message(STATUS "| target_dependencies = ${target_dependencies}")
+    message(STATUS "| target_optional_dependencies = ${target_optional_dependencies}")
+    message(STATUS "| target_cxx_version = ${target_cxx_version}")
+    message(STATUS "+-")
 
     set(has_missing_dependency FALSE)
     foreach(target_dependency ${target_dependencies})
@@ -181,64 +197,45 @@ foreach(target_filename target_dependencies target_optional_dependencies IN ZIP_
     endforeach()
 
     if (has_missing_dependency)
-        continue()
+        return()
     endif()
 
-    string(CONCAT target_cpp_filename ${target_filename} ".cpp")
-    string(CONCAT target_cxx_17 "target_cxx_17_" ${target_filename})
-    string(CONCAT target_cxx_20 "target_cxx_20_" ${target_filename})
-
-    add_executable(${target_cxx_17} ${target_cpp_filename})
+    add_executable(${target} ${target_cpp_filename})
 
     if (NOT empty_dependencies)
-        target_link_libraries(${target_cxx_17} ${target_dependencies})
+        target_link_libraries(${target} ${target_dependencies})
     endif()
 
     if (NOT empty_optional_dependencies)
         foreach(target_optional_dependency ${target_optional_dependencies})
             find_library(dependency_lib ${target_optional_dependency})
             if(NOT dependency_lib)
-                message(WARNING "Optional dependency ${target_optional_dependency} of target ${target_filename} not found")
+                message(WARNING "Optional dependency ${target_optional_dependency} of target ${target} not found")
             else()
-                target_link_libraries(${target_cxx_17} ${target_optional_dependency})
+                target_link_libraries(${target} ${target_optional_dependency})
             endif()
         endforeach()
     endif()
 
     if (USING_MINGW_GCC AND NOT WIN32)
-        target_link_options(${target_cxx_17} PRIVATE -static -static-libgcc -static-libstdc++)
+        target_link_options(${target} PRIVATE -static -static-libgcc -static-libstdc++)
     endif()
 
-    target_compile_options(${target_cxx_17} PRIVATE ${TEST_COMPILE_OPTIONS})
-    target_compile_definitions(${target_cxx_17} PRIVATE ${TEST_COMPILE_DEFINITIONS})
-    set_target_properties(${target_cxx_17} PROPERTIES CXX_STANDARD 17 CXX_EXTENSIONS OFF CXX_STANDARD_REQUIRED ON)
-    add_test(NAME ${target_cxx_17} COMMAND $<TARGET_FILE:${target_cxx_17}>)
+    target_compile_options(${target} PRIVATE ${TEST_COMPILE_OPTIONS})
+    target_compile_definitions(${target} PRIVATE ${TEST_COMPILE_DEFINITIONS})
+    set_target_properties(${target} PROPERTIES CXX_STANDARD ${target_cxx_version} CXX_EXTENSIONS OFF CXX_STANDARD_REQUIRED ON)
+    add_test(NAME ${target} COMMAND $<TARGET_FILE:${target}>)
+endfunction(add_test_target)
 
-    add_executable(${target_cxx_20} ${target_cpp_filename})
-
-    if (NOT empty_dependencies)
-        target_link_libraries(${target_cxx_20} ${target_dependencies})
-    endif()
-
-    if (NOT empty_optional_dependencies)
-        foreach(target_optional_dependency ${target_optional_dependencies})
-            find_library(dependency_lib ${target_optional_dependency})
-            if(NOT dependency_lib)
-                message(WARNING "Optional dependency ${target_optional_dependency} of target ${target_filename} not found")
-            else()
-                target_link_libraries(${target_cxx_20} ${target_optional_dependency})
-            endif()
-        endforeach()
-    endif()
-
-    if (USING_MINGW_GCC AND NOT WIN32)
-        target_link_options(${target_cxx_20} PRIVATE -static-libgcc -static-libstdc++)
-    endif()
-
-    target_compile_options(${target_cxx_20} PRIVATE ${TEST_COMPILE_OPTIONS})
-    target_compile_definitions(${target_cxx_20} PRIVATE ${TEST_COMPILE_DEFINITIONS})
-    set_target_properties(${target_cxx_20} PROPERTIES CXX_STANDARD 20 CXX_EXTENSIONS OFF CXX_STANDARD_REQUIRED ON)
-    add_test(NAME ${target_cxx_20} COMMAND $<TARGET_FILE:${target_cxx_20}>)
+foreach(target_filename target_dependencies target_optional_dependencies IN ZIP_LISTS TestFilenames TestDependencies TestOptionalDependencies)
+    foreach(version 17 20)
+        add_test_target(
+            "${target_filename}"
+            "${target_dependencies}"
+            "${target_optional_dependencies}"
+            ${version}
+        )
+    endforeach()
 endforeach()
 
 enable_testing()
