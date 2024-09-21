@@ -27,7 +27,9 @@ using namespace math_functions;
 using namespace test_tools;
 using std::gcd;
 
-static void test_isqrt() {
+namespace {
+
+void test_isqrt() {
     log_tests_started();
 
     constexpr uint32_t kIters = 2e6;
@@ -90,7 +92,7 @@ static void test_isqrt() {
     }
 }
 
-static void test_icbrt() noexcept {
+void test_icbrt() noexcept {
     log_tests_started();
 
     for (uint32_t n = 1; n < 1625; n++) {
@@ -117,7 +119,7 @@ static void test_icbrt() noexcept {
     assert(icbrt(std::numeric_limits<uint64_t>::max()) == 2642245);
 }
 
-static void test_log2() noexcept {
+void test_log2() noexcept {
     log_tests_started();
 
     for (uint32_t k = 0; k < sizeof(uint32_t) * CHAR_BIT; k++) {
@@ -158,7 +160,7 @@ static void test_log2() noexcept {
     assert(log2_ceil(uint128_t(0)) == uint32_t(-1));
 }
 
-static void test_bit_reverse() noexcept {
+void test_bit_reverse() noexcept {
     log_tests_started();
 
     for (uint32_t n = 0; n < 256; n++) {
@@ -178,11 +180,10 @@ static void test_bit_reverse() noexcept {
 
 #if defined(HAS_MPFR_DURING_TESTING) && HAS_MPFR_DURING_TESTING
 
-static const mpfr_rnd_t kRoundMode = mpfr_get_default_rounding_mode();
+const mpfr_rnd_t kRoundMode = mpfr_get_default_rounding_mode();
 
 template <class FloatType>
-static SumSinCos<FloatType> call_sum_of_sines_and_cosines(mpfr_t alpha, mpfr_t beta,
-                                                          uint32_t n) noexcept {
+SumSinCos<FloatType> call_sum_of_sines_and_cosines(mpfr_t alpha, mpfr_t beta, uint32_t n) noexcept {
     if constexpr (std::is_same_v<FloatType, float>) {
         return sum_of_sines_and_cosines(mpfr_get_flt(alpha, kRoundMode),
                                         mpfr_get_flt(beta, kRoundMode), n);
@@ -196,9 +197,9 @@ static SumSinCos<FloatType> call_sum_of_sines_and_cosines(mpfr_t alpha, mpfr_t b
 }
 
 template <class FloatType>
-static std::pair<bool, bool> check_sums_correctness(mpfr_t c_sines_sum, FloatType sines_sum,
-                                                    mpfr_t c_cosines_sum, FloatType cosines_sum,
-                                                    FloatType eps) noexcept {
+std::pair<bool, bool> check_sums_correctness(mpfr_t c_sines_sum, FloatType sines_sum,
+                                             mpfr_t c_cosines_sum, FloatType cosines_sum,
+                                             FloatType eps) noexcept {
     auto cmp_lambda = [](mpfr_t c_sum, FloatType sum, FloatType lambda_eps) noexcept {
         if constexpr (std::is_same_v<FloatType, float> || std::is_same_v<FloatType, double>) {
             mpfr_sub_d(c_sum, c_sum, sum, kRoundMode);
@@ -218,7 +219,7 @@ static std::pair<bool, bool> check_sums_correctness(mpfr_t c_sines_sum, FloatTyp
 }
 
 template <class FloatType>
-static void test_sin_cos_sum_generic() noexcept {
+void test_sin_cos_sum_generic() noexcept {
     log_tests_started();
 
     constexpr uint32_t kMaxN       = 1e2;
@@ -293,7 +294,7 @@ static void test_sin_cos_sum_generic() noexcept {
     mpfr_clear(alpha);
 }
 
-static void test_sin_cos_sum() noexcept {
+void test_sin_cos_sum() noexcept {
     log_tests_started();
 
     test_sin_cos_sum_generic<float>();
@@ -303,7 +304,7 @@ static void test_sin_cos_sum() noexcept {
 
 #endif
 
-static void test_visit_all_submasks() noexcept {
+void test_visit_all_submasks() noexcept {
     log_tests_started();
 
     std::vector<uint64_t> vec;
@@ -320,7 +321,7 @@ static void test_visit_all_submasks() noexcept {
     assert((vec == std::vector<uint64_t>{0b111, 0b110, 0b101, 0b100, 0b011, 0b010, 0b001}));
 }
 
-static void test_prime_bitarrays() {
+void test_prime_bitarrays() {
     log_tests_started();
 
     constexpr size_t N                    = 1000;
@@ -354,7 +355,7 @@ static void test_prime_bitarrays() {
     }
 }
 
-static void test_factorizer() {
+void test_factorizer() {
     log_tests_started();
 
     constexpr auto N = uint32_t(1e7);
@@ -384,7 +385,7 @@ static void test_factorizer() {
 }
 
 template <class IntType>
-[[nodiscard]] static bool multi_thread_test_extended_euclid_algorithm() {
+[[nodiscard]] bool multi_thread_test_extended_euclid_algorithm() {
     static_assert(std::is_same_v<IntType, std::int64_t> || std::is_same_v<IntType, std::uint32_t>,
                   "");
     log_tests_started();
@@ -410,8 +411,8 @@ template <class IntType>
             rnt_t mrs_rnd(static_cast<typename rnt_t::result_type>(seed));
 
             for (size_t test_iter = kTestsPerThread; test_iter != 0; --test_iter) {
-                IntType a = static_cast<IntType>(mrs_rnd());
-                IntType b = static_cast<IntType>(mrs_rnd());
+                const IntType a = static_cast<IntType>(mrs_rnd());
+                const IntType b = static_cast<IntType>(mrs_rnd());
 
                 const auto [u, v, gcd] = math_functions::extended_euclid_algorithm(a, b);
                 const auto real_gcd    = std::gcd(a, b);
@@ -503,7 +504,7 @@ template <class IntType>
     return !result.test_and_set();
 }
 
-[[nodiscard]] static bool test_solve_congruence_all_roots() {
+[[nodiscard]] bool test_solve_congruence_all_roots() {
     log_tests_started();
 
     auto seed = std::ranlux24(std::uint32_t(std::time(nullptr)))();
@@ -547,7 +548,44 @@ template <class IntType>
     return true;
 }
 
-static void test_general_asserts() {
+void test_powers_sum() noexcept {
+    ::test_tools::log_tests_started();
+
+    for (uint64_t m = 0; m <= 6; m++) {
+        uint64_t s   = 0;
+        const auto n = m >= 2 ? static_cast<uint32_t>(
+                                    std::pow(std::numeric_limits<uint64_t>::max(), 1.0L / (2 * m)))
+                              : 1'000'000;
+        for (uint64_t i = 1; i <= n; i++) {
+            s += math_functions::bin_pow(i, m);
+        }
+        switch (m) {
+            case 0:
+                assert(math_functions::powers_sum_u64<0>(n) == s);
+                break;
+            case 1:
+                assert(math_functions::powers_sum_u64<1>(n) == s);
+                break;
+            case 2:
+                assert(math_functions::powers_sum_u64<2>(n) == s);
+                break;
+            case 3:
+                assert(math_functions::powers_sum_u64<3>(n) == s);
+                break;
+            case 4:
+                assert(math_functions::powers_sum_u64<4>(n) == s);
+                break;
+            case 5:
+                assert(math_functions::powers_sum_u64<5>(n) == s);
+                break;
+            case 6:
+                assert(math_functions::powers_sum_u64<6>(n) == s);
+                break;
+        }
+    }
+}
+
+void test_general_asserts() {
 #define STRINGIFY(expr) #expr
 #define ASSERT_THAT(expr)                       \
     do {                                        \
@@ -1655,6 +1693,8 @@ static void test_general_asserts() {
 #undef LOG10_ASSERT_THAT
 }
 
+}  // namespace
+
 int main() {
     test_general_asserts();
     test_isqrt();
@@ -1670,4 +1710,5 @@ int main() {
     assert(multi_thread_test_extended_euclid_algorithm<std::uint32_t>());
     assert(multi_thread_test_extended_euclid_algorithm<std::int64_t>());
     assert(test_solve_congruence_all_roots());
+    test_powers_sum();
 }

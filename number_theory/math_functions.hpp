@@ -81,7 +81,7 @@ template <InplaceMultipliable T>
 #else
 template <class T>
 #endif
-[[nodiscard]] ATTRIBUTE_CONST constexpr T bin_pow(T n, uint64_t p) noexcept {
+[[nodiscard]] ATTRIBUTE_CONST constexpr T bin_pow(T n, uint64_t p) noexcept(noexcept(n *= n)) {
     T res(1);
     while (true) {
         if (p & 1) {
@@ -105,7 +105,8 @@ template <InplaceMultipliable T>
 #else
 template <class T>
 #endif
-[[nodiscard]] ATTRIBUTE_CONST constexpr T bin_pow(T n, int64_t p) noexcept {
+[[nodiscard]] ATTRIBUTE_CONST constexpr T bin_pow(T n, int64_t p) noexcept(noexcept(n *= n) &&
+                                                                           noexcept(1 / n)) {
     const bool not_inverse = p >= 0;
     uint64_t p_u           = p >= 0 ? static_cast<uint64_t>(p) : -static_cast<uint64_t>(p);
     T res(1);
@@ -1368,12 +1369,6 @@ template <typename T>
 
 #endif
 
-#if CONFIG_HAS_AT_LEAST_CXX_20 || defined(__GNUG__) || defined(__clang__)
-#define CONSTEXPR_LOG10 constexpr
-#else
-#define CONSTEXPR_LOG10 inline
-#endif
-
 namespace detail {
 
 ATTRIBUTE_CONST constexpr uint32_t log10_floor_compile_time_impl(uint32_t n) noexcept {
@@ -1419,16 +1414,20 @@ ATTRIBUTE_CONST inline uint32_t log10_floor_runtime_impl(uint32_t n) noexcept {
 /// @brief For n > 0 returns ⌊log_10(n)⌋. For n = 0 returns (uint32_t)-1
 /// @param[in] n
 /// @return
-[[nodiscard]] ATTRIBUTE_CONST CONSTEXPR_LOG10 uint32_t log10_floor(uint32_t n) noexcept {
+[[nodiscard]] ATTRIBUTE_CONST constexpr uint32_t log10_floor(uint32_t n) noexcept {
     /**
      * See Hackers Delight 11-4
      */
 
+#if CONFIG_HAS_AT_LEAST_CXX_20 || defined(__GNUG__) || defined(__clang__)
     if (::config::is_constant_evaluated() || ::config::is_gcc_constant_p(n)) {
+#endif
         return ::math_functions::detail::log10_floor_compile_time_impl(n);
+#if CONFIG_HAS_AT_LEAST_CXX_20 || defined(__GNUG__) || defined(__clang__)
     } else {
         return ::math_functions::detail::log10_floor_runtime_impl(n);
     }
+#endif
 }
 
 namespace detail {
@@ -1500,33 +1499,35 @@ ATTRIBUTE_CONST static inline uint32_t log10_floor_runtime_impl(uint64_t n,
 /// (uint32_t)-1
 /// @param[in] n
 /// @return
-[[nodiscard]] ATTRIBUTE_CONST CONSTEXPR_LOG10 uint32_t log10_floor(uint64_t n) noexcept {
+[[nodiscard]] ATTRIBUTE_CONST constexpr uint32_t log10_floor(uint64_t n) noexcept {
     /**
      * See Hackers Delight 11-4
      */
 
-    static_assert(countl_zero(uint64_t(0)) == 64, "countl_zero detail error");
-    const int32_t approx_log10 = (19 * (63 - int32_t(countl_zero(n)))) >> 6;
+    static_assert(::math_functions::countl_zero(uint64_t(0)) == 64, "countl_zero detail error");
+    const int32_t approx_log10 = (19 * (63 - int32_t(::math_functions::countl_zero(n)))) >> 6;
     ATTRIBUTE_ASSUME((-19 >> 6) <= approx_log10 && approx_log10 <= ((19 * 63) >> 6));
 
+#if CONFIG_HAS_AT_LEAST_CXX_20 || defined(__GNUG__) || defined(__clang__)
     if (::config::is_constant_evaluated() || ::config::is_gcc_constant_p(n)) {
+#endif
         return ::math_functions::detail::log10_floor_compile_time_impl(n, approx_log10);
+#if CONFIG_HAS_AT_LEAST_CXX_20 || defined(__GNUG__) || defined(__clang__)
     } else {
         return ::math_functions::detail::log10_floor_runtime_impl(n, approx_log10);
     }
+#endif
 }
 
-[[nodiscard]] ATTRIBUTE_CONST CONSTEXPR_LOG10 uint32_t base_10_len(uint32_t n) noexcept {
+[[nodiscard]] ATTRIBUTE_CONST constexpr uint32_t base_10_len(uint32_t n) noexcept {
     // or `n` with 1 so that base_10_len(0) = 1
     return ::math_functions::log10_floor(n | 1) + 1;
 }
 
-[[nodiscard]] ATTRIBUTE_CONST CONSTEXPR_LOG10 uint32_t base_10_len(uint64_t n) noexcept {
+[[nodiscard]] ATTRIBUTE_CONST constexpr uint32_t base_10_len(uint64_t n) noexcept {
     // or `n` with 1 so that base_10_len(0) = 1
     return ::math_functions::log10_floor(n | 1) + 1;
 }
-
-#undef CONSTEXPR_LOG10
 
 template <class T>
 struct ExtractPow2Result {
@@ -2378,6 +2379,10 @@ ATTRIBUTE_CONST constexpr T powers_sum(const std::uint32_t n) noexcept {
 
 }  // namespace detail
 
+/// @brief Return 1^M + 2^M + ... + n^M
+/// @tparam M
+/// @param n
+/// @return
 template <std::uint32_t M>
 [[nodiscard]] ATTRIBUTE_CONST constexpr std::uint64_t powers_sum_u64(
     const std::uint32_t n) noexcept {
@@ -2386,17 +2391,16 @@ template <std::uint32_t M>
 
 #if defined(INTEGERS_128_BIT_HPP)
 
+/// @brief Return 1^M + 2^M + ... + n^M
+/// @tparam M
+/// @param n
+/// @return
 template <std::uint32_t M>
 [[nodiscard]] ATTRIBUTE_CONST constexpr uint128_t powers_sum_u128(const std::uint32_t n) noexcept {
     return ::math_functions::detail::powers_sum<M, uint128_t>(n);
 }
 
 #endif
-
-/// @brief Return 1^M + 2^M + ... + n^M
-/// @tparam M
-/// @param n
-/// @return
 
 }  // namespace math_functions
 
