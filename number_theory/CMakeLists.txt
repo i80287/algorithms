@@ -202,7 +202,7 @@ foreach(target_filename target_dependencies target_optional_dependencies IN ZIP_
     endif()
 
     if (USING_MINGW_GCC AND NOT WIN32)
-        target_link_options(${target_cxx_17} PRIVATE -static-libgcc -static-libstdc++)
+        target_link_options(${target_cxx_17} PRIVATE -static -static-libgcc -static-libstdc++)
     endif()
 
     target_compile_options(${target_cxx_17} PRIVATE ${TEST_COMPILE_OPTIONS})
