@@ -87,7 +87,7 @@ ATTRIBUTE_NONNULL(1)
     }
 }
 
-};  // namespace fft_detail
+}  // namespace fft_detail
 
 inline void ensure_roots_capacity(const std::size_t n) {
     assert((n & (n - 1)) == 0);

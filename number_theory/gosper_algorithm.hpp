@@ -20,7 +20,8 @@ template <class Function>
 #if CONFIG_HAS_AT_LEAST_CXX_20
     requires std::is_invocable_r_v<int32_t, Function, const int32_t>
 #endif
-constexpr loop_detect_result loop_detection_Gosper(Function f, int32_t x0) noexcept(std::is_nothrow_invocable_v<Function, int32_t>) {
+constexpr loop_detect_result loop_detection_Gosper(Function f, int32_t x0) noexcept(
+    std::is_nothrow_invocable_v<Function, int32_t>) {
     /**
      * See Hackers Delight 5-5.
      */
