@@ -190,7 +190,7 @@ inline void Deallocate(void* memory) noexcept {
     ::operator delete(memory);
 }
 
-#if defined(__clang__)
+#if defined(__clang__) || defined(__MINGW32__)
 __attribute__((malloc))
 #else
 __attribute__((malloc, malloc(::longint_allocator::Deallocate, 1)))
