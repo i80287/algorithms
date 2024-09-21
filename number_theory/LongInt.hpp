@@ -155,11 +155,11 @@ private:
                kTotalMiddlePages * sizeof(MiddlePage);
     }
 
-    friend void* Allocate(std::size_t size);
-    friend void Deallocate(void* memory) noexcept;
+    friend inline void* Allocate(std::size_t size);
+    friend inline void Deallocate(void* memory) noexcept;
 };
 
-void Deallocate(void* memory) noexcept {
+inline void Deallocate(void* memory) noexcept {
     if (unlikely(memory == nullptr)) {
         return;
     }
@@ -190,13 +190,13 @@ void Deallocate(void* memory) noexcept {
     ::operator delete(memory);
 }
 
-#ifdef __clang__
+#if defined(__clang__)
 __attribute__((malloc))
 #else
 __attribute__((malloc, malloc(::longint_allocator::Deallocate, 1)))
 #endif
-ATTRIBUTE_RETURNS_NONNULL void*
-Allocate(std::size_t size) {
+ATTRIBUTE_RETURNS_NONNULL
+ATTRIBUTE_ALLOC_SIZE(1) inline void* Allocate(std::size_t size) {
     if (size <= inner_impl::SmallPage::kCapacity && inner_impl::free_small_pages_head != nullptr) {
         inner_impl::SmallPage* p = inner_impl::free_small_pages_head;
 #ifdef DEBUG_LI_ALLOC_PRINTING
@@ -1018,7 +1018,8 @@ struct longint {
     }
 
     constexpr longint& operator/=(uint32_t n) noexcept {
-        if ((config::is_constant_evaluated() || config::is_gcc_constant_p(n)) && (n & (n - 1)) == 0) {
+        if ((config::is_constant_evaluated() || config::is_gcc_constant_p(n)) &&
+            (n & (n - 1)) == 0) {
             if (n > 1) {
                 operator>>=(uint32_t(math_functions::countl_zero(n)));
             }
