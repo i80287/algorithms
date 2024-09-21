@@ -240,11 +240,11 @@
  * Clang docs: https://clang.llvm.org/docs/AttributeReference.html#alloc-size
  */
 #if CONFIG_GNUC_PREREQ(4, 3) || CONFIG_HAS_GCC_ATTRIBUTE(__alloc_size__)
-#define ATTRIBUTE_ALLOC_SIZE(params) __attribute__((__alloc_size__(params)))
+#define ATTRIBUTE_ALLOC_SIZE(...) __attribute__((__alloc_size__(__VA_ARGS__)))
 #elif CONFIG_HAS_AT_LEAST_CXX_17 && (defined(__GNUG__) || defined(__clang__))
-#define ATTRIBUTE_ALLOC_SIZE [[gnu::alloc_size]]
+#define ATTRIBUTE_ALLOC_SIZE(...) [[gnu::alloc_size(__VA_ARGS__)]]
 #else
-#define ATTRIBUTE_ALLOC_SIZE(params)
+#define ATTRIBUTE_ALLOC_SIZE(...)
 #endif
 
 /**
