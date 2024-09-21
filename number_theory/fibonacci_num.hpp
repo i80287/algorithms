@@ -1,6 +1,8 @@
 #include <cstdint>
 
-#if defined(__has_include) && __has_include("integers_128_bit.hpp")
+#include "config_macros.hpp"
+
+#if CONFIG_HAS_INCLUDE("integers_128_bit.hpp")
 #include "integers_128_bit.hpp"
 #endif
 
