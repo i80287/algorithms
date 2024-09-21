@@ -48,8 +48,9 @@ jobs:
     - uses: actions/checkout@v3
     - name: Install dependencies
       run: |
+        sudo dpkg --add-architecture i386
         sudo apt update
-        sudo apt install gcc-mingw-w64 g++-mingw-w64 --install-recommends wine
+        sudo apt install --install-recommends gcc-mingw-w64 g++-mingw-w64 wine32 wine
     - name: Run tests
       run: |
         cd ./number_theory

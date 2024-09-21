@@ -4,10 +4,12 @@
 #include <cinttypes>
 #include <cstdio>
 #include <cstdlib>
+#include <ctime>
 #include <limits>
 #include <numeric>
 #include <random>
 #include <thread>
+#include <type_traits>
 #include <utility>
 
 #include "config_macros.hpp"
@@ -401,8 +403,8 @@ template <class IntType>
                               kTestsPerThread
 #endif
         ]() noexcept {
-            const auto seed = thread_id * 3'829'234'734ul + 27'273'489ul;
-            // printf("Thread %zu started, seed = %zu\n", thread_id, seed);
+            const std::size_t seed = thread_id * 3'829'234'734ul + 27'273'489;
+            printf("Thread %zu started, seed = %zu\n", thread_id, seed);
             using rnt_t = std::conditional_t<sizeof(IntType) == sizeof(std::uint32_t), std::mt19937,
                                              std::mt19937_64>;
             rnt_t mrs_rnd(static_cast<typename rnt_t::result_type>(seed));
@@ -504,9 +506,11 @@ template <class IntType>
 [[nodiscard]] static bool test_solve_congruence_all_roots() {
     log_tests_started();
 
-    auto seed = std::ranlux24{uint32_t(std::time(nullptr))}();
-    std::mt19937_64 rnd_64{seed};
-    std::mt19937 rnd_32{seed};
+    auto seed = std::ranlux24(std::uint32_t(std::time(nullptr)))();
+    printf("Seed: %" PRIuFAST32 "\n", seed);
+    std::mt19937_64 rnd_64(seed);
+    std::mt19937 rnd_32(seed);
+
     const size_t kTotalTests = (1 << 24);
     for (auto test_iter = kTotalTests; test_iter != 0; --test_iter) {
         const auto m     = static_cast<std::uint32_t>(rnd_32());
