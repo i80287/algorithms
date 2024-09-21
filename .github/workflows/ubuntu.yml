@@ -39,3 +39,19 @@ jobs:
         cd ./number_theory
         chmod +x ./run_clang_tests.sh
         ./run_clang_tests.sh
+
+  ubuntu-cmake-gcc-mingw-w64-x86_64:
+    name: ubuntu
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+    - name: Install dependencies
+      run: |
+        sudo apt update
+        sudo apt install gcc-mingw-w64 g++-mingw-w64 --install-recommends wine
+    - name: Run tests
+      run: |
+        cd ./number_theory
+        chmod +x ./run_gcc_mingw_64_tests.sh
+        ./run_gcc_mingw_64_tests.sh
