@@ -1628,6 +1628,28 @@ static void test_general_asserts() {
         return q == 2147090867 && r == 31;
     }()));
 
+    ASSERT_THAT((math_functions::powers_sum_u64<0>(100) == 100u));
+    ASSERT_THAT((math_functions::powers_sum_u64<1>(100) == 100u * (100u + 1) / 2));
+    ASSERT_THAT((math_functions::powers_sum_u64<2>(100) == 100u * (100u + 1) * (2 * 100u + 1) / 6));
+    ASSERT_THAT(
+        (math_functions::powers_sum_u64<3>(100) == 100u * 100u * (100u + 1) * (100u + 1) / 4));
+
+#if defined(HAS_I128_CONSTEXPR) && HAS_I128_CONSTEXPR
+
+    ASSERT_THAT((math_functions::powers_sum_u128<0>(100) == 100u));
+    ASSERT_THAT((math_functions::powers_sum_u128<1>(100) == 100u * (100u + 1) / 2));
+    ASSERT_THAT(
+        (math_functions::powers_sum_u128<2>(100) == 100u * (100u + 1) * (2 * 100u + 1) / 6));
+    ASSERT_THAT(
+        (math_functions::powers_sum_u128<3>(100) == 100u * 100u * (100u + 1) * (100u + 1) / 4));
+
+    constexpr auto kN    = uint32_t(3e9);
+    constexpr auto kN128 = uint128_t(kN);
+    ASSERT_THAT(
+        (math_functions::powers_sum_u128<3>(kN) == kN128 * kN128 * (kN128 + 1) * (kN128 + 1) / 4));
+
+#endif
+
 #undef STRINGIFY
 #undef ASSERT_THAT
 #undef LOG10_ASSERT_THAT

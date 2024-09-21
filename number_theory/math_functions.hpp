@@ -2302,6 +2302,102 @@ ATTRIBUTE_CONST constexpr HelperRetType congruence_helper(const std::uint64_t a,
 
 #endif
 
+namespace detail {
+
+template <std::uint32_t M, class T>
+ATTRIBUTE_CONST ATTRIBUTE_ALWAYS_INLINE constexpr T unrolled_pow(const std::uint32_t n) noexcept {
+    if constexpr (M > 0) {
+        const auto tmp = ::math_functions::detail::unrolled_pow<M / 2, T>(n);
+        if constexpr (M % 2 == 0) {
+            return tmp * tmp;
+        } else {
+            return tmp * tmp * n;
+        }
+    } else {
+        return 1;
+    }
+}
+
+template <std::uint32_t N, std::uint32_t K, class T>
+ATTRIBUTE_CONST ATTRIBUTE_ALWAYS_INLINE constexpr T unrolled_cnk() noexcept {
+    if constexpr (K > N) {
+        return 0;
+    } else {
+        // C_n_k = C_n_{n - k}
+        constexpr auto KD = std::min(N - K, K);
+        if constexpr (KD == 0) {
+            // C_n_0 = 1
+            return 1;
+        } else if constexpr (KD == 1) {
+            // C_n_1 = n
+            return N;
+        } else if constexpr (KD == 2) {
+            // C_n_2 = n * (n - 1) / 2
+            return static_cast<T>(N) * static_cast<T>(N - 1) / 2;
+        } else {
+            // C_n_k = C_{n - 1}_k + C_{n - 1}_{k - 1}
+            return ::math_functions::detail::unrolled_cnk<N - 1, KD, T>() +
+                   ::math_functions::detail::unrolled_cnk<N - 1, KD - 1, T>();
+        }
+    }
+}
+
+template <std::uint32_t M, class T>
+ATTRIBUTE_CONST constexpr T powers_sum(const std::uint32_t n) noexcept;
+
+template <std::uint32_t M, std::uint32_t I, class T>
+ATTRIBUTE_CONST ATTRIBUTE_ALWAYS_INLINE constexpr T helper(const std::uint32_t n) noexcept {
+    static_assert(I <= M + 1);
+    const auto res = ::math_functions::detail::unrolled_cnk<M + 1, I, T>() *
+                     ::math_functions::detail::powers_sum<M + 1 - I, T>(n);
+    if constexpr (I + 1 <= M + 1) {
+        return res + ::math_functions::detail::helper<M, I + 1, T>(n);
+    } else {
+        return res;
+    }
+}
+
+template <std::uint32_t M, class T>
+ATTRIBUTE_CONST constexpr T powers_sum(const std::uint32_t n) noexcept {
+    static_assert(M + 1 > M);
+    if constexpr (M == 0) {
+        return n;
+    } else if constexpr (M == 1) {
+        return static_cast<T>(n) * (static_cast<T>(n) + 1) / 2;
+    } else if constexpr (M == 2) {
+        return ((n * (static_cast<T>(n) + 1) / 2) * (2 * static_cast<T>(n) + 1)) / 3;
+    } else if constexpr (M == 3) {
+        const auto tmp = static_cast<T>(n) * (static_cast<T>(n) + 1) / 2;
+        return tmp * tmp;
+    } else {
+        return (::math_functions::detail::unrolled_pow<M + 1, T>(n + 1) - 1 -
+                ::math_functions::detail::helper<M, 2, T>(n)) /
+               ::math_functions::detail::unrolled_cnk<M + 1, 1, T>();
+    }
+}
+
+}  // namespace detail
+
+template <std::uint32_t M>
+[[nodiscard]] ATTRIBUTE_CONST constexpr std::uint64_t powers_sum_u64(
+    const std::uint32_t n) noexcept {
+    return ::math_functions::detail::powers_sum<M, std::uint64_t>(n);
+}
+
+#if defined(INTEGERS_128_BIT_HPP)
+
+template <std::uint32_t M>
+[[nodiscard]] ATTRIBUTE_CONST constexpr uint128_t powers_sum_u128(const std::uint32_t n) noexcept {
+    return ::math_functions::detail::powers_sum<M, uint128_t>(n);
+}
+
+#endif
+
+/// @brief Return 1^M + 2^M + ... + n^M
+/// @tparam M
+/// @param n
+/// @return
+
 }  // namespace math_functions
 
 #if defined(INTEGERS_128_BIT_HPP)
