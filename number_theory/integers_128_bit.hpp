@@ -25,7 +25,10 @@
 #endif
 #endif
 
-#if defined(__GNUC__) || defined(__clang__)
+#if defined(__clang__)
+typedef __uint128_t uint128_t;
+typedef __int128_t int128_t;
+#elif defined(__GNUC__)
 typedef __uint128_t uint128_t;
 typedef __int128_t int128_t;
 #elif defined(_MSC_VER)
