@@ -50,7 +50,7 @@ jobs:
       run: |
         sudo dpkg --add-architecture i386
         sudo apt update
-        sudo apt install --install-recommends gcc-mingw-w64 g++-mingw-w64 wine
+        sudo apt install --install-recommends gcc-mingw-w64 g++-mingw-w64 mingw-w64 mingw-w64-common mingw-w64-tools mingw-w64-x86-64-dev wine
     - name: Run tests
       run: |
         cd ./number_theory
