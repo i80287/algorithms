@@ -40,7 +40,7 @@ jobs:
         chmod +x ./run_clang_tests.sh
         ./run_clang_tests.sh
 
-  ubuntu-cmake-gcc-mingw-w64-x86_64:
+  ubuntu-cmake-gcc-mingw-w64-i686-posix:
     name: ubuntu
     runs-on: ubuntu-latest
 
@@ -50,7 +50,24 @@ jobs:
       run: |
         sudo dpkg --add-architecture i386
         sudo apt update
-        sudo apt install --install-recommends gcc-mingw-w64 g++-mingw-w64 mingw-w64 mingw-w64-common mingw-w64-tools mingw-w64-x86-64-dev wine
+        sudo apt install --install-recommends gcc-mingw-w64 gcc-mingw-w64-x86-64-posix gcc-mingw-w64-x86-64-posix g++-mingw-w64 g++-mingw-w64-x86-64-posix mingw-w64 mingw-w64-common mingw-w64-tools mingw-w64-x86-64-dev gcc-mingw-w64-i686 gcc-mingw-w64-i686-posix gcc-mingw-w64-i686-posix-runtime wine
+    - name: Run tests
+      run: |
+        cd ./number_theory
+        chmod +x ./run_gcc_mingw_32_tests.sh
+        ./run_gcc_mingw_32_tests.sh
+
+  ubuntu-cmake-gcc-mingw-w64-x86_64-posix:
+    name: ubuntu
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+    - name: Install dependencies
+      run: |
+        sudo dpkg --add-architecture i386
+        sudo apt update
+        sudo apt install --install-recommends gcc-mingw-w64 gcc-mingw-w64-x86-64-posix gcc-mingw-w64-x86-64-posix g++-mingw-w64 g++-mingw-w64-x86-64-posix mingw-w64 mingw-w64-common mingw-w64-tools mingw-w64-x86-64-dev wine
     - name: Run tests
       run: |
         cd ./number_theory
