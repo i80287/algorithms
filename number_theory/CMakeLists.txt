@@ -66,8 +66,6 @@ function(configure_gcc_or_clang_gcc_options)
         ${TEST_COMPILE_DEFINITIONS})
     set(LOCAL_FN_TEST_COMPILE_OPTIONS
         ${LOCAL_FN_TEST_COMPILE_OPTIONS}
-        -fstack-protector-strong
-        -mshstk
         -Wall
         -Wextra
         -Wcast-qual
@@ -84,7 +82,15 @@ function(configure_gcc_or_clang_gcc_options)
         -Wunreachable-code
         -Wcast-align
         -Warray-bounds
-        -Wformat=2)
+        -Wformat=2
+    )
+    if (NOT USING_MINGW_GCC)
+        set(LOCAL_FN_TEST_COMPILE_OPTIONS
+            ${LOCAL_FN_TEST_COMPILE_OPTIONS}
+            -fstack-protector-strong
+            -mshstk
+        )
+    endif()
     if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
         set(LOCAL_FN_TEST_COMPILE_OPTIONS
             ${LOCAL_FN_TEST_COMPILE_OPTIONS}
