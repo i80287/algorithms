@@ -442,6 +442,8 @@ constexpr
 
 template <std::size_t Size, class TWordType>
 static void test_for_size() {
+    test_tools::log_tests_started();
+
     using matrix_t = square_bitmatrix<Size, TWordType>;
 
     auto test_identity_matrix = [](const matrix_t& n) {
