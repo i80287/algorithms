@@ -1,10 +1,14 @@
-#! /bin/sh
+#!/bin/bash
 
-if [ -d cmake-build-tests-clang ]; then rm -r cmake-build-tests-clang; fi
-mkdir -p cmake-build-tests-clang
-cp ./u64-primes.txt ./cmake-build-tests-clang/u64-primes.txt
-cp ./u128-primes.txt ./cmake-build-tests-clang/u128-primes.txt
-cd ./cmake-build-tests-clang || return 1
+build_dir=cmake-build-tests-clang
+
+set -e
+
+if [ -d "$build_dir" ]; then rm -r "$build_dir"; fi
+mkdir -p "$build_dir"
+cp ./u64-primes.txt ./$build_dir/u64-primes.txt
+cp ./u128-primes.txt ./$build_dir/u128-primes.txt
+cd ./$build_dir || return 1
 
 cmake -D CMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -S .. -B . &&
         make all --jobs "$(nproc)" &&
