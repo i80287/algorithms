@@ -5,11 +5,18 @@ on: [push, pull_request, workflow_dispatch]
 permissions:
     contents: read
 
+env:
+    UBSAN_OPTIONS: print_stacktrace=1
+
 jobs:
 
   ubuntu-cmake-gcc:
-    name: ubuntu
-    runs-on: ubuntu-latest
+    name: test-on-ubuntu-${{ matrix.ubuntu_version }}
+    runs-on: ubuntu-${{ matrix.ubuntu_version }}
+    strategy:
+      fail-fast: true
+      matrix:
+        ubuntu_version: [20.04 22.04 24.04]
 
     steps:
     - uses: actions/checkout@v3
@@ -25,8 +32,12 @@ jobs:
         ./run_gcc_tests.sh
 
   ubuntu-cmake-clang:
-    name: ubuntu
-    runs-on: ubuntu-latest
+    name: test-on-ubuntu-${{ matrix.ubuntu_version }}
+    runs-on: ubuntu-${{ matrix.ubuntu_version }}
+    strategy:
+      fail-fast: true
+      matrix:
+        ubuntu_version: [20.04 22.04 24.04]
 
     steps:
     - uses: actions/checkout@v3
@@ -34,6 +45,7 @@ jobs:
       run: |
         sudo apt update
         sudo apt install clang llvm cmake make libgmp-dev libmpfr-dev
+        sudo apt upgrade
     - name: Run tests
       run: |
         cd ./number_theory
@@ -41,8 +53,12 @@ jobs:
         ./run_clang_tests.sh
 
   ubuntu-cmake-gcc-mingw-w64-i686-posix:
-    name: ubuntu
-    runs-on: ubuntu-latest
+    name: test-on-ubuntu-${{ matrix.ubuntu_version }}
+    runs-on: ubuntu-${{ matrix.ubuntu_version }}
+    strategy:
+      fail-fast: true
+      matrix:
+        ubuntu_version: [20.04 22.04 24.04]
 
     steps:
     - uses: actions/checkout@v3
@@ -50,7 +66,8 @@ jobs:
       run: |
         sudo dpkg --add-architecture i386
         sudo apt update
-        sudo apt install --install-recommends gcc-mingw-w64 gcc-mingw-w64-x86-64-posix gcc-mingw-w64-x86-64-posix g++-mingw-w64 g++-mingw-w64-x86-64-posix mingw-w64 mingw-w64-common mingw-w64-tools mingw-w64-x86-64-dev gcc-mingw-w64-i686 gcc-mingw-w64-i686-posix gcc-mingw-w64-i686-posix-runtime wine
+        sudo apt install -y --install-recommends gcc-mingw-w64 gcc-mingw-w64-x86-64-posix gcc-mingw-w64-x86-64-posix g++-mingw-w64 g++-mingw-w64-x86-64-posix mingw-w64 mingw-w64-common mingw-w64-tools mingw-w64-x86-64-dev gcc-mingw-w64-i686 gcc-mingw-w64-i686-posix gcc-mingw-w64-i686-posix-runtime wine
+        sudo apt upgrade
     - name: Run tests
       run: |
         cd ./number_theory
@@ -58,8 +75,12 @@ jobs:
         ./run_gcc_mingw_32_tests.sh
 
   ubuntu-cmake-gcc-mingw-w64-x86_64-posix:
-    name: ubuntu
-    runs-on: ubuntu-latest
+    name: test-on-ubuntu-${{ matrix.ubuntu_version }}
+    runs-on: ubuntu-${{ matrix.ubuntu_version }}
+    strategy:
+      fail-fast: true
+      matrix:
+        ubuntu_version: [20.04 22.04 24.04]
 
     steps:
     - uses: actions/checkout@v3
@@ -67,7 +88,8 @@ jobs:
       run: |
         sudo dpkg --add-architecture i386
         sudo apt update
-        sudo apt install --install-recommends gcc-mingw-w64 gcc-mingw-w64-x86-64-posix gcc-mingw-w64-x86-64-posix g++-mingw-w64 g++-mingw-w64-x86-64-posix mingw-w64 mingw-w64-common mingw-w64-tools mingw-w64-x86-64-dev wine
+        sudo apt install -y --install-recommends gcc-mingw-w64 gcc-mingw-w64-x86-64-posix gcc-mingw-w64-x86-64-posix g++-mingw-w64 g++-mingw-w64-x86-64-posix mingw-w64 mingw-w64-common mingw-w64-tools mingw-w64-x86-64-dev wine
+        sudo apt upgrade
     - name: Run tests
       run: |
         cd ./number_theory
