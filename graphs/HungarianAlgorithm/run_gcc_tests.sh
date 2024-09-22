@@ -1,8 +1,12 @@
-#! /bin/sh
+#!/bin/bash
 
-mkdir -p build_tests
-cd ./build_tests || return 1
+build_dir=cmake-build-tests-gcc
 
-cmake -D CMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -S .. -B . \
-        && make all --jobs "$(nproc)" \
-        && make test
+set -e
+
+mkdir -p "$build_dir"
+cd ./$build_dir || return 1
+
+cmake -D CMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -S .. -B . &&
+        make all --jobs "$(nproc)" &&
+        env CTEST_OUTPUT_ON_FAILURE=1 make test

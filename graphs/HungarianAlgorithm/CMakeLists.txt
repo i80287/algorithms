@@ -67,7 +67,6 @@ foreach(target_filename ${TestFilenames})
     string(CONCAT target_cxx_20 "target_cxx_20_" ${target_filename})
 
     add_executable(${target_cxx_20} ${target_cpp_filename})
-    target_link_libraries(${target_cxx_20} gmp gmpxx mpfr)
     target_compile_options(${target_cxx_20} PRIVATE ${TEST_COMPILE_OPTIONS})
     target_compile_definitions(${target_cxx_20} PRIVATE ${TEST_COMPILE_DEFINITIONS})
     set_target_properties(${target_cxx_20} PROPERTIES CXX_STANDARD 20 CXX_EXTENSIONS OFF CXX_STANDARD_REQUIRED ON)
