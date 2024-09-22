@@ -27,45 +27,65 @@ if (USING_MINGW_GCC)
 endif()
 
 set(TestFilenames)
+set(TestDirectories "dummy")
+set(TestCxxVersions "dummy")
 set(TestDependencies "dummy")
 set(TestOptionalDependencies "dummy")
 
 if (NOT USING_MINGW_GCC_32)
     list(APPEND TestFilenames test_fibonacci_num)
+    list(APPEND TestDirectories "number_theory")
+    list(APPEND TestCxxVersions "17 20")
     list(APPEND TestDependencies "")
     list(APPEND TestOptionalDependencies "")
 endif()
 
 if (NOT USING_MINGW_GCC_32)
     list(APPEND TestFilenames test_gosper_algorithm)
+    list(APPEND TestDirectories "number_theory")
+    list(APPEND TestCxxVersions "17 20")
     list(APPEND TestDependencies "")
     list(APPEND TestOptionalDependencies "")
 
     list(APPEND TestFilenames test_integers_128_bit)
+    list(APPEND TestDirectories "number_theory")
+    list(APPEND TestCxxVersions "17 20")
     list(APPEND TestDependencies "")
     list(APPEND TestOptionalDependencies "")
 
     list(APPEND TestFilenames test_is_prime_bpsw)
+    list(APPEND TestDirectories "number_theory")
+    list(APPEND TestCxxVersions "17 20")
     list(APPEND TestDependencies "gmp")
     list(APPEND TestOptionalDependencies "")
 
     list(APPEND TestFilenames test_kronecker_symbol)
+    list(APPEND TestDirectories "number_theory")
+    list(APPEND TestCxxVersions "17 20")
     list(APPEND TestDependencies "gmp gmpxx")
     list(APPEND TestOptionalDependencies "")
 
     list(APPEND TestFilenames test_long_int)
+    list(APPEND TestDirectories "number_theory")
+    list(APPEND TestCxxVersions "17 20")
     list(APPEND TestDependencies "")
     list(APPEND TestOptionalDependencies "")
 
     list(APPEND TestFilenames test_math_functions)
+    list(APPEND TestDirectories "number_theory")
+    list(APPEND TestCxxVersions "17 20")
     list(APPEND TestDependencies "")
     list(APPEND TestOptionalDependencies "mpfr")
 endif()
 
 list(APPEND TestFilenames test_bitmatrix)
+list(APPEND TestDirectories "number_theory")
+list(APPEND TestCxxVersions "17 20")
 list(APPEND TestDependencies "")
 list(APPEND TestOptionalDependencies "")
 
+list(POP_FRONT TestDirectories)
+list(POP_FRONT TestCxxVersions)
 list(POP_FRONT TestDependencies)
 list(POP_FRONT TestOptionalDependencies)
 
@@ -227,14 +247,23 @@ function(
     add_test(NAME ${target} COMMAND $<TARGET_FILE:${target}>)
 endfunction(add_test_target)
 
-foreach(target_filename target_dependencies target_optional_dependencies IN ZIP_LISTS TestFilenames TestDependencies TestOptionalDependencies)
-    foreach(version 17 20)
-        add_test_target(
-            "${target_filename}"
-            "${target_dependencies}"
-            "${target_optional_dependencies}"
-            ${version}
-        )
+foreach(target_filename target_dir target_supported_cxx_versions target_dependencies target_optional_dependencies
+    IN ZIP_LISTS
+        TestFilenames
+        TestDirectories
+        TestCxxVersions
+        TestDependencies
+        TestOptionalDependencies)
+    string(REPLACE " " ";" target_supported_cxx_versions ${target_supported_cxx_versions})
+    foreach(version 17 20 23 26)
+        if (${version} IN_LIST target_supported_cxx_versions)
+            add_test_target(
+                "${target_filename}"
+                "${target_dependencies}"
+                "${target_optional_dependencies}"
+                ${version}
+            )
+        endif()
     endforeach()
 endforeach()
 
