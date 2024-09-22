@@ -19,11 +19,6 @@
 #include <string>
 #include <string_view>
 #include <type_traits>
-#if __cplusplus >= 202002L && defined(__GNUC__) && !defined(__clang__)
-#if __has_include("format")
-#include <format>
-#endif
-#endif
 
 #if defined(__clang__)
 typedef __uint128_t uint128_t;
@@ -40,6 +35,13 @@ typedef std::_Signed128 int128_t;
 #endif
 
 #include "config_macros.hpp"
+
+#if CONFIG_HAS_AT_LEAST_CXX_20 && defined(__GNUC__) && !defined(__clang__) && CONFIG_HAS_INCLUDE(<format>)
+#define SPECIALIZE_STD_FORMAT 1
+#include <format>
+#else
+#define SPECIALIZE_STD_FORMAT 0
+#endif
 
 /**
  * Macro defined to 1 if current [u]int128_t supports constexpr
@@ -356,8 +358,7 @@ inline ostream& operator<<(ostream& out, int128_t number) {
     return out << string_view(ptr, length);
 }
 
-#if __cplusplus >= 202002L && defined(__GNUC__) && !defined(__clang__)
-#if __has_include("format")
+#if SPECIALIZE_STD_FORMAT
 template <class CharT>
 struct formatter<uint128_t, CharT> {
     template <class ParseContext>
@@ -385,7 +386,8 @@ struct formatter<int128_t, CharT> {
     }
 };
 #endif
-#endif
+
+#undef SPECIALIZE_STD_FORMAT
 
 }  // namespace std
 
