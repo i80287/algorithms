@@ -140,8 +140,13 @@ function(configure_gcc_or_clang_gcc_options)
     set(LOCAL_FN_TEST_COMPILE_DEFINITIONS
         ${LOCAL_FN_TEST_COMPILE_DEFINITIONS}
         _GLIBCXX_DEBUG=1
-        _GLIBCXX_DEBUG_PEDANTIC=1
-        _GLIBCXX_CONCEPT_CHECKS=1)
+        _GLIBCXX_DEBUG_PEDANTIC=1)
+    if (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER 10.0)
+        # In gcc with version < 10.0 this check breaks `constexpr`-tivity of some functions
+        set(LOCAL_FN_TEST_COMPILE_DEFINITIONS
+            ${LOCAL_FN_TEST_COMPILE_DEFINITIONS}
+            _GLIBCXX_CONCEPT_CHECKS=1)
+    endif()
     set(LOCAL_FN_TEST_COMPILE_OPTIONS
         ${LOCAL_FN_TEST_COMPILE_OPTIONS}
         -UNDEBUG)

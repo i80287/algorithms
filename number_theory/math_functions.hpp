@@ -2310,16 +2310,21 @@ ATTRIBUTE_CONST constexpr HelperRetType congruence_helper(const std::uint64_t a,
 namespace detail {
 
 template <std::uint32_t M, class T>
-ATTRIBUTE_CONST ATTRIBUTE_ALWAYS_INLINE constexpr T unrolled_pow(const std::uint32_t n) noexcept {
-    if constexpr (M > 0) {
+ATTRIBUTE_CONST ATTRIBUTE_ALWAYS_INLINE constexpr T unrolled_pow(
+    [[maybe_unused]] const std::uint32_t n) noexcept {
+    if constexpr (M == 0) {
+        return 1;
+    } else if constexpr (M == 1) {
+        return n;
+    } else if constexpr (M == 2) {
+        return n * n;
+    } else {
         const auto tmp = ::math_functions::detail::unrolled_pow<M / 2, T>(n);
         if constexpr (M % 2 == 0) {
             return tmp * tmp;
         } else {
             return tmp * tmp * n;
         }
-    } else {
-        return 1;
     }
 }
 
