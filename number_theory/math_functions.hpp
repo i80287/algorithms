@@ -2123,9 +2123,7 @@ ATTRIBUTE_CONST constexpr HelperRetType congruence_helper(const std::uint64_t a,
      */
     const auto c_          = c / static_cast<int64_t>(d);
     const std::uint64_t a_ = a / d;
-    ATTRIBUTE_ASSUME(a_ > 0);
     const std::uint32_t m_ = m / d;
-    ATTRIBUTE_ASSUME(m_ > 0);
     // a_ * u_ + m_ * v_ == 1
     const std::int64_t u_  = extended_euclid_algorithm<std::uint64_t>(a_, m_).u_value;
     const auto unsigned_u_ = static_cast<std::uint64_t>(u_ + (m_ * (u_ < 0)));
