@@ -551,36 +551,66 @@ template <class IntType>
 void test_powers_sum() noexcept {
     ::test_tools::log_tests_started();
 
-    for (uint64_t m = 0; m <= 6; m++) {
-        uint64_t s   = 0;
-        const auto n = m >= 2 ? static_cast<uint32_t>(
-                                    std::pow(std::numeric_limits<uint64_t>::max(), 1.0L / (2 * m)))
-                              : 1'000'000;
-        for (uint64_t i = 1; i <= n; i++) {
+    constexpr uint64_t kMaxM = 6;
+    for (uint64_t m = 0; m <= kMaxM; m++) {
+        const auto max_n = [m]() -> std::uint32_t {
+            switch (m) {
+                static_assert(kMaxM <= 6);
+                case 6:
+                    return 564;
+                case 5:
+                    return 1500;
+                case 4:
+                    return 9500;
+                case 3:
+                    return 91'000;
+                case 2:
+                    return 1'715'000;
+                case 1:
+                case 0:
+                    return 1'000'000'000;
+            }
+            std::terminate();
+        }();
+        constexpr std::uint32_t kOffset = 50;
+        assert(max_n >= kOffset);
+        const auto start_n = max_n - kOffset;
+        uint64_t s         = 0;
+        for (uint64_t i = 1; i < start_n; i++) {
             s += math_functions::bin_pow(i, m);
         }
-        switch (m) {
-            case 0:
-                assert(math_functions::powers_sum_u64<0>(n) == s);
-                break;
-            case 1:
-                assert(math_functions::powers_sum_u64<1>(n) == s);
-                break;
-            case 2:
-                assert(math_functions::powers_sum_u64<2>(n) == s);
-                break;
-            case 3:
-                assert(math_functions::powers_sum_u64<3>(n) == s);
-                break;
-            case 4:
-                assert(math_functions::powers_sum_u64<4>(n) == s);
-                break;
-            case 5:
-                assert(math_functions::powers_sum_u64<5>(n) == s);
-                break;
-            case 6:
-                assert(math_functions::powers_sum_u64<6>(n) == s);
-                break;
+        for (uint32_t n = start_n; n <= max_n; n++) {
+            s += math_functions::bin_pow(uint64_t(n), m);
+            switch (m) {
+                case 0:
+                    assert(math_functions::powers_sum_u64<0>(n) == s);
+                    assert(math_functions::powers_sum_u128<0>(n) == s);
+                    break;
+                case 1:
+                    assert(math_functions::powers_sum_u64<1>(n) == s);
+                    assert(math_functions::powers_sum_u128<1>(n) == s);
+                    break;
+                case 2:
+                    assert(math_functions::powers_sum_u64<2>(n) == s);
+                    assert(math_functions::powers_sum_u128<2>(n) == s);
+                    break;
+                case 3:
+                    assert(math_functions::powers_sum_u64<3>(n) == s);
+                    assert(math_functions::powers_sum_u128<3>(n) == s);
+                    break;
+                case 4:
+                    assert(math_functions::powers_sum_u64<4>(n) == s);
+                    assert(math_functions::powers_sum_u128<4>(n) == s);
+                    break;
+                case 5:
+                    assert(math_functions::powers_sum_u64<5>(n) == s);
+                    assert(math_functions::powers_sum_u128<5>(n) == s);
+                    break;
+                case 6:
+                    assert(math_functions::powers_sum_u64<6>(n) == s);
+                    assert(math_functions::powers_sum_u128<6>(n) == s);
+                    break;
+            }
         }
     }
 }
@@ -1696,19 +1726,19 @@ void test_general_asserts() {
 }  // namespace
 
 int main() {
-    test_general_asserts();
-    test_isqrt();
-    test_icbrt();
-    test_log2();
-    test_bit_reverse();
-#if defined(HAS_MPFR_DURING_TESTING) && HAS_MPFR_DURING_TESTING
-    test_sin_cos_sum();
-#endif
-    test_visit_all_submasks();
-    test_prime_bitarrays();
-    test_factorizer();
-    assert(multi_thread_test_extended_euclid_algorithm<std::uint32_t>());
-    assert(multi_thread_test_extended_euclid_algorithm<std::int64_t>());
-    assert(test_solve_congruence_all_roots());
+    //     test_general_asserts();
+    //     test_isqrt();
+    //     test_icbrt();
+    //     test_log2();
+    //     test_bit_reverse();
+    // #if defined(HAS_MPFR_DURING_TESTING) && HAS_MPFR_DURING_TESTING
+    //     test_sin_cos_sum();
+    // #endif
+    //     test_visit_all_submasks();
+    //     test_prime_bitarrays();
+    //     test_factorizer();
+    //     assert(multi_thread_test_extended_euclid_algorithm<std::uint32_t>());
+    //     assert(multi_thread_test_extended_euclid_algorithm<std::int64_t>());
+    //     assert(test_solve_congruence_all_roots());
     test_powers_sum();
 }

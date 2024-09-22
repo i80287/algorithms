@@ -2360,16 +2360,64 @@ ATTRIBUTE_CONST ATTRIBUTE_ALWAYS_INLINE constexpr T helper(const std::uint32_t n
 
 template <std::uint32_t M, class T>
 ATTRIBUTE_CONST constexpr T powers_sum(const std::uint32_t n) noexcept {
+    static_assert(sizeof(T) >= sizeof(std::uint64_t));
     static_assert(M + 1 > M);
+
     if constexpr (M == 0) {
         return n;
     } else if constexpr (M == 1) {
-        return static_cast<T>(n) * (static_cast<T>(n) + 1) / 2;
+        // n * (n + 1) / 2
+        const auto n_u64 = static_cast<std::uint64_t>(n);
+        return static_cast<T>((n * (n_u64 + 1)) / 2);
     } else if constexpr (M == 2) {
-        return ((n * (static_cast<T>(n) + 1) / 2) * (2 * static_cast<T>(n) + 1)) / 3;
+        // n * (n + 1) * (2 * n + 1) / 6
+        const auto n_u64 = static_cast<std::uint64_t>(n);
+        const T tmp      = static_cast<T>((n * (n_u64 + 1)) / 2);
+        const auto tmp2  = 2 * n_u64 + 1;
+        return (tmp2 % 3 == 0) ? (tmp * (tmp2 / 3)) : ((tmp / 3) * tmp2);
     } else if constexpr (M == 3) {
-        const auto tmp = static_cast<T>(n) * (static_cast<T>(n) + 1) / 2;
+        // n * n * (n + 1) * (n + 1) / 4
+        const auto tmp = static_cast<T>((n * (static_cast<std::uint64_t>(n) + 1)) / 2);
         return tmp * tmp;
+    } else if constexpr (M == 4) {
+        // n * (n + 1) * (6 * n^3 + 9 * n^2 + n - 1) / 30
+        const auto n_u64                     = static_cast<std::uint64_t>(n);
+        const std::uint64_t n_square_u64     = n_u64 * n;
+        const auto tmp                       = static_cast<T>((n_square_u64 + n) / 2);
+        const std::uint64_t two_n_plus_3_u64 = 2 * n_u64 + 3;
+        const std::uint32_t n_minus_1        = n - 1;
+        switch (n % 5) {
+            case 0:
+            case 4: {
+                const auto tmp2 = tmp / 5;
+                const auto tmp3 = static_cast<T>(n_square_u64) * two_n_plus_3_u64;
+                if (n_minus_1 % 3 == 0) {
+                    return tmp2 * (tmp3 + (n_minus_1 / 3));
+                } else {
+                    ATTRIBUTE_ASSUME(tmp2 % 3 == 0);
+                    return tmp2 * tmp3 + ((tmp2 / 3) * n_minus_1);
+                }
+            }
+            case 1: {
+                ATTRIBUTE_ASSUME(two_n_plus_3_u64 % 5 == 0);
+                const auto lhs = static_cast<T>(n_square_u64) * (two_n_plus_3_u64 / 5);
+                const std::uint32_t n_minus_1_over_5 = n_minus_1 / 5;
+                if (n_minus_1_over_5 % 3 == 0) {
+                    return tmp * (lhs + (n_minus_1_over_5 / 3));
+                } else {
+                    return tmp * lhs + ((tmp / 3) * n_minus_1_over_5);
+                }
+            }
+            default:
+                break;
+        }
+
+        const auto tmp2 = static_cast<T>(n_square_u64) * two_n_plus_3_u64;
+        if (n_minus_1 % 3 == 0) {
+            return tmp * ((tmp2 + (n_minus_1 / 3)) / 5);
+        } else {
+            return (tmp / 3) * ((3 * tmp2 + n_minus_1) / 5);
+        }
     } else {
         return (::math_functions::detail::unrolled_pow<M + 1, T>(n + 1) - 1 -
                 ::math_functions::detail::helper<M, 2, T>(n)) /
