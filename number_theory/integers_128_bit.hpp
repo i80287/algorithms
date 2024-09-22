@@ -36,7 +36,8 @@ typedef std::_Signed128 int128_t;
 
 #include "config_macros.hpp"
 
-#if CONFIG_HAS_AT_LEAST_CXX_20 && defined(__GNUC__) && !defined(__clang__) && CONFIG_HAS_INCLUDE(<format>)
+#if CONFIG_HAS_AT_LEAST_CXX_20 && defined(__GNUC__) && !defined(__clang__) && \
+    CONFIG_HAS_INCLUDE(<format>)
 #define SPECIALIZE_STD_FORMAT 1
 #include <format>
 #else
