@@ -28,7 +28,7 @@ endif()
 
 set(LINK_THREADS_LIBRARY_MANUALLY False)
 
-if (CMAKE_SYSTEM_NAME MATCHES "Linux")
+if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND CMAKE_SYSTEM_NAME MATCHES "Linux")
     find_program(LSB_RELEASE_EXEC lsb_release)
     if (NOT LSB_RELEASE_EXEC)
         message(WARNING "Could not get linux distro info, pthread linking on ubuntu 20 might be broken")
