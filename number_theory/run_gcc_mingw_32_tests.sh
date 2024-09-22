@@ -1,6 +1,6 @@
 #!/bin/bash
 
-build_dir=cmake-build-tests-mingw32
+build_dir=cmake-build-tests-gcc-mingw-w32
 
 set -e
 

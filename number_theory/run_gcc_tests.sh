@@ -1,6 +1,6 @@
 #!/bin/bash
 
-build_dir=cmake-build-tests-clang
+build_dir=cmake-build-tests-gcc
 
 set -e
 

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-build_dir=cmake-build-tests-mingw64
+build_dir=cmake-build-tests-gcc-mingw-w64
 
 set -e
 
