@@ -514,7 +514,7 @@ template <class IntType>
 
     const size_t kTotalTests = (1 << 24);
     for (auto test_iter = kTotalTests; test_iter != 0; --test_iter) {
-        const auto m     = static_cast<std::uint32_t>(rnd_32());
+        const auto m     = static_cast<std::uint32_t>(rnd_32()) | 1;
         const uint64_t a = rnd_64() % m;  // % m to be able to perform a * x in the check
         const auto c     = static_cast<int64_t>(rnd_64());
         const uint64_t mod2 =
