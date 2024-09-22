@@ -198,10 +198,12 @@ inline void Deallocate(void* memory) noexcept {
     ::operator delete(memory);
 }
 
-#if defined(__clang__) || defined(__MINGW32__)
+#if CONFIG_GNUC_AT_LEAST(2, 96)
+#if defined(__clang__) || defined(__MINGW32__) || !CONFIG_GNUC_AT_LEAST(10, 0)
 __attribute__((malloc))
 #else
 __attribute__((malloc, malloc(::longint_allocator::Deallocate, 1)))
+#endif
 #endif
 ATTRIBUTE_RETURNS_NONNULL
 ATTRIBUTE_ALLOC_SIZE(1) inline void* Allocate(std::size_t size) {

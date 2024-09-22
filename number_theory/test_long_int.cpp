@@ -1,7 +1,7 @@
 #include <chrono>
 
 #include "config_macros.hpp"
-#include "LongInt.hpp"
+#include "longint.hpp"
 #include "test_tools.hpp"
 
 namespace long_int_tests {
