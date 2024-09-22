@@ -1,14 +1,12 @@
-#include <gmp.h>  // mpz_t, mpz_init, mp_limb_t, mpz_limbs_write, mpz_limbs_finish, mpz_probab_prime_p
+#include <gmp.h>
 
 #include <array>
-#include <cinttypes>  // PRIu64
-#include <cstdint>    // std::uint64_t, std::size_t
-#include <cstdio>     // std::printf, stdf::fscanf
-#include <cstring>    // std::strerrno
-#include <ctime>      // std::time
-#include <iterator>   // std::size
-#include <random>     // std::mt19937_64
-#include <source_location>
+#include <cinttypes>
+#include <cstdint>
+#include <cstdio>
+#include <ctime>
+#include <iterator>
+#include <random>
 
 #include "config_macros.hpp"
 #include "is_prime.hpp"
