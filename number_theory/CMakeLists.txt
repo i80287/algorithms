@@ -26,6 +26,31 @@ if (USING_MINGW_GCC)
     endif()
 endif()
 
+set(LINK_THREADS_LIBRARY_MANUALLY False)
+
+if (CMAKE_SYSTEM_NAME MATCHES "Linux")
+    find_program(LSB_RELEASE_EXEC lsb_release)
+    if (NOT LSB_RELEASE_EXEC)
+        message(WARNING "Could not get linux distro info, pthread linking on ubuntu 20 might be broken")
+    else()
+        execute_process(COMMAND ${LSB_RELEASE_EXEC} -irs
+            OUTPUT_VARIABLE
+            LSB_DISTRIBUTOR_ID_SHORT
+            OUTPUT_STRIP_TRAILING_WHITESPACE
+            OUTPUT_VARIABLE
+            LSB_RELEASE_VERSION_SHORT
+            OUTPUT_STRIP_TRAILING_WHITESPACE
+        )
+
+        string(TOLOWER "${LSB_DISTRIBUTOR_ID_SHORT}" LSB_DISTRIBUTOR_ID_SHORT)
+        if (LSB_DISTRIBUTOR_ID_SHORT STREQUAL "ubuntu" AND LSB_RELEASE_VERSION_SHORT VERSION_LESS_EQUAL "20.04")
+            set(LINK_THREADS_LIBRARY_MANUALLY True)
+            set(THREADS_PREFER_PTHREAD_FLAG ON)
+            find_package(Threads REQUIRED)
+        endif()
+    endif()
+endif()
+
 set(TestFilenames)
 set(TestDirectories "dummy")
 set(TestCxxVersions "dummy")
@@ -240,6 +265,10 @@ function(
                 target_link_libraries(${target} ${target_optional_dependency})
             endif()
         endforeach()
+    endif()
+
+    if (LINK_THREADS_LIBRARY_MANUALLY)
+        target_link_libraries(${target} PRIVATE Threads::Threads)
     endif()
 
     if (USING_MINGW_GCC AND NOT WIN32)
