@@ -414,14 +414,18 @@
 #include <intrin.h>  // for _ReadWriteBarrier
 #endif
 
-namespace config::detail {
+namespace config {
+
+namespace detail {
 
 #if (defined(_MSC_VER) || defined(__MINGW32__)) && CONFIG_HAS_INCLUDE(<intrin.h>)
-static inline void ATTRIBUTE_NOINLINE sink_char_ptr(char const volatile*) {}
+ATTRIBUTE_NOINLINE static inline void sink_char_ptr(char const volatile*) {}
 #endif
 
+}  // namespace detail
+
 template <class T>
-ATTRIBUTE_ALWAYS_INLINE static inline void no_opt_impl(T&& expr) {
+ATTRIBUTE_ALWAYS_INLINE static inline void do_not_optimize_away(T&& expr) noexcept {
 #if (defined(_MSC_VER) || defined(__MINGW32__)) && CONFIG_HAS_INCLUDE(<intrin.h>)
     ::config::detail::sink_char_ptr(&reinterpret_cast<volatile const char&>(expr));
     _ReadWriteBarrier();
@@ -432,9 +436,7 @@ ATTRIBUTE_ALWAYS_INLINE static inline void no_opt_impl(T&& expr) {
 #endif
 }
 
-}  // namespace config::detail
-
-#define CONFIG_DO_NOT_OPTIMIZE_AWAY(expr) ::config::detail::no_opt_impl(expr)
+}  // namespace config
 
 #if CONFIG_HAS_INCLUDE(<type_traits>)
 #include <type_traits>
