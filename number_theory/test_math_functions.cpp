@@ -385,11 +385,11 @@ void test_factorizer() {
 }
 
 template <class IntType>
+[[nodiscard]]
 #if defined(__clang__) || defined(__GNUG__)
 __attribute__((no_sanitize("signed-integer-overflow")))  // TODO: fix without this hack
 #endif
-[[nodiscard]] bool
-multi_thread_test_extended_euclid_algorithm() {
+bool multi_thread_test_extended_euclid_algorithm() {
     static_assert(std::is_same_v<IntType, std::int64_t> || std::is_same_v<IntType, std::uint32_t>,
                   "");
     log_tests_started();
