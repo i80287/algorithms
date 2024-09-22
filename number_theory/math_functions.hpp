@@ -1215,22 +1215,22 @@ template <class T>
 /// @brief If @a n != 0, return number that is power of 2 and
 ///         whose only bit is the lowest bit set in the @a n
 ///        Otherwise, return 0
-/// @tparam TInt
+/// @tparam IntType
 /// @param[in] n
 /// @return
-template <class TInt>
-[[nodiscard]] ATTRIBUTE_CONST constexpr TInt least_bit_set(TInt n) noexcept {
+template <class IntType>
+[[nodiscard]] ATTRIBUTE_CONST constexpr IntType least_bit_set(IntType n) noexcept {
     namespace helper_ns =
 #ifdef INTEGERS_128_BIT_HPP
         type_traits_helper_int128_t;
 #else
         std;
 #endif
-    static_assert(helper_ns::is_integral_v<TInt>, "integral type expected");
-    using TUInt            = helper_ns::make_unsigned_t<TInt>;
-    using TUIntAtLeastUInt = std::common_type_t<TUInt, uint32_t>;
-    auto unsigned_n        = static_cast<TUIntAtLeastUInt>(static_cast<TUInt>(n));
-    return static_cast<TInt>(unsigned_n & -unsigned_n);
+    static_assert(helper_ns::is_integral_v<IntType>, "integral type expected");
+    using UIntType              = helper_ns::make_unsigned_t<IntType>;
+    using UIntTypeAtLeastUInt32 = std::common_type_t<UIntType, uint32_t>;
+    auto unsigned_n             = static_cast<UIntTypeAtLeastUInt32>(static_cast<UIntType>(n));
+    return static_cast<IntType>(unsigned_n & -unsigned_n);
 }
 
 namespace detail {
