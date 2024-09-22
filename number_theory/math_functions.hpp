@@ -1419,11 +1419,13 @@ ATTRIBUTE_CONST inline uint32_t log10_floor_runtime_impl(uint32_t n) noexcept {
      * See Hackers Delight 11-4
      */
 
-#if CONFIG_HAS_AT_LEAST_CXX_20 || defined(__GNUG__) || defined(__clang__)
+#if CONFIG_HAS_AT_LEAST_CXX_20 || \
+    (CONFIG_HAS_AT_LEAST_CXX_17 && (defined(__clang__) || CONFIG_GNUC_AT_LEAST(10, 0)))
     if (::config::is_constant_evaluated() || ::config::is_gcc_constant_p(n)) {
 #endif
         return ::math_functions::detail::log10_floor_compile_time_impl(n);
-#if CONFIG_HAS_AT_LEAST_CXX_20 || defined(__GNUG__) || defined(__clang__)
+#if CONFIG_HAS_AT_LEAST_CXX_20 || \
+    (CONFIG_HAS_AT_LEAST_CXX_17 && (defined(__clang__) || CONFIG_GNUC_AT_LEAST(10, 0)))
     } else {
         return ::math_functions::detail::log10_floor_runtime_impl(n);
     }
@@ -1508,11 +1510,13 @@ ATTRIBUTE_CONST static inline uint32_t log10_floor_runtime_impl(uint64_t n,
     const int32_t approx_log10 = (19 * (63 - int32_t(::math_functions::countl_zero(n)))) >> 6;
     ATTRIBUTE_ASSUME((-19 >> 6) <= approx_log10 && approx_log10 <= ((19 * 63) >> 6));
 
-#if CONFIG_HAS_AT_LEAST_CXX_20 || defined(__GNUG__) || defined(__clang__)
+#if CONFIG_HAS_AT_LEAST_CXX_20 || \
+    (CONFIG_HAS_AT_LEAST_CXX_17 && (defined(__clang__) || CONFIG_GNUC_AT_LEAST(10, 0)))
     if (::config::is_constant_evaluated() || ::config::is_gcc_constant_p(n)) {
 #endif
         return ::math_functions::detail::log10_floor_compile_time_impl(n, approx_log10);
-#if CONFIG_HAS_AT_LEAST_CXX_20 || defined(__GNUG__) || defined(__clang__)
+#if CONFIG_HAS_AT_LEAST_CXX_20 || \
+    (CONFIG_HAS_AT_LEAST_CXX_17 && (defined(__clang__) || CONFIG_GNUC_AT_LEAST(10, 0)))
     } else {
         return ::math_functions::detail::log10_floor_runtime_impl(n, approx_log10);
     }

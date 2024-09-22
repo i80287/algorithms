@@ -24,6 +24,14 @@
 #endif
 #include "math_functions.hpp"
 
+// https://en.cppreference.com/w/cpp/numeric/bit_cast
+#if CONFIG_HAS_AT_LEAST_CXX_20 && defined(__cpp_lib_bit_cast) && __cpp_lib_bit_cast >= 201806L
+#include <bit>
+#define LONG_INT_USE_BIT_CAST 1
+#else
+#define LONG_INT_USE_BIT_CAST 0
+#endif
+
 #if !defined(__GNUG__)
 #error "Current implementation works only with GCC"
 #endif
@@ -1203,7 +1211,7 @@ struct longint {
     }
 
     void set_string(std::string_view s) {
-#if CONFIG_HAS_AT_LEAST_CXX_20
+#if LONG_INT_USE_BIT_CAST
         const unsigned char* str_iter = std::bit_cast<const unsigned char*>(s.begin());
         const unsigned char* str_end  = std::bit_cast<const unsigned char*>(s.end());
 #else
@@ -2218,3 +2226,5 @@ private:
 };
 
 std::vector<longint> longint::conv_dec_base_pows = {longint(longint::kStrConvBase)};
+
+#undef LONG_INT_USE_BIT_CAST

@@ -3,9 +3,9 @@
 
 /* Test for gcc >= maj.min, as per __GNUC_PREREQ in glibc */
 #if defined(__GNUC__) && defined(__GNUC_MINOR__)
-#define CONFIG_GNUC_PREREQ(maj, min) ((__GNUC__ << 16) + __GNUC_MINOR__ >= ((maj) << 16) + (min))
+#define CONFIG_GNUC_AT_LEAST(maj, min) ((__GNUC__ << 16) + __GNUC_MINOR__ >= ((maj) << 16) + (min))
 #else
-#define CONFIG_GNUC_PREREQ(maj, min) 0
+#define CONFIG_GNUC_AT_LEAST(maj, min) 0
 #endif
 
 #if (defined(__GNUC__) || defined(__GNUG__) || defined(__clang__)) && \
@@ -100,7 +100,7 @@
 #define CONFIG_UNREACHABLE() __builtin_unreachable()
 #elif CONFIG_HAS_BUILTIN(__builtin_assume)
 #define CONFIG_UNREACHABLE() __builtin_assume(false)
-#elif CONFIG_GNUC_PREREQ(13, 0) && CONFIG_HAS_GCC_ATTRIBUTE(assume)
+#elif CONFIG_GNUC_AT_LEAST(13, 0) && CONFIG_HAS_GCC_ATTRIBUTE(assume)
 #define CONFIG_UNREACHABLE() __attribute__((assume(false)))
 #elif defined(_MSC_VER)
 #define CONFIG_UNREACHABLE() __assume(false)
@@ -112,7 +112,7 @@
 
 #if CONFIG_HAS_AT_LEAST_CXX_23 && CONFIG_HAS_CPP_ATTRIBUTE(assume)
 #define ATTRIBUTE_ASSUME(expr) [[assume(expr)]]
-#elif CONFIG_GNUC_PREREQ(13, 0) && CONFIG_HAS_GCC_ATTRIBUTE(assume)
+#elif CONFIG_GNUC_AT_LEAST(13, 0) && CONFIG_HAS_GCC_ATTRIBUTE(assume)
 #define ATTRIBUTE_ASSUME(expr) __attribute__((assume(expr)))
 #elif defined(__clang__) && CONFIG_HAS_BUILTIN(__builtin_assume)
 // Side effect of expr is discarded
@@ -129,7 +129,7 @@
 #endif
 
 /* __builtin_expect is in gcc 3.0 */
-#if CONFIG_GNUC_PREREQ(3, 0) && CONFIG_HAS_BUILTIN(__builtin_expect)
+#if CONFIG_GNUC_AT_LEAST(3, 0) && CONFIG_HAS_BUILTIN(__builtin_expect)
 
 #if defined(likely)
 #undef likely
@@ -171,7 +171,7 @@
 #define __attribute__(...)
 #endif
 
-#if CONFIG_GNUC_PREREQ(2, 6) || CONFIG_HAS_GCC_ATTRIBUTE(__const__)
+#if CONFIG_GNUC_AT_LEAST(2, 6) || CONFIG_HAS_GCC_ATTRIBUTE(__const__)
 #define ATTRIBUTE_CONST __attribute__((__const__))
 #elif CONFIG_HAS_AT_LEAST_CXX_17 && (defined(__GNUG__) || defined(__clang__))
 #define ATTRIBUTE_COLD [[gnu::const]]
@@ -179,19 +179,19 @@
 #define ATTRIBUTE_CONST
 #endif
 
-#if CONFIG_GNUC_PREREQ(2, 7) || CONFIG_HAS_GCC_ATTRIBUTE(__unused__)
+#if CONFIG_GNUC_AT_LEAST(2, 7) || CONFIG_HAS_GCC_ATTRIBUTE(__unused__)
 #define ATTRIBUTE_MAYBE_UNUSED __attribute__((__unused__))
 #else
 #define ATTRIBUTE_MAYBE_UNUSED
 #endif
 
-#if CONFIG_GNUC_PREREQ(2, 96) || CONFIG_HAS_GCC_ATTRIBUTE(__pure__)
+#if CONFIG_GNUC_AT_LEAST(2, 96) || CONFIG_HAS_GCC_ATTRIBUTE(__pure__)
 #define ATTRIBUTE_PURE __attribute__((__pure__))
 #else
 #define ATTRIBUTE_PURE
 #endif
 
-#if CONFIG_GNUC_PREREQ(3, 0) || CONFIG_HAS_GCC_ATTRIBUTE(__noinline__)
+#if CONFIG_GNUC_AT_LEAST(3, 0) || CONFIG_HAS_GCC_ATTRIBUTE(__noinline__)
 #define ATTRIBUTE_NOINLINE __attribute__((__noinline__))
 #elif CONFIG_HAS_AT_LEAST_CXX_17 && defined(__clang__)
 #define ATTRIBUTE_NOINLINE [[clang::noinline]]
@@ -205,7 +205,7 @@
 #define ATTRIBUTE_NOINLINE
 #endif
 
-#if CONFIG_GNUC_PREREQ(3, 2) || CONFIG_HAS_GCC_ATTRIBUTE(__always_inline__)
+#if CONFIG_GNUC_AT_LEAST(3, 2) || CONFIG_HAS_GCC_ATTRIBUTE(__always_inline__)
 #define ATTRIBUTE_ALWAYS_INLINE __attribute__((__always_inline__))
 #elif CONFIG_HAS_AT_LEAST_CXX_17 && defined(__clang__)
 #define ATTRIBUTE_ALWAYS_INLINE [[clang::always_inline]]
@@ -217,7 +217,7 @@
 #define ATTRIBUTE_ALWAYS_INLINE
 #endif
 
-#if CONFIG_GNUC_PREREQ(4, 3) || CONFIG_HAS_GCC_ATTRIBUTE(__cold__)
+#if CONFIG_GNUC_AT_LEAST(4, 3) || CONFIG_HAS_GCC_ATTRIBUTE(__cold__)
 #define ATTRIBUTE_COLD __attribute__((__cold__))
 #elif CONFIG_HAS_AT_LEAST_CXX_17 && (defined(__GNUG__) || defined(__clang__))
 #define ATTRIBUTE_COLD [[gnu::cold]]
@@ -225,7 +225,7 @@
 #define ATTRIBUTE_COLD
 #endif
 
-#if CONFIG_GNUC_PREREQ(4, 3) && CONFIG_HAS_GCC_ATTRIBUTE(hot)
+#if CONFIG_GNUC_AT_LEAST(4, 3) && CONFIG_HAS_GCC_ATTRIBUTE(hot)
 #define ATTRIBUTE_HOT __attribute__((hot))
 #elif CONFIG_HAS_AT_LEAST_CXX_17 && (defined(__GNUG__) || defined(__clang__))
 #define ATTRIBUTE_HOT [[gnu::hot]]
@@ -239,7 +239,7 @@
  *  indicate the size of the allocation.
  * Clang docs: https://clang.llvm.org/docs/AttributeReference.html#alloc-size
  */
-#if CONFIG_GNUC_PREREQ(4, 3) || CONFIG_HAS_GCC_ATTRIBUTE(__alloc_size__)
+#if CONFIG_GNUC_AT_LEAST(4, 3) || CONFIG_HAS_GCC_ATTRIBUTE(__alloc_size__)
 #define ATTRIBUTE_ALLOC_SIZE(...) __attribute__((__alloc_size__(__VA_ARGS__)))
 #elif CONFIG_HAS_AT_LEAST_CXX_17 && (defined(__GNUG__) || defined(__clang__))
 #define ATTRIBUTE_ALLOC_SIZE(...) [[gnu::alloc_size(__VA_ARGS__)]]
@@ -249,14 +249,14 @@
 
 /**
  *  mode in { "read_only", "read_write", "write_only", "none" },
- *  mode "none" is valid iff CONFIG_GNUC_PREREQ(11, 0)
+ *  mode "none" is valid iff CONFIG_GNUC_AT_LEAST(11, 0)
  *
  *  memory_argument_pos >= 1
  *  range_size_argument_pos >= 1
  *
  *  See https://gcc.gnu.org/onlinedocs/gcc/Common-Function-Attributes.html for more info
  */
-#if CONFIG_GNUC_PREREQ(10, 0)
+#if CONFIG_GNUC_AT_LEAST(10, 0)
 #define ATTRIBUTE_ACCESS(mode, memory_argument_pos) \
     __attribute__((access(mode, memory_argument_pos)))
 #define ATTRIBUTE_SIZED_ACCESS(mode, memory_argument_pos, range_size_argument_pos) \
@@ -270,7 +270,7 @@
  *  See https://gcc.gnu.org/onlinedocs/gcc/Common-Function-Attributes.html
  *   and https://clang.llvm.org/docs/AttributeReference.html#id664 for more info
  */
-#if CONFIG_GNUC_PREREQ(3, 3) || CONFIG_HAS_GCC_ATTRIBUTE(__nonnull__)
+#if CONFIG_GNUC_AT_LEAST(3, 3) || CONFIG_HAS_GCC_ATTRIBUTE(__nonnull__)
 #define ATTRIBUTE_NONNULL(...) __attribute__((__nonnull__(__VA_ARGS__)))
 #elif CONFIG_HAS_AT_LEAST_CXX_17 && (defined(__GNUG__) || defined(__clang__))
 #define ATTRIBUTE_NONNULL(...) [[gnu::nonnull(__VA_ARGS__)]]
@@ -278,7 +278,7 @@
 #define ATTRIBUTE_NONNULL(...)
 #endif
 
-#if CONFIG_GNUC_PREREQ(4, 9) || CONFIG_HAS_GCC_ATTRIBUTE(__returns_nonnull__)
+#if CONFIG_GNUC_AT_LEAST(4, 9) || CONFIG_HAS_GCC_ATTRIBUTE(__returns_nonnull__)
 #define ATTRIBUTE_RETURNS_NONNULL __attribute__((__returns_nonnull__))
 #elif CONFIG_HAS_AT_LEAST_CXX_17 && (defined(__GNUG__) || defined(__clang__))
 #define ATTRIBUTE_RETURNS_NONNULL [[gnu::returns_nonnull]]
