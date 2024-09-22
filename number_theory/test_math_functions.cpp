@@ -1726,19 +1726,19 @@ void test_general_asserts() {
 }  // namespace
 
 int main() {
-    //     test_general_asserts();
-    //     test_isqrt();
-    //     test_icbrt();
-    //     test_log2();
-    //     test_bit_reverse();
-    // #if defined(HAS_MPFR_DURING_TESTING) && HAS_MPFR_DURING_TESTING
-    //     test_sin_cos_sum();
-    // #endif
-    //     test_visit_all_submasks();
-    //     test_prime_bitarrays();
-    //     test_factorizer();
-    //     assert(multi_thread_test_extended_euclid_algorithm<std::uint32_t>());
-    //     assert(multi_thread_test_extended_euclid_algorithm<std::int64_t>());
-    //     assert(test_solve_congruence_all_roots());
+    test_general_asserts();
+    test_isqrt();
+    test_icbrt();
+    test_log2();
+    test_bit_reverse();
+#if defined(HAS_MPFR_DURING_TESTING) && HAS_MPFR_DURING_TESTING
+    test_sin_cos_sum();
+#endif
+    test_visit_all_submasks();
+    test_prime_bitarrays();
+    test_factorizer();
+    assert(multi_thread_test_extended_euclid_algorithm<std::uint32_t>());
+    assert(multi_thread_test_extended_euclid_algorithm<std::int64_t>());
+    assert(test_solve_congruence_all_roots());
     test_powers_sum();
 }
