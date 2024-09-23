@@ -8,14 +8,16 @@ permissions:
 jobs:
 
   fedora-cmake-gcc:
-    name: fedora
+    name: test-fedora-gcc
     runs-on: ubuntu-latest
     container:
       image: fedora:latest
 
     steps:
     - uses: actions/checkout@v3
+
     - run: cat /etc/os-release
+
     - name: Install dependencies
       run: |
         sudo dnf -y update
@@ -23,26 +25,27 @@ jobs:
         sudo dnf upgrade
     - name: Run tests
       run: |
-        cd ./number_theory
         chmod +x ./run_gcc_tests.sh
         ./run_gcc_tests.sh
 
   fedora-cmake-clang:
-    name: fedora
+    name: test-fedora-clang
     runs-on: ubuntu-latest
     container:
       image: fedora:latest
 
     steps:
     - uses: actions/checkout@v3
+
     - run: cat /etc/os-release
+
     - name: Install dependencies
       run: |
         sudo dnf -y update
         sudo dnf -y install gcc libasan libasan-static libubsan libubsan-static llvm clang cmake make gmp gmp-devel gmp-c++ gmp-devel gmp-static mpfr-devel
         sudo dnf upgrade
+
     - name: Run tests
       run: |
-        cd ./number_theory
         chmod +x ./run_clang_tests.sh
         ./run_clang_tests.sh

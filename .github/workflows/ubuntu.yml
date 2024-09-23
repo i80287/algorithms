@@ -11,7 +11,7 @@ env:
 jobs:
 
   ubuntu-cmake-gcc:
-    name: test-on-ubuntu-${{ matrix.ubuntu_version }}
+    name: test-gcc-on-ubuntu-${{ matrix.ubuntu_version }}
     runs-on: ubuntu-${{ matrix.ubuntu_version }}
     strategy:
       fail-fast: false
@@ -28,12 +28,11 @@ jobs:
 
     - name: Run tests
       run: |
-        cd ./number_theory
         chmod +x ./run_gcc_tests.sh
         ./run_gcc_tests.sh
 
   ubuntu-cmake-clang:
-    name: test-on-ubuntu-${{ matrix.ubuntu_version }}
+    name: test-clang-on-ubuntu-${{ matrix.ubuntu_version }}
     runs-on: ubuntu-${{ matrix.ubuntu_version }}
     strategy:
       fail-fast: false
@@ -50,12 +49,11 @@ jobs:
 
     - name: Run tests
       run: |
-        cd ./number_theory
         chmod +x ./run_clang_tests.sh
         ./run_clang_tests.sh
 
   ubuntu-cmake-gcc-mingw-w64-i686-posix:
-    name: test-on-ubuntu-${{ matrix.ubuntu_version }}
+    name: test-gcc-mingw-w64-i686-posix-on-ubuntu-${{ matrix.ubuntu_version }}
     runs-on: ubuntu-${{ matrix.ubuntu_version }}
     strategy:
       fail-fast: false
@@ -77,12 +75,11 @@ jobs:
 
     - name: Run tests
       run: |
-        cd ./number_theory
         chmod +x ./run_gcc_mingw_32_tests.sh
         ./run_gcc_mingw_32_tests.sh
 
   ubuntu-cmake-gcc-mingw-w64-x86_64-posix:
-    name: test-on-ubuntu-${{ matrix.ubuntu_version }}
+    name: test-gcc-mingw-w64-x86_64-posix-on-ubuntu-${{ matrix.ubuntu_version }}
     runs-on: ubuntu-${{ matrix.ubuntu_version }}
     strategy:
       fail-fast: false
@@ -104,6 +101,5 @@ jobs:
 
     - name: Run tests
       run: |
-        cd ./number_theory
         chmod +x ./run_gcc_mingw_64_tests.sh
         ./run_gcc_mingw_64_tests.sh

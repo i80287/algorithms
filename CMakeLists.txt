@@ -170,7 +170,7 @@ function(configure_gcc_or_clang_gcc_options)
         _GLIBCXX_DEBUG=1
         _GLIBCXX_DEBUG_PEDANTIC=1)
     if (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER 10.0)
-        # In gcc with version < 10.0 this check breaks `constexpr`-tivity of some functions
+        # In gcc with version < 10.0 these checks break `constexpr`-tivity of some std:: functions
         set(LOCAL_FN_TEST_COMPILE_DEFINITIONS
             ${LOCAL_FN_TEST_COMPILE_DEFINITIONS}
             _GLIBCXX_CONCEPT_CHECKS=1)
@@ -186,8 +186,7 @@ function(configure_gcc_or_clang_gcc_options)
         PARENT_SCOPE)
 
     if (NOT USING_MINGW_GCC)
-        set(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} -fsanitize=address PARENT_SCOPE)
-        set(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} -fsanitize=undefined PARENT_SCOPE)
+        set(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} -fsanitize=address,undefined PARENT_SCOPE)
     endif()
 
 endfunction()
@@ -215,12 +214,17 @@ message(STATUS "+-")
 function(
     add_test_target
     target_filename
+    target_dir
     target_dependencies
     target_optional_dependencies
     target_cxx_version
 )
     string(CONCAT target_cpp_filename ${target_filename} ".cpp")
     string(CONCAT target "target_cxx_" ${target_cxx_version} "_" ${target_filename})
+
+    file(TO_NATIVE_PATH "/" os_separator)
+    string(REPLACE " " ";" target_dir ${target_dir})
+    string(JOIN "${os_separator}" target_path_to_cpp ${target_dir} ${target_cpp_filename})
 
     string(COMPARE EQUAL "${target_dependencies}" "" empty_dependencies)
     if (NOT empty_dependencies)
@@ -253,7 +257,7 @@ function(
         return()
     endif()
 
-    add_executable(${target} ${target_cpp_filename})
+    add_executable(${target} ${target_path_to_cpp})
 
     if (NOT empty_dependencies)
         target_link_libraries(${target} PRIVATE ${target_dependencies})
@@ -296,6 +300,7 @@ foreach(target_filename target_dir target_supported_cxx_versions target_dependen
         if (${version} IN_LIST target_supported_cxx_versions)
             add_test_target(
                 "${target_filename}"
+                "${target_dir}"
                 "${target_dependencies}"
                 "${target_optional_dependencies}"
                 ${version}
