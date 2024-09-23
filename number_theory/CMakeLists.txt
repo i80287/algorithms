@@ -256,7 +256,7 @@ function(
     add_executable(${target} ${target_cpp_filename})
 
     if (NOT empty_dependencies)
-        target_link_libraries(${target} ${target_dependencies})
+        target_link_libraries(${target} PRIVATE ${target_dependencies})
     endif()
 
     if (NOT empty_optional_dependencies)
@@ -265,7 +265,7 @@ function(
             if(NOT dependency_lib)
                 message(WARNING "Optional dependency ${target_optional_dependency} of target ${target} not found")
             else()
-                target_link_libraries(${target} ${target_optional_dependency})
+                target_link_libraries(${target} PRIVATE ${target_optional_dependency})
             endif()
         endforeach()
     endif()
