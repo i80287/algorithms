@@ -25,6 +25,7 @@ jobs:
         sudo dnf upgrade
     - name: Run tests
       run: |
+        cd ./tests
         chmod +x ./run_gcc_tests.sh
         ./run_gcc_tests.sh
 
@@ -47,5 +48,6 @@ jobs:
 
     - name: Run tests
       run: |
+        cd ./tests
         chmod +x ./run_clang_tests.sh
         ./run_clang_tests.sh

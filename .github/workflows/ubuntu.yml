@@ -28,6 +28,7 @@ jobs:
 
     - name: Run tests
       run: |
+        cd ./tests
         chmod +x ./run_gcc_tests.sh
         ./run_gcc_tests.sh
 
@@ -49,6 +50,7 @@ jobs:
 
     - name: Run tests
       run: |
+        cd ./tests
         chmod +x ./run_clang_tests.sh
         ./run_clang_tests.sh
 
@@ -75,6 +77,7 @@ jobs:
 
     - name: Run tests
       run: |
+        cd ./tests
         chmod +x ./run_gcc_mingw_32_tests.sh
         ./run_gcc_mingw_32_tests.sh
 
@@ -101,5 +104,6 @@ jobs:
 
     - name: Run tests
       run: |
+        cd ./tests
         chmod +x ./run_gcc_mingw_64_tests.sh
         ./run_gcc_mingw_64_tests.sh
