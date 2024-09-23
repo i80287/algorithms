@@ -229,8 +229,10 @@ list(APPEND TestCxxVersions "17 20 23 26")
 list(APPEND TestDependencies "")
 list(APPEND TestOptionalDependencies "")
 
-if (NOT (USING_MINGW_GCC AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS_EQUAL 10.0.0))
-    # Probably a bug: gcc mingw w64 10.0.0 supports C++20 but doesn't have std::bit_cast
+if (NOT ((USING_MINGW_GCC OR CMAKE_CXX_COMPILER_ID STREQUAL "Clang") AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS_EQUAL 10.0.0))
+    # gcc mingw w64 10.0.0 supports C++20 but doesn't have std::bit_cast, same with clang
+    # gcc:   https://gcc.gnu.org/projects/cxx-status.html
+    # clang: https://clang.llvm.org/cxx_status.html
     list(APPEND TestFilenames test_hungarian_algo)
     list(APPEND TestDirectories "graphs HungarianAlgorithm")
     list(APPEND TestCxxVersions "20 23 26")
