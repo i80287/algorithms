@@ -4,12 +4,10 @@
 #include <array>
 #include <bitset>
 #include <climits>
-#include <concepts>
 #include <cstddef>
 #include <cstdint>
 #include <cstring>
 #include <fstream>
-#include <initializer_list>
 #include <memory>
 #include <numeric>
 #include <sstream>
@@ -17,6 +15,10 @@
 #include <utility>
 
 #include "config_macros.hpp"
+
+#if CONFIG_HAS_AT_LEAST_CXX_20 && CONFIG_HAS_INCLUDE(<concepts>)
+#include <concepts>
+#endif
 
 // clang-format off
 
@@ -342,7 +344,7 @@ public:
     using bit_reference          = typename value_type::reference;
 
     // Made public for the simple initialization from the
-    // initializers like {0b00, 0b10, ...}
+    // initializers like {0b00, 0b10, ...} (like in the std::array)
     matrix_type data_{};
 
     [[nodiscard]] ATTRIBUTE_CONST static CONSTEXPR_BITSET_OPS square_bitmatrix identity() noexcept {
@@ -557,7 +559,7 @@ public:
     }
     ATTRIBUTE_ALWAYS_INLINE CONSTEXPR_BITSET_OPS void set_unchecked(
         std::pair<size_type, size_type> indexes, bool value = true) noexcept {
-        set(indexes.first, indexes.second, value);
+        set_unchecked(indexes.first, indexes.second, value);
     }
     ATTRIBUTE_ALWAYS_INLINE CONSTEXPR_BITSET_OPS void set_checked(std::size_t i, std::size_t j,
                                                                   bool value = true) noexcept {
@@ -703,13 +705,21 @@ public:
 private:
     static constexpr bool kUseSGIExtension =
 #if CONFIG_HAS_AT_LEAST_CXX_20
+#if CONFIG_HAS_INCLUDE(<concepts>)
         requires(const row_type row) {
             { row._Find_first() } -> std::convertible_to<size_type>;
             { row._Find_next(size_type()) } -> std::convertible_to<size_type>;
         };
 #else
+        requires(const row_type row, size_type i, size_type j) {
+            i = row._Find_first();
+            j = row._Find_next(size_type());
+        };
+#endif
+#else
         false;
 #endif
+
     template <class TFunction>
     ATTRIBUTE_ALWAYS_INLINE static constexpr void for_each_row_set_bit(
         const row_type& row, TFunction fn) noexcept(is_noexcept_index_fn<TFunction>()) {
@@ -870,7 +880,7 @@ private:
     static constexpr square_bitmatrix create_identity_matrix_impl() noexcept {
         square_bitmatrix m{};
         for (size_type i = 0; i < N; ++i) {
-            m[i][i] = true;
+            m.set_unchecked(i, i, true);
         }
         return m;
     }
