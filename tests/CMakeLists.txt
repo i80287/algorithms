@@ -162,6 +162,37 @@ elseif (CMAKE_CXX_COMPILER_ID STREQUAL "Intel")
 elseif (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
 endif()
 
+if (CMAKE_SYSTEM_NAME MATCHES "Linux")
+    find_program(CMAKE_CXX_CPPCHECK NAMES cppcheck)
+    if (NOT CMAKE_CXX_CPPCHECK)
+        message(WARNING "Could not find cppcheck")
+    else()
+        list(APPEND
+            CMAKE_CXX_CPPCHECK
+            "--force"
+            "--template=gcc"
+            "--error-exitcode=1"
+            "--inline-suppr"
+        )
+
+        if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang" OR CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+            if (CMAKE_CXX_BYTE_ORDER STREQUAL "LITTLE_ENDIAN")
+                list(APPEND CMAKE_CXX_CPPCHECK
+                    "-D__ORDER_LITTLE_ENDIAN__=1234"
+                    "-D__ORDER_BIG_ENDIAN__=4321"
+                    "-D__BYTE_ORDER__=1234"
+                )
+            elseif (CMAKE_CXX_BYTE_ORDER STREQUAL "BIG_ENDIAN")
+                list(APPEND CMAKE_CXX_CPPCHECK
+                    "-D__ORDER_LITTLE_ENDIAN__=1234"
+                    "-D__ORDER_BIG_ENDIAN__=4321"
+                    "-D__BYTE_ORDER__=4321"
+                )
+            endif()
+        endif()
+    endif()
+endif()
+
 message(STATUS "+-")
 message(STATUS "| TEST_COMPILE_DEFINITIONS = ${TEST_COMPILE_DEFINITIONS}")
 message(STATUS "| TEST_COMPILE_OPTIONS = ${TEST_COMPILE_OPTIONS}")
