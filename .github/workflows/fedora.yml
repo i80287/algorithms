@@ -21,8 +21,9 @@ jobs:
     - name: Install dependencies
       run: |
         sudo dnf -y update
-        sudo dnf -y install gcc gcc-c++ libasan libasan-static libubsan libubsan-static cmake make gmp gmp-devel gmp-c++ gmp-devel gmp-static mpfr-devel
+        sudo dnf -y install gcc gcc-c++ libasan libasan-static libubsan libubsan-static cmake make gmp gmp-devel gmp-c++ gmp-devel gmp-static mpfr-devel cppcheck
         sudo dnf upgrade
+
     - name: Run tests
       run: |
         cd ./tests
@@ -43,7 +44,7 @@ jobs:
     - name: Install dependencies
       run: |
         sudo dnf -y update
-        sudo dnf -y install gcc libasan libasan-static libubsan libubsan-static llvm clang cmake make gmp gmp-devel gmp-c++ gmp-devel gmp-static mpfr-devel
+        sudo dnf -y install gcc libasan libasan-static libubsan libubsan-static llvm clang cmake make gmp gmp-devel gmp-c++ gmp-devel gmp-static mpfr-devel cppcheck
         sudo dnf upgrade
 
     - name: Run tests
