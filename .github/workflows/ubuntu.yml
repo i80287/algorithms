@@ -24,7 +24,12 @@ jobs:
     - name: Install dependencies
       run: |
         sudo apt update
-        sudo apt install gcc g++ build-essential cmake make libgmp-dev libmpfr-dev cppcheck
+        sudo apt install gcc g++ build-essential cmake make libgmp-dev libmpfr-dev
+
+    - name: Install cppcheck
+      run: |
+        sudo apt update
+        sudo apt install cppcheck
 
     - name: Run tests
       run: |
@@ -46,7 +51,12 @@ jobs:
     - name: Install dependencies
       run: |
         sudo apt update
-        sudo apt install clang llvm cmake make libgmp-dev libmpfr-dev cppcheck
+        sudo apt install clang llvm cmake make libgmp-dev libmpfr-dev
+
+    - name: Install cppcheck
+      run: |
+        sudo apt update
+        sudo apt install cppcheck
 
     - name: Run tests
       run: |
@@ -73,7 +83,12 @@ jobs:
           gcc-mingw-w64 gcc-mingw-w64-i686 gcc-mingw-w64-i686-posix gcc-mingw-w64-i686-posix-runtime \
           g++-mingw-w64 g++-mingw-w64-i686 g++-mingw-w64-i686-posix \
           mingw-w64 mingw-w64-common mingw-w64-tools mingw-w64-i686-dev \
-          cppcheck cmake make wine
+          cmake make wine
+
+    - name: Install cppcheck
+      run: |
+        sudo apt update
+        sudo apt install cppcheck
 
     - name: Run tests
       run: |
@@ -100,7 +115,12 @@ jobs:
           gcc-mingw-w64 gcc-mingw-w64-x86-64-posix gcc-mingw-w64-x86-64-posix-runtime \
           g++-mingw-w64 g++-mingw-w64-x86-64-posix \
           mingw-w64 mingw-w64-common mingw-w64-tools mingw-w64-x86-64-dev \
-          cppcheck cmake make wine
+          cmake make wine
+
+    - name: Install cppcheck
+      run: |
+        sudo apt update
+        sudo apt install cppcheck
 
     - name: Run tests
       run: |

@@ -407,6 +407,7 @@
 /* . */
 
 #if !defined(CONFIG_BYTE_ORDER_LITTLE_ENDIAN) || !defined(CONFIG_BYTE_ORDER_BIG_ENDIAN)
+// cppcheck-suppress [preprocessorErrorDirective]
 #error Unable to determine endian
 #endif /* Check we found an endianness correctly. */
 

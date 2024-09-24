@@ -31,6 +31,7 @@ typedef __int128_t int128_t;
 typedef std::_Unsigned128 uint128_t;
 typedef std::_Signed128 int128_t;
 #else
+// cppcheck-suppress [preprocessorErrorDirective]
 #error "Unsupported compiler, typedef 128-bit integer specific for your compiler"
 #endif
 

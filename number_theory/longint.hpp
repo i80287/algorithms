@@ -33,6 +33,7 @@
 #endif
 
 #if !defined(__GNUG__)
+// cppcheck-suppress [preprocessorErrorDirective]
 #error "Current implementation works only with GCC"
 #endif
 

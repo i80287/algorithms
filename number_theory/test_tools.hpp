@@ -314,6 +314,7 @@ TEST_TOOLS_CONSTEVAL std::string_view get_typename_impl(const std::string_view f
     }
 
 #else
+// cppcheck-suppress [preprocessorErrorDirective]
 #error("Unsupported compiler")
 #endif
 
@@ -354,6 +355,7 @@ TEST_TOOLS_CONSTEVAL std::string_view get_enum_value_name_impl(
 #elif defined(_MSC_VER)
     constexpr string_view prefix = "get_enum_value_name<";
 #else
+// cppcheck-suppress [preprocessorErrorDirective]
 #error("Unsupported compiler")
 #endif
 
