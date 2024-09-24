@@ -1071,6 +1071,8 @@ template <class T>
 [[nodiscard]] ATTRIBUTE_CONST constexpr int32_t popcount(T n) noexcept {
 #if defined(INTEGERS_128_BIT_HPP)
     if constexpr (std::is_same_v<T, uint128_t>) {
+        // Reason: cppcheck can not deduce that n is uint128_t here
+        // cppcheck-suppress [shiftTooManyBits]
         uint64_t high = static_cast<uint64_t>(n >> 64);
         uint64_t low  = static_cast<uint64_t>(n);
 #if CONFIG_HAS_AT_LEAST_CXX_20

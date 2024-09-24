@@ -376,13 +376,13 @@ static void TestPrimesFromFile() {
     Wrapper fin("u64-primes.txt", "r");
     for (uint64_t prev_prime = uint64_t(-1), p = 0;; prev_prime = p) {
         switch (std::fscanf(fin.file, "%" PRIu64, &p)) {
-            [[likely]] case 1:
+            case 1:
                 assert(prev_prime > p);
                 assert(is_prime_bpsw(p));
                 break;
-            [[unlikely]] case std::char_traits<char>::eof():
+            case std::char_traits<char>::eof():
                 return;
-            [[unlikely]] default:
+            default:
                 perror("std::fscanf");
                 throw std::runtime_error("std::fscanf");
         }
