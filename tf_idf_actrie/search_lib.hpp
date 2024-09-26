@@ -23,21 +23,23 @@ template <bool IsExactWordsMatching = DefaultIsExactWordsMatching>
 // ATTRIBUTE_LIFETIME_BOUND doesn't work for the std::string_view
 
 template <bool IsExactWordsMatching = DefaultIsExactWordsMatching>
-[[nodiscard]] std::vector<string_view> Search(const std::string& text ATTRIBUTE_LIFETIME_BOUND,
-                                              string_view query, std::size_t max_result_size) {
+[[nodiscard]] inline std::vector<string_view> Search(
+    const std::string& text ATTRIBUTE_LIFETIME_BOUND, string_view query,
+    std::size_t max_result_size) {
     return ::search_lib::Search(std::string_view(text), query, max_result_size);
 }
 
 template <bool IsExactWordsMatching = DefaultIsExactWordsMatching>
-[[nodiscard]] std::vector<string_view> Search(const char* text ATTRIBUTE_LIFETIME_BOUND,
-                                              string_view query, std::size_t max_result_size) {
+[[nodiscard]] inline std::vector<string_view> Search(const char* text ATTRIBUTE_LIFETIME_BOUND,
+                                                     string_view query,
+                                                     std::size_t max_result_size) {
     return ::search_lib::Search(std::string_view(text), query, max_result_size);
 }
 
 template <bool IsExactWordsMatching = DefaultIsExactWordsMatching>
-[[nodiscard]] std::vector<string_view> Search(const char* text ATTRIBUTE_LIFETIME_BOUND,
-                                              std::size_t text_size, string_view query,
-                                              std::size_t max_result_size) {
+[[nodiscard]] inline std::vector<string_view> Search(const char* text ATTRIBUTE_LIFETIME_BOUND,
+                                                     std::size_t text_size, string_view query,
+                                                     std::size_t max_result_size) {
     return ::search_lib::Search(std::string_view(text, text_size), query, max_result_size);
 }
 
