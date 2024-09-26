@@ -1742,6 +1742,12 @@ struct [[nodiscard]] PrimeFactor final {
     std::uint32_t factor_power;
 };
 
+#if CONFIG_HAS_AT_LEAST_CXX_20 && !defined(_GLIBCXX_DEBUG)
+#define CONSTEXPR_VECTOR constexpr
+#else
+#define CONSTEXPR_VECTOR inline
+#endif
+
 /// @brief
 /// @tparam NumericType
 /// @param[in] n
@@ -1756,7 +1762,7 @@ template <class NumericType>
 #endif
              )
 #endif
-[[nodiscard]] inline auto prime_factors_as_pairs(NumericType n) {
+[[nodiscard]] CONSTEXPR_VECTOR auto prime_factors_as_vector(NumericType n) {
     std::vector<PrimeFactor<NumericType>> divisors;
     if constexpr (std::is_same_v<NumericType, std::uint32_t>) {
         divisors.reserve(::math_functions::detail::max_number_of_prime_divisors(n));
@@ -1887,12 +1893,6 @@ void prime_divisors_to_map(NumericType n, std::map<NumericType, uint32_t>& divis
     }
 }
 
-#if CONFIG_HAS_AT_LEAST_CXX_20 && !defined(_GLIBCXX_DEBUG)
-#define CONSTEXPR_VECTOR constexpr
-#else
-#define CONSTEXPR_VECTOR
-#endif
-
 /// @brief https://cp-algorithms.com/algebra/prime-sieve-linear.html
 class [[nodiscard]] Factorizer final {
 public:
@@ -1957,7 +1957,7 @@ private:
 /// @brief Find all prime numbers in [2; n]
 /// @param n inclusive upper bound
 /// @return vector, such that vector[n] == true \iff n is prime
-[[nodiscard]] CONSTEXPR_VECTOR inline auto dynamic_primes_sieve(uint32_t n) {
+[[nodiscard]] CONSTEXPR_VECTOR auto dynamic_primes_sieve(uint32_t n) {
     std::vector<std::uint8_t> primes(std::size_t(n) + 1, true);
     primes[0] = false;
     if (likely(n > 0)) {

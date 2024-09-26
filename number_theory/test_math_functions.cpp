@@ -368,14 +368,14 @@ void test_factorizer() {
 
     for (std::uint32_t i = 0; i <= N; i++) {
 #if CONFIG_HAS_AT_LEAST_CXX_20
-        assert(std::ranges::equal(fact.prime_factors(i), prime_factors_as_pairs(i),
+        assert(std::ranges::equal(fact.prime_factors(i), prime_factors_as_vector(i),
                                   [](auto pf1, auto pf2) constexpr noexcept {
                                       return pf1.factor == pf2.factor &&
                                              pf1.factor_power == pf2.factor_power;
                                   }));
 #else
         auto&& range1 = fact.prime_factors(i);
-        auto&& range2 = prime_factors_as_pairs(i);
+        auto&& range2 = prime_factors_as_vector(i);
         assert(range1.size() == range2.size() &&
                std::equal(range1.begin(), range1.end(), range2.begin(), [](auto pf1, auto pf2) {
                    return pf1.factor == pf2.factor && pf1.factor_power == pf2.factor_power;
