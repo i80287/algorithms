@@ -368,14 +368,14 @@ void test_factorizer() {
 
     for (std::uint32_t i = 0; i <= N; i++) {
 #if CONFIG_HAS_AT_LEAST_CXX_20
-        assert(std::ranges::equal(fact.prime_factors(i), prime_factors_as_pairs(i),
+        assert(std::ranges::equal(fact.prime_factors(i), prime_factors_as_vector(i),
                                   [](auto pf1, auto pf2) constexpr noexcept {
                                       return pf1.factor == pf2.factor &&
                                              pf1.factor_power == pf2.factor_power;
                                   }));
 #else
         auto&& range1 = fact.prime_factors(i);
-        auto&& range2 = prime_factors_as_pairs(i);
+        auto&& range2 = prime_factors_as_vector(i);
         assert(range1.size() == range2.size() &&
                std::equal(range1.begin(), range1.end(), range2.begin(), [](auto pf1, auto pf2) {
                    return pf1.factor == pf2.factor && pf1.factor_power == pf2.factor_power;
@@ -508,7 +508,7 @@ bool multi_thread_test_extended_euclid_algorithm() {
     return !result.test_and_set();
 }
 
-[[nodiscard]] bool test_solve_congruence_all_roots() {
+[[nodiscard]] bool test_solve_congruence_modulo_m_all_roots() {
     log_tests_started();
 
     auto seed = std::ranlux24(std::uint32_t(std::time(nullptr)))();
@@ -523,7 +523,7 @@ bool multi_thread_test_extended_euclid_algorithm() {
         const auto c     = static_cast<int64_t>(rnd_64());
         const uint64_t mod2 =
             static_cast<uint64_t>((c % static_cast<int64_t>(m)) + static_cast<int64_t>(m)) % m;
-        for (std::uint32_t x : math_functions::solve_congruence_all_roots(a, c, m)) {
+        for (std::uint32_t x : math_functions::solve_congruence_modulo_m_all_roots(a, c, m)) {
             if (unlikely(x >= m)) {
                 printf("Solution %" PRIu32
                        " overflow\n"
@@ -1743,6 +1743,6 @@ int main() {
     test_factorizer();
     assert(multi_thread_test_extended_euclid_algorithm<std::uint32_t>());
     assert(multi_thread_test_extended_euclid_algorithm<std::int64_t>());
-    assert(test_solve_congruence_all_roots());
+    assert(test_solve_congruence_modulo_m_all_roots());
     test_powers_sum();
 }

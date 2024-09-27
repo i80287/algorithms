@@ -1742,6 +1742,12 @@ struct [[nodiscard]] PrimeFactor final {
     std::uint32_t factor_power;
 };
 
+#if CONFIG_HAS_AT_LEAST_CXX_20 && !defined(_GLIBCXX_DEBUG)
+#define CONSTEXPR_VECTOR constexpr
+#else
+#define CONSTEXPR_VECTOR inline
+#endif
+
 /// @brief
 /// @tparam NumericType
 /// @param[in] n
@@ -1756,7 +1762,7 @@ template <class NumericType>
 #endif
              )
 #endif
-[[nodiscard]] inline auto prime_factors_as_pairs(NumericType n) {
+[[nodiscard]] CONSTEXPR_VECTOR auto prime_factors_as_vector(NumericType n) {
     std::vector<PrimeFactor<NumericType>> divisors;
     if constexpr (std::is_same_v<NumericType, std::uint32_t>) {
         divisors.reserve(::math_functions::detail::max_number_of_prime_divisors(n));
@@ -1887,12 +1893,6 @@ void prime_divisors_to_map(NumericType n, std::map<NumericType, uint32_t>& divis
     }
 }
 
-#if CONFIG_HAS_AT_LEAST_CXX_20 && !defined(_GLIBCXX_DEBUG)
-#define CONSTEXPR_VECTOR constexpr
-#else
-#define CONSTEXPR_VECTOR
-#endif
-
 /// @brief https://cp-algorithms.com/algebra/prime-sieve-linear.html
 class [[nodiscard]] Factorizer final {
 public:
@@ -1957,7 +1957,7 @@ private:
 /// @brief Find all prime numbers in [2; n]
 /// @param n inclusive upper bound
 /// @return vector, such that vector[n] == true \iff n is prime
-[[nodiscard]] CONSTEXPR_VECTOR inline auto dynamic_primes_sieve(uint32_t n) {
+[[nodiscard]] CONSTEXPR_VECTOR auto dynamic_primes_sieve(uint32_t n) {
     std::vector<std::uint8_t> primes(std::size_t(n) + 1, true);
     primes[0] = false;
     if (likely(n > 0)) {
@@ -2157,7 +2157,7 @@ ATTRIBUTE_CONST constexpr HelperRetType congruence_helper(const std::uint64_t a,
 ///          such that 0 <= x_{0} < x_{1} < ... < x_{gcd(a, m)-1} < m,
 ///          x_{0} < m / gcd(a, m), x_{i + 1} = x_{i} + m / gcd(a, m).
 ///         Otherwise, return empty vector.
-[[nodiscard]] inline std::vector<std::uint32_t> solve_congruence_all_roots(std::uint64_t a,
+[[nodiscard]] inline std::vector<std::uint32_t> solve_congruence_modulo_m_all_roots(std::uint64_t a,
                                                                            std::int64_t c,
                                                                            std::uint32_t m) {
     const auto [x0, d, m_] = ::math_functions::detail::congruence_helper(a, c, m);
@@ -2173,14 +2173,14 @@ ATTRIBUTE_CONST constexpr HelperRetType congruence_helper(const std::uint64_t a,
 /// @brief Solves congruence a * x ≡ c (mod m)
 /// @note Roots exist <=> c % gcd(a, m) == 0.
 ///       If roots exist, then exactly 1 root is returned, and
-///        it is the least of all roots (see @fn solve_congruence_all_roots).
+///        it is the least of all roots (see @fn solve_congruence_modulo_m_all_roots).
 ///       Works in O(log(min(a, m))
 /// @param a
 /// @param c
 /// @param m
 /// @return If roots exist, return root x such that 0 <= x < m / gcd(a, m).
 ///         Otherwise, return uint32_t(-1)
-[[nodiscard]] ATTRIBUTE_CONST constexpr std::uint32_t solve_congruence(std::uint64_t a,
+[[nodiscard]] ATTRIBUTE_CONST constexpr std::uint32_t solve_congruence_modulo_m(std::uint64_t a,
                                                                        std::int64_t c,
                                                                        std::uint32_t m) noexcept {
     return ::math_functions::detail::congruence_helper(a, c, m).x0;
@@ -2189,7 +2189,7 @@ ATTRIBUTE_CONST constexpr HelperRetType congruence_helper(const std::uint64_t a,
 /// @brief Solve congruence 2^k * x ≡ c (mod m),
 ///        Where gcd(c, m) = 1 and m ≡ 1 mod 2
 ///        Works in O(k)
-/// @note  Faster implementation of @fn solve_congruence
+/// @note  Faster implementation of @fn solve_congruence_modulo_m
 ///        for a = 2^k.
 /// @param k
 /// @param c
