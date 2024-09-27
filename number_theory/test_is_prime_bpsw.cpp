@@ -392,7 +392,7 @@ static void TestPrimesFromFile() {
 static void TestRandomPrimesGMP() noexcept {
     log_tests_started();
 
-    constexpr size_t kTotalTests = 1u << 24;
+    constexpr size_t kTotalTests = 1u << 26;
 
     const auto rnd_seed =
         std::uint_fast64_t(std::random_device{}()) ^ std::uint_fast64_t(std::time(nullptr));

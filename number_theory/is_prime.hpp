@@ -1,6 +1,7 @@
 #ifndef IS_PRIME_BPSW_HPP
 #define IS_PRIME_BPSW_HPP 1
 
+#include <cassert>
 #include <cstdint>  // std::uint32_t, std::uint64_t
 #include <cstdlib>  // std::abs
 #include <numeric>  // std::gcd
@@ -315,17 +316,18 @@ ATTRIBUTE_CONST I128_CONSTEXPR bool is_strong_selfridge_prp(uint64_t n) noexcept
     ATTRIBUTE_ASSUME(n % 2 == 1);
     // Redundant but still
     ATTRIBUTE_ASSUME(n >= 1);
-    for (int32_t d = 5;; d += (d > 0) ? 2 : -2, d = -d) {
+    constexpr std::int32_t kStep = 2;
+    for (int32_t d = 5;; d += (d > 0) ? kStep : -kStep, d = -d) {
+        constexpr std::int32_t kMaxD = 999'997;
         // Calculate the Jacobi symbol (d/n)
         const int32_t jacobi = ::math_functions::kronecker_symbol(int64_t(d), n);
-        ATTRIBUTE_ASSUME(jacobi == -1 || jacobi == 0 || jacobi == 1);
         switch (jacobi) {
             /**
              * if jacobi == 0, d is a factor of n, therefore n is composite
              * if d == n, then n is either prime or 9
              */
             case 0:
-                return uint32_t(std::abs(d)) == n && n != 9;
+                return ::math_functions::uabs(d) == n && n != 9;
             case 1:
                 /* if we get to the 5th d, make sure we aren't dealing with a
                  * square... */
@@ -333,18 +335,22 @@ ATTRIBUTE_CONST I128_CONSTEXPR bool is_strong_selfridge_prp(uint64_t n) noexcept
                     return false;
                 }
 
-                if (unlikely(d >= 1000000)) {
+                if (unlikely(d > kMaxD)) {
                     // Appropriate value for D cannot be found in
                     // is_strong_selfridge_prp
                     return false;
                 }
                 break;
             case -1: {
+                ATTRIBUTE_ASSUME(d <= kMaxD + kStep * 2);
                 ATTRIBUTE_ASSUME((1 - d) % 4 == 0);
-                int32_t q = (1 - d) / 4;
+                const std::int32_t q = (1 - d) / 4;
                 ATTRIBUTE_ASSUME(1 - 4 * q == d);
                 return ::math_functions::detail::is_strong_lucas_prp<false>(n, 1, q);
             }
+            default:
+                std::abort();
+                break;
         }
     }
 }
