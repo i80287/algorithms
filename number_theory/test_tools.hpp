@@ -136,26 +136,23 @@ ATTRIBUTE_ALWAYS_INLINE inline void log_tests_started_impl(const char* function_
 #endif
 
 struct Wrapper final {
-    FILE* const file;
+    std::FILE* const file;
     Wrapper(const char* fname, const char* mode) : file(DoFOpenOrThrow(fname, mode)) {}
     Wrapper(const Wrapper&)            = delete;
     Wrapper(Wrapper&&)                 = delete;
     Wrapper& operator=(const Wrapper&) = delete;
     Wrapper& operator=(Wrapper&&)      = delete;
     ~Wrapper() {
-        std::fclose(file);
+        if (std::fclose(file) != 0) {
+            std::perror("fclose");
+        }
     }
 
 private:
-    ATTRIBUTE_RETURNS_NONNULL static std::FILE* DoFOpenOrThrow(const char* fname,
-                                                               const char* mode) {
+    ATTRIBUTE_RETURNS_NONNULL ATTRIBUTE_ALWAYS_INLINE static std::FILE* DoFOpenOrThrow(
+        const char* fname, const char* mode) {
         std::FILE* const file_handle = std::fopen(fname, mode);
-#if CONFIG_HAS_AT_LEAST_CXX_20
-        if (file_handle == nullptr) [[unlikely]]
-#else
-        if (unlikely(file_handle == nullptr))
-#endif
-        {
+        if (unlikely(file_handle == nullptr)) {
             ThrowOnFOpenFail(fname, mode);
         }
 
@@ -168,12 +165,7 @@ private:
                                           "Wrapper::Wrapper(const char* fname, const char* mode): "
                                           "std::fopen(\"%s\", \"%s\") failed: %s",
                                           fname, mode, std::strerror(errno_value));
-#if CONFIG_HAS_AT_LEAST_CXX_20
-        if (bytes_written < 0) [[unlikely]]
-#else
-        if (bytes_written < 0)
-#endif
-        {
+        if (bytes_written < 0) {
             constexpr std::string_view msg =
                 "Wrapper::Wrapper(const char* fname,const char* mode): "
                 "std::snprintf failed after std::fopen failed";
@@ -182,6 +174,7 @@ private:
             std::char_traits<char>::copy(buffer.data(), msg.data(), msg.size());
             buffer[msg.size()] = '\0';
         }
+
         throw std::runtime_error(buffer.data());
     }
 };
@@ -260,32 +253,43 @@ TEST_TOOLS_CONSTEVAL std::size_t get_typename_end_pos_impl(const std::string_vie
     return s.size();
 }
 
-TEST_TOOLS_CONSTEVAL bool is_space(char c) noexcept {
-    switch (static_cast<std::uint8_t>(c)) {
-        case '\n':
-        case '\v':
-        case '\f':
-        case '\r':
-        case ' ':
-            return true;
-        default:
-            return false;
-    }
-}
+#define CONSTEVAL_ASSERT_CONCAT_IMPL(arg1, arg2, arg3) arg1##arg2##arg3
+#define CONSTEVAL_ASSERT_CONCAT(arg1, arg2, arg3)      CONSTEVAL_ASSERT_CONCAT_IMPL(arg1, arg2, arg3)
+#define CONSTEVAL_ASSERT_GENERATE_UNIQUE_NAME(prefix) \
+    CONSTEVAL_ASSERT_CONCAT(prefix, _unique_addendum_, __COUNTER__)
+
+#define CONSTEVAL_ASSERT(expr)                                                    \
+    do {                                                                          \
+        [[maybe_unused]] const int CONSTEVAL_ASSERT_GENERATE_UNIQUE_NAME(guard) = \
+            static_cast<bool>(expr) ? 0 : throw 0;                                \
+    } while (false)
 
 TEST_TOOLS_CONSTEVAL std::string_view get_typename_impl(const std::string_view function_name) {
+    const auto is_space = [](char c) constexpr noexcept {
+        switch (static_cast<std::uint8_t>(c)) {
+            case '\n':
+            case '\v':
+            case '\f':
+            case '\r':
+            case ' ':
+                return true;
+            default:
+                return false;
+        }
+    };
+
 #if defined(__GNUG__) || defined(__clang__)
     constexpr std::string_view type_prefix = "T = ";
     const auto prefix_start_pos            = function_name.find(type_prefix);
-    [[maybe_unused]] const auto guard1 = 0 / unsigned(prefix_start_pos != std::string_view::npos);
-    auto typename_start_pos            = prefix_start_pos + type_prefix.size();
+    CONSTEVAL_ASSERT(prefix_start_pos != std::string_view::npos);
+    auto typename_start_pos = prefix_start_pos + type_prefix.size();
 #elif defined(_MSC_VER)
     constexpr std::string_view type_prefix = "get_typename<";
     const auto prefix_start_pos            = function_name.find(type_prefix);
-    [[maybe_unused]] const auto guard6 = 0 / unsigned(prefix_start_pos != std::string_view::npos);
-    auto typename_start_pos            = prefix_start_pos + type_prefix.size();
-    [[maybe_unused]] const auto guard7 = 0 / unsigned(typename_start_pos < function_name.size());
-    std::string_view piece             = function_name.substr(typename_start_pos);
+    CONSTEVAL_ASSERT(prefix_start_pos != std::string_view::npos);
+    auto typename_start_pos = prefix_start_pos + type_prefix.size();
+    CONSTEVAL_ASSERT(typename_start_pos < function_name.size());
+    std::string_view piece                 = function_name.substr(typename_start_pos);
     constexpr std::string_view kKeywords[] = {
         "class",
         "struct",
@@ -294,7 +298,7 @@ TEST_TOOLS_CONSTEVAL std::string_view get_typename_impl(const std::string_view f
     };
     for (bool continue_cut = true; continue_cut;) {
         continue_cut = false;
-        while (::test_tools::test_tools_detail::is_space(piece.front())) {
+        while (is_space(piece.front())) {
             piece.remove_prefix(1);
             typename_start_pos++;
         }
@@ -318,15 +322,15 @@ TEST_TOOLS_CONSTEVAL std::string_view get_typename_impl(const std::string_view f
 #error("Unsupported compiler")
 #endif
 
-    [[maybe_unused]] const auto guard2 = 0 / unsigned(typename_start_pos < function_name.size());
-    while (::test_tools::test_tools_detail::is_space(function_name[typename_start_pos])) {
+    CONSTEVAL_ASSERT(typename_start_pos < function_name.size());
+    while (is_space(function_name[typename_start_pos])) {
         typename_start_pos++;
     }
-    [[maybe_unused]] const auto guard3 = 0 / unsigned(typename_start_pos < function_name.size());
+    CONSTEVAL_ASSERT(typename_start_pos < function_name.size());
     const auto typename_end_pos =
         typename_start_pos + get_typename_end_pos_impl(function_name.substr(typename_start_pos));
-    [[maybe_unused]] const auto guard4 = 0 / unsigned(typename_end_pos < function_name.size());
-    [[maybe_unused]] const auto guard5 = 0 / unsigned(typename_start_pos < typename_end_pos);
+    CONSTEVAL_ASSERT(typename_end_pos < function_name.size());
+    CONSTEVAL_ASSERT(typename_start_pos < typename_end_pos);
     return function_name.substr(typename_start_pos, typename_end_pos - typename_start_pos);
 }
 
@@ -359,14 +363,14 @@ TEST_TOOLS_CONSTEVAL std::string_view get_enum_value_name_impl(
 #error("Unsupported compiler")
 #endif
 
-    const auto prefix_start_pos        = function_name.find(prefix);
-    [[maybe_unused]] const auto guard1 = 0 / unsigned(prefix_start_pos != string_view::npos);
-    auto value_start_pos               = prefix_start_pos + prefix.size();
-    [[maybe_unused]] const auto guard2 = 0 / unsigned(value_start_pos < function_name.size());
+    const auto prefix_start_pos = function_name.find(prefix);
+    CONSTEVAL_ASSERT(prefix_start_pos != string_view::npos);
+    auto value_start_pos = prefix_start_pos + prefix.size();
+    CONSTEVAL_ASSERT(value_start_pos < function_name.size());
     const auto value_end_pos =
         value_start_pos + get_typename_end_pos_impl(function_name.substr(value_start_pos));
-    [[maybe_unused]] const auto guard3 = 0 / unsigned(value_start_pos < value_end_pos);
-    [[maybe_unused]] const auto guard4 = 0 / unsigned(value_end_pos < function_name.size());
+    CONSTEVAL_ASSERT(value_start_pos < value_end_pos);
+    CONSTEVAL_ASSERT(value_end_pos < function_name.size());
     std::string_view full_name =
         function_name.substr(value_start_pos, value_end_pos - value_start_pos);
     constexpr std::string_view kScopeResolutionOperator = "::";
@@ -376,6 +380,11 @@ TEST_TOOLS_CONSTEVAL std::string_view get_enum_value_name_impl(
     }
     return full_name;
 }
+
+#undef CONSTEVAL_ASSERT
+#undef CONSTEVAL_ASSERT_GENERATE_UNIQUE_NAME
+#undef CONSTEVAL_ASSERT_CONCAT
+#undef CONSTEVAL_ASSERT_CONCAT_IMPL
 
 }  // namespace test_tools_detail
 

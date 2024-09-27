@@ -218,6 +218,9 @@ static void CheckJacobiBasic() noexcept {
                 assert(j_m1_p == -1);
                 assert(j_2_p == 1);
                 break;
+            default:
+                assert(false && "Not an odd prime number");
+                break;
         }
 
         int32_t j_3_p = kronecker_symbol(3u, p);
@@ -229,6 +232,8 @@ static void CheckJacobiBasic() noexcept {
             case 5:
             case 7:
                 assert(j_3_p == -1);
+                break;
+            default:
                 break;
         }
 
@@ -248,6 +253,9 @@ static void CheckJacobiBasic() noexcept {
                 assert(p == 5);
                 assert(j_5_p == 0);
                 break;
+            default:
+                // For the analysers
+                std::abort();
         }
 
         if (p <= math_functions::kMaxFibNonOverflowU64) {

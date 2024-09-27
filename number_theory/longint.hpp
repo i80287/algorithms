@@ -1445,6 +1445,8 @@ struct longint {
             case 2:
                 ans += std::to_string((uint64_t(nums_[1]) << 32) | nums_[0]);
                 return;
+            default:
+                break;
         }
 
         std::size_t n = math_functions::nearest_greater_equal_power_of_two(usize_value);
@@ -2063,6 +2065,8 @@ private:
                 return Decimal(nums[0]);
             case 2:
                 return Decimal(uint64_t(nums[1]) * kNumsBase | nums[0]);
+            default:
+                break;
         }
 
         Decimal low_dec  = convertBinBase(nums, size / 2);

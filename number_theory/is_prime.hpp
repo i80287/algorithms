@@ -1,10 +1,9 @@
 #ifndef IS_PRIME_BPSW_HPP
 #define IS_PRIME_BPSW_HPP 1
 
-#include <cassert>
-#include <cstdint>  // std::uint32_t, std::uint64_t
-#include <cstdlib>  // std::abs
-#include <numeric>  // std::gcd
+#include <cstdint>
+#include <cstdlib>
+#include <numeric>
 
 #include "config_macros.hpp"
 #include "integers_128_bit.hpp"
@@ -349,8 +348,8 @@ ATTRIBUTE_CONST I128_CONSTEXPR bool is_strong_selfridge_prp(uint64_t n) noexcept
                 return ::math_functions::detail::is_strong_lucas_prp<false>(n, 1, q);
             }
             default:
+                // For the analysers
                 std::abort();
-                break;
         }
     }
 }

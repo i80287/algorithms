@@ -1,6 +1,7 @@
 #include <gmp.h>
 
 #include <array>
+#include <cassert>
 #include <cinttypes>
 #include <cstdint>
 #include <cstdio>
@@ -397,7 +398,8 @@ static void TestRandomPrimesGMP() noexcept {
     const auto rnd_seed =
         std::uint_fast64_t(std::random_device{}()) ^ std::uint_fast64_t(std::time(nullptr));
     std::mt19937_64 rnd(rnd_seed);
-    fprintf(stderr, "Random seed = %" PRIuFAST64 "\n", rnd_seed);
+    [[maybe_unused]] int ret = fprintf(stderr, "Random seed = %" PRIuFAST64 "\n", rnd_seed);
+    assert(ret > 0);
 
     mpz_t n_gmp;
     mpz_init(n_gmp);

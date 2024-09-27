@@ -202,9 +202,9 @@ std::pair<bool, bool> check_sums_correctness(mpfr_t c_sines_sum, FloatType sines
                                              FloatType eps) noexcept {
     auto cmp_lambda = [](mpfr_t c_sum, FloatType sum, FloatType lambda_eps) noexcept {
         if constexpr (std::is_same_v<FloatType, float> || std::is_same_v<FloatType, double>) {
-            mpfr_sub_d(c_sum, c_sum, sum, kRoundMode);
+            mpfr_sub_d(c_sum, c_sum, static_cast<double>(sum), kRoundMode);
             mpfr_abs(c_sum, c_sum, kRoundMode);
-            return mpfr_cmp_d(c_sum, lambda_eps) <= 0;
+            return mpfr_cmp_d(c_sum, static_cast<double>(lambda_eps)) <= 0;
         } else {
             const long double upper_bound = sum + lambda_eps;
             const long double lower_bound = sum - lambda_eps;
@@ -557,7 +557,7 @@ void test_powers_sum() noexcept {
 
     constexpr uint64_t kMaxM = 6;
     for (uint64_t m = 0; m <= kMaxM; m++) {
-        const auto max_n = [m]() -> std::uint32_t {
+        const auto max_n = [m]() noexcept -> std::uint32_t {
             switch (m) {
                 static_assert(kMaxM <= 6);
                 case 6:
@@ -573,6 +573,8 @@ void test_powers_sum() noexcept {
                 case 1:
                 case 0:
                     return 1'000'000'000;
+                default:
+                    break;
             }
             std::terminate();
         }();

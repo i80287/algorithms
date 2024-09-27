@@ -960,9 +960,9 @@ static void TestToString() {
     n.SquareInplace();
 
     std::string ans(kSquareDigits, '\0');
-    std::memset(&ans[0], '9', (k - 1) * sizeof(char));
+    std::memset(ans.data(), '9', (k - 1) * sizeof(char));
     ans[k - 1] = '8';
-    std::memset(&ans[k], '0', (k - 1) * sizeof(char));
+    std::memset(std::addressof(ans[k]), '0', (k - 1) * sizeof(char));
     ans[kSquareDigits - 1] = '1';
 
     buffer.reserve(kSquareDigits + 1);

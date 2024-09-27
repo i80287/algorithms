@@ -1185,7 +1185,9 @@ template <class T>
 #if defined(INTEGERS_128_BIT_HPP)
 
 [[nodiscard]] ATTRIBUTE_CONST I128_CONSTEXPR bool is_power_of_two(int128_t n) noexcept {
-    return (n & (n - 1)) == 0 && n > 0;
+    // Cast to unsigned to avoid potential overflow (ub for int128_t)
+    uint128_t m = static_cast<uint128_t>(n);
+    return (m & (m - 1)) == 0 && n > 0;
 }
 
 [[nodiscard]] ATTRIBUTE_CONST I128_CONSTEXPR bool is_power_of_two(uint128_t n) noexcept {
@@ -2157,9 +2159,8 @@ ATTRIBUTE_CONST constexpr HelperRetType congruence_helper(const std::uint64_t a,
 ///          such that 0 <= x_{0} < x_{1} < ... < x_{gcd(a, m)-1} < m,
 ///          x_{0} < m / gcd(a, m), x_{i + 1} = x_{i} + m / gcd(a, m).
 ///         Otherwise, return empty vector.
-[[nodiscard]] inline std::vector<std::uint32_t> solve_congruence_modulo_m_all_roots(std::uint64_t a,
-                                                                           std::int64_t c,
-                                                                           std::uint32_t m) {
+[[nodiscard]] inline std::vector<std::uint32_t> solve_congruence_modulo_m_all_roots(
+    std::uint64_t a, std::int64_t c, std::uint32_t m) {
     const auto [x0, d, m_] = ::math_functions::detail::congruence_helper(a, c, m);
     std::vector<std::uint32_t> solutions(d);
     auto x = x0;
@@ -2180,9 +2181,8 @@ ATTRIBUTE_CONST constexpr HelperRetType congruence_helper(const std::uint64_t a,
 /// @param m
 /// @return If roots exist, return root x such that 0 <= x < m / gcd(a, m).
 ///         Otherwise, return uint32_t(-1)
-[[nodiscard]] ATTRIBUTE_CONST constexpr std::uint32_t solve_congruence_modulo_m(std::uint64_t a,
-                                                                       std::int64_t c,
-                                                                       std::uint32_t m) noexcept {
+[[nodiscard]] ATTRIBUTE_CONST constexpr std::uint32_t solve_congruence_modulo_m(
+    std::uint64_t a, std::int64_t c, std::uint32_t m) noexcept {
     return ::math_functions::detail::congruence_helper(a, c, m).x0;
 }
 
