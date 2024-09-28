@@ -27,7 +27,7 @@ void test1() {
         "including versions of Lorem Ipsum."sv;
 
     constexpr auto query         = "typesetting release"sv;
-    constexpr size_t result_size = 3;
+    constexpr std::size_t result_size = 3;
 
     auto res = search_lib::Search(text, query, result_size);
     assert((res == std::vector{
@@ -59,7 +59,7 @@ void test2() {
     text.shrink_to_fit();
 
     constexpr auto query         = "london city borough burg"sv;
-    constexpr size_t result_size = 32;
+    constexpr std::size_t result_size = 32;
 
     const auto start                  = std::chrono::high_resolution_clock::now();
     std::vector<std::string_view> res = search_lib::Search(text, query, result_size);
@@ -69,7 +69,7 @@ void test2() {
     constexpr bool kPrintResults = false;
     if constexpr (kPrintResults) {
         std::cout << "Test 2\nText length: " << text.length() << "\nFound " << res.size()
-                  << " lines in " << duration << ":\n\n";
+                  << " lines in " << duration.count() << " ns :\n\n";
         for (auto line : res) {
             std::cout << line << '\n';
         }
