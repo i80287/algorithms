@@ -42,7 +42,7 @@ if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND CMAKE_SYSTEM_NAME MATCHES "Linux")
             OUTPUT_STRIP_TRAILING_WHITESPACE
         )
 
-        string(REPLACE "\n" " " LSB_DISTRIBUTOR_ID_AND_RELEASE_VERSION_SHORT ${LSB_DISTRIBUTOR_ID_AND_RELEASE_VERSION_SHORT})
+        string(REPLACE "\n" " " LSB_DISTRIBUTOR_ID_AND_RELEASE_VERSION_SHORT "${LSB_DISTRIBUTOR_ID_AND_RELEASE_VERSION_SHORT}")
         separate_arguments(LSB_DISTRIBUTOR_ID_AND_RELEASE_VERSION_SHORT)
 
         list(GET LSB_DISTRIBUTOR_ID_AND_RELEASE_VERSION_SHORT 0 LSB_DISTRIBUTOR_ID_SHORT)
@@ -145,6 +145,7 @@ if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
     if (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 19.0.0)
         list(APPEND SUPPORTED_CXX_VERSIONS 26)
     endif()
+elseif (CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang")
 elseif (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
     configure_gcc_or_clang_gcc_options()
     if (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 10.0.0)
@@ -231,17 +232,19 @@ if (NOT USING_MINGW_GCC_32)
     list(APPEND TestDependencies "")
     list(APPEND TestOptionalDependencies "")
 
-    list(APPEND TestFilenames "test_is_prime_bpsw")
-    list(APPEND TestDirectories "number_theory")
-    list(APPEND TestCxxVersions "17 20 23 26")
-    list(APPEND TestDependencies "gmp")
-    list(APPEND TestOptionalDependencies "")
+    if (NOT APPLE)
+        list(APPEND TestFilenames "test_is_prime_bpsw")
+        list(APPEND TestDirectories "number_theory")
+        list(APPEND TestCxxVersions "17 20 23 26")
+        list(APPEND TestDependencies "gmp")
+        list(APPEND TestOptionalDependencies "")
 
-    list(APPEND TestFilenames "test_kronecker_symbol")
-    list(APPEND TestDirectories "number_theory")
-    list(APPEND TestCxxVersions "17 20 23 26")
-    list(APPEND TestDependencies "gmp gmpxx")
-    list(APPEND TestOptionalDependencies "")
+        list(APPEND TestFilenames "test_kronecker_symbol")
+        list(APPEND TestDirectories "number_theory")
+        list(APPEND TestCxxVersions "17 20 23 26")
+        list(APPEND TestDependencies "gmp gmpxx")
+        list(APPEND TestOptionalDependencies "")
+    endif()
 
     list(APPEND TestFilenames "test_long_int")
     list(APPEND TestDirectories "number_theory")
@@ -249,11 +252,13 @@ if (NOT USING_MINGW_GCC_32)
     list(APPEND TestDependencies "")
     list(APPEND TestOptionalDependencies "")
 
-    list(APPEND TestFilenames "test_math_functions")
-    list(APPEND TestDirectories "number_theory")
-    list(APPEND TestCxxVersions "17 20 23 26")
-    list(APPEND TestDependencies "")
-    list(APPEND TestOptionalDependencies "mpfr")
+    if (NOT APPLE)
+        list(APPEND TestFilenames "test_math_functions")
+        list(APPEND TestDirectories "number_theory")
+        list(APPEND TestCxxVersions "17 20 23 26")
+        list(APPEND TestDependencies "")
+        list(APPEND TestOptionalDependencies "mpfr")
+    endif()
 endif()
 
 list(APPEND TestFilenames "test_bitmatrix")
@@ -294,11 +299,11 @@ function(
     target_optional_dependencies
     target_cxx_version
 )
-    string(REPLACE " " ";" target_filenames ${target_filenames})
+    string(REPLACE " " ";" target_filenames "${target_filenames}")
 
     set(target_cpp_filenames)
     file(TO_NATIVE_PATH "/" os_separator)
-    string(REPLACE " " ";" target_dir ${target_dir})
+    string(REPLACE " " ";" target_dir "${target_dir}")
     foreach(target_filename ${target_filenames})
         set(target_cpp_filename "${target_filename}.cpp")
         string(JOIN "${os_separator}" target_path_to_cpp ".." ${target_dir} ${target_cpp_filename})
@@ -310,12 +315,12 @@ function(
 
     string(COMPARE EQUAL "${target_dependencies}" "" empty_dependencies)
     if (NOT empty_dependencies)
-        string(REPLACE " " ";" target_dependencies ${target_dependencies})
+        string(REPLACE " " ";" target_dependencies "${target_dependencies}")
     endif()
 
     string(COMPARE EQUAL "${target_optional_dependencies}" "" empty_optional_dependencies)
     if (NOT empty_optional_dependencies)
-        string(REPLACE " " ";" target_optional_dependencies ${target_optional_dependencies})
+        string(REPLACE " " ";" target_optional_dependencies "${target_optional_dependencies}")
     endif()
 
     message(STATUS "+-")
@@ -378,7 +383,7 @@ foreach(target_filenames target_dir target_supported_cxx_versions target_depende
         TestCxxVersions
         TestDependencies
         TestOptionalDependencies)
-    string(REPLACE " " ";" target_supported_cxx_versions ${target_supported_cxx_versions})
+    string(REPLACE " " ";" target_supported_cxx_versions "${target_supported_cxx_versions}")
     foreach(version ${SUPPORTED_CXX_VERSIONS})
         if (${version} IN_LIST target_supported_cxx_versions)
             add_test_target(
