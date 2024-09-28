@@ -576,7 +576,7 @@ void test_powers_sum() noexcept {
                 default:
                     break;
             }
-            std::terminate();
+            assert(false);
         }();
         constexpr std::uint32_t kOffset = 50;
         assert(max_n >= kOffset);
@@ -616,6 +616,8 @@ void test_powers_sum() noexcept {
                     assert(math_functions::powers_sum_u64<6>(n) == s);
                     assert(math_functions::powers_sum_u128<6>(n) == s);
                     break;
+                default:
+                    assert(false);
             }
         }
     }
@@ -1147,10 +1149,26 @@ void test_general_asserts() {
     ASSERT_THAT(next_n_bits_permutation(0b0011010) == 0b0011100);
     ASSERT_THAT(next_n_bits_permutation(0b0011100) == 0b0100011);
     ASSERT_THAT(next_n_bits_permutation(0b0100011) == 0b0100101);
+    ASSERT_THAT(next_n_bits_permutation(0b0100101) == 0b0100110);
+    ASSERT_THAT(next_n_bits_permutation(0b0111000) == 0b1000011);
+    ASSERT_THAT(next_n_bits_permutation(0b0110'0000'0000'0000'0000'0000'0000'0000u) ==
+                0b1000'0000'0000'0000'0000'0000'0000'0001u);
 
     ASSERT_THAT(next_n_bits_permutation(0b01) == 0b10);
 
     ASSERT_THAT(next_n_bits_permutation(0b1111111) == 0b10111111);
+
+    ASSERT_THAT(next_n_bits_permutation(1u << 0) == 1u << 1);
+    ASSERT_THAT(next_n_bits_permutation(1u << 1) == 1u << 2);
+    ASSERT_THAT(next_n_bits_permutation(1u << 2) == 1u << 3);
+    ASSERT_THAT(next_n_bits_permutation(1u << 3) == 1u << 4);
+    ASSERT_THAT(next_n_bits_permutation(1u << 4) == 1u << 5);
+    ASSERT_THAT(next_n_bits_permutation(1u << 5) == 1u << 6);
+    ASSERT_THAT(next_n_bits_permutation(1u << 6) == 1u << 7);
+    ASSERT_THAT(next_n_bits_permutation(1u << 7) == 1u << 8);
+    ASSERT_THAT(next_n_bits_permutation(1u << 8) == 1u << 9);
+    ASSERT_THAT(next_n_bits_permutation(1u << 29) == 1u << 30);
+    ASSERT_THAT(next_n_bits_permutation(1u << 30) == 1u << 31);
 
     ASSERT_THAT(!is_power_of_two(0ull));
     ASSERT_THAT(is_power_of_two(1ull << 0));

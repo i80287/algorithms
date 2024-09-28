@@ -1123,7 +1123,8 @@ template <class T>
 ///         0b0011100 ->
 ///         0b0100011 ->
 ///         etc.
-/// x = 0 => undefined behaviour (shift by 33 bits)
+/// @note Special case:
+///        0 -> 0
 /// @param[in] x
 /// @return
 [[nodiscard]] ATTRIBUTE_CONST constexpr uint32_t next_n_bits_permutation(uint32_t x) noexcept {
@@ -1137,7 +1138,7 @@ template <class T>
     uint32_t t = x | (x - 1);
     // Next set to 1 the most significant bit to change,
     // set to 0 the least significant ones, and add the necessary 1 bits.
-    return (t + 1) | (((~t & -~t) - 1) >> (::math_functions::countr_zero(x) + 1));
+    return (t + 1) | uint32_t(uint64_t(((~t & -~t) - 1)) >> (::math_functions::countr_zero(x) + 1));
 }
 
 [[nodiscard]] ATTRIBUTE_CONST constexpr bool is_power_of_two(signed char n) noexcept {
