@@ -1127,6 +1127,9 @@ template <class T>
 /// @param[in] x
 /// @return
 [[nodiscard]] ATTRIBUTE_CONST constexpr uint32_t next_n_bits_permutation(uint32_t x) noexcept {
+    if (x == 0) {
+        return 0;
+    }
     // See
     // https://graphics.stanford.edu/~seander/bithacks.html#RoundUpPowerOf2
 
