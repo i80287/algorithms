@@ -204,14 +204,14 @@ message(STATUS "| USING_MSYS2_MINGW_GCC = ${USING_MSYS2_MINGW_GCC}")
 message(STATUS "+-")
 
 
-set(TestFilenames)
+set(TestFilenames "dummy")
 set(TestDirectories "dummy")
 set(TestCxxVersions "dummy")
 set(TestDependencies "dummy")
 set(TestOptionalDependencies "dummy")
 
 if (NOT USING_MINGW_GCC_32)
-    list(APPEND TestFilenames test_fibonacci_num)
+    list(APPEND TestFilenames "test_fibonacci_num")
     list(APPEND TestDirectories "number_theory")
     list(APPEND TestCxxVersions "17 20 23 26")
     list(APPEND TestDependencies "")
@@ -219,44 +219,44 @@ if (NOT USING_MINGW_GCC_32)
 endif()
 
 if (NOT USING_MINGW_GCC_32)
-    list(APPEND TestFilenames test_gosper_algorithm)
+    list(APPEND TestFilenames "test_gosper_algorithm")
     list(APPEND TestDirectories "number_theory")
     list(APPEND TestCxxVersions "17 20 23 26")
     list(APPEND TestDependencies "")
     list(APPEND TestOptionalDependencies "")
 
-    list(APPEND TestFilenames test_integers_128_bit)
+    list(APPEND TestFilenames "test_integers_128_bit")
     list(APPEND TestDirectories "number_theory")
     list(APPEND TestCxxVersions "17 20 23 26")
     list(APPEND TestDependencies "")
     list(APPEND TestOptionalDependencies "")
 
-    list(APPEND TestFilenames test_is_prime_bpsw)
+    list(APPEND TestFilenames "test_is_prime_bpsw")
     list(APPEND TestDirectories "number_theory")
     list(APPEND TestCxxVersions "17 20 23 26")
     list(APPEND TestDependencies "gmp")
     list(APPEND TestOptionalDependencies "")
 
-    list(APPEND TestFilenames test_kronecker_symbol)
+    list(APPEND TestFilenames "test_kronecker_symbol")
     list(APPEND TestDirectories "number_theory")
     list(APPEND TestCxxVersions "17 20 23 26")
     list(APPEND TestDependencies "gmp gmpxx")
     list(APPEND TestOptionalDependencies "")
 
-    list(APPEND TestFilenames test_long_int)
+    list(APPEND TestFilenames "test_long_int")
     list(APPEND TestDirectories "number_theory")
     list(APPEND TestCxxVersions "17 20 23 26")
     list(APPEND TestDependencies "")
     list(APPEND TestOptionalDependencies "")
 
-    list(APPEND TestFilenames test_math_functions)
+    list(APPEND TestFilenames "test_math_functions")
     list(APPEND TestDirectories "number_theory")
     list(APPEND TestCxxVersions "17 20 23 26")
     list(APPEND TestDependencies "")
     list(APPEND TestOptionalDependencies "mpfr")
 endif()
 
-list(APPEND TestFilenames test_bitmatrix)
+list(APPEND TestFilenames "test_bitmatrix")
 list(APPEND TestDirectories "number_theory")
 list(APPEND TestCxxVersions "17 20 23 26")
 list(APPEND TestDependencies "")
@@ -266,13 +266,20 @@ if (NOT ((USING_MINGW_GCC OR CMAKE_CXX_COMPILER_ID STREQUAL "Clang") AND CMAKE_C
     # gcc mingw w64 10.0.0 supports C++20 but doesn't have std::bit_cast, same with clang
     # gcc:   https://gcc.gnu.org/projects/cxx-status.html
     # clang: https://clang.llvm.org/cxx_status.html
-    list(APPEND TestFilenames test_hungarian_algo)
+    list(APPEND TestFilenames "test_hungarian_algo")
     list(APPEND TestDirectories "graphs HungarianAlgorithm")
     list(APPEND TestCxxVersions "20 23 26")
     list(APPEND TestDependencies "")
     list(APPEND TestOptionalDependencies "")
 endif()
 
+list(APPEND TestFilenames "test_tf_idf_actrie search_lib")
+list(APPEND TestDirectories "tf_idf_actrie")
+list(APPEND TestCxxVersions "20 23 26")
+list(APPEND TestDependencies "")
+list(APPEND TestOptionalDependencies "")
+
+list(POP_FRONT TestFilenames)
 list(POP_FRONT TestDirectories)
 list(POP_FRONT TestCxxVersions)
 list(POP_FRONT TestDependencies)
@@ -281,18 +288,25 @@ list(POP_FRONT TestOptionalDependencies)
 
 function(
     add_test_target
-    target_filename
+    target_filenames
     target_dir
     target_dependencies
     target_optional_dependencies
     target_cxx_version
 )
-    string(CONCAT target_cpp_filename ${target_filename} ".cpp")
-    string(CONCAT target "target_cxx_" ${target_cxx_version} "_" ${target_filename})
+    string(REPLACE " " ";" target_filenames ${target_filenames})
 
+    set(target_cpp_filenames)
     file(TO_NATIVE_PATH "/" os_separator)
     string(REPLACE " " ";" target_dir ${target_dir})
-    string(JOIN "${os_separator}" target_path_to_cpp ".." ${target_dir} ${target_cpp_filename})
+    foreach(target_filename ${target_filenames})
+        set(target_cpp_filename "${target_filename}.cpp")
+        string(JOIN "${os_separator}" target_path_to_cpp ".." ${target_dir} ${target_cpp_filename})
+        list(APPEND target_cpp_filenames ${target_path_to_cpp})
+    endforeach()
+
+    list(GET target_filenames 0 first_target_filename)
+    set(target "target_cxx_${target_cxx_version}_${first_target_filename}")
 
     string(COMPARE EQUAL "${target_dependencies}" "" empty_dependencies)
     if (NOT empty_dependencies)
@@ -305,7 +319,8 @@ function(
     endif()
 
     message(STATUS "+-")
-    message(STATUS "| target_filename = ${target_filename}")
+    message(STATUS "| target = ${target}")
+    message(STATUS "| target_cpp_filenames = ${target_cpp_filenames}")
     message(STATUS "| target_dependencies = ${target_dependencies}")
     message(STATUS "| target_optional_dependencies = ${target_optional_dependencies}")
     message(STATUS "| target_cxx_version = ${target_cxx_version}")
@@ -325,7 +340,7 @@ function(
         return()
     endif()
 
-    add_executable(${target} ${target_path_to_cpp})
+    add_executable(${target} ${target_cpp_filenames})
 
     if (NOT empty_dependencies)
         target_link_libraries(${target} PRIVATE ${target_dependencies})
@@ -356,7 +371,7 @@ function(
     add_test(NAME ${target} COMMAND $<TARGET_FILE:${target}>)
 endfunction(add_test_target)
 
-foreach(target_filename target_dir target_supported_cxx_versions target_dependencies target_optional_dependencies
+foreach(target_filenames target_dir target_supported_cxx_versions target_dependencies target_optional_dependencies
     IN ZIP_LISTS
         TestFilenames
         TestDirectories
@@ -367,7 +382,7 @@ foreach(target_filename target_dir target_supported_cxx_versions target_dependen
     foreach(version ${SUPPORTED_CXX_VERSIONS})
         if (${version} IN_LIST target_supported_cxx_versions)
             add_test_target(
-                "${target_filename}"
+                "${target_filenames}"
                 "${target_dir}"
                 "${target_dependencies}"
                 "${target_optional_dependencies}"
