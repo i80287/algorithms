@@ -14,7 +14,7 @@ namespace detail {
 
 template <typename Uint>
 #if CONFIG_HAS_AT_LEAST_CXX_20
-    requires type_traits_helper_int128_t::is_unsigned_v<Uint>
+    requires int128_traits::is_unsigned_v<Uint>
 #endif
 ATTRIBUTE_CONST constexpr std::int32_t kronecker_symbol_ui(Uint a, Uint n) noexcept {
     std::int32_t t = 1;
@@ -97,11 +97,11 @@ ATTRIBUTE_CONST constexpr std::int32_t kronecker_symbol_ui(Uint a, Uint n) noexc
 
 template <typename Sint>
 #if CONFIG_HAS_AT_LEAST_CXX_20
-    requires type_traits_helper_int128_t::is_signed_v<Sint>
+    requires int128_traits::is_signed_v<Sint>
 #endif
 ATTRIBUTE_CONST constexpr std::int32_t kronecker_symbol_si(Sint a, Sint n) noexcept {
     bool carry = n < 0 && a < 0;
-    using Uint = type_traits_helper_int128_t::make_unsigned_t<Sint>;
+    using Uint = int128_traits::make_unsigned_t<Sint>;
     Uint n_u   = ::math_functions::uabs(n);
 
     std::int32_t t = 1;
@@ -183,8 +183,7 @@ ATTRIBUTE_CONST constexpr std::int32_t kronecker_symbol_si(Sint a, Sint n) noexc
 
 template <class Sint, class Uint>
 #if CONFIG_HAS_AT_LEAST_CXX_20
-    requires type_traits_helper_int128_t::is_signed_v<Sint> &&
-             type_traits_helper_int128_t::is_unsigned_v<Uint>
+    requires int128_traits::is_signed_v<Sint> && int128_traits::is_unsigned_v<Uint>
 #endif
 ATTRIBUTE_CONST constexpr int32_t kronecker_symbol_si_ui(Sint a, Uint n) noexcept {
     std::int32_t t = 1;
@@ -286,20 +285,20 @@ ATTRIBUTE_CONST ATTRIBUTE_ALWAYS_INLINE constexpr int32_t kronecker_symbol(Integ
     using T2 = std::remove_cv_t<typename std::remove_reference_t<IntegerT2> >;
 #endif
 
-    static_assert(type_traits_helper_int128_t::is_integral_v<T1>, "");
-    static_assert(type_traits_helper_int128_t::is_integral_v<T2>, "");
+    static_assert(int128_traits::is_integral_v<T1>, "");
+    static_assert(int128_traits::is_integral_v<T2>, "");
     static_assert(sizeof(T1) == sizeof(T2), "both integers must have the same size");
     static_assert(sizeof(T1) >= sizeof(int), "integers must be at least sizeof(int) in size");
 
-    if constexpr (type_traits_helper_int128_t::is_unsigned_v<T1>) {
-        if constexpr (type_traits_helper_int128_t::is_unsigned_v<T2>) {
+    if constexpr (int128_traits::is_unsigned_v<T1>) {
+        if constexpr (int128_traits::is_unsigned_v<T2>) {
             return detail::kronecker_symbol_ui<T1>(a, static_cast<T1>(n));
         } else {
             return detail::kronecker_symbol_ui<T1>(
                 a, n >= 0 ? static_cast<T1>(n) : -static_cast<T1>(n));
         }
     } else {
-        if constexpr (type_traits_helper_int128_t::is_unsigned_v<T2>) {
+        if constexpr (int128_traits::is_unsigned_v<T2>) {
             return detail::kronecker_symbol_si_ui<T1, T2>(a, n);
         } else {
             return detail::kronecker_symbol_si<T1>(a, static_cast<T1>(n));

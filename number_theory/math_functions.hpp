@@ -1230,7 +1230,7 @@ template <class IntType>
 [[nodiscard]] ATTRIBUTE_CONST constexpr IntType least_bit_set(IntType n) noexcept {
     namespace helper_ns =
 #ifdef INTEGERS_128_BIT_HPP
-        type_traits_helper_int128_t;
+        int128_traits;
 #else
         std;
 #endif
@@ -1288,14 +1288,14 @@ template <typename T>
 [[nodiscard]] ATTRIBUTE_CONST constexpr uint32_t base_b_len(T value,
                                                             const uint8_t base = 10) noexcept {
 #if defined(INTEGERS_128_BIT_HPP)
-    static_assert(type_traits_helper_int128_t::is_integral_v<T>);
+    static_assert(int128_traits::is_integral_v<T>);
 #else
     static_assert(std::is_integral_v<T>);
 #endif
 
     constexpr bool kIsSigned =
 #if defined(INTEGERS_128_BIT_HPP)
-        type_traits_helper_int128_t::is_signed_v<T>;
+        int128_traits::is_signed_v<T>;
 #else
         std::is_signed_v<T>;
 #endif
@@ -1761,12 +1761,13 @@ struct [[nodiscard]] PrimeFactor final {
 ///          sorted by prime_div.
 template <class NumericType>
 #if CONFIG_HAS_AT_LEAST_CXX_20
-    requires(sizeof(NumericType) >= sizeof(int)) &&
-            (std::is_integral_v<NumericType>
+    requires(sizeof(NumericType) >= sizeof(int)) && (
 #ifdef INTEGERS_128_BIT_HPP
-             || type_traits_helper_int128_t::is_integral_v<NumericType>
+                                                        int128_traits::is_integral_v<NumericType>
+#else
+                                                        std::is_integral_v<NumericType>
 #endif
-             )
+                                                        )
 #endif
 [[nodiscard]] CONSTEXPR_VECTOR auto prime_factors_as_vector(NumericType n) {
     std::vector<PrimeFactor<NumericType>> divisors;
@@ -1777,7 +1778,7 @@ template <class NumericType>
         // n = s * 2^pow_of_2, where s is odd
         using UnsignedNumericType =
 #ifdef INTEGERS_128_BIT_HPP
-            type_traits_helper_int128_t::make_unsigned_t<NumericType>;
+            int128_traits::make_unsigned_t<NumericType>;
 #else
             std::make_unsigned_t<NumericType>;
 #endif
@@ -1811,12 +1812,11 @@ template <class NumericType>
 /// @return
 template <class NumericType>
 #if CONFIG_HAS_AT_LEAST_CXX_20
-    requires(sizeof(NumericType) >= sizeof(int)) &&
-            (std::is_integral_v<NumericType>
+    requires(sizeof(NumericType) >= sizeof(int)) && (std::is_integral_v<NumericType>
 #ifdef INTEGERS_128_BIT_HPP
-             || type_traits_helper_int128_t::is_integral_v<NumericType>
+                                                     || int128_traits::is_integral_v<NumericType>
 #endif
-             )
+                                                     )
 #endif
 [[nodiscard]] inline auto prime_factors_as_map(NumericType n) {
     std::map<NumericType, uint32_t> divisors;
@@ -1826,7 +1826,7 @@ template <class NumericType>
         // n = s * 2^pow_of_2, where s is odd
         using UnsignedNumericType =
 #ifdef INTEGERS_128_BIT_HPP
-            type_traits_helper_int128_t::make_unsigned_t<NumericType>;
+            int128_traits::make_unsigned_t<NumericType>;
 #else
             std::make_unsigned_t<NumericType>;
 #endif
@@ -1862,7 +1862,7 @@ template <class NumericType>
 #if CONFIG_HAS_AT_LEAST_CXX_20
     requires(sizeof(NumericType) >= sizeof(int)) &&
 #ifdef INTEGERS_128_BIT_HPP
-            type_traits_helper_int128_t::is_integral_v<NumericType>
+            int128_traits::is_integral_v<NumericType>
 #else
             std::is_integral_v<NumericType>
 #endif
@@ -1873,7 +1873,7 @@ void prime_divisors_to_map(NumericType n, std::map<NumericType, uint32_t>& divis
         // n = s * 2^pow_of_2, where s is odd
         using UnsignedNumericType =
 #ifdef INTEGERS_128_BIT_HPP
-            type_traits_helper_int128_t::make_unsigned_t<NumericType>;
+            int128_traits::make_unsigned_t<NumericType>;
 #else
             std::make_unsigned_t<NumericType>;
 #endif

@@ -819,7 +819,7 @@ static void TestSetString() {
         (uint128_t(9593560117762545909ull) << 64) | (uint128_t(6883651453229059866ull)),
         (uint128_t(uint64_t(-1)) << 64) | (uint128_t(uint64_t(-1)))};
     for (uint128_t number : numbersU128) {
-        n.set_string(std::to_string(number));
+        n.set_string(to_string(number));
         assert(n == number);
     }
 
@@ -935,7 +935,7 @@ static void TestToString() {
     for (uint128_t number : numbersU128) {
         n = number;
         n.to_string(buffer);
-        assert(buffer == std::to_string(number));
+        assert(buffer == to_string(number));
     }
 
     uint128_t c = 0;
