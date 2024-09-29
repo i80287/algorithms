@@ -129,11 +129,12 @@ function(configure_gcc_or_clang_gcc_options)
 
 endfunction()
 
-if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
-    if (CMAKE_CXX_COMPILER_FRONTEND_VARIANT STREQUAL "MSVC")
-    elseif (CMAKE_CXX_COMPILER_FRONTEND_VARIANT STREQUAL "GNU")
-        configure_gcc_or_clang_gcc_options()
-    elseif (CMAKE_CXX_COMPILER_FRONTEND_VARIANT STREQUAL "AppleClang")
+if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang" OR CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang")
+    if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+        if (CMAKE_CXX_COMPILER_FRONTEND_VARIANT STREQUAL "MSVC")
+        elseif (CMAKE_CXX_COMPILER_FRONTEND_VARIANT STREQUAL "GNU")
+            configure_gcc_or_clang_gcc_options()
+        endif()
     endif()
 
     if (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 10.0.0)
@@ -145,7 +146,6 @@ if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
     if (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 19.0.0)
         list(APPEND SUPPORTED_CXX_VERSIONS 26)
     endif()
-elseif (CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang")
 elseif (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
     configure_gcc_or_clang_gcc_options()
     if (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 10.0.0)
@@ -269,7 +269,8 @@ list(APPEND TestCxxVersions "17 20 23 26")
 list(APPEND TestDependencies "")
 list(APPEND TestOptionalDependencies "")
 
-if (NOT ((USING_MINGW_GCC OR CMAKE_CXX_COMPILER_ID STREQUAL "Clang") AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS_EQUAL 10.0.0))
+set(mingw_gcc_or_clang USING_MINGW_GCC OR CMAKE_CXX_COMPILER_ID STREQUAL "Clang" OR CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang")
+if ((NOT mingw_gcc_or_clang) OR (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER 10.0.0))
     # gcc mingw w64 10.0.0 supports C++20 but doesn't have std::bit_cast, same with clang
     # gcc:   https://gcc.gnu.org/projects/cxx-status.html
     # clang: https://clang.llvm.org/cxx_status.html
@@ -279,6 +280,7 @@ if (NOT ((USING_MINGW_GCC OR CMAKE_CXX_COMPILER_ID STREQUAL "Clang") AND CMAKE_C
     list(APPEND TestDependencies "")
     list(APPEND TestOptionalDependencies "")
 endif()
+unset(mingw_gcc_or_clang)
 
 list(APPEND TestFilenames "test_tf_idf_actrie search_lib")
 list(APPEND TestDirectories "tf_idf_actrie")
