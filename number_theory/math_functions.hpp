@@ -1657,7 +1657,7 @@ namespace detail {
 ///         number of different prime divisors of @a `n`.
 /// @param[in] n
 /// @return
-[[nodiscard]] ATTRIBUTE_CONST constexpr std::uint32_t max_number_of_prime_divisors(
+[[nodiscard]] ATTRIBUTE_CONST constexpr std::uint32_t max_number_of_unique_prime_divisors(
     std::uint32_t n) noexcept {
     constexpr std::uint32_t kBoundary2 = 2 * 3;
     constexpr std::uint32_t kBoundary3 = 2 * 3 * 5;
@@ -1742,17 +1742,82 @@ namespace detail {
 
 template <class NumericType>
 struct [[nodiscard]] PrimeFactor final {
-    constexpr PrimeFactor(NumericType prime_factor, std::uint32_t prime_factor_power) noexcept
+    using IntType = NumericType;
+
+    ATTRIBUTE_ALWAYS_INLINE
+    constexpr PrimeFactor(IntType prime_factor, std::uint32_t prime_factor_power) noexcept
         : factor(prime_factor), factor_power(prime_factor_power) {}
-    NumericType factor;
+
+    IntType factor;
     std::uint32_t factor_power;
 };
 
-#if CONFIG_HAS_AT_LEAST_CXX_20 && !defined(_GLIBCXX_DEBUG)
+#if CONFIG_HAS_AT_LEAST_CXX_20 && !defined(_GLIBCXX_DEBUG) && !defined(_GLIBCXX_ASSERTIONS)
 #define CONSTEXPR_VECTOR constexpr
 #else
 #define CONSTEXPR_VECTOR inline
 #endif
+
+namespace detail {
+
+#ifdef INTEGERS_128_BIT_HPP
+template <class T>
+inline constexpr bool is_integral_v = int128_traits::is_integral_v<T>;
+#else
+template <class T>
+inline constexpr bool is_integral_v = std::is_integral_v<T>;
+#endif
+
+#ifdef INTEGERS_128_BIT_HPP
+template <class T>
+using make_unsigned_t = typename int128_traits::make_unsigned_t<T>;
+#else
+template <class T>
+using make_unsigned_t = typename std::make_unsigned_t<T>;
+#endif
+
+};  // namespace detail
+
+template <class NumericType, class Function>
+#if CONFIG_HAS_AT_LEAST_CXX_20
+    requires(sizeof(NumericType) >= sizeof(int)) &&
+            ::math_functions::detail::is_integral_v<NumericType> &&
+            std::is_invocable_v<
+                Function,
+                PrimeFactor<typename ::math_functions::detail::make_unsigned_t<NumericType>>>
+#endif
+[[nodiscard]]
+ATTRIBUTE_ALWAYS_INLINE CONSTEXPR_VECTOR auto
+visit_prime_factors(NumericType n, Function visitor) noexcept(
+    std::is_nothrow_invocable_v<
+        Function, PrimeFactor<typename ::math_functions::detail::make_unsigned_t<NumericType>>>) {
+    using UnsignedNumericType = typename ::math_functions::detail::make_unsigned_t<NumericType>;
+    using PrimeFactorType     = PrimeFactor<UnsignedNumericType>;
+    UnsignedNumericType n_abs = ::math_functions::uabs(n);
+
+    if (n_abs % 2 == 0 && n_abs > 0) {
+        // n_abs = s * 2^pow_of_2, where s is odd
+        auto [s, pow_of_2] = ::math_functions::extract_pow2(n_abs);
+        n_abs              = s;
+        visitor(PrimeFactorType(UnsignedNumericType(2), pow_of_2));
+    }
+
+    for (UnsignedNumericType d = 3; d * d <= n_abs; d += 2) {
+        ATTRIBUTE_ASSUME(d >= 3);
+        if (n_abs % d == 0) {
+            std::uint32_t pow_of_d = 0;
+            do {
+                pow_of_d++;
+                n_abs /= d;
+            } while (n_abs % d == 0);
+            visitor(PrimeFactorType(d, pow_of_d));
+        }
+    }
+
+    if (n_abs > 1) {
+        visitor(PrimeFactorType(n_abs, std::uint32_t(1)));
+    }
+}
 
 /// @brief
 /// @tparam NumericType
@@ -1760,150 +1825,47 @@ struct [[nodiscard]] PrimeFactor final {
 /// @return vector of pairs { prime_div : power_of_prime_div },
 ///          sorted by prime_div.
 template <class NumericType>
-#if CONFIG_HAS_AT_LEAST_CXX_20
-    requires(sizeof(NumericType) >= sizeof(int)) && (
-#ifdef INTEGERS_128_BIT_HPP
-                                                        int128_traits::is_integral_v<NumericType>
-#else
-                                                        std::is_integral_v<NumericType>
-#endif
-                                                        )
-#endif
 [[nodiscard]] CONSTEXPR_VECTOR auto prime_factors_as_vector(NumericType n) {
-    std::vector<PrimeFactor<NumericType>> divisors;
-    if constexpr (std::is_same_v<NumericType, std::uint32_t>) {
-        divisors.reserve(::math_functions::detail::max_number_of_prime_divisors(n));
+    using UnsignedNumericType = typename ::math_functions::detail::make_unsigned_t<NumericType>;
+
+    std::vector<::math_functions::PrimeFactor<UnsignedNumericType>> prime_factors_vector;
+    if constexpr (std::is_same_v<UnsignedNumericType, std::uint32_t>) {
+        prime_factors_vector.reserve(::math_functions::detail::max_number_of_unique_prime_divisors(
+            ::math_functions::uabs(n)));
     }
-    if (n % 2 == 0 && n > 0) {
-        // n = s * 2^pow_of_2, where s is odd
-        using UnsignedNumericType =
-#ifdef INTEGERS_128_BIT_HPP
-            int128_traits::make_unsigned_t<NumericType>;
-#else
-            std::make_unsigned_t<NumericType>;
+
+    ::math_functions::visit_prime_factors(
+        n, [&prime_factors_vector](::math_functions::PrimeFactor<UnsignedNumericType> pf)
+#if CONFIG_HAS_AT_LEAST_CXX_20 && !defined(_GLIBCXX_DEBUG) && !defined(_GLIBCXX_ASSERTIONS)
+               constexpr
 #endif
-        auto [s, pow_of_2] = ::math_functions::extract_pow2(static_cast<UnsignedNumericType>(n));
-        n                  = static_cast<NumericType>(s);
-        divisors.emplace_back(NumericType(2), pow_of_2);
-    }
+        { prime_factors_vector.push_back(std::move(pf)); });
 
-    for (NumericType d = 3; d * d <= n; d += 2) {
-        ATTRIBUTE_ASSUME(d != 0);
-        if (n % d == 0) {
-            std::uint32_t pow_of_d = 0;
-            do {
-                pow_of_d++;
-                n /= d;
-            } while (n % d == 0);
-            divisors.emplace_back(d, pow_of_d);
-        }
-    }
-
-    if (n > 1) {
-        divisors.emplace_back(n, std::uint32_t(1));
-    }
-
-    return divisors;
+    return prime_factors_vector;
 }
 
-/// @brief
-/// @tparam NumericType
-/// @param[in] n
-/// @return
 template <class NumericType>
-#if CONFIG_HAS_AT_LEAST_CXX_20
-    requires(sizeof(NumericType) >= sizeof(int)) && (std::is_integral_v<NumericType>
-#ifdef INTEGERS_128_BIT_HPP
-                                                     || int128_traits::is_integral_v<NumericType>
-#endif
-                                                     )
-#endif
 [[nodiscard]] inline auto prime_factors_as_map(NumericType n) {
-    std::map<NumericType, uint32_t> divisors;
-    auto hint_iterator = divisors.begin();
+    using UnsignedNumericType = typename ::math_functions::detail::make_unsigned_t<NumericType>;
 
-    if (n % 2 == 0 && n > 0) {
-        // n = s * 2^pow_of_2, where s is odd
-        using UnsignedNumericType =
-#ifdef INTEGERS_128_BIT_HPP
-            int128_traits::make_unsigned_t<NumericType>;
-#else
-            std::make_unsigned_t<NumericType>;
-#endif
-        auto [s, pow_of_2] = ::math_functions::extract_pow2(static_cast<UnsignedNumericType>(n));
-        n                  = static_cast<NumericType>(s);
-        hint_iterator      = divisors.emplace_hint(hint_iterator, NumericType(2), pow_of_2);
-    }
+    std::map<UnsignedNumericType, uint32_t> prime_factors_map;
 
-    for (NumericType d = 3; d * d <= n; d += 2) {
-        ATTRIBUTE_ASSUME(d != 0);
-        if (n % d == 0) {
-            uint32_t pow_of_d = 0;
-            do {
-                pow_of_d++;
-                n /= d;
-            } while (n % d == 0);
-            hint_iterator = divisors.emplace_hint(hint_iterator, d, pow_of_d);
-        }
-    }
+    ::math_functions::visit_prime_factors(
+        n, [&prime_factors_map, iter = prime_factors_map.end()](
+               ::math_functions::PrimeFactor<UnsignedNumericType> pf) mutable {
+            iter = prime_factors_map.emplace_hint(iter, pf.factor, pf.factor_power);
+        });
 
-    if (n > 1) {
-        divisors.emplace_hint(hint_iterator, n, uint32_t(1));
-    }
-
-    return divisors;
-}
-
-/// @brief
-/// @tparam NumericType
-/// @param[in] n
-/// @param[inout] divisors
-template <class NumericType>
-#if CONFIG_HAS_AT_LEAST_CXX_20
-    requires(sizeof(NumericType) >= sizeof(int)) &&
-#ifdef INTEGERS_128_BIT_HPP
-            int128_traits::is_integral_v<NumericType>
-#else
-            std::is_integral_v<NumericType>
-#endif
-#endif
-            inline
-void prime_divisors_to_map(NumericType n, std::map<NumericType, uint32_t>& divisors) {
-    if (n % 2 == 0 && n > 0) {
-        // n = s * 2^pow_of_2, where s is odd
-        using UnsignedNumericType =
-#ifdef INTEGERS_128_BIT_HPP
-            int128_traits::make_unsigned_t<NumericType>;
-#else
-            std::make_unsigned_t<NumericType>;
-#endif
-        auto [s, pow_of_2] = ::math_functions::extract_pow2(static_cast<UnsignedNumericType>(n));
-        n                  = static_cast<NumericType>(s);
-        divisors[2] += pow_of_2;
-    }
-
-    for (NumericType d = 3; d * d <= n; d += 2) {
-        ATTRIBUTE_ASSUME(d != 0);
-        if (n % d == 0) {
-            uint32_t pow_of_d = 0;
-            do {
-                pow_of_d++;
-                n /= d;
-            } while (n % d == 0);
-            divisors[d] += pow_of_d;
-        }
-    }
-
-    if (n > 1) {
-        divisors[n]++;
-    }
+    return prime_factors_map;
 }
 
 /// @brief https://cp-algorithms.com/algebra/prime-sieve-linear.html
 class [[nodiscard]] Factorizer final {
 public:
+    using PrimeFactors = std::vector<PrimeFactor<std::uint32_t>>;
+
     CONSTEXPR_VECTOR Factorizer(std::uint32_t n) : least_prime_factor(std::size_t(n) + 1) {
-        for (uint32_t i = 2; i <= n; i++) {
+        for (uint32_t i = 2; i <= std::size_t(n); i++) {
             if (least_prime_factor[i] == 0) {
                 least_prime_factor[i] = i;
                 primes.push_back(i);
@@ -1933,13 +1895,15 @@ public:
     [[nodiscard]] CONSTEXPR_VECTOR bool is_prime(std::uint32_t n) const noexcept {
         return least_prime_factor[n] == n && n >= 2;
     }
-    [[nodiscard]] CONSTEXPR_VECTOR auto prime_factors(std::uint32_t n) const noexcept {
-        std::vector<PrimeFactor<std::uint32_t>> pfs;
+
+    [[nodiscard]] CONSTEXPR_VECTOR PrimeFactors prime_factors(std::uint32_t n) const {
+        PrimeFactors pfs;
         if (n % 2 == 0 && n > 0) {
             const auto [n_div_pow_of_2, power_of_2] = ::math_functions::extract_pow2(n);
             pfs.emplace_back(std::uint32_t(2), power_of_2);
             n = n_div_pow_of_2;
         }
+
         while (n >= 3) {
             const auto lpf = least_prime_factor[n];
             if (pfs.empty() || pfs.back().factor != lpf) {
@@ -1952,6 +1916,7 @@ public:
             ATTRIBUTE_ASSUME(n % lpf == 0);
             n /= lpf;
         }
+
         return pfs;
     }
 
@@ -1963,18 +1928,18 @@ private:
 /// @brief Find all prime numbers in [2; n]
 /// @param n inclusive upper bound
 /// @return vector, such that vector[n] == true \iff n is prime
-[[nodiscard]] CONSTEXPR_VECTOR auto dynamic_primes_sieve(uint32_t n) {
-    std::vector<std::uint8_t> primes(std::size_t(n) + 1, true);
+[[nodiscard]] CONSTEXPR_VECTOR auto dynamic_primes_sieve(std::uint32_t n) {
+    std::vector<std::uint8_t> primes(std::size_t(n) + 1, std::uint8_t(true));
     primes[0] = false;
     if (likely(n > 0)) {
-        primes[1]           = false;
-        const uint32_t root = ::math_functions::isqrt(n);
-        if (const uint32_t i = 2; i <= root) {
+        primes[1]                = false;
+        const std::uint32_t root = ::math_functions::isqrt(n);
+        if (const std::uint32_t i = 2; i <= root) {
             for (std::size_t j = i * i; j <= n; j += i) {
                 primes[j] = false;
             }
         }
-        for (uint32_t i = 3; i <= root; i += 2) {
+        for (std::uint32_t i = 3; i <= root; i += 2) {
             if (primes[i]) {
                 for (std::size_t j = i * i; j <= n; j += i) {
                     primes[j] = false;
@@ -1985,8 +1950,6 @@ private:
 
     return primes;
 }
-
-#undef CONSTEXPR_VECTOR
 
 // https://en.cppreference.com/w/cpp/feature_test
 #if defined(__cpp_lib_constexpr_bitset) && \
@@ -2010,8 +1973,8 @@ private:
 /// @return bitset, such that bitset[n] == true \iff n is prime
 template <std::uint32_t N>
 [[nodiscard]] CONSTEXPR_FIXED_PRIMES_SIEVE inline const auto& fixed_primes_sieve() noexcept {
-    using PrimesSet                                   = std::bitset<std::size_t(N) + 1>;
-    static CONSTEXPR_PRIMES_SIEVE PrimesSet primes_bs = []() CONSTEXPR_BITSET_OPS noexcept {
+    using PrimesSet                                         = std::bitset<std::size_t(N) + 1>;
+    static CONSTEXPR_PRIMES_SIEVE const PrimesSet primes_bs = []() CONSTEXPR_BITSET_OPS noexcept {
         PrimesSet primes{};
         primes.set();
         primes[0] = false;
@@ -2023,7 +1986,7 @@ template <std::uint32_t N>
                     primes[j] = false;
                 }
             }
-            for (uint32_t i = 3; i <= root; i += 2) {
+            for (std::uint32_t i = 3; i <= root; i += 2) {
                 if (primes[i]) {
                     for (std::size_t j = i * i; j <= N; j += i) {
                         primes[j] = false;
@@ -2114,9 +2077,10 @@ struct HelperRetType {
     std::uint32_t m_                  = 0;            // m / d
 };
 
-ATTRIBUTE_CONST constexpr HelperRetType congruence_helper(const std::uint64_t a,
-                                                          const std::int64_t c,
-                                                          const std::uint32_t m) noexcept {
+ATTRIBUTE_CONST
+ATTRIBUTE_ALWAYS_INLINE
+constexpr HelperRetType congruence_helper(const std::uint64_t a, const std::int64_t c,
+                                          const std::uint32_t m) noexcept {
     const auto d = static_cast<std::uint32_t>(std::gcd(a, m));
     if (m == 0 || c % static_cast<int64_t>(d) != 0) {
         return {};
@@ -2163,7 +2127,7 @@ ATTRIBUTE_CONST constexpr HelperRetType congruence_helper(const std::uint64_t a,
 ///          such that 0 <= x_{0} < x_{1} < ... < x_{gcd(a, m)-1} < m,
 ///          x_{0} < m / gcd(a, m), x_{i + 1} = x_{i} + m / gcd(a, m).
 ///         Otherwise, return empty vector.
-[[nodiscard]] inline std::vector<std::uint32_t> solve_congruence_modulo_m_all_roots(
+[[nodiscard]] CONSTEXPR_VECTOR std::vector<std::uint32_t> solve_congruence_modulo_m_all_roots(
     std::uint64_t a, std::int64_t c, std::uint32_t m) {
     const auto [x0, d, m_] = ::math_functions::detail::congruence_helper(a, c, m);
     std::vector<std::uint32_t> solutions(d);
@@ -2172,6 +2136,7 @@ ATTRIBUTE_CONST constexpr HelperRetType congruence_helper(const std::uint64_t a,
         ith_solution = x;
         x += m_;
     }
+
     return solutions;
 }
 
@@ -2528,6 +2493,8 @@ namespace std {
 }  // namespace std
 
 #endif  // INTEGERS_128_BIT_HPP
+
+#undef CONSTEXPR_VECTOR
 
 #if MATH_FUNCTIONS_HPP_ENABLE_TARGET_OPTIONS
 #if defined(__GNUG__)
