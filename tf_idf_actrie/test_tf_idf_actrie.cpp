@@ -6,6 +6,10 @@
 
 #include "search_lib.hpp"
 
+#ifdef NDEBUG
+#warning("Can't test properly with NDEBUG macro defined (macro won't be undefined manually)")
+#endif
+
 namespace {
 
 using namespace std::literals::string_view_literals;
@@ -26,7 +30,7 @@ void test1() {
         "publishing software like Aldus PageMaker\n"
         "including versions of Lorem Ipsum."sv;
 
-    constexpr auto query         = "typesetting release"sv;
+    constexpr auto query              = "typesetting release"sv;
     constexpr std::size_t result_size = 3;
 
     auto res = search_lib::Search(text, query, result_size);
@@ -43,7 +47,7 @@ void test2() {
 
     if (file == nullptr) {
         std::clog << "Was not able to open file " << filename << '\n';
-        return;
+        assert(false);
     }
 
     std::string text;
@@ -58,7 +62,7 @@ void test2() {
 
     text.shrink_to_fit();
 
-    constexpr auto query         = "london city borough burg"sv;
+    constexpr auto query              = "london city borough burg"sv;
     constexpr std::size_t result_size = 32;
 
     const auto start                  = std::chrono::high_resolution_clock::now();
