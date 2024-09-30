@@ -1787,7 +1787,7 @@ template <class NumericType, class Function>
                               typename ::math_functions::detail::make_unsigned_t<NumericType>>>
 #endif
 [[nodiscard]]
-ATTRIBUTE_ALWAYS_INLINE CONSTEXPR_VECTOR auto
+ATTRIBUTE_ALWAYS_INLINE constexpr auto
 visit_prime_factors(NumericType n, Function visitor) noexcept(
     std::is_nothrow_invocable_v<
         Function, typename ::math_functions::PrimeFactor<
@@ -2209,6 +2209,61 @@ constexpr HelperRetType congruence_helper(const std::uint64_t a, const std::int6
         k--;
     }
     return c64;
+}
+
+/// @brief Return max q, such that n! ≡ 0 mod(k^q), where k > 1 and n >= 0
+/// @param n
+/// @param k
+/// @return q if k > 1 and std::numeric_limits<std::uint32_t>::max() otherwise
+[[nodiscard]] ATTRIBUTE_CONST constexpr std::uint32_t solve_factorial_congruence(
+    std::uint32_t n, std::uint32_t k) noexcept {
+    /*
+     * let k  = p_1^a_1 * p_2^a_2 * ... * p_m^a_m
+     * let n! = p_1^b_1 * p_2^b_2 * ...
+     * then b_i = ⌊n / p_i⌋ + ⌊n / p_i^2⌋ + ⌊n / p_i^3⌋ + ...
+     *
+     * then q = min{ b_i / a_i | 1 <= i <= m }
+     **/
+
+    auto ans = std::numeric_limits<std::uint32_t>::max();
+    ::math_functions::visit_prime_factors(
+        k, [&ans, n](::math_functions::PrimeFactor<std::uint32_t> pf) constexpr noexcept {
+            std::uint64_t pow_of_p_i = pf.factor;
+            /**
+             * max b_i can be reached if n = 4294967295 and p_i = 2, then:
+             * b_i = ⌊4294967295 / 2⌋
+             *     + ⌊4294967295 / 4⌋
+             *     + ⌊4294967295 / 8⌋
+             *     + ...
+             *     + ⌊4294967295 / 2147483648⌋
+             * < 4294967295 / 2
+             * + 4294967295 / 4
+             * + 4294967295 / 8
+             * + ...
+             * + 4294967295 / 2147483648
+             * = 4294967295 * (1 - 1/(2^31))
+             * < 4294967295
+             *
+             * Hence b_i fits into the uint32_t
+             */
+
+            if (pow_of_p_i > n) {
+                ans = 0;
+                return false;
+            }
+
+            std::uint32_t b_i = 0;
+            do {
+                b_i += n / std::uint32_t(pow_of_p_i);
+                pow_of_p_i *= pf.factor;
+            } while (pow_of_p_i <= n);
+
+            std::uint32_t a_i = pf.factor_power;
+            ans               = std::min(ans, b_i / a_i);
+            return true;
+        });
+
+    return ans;
 }
 
 [[nodiscard]] ATTRIBUTE_CONST constexpr bool is_perfect_number(std::uint32_t n) noexcept {

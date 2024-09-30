@@ -623,6 +623,25 @@ void test_powers_sum() noexcept {
     }
 }
 
+void test_solve_factorial_congruence() noexcept {
+    assert(solve_factorial_congruence(12, 6) == 5);
+    assert(solve_factorial_congruence(6, 3) == 2);
+    assert(solve_factorial_congruence(6, 12) == 2);
+    assert(solve_factorial_congruence(0xffffffffu, 2) == 4294967263u);
+
+    static_assert(1ull * 2 * 3 * 4 * 5 * 6 * 7 * 8 * 9 * 10 * 11 * 12 <=
+                  std::numeric_limits<uint32_t>::max());
+    static_assert(1ull * 2 * 3 * 4 * 5 * 6 * 7 * 8 * 9 * 10 * 11 * 12 * 13 >
+                  std::numeric_limits<uint32_t>::max());
+
+    uint32_t n_fact = 1;
+    for (uint32_t n = 1; n <= 12; n++) {
+        n_fact *= n;
+        uint32_t k = n_fact + 1;
+        assert(solve_factorial_congruence(n, k) == 0);
+    }
+}
+
 void test_general_asserts() {
 #define STRINGIFY(expr) #expr
 #define ASSERT_THAT(expr)                       \
@@ -1765,4 +1784,5 @@ int main() {
     assert(multi_thread_test_extended_euclid_algorithm<std::int64_t>());
     assert(test_solve_congruence_modulo_m_all_roots());
     test_powers_sum();
+    test_solve_factorial_congruence();
 }
