@@ -553,7 +553,7 @@ bool multi_thread_test_extended_euclid_algorithm() {
 }
 
 void test_powers_sum() noexcept {
-    ::test_tools::log_tests_started();
+    log_tests_started();
 
     constexpr uint64_t kMaxM = 6;
     for (uint64_t m = 0; m <= kMaxM; m++) {
@@ -624,6 +624,8 @@ void test_powers_sum() noexcept {
 }
 
 void test_solve_factorial_congruence() noexcept {
+    log_tests_started();
+
     assert(solve_factorial_congruence(12, 6) == 5);
     assert(solve_factorial_congruence(6, 3) == 2);
     assert(solve_factorial_congruence(6, 12) == 2);
