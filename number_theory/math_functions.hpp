@@ -1776,30 +1776,39 @@ template <class T>
 using make_unsigned_t = typename std::make_unsigned_t<T>;
 #endif
 
-};  // namespace detail
+}  // namespace detail
 
 template <class NumericType, class Function>
 #if CONFIG_HAS_AT_LEAST_CXX_20
     requires(sizeof(NumericType) >= sizeof(int)) &&
             ::math_functions::detail::is_integral_v<NumericType> &&
             std::is_invocable_v<
-                Function,
-                PrimeFactor<typename ::math_functions::detail::make_unsigned_t<NumericType>>>
+                Function, typename ::math_functions::PrimeFactor<
+                              typename ::math_functions::detail::make_unsigned_t<NumericType>>>
 #endif
 [[nodiscard]]
 ATTRIBUTE_ALWAYS_INLINE CONSTEXPR_VECTOR auto
 visit_prime_factors(NumericType n, Function visitor) noexcept(
     std::is_nothrow_invocable_v<
-        Function, PrimeFactor<typename ::math_functions::detail::make_unsigned_t<NumericType>>>) {
+        Function, typename ::math_functions::PrimeFactor<
+                      typename ::math_functions::detail::make_unsigned_t<NumericType>>>) {
     using UnsignedNumericType = typename ::math_functions::detail::make_unsigned_t<NumericType>;
-    using PrimeFactorType     = PrimeFactor<UnsignedNumericType>;
+    using PrimeFactorType     = typename ::math_functions::PrimeFactor<UnsignedNumericType>;
     UnsignedNumericType n_abs = ::math_functions::uabs(n);
+
+    constexpr bool check_early_exit = std::is_invocable_r_v<bool, Function, PrimeFactorType>;
 
     if (n_abs % 2 == 0 && n_abs > 0) {
         // n_abs = s * 2^pow_of_2, where s is odd
         auto [s, pow_of_2] = ::math_functions::extract_pow2(n_abs);
         n_abs              = s;
-        visitor(PrimeFactorType(UnsignedNumericType(2), pow_of_2));
+        if constexpr (check_early_exit) {
+            if (!visitor(PrimeFactorType(UnsignedNumericType(2), pow_of_2))) {
+                return;
+            }
+        } else {
+            visitor(PrimeFactorType(UnsignedNumericType(2), pow_of_2));
+        }
     }
 
     for (UnsignedNumericType d = 3; d * d <= n_abs; d += 2) {
@@ -1810,12 +1819,25 @@ visit_prime_factors(NumericType n, Function visitor) noexcept(
                 pow_of_d++;
                 n_abs /= d;
             } while (n_abs % d == 0);
-            visitor(PrimeFactorType(d, pow_of_d));
+
+            if constexpr (check_early_exit) {
+                if (!visitor(PrimeFactorType(d, pow_of_d))) {
+                    return;
+                }
+            } else {
+                visitor(PrimeFactorType(d, pow_of_d));
+            }
         }
     }
 
     if (n_abs > 1) {
-        visitor(PrimeFactorType(n_abs, std::uint32_t(1)));
+        if constexpr (check_early_exit) {
+            if (!visitor(PrimeFactorType(n_abs, std::uint32_t(1)))) {
+                return;
+            }
+        } else {
+            visitor(PrimeFactorType(n_abs, std::uint32_t(1)));
+        }
     }
 }
 
@@ -1829,7 +1851,8 @@ template <class NumericType>
     using UnsignedNumericType = typename ::math_functions::detail::make_unsigned_t<NumericType>;
 
     std::vector<::math_functions::PrimeFactor<UnsignedNumericType>> prime_factors_vector;
-    if constexpr (std::is_same_v<UnsignedNumericType, std::uint32_t>) {
+    constexpr bool kReservePlaceForFactors = std::is_same_v<UnsignedNumericType, std::uint32_t>;
+    if constexpr (kReservePlaceForFactors) {
         prime_factors_vector.reserve(::math_functions::detail::max_number_of_unique_prime_divisors(
             ::math_functions::uabs(n)));
     }
@@ -1839,7 +1862,7 @@ template <class NumericType>
 #if CONFIG_HAS_AT_LEAST_CXX_20 && !defined(_GLIBCXX_DEBUG) && !defined(_GLIBCXX_ASSERTIONS)
                constexpr
 #endif
-        { prime_factors_vector.push_back(std::move(pf)); });
+        noexcept(kReservePlaceForFactors) { prime_factors_vector.push_back(std::move(pf)); });
 
     return prime_factors_vector;
 }
