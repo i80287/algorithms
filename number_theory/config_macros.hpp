@@ -436,7 +436,7 @@ ATTRIBUTE_NOINLINE inline void sink_char_ptr(char const volatile*) {}
 }  // namespace detail
 
 template <class T>
-ATTRIBUTE_ALWAYS_INLINE static inline void do_not_optimize_away(T&& expr) noexcept {
+ATTRIBUTE_ALWAYS_INLINE inline void do_not_optimize_away(T&& expr) noexcept {
 #if (defined(_MSC_VER) || defined(__MINGW32__)) && CONFIG_HAS_INCLUDE(<intrin.h>)
     ::config::detail::sink_char_ptr(&reinterpret_cast<volatile const char&>(expr));
     _ReadWriteBarrier();
