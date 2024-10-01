@@ -10,33 +10,33 @@
 #include <string>
 #include <vector>
 
-#if __cplusplus >= 202002L
-#define PermutationViewConstexpr constexpr
+#if __cplusplus >= 202002L && !defined(_GLIBCXX_DEBUG) && !defined(_GLIBCXX_ASSERTIONS)
+#define CONSTEXPR_VECTOR constexpr
 #else
-#define PermutationViewConstexpr
+#define CONSTEXPR_VECTOR inline
 #endif
 
-class PermutationView {
+class PermutationView final {
+    using Container = std::vector<uint32_t>;
+
 public:
-    PermutationViewConstexpr PermutationView() noexcept(noexcept(std::vector<uint32_t>{})) =
-        default;
+    using size_type = typename Container::size_type;
 
-    PermutationViewConstexpr explicit PermutationView(size_t length) : elems_(length) {
-        uint32_t i = 0;
-        for (uint32_t& elem : elems_) {
-            elem = ++i;
-        }
+    CONSTEXPR_VECTOR PermutationView() = default;
+
+    CONSTEXPR_VECTOR explicit PermutationView(size_type length) : elems_(length) {
+        std::iota(elems_.begin(), elems_.end(), 1);
     }
 
-    explicit PermutationView(const std::vector<uint32_t>& elems) : elems_{elems} {
-        CheckElems(elems.begin(), elems.end());
+    explicit PermutationView(std::vector<uint32_t> elems) noexcept : elems_(std::move(elems)) {
+        CheckElems(elems_.begin(), elems_.end());
     }
 
-    explicit PermutationView(std::initializer_list<uint32_t> elems) : elems_{elems} {
-        CheckElems(elems.begin(), elems.end());
+    explicit PermutationView(std::initializer_list<uint32_t> elems) : elems_(elems) {
+        CheckElems(elems_.begin(), elems_.end());
     }
 
-    PermutationViewConstexpr void resize(size_t new_size) {
+    CONSTEXPR_VECTOR void resize(size_type new_size) {
         elems_.resize(new_size);
         uint32_t i = 0;
         for (uint32_t& elem : elems_) {
@@ -44,19 +44,19 @@ public:
         }
     }
 
-    PermutationViewConstexpr size_t size() const noexcept {
+    CONSTEXPR_VECTOR size_type size() const noexcept {
         return elems_.size();
     }
 
-    PermutationViewConstexpr bool empty() const noexcept {
+    CONSTEXPR_VECTOR bool empty() const noexcept {
         return elems_.empty();
     }
 
-    PermutationViewConstexpr bool CheckNumber(size_t i) const noexcept {
+    CONSTEXPR_VECTOR bool CheckNumber(size_type i) const noexcept {
         return i - 1 < size();
     }
 
-    PermutationView& Swap(uint32_t i, uint32_t j) {
+    CONSTEXPR_VECTOR PermutationView& Swap(uint32_t i, uint32_t j) {
         if (!CheckNumber(i) || !CheckNumber(j)) {
             throw std::out_of_range(__PRETTY_FUNCTION__);
         }
@@ -65,32 +65,32 @@ public:
         return *this;
     }
 
-    PermutationViewConstexpr uint32_t& operator[](size_t number) {
+    CONSTEXPR_VECTOR uint32_t& operator[](size_type number) {
         // see https://en.cppreference.com/w/cpp/language/constexpr
         return CheckNumber(number) ? elems_[number - 1]
                                    : throw std::out_of_range(__PRETTY_FUNCTION__);
     }
 
-    PermutationViewConstexpr uint32_t operator[](size_t number) const {
+    CONSTEXPR_VECTOR uint32_t operator[](size_type number) const {
         // see https://en.cppreference.com/w/cpp/language/constexpr
         return CheckNumber(number) ? elems_[number - 1]
                                    : throw std::out_of_range(__PRETTY_FUNCTION__);
     }
 
     std::string to_string() const {
-        const size_t n                = elems_.size();
-        const size_t max_digits_count = std::to_string(n).size();
-        const size_t one_line_length  = n * max_digits_count + (n - 1);  // n - 1 spaces
+        const size_type n                = elems_.size();
+        const size_type max_digits_count = std::to_string(n).size();
+        const size_type one_line_length  = n * max_digits_count + (n - 1);  // n - 1 spaces
         // 1 for '\n', 8 for "/ ", "\ ", " \", " /"
-        const size_t capacity = one_line_length + 1 + one_line_length + 8;
+        const size_type capacity = one_line_length + 1 + one_line_length + 8;
         std::string s;
         s.reserve(capacity);
         s.push_back('/');
         s.push_back(' ');
 
         for (uint32_t i = 1; i <= n; i++) {
-            std::string str_i_repr     = std::to_string(i);
-            size_t needed_spaces_count = max_digits_count - str_i_repr.size();
+            std::string str_i_repr        = std::to_string(i);
+            size_type needed_spaces_count = max_digits_count - str_i_repr.size();
             // Unroll while loop for small i space padding
             switch (needed_spaces_count) {
                 case 2:
@@ -116,8 +116,8 @@ public:
         s.append("\\\n\\ ");
 
         for (uint32_t i = 0; i < n; i++) {
-            std::string str_i_repr     = std::to_string(elems_[i]);
-            size_t needed_spaces_count = max_digits_count - str_i_repr.size();
+            std::string str_i_repr        = std::to_string(elems_[i]);
+            size_type needed_spaces_count = max_digits_count - str_i_repr.size();
             // Unroll while loop for small i space padding
             switch (needed_spaces_count) {
                 case 2:
@@ -149,9 +149,17 @@ public:
         return out << perm.to_string();
     }
 
+    friend std::string to_string(const PermutationView& permutation) {
+        return permutation.to_string();
+    }
+
+    CONSTEXPR_VECTOR friend void swap(PermutationView& lhs, PermutationView& rhs) noexcept {
+        lhs.elems_.swap(rhs.elems_);
+    }
+
 protected:
     template <class Iterator>
-    void CheckElems(Iterator begin, Iterator end) const noexcept(false) {
+    void CheckElems(Iterator begin, Iterator end) const {
         for (; begin != end; ++begin) {
             if (!CheckNumber(*begin)) {
                 throw std::out_of_range(__PRETTY_FUNCTION__);
@@ -159,14 +167,8 @@ protected:
         }
     }
 
-    std::vector<uint32_t> elems_;
+    Container elems_;
 };
-
-namespace std {
-inline string to_string(const PermutationView& permutation) {
-    return permutation.to_string();
-}
-}  // namespace std
 
 int main() {
     /**
@@ -180,12 +182,24 @@ int main() {
      */
     PermutationView p(10);
     std::cout << p << "\n\n";
+    assert(p.to_string() ==
+           "/  1  2  3  4  5  6  7  8  9 10 \\\n"
+           "\\  1  2  3  4  5  6  7  8  9 10 /");
+
     p.Swap(1, 2);
     p.Swap(10, 9);
     std::cout << p << "\n\n";
+    assert(p.to_string() ==
+           "/  1  2  3  4  5  6  7  8  9 10 \\\n"
+           "\\  2  1  3  4  5  6  7  8 10  9 /");
 
     p.resize(50);
     p.Swap(1, 50);
     p.Swap(2, 49);
-    std::cout << p;
+    std::cout << p << '\n';
+    assert(p.to_string() ==
+           "/  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 "
+           "29 30 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47 48 49 50 \\\n"
+           "\\ 50 49  3  4  5  6  7  8  9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 "
+           "29 30 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47 48  2  1 /");
 }
