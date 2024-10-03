@@ -374,9 +374,9 @@ static void TestLargestU64Primes() noexcept {
 static void TestPrimesFromFile() {
     log_tests_started();
 
-    Wrapper fin("u64-primes.txt", "r");
+    FilePtr fin("u64-primes.txt", "r");
     for (uint64_t prev_prime = uint64_t(-1), p = 0;; prev_prime = p) {
-        switch (std::fscanf(fin.file, "%" PRIu64, &p)) {
+        switch (std::fscanf(fin, "%" PRIu64, &p)) {
             case 1:
                 assert(prev_prime > p);
                 assert(is_prime_bpsw(p));

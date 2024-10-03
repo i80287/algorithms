@@ -138,23 +138,35 @@ ATTRIBUTE_ALWAYS_INLINE inline void log_tests_started_impl(const char* function_
 
 #endif
 
-struct Wrapper final {
-    std::FILE* const file;
-    Wrapper(const char* fname, const char* mode) : file(DoFOpenOrThrow(fname, mode)) {}
-    Wrapper(const Wrapper&)            = delete;
-    Wrapper(Wrapper&&)                 = delete;
-    Wrapper& operator=(const Wrapper&) = delete;
-    Wrapper& operator=(Wrapper&&)      = delete;
-    ~Wrapper() {
+struct FilePtr final {
+    using FileHandle = std::FILE*;
+    FileHandle const file;
+
+    [[nodiscard]] constexpr operator FileHandle() noexcept {
+        return file;
+    }
+    [[nodiscard]] constexpr std::FILE& operator*() noexcept {
+        return *file;
+    }
+    [[nodiscard]] constexpr std::FILE* operator->() noexcept {
+        return file;
+    }
+
+    FilePtr(const char* fname, const char* mode) : file(DoFOpenOrThrow(fname, mode)) {}
+    FilePtr(const FilePtr&)            = delete;
+    FilePtr(FilePtr&&)                 = delete;
+    FilePtr& operator=(const FilePtr&) = delete;
+    FilePtr& operator=(FilePtr&&)      = delete;
+    ~FilePtr() {
         if (std::fclose(file) != 0) {
             std::perror("fclose");
         }
     }
 
 private:
-    ATTRIBUTE_RETURNS_NONNULL ATTRIBUTE_ALWAYS_INLINE static std::FILE* DoFOpenOrThrow(
+    ATTRIBUTE_RETURNS_NONNULL ATTRIBUTE_ALWAYS_INLINE static FileHandle DoFOpenOrThrow(
         const char* fname, const char* mode) {
-        std::FILE* const file_handle = std::fopen(fname, mode);
+        FileHandle const file_handle = std::fopen(fname, mode);
         if (unlikely(file_handle == nullptr)) {
             ThrowOnFOpenFail(fname, mode);
         }
@@ -165,15 +177,15 @@ private:
         const auto errno_value = errno;
         std::array<char, 1024> buffer{};
         int bytes_written = std::snprintf(buffer.data(), buffer.size(),
-                                          "Wrapper::Wrapper(const char* fname, const char* mode): "
+                                          "FilePtr::FilePtr(const char* fname, const char* mode): "
                                           "std::fopen(\"%s\", \"%s\") failed: %s",
                                           fname, mode, std::strerror(errno_value));
         if (bytes_written < 0) {
             constexpr std::string_view msg =
-                "Wrapper::Wrapper(const char* fname,const char* mode): "
+                "FilePtr::FilePtr(const char* fname,const char* mode): "
                 "std::snprintf failed after std::fopen failed";
             static_assert(msg.size() < std::size(buffer),
-                          "Wrapper::Wrapper(const char*,const char*)");
+                          "FilePtr::FilePtr(const char*,const char*)");
             std::char_traits<char>::copy(buffer.data(), msg.data(), msg.size());
             buffer[msg.size()] = '\0';
         }
