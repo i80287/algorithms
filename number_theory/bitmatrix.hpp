@@ -275,8 +275,8 @@ private:
                   "Unsupported platform");
 
 public:
-    // N >= 64 and N >= 32 checks here are for the performance reasons, everything works correctly
-    // without them too.
+    // N >= 64 and N >= 32 checks are here for the performance reasons,
+    // everything works fine without them as well.
     template <std::size_t N>
     using word_type =
         std::conditional_t<N >= 64 && kUseUInt64, std::uint64_t,
@@ -641,7 +641,7 @@ public:
         transpose_matrix(data_);
         return *this;
     }
-    NODISCARD_WITH_MESSAGE("This method is not inplace. Use transpose_inplace() for this purpose")
+    NODISCARD_WITH_MESSAGE("This method is not inplace. Use transpose() for this purpose")
     ATTRIBUTE_PURE CONSTEXPR_POINTER_CAST square_bitmatrix T() const noexcept {
         square_bitmatrix copy(*this);
         copy.transpose();
