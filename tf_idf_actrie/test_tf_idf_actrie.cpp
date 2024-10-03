@@ -1,8 +1,11 @@
 #include <cassert>
 #include <chrono>
-#include <cstdio>
+#include <fstream>
 #include <iostream>
+#include <sstream>
 #include <string>
+#include <string_view>
+#include <utility>
 
 #include "search_lib.hpp"
 
@@ -42,24 +45,15 @@ void test1() {
 }
 
 void test2() {
-    constexpr std::string_view filename = "Anglo_Saxon_Chronicle.txt";
-    std::FILE* file                     = std::fopen(filename.data(), "r");
-
-    if (file == nullptr) {
-        std::clog << "Was not able to open file " << filename << '\n';
-        assert(false);
-    }
-
-    std::string text;
-    text.reserve(1u << 20);
-    for (char buffer[8192] = {}; std::fgets(buffer, sizeof(buffer), file) != nullptr;) {
-        text += buffer;
-    }
-
-    if (std::fclose(file)) {
-        std::clog << "An error occured while closing file " << filename << '\n';
-    }
-
+    std::string text = []() {
+        std::ostringstream buffer;
+        {
+            std::ifstream fin("Anglo_Saxon_Chronicle.txt");
+            fin.exceptions(std::ifstream::failbit | std::ifstream::badbit);
+            buffer << fin.rdbuf();
+        }
+        return std::move(buffer).str();
+    }();
     text.shrink_to_fit();
 
     constexpr auto query              = "london city borough burg"sv;
