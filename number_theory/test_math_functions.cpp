@@ -5,6 +5,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <ctime>
+#include <iostream>
 #include <limits>
 #include <numeric>
 #include <random>
@@ -385,11 +386,7 @@ void test_factorizer() {
 }
 
 template <class IntType>
-[[nodiscard]]
-#if defined(__clang__) || defined(__GNUG__)
-__attribute__((no_sanitize("signed-integer-overflow")))  // TODO: fix without this hack
-#endif
-bool multi_thread_test_extended_euclid_algorithm() {
+[[nodiscard]] bool multi_thread_test_extended_euclid_algorithm() {
     static_assert(std::is_same_v<IntType, std::int64_t> || std::is_same_v<IntType, std::uint32_t>,
                   "");
     log_tests_started();
@@ -407,9 +404,9 @@ bool multi_thread_test_extended_euclid_algorithm() {
                               ,
                               kTestsPerThread
 #endif
-        ]() noexcept {
+        ]() {
             const std::size_t seed = thread_id * 3'829'234'734ul + 27'273'489;
-            printf("Thread %zu started, seed = %zu\n", thread_id, seed);
+            std::cout << "Thread " << thread_id << " started, seed = " << seed << std::endl;
             using rnt_t = std::conditional_t<sizeof(IntType) == sizeof(std::uint32_t), std::mt19937,
                                              std::mt19937_64>;
             rnt_t mrs_rnd(static_cast<typename rnt_t::result_type>(seed));
@@ -418,86 +415,110 @@ bool multi_thread_test_extended_euclid_algorithm() {
                 const IntType a = static_cast<IntType>(mrs_rnd());
                 const IntType b = static_cast<IntType>(mrs_rnd());
 
-                const auto [u, v, gcd] = math_functions::extended_euclid_algorithm(a, b);
-                const auto real_gcd    = std::gcd(a, b);
+                const auto [u, v, a_b_gcd] = math_functions::extended_euclid_algorithm(a, b);
+                const auto real_gcd        = std::gcd(a, b);
+                if (likely(real_gcd != 0)) {
+                    assert(a % real_gcd == 0);
+                    assert(b % real_gcd == 0);
+                } else {
+                    assert(a == 0 && b == 0);
+                }
 
-                if (unlikely(gcd != static_cast<std::make_unsigned_t<IntType>>(real_gcd))) {
-                    printf(
-                        "In thread %zu calculated gcd != std::gcd(a, b) when "
-                        "a = %" PRId64
-                        ", "
-                        "b = %" PRId64
-                        ", "
-                        "u = %" PRId64
-                        ", "
-                        "v = %" PRId64
-                        ", "
-                        "gcd = %" PRId64 "\n",
-                        thread_id, static_cast<std::int64_t>(a), static_cast<std::int64_t>(b),
-                        static_cast<std::int64_t>(u), static_cast<std::int64_t>(v),
-                        static_cast<std::int64_t>(gcd));
+                if (unlikely(a_b_gcd != static_cast<std::make_unsigned_t<IntType>>(real_gcd))) {
+                    std::cerr << "In thread " << thread_id
+                              << " calculated gcd != std::gcd(a, b) when "
+                                 "a = "
+                              << a
+                              << ", "
+                                 "b = "
+                              << b
+                              << ", "
+                                 "u = "
+                              << u
+                              << ", "
+                                 "v = "
+                              << v
+                              << ", "
+                                 "wrong gcd = "
+                              << a_b_gcd
+                              << ", "
+                                 "true gcd = "
+                              << real_gcd << std::endl;
                     result.test_and_set();
                     return;
                 }
 
-                if (unlikely(a * u + b * v != real_gcd)) {
-                    printf(
-                        "In thread %zu a * u + b * v != std::gcd(a, b) when "
-                        "a = %" PRId64
-                        ", "
-                        "b = %" PRId64
-                        ", "
-                        "u = %" PRId64
-                        ", "
-                        "v = %" PRId64 "\n",
-                        thread_id, static_cast<std::int64_t>(a), static_cast<std::int64_t>(b),
-                        static_cast<std::int64_t>(u), static_cast<std::int64_t>(v));
+                const int128_t i128_a = a;
+                const int128_t i128_b = b;
+                const int128_t i128_u = u;
+                const int128_t i128_v = v;
+                if (unlikely(i128_a * i128_u + i128_b * i128_v != real_gcd)) {
+                    std::cerr << "In thread " << thread_id
+                              << " a * u + b * v != gcd(a, b) when "
+                                 "a = "
+                              << a
+                              << ", "
+                                 "b = "
+                              << b
+                              << ", "
+                                 "u = "
+                              << u
+                              << ", "
+                                 "v = "
+                              << v
+                              << ", "
+                                 "gcd = "
+                              << a_b_gcd << std::endl;
                     result.test_and_set();
                     return;
                 }
 
-                IntType b_abs = b;
-                if constexpr (std::is_signed_v<IntType>) {
-                    b_abs = std::abs(b_abs);
-                }
-                if (unlikely(!(b == 0 || std::abs(u) <= b_abs))) {
-                    printf(
-                        "In thread %zu !(b == 0 || (- |b| <= u && u <= |b|)) when "
-                        "a = %" PRId64
-                        ", "
-                        "b = %" PRId64
-                        ", "
-                        "u = %" PRId64
-                        ", "
-                        "v = %" PRId64 "\n",
-                        thread_id, static_cast<std::int64_t>(a), static_cast<std::int64_t>(b),
-                        static_cast<std::int64_t>(u), static_cast<std::int64_t>(v));
+                bool valid_u_range =
+                    (b == 0 && u == 1) ^ (::math_functions::uabs(u) <= ::math_functions::uabs(b));
+                if (unlikely(!valid_u_range)) {
+                    std::cerr << "In thread " << thread_id
+                              << " !(b == 0 || (- |b| <= u && u <= |b|)) when "
+                                 "a = "
+                              << a
+                              << ", "
+                                 "b = "
+                              << b
+                              << ", "
+                                 "u = "
+                              << u
+                              << ", "
+                                 "v = "
+                              << v
+                              << ", "
+                                 "gcd = "
+                              << a_b_gcd << std::endl;
                     result.test_and_set();
                     return;
                 }
 
-                IntType a_abs = a;
-                if constexpr (std::is_signed_v<IntType>) {
-                    a_abs = std::abs(a_abs);
-                }
-                if (unlikely(!(a == 0 || std::abs(v) <= a_abs))) {
-                    printf(
-                        "In thread %zu !(a == 0 || (- |a| <= v && v <= |a|)) when "
-                        "a = %" PRId64
-                        ", "
-                        "b = %" PRId64
-                        ", "
-                        "u = %" PRId64
-                        ", "
-                        "v = %" PRId64 "\n",
-                        thread_id, static_cast<std::int64_t>(a), static_cast<std::int64_t>(b),
-                        static_cast<std::int64_t>(u), static_cast<std::int64_t>(v));
+                bool valid_v_range =
+                    (a == 0 && v == 1) ^ (::math_functions::uabs(v) <= ::math_functions::uabs(a));
+                if (unlikely(!valid_v_range)) {
+                    std::cerr << "In thread " << thread_id
+                              << " !(a == 0 || (- |a| <= v && v <= |a|)) when "
+                                 "a = "
+                              << a
+                              << ", "
+                                 "b = "
+                              << b
+                              << ", "
+                                 "u = "
+                              << u
+                              << ", "
+                                 "v = "
+                              << v
+                              << ", "
+                                 "gcd = "
+                              << a_b_gcd << std::endl;
                     result.test_and_set();
                     return;
                 }
             }
-
-            // printf("Exited thread %zu without errors\n", thread_id);
         });
     }
 
@@ -508,51 +529,39 @@ bool multi_thread_test_extended_euclid_algorithm() {
     return !result.test_and_set();
 }
 
-[[nodiscard]] bool test_solve_congruence_modulo_m_all_roots() {
+void test_solve_congruence_modulo_m_all_roots() {
     log_tests_started();
 
-    auto seed = std::ranlux24(std::uint32_t(std::time(nullptr)))();
+    const auto seed = std::ranlux24(std::uint32_t(std::time(nullptr)))();
     printf("Seed: %" PRIuFAST32 "\n", seed);
-    std::mt19937_64 rnd_64(seed);
     std::mt19937 rnd_32(seed);
 
-    const size_t kTotalTests = (1 << 24);
-    for (auto test_iter = kTotalTests; test_iter != 0; --test_iter) {
-        const auto m     = static_cast<std::uint32_t>(rnd_32()) | 1;
-        const uint64_t a = rnd_64() % m;  // % m to be able to perform a * x in the check
-        const auto c     = static_cast<int64_t>(rnd_64());
-        const uint64_t mod2 =
-            static_cast<uint64_t>((c % static_cast<int64_t>(m)) + static_cast<int64_t>(m)) % m;
-        for (std::uint32_t x : math_functions::solve_congruence_modulo_m_all_roots(a, c, m)) {
-            if (unlikely(x >= m)) {
-                printf("Solution %" PRIu32
-                       " overflow\n"
-                       "a = %" PRIu64
-                       ", "
-                       "c = %" PRId64
-                       ", "
-                       "m = %" PRIu32 "\n",
-                       x, a, c, m);
-                return false;
-            }
-            if (unlikely((a * x) % m != mod2)) {
-                printf("Solution %" PRIu32
-                       " failed\n"
-                       "a = %" PRIu64
-                       ", "
-                       "c = %" PRId64
-                       ", "
-                       "m = %" PRIu32 "\n",
-                       x, a, c, m);
-                return false;
+    constexpr size_t kTotalTests = 1 << 25;
+    for (auto test_iter = kTotalTests; test_iter > 0; --test_iter) {
+        const auto m = static_cast<std::uint32_t>(rnd_32());
+        if (unlikely(m == 0)) {
+            continue;
+        }
+        const auto a       = static_cast<std::uint32_t>(rnd_32());
+        const auto c       = static_cast<std::uint32_t>(rnd_32());
+        const auto roots   = math_functions::solve_congruence_modulo_m_all_roots(a, c, m);
+        const auto gcd_a_m = std::gcd(a, m);
+        assert((c % gcd_a_m == 0) == !roots.empty());
+        if (!roots.empty()) {
+            const auto c_mod_m = c % m;
+            const auto step    = m / gcd_a_m;
+            auto expected_x    = roots[0];
+            for (const std::uint32_t x : roots) {
+                assert(x < m);
+                assert((uint64_t(a) * uint64_t(x)) % m == c_mod_m);
+                assert(x == expected_x);
+                expected_x += step;
             }
         }
     }
-
-    return true;
 }
 
-void test_inv_mod_m() noexcept {
+void test_inv_mod_m() {
     log_tests_started();
 
     constexpr uint32_t m_arr1[] = {
@@ -584,6 +593,25 @@ void test_inv_mod_m() noexcept {
         for (uint32_t a = m - kLimit; a < m; a++) {
             const auto a_inv = math_functions::inv_mod_m(a, m);
             assert(a_inv < m);
+            assert((a * uint64_t(a_inv)) % m == 1);
+        }
+    }
+
+    for (uint32_t m = 3; m <= 1000; m++) {
+        auto n_pfs = math_functions::prime_factors_as_vector(m);
+        for (uint32_t a = 1; a < m; a++) {
+            bool are_coprime = std::gcd(a, m) == 1;
+            assert(are_coprime ==
+                   std::all_of(n_pfs.begin(), n_pfs.end(),
+                               [a](auto pf) constexpr noexcept { return a % pf.factor != 0; }));
+            const auto a_inv = math_functions::inv_mod_m(a, m);
+            if (!are_coprime) {
+                assert(a_inv == math_functions::kNoCongruenceSolution);
+                continue;
+            }
+
+            assert(a_inv < m);
+            assert(a_inv != math_functions::kNoCongruenceSolution);
             assert((a * uint64_t(a_inv)) % m == 1);
         }
     }
@@ -1819,10 +1847,10 @@ int main() {
     test_visit_all_submasks();
     test_prime_bitarrays();
     test_factorizer();
-    test_inv_mod_m();
     assert(multi_thread_test_extended_euclid_algorithm<std::uint32_t>());
     assert(multi_thread_test_extended_euclid_algorithm<std::int64_t>());
-    assert(test_solve_congruence_modulo_m_all_roots());
+    test_solve_congruence_modulo_m_all_roots();
+    test_inv_mod_m();
     test_solve_factorial_congruence();
     test_powers_sum();
 }
