@@ -78,7 +78,10 @@ inline void throw_if_not(bool expr, const char* message_format,
 
 ATTRIBUTE_ALWAYS_INLINE inline void log_tests_started(
     const std::source_location src = std::source_location::current()) noexcept {
-    printf("Started tests in %s\n", src.function_name());
+    int ret = printf("Started tests in %s\n", src.function_name());
+    assert(ret > 0);
+    ret = fflush(stdout);
+    assert(ret == 0);
 }
 
 ATTRIBUTE_ALWAYS_INLINE inline void log_location(
