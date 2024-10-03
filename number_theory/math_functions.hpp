@@ -2166,8 +2166,13 @@ ATTRIBUTE_CONST ATTRIBUTE_ALWAYS_INLINE constexpr std::uint32_t congruence_arg(
             return static_cast<std::uint32_t>(x);
         }
     } else {
-        const auto x_mod_m = x % m;
-        return static_cast<std::uint32_t>(x_mod_m >= 0 ? x_mod_m : x_mod_m + m);
+        if constexpr (sizeof(x) > sizeof(std::uint32_t)) {
+            const auto x_mod_m = x % m;
+            return static_cast<std::uint32_t>(x_mod_m >= 0 ? x_mod_m : x_mod_m + m);
+        } else {
+            const auto x_mod_m = static_cast<std::int64_t>(x) % m;
+            return static_cast<std::uint32_t>(x_mod_m >= 0 ? x_mod_m : x_mod_m + m);
+        }
     }
 }
 
