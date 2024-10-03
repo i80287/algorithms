@@ -552,6 +552,43 @@ bool multi_thread_test_extended_euclid_algorithm() {
     return true;
 }
 
+void test_inv_mod_m() noexcept {
+    log_tests_started();
+
+    constexpr uint32_t m_arr1[] = {
+        2,   3,   5,   7,   11,  13,  17,  19,  23,  29,  31,  37,  41,  43,  47,  53,
+        59,  61,  67,  71,  73,  79,  83,  89,  97,  101, 103, 107, 109, 113, 127, 131,
+        137, 139, 157, 149, 151, 163, 167, 173, 179, 181, 191, 193, 197, 199, 211, 223,
+        227, 229, 233, 239, 241, 257, 251, 263, 269, 271, 277, 281, 283, 293, 307, 311,
+    };
+
+    for (uint32_t m : m_arr1) {
+        for (uint32_t a = 1; a < m; a++) {
+            const auto a_inv = math_functions::inv_mod_m(a, m);
+            assert(a_inv < m);
+            assert((a * uint64_t(a_inv)) % m == 1);
+        }
+    }
+
+    constexpr uint32_t m_arr2[] = {
+        2147483489u, 2147483497u, 2147483543u, 2147483549u, 2147483563u,
+        2147483579u, 2147483587u, 2147483629u, 2147483647u,
+    };
+    constexpr uint32_t kLimit = 100;
+    for (uint32_t m : m_arr2) {
+        for (uint32_t a = 1; a < std::min(m, kLimit); a++) {
+            const auto a_inv = math_functions::inv_mod_m(a, m);
+            assert(a_inv < m);
+            assert((a * uint64_t(a_inv)) % m == 1);
+        }
+        for (uint32_t a = m - kLimit; a < m; a++) {
+            const auto a_inv = math_functions::inv_mod_m(a, m);
+            assert(a_inv < m);
+            assert((a * uint64_t(a_inv)) % m == 1);
+        }
+    }
+}
+
 void test_powers_sum() noexcept {
     log_tests_started();
 
@@ -1782,9 +1819,10 @@ int main() {
     test_visit_all_submasks();
     test_prime_bitarrays();
     test_factorizer();
+    test_inv_mod_m();
     assert(multi_thread_test_extended_euclid_algorithm<std::uint32_t>());
     assert(multi_thread_test_extended_euclid_algorithm<std::int64_t>());
     assert(test_solve_congruence_modulo_m_all_roots());
-    test_powers_sum();
     test_solve_factorial_congruence();
+    test_powers_sum();
 }

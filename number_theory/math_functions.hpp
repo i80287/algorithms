@@ -2091,67 +2091,53 @@ template <typename IntType>
     };
 }
 
+inline constexpr auto kNoCongruenceSolution = std::numeric_limits<std::uint32_t>::max();
+
 namespace detail {
 
 struct HelperRetType {
-    static constexpr auto kNoSolution = std::uint32_t(-1);
-    std::uint32_t x0                  = kNoSolution;  // first solution of congruence
-    std::uint32_t d                   = 0;            // gcd(a, m)
-    std::uint32_t m_                  = 0;            // m / d
+    std::uint32_t x0 = kNoCongruenceSolution;  // first solution of congruence
+    std::uint32_t d  = 0;                      // gcd(a, m)
+    std::uint32_t m_ = 0;                      // m / d
 };
 
 ATTRIBUTE_CONST
 ATTRIBUTE_ALWAYS_INLINE
-constexpr HelperRetType congruence_helper(const std::uint64_t a, const std::int64_t c,
+constexpr HelperRetType congruence_helper(const std::uint32_t a, const std::uint32_t c,
                                           const std::uint32_t m) noexcept {
-    const auto d = static_cast<std::uint32_t>(std::gcd(a, m));
-    if (m == 0 || c % static_cast<int64_t>(d) != 0) {
+    const std::uint32_t d = std::gcd(a, m);
+    if (m == 0 || c % d != 0) {
         return {};
     }
 
-    ATTRIBUTE_ASSUME(d > 0);
+    ATTRIBUTE_ASSUME(a >= d);
     ATTRIBUTE_ASSUME(a % d == 0);
+    ATTRIBUTE_ASSUME(m >= d);
     ATTRIBUTE_ASSUME(m % d == 0);
 
     /*
      * Solves a_ * x === c_ (mod m_) as gcd(a_, m_) == 1
      */
-    const auto c_          = c / static_cast<int64_t>(d);
-    const std::uint64_t a_ = a / d;
+    const std::uint32_t a_ = a / d;
+    const std::uint32_t c_ = c / d;
     const std::uint32_t m_ = m / d;
     // a_ * u_ + m_ * v_ == 1
-    const std::int64_t u_  = extended_euclid_algorithm<std::uint64_t>(a_, m_).u_value;
-    const auto unsigned_u_ = static_cast<std::uint64_t>(u_ + (m_ * (u_ < 0)));
+    const std::int64_t u_ =
+        ::math_functions::extended_euclid_algorithm<std::uint32_t>(a_, m_).u_value;
+    const auto unsigned_u_ = static_cast<std::uint64_t>(u_ >= 0 ? u_ : u_ + m_);
 
     // a_ * (u_ * c_) + m_ * (v_ * c_) == c_
     // a * (u_ * c_) + m * (v_ * c_) == c
-    const auto signed_m_   = static_cast<std::int64_t>(m_);
-    const auto unsigned_c_ = static_cast<std::uint64_t>((c_ % signed_m_) + signed_m_) % m_;
     // x0 = u_ * c_
-    // now 0 <= unsigned_u_ < m_ && 0 <= unsigned_c_ < m_ =>
-    // => unsigned_u_ * unsigned_c_ won't cause overflow (since m_ <= m < 2^32)
-    const auto x0 = static_cast<std::uint32_t>((unsigned_u_ * unsigned_c_) % m_);
-    ATTRIBUTE_ASSUME(x0 != HelperRetType::kNoSolution);
-
+    const auto x0 = static_cast<std::uint32_t>((unsigned_u_ * c_) % m_);
+    ATTRIBUTE_ASSUME(x0 != ::math_functions::kNoCongruenceSolution);
     return {x0, d, m_};
 }
 
-}  // namespace detail
-
-/// @brief Solves congruence a * x ≡ c (mod m)
-/// @note Roots exist <=> c % gcd(a, m) == 0.
-///       If roots exist, then exactly gcd(a, m)
-///        roots are returned (see @return section).
-///       Works in O(log(min(a, m)) + gcd(a, m)).
-/// @param a
-/// @param c
-/// @param m
-/// @return If roots exist, return vector of gcd(a, m) roots
-///          such that 0 <= x_{0} < x_{1} < ... < x_{gcd(a, m)-1} < m,
-///          x_{0} < m / gcd(a, m), x_{i + 1} = x_{i} + m / gcd(a, m).
-///         Otherwise, return empty vector.
-[[nodiscard]] CONSTEXPR_VECTOR std::vector<std::uint32_t> solve_congruence_modulo_m_all_roots(
-    std::uint64_t a, std::int64_t c, std::uint32_t m) {
+CONSTEXPR_VECTOR
+std::vector<std::uint32_t> solve_congruence_modulo_m_all_roots_impl(std::uint32_t a,
+                                                                    std::uint32_t c,
+                                                                    std::uint32_t m) {
     const auto [x0, d, m_] = ::math_functions::detail::congruence_helper(a, c, m);
     std::vector<std::uint32_t> solutions(d);
     auto x = x0;
@@ -2163,19 +2149,84 @@ constexpr HelperRetType congruence_helper(const std::uint64_t a, const std::int6
     return solutions;
 }
 
+ATTRIBUTE_CONST constexpr std::uint32_t solve_congruence_modulo_m_impl(std::uint32_t a,
+                                                                       std::uint32_t c,
+                                                                       std::uint32_t m) noexcept {
+    return ::math_functions::detail::congruence_helper(a, c, m).x0;
+}
+
+template <class T>
+ATTRIBUTE_CONST ATTRIBUTE_ALWAYS_INLINE constexpr std::uint32_t congruence_arg(
+    T x, [[maybe_unused]] std::uint32_t m) noexcept {
+    static_assert(std::is_integral_v<T>, "Expected integral type in the congruence");
+    if constexpr (std::is_unsigned_v<T>) {
+        if constexpr (sizeof(x) > sizeof(std::uint32_t)) {
+            return static_cast<std::uint32_t>(x % m);
+        } else {
+            return static_cast<std::uint32_t>(x);
+        }
+    } else {
+        const auto x_mod_m = x % m;
+        return static_cast<std::uint32_t>(x_mod_m >= 0 ? x_mod_m : x_mod_m + m);
+    }
+}
+
+}  // namespace detail
 /// @brief Solves congruence a * x ≡ c (mod m)
+/// @note Roots exist <=> c % gcd(a, m) == 0.
+///       If roots exist, then exactly gcd(a, m)
+///        roots are returned (see @return section).
+///       Works in O(log(min(a, m)) + gcd(a, m)).
+/// @tparam T1
+/// @tparam T2
+/// @param a
+/// @param c
+/// @param m
+/// @return If roots exist, return vector of gcd(a, m) roots
+///          such that 0 <= x_{0} < x_{1} < ... < x_{gcd(a, m)-1} < m,
+///          x_{0} < m / gcd(a, m), x_{i + 1} = x_{i} + m / gcd(a, m).
+///         Otherwise, return empty vector.
+template <class T1, class T2>
+[[nodiscard]]
+ATTRIBUTE_ALWAYS_INLINE CONSTEXPR_VECTOR
+    std::vector<std::uint32_t> solve_congruence_modulo_m_all_roots(T1 a, T2 c, std::uint32_t m) {
+    return ::math_functions::detail::solve_congruence_modulo_m_all_roots_impl(
+        ::math_functions::detail::congruence_arg(a, m),
+        ::math_functions::detail::congruence_arg(c, m), m);
+}
+
+/// @brief Solves modulus congruence a * x ≡ c (mod m)
 /// @note Roots exist <=> c % gcd(a, m) == 0.
 ///       If roots exist, then exactly 1 root is returned, and
 ///        it is the least of all roots (see @fn solve_congruence_modulo_m_all_roots).
 ///       Works in O(log(min(a, m))
+/// @tparam T1
+/// @tparam T2
 /// @param a
 /// @param c
 /// @param m
 /// @return If roots exist, return root x such that 0 <= x < m / gcd(a, m).
-///         Otherwise, return uint32_t(-1)
-[[nodiscard]] ATTRIBUTE_CONST constexpr std::uint32_t solve_congruence_modulo_m(
-    std::uint64_t a, std::int64_t c, std::uint32_t m) noexcept {
-    return ::math_functions::detail::congruence_helper(a, c, m).x0;
+///         Otherwise, return math_functions::kNoCongruenceSolution
+template <class T1, class T2>
+[[nodiscard]]
+ATTRIBUTE_CONST ATTRIBUTE_ALWAYS_INLINE constexpr std::uint32_t solve_congruence_modulo_m(
+    T1 a, T2 c, std::uint32_t m) noexcept {
+    return ::math_functions::detail::solve_congruence_modulo_m_impl(
+        ::math_functions::detail::congruence_arg(a, m),
+        ::math_functions::detail::congruence_arg(c, m), m);
+}
+
+/// @brief Solves modulus congruence a * x ≡ 1 (mod m) (e.g. a^{-1} mod m)
+/// @note a^{-1} mod m exists <=> gcd(a, m) == 1.
+///       Works in O(log(min(a, m))
+/// @tparam T
+/// @param a
+/// @param m
+/// @return
+template <class T>
+[[nodiscard]]
+ATTRIBUTE_CONST constexpr std::uint32_t inv_mod_m(T a, std::uint32_t m) noexcept {
+    return ::math_functions::solve_congruence_modulo_m(a, std::uint32_t{1}, m);
 }
 
 /// @brief Solve congruence 2^k * x ≡ c (mod m),
@@ -2200,8 +2251,8 @@ constexpr HelperRetType congruence_helper(const std::uint64_t a, const std::int6
      * then
      * k -= 2, c /= 4
      */
-    std::uint64_t c64 = c;
-    while (k != 0) {
+    std::uint64_t c64 = c % m;
+    while (k > 0) {
         if (c64 % 2 != 0) {
             c64 += m;
         }
