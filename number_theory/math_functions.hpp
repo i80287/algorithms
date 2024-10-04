@@ -2001,7 +2001,7 @@ template <std::uint32_t N>
         primes.set();
         primes[0] = false;
         if constexpr (primes.size() > 1) {
-            primes[1]                = false;
+            primes[1]                    = false;
             constexpr std::uint32_t root = ::math_functions::isqrt(N);
             if constexpr (constexpr std::uint32_t i = 2; i <= root) {
                 for (std::size_t j = i * i; j <= N; j += i) {

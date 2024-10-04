@@ -66,9 +66,9 @@ void test2() {
 
     constexpr bool kPrintResults = false;
     if constexpr (kPrintResults) {
-        std::cout << "Test 2\nText length: " << text.length() << "\nFound " << res.size()
+        std::cout << "Test 2\nText length: " << text.size() << "\nFound " << res.size()
                   << " lines in " << duration.count() << " ns :\n\n";
-        for (auto line : res) {
+        for (std::string_view line : res) {
             std::cout << line << '\n';
         }
     }

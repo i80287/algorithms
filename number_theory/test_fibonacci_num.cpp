@@ -3,10 +3,12 @@
 #include "fibonacci_num.hpp"
 #include "test_tools.hpp"
 
+namespace {
+
 using namespace test_tools;
 
 template <uint32_t k>
-static void test_fib_u64() noexcept {
+void test_fib_u64() noexcept {
     log_tests_started();
 
     static_assert(math_functions::fibonacci_num(0) == 1);
@@ -26,7 +28,7 @@ static void test_fib_u64() noexcept {
 }
 
 template <uint32_t k>
-static void test_fib_u128() noexcept {
+void test_fib_u128() noexcept {
     log_tests_started();
 #if HAS_I128_CONSTEXPR
     static_assert(math_functions::fibonacci_num_u128(0) == 1);
@@ -47,6 +49,8 @@ static void test_fib_u128() noexcept {
         prev_fib      = current_fib;
     }
 }
+
+}  // namespace
 
 int main() {
     constexpr uint32_t k = 1u << 24;
