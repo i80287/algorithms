@@ -296,13 +296,13 @@
 #define ATTRIBUTE_RETURNS_NONNULL
 #endif
 
-#if defined(__clang__) && CONFIG_HAS_AT_LEAST_CXX_17
+#if defined(__clang__) && CONFIG_HAS_CPP_ATTRIBUTE(clang::lifetimebound)
 #define ATTRIBUTE_LIFETIME_BOUND [[clang::lifetimebound]]
 #else
 #define ATTRIBUTE_LIFETIME_BOUND
 #endif
 
-#if defined(__clang__) && CONFIG_HAS_AT_LEAST_CXX_17
+#if defined(__clang__) && CONFIG_HAS_CPP_ATTRIBUTE(clang::reinitializes)
 #define ATTRIBUTE_REINITIALIZES [[clang::reinitializes]]
 #else
 #define ATTRIBUTE_REINITIALIZES
@@ -476,7 +476,7 @@ namespace config {
 
 template <class T>
 ATTRIBUTE_ALWAYS_INLINE constexpr bool is_gcc_constant_p(ATTRIBUTE_MAYBE_UNUSED T&& expr) noexcept {
-#if CONFIG_HAS_BUILTIN(__builtin_constant_p)
+#if CONFIG_HAS_BUILTIN(__builtin_constant_p) && CONFIG_HAS_INCLUDE(<utility>)
     return static_cast<bool>(__builtin_constant_p(std::forward<T>(expr)));
 #else
     return false;
