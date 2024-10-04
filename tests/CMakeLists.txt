@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.20)
 
-project(math_tests VERSION 0.1.0 LANGUAGES CXX)
+project(tests VERSION 0.1.0 LANGUAGES CXX)
 
 set(USING_MINGW_GCC False)
 set(USING_MINGW_GCC_32 False)
@@ -62,10 +62,17 @@ set(TEST_COMPILE_OPTIONS)
 set(TEST_COMPILE_DEFINITIONS)
 
 function(configure_gcc_or_clang_gcc_options)
+    if (MSVC)
+        message(FATAL_ERROR "ClangCL should not be configured with this function")
+    endif()
+
     set(LOCAL_FN_TEST_COMPILE_OPTIONS
         ${TEST_COMPILE_OPTIONS})
     set(LOCAL_FN_TEST_COMPILE_DEFINITIONS
         ${TEST_COMPILE_DEFINITIONS})
+    set(LOCAL_FN_CMAKE_CXX_FLAGS_RELWITHDEBINFO
+        ${CMAKE_CXX_FLAGS_RELWITHDEBINFO})
+
     set(LOCAL_FN_TEST_COMPILE_OPTIONS
         ${LOCAL_FN_TEST_COMPILE_OPTIONS}
         -Wall
@@ -86,7 +93,7 @@ function(configure_gcc_or_clang_gcc_options)
         -Warray-bounds
         -Wformat=2
     )
-    if (NOT USING_MINGW_GCC AND NOT MSVC)
+    if (NOT USING_MINGW_GCC)
         set(LOCAL_FN_TEST_COMPILE_OPTIONS
             ${LOCAL_FN_TEST_COMPILE_OPTIONS}
             -fstack-protector-strong
@@ -101,10 +108,6 @@ function(configure_gcc_or_clang_gcc_options)
             -Wduplicated-cond)
     endif()
     if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
-        set(LOCAL_FN_TEST_COMPILE_OPTIONS
-            ${LOCAL_FN_TEST_COMPILE_OPTIONS}
-            -Wno-c++98-compat
-        )
         set(LOCAL_FN_TEST_COMPILE_DEFINITIONS
             ${LOCAL_FN_TEST_COMPILE_DEFINITIONS}
             _LIBCPP_ENABLE_ASSERTIONS=1)
@@ -117,17 +120,20 @@ function(configure_gcc_or_clang_gcc_options)
             _GLIBCXX_DEBUG_PEDANTIC=1
             _GLIBCXX_CONCEPT_CHECKS=1)
     endif()
-    set(LOCAL_FN_TEST_COMPILE_OPTIONS
-        ${LOCAL_FN_TEST_COMPILE_OPTIONS}
-        -UNDEBUG)
+
+    string(REGEX REPLACE "-D\\s?NDEBUG(=\\d)?" "" LOCAL_FN_CMAKE_CXX_FLAGS_RELWITHDEBINFO "${LOCAL_FN_CMAKE_CXX_FLAGS_RELWITHDEBINFO}")
+
     set(TEST_COMPILE_OPTIONS
         ${LOCAL_FN_TEST_COMPILE_OPTIONS}
         PARENT_SCOPE)
     set(TEST_COMPILE_DEFINITIONS
         ${LOCAL_FN_TEST_COMPILE_DEFINITIONS}
         PARENT_SCOPE)
+    set(CMAKE_CXX_FLAGS_RELWITHDEBINFO
+        ${LOCAL_FN_CMAKE_CXX_FLAGS_RELWITHDEBINFO}
+        PARENT_SCOPE)
 
-    if (NOT USING_MINGW_GCC AND NOT MSVC)
+    if (NOT USING_MINGW_GCC)
         set(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} -fsanitize=address,undefined PARENT_SCOPE)
     endif()
 
@@ -144,20 +150,25 @@ function(configure_msvc_or_clang_msvc_options)
         _CRT_SECURE_NO_WARNINGS=1)
 
     if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
-        # set(LOCAL_FN_TEST_COMPILE_OPTIONS
-        #     ${LOCAL_FN_TEST_COMPILE_OPTIONS}
-        #     -UNDEBUG)
+        set(LOCAL_FN_TEST_COMPILE_OPTIONS
+            ${LOCAL_FN_TEST_COMPILE_OPTIONS}
+            -UNDEBUG)
+        set(LOCAL_FN_TEST_COMPILE_OPTIONS
+            ${LOCAL_FN_TEST_COMPILE_OPTIONS}
+            "/W4" # Enable -Wall and -Wextra
+        )
     else()
-        if ((MSVC) AND (MSVC_VERSION GREATER_EQUAL 1914))
+        if (MSVC_VERSION GREATER_EQUAL 1914)
             set(LOCAL_FN_TEST_COMPILE_OPTIONS
                 ${LOCAL_FN_TEST_COMPILE_OPTIONS}
                 "/Zc:__cplusplus")
         endif()
         set(LOCAL_FN_TEST_COMPILE_OPTIONS
             ${LOCAL_FN_TEST_COMPILE_OPTIONS}
-            "/Wall"
+            "/W4"
             "/UNDEBUG"
-            "/wd9025")
+            "/wd4146" # Disable C4146: unary minus operator applied to unsigned type, result still unsigned
+            )
     endif()
 
     set(TEST_COMPILE_OPTIONS
@@ -174,9 +185,10 @@ if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang" OR CMAKE_CXX_COMPILER_ID STREQUAL "Ap
     if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
         if (CMAKE_CXX_COMPILER_FRONTEND_VARIANT STREQUAL "MSVC")
             configure_msvc_or_clang_msvc_options()
-            configure_gcc_or_clang_gcc_options()
         elseif (CMAKE_CXX_COMPILER_FRONTEND_VARIANT STREQUAL "GNU")
             configure_gcc_or_clang_gcc_options()
+        else()
+            message(FATAL_ERROR "Clang with the unknown frontend")
         endif()
     endif()
 
@@ -200,7 +212,6 @@ elseif (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
     if (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 15.0.0)
         list(APPEND SUPPORTED_CXX_VERSIONS 26)
     endif()
-elseif (CMAKE_CXX_COMPILER_ID STREQUAL "Intel")
 elseif (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
     configure_msvc_or_clang_msvc_options()
     if (MSVC_VERSION GREATER_EQUAL 1928)

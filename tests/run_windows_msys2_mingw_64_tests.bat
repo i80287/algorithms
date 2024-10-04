@@ -1,12 +1,19 @@
-if not exist ".\cmake-build-tests-windows-msys2-mingw-w64" mkdir cmake-build-tests-windows-msys2-mingw-w64
+set build_dir=cmake-build-tests-windows-msys2-mingw-w64
 
-copy ..\number_theory\u64-primes.txt .\cmake-build-tests-windows-msys2-mingw-w64\u64-primes.txt
-copy ..\number_theory\u128-primes.txt .\cmake-build-tests-windows-msys2-mingw-w64\u128-primes.txt
-copy ..\tf_idf_actrie\Anglo_Saxon_Chronicle.txt .\cmake-build-tests-windows-msys2-mingw-w64\Anglo_Saxon_Chronicle.txt
+if not exist ".\%build_dir%" mkdir %build_dir%
 
-cd .\cmake-build-tests-windows-msys2-mingw-w64
+copy "..\number_theory\u64-primes.txt" ".\%build_dir%\u64-primes.txt"
+copy "..\number_theory\u128-primes.txt" ".\%build_dir%\u128-primes.txt"
+copy "..\tf_idf_actrie\Anglo_Saxon_Chronicle.txt" ".\%build_dir%\Anglo_Saxon_Chronicle.txt"
+
+cd ".\%build_dir%"
 
 cmake -G "MSYS Makefiles" -DCMAKE_BUILD_TYPE=RelWithDebInfo -S .. -B .
+if %errorlevel% neq 0 exit /b %errorlevel%
+
 make all --jobs %NUMBER_OF_PROCESSORS%
+if %errorlevel% neq 0 exit /b %errorlevel%
+
 SET CTEST_OUTPUT_ON_FAILURE=1
 make test
+if %errorlevel% neq 0 exit /b %errorlevel%
