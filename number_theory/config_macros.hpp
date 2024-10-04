@@ -134,7 +134,7 @@
 #endif
 
 /* __builtin_expect is in gcc 3.0 */
-#if CONFIG_GNUC_AT_LEAST(3, 0) && CONFIG_HAS_BUILTIN(__builtin_expect)
+#if CONFIG_GNUC_AT_LEAST(3, 0) || CONFIG_HAS_BUILTIN(__builtin_expect)
 
 #if defined(likely)
 #undef likely
@@ -235,7 +235,7 @@
 #define ATTRIBUTE_COLD
 #endif
 
-#if defined(__GNUC__) && CONFIG_HAS_GCC_ATTRIBUTE(hot)
+#if CONFIG_GNUC_AT_LEAST(4, 4) || CONFIG_HAS_GCC_ATTRIBUTE(hot)
 #define ATTRIBUTE_HOT __attribute__((hot))
 #elif (defined(__GNUG__) || defined(__clang__)) && CONFIG_HAS_CPP_ATTRIBUTE(gnu::hot)
 #define ATTRIBUTE_HOT [[gnu::hot]]
