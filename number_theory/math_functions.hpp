@@ -1849,7 +1849,7 @@ template <class NumericType>
 [[nodiscard]] CONSTEXPR_VECTOR auto prime_factors_as_vector(NumericType n) {
     using UnsignedNumericType = typename ::math_functions::detail::make_unsigned_t<NumericType>;
 
-    std::vector<::math_functions::PrimeFactor<UnsignedNumericType>> prime_factors_vector;
+    std::vector<typename ::math_functions::PrimeFactor<UnsignedNumericType>> prime_factors_vector;
     constexpr bool kReservePlaceForFactors = std::is_same_v<UnsignedNumericType, std::uint32_t>;
     if constexpr (kReservePlaceForFactors) {
         prime_factors_vector.reserve(::math_functions::detail::max_number_of_unique_prime_divisors(
