@@ -410,7 +410,7 @@ function(
     add_executable(${target} ${target_cpp_filenames})
 
     if (NOT empty_dependencies)
-        target_link_libraries(${target} PRIVATE ${target_dependencies})
+        target_link_libraries(${target} PUBLIC ${target_dependencies})
     endif()
 
     if (NOT empty_optional_dependencies)
@@ -419,21 +419,21 @@ function(
             if(NOT dependency_lib)
                 message(WARNING "Optional dependency ${target_optional_dependency} of target ${target} not found")
             else()
-                target_link_libraries(${target} PRIVATE ${target_optional_dependency})
+                target_link_libraries(${target} PUBLIC ${target_optional_dependency})
             endif()
         endforeach()
     endif()
 
     if (LINK_THREADS_LIBRARY_MANUALLY)
-        target_link_libraries(${target} PRIVATE Threads::Threads)
+        target_link_libraries(${target} PUBLIC Threads::Threads)
     endif()
 
     if (USING_MINGW_GCC AND NOT WIN32)
-        target_link_options(${target} PRIVATE -static -static-libgcc -static-libstdc++)
+        target_link_options(${target} PUBLIC -static -static-libgcc -static-libstdc++)
     endif()
 
-    target_compile_options(${target} PRIVATE ${TEST_COMPILE_OPTIONS})
-    target_compile_definitions(${target} PRIVATE ${TEST_COMPILE_DEFINITIONS})
+    target_compile_options(${target} PUBLIC ${TEST_COMPILE_OPTIONS})
+    target_compile_definitions(${target} PUBLIC ${TEST_COMPILE_DEFINITIONS})
     set_target_properties(${target} PROPERTIES CXX_STANDARD ${target_cxx_version} CXX_EXTENSIONS OFF CXX_STANDARD_REQUIRED ON)
     add_test(NAME ${target} COMMAND $<TARGET_FILE:${target}>)
 endfunction(add_test_target)
