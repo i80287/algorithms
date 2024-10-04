@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.20)
 
 project(math_tests VERSION 0.1.0 LANGUAGES CXX)
 
@@ -9,13 +9,13 @@ set(USING_MSYS2_MINGW_GCC False)
 # other versions can be added below depending on the compiler version
 set(SUPPORTED_CXX_VERSIONS "17")
 
+string(TOLOWER ${CMAKE_CXX_COMPILER} STRING_LOWER_CMAKE_CXX_COMPILER)
 if (MINGW OR MSYS)
     set(USING_MINGW_GCC True)
     if((WIN32 AND NOT MSVC) OR MSYS)
         set(USING_MSYS2_MINGW_GCC True)
     endif()
 else()
-    string(TOLOWER ${CMAKE_CXX_COMPILER} STRING_LOWER_CMAKE_CXX_COMPILER)
     string(FIND ${STRING_LOWER_CMAKE_CXX_COMPILER} "mingw" pos)
     if (NOT pos EQUAL -1)
         set(USING_MINGW_GCC True)
@@ -86,7 +86,7 @@ function(configure_gcc_or_clang_gcc_options)
         -Warray-bounds
         -Wformat=2
     )
-    if (NOT USING_MINGW_GCC)
+    if (NOT USING_MINGW_GCC AND NOT MSVC)
         set(LOCAL_FN_TEST_COMPILE_OPTIONS
             ${LOCAL_FN_TEST_COMPILE_OPTIONS}
             -fstack-protector-strong
@@ -101,6 +101,10 @@ function(configure_gcc_or_clang_gcc_options)
             -Wduplicated-cond)
     endif()
     if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+        set(LOCAL_FN_TEST_COMPILE_OPTIONS
+            ${LOCAL_FN_TEST_COMPILE_OPTIONS}
+            -Wno-c++98-compat
+        )
         set(LOCAL_FN_TEST_COMPILE_DEFINITIONS
             ${LOCAL_FN_TEST_COMPILE_DEFINITIONS}
             _LIBCPP_ENABLE_ASSERTIONS=1)
@@ -123,15 +127,54 @@ function(configure_gcc_or_clang_gcc_options)
         ${LOCAL_FN_TEST_COMPILE_DEFINITIONS}
         PARENT_SCOPE)
 
-    if (NOT USING_MINGW_GCC)
+    if (NOT USING_MINGW_GCC AND NOT MSVC)
         set(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} -fsanitize=address,undefined PARENT_SCOPE)
     endif()
 
-endfunction()
+endfunction(configure_gcc_or_clang_gcc_options)
 
+function(configure_msvc_or_clang_msvc_options)
+    set(LOCAL_FN_TEST_COMPILE_OPTIONS
+        ${TEST_COMPILE_OPTIONS})
+    set(LOCAL_FN_TEST_COMPILE_DEFINITIONS
+        ${TEST_COMPILE_DEFINITIONS})
+
+    set(LOCAL_FN_TEST_COMPILE_DEFINITIONS
+        ${LOCAL_FN_TEST_COMPILE_DEFINITIONS}
+        _CRT_SECURE_NO_WARNINGS=1)
+
+    if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+        # set(LOCAL_FN_TEST_COMPILE_OPTIONS
+        #     ${LOCAL_FN_TEST_COMPILE_OPTIONS}
+        #     -UNDEBUG)
+    else()
+        if ((MSVC) AND (MSVC_VERSION GREATER_EQUAL 1914))
+            set(LOCAL_FN_TEST_COMPILE_OPTIONS
+                ${LOCAL_FN_TEST_COMPILE_OPTIONS}
+                "/Zc:__cplusplus")
+        endif()
+        set(LOCAL_FN_TEST_COMPILE_OPTIONS
+            ${LOCAL_FN_TEST_COMPILE_OPTIONS}
+            "/Wall"
+            "/UNDEBUG"
+            "/wd9025")
+    endif()
+
+    set(TEST_COMPILE_OPTIONS
+        ${LOCAL_FN_TEST_COMPILE_OPTIONS}
+        PARENT_SCOPE)
+    set(TEST_COMPILE_DEFINITIONS
+        ${LOCAL_FN_TEST_COMPILE_DEFINITIONS}
+        PARENT_SCOPE)
+endfunction(configure_msvc_or_clang_msvc_options)
+
+
+# https://en.cppreference.com/w/cpp/compiler_support
 if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang" OR CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang")
     if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
         if (CMAKE_CXX_COMPILER_FRONTEND_VARIANT STREQUAL "MSVC")
+            configure_msvc_or_clang_msvc_options()
+            configure_gcc_or_clang_gcc_options()
         elseif (CMAKE_CXX_COMPILER_FRONTEND_VARIANT STREQUAL "GNU")
             configure_gcc_or_clang_gcc_options()
         endif()
@@ -159,6 +202,13 @@ elseif (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
     endif()
 elseif (CMAKE_CXX_COMPILER_ID STREQUAL "Intel")
 elseif (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
+    configure_msvc_or_clang_msvc_options()
+    if (MSVC_VERSION GREATER_EQUAL 1928)
+        list(APPEND SUPPORTED_CXX_VERSIONS 20)
+    endif()
+    if (MSVC_VERSION GREATER_EQUAL 1937)
+        list(APPEND SUPPORTED_CXX_VERSIONS 23)
+    endif()
 endif()
 
 
@@ -217,48 +267,50 @@ if (NOT USING_MINGW_GCC_32)
     list(APPEND TestCxxVersions "17 20 23 26")
     list(APPEND TestDependencies "")
     list(APPEND TestOptionalDependencies "")
-endif()
 
-if (NOT USING_MINGW_GCC_32)
     list(APPEND TestFilenames "test_gosper_algorithm")
     list(APPEND TestDirectories "number_theory")
     list(APPEND TestCxxVersions "17 20 23 26")
     list(APPEND TestDependencies "")
     list(APPEND TestOptionalDependencies "")
 
-    list(APPEND TestFilenames "test_integers_128_bit")
-    list(APPEND TestDirectories "number_theory")
-    list(APPEND TestCxxVersions "17 20 23 26")
-    list(APPEND TestDependencies "")
-    list(APPEND TestOptionalDependencies "")
-
-    if (NOT APPLE)
-        list(APPEND TestFilenames "test_is_prime_bpsw")
+    if (NOT (CMAKE_CXX_COMPILER_ID STREQUAL "Clang" AND CMAKE_CXX_COMPILER_FRONTEND_VARIANT STREQUAL "MSVC"))
+        list(APPEND TestFilenames "test_integers_128_bit")
         list(APPEND TestDirectories "number_theory")
         list(APPEND TestCxxVersions "17 20 23 26")
-        list(APPEND TestDependencies "gmp")
+        list(APPEND TestDependencies "")
         list(APPEND TestOptionalDependencies "")
 
-        list(APPEND TestFilenames "test_kronecker_symbol")
+        list(APPEND TestFilenames "test_math_functions")
         list(APPEND TestDirectories "number_theory")
         list(APPEND TestCxxVersions "17 20 23 26")
-        list(APPEND TestDependencies "gmp gmpxx")
-        list(APPEND TestOptionalDependencies "")
+        list(APPEND TestDependencies "")
+        if (NOT APPLE AND (CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_FRONTEND_VARIANT STREQUAL "GNU"))
+            list(APPEND TestOptionalDependencies "mpfr")
+        else()
+            list(APPEND TestOptionalDependencies "")
+        endif()
     endif()
 
-    list(APPEND TestFilenames "test_long_int")
-    list(APPEND TestDirectories "number_theory")
-    list(APPEND TestCxxVersions "17 20 23 26")
-    list(APPEND TestDependencies "")
-    list(APPEND TestOptionalDependencies "")
+    if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_FRONTEND_VARIANT STREQUAL "GNU")
+        if (NOT APPLE)
+            list(APPEND TestFilenames "test_is_prime_bpsw")
+            list(APPEND TestDirectories "number_theory")
+            list(APPEND TestCxxVersions "17 20 23 26")
+            list(APPEND TestDependencies "gmp")
+            list(APPEND TestOptionalDependencies "")
 
-    list(APPEND TestFilenames "test_math_functions")
-    list(APPEND TestDirectories "number_theory")
-    list(APPEND TestCxxVersions "17 20 23 26")
-    list(APPEND TestDependencies "")
-    if (NOT APPLE)
-        list(APPEND TestOptionalDependencies "mpfr")
-    else()
+            list(APPEND TestFilenames "test_kronecker_symbol")
+            list(APPEND TestDirectories "number_theory")
+            list(APPEND TestCxxVersions "17 20 23 26")
+            list(APPEND TestDependencies "gmp gmpxx")
+            list(APPEND TestOptionalDependencies "")
+        endif()
+
+        list(APPEND TestFilenames "test_long_int")
+        list(APPEND TestDirectories "number_theory")
+        list(APPEND TestCxxVersions "17 20 23 26")
+        list(APPEND TestDependencies "")
         list(APPEND TestOptionalDependencies "")
     endif()
 endif()
@@ -306,11 +358,10 @@ function(
     string(REPLACE " " ";" target_filenames "${target_filenames}")
 
     set(target_cpp_filenames)
-    file(TO_NATIVE_PATH "/" os_separator)
     string(REPLACE " " ";" target_dir "${target_dir}")
     foreach(target_filename ${target_filenames})
         set(target_cpp_filename "${target_filename}.cpp")
-        string(JOIN "${os_separator}" target_path_to_cpp ".." ${target_dir} ${target_cpp_filename})
+        string(JOIN "/" target_path_to_cpp ".." ${target_dir} ${target_cpp_filename})
         list(APPEND target_cpp_filenames ${target_path_to_cpp})
     endforeach()
 
