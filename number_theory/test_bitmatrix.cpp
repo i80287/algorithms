@@ -5,6 +5,8 @@
 #include "bitmatrix.hpp"
 #include "test_tools.hpp"
 
+namespace {
+
 ATTRIBUTE_CONST
 #if CONFIG_HAS_AT_LEAST_CXX_20
 constexpr
@@ -441,7 +443,7 @@ constexpr
 }
 
 template <std::size_t Size, class TWordType>
-static void test_for_size() {
+void test_for_size() {
     test_tools::log_tests_started();
 
     using matrix_t = square_bitmatrix<Size, TWordType>;
@@ -530,7 +532,7 @@ static void test_for_size() {
 }
 
 template <class TWordType>
-static void test_for_word_type() {
+void test_for_word_type() {
     test_for_size<1, TWordType>();
     test_for_size<2, TWordType>();
     test_for_size<7, TWordType>();
@@ -552,6 +554,8 @@ static void test_for_word_type() {
     test_for_size<256, TWordType>();
     test_for_size<257, TWordType>();
 }
+
+}  // namespace
 
 int main() {
 #if CONFIG_HAS_AT_LEAST_CXX_20

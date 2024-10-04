@@ -1,11 +1,7 @@
 #pragma once
 
 #ifdef NDEBUG
-#ifdef _MSC_VER
-#pragma message("Can't test properly with NDEBUG macro defined (macro won't be undefined manually)")
-#else
-#warning("Can't test properly with NDEBUG macro defined (macro won't be undefined manually)")
-#endif
+#error("Can't test properly with NDEBUG macro defined (macro won't be undefined manually)")
 #endif
 
 #include <algorithm>

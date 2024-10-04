@@ -33,7 +33,7 @@ namespace {
 void test_isqrt() {
     log_tests_started();
 
-    constexpr uint32_t kIters = 2e6;
+    constexpr uint32_t kIters = 2'000'000;
 
     constexpr auto test_sqrts = [](uint32_t n, uint32_t n_squared) {
         assert(n == isqrt(n_squared));
@@ -41,7 +41,7 @@ void test_isqrt() {
         assert(n == isqrt(uint128_t(n_squared)));
     };
 
-    constexpr uint32_t kProbes = 1e5;
+    constexpr uint32_t kProbes = 100'000;
     for (uint32_t i = 0; i <= std::min(kProbes, 65535u); i++) {
         uint32_t i_square      = i * i;
         uint32_t next_i_square = (i + 1) * (i + 1);
@@ -50,7 +50,7 @@ void test_isqrt() {
         }
     }
 
-    for (uint32_t r = uint32_t(0) - kIters; r != 0; r++) {
+    for (uint32_t r = std::numeric_limits<uint32_t>::max() - kIters; r != 0; r++) {
         uint64_t rs = uint64_t(r) * r;
         assert(r - 1 == isqrt(rs - 1));
         assert(r == isqrt(rs));
@@ -60,7 +60,7 @@ void test_isqrt() {
         assert(r == isqrt(uint128_t(rs + 1)));
     }
 
-    for (uint64_t r = uint64_t(0) - kIters; r != 0; r++) {
+    for (uint64_t r = std::numeric_limits<uint64_t>::max() - kIters; r != 0; r++) {
         uint128_t rs = uint128_t(r) * r;
         assert(r - 1 == isqrt(uint128_t(rs - 1)));
         assert(r == isqrt(uint128_t(rs)));
@@ -644,6 +644,7 @@ void test_powers_sum() noexcept {
                     break;
             }
             assert(false);
+            std::terminate();
         }();
         constexpr std::uint32_t kOffset = 50;
         assert(max_n >= kOffset);
@@ -1452,15 +1453,15 @@ void test_general_asserts() {
     ASSERT_THAT(least_bit_set(0b100000u) == 0b100000u);
     ASSERT_THAT(least_bit_set(0b1000000u) == 0b1000000u);
     ASSERT_THAT(least_bit_set(0b10000000u) == 0b10000000u);
-    ASSERT_THAT(least_bit_set(int8_t(0b0)) == int8_t(0b0));
-    ASSERT_THAT(least_bit_set(int8_t(0b1)) == int8_t(0b1));
-    ASSERT_THAT(least_bit_set(int8_t(0b10)) == int8_t(0b10));
-    ASSERT_THAT(least_bit_set(int8_t(0b100)) == int8_t(0b100));
-    ASSERT_THAT(least_bit_set(int8_t(0b1000)) == int8_t(0b1000));
-    ASSERT_THAT(least_bit_set(int8_t(0b10000)) == int8_t(0b10000));
-    ASSERT_THAT(least_bit_set(int8_t(0b100000)) == int8_t(0b100000));
-    ASSERT_THAT(least_bit_set(int8_t(0b1000000)) == int8_t(0b1000000));
-    ASSERT_THAT(least_bit_set(int8_t(0b10000000)) == int8_t(0b10000000));
+    ASSERT_THAT(least_bit_set(static_cast<int8_t>(0b0)) == static_cast<int8_t>(0b0));
+    ASSERT_THAT(least_bit_set(static_cast<int8_t>(0b1)) == static_cast<int8_t>(0b1));
+    ASSERT_THAT(least_bit_set(static_cast<int8_t>(0b10)) == static_cast<int8_t>(0b10));
+    ASSERT_THAT(least_bit_set(static_cast<int8_t>(0b100)) == static_cast<int8_t>(0b100));
+    ASSERT_THAT(least_bit_set(static_cast<int8_t>(0b1000)) == static_cast<int8_t>(0b1000));
+    ASSERT_THAT(least_bit_set(static_cast<int8_t>(0b10000)) == static_cast<int8_t>(0b10000));
+    ASSERT_THAT(least_bit_set(static_cast<int8_t>(0b100000)) == static_cast<int8_t>(0b100000));
+    ASSERT_THAT(least_bit_set(static_cast<int8_t>(0b1000000)) == static_cast<int8_t>(0b1000000));
+    ASSERT_THAT(least_bit_set(static_cast<int8_t>(0b10000000)) == static_cast<int8_t>(0b10000000));
     ASSERT_THAT(least_bit_set(uint8_t(0b0)) == uint8_t(0b0));
     ASSERT_THAT(least_bit_set(uint8_t(0b1)) == uint8_t(0b1));
     ASSERT_THAT(least_bit_set(uint8_t(0b10)) == uint8_t(0b10));
