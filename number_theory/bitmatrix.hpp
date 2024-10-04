@@ -267,20 +267,19 @@ constexpr void transpose64(uint64_t (&src)[64]) noexcept {
 namespace detail {
 struct square_bitmatrix_helper {
 private:
-    static constexpr bool kUseUInt64 = sizeof(std::bitset<64 + 1>) == sizeof(std::bitset<64 + 64>);
-    static constexpr bool kUseUInt32 =
-        !kUseUInt64 && sizeof(std::bitset<32 + 1>) == sizeof(std::bitset<32 + 32>);
-    static constexpr bool kUseUInt8 = !kUseUInt64 && !kUseUInt32;
+    static constexpr bool kCanUseUInt64 =
+        sizeof(std::bitset<64 + 1>) == sizeof(std::bitset<64 + 64>);
+    static constexpr bool kCanUseUInt32 =
+        !kCanUseUInt64 && sizeof(std::bitset<32 + 1>) == sizeof(std::bitset<32 + 32>);
+    static constexpr bool kUseUInt8 = !kCanUseUInt64 && !kCanUseUInt32;
     static_assert(!kUseUInt8 || sizeof(std::bitset<8 + 1>) == sizeof(std::bitset<8 + 8>),
                   "Unsupported platform");
 
 public:
-    // N >= 64 and N >= 32 checks are here for the performance reasons,
-    // everything works fine without them as well.
     template <std::size_t N>
-    using word_type =
-        std::conditional_t<N >= 64 && kUseUInt64, std::uint64_t,
-                           std::conditional_t<N >= 32 && kUseUInt32, std::uint32_t, std::uint8_t>>;
+    using word_type = std::conditional_t<
+        (N > 32) && kCanUseUInt64, std::uint64_t,
+        std::conditional_t<(N > 8) && kCanUseUInt32, std::uint32_t, std::uint8_t>>;
 };
 
 #if CONFIG_HAS_AT_LEAST_CXX_20
@@ -312,7 +311,8 @@ private:
     static_assert(CHAR_BIT == 8, "Platform not supported");
     static constexpr std::size_t kAlignmentBits = sizeof(word_type) * CHAR_BIT;
     static constexpr std::size_t kBits          = (N + kAlignmentBits - 1) & ~(kAlignmentBits - 1);
-    static_assert(sizeof(std::bitset<N>) == sizeof(std::bitset<kBits>), "Platform not supported");
+    static_assert(sizeof(std::bitset<N>) == sizeof(std::bitset<kBits>),
+                  "Invalid word_type passed to the square_bitmatrix");
 
     template <class TFunction>
     static constexpr bool is_noexcept_index_fn() noexcept {

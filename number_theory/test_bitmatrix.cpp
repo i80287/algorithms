@@ -565,10 +565,10 @@ int main() {
 
     test_for_word_type<std::uint8_t>();
     // std::bitset uses unsigned long which is std::uint32_t on Windows.
-    if constexpr (sizeof(std::bitset<32 + 1>) == sizeof(std::bitset<32 + 32>)) {
+    if constexpr (sizeof(std::bitset<1>) == sizeof(std::bitset<32>)) {
         test_for_word_type<std::uint32_t>();
     }
-    if constexpr (sizeof(std::bitset<64 + 1>) == sizeof(std::bitset<64 + 64>)) {
+    if constexpr (sizeof(std::bitset<1>) == sizeof(std::bitset<64>)) {
         test_for_word_type<std::uint64_t>();
     }
 }
