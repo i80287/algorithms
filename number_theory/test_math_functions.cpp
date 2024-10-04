@@ -361,10 +361,12 @@ void test_factorizer() {
 
     constexpr auto N = uint32_t(1e7);
     Factorizer fact(N);
-    const auto is_prime = dynamic_primes_sieve(N);
-    assert(is_prime.size() == N + 1);
-    for (std::uint32_t i = 0; i <= N; i++) {
-        assert(is_prime[i] == fact.is_prime(i));
+    {
+        const auto is_prime = dynamic_primes_sieve(N);
+        assert(is_prime.size() == N + 1);
+        for (std::uint32_t i = 0; i <= N; i++) {
+            assert(is_prime[i] == fact.is_prime(i));
+        }
     }
 
     for (std::uint32_t i = 0; i <= N; i++) {
@@ -536,7 +538,7 @@ void test_solve_congruence_modulo_m_all_roots() {
     printf("Seed: %" PRIuFAST32 "\n", seed);
     std::mt19937 rnd_32(seed);
 
-    constexpr size_t kTotalTests = 1 << 25;
+    constexpr auto kTotalTests = size_t(1) << 25;
     for (auto test_iter = kTotalTests; test_iter > 0; --test_iter) {
         const auto m = static_cast<std::uint32_t>(rnd_32());
         if (unlikely(m == 0)) {
@@ -622,9 +624,9 @@ void test_powers_sum() noexcept {
 
     constexpr uint64_t kMaxM = 6;
     for (uint64_t m = 0; m <= kMaxM; m++) {
+        static_assert(kMaxM <= 6);
         const auto max_n = [m]() noexcept -> std::uint32_t {
             switch (m) {
-                static_assert(kMaxM <= 6);
                 case 6:
                     return 564;
                 case 5:

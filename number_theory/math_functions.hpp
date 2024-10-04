@@ -105,8 +105,8 @@ template <InplaceMultipliable T>
 #else
 template <class T>
 #endif
-[[nodiscard]] ATTRIBUTE_CONST constexpr T bin_pow(T n, int64_t p) noexcept(noexcept(n *= n) &&
-                                                                           noexcept(1 / n)) {
+[[nodiscard]] ATTRIBUTE_CONST constexpr T bin_pow(T n, int64_t p) noexcept(
+    noexcept(n *= n) && noexcept(1 / n)) {
     const bool not_inverse = p >= 0;
     uint64_t p_u           = p >= 0 ? static_cast<uint64_t>(p) : -static_cast<uint64_t>(p);
     T res(1);
@@ -1786,8 +1786,7 @@ template <class NumericType, class Function>
                 Function, typename ::math_functions::PrimeFactor<
                               typename ::math_functions::detail::make_unsigned_t<NumericType>>>
 #endif
-[[nodiscard]]
-ATTRIBUTE_ALWAYS_INLINE constexpr auto
+[[nodiscard]] ATTRIBUTE_ALWAYS_INLINE constexpr auto
 visit_prime_factors(NumericType n, Function visitor) noexcept(
     std::is_nothrow_invocable_v<
         Function, typename ::math_functions::PrimeFactor<
@@ -1952,7 +1951,7 @@ private:
 /// @param n inclusive upper bound
 /// @return vector, such that vector[n] == true \iff n is prime
 [[nodiscard]] CONSTEXPR_VECTOR auto dynamic_primes_sieve(std::uint32_t n) {
-    std::vector<std::uint8_t> primes(std::size_t(n) + 1, std::uint8_t(true));
+    std::vector<bool> primes(std::size_t(n) + 1, true);
     primes[0] = false;
     if (likely(n > 0)) {
         primes[1]                = false;
@@ -2192,9 +2191,8 @@ ATTRIBUTE_CONST ATTRIBUTE_ALWAYS_INLINE constexpr std::uint32_t congruence_arg(
 ///          x_{0} < m / gcd(a, m), x_{i + 1} = x_{i} + m / gcd(a, m).
 ///         Otherwise, return empty vector.
 template <class T1, class T2>
-[[nodiscard]]
-ATTRIBUTE_ALWAYS_INLINE CONSTEXPR_VECTOR
-    std::vector<std::uint32_t> solve_congruence_modulo_m_all_roots(T1 a, T2 c, std::uint32_t m) {
+[[nodiscard]] ATTRIBUTE_ALWAYS_INLINE CONSTEXPR_VECTOR std::vector<std::uint32_t>
+solve_congruence_modulo_m_all_roots(T1 a, T2 c, std::uint32_t m) {
     return ::math_functions::detail::solve_congruence_modulo_m_all_roots_impl(
         ::math_functions::detail::congruence_arg(a, m),
         ::math_functions::detail::congruence_arg(c, m), m);
@@ -2213,9 +2211,8 @@ ATTRIBUTE_ALWAYS_INLINE CONSTEXPR_VECTOR
 /// @return If roots exist, return root x such that 0 <= x < m / gcd(a, m).
 ///         Otherwise, return math_functions::kNoCongruenceSolution
 template <class T1, class T2>
-[[nodiscard]]
-ATTRIBUTE_CONST ATTRIBUTE_ALWAYS_INLINE constexpr std::uint32_t solve_congruence_modulo_m(
-    T1 a, T2 c, std::uint32_t m) noexcept {
+[[nodiscard]] ATTRIBUTE_CONST ATTRIBUTE_ALWAYS_INLINE constexpr std::uint32_t
+solve_congruence_modulo_m(T1 a, T2 c, std::uint32_t m) noexcept {
     return ::math_functions::detail::solve_congruence_modulo_m_impl(
         ::math_functions::detail::congruence_arg(a, m),
         ::math_functions::detail::congruence_arg(c, m), m);
@@ -2229,8 +2226,7 @@ ATTRIBUTE_CONST ATTRIBUTE_ALWAYS_INLINE constexpr std::uint32_t solve_congruence
 /// @param m
 /// @return
 template <class T>
-[[nodiscard]]
-ATTRIBUTE_CONST constexpr std::uint32_t inv_mod_m(T a, std::uint32_t m) noexcept {
+[[nodiscard]] ATTRIBUTE_CONST constexpr std::uint32_t inv_mod_m(T a, std::uint32_t m) noexcept {
     return ::math_functions::solve_congruence_modulo_m(a, std::uint32_t{1}, m);
 }
 
