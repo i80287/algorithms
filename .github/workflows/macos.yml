@@ -1,0 +1,34 @@
+name: macOS CI
+
+on: [push, pull_request, workflow_dispatch]
+
+permissions:
+  contents: read
+
+jobs:
+
+  macOS-cmake-clang:
+    name: test-on-macOS-${{ matrix.macos_versions }}
+    runs-on: macos-${{ matrix.macos_versions }}
+    strategy:
+      fail-fast: false
+      matrix:
+        macos_versions: [13]
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Install dependencies
+      run: |
+        brew update
+        brew install gcc libtool make cmake
+        brew reinstall gmp mpfr
+        brew unlink gmp && brew link gmp
+        brew unlink mpfr && brew link mpfr
+
+    - name: Run tests
+      if: matrix.macos_versions <= 13
+      run: |
+        cd ./tests
+        chmod +x run_clang_tests_macos.sh
+        ./run_clang_tests_macos.sh
