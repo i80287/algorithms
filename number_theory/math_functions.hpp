@@ -2002,8 +2002,8 @@ template <std::uint32_t N>
         primes[0] = false;
         if constexpr (primes.size() > 1) {
             primes[1]                = false;
-            const std::uint32_t root = ::math_functions::isqrt(N);
-            if (const std::uint32_t i = 2; i <= root) {
+            constexpr std::uint32_t root = ::math_functions::isqrt(N);
+            if constexpr (constexpr std::uint32_t i = 2; i <= root) {
                 for (std::size_t j = i * i; j <= N; j += i) {
                     primes[j] = false;
                 }
@@ -2018,6 +2018,7 @@ template <std::uint32_t N>
         }
         return primes;
     }();
+
     return primes_bs;
 }
 
