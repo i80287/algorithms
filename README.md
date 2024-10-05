@@ -1,2 +1,4 @@
-![Ubuntu tests event param](https://github.com/i80287/algorithms/workflows/Ubuntu/badge.svg)
-![Fedora tests event param](https://github.com/i80287/algorithms/workflows/Fedora/badge.svg)
+![Ubuntu tests pass badge](https://github.com/i80287/algorithms/workflows/Ubuntu/badge.svg)
+![Fedora tests pass badge](https://github.com/i80287/algorithms/workflows/Fedora/badge.svg)
+![macOS tests pass badge](https://github.com/i80287/algorithms/workflows/macOS%20CI/badge.svg)
+![Windows tests pass badge](https://github.com/i80287/algorithms/workflows/Windows%20CI/badge.svg)
