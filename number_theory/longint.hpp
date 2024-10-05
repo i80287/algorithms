@@ -469,7 +469,7 @@ struct longint {
             deallocate(other.nums_);
             other.nums_ = ans;
         } else {
-            std::size_t n = 2 * math_functions::nearest_greater_equal_power_of_two(prod_size);
+            std::size_t n = 2 * math_functions::nearest_greater_equal_power_of_two(uint64_t(prod_size));
             const bool high_precision = n > kFFTPrecisionBorder;
             n <<= high_precision;
             // Allocate n complex numbers for p1 and n complex numbers for p2
@@ -587,7 +587,7 @@ struct longint {
             deallocate(nums_);
             nums_ = ans;
         } else {
-            std::size_t n = 2 * math_functions::nearest_greater_equal_power_of_two(prod_size);
+            std::size_t n = 2 * math_functions::nearest_greater_equal_power_of_two(uint64_t(prod_size));
             const bool high_precision = n > kFFTPrecisionBorder;
             n <<= high_precision;
             // Allocate n complex numbers for p1 and n complex numbers for p2
@@ -1260,7 +1260,7 @@ struct longint {
         const std::size_t str_conv_digits_size =
             (digits_count + kStrConvBaseDigits - 1) / kStrConvBaseDigits;
         const std::size_t aligned_str_conv_digits_size =
-            math_functions::nearest_greater_equal_power_of_two(str_conv_digits_size);
+            math_functions::nearest_greater_equal_power_of_two(uint64_t(str_conv_digits_size));
         reserveUninitializedWithoutCopy(uint32_t(aligned_str_conv_digits_size));
         uint32_t* str_conv_digits = nums_;
 
@@ -1449,8 +1449,8 @@ struct longint {
                 break;
         }
 
-        std::size_t n = math_functions::nearest_greater_equal_power_of_two(usize_value);
-        ensureBinBasePowsCapacity(math_functions::log2_floor(n));
+        std::size_t n = math_functions::nearest_greater_equal_power_of_two(uint64_t(usize_value));
+        ensureBinBasePowsCapacity(math_functions::log2_floor(uint64_t(n)));
         digit_t* knums = allocate(n);
         std::fill_n(std::copy_n(nums_, usize_value, knums), n - usize_value, digit_t(0));
         Decimal result = convertBinBase(knums, n);
@@ -1637,7 +1637,7 @@ struct longint {
                 deallocate(this->digits_);
                 this->digits_ = ans;
             } else {
-                std::size_t n = math_functions::nearest_greater_equal_power_of_two(3 * new_size);
+                std::size_t n = math_functions::nearest_greater_equal_power_of_two(3 * uint64_t(new_size));
                 static_assert(kFftDecimalBase * kFftDecimalBase * kFftDecimalBase == kDecimalBase,
                               "");
                 // Allocate n for the first polynomial
@@ -1777,7 +1777,7 @@ struct longint {
                 deallocate(other.digits_);
                 other.digits_ = ans;
             } else {
-                std::size_t n = math_functions::nearest_greater_equal_power_of_two(3 * prod_size);
+                std::size_t n = math_functions::nearest_greater_equal_power_of_two(3 * uint64_t(prod_size));
                 static_assert(kFftDecimalBase * kFftDecimalBase * kFftDecimalBase == kDecimalBase,
                               "");
                 // Allocate n for the first polynomial
@@ -1948,7 +1948,7 @@ private:
                 mult_add_buffer[j + half_len] = uint32_t(carry);
             }
         } else {
-            std::size_t n = 2 * math_functions::nearest_greater_equal_power_of_two(prod_size);
+            std::size_t n = 2 * math_functions::nearest_greater_equal_power_of_two(uint64_t(prod_size));
             const bool high_precision = n > kFFTPrecisionBorder;
             n <<= high_precision;
             fft::complex* p1 = fft_poly_buffer;
@@ -2072,7 +2072,7 @@ private:
         Decimal low_dec  = convertBinBase(nums, size / 2);
         Decimal high_dec = convertBinBase(nums + size / 2, size / 2);
 
-        const std::size_t idx = math_functions::log2_floor(size) - 1;
+        const std::size_t idx = math_functions::log2_floor(uint64_t(size)) - 1;
         assert(idx < conv_bin_base_pows.size());
         high_dec *= conv_bin_base_pows[idx];
         high_dec += low_dec;
