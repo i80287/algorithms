@@ -30,7 +30,7 @@ jobs:
     name: test-clang-cl-on-windows
     runs-on: windows-latest
     strategy:
-       fail-fast: false
+      fail-fast: false
 
     steps:
     - uses: actions/checkout@v4
