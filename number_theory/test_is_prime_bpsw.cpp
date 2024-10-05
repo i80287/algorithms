@@ -1,5 +1,3 @@
-#include <gmp.h>
-
 #include <array>
 #include <cassert>
 #include <cinttypes>
@@ -12,6 +10,16 @@
 #include "config_macros.hpp"
 #include "is_prime.hpp"
 #include "test_tools.hpp"
+
+#if CONFIG_HAS_INCLUDE(<gmp.h>)
+#include <gmp.h>
+#define HAS_GMP_DURING_TESTING 1
+#else
+#define HAS_GMP_DURING_TESTING 0
+#if defined(__linux__) && !defined(__MINGW32__)
+#error "gmp tests should be available on linux"
+#endif
+#endif
 
 using namespace test_tools;
 using math_functions::is_prime_bpsw;
@@ -390,6 +398,8 @@ static void TestPrimesFromFile() {
     }
 }
 
+#if HAS_GMP_DURING_TESTING
+
 static void TestRandomPrimesGMP() noexcept {
     log_tests_started();
 
@@ -434,6 +444,8 @@ static void TestRandomPrimesGMP() noexcept {
     mpz_clear(n_gmp);
 }
 
+#endif
+
 static void TestMersennePrimeNumbers() noexcept {
     for (const auto n : {0, 1, 2, 5, 11, 13, 17, 19, 23, 29}) {
         assert(!math_functions::is_mersenne_prime(std::uint64_t(n)));
@@ -474,6 +486,8 @@ int main() {
     TestMidPrimes();
     TestLargestU64Primes();
     TestPrimesFromFile();
+#if HAS_GMP_DURING_TESTING
     TestRandomPrimesGMP();
+#endif
     TestMersennePrimeNumbers();
 }

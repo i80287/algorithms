@@ -22,6 +22,9 @@
 #define HAS_MPFR_DURING_TESTING 1
 #else
 #define HAS_MPFR_DURING_TESTING 0
+#if defined(__linux__) && !defined(__MINGW32__)
+#error "mpfr tests should be available on linux"
+#endif
 #endif
 
 using namespace math_functions;

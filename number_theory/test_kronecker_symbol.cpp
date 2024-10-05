@@ -9,8 +9,15 @@
 using math_functions::fibonacci_num;
 using math_functions::kronecker_symbol;
 
-// Link with -lgmp and -lgmpxx
+#if CONFIG_HAS_INCLUDE(<gmpxx.h>)
 #include <gmpxx.h>
+#define HAS_GMPXX_DURING_TESTING 1
+#else
+#define HAS_GMPXX_DURING_TESTING 0
+#if defined(__linux__) && !defined(__MINGW32__)
+#error "gmpxx tests should be available on linux"
+#endif
+#endif
 
 /// @brief Kronecker symbols (n/k) for 1 <= n <= 30 and 1 <= k <= 30
 ///        Here (n/k) = krnk[n - 1][k - 1] (using zero indexing notation)
@@ -283,6 +290,8 @@ static void CheckJacobiBasic() noexcept {
     }
 }
 
+#if HAS_GMPXX_DURING_TESTING
+
 static void CheckJacobi(int32_t i, int32_t j, const mpz_class& n1, const mpz_class& n2) noexcept {
     int32_t func_jac = kronecker_symbol(i, j);
     int real_jac     = mpz_jacobi(n1.get_mpz_t(), n2.get_mpz_t());
@@ -519,13 +528,17 @@ static void GMPCheckJacobiU64I64() {
     }
 }
 
+#endif
+
 int main() {
     constexpr uint16_t kLen = 2000;
     CheckJacobiBasic<kLen>();
+#if HAS_GMPXX_DURING_TESTING
     GMPCheckJacobiI32<kLen>();
     GMPCheckJacobiI64<kLen>();
     GMPCheckJacobiU32<kLen>();
     GMPCheckJacobiU64<kLen>();
     GMPCheckJacobiU32I32<kLen>();
     GMPCheckJacobiU64I64<kLen>();
+#endif
 }
