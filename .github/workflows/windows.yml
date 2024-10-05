@@ -1,0 +1,27 @@
+name: Windows CI
+
+on: [push, pull_request, workflow_dispatch]
+
+permissions:
+  contents: read
+
+jobs:
+
+  windows-cmake-msvc:
+    name: test-msvc-on-windows
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Add msbuild to PATH
+      uses: microsoft/setup-msbuild@v2
+      with:
+        msbuild-architecture: x64
+
+    - name: Run tests
+      run: |
+        cd .\tests
+        .\run_windows_msvc_tests.bat
