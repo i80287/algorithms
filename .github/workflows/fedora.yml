@@ -1,4 +1,4 @@
-name: Fedora
+name: Fedora CI
 
 on: [push, pull_request, workflow_dispatch]
 
