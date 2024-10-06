@@ -1054,8 +1054,8 @@ static void TestDecimal() {
 
         d1 += d1;
         assert(d1.size_ == 4 && d1.digits_[0] == 0 && d1.digits_[1] == 0 &&
-               d1.digits_[2] == (1u << (k + 1)) % longint::Decimal::kDecimalBase &&
-               d1.digits_[3] == (1u << (k + 1)) / longint::Decimal::kDecimalBase);
+               d1.digits_[2] == (1u << (k + 1)) % longint::kDecimalBase &&
+               d1.digits_[3] == (1u << (k + 1)) / longint::kDecimalBase);
     }
 
     {
