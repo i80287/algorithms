@@ -7,10 +7,13 @@
 #include <ctime>
 #include <iostream>
 #include <limits>
+#include <list>
 #include <numeric>
 #include <random>
+#include <set>
 #include <thread>
 #include <type_traits>
+#include <unordered_set>
 #include <utility>
 
 #include "config_macros.hpp"
@@ -390,10 +393,109 @@ void test_factorizer() {
     }
 }
 
+#if defined(INTEGERS_128_BIT_HPP)
+
+template <class IntType>
+bool test_extended_euclid_algorithm_a_b(std::size_t thread_id, IntType a, IntType b) noexcept {
+    const auto [u, v, a_b_gcd] = math_functions::extended_euclid_algorithm(a, b);
+    using HighIntType = std::conditional_t<sizeof(IntType) == sizeof(uint32_t), int64_t, int128_t>;
+    const HighIntType hi_a = a;
+    const HighIntType hi_b = b;
+    const HighIntType hi_u = u;
+    const HighIntType hi_v = v;
+    if (unlikely(hi_a * hi_u + hi_b * hi_v != static_cast<HighIntType>(a_b_gcd))) {
+        std::cerr << "In thread " << thread_id
+                  << " a * u + b * v != gcd(a, b) when "
+                     "a = "
+                  << a
+                  << ", "
+                     "b = "
+                  << b
+                  << ", "
+                     "u = "
+                  << u
+                  << ", "
+                     "v = "
+                  << v
+                  << ", "
+                     "gcd = "
+                  << a_b_gcd << std::endl;
+        return false;
+    }
+
+    bool valid_u_range = (b == 0 && u == ::math_functions::sign(a)) ^
+                         (::math_functions::uabs(u) <= ::math_functions::uabs(b));
+    if (unlikely(!valid_u_range)) {
+        std::cerr << "In thread " << thread_id
+                  << " not b == 0 && u == sign(a) xor -|b| <= u && u <= |b| when "
+                     "a = "
+                  << a
+                  << ", "
+                     "b = "
+                  << b
+                  << ", "
+                     "u = "
+                  << u
+                  << ", "
+                     "v = "
+                  << v
+                  << ", "
+                     "gcd = "
+                  << a_b_gcd << std::endl;
+        return false;
+    }
+
+    bool valid_v_range = (a == 0 && v == ::math_functions::sign(b)) ^
+                         (::math_functions::uabs(v) <= ::math_functions::uabs(a));
+    if (unlikely(!valid_v_range)) {
+        std::cerr << "In thread " << thread_id
+                  << " not a == 0 && v == sign(b) xor -|a| <= v && v <= |a| when "
+                     "a = "
+                  << a
+                  << ", "
+                     "b = "
+                  << b
+                  << ", "
+                     "u = "
+                  << u
+                  << ", "
+                     "v = "
+                  << v
+                  << ", "
+                     "gcd = "
+                  << a_b_gcd << std::endl;
+        return false;
+    }
+
+    const auto real_gcd = std::gcd(math_functions::uabs(a), math_functions::uabs(b));
+    if (unlikely(a_b_gcd != real_gcd)) {
+        std::cerr << "In thread " << thread_id
+                  << " calculated gcd != std::gcd(a, b) when "
+                     "a = "
+                  << a
+                  << ", "
+                     "b = "
+                  << b
+                  << ", "
+                     "u = "
+                  << u
+                  << ", "
+                     "v = "
+                  << v
+                  << ", "
+                     "wrong gcd = "
+                  << a_b_gcd
+                  << ", "
+                     "true gcd = "
+                  << real_gcd << std::endl;
+        return false;
+    }
+
+    return true;
+}
+
 template <class IntType>
 [[nodiscard]] bool multi_thread_test_extended_euclid_algorithm() {
-    static_assert(std::is_same_v<IntType, std::int64_t> || std::is_same_v<IntType, std::uint32_t>,
-                  "");
     log_tests_started();
 
     constexpr std::size_t kTotalTests     = 1ull << 30;
@@ -412,116 +514,19 @@ template <class IntType>
         ]() {
             const std::size_t seed = thread_id * 3'829'234'734ul + 27'273'489;
             std::cout << "Thread " << thread_id << " started, seed = " << seed << std::endl;
+
+            static_assert(sizeof(IntType) == sizeof(std::uint32_t) ||
+                          sizeof(IntType) == sizeof(std::uint64_t));
             using rnt_t = std::conditional_t<sizeof(IntType) == sizeof(std::uint32_t), std::mt19937,
                                              std::mt19937_64>;
             rnt_t mrs_rnd(static_cast<typename rnt_t::result_type>(seed));
 
             for (size_t test_iter = kTestsPerThread; test_iter != 0; --test_iter) {
-                const IntType a = static_cast<IntType>(mrs_rnd());
-                const IntType b = static_cast<IntType>(mrs_rnd());
-
-                const auto [u, v, a_b_gcd] = math_functions::extended_euclid_algorithm(a, b);
-                const auto real_gcd        = std::gcd(a, b);
-                if (likely(real_gcd != 0)) {
-                    assert(a % real_gcd == 0);
-                    assert(b % real_gcd == 0);
-                } else {
-                    assert(a == 0 && b == 0);
-                }
-
-                if (unlikely(a_b_gcd != static_cast<std::make_unsigned_t<IntType>>(real_gcd))) {
-                    std::cerr << "In thread " << thread_id
-                              << " calculated gcd != std::gcd(a, b) when "
-                                 "a = "
-                              << a
-                              << ", "
-                                 "b = "
-                              << b
-                              << ", "
-                                 "u = "
-                              << u
-                              << ", "
-                                 "v = "
-                              << v
-                              << ", "
-                                 "wrong gcd = "
-                              << a_b_gcd
-                              << ", "
-                                 "true gcd = "
-                              << real_gcd << std::endl;
+                const auto a = static_cast<IntType>(mrs_rnd());
+                const auto b = static_cast<IntType>(mrs_rnd());
+                if (unlikely(!test_extended_euclid_algorithm_a_b(thread_id, a, b))) {
                     result.test_and_set();
-                    return;
-                }
-
-                const int128_t i128_a = a;
-                const int128_t i128_b = b;
-                const int128_t i128_u = u;
-                const int128_t i128_v = v;
-                if (unlikely(i128_a * i128_u + i128_b * i128_v != real_gcd)) {
-                    std::cerr << "In thread " << thread_id
-                              << " a * u + b * v != gcd(a, b) when "
-                                 "a = "
-                              << a
-                              << ", "
-                                 "b = "
-                              << b
-                              << ", "
-                                 "u = "
-                              << u
-                              << ", "
-                                 "v = "
-                              << v
-                              << ", "
-                                 "gcd = "
-                              << a_b_gcd << std::endl;
-                    result.test_and_set();
-                    return;
-                }
-
-                bool valid_u_range =
-                    (b == 0 && u == 1) ^ (::math_functions::uabs(u) <= ::math_functions::uabs(b));
-                if (unlikely(!valid_u_range)) {
-                    std::cerr << "In thread " << thread_id
-                              << " !(b == 0 || (- |b| <= u && u <= |b|)) when "
-                                 "a = "
-                              << a
-                              << ", "
-                                 "b = "
-                              << b
-                              << ", "
-                                 "u = "
-                              << u
-                              << ", "
-                                 "v = "
-                              << v
-                              << ", "
-                                 "gcd = "
-                              << a_b_gcd << std::endl;
-                    result.test_and_set();
-                    return;
-                }
-
-                bool valid_v_range =
-                    (a == 0 && v == 1) ^ (::math_functions::uabs(v) <= ::math_functions::uabs(a));
-                if (unlikely(!valid_v_range)) {
-                    std::cerr << "In thread " << thread_id
-                              << " !(a == 0 || (- |a| <= v && v <= |a|)) when "
-                                 "a = "
-                              << a
-                              << ", "
-                                 "b = "
-                              << b
-                              << ", "
-                                 "u = "
-                              << u
-                              << ", "
-                                 "v = "
-                              << v
-                              << ", "
-                                 "gcd = "
-                              << a_b_gcd << std::endl;
-                    result.test_and_set();
-                    return;
+                    break;
                 }
             }
         });
@@ -532,6 +537,26 @@ template <class IntType>
     }
 
     return !result.test_and_set();
+}
+
+#endif  // INTEGERS_128_BIT_HPP
+
+void test_extended_euclid_algorithm() {
+    constexpr uint64_t a     = std::numeric_limits<uint64_t>::max();
+    constexpr uint64_t b     = 0;
+    constexpr auto q         = math_functions::extended_euclid_algorithm(a, b);
+    constexpr auto u_value   = q.u_value;
+    constexpr auto v_value   = q.v_value;
+    constexpr auto gcd_value = q.gcd_value;
+    static_assert(gcd_value == std::gcd(a, b));
+    static_assert(u_value * a + v_value * b == gcd_value);
+
+#if defined(INTEGERS_128_BIT_HPP)
+    assert(multi_thread_test_extended_euclid_algorithm<std::int32_t>());
+    assert(multi_thread_test_extended_euclid_algorithm<std::uint32_t>());
+    assert(multi_thread_test_extended_euclid_algorithm<std::int64_t>());
+    assert(multi_thread_test_extended_euclid_algorithm<std::uint64_t>());
+#endif
 }
 
 void test_solve_congruence_modulo_m_all_roots() {
@@ -569,14 +594,14 @@ void test_solve_congruence_modulo_m_all_roots() {
 void test_inv_mod_m() {
     log_tests_started();
 
-    constexpr uint32_t m_arr1[] = {
+    constexpr uint32_t first_prime_nums[] = {
         2,   3,   5,   7,   11,  13,  17,  19,  23,  29,  31,  37,  41,  43,  47,  53,
         59,  61,  67,  71,  73,  79,  83,  89,  97,  101, 103, 107, 109, 113, 127, 131,
         137, 139, 157, 149, 151, 163, 167, 173, 179, 181, 191, 193, 197, 199, 211, 223,
         227, 229, 233, 239, 241, 257, 251, 263, 269, 271, 277, 281, 283, 293, 307, 311,
     };
 
-    for (uint32_t m : m_arr1) {
+    for (uint32_t m : first_prime_nums) {
         for (uint32_t a = 1; a < m; a++) {
             const auto a_inv = math_functions::inv_mod_m(a, m);
             assert(a_inv < m);
@@ -584,12 +609,12 @@ void test_inv_mod_m() {
         }
     }
 
-    constexpr uint32_t m_arr2[] = {
+    constexpr uint32_t big_prime_nums[] = {
         2147483489u, 2147483497u, 2147483543u, 2147483549u, 2147483563u,
         2147483579u, 2147483587u, 2147483629u, 2147483647u,
     };
     constexpr uint32_t kLimit = 100;
-    for (uint32_t m : m_arr2) {
+    for (uint32_t m : big_prime_nums) {
         for (uint32_t a = 1; a < std::min(m, kLimit); a++) {
             const auto a_inv = math_functions::inv_mod_m(a, m);
             assert(a_inv < m);
@@ -618,6 +643,66 @@ void test_inv_mod_m() {
             assert(a_inv < m);
             assert(a_inv != math_functions::kNoCongruenceSolution);
             assert((a * uint64_t(a_inv)) % m == 1);
+        }
+    }
+
+    constexpr std::mt19937_64::result_type kSeed = 372'134'058;
+    std::mt19937_64 rnd_gen(kSeed);
+    constexpr std::size_t n = 25'000;
+    std::vector<uint64_t> nums(n);
+
+    auto make_rbtree_set = [](const std::vector<std::uint64_t>& nums) {
+        return std::set<std::uint64_t>(nums.begin(), nums.end());
+    };
+    auto make_hash_set = [](const std::vector<std::uint64_t>& nums) {
+        return std::unordered_set<std::uint64_t>(nums.begin(), nums.end());
+    };
+    auto make_unique_vector = [](std::vector<std::uint64_t> nums) {
+        std::sort(nums.begin(), nums.end());
+        const auto iter = std::unique(nums.begin(), nums.end());
+        nums.erase(iter, nums.end());
+        return nums;
+    };
+    auto make_unique_list = [](std::vector<std::uint64_t> nums) {
+        std::sort(nums.begin(), nums.end());
+        const auto iter = std::unique(nums.begin(), nums.end());
+        nums.erase(iter, nums.end());
+        return std::list<std::uint64_t>(nums.begin(), nums.end());
+    };
+
+    for (const std::uint32_t m : first_prime_nums) {
+        std::generate(nums.begin(), nums.end(), [&rnd_gen, m]() noexcept {
+            const auto rnd_num = rnd_gen();
+            return rnd_num % m != 0 ? rnd_num : rnd_num + 1;
+        });
+        const auto [nums_mod_m, inv_nums] = math_functions::inv_mod_m(nums, m);
+        assert(nums_mod_m.size() == n);
+        assert(inv_nums.size() == n);
+        for (std::size_t i = 0; i < n; i++) {
+            assert(nums_mod_m[i] == nums[i] % m);
+            assert(inv_nums[i] < m);
+            assert((std::uint64_t{nums_mod_m[i]} * inv_nums[i]) % m == 1);
+        }
+
+        {
+            auto [c1, c2] = math_functions::inv_mod_m(make_unique_vector(nums), m);
+            auto [c3, c4] = math_functions::inv_mod_m(make_rbtree_set(nums), m);
+            assert(c1 == c3);
+            assert(c2 == c4);
+
+            auto [c5, c6] = math_functions::inv_mod_m(make_hash_set(nums), m);
+            std::sort(c1.begin(), c1.end());
+            std::sort(c5.begin(), c5.end());
+            assert(c1 == c5);
+            std::sort(c2.begin(), c2.end());
+            std::sort(c6.begin(), c6.end());
+            assert(c2 == c6);
+
+            auto [c7, c8] = math_functions::inv_mod_m(make_unique_list(nums), m);
+            std::sort(c7.begin(), c7.end());
+            assert(c1 == c7);
+            std::sort(c8.begin(), c8.end());
+            assert(c2 == c8);
         }
     }
 }
@@ -1853,8 +1938,7 @@ int main() {
     test_visit_all_submasks();
     test_prime_bitarrays();
     test_factorizer();
-    assert(multi_thread_test_extended_euclid_algorithm<std::uint32_t>());
-    assert(multi_thread_test_extended_euclid_algorithm<std::int64_t>());
+    test_extended_euclid_algorithm();
     test_solve_congruence_modulo_m_all_roots();
     test_inv_mod_m();
     test_solve_factorial_congruence();

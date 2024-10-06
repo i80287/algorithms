@@ -22,6 +22,7 @@
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
+#include <iterator>
 #include <limits>
 #include <map>
 #include <numeric>
@@ -32,7 +33,8 @@
 #include "config_macros.hpp"
 
 #if CONFIG_HAS_AT_LEAST_CXX_20
-#include <bit>  // std::popcount, std::countr_zero, std::countl_zero
+#include <bit>
+#include <ranges>
 #endif
 
 #if CONFIG_HAS_INCLUDE("integers_128_bit.hpp")
@@ -105,8 +107,8 @@ template <InplaceMultipliable T>
 #else
 template <class T>
 #endif
-[[nodiscard]] ATTRIBUTE_CONST constexpr T bin_pow(T n, int64_t p) noexcept(
-    noexcept(n *= n) && noexcept(1 / n)) {
+[[nodiscard]] ATTRIBUTE_CONST constexpr T bin_pow(T n, int64_t p) noexcept(noexcept(n *= n) &&
+                                                                           noexcept(1 / n)) {
     const bool not_inverse = p >= 0;
     uint64_t p_u           = p >= 0 ? static_cast<uint64_t>(p) : -static_cast<uint64_t>(p);
     T res(1);
@@ -537,16 +539,33 @@ ATTRIBUTE_ALWAYS_INLINE constexpr void visit_all_submasks(uint64_t mask, Functor
     } while (s != 0);
 }
 
+int32_t sign(bool x)          = delete;
+int32_t sign(char x)          = delete;
+int32_t sign(signed char x)   = delete;
+int32_t sign(unsigned char x) = delete;
+
 [[nodiscard]] ATTRIBUTE_CONST constexpr int32_t sign(int x) noexcept {
     return int32_t(x > 0) - int32_t(x < 0);
+}
+
+[[nodiscard]] ATTRIBUTE_CONST constexpr int32_t sign(unsigned x) noexcept {
+    return x > 0 ? 1 : 0;
 }
 
 [[nodiscard]] ATTRIBUTE_CONST constexpr int32_t sign(long x) noexcept {
     return int32_t(x > 0) - int32_t(x < 0);
 }
 
+[[nodiscard]] ATTRIBUTE_CONST constexpr int32_t sign(unsigned long x) noexcept {
+    return x > 0 ? 1 : 0;
+}
+
 [[nodiscard]] ATTRIBUTE_CONST constexpr int32_t sign(long long x) noexcept {
     return int32_t(x > 0) - int32_t(x < 0);
+}
+
+[[nodiscard]] ATTRIBUTE_CONST constexpr int32_t sign(unsigned long long x) noexcept {
+    return x > 0 ? 1 : 0;
 }
 
 #if defined(INTEGERS_128_BIT_HPP)
@@ -554,6 +573,10 @@ ATTRIBUTE_ALWAYS_INLINE constexpr void visit_all_submasks(uint64_t mask, Functor
 [[nodiscard]] ATTRIBUTE_CONST I128_CONSTEXPR int32_t sign(int128_t x) noexcept {
     uint32_t sign_bit = uint32_t(uint128_t(x) >> 127);
     return int32_t(x != 0) - int32_t(2 * sign_bit);
+}
+
+[[nodiscard]] ATTRIBUTE_CONST constexpr int32_t sign(uint128_t x) noexcept {
+    return x > 0 ? 1 : 0;
 }
 
 #endif
@@ -2036,8 +2059,8 @@ struct [[nodiscard]] ExtEuclidAlgoRet {
 /// @brief
 /// Finds such integer u and v so that `a * u + b * v = gcd(a, b)`
 /// let gcd(a, b) >= 0
-/// if a == 0 => u == 0 && v == 1 && (a * u + b * v = b = gcd(0, b))
-/// if b == 0 => u == 1 && v == 0 && (a * u + b * v = a = gcd(a, 0))
+/// if a == 0 => u == 0 && v == sign(b) && (a * u + b * v = b = gcd(0, b))
+/// if b == 0 => v == 0 && u == sign(a) && (a * u + b * v = a = gcd(a, 0))
 /// if a != 0 => |v| <= |a|
 /// if b != 0 => |u| <= |b|
 /// Works in O(log(min(a, b)))
@@ -2177,6 +2200,7 @@ ATTRIBUTE_CONST ATTRIBUTE_ALWAYS_INLINE constexpr std::uint32_t congruence_arg(
 }
 
 }  // namespace detail
+
 /// @brief Solves congruence a * x ≡ c (mod m)
 /// @note Roots exist <=> c % gcd(a, m) == 0.
 ///       If roots exist, then exactly gcd(a, m)
@@ -2219,17 +2243,147 @@ solve_congruence_modulo_m(T1 a, T2 c, std::uint32_t m) noexcept {
         ::math_functions::detail::congruence_arg(c, m), m);
 }
 
+#if CONFIG_HAS_CONCEPTS
+
 /// @brief Solves modulus congruence a * x ≡ 1 (mod m) (e.g. a^{-1} mod m)
 /// @note a^{-1} mod m exists <=> gcd(a, m) == 1.
 ///       Works in O(log(min(a, m))
-/// @tparam T
+/// @tparam IntType
 /// @param a
 /// @param m
 /// @return
-template <class T>
-[[nodiscard]] ATTRIBUTE_CONST constexpr std::uint32_t inv_mod_m(T a, std::uint32_t m) noexcept {
+template <std::integral IntType>
+    requires(!std::is_same_v<IntType, bool>)
+[[nodiscard]]
+ATTRIBUTE_CONST constexpr std::uint32_t inv_mod_m(IntType a, std::uint32_t m) noexcept {
     return ::math_functions::solve_congruence_modulo_m(a, std::uint32_t{1}, m);
 }
+
+#else
+
+// clang-format off
+
+/// @brief Solves modulus congruence a * x ≡ 1 (mod m) (e.g. a^{-1} mod m)
+/// @note a^{-1} mod m exists <=> gcd(a, m) == 1.
+///       Works in O(log(min(a, m))
+/// @tparam IntType
+/// @param a
+/// @param m
+/// @return
+template <class IntType>
+[[nodiscard]]
+ATTRIBUTE_CONST
+constexpr
+std::enable_if_t<std::is_integral_v<IntType>, std::uint32_t> inv_mod_m(IntType a, std::uint32_t m) noexcept {
+    return ::math_functions::solve_congruence_modulo_m(a, std::uint32_t{1}, m);
+}
+
+// clang-format on
+
+#endif
+
+struct InverseResult {
+    std::vector<std::uint32_t> numbers_mod_m;
+    std::vector<std::uint32_t> inversed_numbers;
+};
+
+namespace detail {
+
+template <class Iter>
+CONSTEXPR_VECTOR typename ::math_functions::InverseResult inv_mod_m_impl(Iter nums_begin,
+                                                                         Iter nums_end,
+                                                                         std::uint32_t m) {
+    const auto n = static_cast<std::size_t>(std::distance(nums_begin, nums_end));
+    auto res     = ::math_functions::InverseResult{
+        std::vector<std::uint32_t>(n),
+        std::vector<std::uint32_t>(n),
+    };
+
+    std::uint32_t prod_mod_m = 1;
+    {
+        auto nums_mod_m_iter     = res.numbers_mod_m.begin();
+        auto inv_nums_mod_m_iter = res.inversed_numbers.begin();
+        for (auto iter = nums_begin; iter != nums_end;
+             ++iter, ++nums_mod_m_iter, ++inv_nums_mod_m_iter) {
+            const auto num_mod_m = ::math_functions::detail::congruence_arg(*iter, m);
+            *nums_mod_m_iter     = num_mod_m;
+            *inv_nums_mod_m_iter = prod_mod_m;
+            prod_mod_m = static_cast<std::uint32_t>((std::uint64_t{prod_mod_m} * num_mod_m) % m);
+        }
+    }
+
+    const std::uint32_t inv_nums_prod_mod_m = ::math_functions::inv_mod_m(prod_mod_m, m);
+
+    {
+        auto inv_nums_mod_m_iter  = res.inversed_numbers.rbegin();
+        std::uint32_t suffix_prod = 1;
+        for (auto iter = res.numbers_mod_m.rbegin(), nums_mod_m_rend = res.numbers_mod_m.rend();
+             iter != nums_mod_m_rend; ++iter, ++inv_nums_mod_m_iter) {
+            const std::uint64_t t = (std::uint64_t{suffix_prod} * *inv_nums_mod_m_iter) % m;
+            *inv_nums_mod_m_iter  = static_cast<std::uint32_t>((t * inv_nums_prod_mod_m) % m);
+            suffix_prod = static_cast<std::uint32_t>((std::uint64_t{suffix_prod} * *iter) % m);
+        }
+    }
+
+    return res;
+}
+
+}  // namespace detail
+
+#if CONFIG_HAS_CONCEPTS
+
+// clang-format off
+
+template <std::forward_iterator Iter>
+    requires std::integral<typename std::iter_value_t<Iter>> &&
+             (!std::same_as<typename std::iter_value_t<Iter>, bool>)
+[[nodiscard]]
+CONSTEXPR_VECTOR
+typename ::math_functions::InverseResult inv_mod_m(Iter nums_iter_begin, Iter nums_iter_end, std::uint32_t m) {
+    return ::math_functions::detail::inv_mod_m_impl(nums_iter_begin, nums_iter_end, m);
+}
+
+/// @brief Inverse @a nums mod m
+/// @note Works in O(nums.size())
+/// @tparam T 
+/// @param nums 
+/// @param m 
+/// @return 
+template <std::ranges::forward_range Container>
+[[nodiscard]]
+CONSTEXPR_VECTOR
+typename ::math_functions::InverseResult inv_mod_m(const Container& nums, std::uint32_t m) {
+    return ::math_functions::inv_mod_m(std::begin(nums), std::end(nums), m);
+}
+
+// clang-format on
+
+#else
+
+template <class Iter>
+[[nodiscard]]
+CONSTEXPR_VECTOR
+    std::enable_if_t<std::is_integral_v<typename std::iterator_traits<Iter>::value_type> &&
+                         !std::is_same_v<typename std::iterator_traits<Iter>::value_type, bool>,
+                     typename ::math_functions::InverseResult> inv_mod_m(Iter nums_iter_begin,
+                                                                         Iter nums_iter_end,
+                                                                         std::uint32_t m) {
+    return ::math_functions::detail::inv_mod_m_impl(nums_iter_begin, nums_iter_end, m);
+}
+
+template <class Container>
+[[nodiscard]]
+CONSTEXPR_VECTOR
+    std::enable_if_t<std::is_integral_v<typename std::iterator_traits<
+                         decltype(std::begin(std::declval<Container&>()))>::value_type> &&
+                         std::is_integral_v<typename std::iterator_traits<
+                             decltype(std::end(std::declval<Container&>()))>::value_type>,
+                     typename ::math_functions::InverseResult> inv_mod_m(const Container& nums,
+                                                                         std::uint32_t m) {
+    return ::math_functions::detail::inv_mod_m_impl(std::begin(nums), std::end(nums), m);
+}
+
+#endif
 
 /// @brief Solve congruence 2^k * x ≡ c (mod m),
 ///        Where gcd(c, m) = 1 and m ≡ 1 mod 2
