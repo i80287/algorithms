@@ -10,7 +10,9 @@
 
 using namespace test_tools;
 
-static std::vector<uint64_t> read_primes() {
+namespace {
+
+std::vector<uint64_t> read_primes() {
     std::vector<uint64_t> nums;
     nums.reserve(1065000zu);
     for (FilePtr fin("u64-primes.txt", "r");;) {
@@ -21,27 +23,27 @@ static std::vector<uint64_t> read_primes() {
             [[unlikely]] case std::char_traits<char>::eof():
                 return nums;
             [[unlikely]] default:
-                perror("fscanf");
+                std::perror("fscanf");
                 throw std::runtime_error("fscanf");
         }
     }
 }
 
-static volatile bool side_effect_ensurer{};
-
-static std::chrono::nanoseconds run_measurements(const std::vector<uint64_t>& primes) {
+std::chrono::nanoseconds run_measurements(const std::vector<uint64_t>& primes) {
     const auto start = std::chrono::high_resolution_clock::now();
     for (uint64_t prime : primes) {
-        side_effect_ensurer = math_functions::is_prime_bpsw(prime);
+        config::do_not_optimize_away(math_functions::is_prime_bpsw(prime));
     }
     const auto end = std::chrono::high_resolution_clock::now();
     return end - start;
 }
 
+}  // namespace
+
 int main() {
     const auto primes = read_primes();
     for (uint64_t prime : primes) {
-        side_effect_ensurer = prime != 0;
+        config::do_not_optimize_away(prime != 0);
     }
 
     for (auto iter = 4zu; iter != 0; iter--) {
