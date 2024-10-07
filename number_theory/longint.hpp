@@ -304,7 +304,7 @@ struct longint {
     std::int32_t size_      = 0;
     std::uint32_t capacity_ = 0;
 
-    constexpr longint() noexcept(false) = default;
+    constexpr longint() noexcept = default;
     longint(const longint& other) : nums_(nullptr), size_(other.size_), capacity_(other.capacity_) {
         if (capacity_ > 0) {
             nums_ = allocate(capacity_);
@@ -314,7 +314,7 @@ struct longint {
     longint& operator=(const longint& other) {
         return *this = longint(other);
     }
-    constexpr longint(longint&& other) noexcept(false)
+    constexpr longint(longint&& other) noexcept
         : nums_(other.nums_), size_(other.size_), capacity_(other.capacity_) {
         other.nums_     = nullptr;
         other.size_     = 0;
@@ -324,7 +324,7 @@ struct longint {
     constexpr
 #endif
         longint&
-        operator=(longint&& other) noexcept(false) {
+        operator=(longint&& other) noexcept {
         this->swap(other);
         return *this;
     }
@@ -332,7 +332,7 @@ struct longint {
     constexpr
 #endif
         void
-        swap(longint& other) noexcept(false) {
+        swap(longint& other) noexcept {
         std::swap(nums_, other.nums_);
         std::swap(size_, other.size_);
         std::swap(capacity_, other.capacity_);
@@ -341,7 +341,7 @@ struct longint {
     constexpr
 #endif
         friend void
-        swap(longint& lhs, longint& rhs) noexcept(false) {
+        swap(longint& lhs, longint& rhs) noexcept {
         lhs.swap(rhs);
     }
 
@@ -375,7 +375,7 @@ struct longint {
         this->set_string(s);
     }
     struct Reserve {
-        explicit constexpr Reserve(std::uint32_t capacity) noexcept(false) : capacity_(capacity) {}
+        explicit constexpr Reserve(std::uint32_t capacity) noexcept : capacity_(capacity) {}
         std::uint32_t capacity_{};
     };
     explicit longint(Reserve reserve_tag)
@@ -538,7 +538,7 @@ struct longint {
         SquareThisTo(*this);
         return *this;
     }
-    [[nodiscard]] constexpr uint32_t operator[](std::size_t pos) const noexcept(false) {
+    [[nodiscard]] constexpr uint32_t operator[](std::size_t pos) const noexcept {
         return nums_[pos];
     }
     longint& operator*=(const longint& other) {
@@ -813,7 +813,7 @@ struct longint {
         return *this;
     }
 
-    [[nodiscard]] ATTRIBUTE_PURE constexpr bool operator==(int32_t n) const noexcept(false) {
+    [[nodiscard]] ATTRIBUTE_PURE constexpr bool operator==(int32_t n) const noexcept {
         if (config::is_gcc_constant_p(n) && n == 0) {
             return iszero();
         }
@@ -830,7 +830,7 @@ struct longint {
                 return false;
         }
     }
-    [[nodiscard]] ATTRIBUTE_PURE constexpr bool operator==(int64_t n) const noexcept(false) {
+    [[nodiscard]] ATTRIBUTE_PURE constexpr bool operator==(int64_t n) const noexcept {
         if (config::is_gcc_constant_p(n) && n == 0) {
             return iszero();
         }
@@ -855,7 +855,7 @@ struct longint {
                 return false;
         }
     }
-    [[nodiscard]] ATTRIBUTE_PURE constexpr bool operator==(uint32_t n) const noexcept(false) {
+    [[nodiscard]] ATTRIBUTE_PURE constexpr bool operator==(uint32_t n) const noexcept {
         if (config::is_gcc_constant_p(n) && n == 0) {
             return iszero();
         }
@@ -870,7 +870,7 @@ struct longint {
                 return false;
         }
     }
-    [[nodiscard]] ATTRIBUTE_PURE constexpr bool operator==(uint64_t n) const noexcept(false) {
+    [[nodiscard]] ATTRIBUTE_PURE constexpr bool operator==(uint64_t n) const noexcept {
         if (config::is_gcc_constant_p(n) && n == 0) {
             return iszero();
         }
@@ -888,7 +888,7 @@ struct longint {
         }
     }
 #if defined(INTEGERS_128_BIT_HPP)
-    [[nodiscard]] ATTRIBUTE_PURE constexpr bool operator==(uint128_t n) const noexcept(false) {
+    [[nodiscard]] ATTRIBUTE_PURE constexpr bool operator==(uint128_t n) const noexcept {
         if (config::is_gcc_constant_p(n) && n == 0) {
             return iszero();
         }
@@ -914,7 +914,7 @@ struct longint {
                 return false;
         }
     }
-    [[nodiscard]] ATTRIBUTE_PURE constexpr bool operator==(int128_t n) const noexcept(false) {
+    [[nodiscard]] ATTRIBUTE_PURE constexpr bool operator==(int128_t n) const noexcept {
         if (config::is_gcc_constant_p(n) && n == 0) {
             return iszero();
         }
@@ -950,13 +950,11 @@ struct longint {
         }
     }
 #endif
-    [[nodiscard]] ATTRIBUTE_PURE constexpr bool operator==(const longint& other) const
-        noexcept(false) {
+    [[nodiscard]] ATTRIBUTE_PURE constexpr bool operator==(const longint& other) const noexcept {
         return size_ == other.size_ && std::equal(nums_, nums_ + usize(), other.nums_);
     }
 #if CONFIG_HAS_AT_LEAST_CXX_20
-    [[nodiscard]] constexpr std::strong_ordering operator<=>(const longint& other) const
-        noexcept(false) {
+    [[nodiscard]] constexpr std::strong_ordering operator<=>(const longint& other) const noexcept {
         if (size_ != other.size_) {
             return size_ <=> other.size_;
         }
@@ -975,7 +973,7 @@ struct longint {
         return std::strong_ordering::equivalent;
     }
 #else
-    [[nodiscard]] constexpr bool operator<(const longint& other) const noexcept(false) {
+    [[nodiscard]] constexpr bool operator<(const longint& other) const noexcept {
         if (size_ != other.size_) {
             return size_ < other.size_;
         }
@@ -992,37 +990,36 @@ struct longint {
 
         return false;
     }
-    [[nodiscard]] constexpr bool operator>(const longint& other) const noexcept(false) {
+    [[nodiscard]] constexpr bool operator>(const longint& other) const noexcept {
         return other < *this;
     }
-    [[nodiscard]] constexpr bool operator<=(const longint& other) const noexcept(false) {
+    [[nodiscard]] constexpr bool operator<=(const longint& other) const noexcept {
         return !(*this > other);
     }
-    [[nodiscard]] constexpr bool operator>=(const longint& other) const noexcept(false) {
+    [[nodiscard]] constexpr bool operator>=(const longint& other) const noexcept {
         return !(*this < other);
     }
-    [[nodiscard]] ATTRIBUTE_PURE constexpr bool operator!=(int32_t n) const noexcept(false) {
+    [[nodiscard]] ATTRIBUTE_PURE constexpr bool operator!=(int32_t n) const noexcept {
         return !(*this == n);
     }
-    [[nodiscard]] ATTRIBUTE_PURE constexpr bool operator!=(int64_t n) const noexcept(false) {
+    [[nodiscard]] ATTRIBUTE_PURE constexpr bool operator!=(int64_t n) const noexcept {
         return !(*this == n);
     }
-    [[nodiscard]] ATTRIBUTE_PURE constexpr bool operator!=(uint32_t n) const noexcept(false) {
+    [[nodiscard]] ATTRIBUTE_PURE constexpr bool operator!=(uint32_t n) const noexcept {
         return !(*this == n);
     }
-    [[nodiscard]] ATTRIBUTE_PURE constexpr bool operator!=(uint64_t n) const noexcept(false) {
+    [[nodiscard]] ATTRIBUTE_PURE constexpr bool operator!=(uint64_t n) const noexcept {
         return !(*this == n);
     }
 #if defined(INTEGERS_128_BIT_HPP)
-    [[nodiscard]] ATTRIBUTE_PURE constexpr bool operator!=(uint128_t n) const noexcept(false) {
+    [[nodiscard]] ATTRIBUTE_PURE constexpr bool operator!=(uint128_t n) const noexcept {
         return !(*this == n);
     }
-    [[nodiscard]] ATTRIBUTE_PURE constexpr bool operator!=(int128_t n) const noexcept(false) {
+    [[nodiscard]] ATTRIBUTE_PURE constexpr bool operator!=(int128_t n) const noexcept {
         return !(*this == n);
     }
 #endif
-    [[nodiscard]] ATTRIBUTE_PURE constexpr bool operator!=(const longint& other) const
-        noexcept(false) {
+    [[nodiscard]] ATTRIBUTE_PURE constexpr bool operator!=(const longint& other) const noexcept {
         return !(*this == other);
     }
 #endif
@@ -1087,7 +1084,7 @@ struct longint {
         return *this;
     }
 
-    constexpr longint& operator/=(uint32_t n) noexcept(false) {
+    constexpr longint& operator/=(uint32_t n) noexcept {
         if ((config::is_constant_evaluated() || config::is_gcc_constant_p(n)) &&
             (n & (n - 1)) == 0) {
             if (n > 1) {
@@ -1098,7 +1095,7 @@ struct longint {
         static_cast<void>(divmod(n));
         return *this;
     }
-    constexpr longint& operator/=(const int32_t n) noexcept(false) {
+    constexpr longint& operator/=(const int32_t n) noexcept {
         const bool negative = n < 0;
         this->operator/=(math_functions::uabs(n));
         if (negative) {
@@ -1111,7 +1108,7 @@ struct longint {
     /// @note  Behaviour is undefined if n equals 0
     /// @param n
     /// @return *this mod n
-    [[nodiscard]] constexpr uint32_t divmod(const uint32_t n) noexcept(false) {
+    [[nodiscard]] constexpr uint32_t divmod(const uint32_t n) noexcept {
         uint64_t carry = 0;
         for (digit_t *const nums_iter_rend = nums_ - 1, *nums_riter = nums_iter_rend + usize();
              nums_riter != nums_iter_rend; --nums_riter) {
@@ -1126,7 +1123,7 @@ struct longint {
         return static_cast<uint32_t>(carry);
     }
 
-    constexpr longint& operator>>=(uint32_t shift) noexcept(false) {
+    constexpr longint& operator>>=(uint32_t shift) noexcept {
         std::size_t usize_value = usize();
         uint32_t uints_move     = shift / kNumsBits;
         if (uints_move >= usize_value) {
@@ -1169,7 +1166,7 @@ struct longint {
         return *this;
     }
 
-    constexpr void popLeadingZeros() noexcept(false) {
+    constexpr void popLeadingZeros() noexcept {
         std::size_t usize_value = usize();
         while (usize_value != 0 && nums_[usize_value - 1] == 0) {
             usize_value--;
@@ -1179,8 +1176,8 @@ struct longint {
                            : -static_cast<std::int32_t>(usize_value);
     }
 
-    [[nodiscard]] ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_PURE constexpr std::int32_t size() const
-        noexcept(false) {
+    [[nodiscard]] ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_PURE constexpr std::int32_t size()
+        const noexcept {
         const auto value = size_;
         if (value > static_cast<std::int64_t>(max_size()) ||
             value > static_cast<std::int64_t>(capacity_)) {
@@ -1188,8 +1185,8 @@ struct longint {
         }
         return value;
     }
-    [[nodiscard]] ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_PURE constexpr std::size_t usize() const
-        noexcept(false) {
+    [[nodiscard]] ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_PURE constexpr std::size_t usize()
+        const noexcept {
         // std::abs is not used in order to make method constexpr
         const std::size_t value = math_functions::uabs(size_);
         if (value > max_size() || value > capacity_) {
@@ -1197,84 +1194,81 @@ struct longint {
         }
         return value;
     }
-    [[nodiscard]] ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_PURE constexpr std::uint32_t capacity() const
-        noexcept(false) {
+    [[nodiscard]] ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_PURE constexpr std::uint32_t capacity()
+        const noexcept {
         const auto value = capacity_;
         if (value > max_size()) {
             CONFIG_UNREACHABLE();
         }
         return value;
     }
-    [[nodiscard]] ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_PURE constexpr std::int32_t sign() const
-        noexcept(false) {
+    [[nodiscard]] ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_PURE constexpr std::int32_t sign()
+        const noexcept {
         return math_functions::sign(size_);
     }
-    [[nodiscard]] ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_PURE constexpr bool iszero() const
-        noexcept(false) {
+    [[nodiscard]] ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_PURE constexpr bool iszero() const noexcept {
         return size_ == 0;
     }
-    [[nodiscard]] ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_PURE constexpr bool empty() const
-        noexcept(false) {
+    [[nodiscard]] ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_PURE constexpr bool empty() const noexcept {
         return iszero();
     }
-    [[nodiscard]] ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_PURE explicit constexpr operator bool() const
-        noexcept(false) {
+    [[nodiscard]] ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_PURE explicit constexpr operator bool()
+        const noexcept {
         return !iszero();
     }
-    [[nodiscard]] ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_PURE constexpr bool operator!() const
-        noexcept(false) {
+    [[nodiscard]] ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_PURE constexpr bool operator!() const noexcept {
         return iszero();
     }
-    [[nodiscard]] ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_PURE constexpr iterator begin() noexcept(false)
+    [[nodiscard]] ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_PURE constexpr iterator begin() noexcept
         ATTRIBUTE_LIFETIME_BOUND {
         return nums_;
     }
-    [[nodiscard]] ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_PURE constexpr iterator end() noexcept(false)
+    [[nodiscard]] ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_PURE constexpr iterator end() noexcept
         ATTRIBUTE_LIFETIME_BOUND {
         return nums_ + usize();
     }
-    [[nodiscard]] ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_PURE constexpr const_iterator begin() const
-        noexcept(false) ATTRIBUTE_LIFETIME_BOUND {
+    [[nodiscard]] ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_PURE constexpr const_iterator begin()
+        const noexcept ATTRIBUTE_LIFETIME_BOUND {
         return nums_;
     }
-    [[nodiscard]] ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_PURE constexpr const_iterator end() const
-        noexcept(false) ATTRIBUTE_LIFETIME_BOUND {
+    [[nodiscard]] ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_PURE constexpr const_iterator end()
+        const noexcept ATTRIBUTE_LIFETIME_BOUND {
         return nums_ + usize();
     }
-    [[nodiscard]] ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_PURE constexpr const_iterator cbegin() const
-        noexcept(false) ATTRIBUTE_LIFETIME_BOUND {
+    [[nodiscard]] ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_PURE constexpr const_iterator cbegin()
+        const noexcept ATTRIBUTE_LIFETIME_BOUND {
         return begin();
     }
-    [[nodiscard]] ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_PURE constexpr const_iterator cend() const
-        noexcept(false) ATTRIBUTE_LIFETIME_BOUND {
+    [[nodiscard]] ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_PURE constexpr const_iterator cend()
+        const noexcept ATTRIBUTE_LIFETIME_BOUND {
         return end();
     }
     [[nodiscard]] ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_PURE constexpr std::reverse_iterator<iterator>
-    rbegin() noexcept(false) ATTRIBUTE_LIFETIME_BOUND {
+    rbegin() noexcept ATTRIBUTE_LIFETIME_BOUND {
         return std::make_reverse_iterator(end());
     }
     [[nodiscard]] ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_PURE constexpr std::reverse_iterator<iterator>
-    rend() noexcept(false) ATTRIBUTE_LIFETIME_BOUND {
+    rend() noexcept ATTRIBUTE_LIFETIME_BOUND {
         return std::make_reverse_iterator(begin());
     }
     [[nodiscard]] ATTRIBUTE_ALWAYS_INLINE
         ATTRIBUTE_PURE constexpr std::reverse_iterator<const_iterator>
-        rbegin() const noexcept(false) ATTRIBUTE_LIFETIME_BOUND {
+        rbegin() const noexcept ATTRIBUTE_LIFETIME_BOUND {
         return std::make_reverse_iterator(end());
     }
     [[nodiscard]] ATTRIBUTE_ALWAYS_INLINE
         ATTRIBUTE_PURE constexpr std::reverse_iterator<const_iterator>
-        rend() const noexcept(false) ATTRIBUTE_LIFETIME_BOUND {
+        rend() const noexcept ATTRIBUTE_LIFETIME_BOUND {
         return std::make_reverse_iterator(begin());
     }
-    constexpr void change_sign() noexcept(false) {
+    constexpr void change_sign() noexcept {
         size_ = -size_;
     }
-    constexpr void set_zero() noexcept(false) {
+    constexpr void set_zero() noexcept {
         size_ = 0;
     }
     [[nodiscard]] ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_CONST static constexpr std::size_t
-    max_size() noexcept(false) {
+    max_size() noexcept {
         constexpr auto kMaxSSize = std::numeric_limits<decltype(size_)>::max();
         static_assert(kMaxSSize > 0);
         constexpr auto kMaxUSize = std::numeric_limits<decltype(capacity_)>::max();
@@ -1285,12 +1279,11 @@ struct longint {
     inline void set_string(std::string_view s);
 
     [[nodiscard]]
-    ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_PURE constexpr bool fits_in_uint32() const noexcept(false) {
+    ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_PURE constexpr bool fits_in_uint32() const noexcept {
         return static_cast<std::uint32_t>(size_) <= 1;
     }
     [[nodiscard]]
-    ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_PURE constexpr std::uint32_t to_uint32() const
-        noexcept(false) {
+    ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_PURE constexpr std::uint32_t to_uint32() const noexcept {
         static_assert(kNumsBits == 32);
         switch (usize()) {
             default:
@@ -1305,12 +1298,11 @@ struct longint {
         }
     }
     [[nodiscard]]
-    ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_PURE constexpr bool fits_in_uint64() const noexcept(false) {
+    ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_PURE constexpr bool fits_in_uint64() const noexcept {
         return static_cast<std::uint32_t>(size_) <= 2;
     }
     [[nodiscard]]
-    ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_PURE constexpr std::uint64_t to_uint64() const
-        noexcept(false) {
+    ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_PURE constexpr std::uint64_t to_uint64() const noexcept {
         std::uint64_t value = 0;
         static_assert(kNumsBits == 32);
         switch (usize()) {
@@ -1331,22 +1323,22 @@ struct longint {
         return value;
     }
     [[nodiscard]]
-    ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_PURE /* implicit */ constexpr operator std::uint32_t() const
-        noexcept(false) {
+    ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_PURE /* implicit */ constexpr operator std::uint32_t()
+        const noexcept {
         return to_uint32();
     }
     [[nodiscard]]
-    ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_PURE /* implicit */ constexpr operator std::uint64_t() const
-        noexcept(false) {
+    ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_PURE /* implicit */ constexpr operator std::uint64_t()
+        const noexcept {
         return to_uint64();
     }
 #if defined(INTEGERS_128_BIT_HPP)
-    [[nodiscard]] ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_PURE constexpr bool fits_in_uint128() const
-        noexcept(false) {
+    [[nodiscard]] ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_PURE constexpr bool fits_in_uint128()
+        const noexcept {
         return static_cast<std::uint32_t>(size_) <= 4;
     }
     [[nodiscard]]
-    ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_PURE constexpr uint128_t to_uint128() const noexcept(false) {
+    ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_PURE constexpr uint128_t to_uint128() const noexcept {
         uint128_t value = 0;
         static_assert(kNumsBits == 32);
         switch (usize()) {
@@ -1373,7 +1365,7 @@ struct longint {
         return value;
     }
     [[nodiscard]] ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_PURE /* implicit */ constexpr
-    operator uint128_t() const noexcept(false) {
+    operator uint128_t() const noexcept {
         return to_uint128();
     }
 #endif
@@ -1474,7 +1466,7 @@ struct longint {
         dec_digit_t* digits_ = nullptr;
         std::size_t size_    = 0;
 
-        constexpr Decimal() noexcept(false) = default;
+        constexpr Decimal() noexcept = default;
         explicit Decimal(uint32_t n) : digits_(allocate(2)) {
             assign_uint32_unchecked(n);
         }
@@ -1494,7 +1486,7 @@ struct longint {
         constexpr
 #endif
             void
-            swap(Decimal& other) noexcept(false) {
+            swap(Decimal& other) noexcept {
             std::swap(digits_, other.digits_);
             std::swap(size_, other.size_);
         }
@@ -1502,11 +1494,10 @@ struct longint {
         constexpr
 #endif
             friend void
-            swap(Decimal& lhs, Decimal& rhs) noexcept(false) {
+            swap(Decimal& lhs, Decimal& rhs) noexcept {
             lhs.swap(rhs);
         }
-        constexpr Decimal(Decimal&& other) noexcept(false)
-            : digits_(other.digits_), size_(other.size_) {
+        constexpr Decimal(Decimal&& other) noexcept : digits_(other.digits_), size_(other.size_) {
             other.digits_ = nullptr;
             other.size_   = 0;
         }
@@ -1514,7 +1505,7 @@ struct longint {
         constexpr
 #endif
             Decimal&
-            operator=(Decimal&& other) noexcept(false) {
+            operator=(Decimal&& other) noexcept {
             swap(other);
             return *this;
         }
@@ -1770,7 +1761,7 @@ struct longint {
             other.popLeadingZeros();
         }
 
-        constexpr bool operator==(uint32_t n) const noexcept(false) {
+        constexpr bool operator==(uint32_t n) const noexcept {
             switch (size_) {
                 case 0:
                     return n == 0;
@@ -1783,11 +1774,11 @@ struct longint {
             }
         }
 
-        constexpr bool operator!=(uint32_t n) const noexcept(false) {
+        constexpr bool operator!=(uint32_t n) const noexcept {
             return !(*this == n);
         }
 
-        constexpr bool operator==(uint64_t n) const noexcept(false) {
+        constexpr bool operator==(uint64_t n) const noexcept {
             switch (size_) {
                 case 0:
                     return n == 0;
@@ -1816,18 +1807,18 @@ struct longint {
             }
         }
 
-        constexpr bool operator!=(uint64_t n) const noexcept(false) {
+        constexpr bool operator!=(uint64_t n) const noexcept {
             return !(*this == n);
         }
 
-        constexpr bool operator==(const Decimal& other) const noexcept(false) {
+        constexpr bool operator==(const Decimal& other) const noexcept {
             return size_ == other.size_ && std::equal(digits_, digits_ + size_, other.digits_);
         }
 
-        constexpr void set_zero() noexcept(false) {
+        constexpr void set_zero() noexcept {
             size_ = 0;
         }
-        constexpr void popLeadingZeros() noexcept(false) {
+        constexpr void popLeadingZeros() noexcept {
             std::size_t usize_value = size_;
             while (usize_value > 0 && digits_[usize_value - 1] == 0) {
                 usize_value--;
@@ -2089,12 +2080,12 @@ private:
             allocate_default_capacity_32();
         }
     }
-    constexpr void assign_u32_unchecked(uint32_t n) noexcept(false) {
+    constexpr void assign_u32_unchecked(uint32_t n) noexcept {
         static_assert(kNumsBits >= 32);
         size_    = n != 0;
         nums_[0] = n;
     }
-    constexpr void assign_i32_unchecked(int32_t n) noexcept(false) {
+    constexpr void assign_i32_unchecked(int32_t n) noexcept {
         static_assert(kNumsBits >= 32);
         size_    = ::math_functions::sign(n);
         nums_[0] = ::math_functions::uabs(n);
@@ -2109,7 +2100,7 @@ private:
             allocate_default_capacity_64();
         }
     }
-    constexpr void assign_u64_unchecked(uint64_t n) noexcept(false) {
+    constexpr void assign_u64_unchecked(uint64_t n) noexcept {
         static_assert(kNumsBits == 32);
         size_    = n != 0;
         nums_[0] = static_cast<uint32_t>(n);
@@ -2117,7 +2108,7 @@ private:
         size_ += n != 0;
         nums_[1] = static_cast<uint32_t>(n);
     }
-    constexpr void assign_i64_unchecked(int64_t n) noexcept(false) {
+    constexpr void assign_i64_unchecked(int64_t n) noexcept {
         const std::int32_t sgn = ::math_functions::sign(n);
         this->assign_u64_unchecked(::math_functions::uabs(n));
         size_ *= sgn;
@@ -2133,7 +2124,7 @@ private:
             allocate_default_capacity_128();
         }
     }
-    constexpr void assign_u128_unchecked(uint128_t n) noexcept(false) {
+    constexpr void assign_u128_unchecked(uint128_t n) noexcept {
         size_    = n != 0;
         nums_[0] = static_cast<uint32_t>(n);
         n >>= 32;
@@ -2146,7 +2137,7 @@ private:
         size_ += n != 0;
         nums_[3] = static_cast<uint32_t>(n);
     }
-    constexpr void assign_i128_unchecked(int128_t n) noexcept(false) {
+    constexpr void assign_i128_unchecked(int128_t n) noexcept {
         const std::int32_t sgn = ::math_functions::sign(n);
         assign_u128_unchecked(::math_functions::uabs(n));
         size_ *= sgn;
@@ -2154,7 +2145,7 @@ private:
 #endif
 
     static constexpr uint64_t longIntAdd(digit_t nums1[], const digit_t nums2[], std::size_t usize1,
-                                         std::size_t usize2) noexcept(false) {
+                                         std::size_t usize2) noexcept {
         uint64_t carry                 = 0;
         const digit_t* const nums1_end = nums1 + usize1;
         for (const digit_t* const nums2_end = nums2 + usize2; nums2 != nums2_end;
@@ -2238,7 +2229,7 @@ private:
         ::longint_allocator::Deallocate(static_cast<void*>(nums));
     }
     struct ComplexDeleter {
-        void operator()(fft::complex* memory) noexcept(false) {
+        void operator()(fft::complex* memory) noexcept {
             ::operator delete(static_cast<void*>(memory));
         }
     };
@@ -2324,7 +2315,7 @@ inline void longint::set_string(std::string_view s) {
 #endif
 
     std::int32_t sgn        = 1;
-    constexpr auto is_digit = [](const std::uint32_t chr) constexpr noexcept(false) {
+    constexpr auto is_digit = [](const std::uint32_t chr) constexpr noexcept {
         return chr - '0' <= '9' - '0';
     };
     while (str_iter != str_end && !is_digit(*str_iter)) {
