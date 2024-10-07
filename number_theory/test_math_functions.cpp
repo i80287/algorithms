@@ -377,23 +377,13 @@ void test_factorizer() {
 
     for (std::uint32_t i = 0; i <= N; i++) {
         auto pfs = fact.prime_factors(i);
-        if (pfs.size() != fact.number_of_unique_prime_factors(i))
-            std::cerr << i << '\n'
-                      << pfs.size() << '\n'
-                      << fact.number_of_unique_prime_factors(i) << '\n';
         assert(pfs.size() == fact.number_of_unique_prime_factors(i));
         auto pfs_v = prime_factors_as_vector(i);
-#if CONFIG_HAS_AT_LEAST_CXX_20
-        assert(std::ranges::equal(
-            pfs, prime_factors_as_vector(i), [](auto pf1, auto pf2) constexpr noexcept {
+        assert(pfs.size() == pfs_v.size());
+        assert(std::equal(
+            pfs.begin(), pfs.end(), pfs_v.begin(), [](auto pf1, auto pf2) constexpr noexcept {
                 return pf1.factor == pf2.factor && pf1.factor_power == pf2.factor_power;
             }));
-#else
-        assert(pfs.size() == pfs_v.size() &&
-               std::equal(pfs.begin(), pfs.end(), pfs_v.begin(), [](auto pf1, auto pf2) {
-                   return pf1.factor == pf2.factor && pf1.factor_power == pf2.factor_power;
-               }));
-#endif
     }
 }
 
