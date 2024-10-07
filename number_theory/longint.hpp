@@ -39,7 +39,7 @@
 
 namespace longint_allocator {
 
-// #define DEBUG_LI_ALLOC_PRINTING
+// #define DEBUG_LI_ALLOC_PRINTING 1
 
 class inner_impl {
 private:
@@ -47,40 +47,40 @@ private:
 
     struct alignas(64) SmallPage {
         static constexpr std::size_t kCapacity =
-            32 * sizeof(std::uint32_t) - kPageMemoryOffsetInBytes - sizeof(uintptr_t);
+            32 * sizeof(std::uint32_t) - kPageMemoryOffsetInBytes;
 
         std::byte memory[kCapacity];
         SmallPage* next;
-        uintptr_t magic_value__;
     };
     static_assert((sizeof(SmallPage) & (sizeof(SmallPage) - 1)) == 0, "");
     static_assert(sizeof(SmallPage) % alignof(SmallPage) == 0);
-    // static_assert(sizeof(SmallPage) == sizeof(SmallPage::memory) + kPageMemoryOffsetInBytes, "");
+    static_assert(sizeof(SmallPage) == sizeof(SmallPage::memory) + kPageMemoryOffsetInBytes, "");
 
     struct alignas(64) MiddlePage {
         static constexpr std::size_t kCapacity =
-            256 * sizeof(std::uint32_t) - kPageMemoryOffsetInBytes - sizeof(uintptr_t);
+            256 * sizeof(std::uint32_t) - kPageMemoryOffsetInBytes;
 
         std::byte memory[kCapacity];
         MiddlePage* next;
-        uintptr_t magic_value__;
     };
 
     static_assert((sizeof(MiddlePage) & (sizeof(MiddlePage) - 1)) == 0, "");
     static_assert(sizeof(MiddlePage) % alignof(MiddlePage) == 0);
-    // static_assert(sizeof(MiddlePage) == sizeof(MiddlePage::memory) + kPageMemoryOffsetInBytes, "");
+    static_assert(sizeof(MiddlePage) == sizeof(MiddlePage::memory) + kPageMemoryOffsetInBytes, "");
 
     static constexpr std::size_t kTotalSmallPages  = 32;
     static constexpr std::size_t kTotalMiddlePages = 8;
 
-#ifdef __cpp_constinit
+#if defined(__cpp_constinit) && __cpp_constinit >= 201907L
 #define LI_ALLOC_CONSTINIT constinit
 #else
 #define LI_ALLOC_CONSTINIT
 #endif
 
-    LI_ALLOC_CONSTINIT static inline SmallPage first_small_page[kTotalSmallPages]    = {};
-    LI_ALLOC_CONSTINIT static inline MiddlePage first_middle_page[kTotalMiddlePages] = {};
+    LI_ALLOC_CONSTINIT
+    static inline SmallPage first_small_page[kTotalSmallPages] = {};
+    LI_ALLOC_CONSTINIT
+    static inline MiddlePage first_middle_page[kTotalMiddlePages] = {};
 
     LI_ALLOC_CONSTINIT
     static inline SmallPage* free_small_pages_head = std::addressof(first_small_page[0]);
@@ -114,22 +114,18 @@ private:
             for (const SmallPage* last_page = p + kTotalSmallPages - 1; p != last_page;) {
                 SmallPage* p_next = p + 1;
                 p->next           = p_next;
-                p->magic_value__  = 0xdeadbeefdeadbeefull;
                 p                 = p_next;
             }
             p->next = nullptr;
-            p->magic_value__ = 0xdeadbeefdeadbeefull;
         };
         auto init_middle_pages = []() noexcept {
             MiddlePage* p = first_middle_page;
             for (const MiddlePage* p_iter_end = p + kTotalMiddlePages - 1; p != p_iter_end;) {
                 MiddlePage* p_next = p + 1;
                 p->next            = p_next;
-                p->magic_value__   =  0xdeadbabedeadbabeull;
                 p                  = p_next;
             }
             p->next = nullptr;
-            p->magic_value__ = 0xdeadbabedeadbabeull;
         };
         init_small_pages();
         init_middle_pages();
@@ -185,9 +181,9 @@ inline void Deallocate(void* memory) noexcept {
     if (inner_impl::IsSmallPage(p)) {
 #ifdef DEBUG_LI_ALLOC_PRINTING
         inner_impl::current_small_pages_used--;
+        assert(inner_impl::current_small_pages_used >= 0);
 #endif
         inner_impl::SmallPage* page       = reinterpret_cast<inner_impl::SmallPage*>(p);
-        // assert(page->magic_value__ == 0xdeadbeefdeadbeefull);
         page->next                        = inner_impl::free_small_pages_head;
         inner_impl::free_small_pages_head = page;
         return;
@@ -196,15 +192,16 @@ inline void Deallocate(void* memory) noexcept {
     if (inner_impl::IsMiddlePage(p)) {
 #ifdef DEBUG_LI_ALLOC_PRINTING
         inner_impl::current_middle_pages_used--;
+        assert(inner_impl::current_middle_pages_used >= 0);
 #endif
         inner_impl::MiddlePage* page       = reinterpret_cast<inner_impl::MiddlePage*>(p);
-        // assert(page->magic_value__ == 0xdeadbabedeadbabeull);
         page->next                         = inner_impl::free_middle_pages_head;
         inner_impl::free_middle_pages_head = page;
         return;
     }
 #ifdef DEBUG_LI_ALLOC_PRINTING
     inner_impl::malloc_free_count--;
+    assert(inner_impl::malloc_free_count >= 0);
 #endif
     ::operator delete(memory);
 }
@@ -228,7 +225,6 @@ ATTRIBUTE_RETURNS_NONNULL
 ATTRIBUTE_ALLOC_SIZE(1) INLINE_LONGINT_ALLOCATE void* Allocate(std::size_t size) {
     if (size <= inner_impl::SmallPage::kCapacity && inner_impl::free_small_pages_head != nullptr) {
         inner_impl::SmallPage* p = inner_impl::free_small_pages_head;
-        assert(p->magic_value__ == 0xdeadbeefdeadbeefull);
 #ifdef DEBUG_LI_ALLOC_PRINTING
         inner_impl::current_small_pages_used++;
         if (inner_impl::current_small_pages_used > inner_impl::max_small_pages_used) {
@@ -244,7 +240,6 @@ ATTRIBUTE_ALLOC_SIZE(1) INLINE_LONGINT_ALLOCATE void* Allocate(std::size_t size)
     if (size <= inner_impl::MiddlePage::kCapacity &&
         inner_impl::free_middle_pages_head != nullptr) {
         inner_impl::MiddlePage* p = inner_impl::free_middle_pages_head;
-        assert(p->magic_value__ == 0xdeadbabedeadbabeull);
 #ifdef DEBUG_LI_ALLOC_PRINTING
         inner_impl::current_middle_pages_used++;
         if (inner_impl::current_middle_pages_used > inner_impl::max_middle_pages_used) {

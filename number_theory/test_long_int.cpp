@@ -1332,16 +1332,6 @@ void TestToIntTypes() {
 
 int main() {
     using namespace long_int_tests;
-
-    // {
-    //     std::string buffer;
-    //     longint n;
-    //     uint128_t number = ((uint128_t(42576258ull) << 64) | uint128_t(9439515947379090504ull));
-    //     n                = number;
-    //     n.to_string(buffer, true);
-    //     assert(buffer == to_string(number));
-    // }
-
     TestOperatorEqualsInt();
     TestUIntMult();
     TestUIntAdd();
@@ -1355,7 +1345,6 @@ int main() {
     TestSetString();
     TestToString();
     TestToIntTypes();
-    // call\s*[0-9A-Fa-f]*\s*<longint::append_to_string
 
     // std::ios::sync_with_stdio(false);
     // std::cin.tie(nullptr);
