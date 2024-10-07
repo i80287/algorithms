@@ -48,6 +48,18 @@
 #include <iso646.h>
 #endif
 
+#if defined(__cplusplus) && __cplusplus >= 201103L
+#define CONFIG_HAS_AT_LEAST_CXX_11 1
+#else
+#define CONFIG_HAS_AT_LEAST_CXX_11 0
+#endif
+
+#if defined(__cplusplus) && __cplusplus >= 201402L
+#define CONFIG_HAS_AT_LEAST_CXX_14 1
+#else
+#define CONFIG_HAS_AT_LEAST_CXX_14 0
+#endif
+
 // https://en.cppreference.com/w/cpp/feature_test
 #if defined(__cplusplus) && __cplusplus >= 201703L
 #define CONFIG_HAS_AT_LEAST_CXX_17 1
@@ -468,16 +480,16 @@ ATTRIBUTE_ALWAYS_INLINE constexpr bool is_constant_evaluated() noexcept {
 
 }  // namespace config
 
-#if CONFIG_HAS_INCLUDE(<utility>)
-#include <utility>
-#endif
-
 namespace config {
 
 template <class T>
-ATTRIBUTE_ALWAYS_INLINE constexpr bool is_gcc_constant_p(ATTRIBUTE_MAYBE_UNUSED T&& expr) noexcept {
-#if CONFIG_HAS_BUILTIN(__builtin_constant_p) && CONFIG_HAS_INCLUDE(<utility>)
-    return static_cast<bool>(__builtin_constant_p(std::forward<T>(expr)));
+ATTRIBUTE_ALWAYS_INLINE constexpr bool is_gcc_constant_p(ATTRIBUTE_MAYBE_UNUSED T expr) noexcept {
+#if CONFIG_HAS_INCLUDE(<type_traits>)
+    static_assert(std::is_trivial<T>::value,
+                  "Type passed to the is_gcc_constant_p() should be trivial");
+#endif
+#if CONFIG_HAS_BUILTIN(__builtin_constant_p)
+    return static_cast<bool>(__builtin_constant_p(expr));
 #else
     return false;
 #endif
