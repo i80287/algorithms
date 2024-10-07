@@ -155,18 +155,18 @@ template <class T>
 /// @param[in] p
 /// @param[in] mod
 /// @return (n ^ p) % mod
-[[nodiscard]] ATTRIBUTE_CONST I128_CONSTEXPR uint64_t bin_pow_mod(uint64_t n, uint64_t p,
-                                                                  uint64_t mod) noexcept {
+[[nodiscard]]
+ATTRIBUTE_CONST I128_CONSTEXPR uint64_t bin_pow_mod(uint64_t n, uint64_t p, uint64_t mod) noexcept {
     uint64_t res = mod != 1;
     while (true) {
         if (p & 1) {
-            res = uint64_t((uint128_t(res) * n) % mod);
+            res = static_cast<uint64_t>((uint128_t{res} * n) % mod);
         }
         p >>= 1;
         if (p == 0) {
             return res;
         }
-        n = uint64_t((uint128_t(n) * n) % mod);
+        n = static_cast<uint64_t>((uint128_t{n} * n) % mod);
     }
 }
 
@@ -416,7 +416,7 @@ ATTRIBUTE_CONST constexpr IsPerfectSquareResult<uint32_t> is_perfect_square(uint
      * but switch statement could be less efficient in this case
      */
     // clang-format on
-    switch (n & 15) {
+    switch (n % 16) {
         case 0:
         case 1:
         case 4:
@@ -450,7 +450,7 @@ ATTRIBUTE_CONST I128_CONSTEXPR
      * but switch statement could be less efficient in this case
      */
     // clang-format on
-    switch (uint64_t(n) & 15) {
+    switch (static_cast<uint64_t>(n) % 16) {
         case 0:
         case 1:
         case 4:
@@ -520,7 +520,7 @@ ATTRIBUTE_CONST I128_CONSTEXPR
 /// @param[in] b
 /// @return 128-bit number whose bits are reversed bits of the @a `n`.
 [[nodiscard]] ATTRIBUTE_CONST I128_CONSTEXPR uint128_t bit_reverse(uint128_t n) noexcept {
-    uint128_t m = ~uint128_t(0);
+    uint128_t m = ~uint128_t{0};
     for (uint32_t s = sizeof(uint128_t) * CHAR_BIT; s >>= 1;) {
         m ^= m << s;
         n = ((n >> s) & m) | ((n << s) & ~m);
@@ -543,10 +543,24 @@ ATTRIBUTE_ALWAYS_INLINE constexpr void visit_all_submasks(uint64_t mask, Functor
     } while (s != 0);
 }
 
-int32_t sign(bool x)          = delete;
-int32_t sign(char x)          = delete;
-int32_t sign(signed char x)   = delete;
-int32_t sign(unsigned char x) = delete;
+int32_t sign(bool x) = delete;
+int32_t sign(char x) = delete;
+
+[[nodiscard]] ATTRIBUTE_CONST constexpr int32_t sign(signed char x) noexcept {
+    return int32_t(x > 0) - int32_t(x < 0);
+}
+
+[[nodiscard]] ATTRIBUTE_CONST constexpr int32_t sign(unsigned char x) noexcept {
+    return x > 0 ? 1 : 0;
+}
+
+[[nodiscard]] ATTRIBUTE_CONST constexpr int32_t sign(short x) noexcept {
+    return int32_t(x > 0) - int32_t(x < 0);
+}
+
+[[nodiscard]] ATTRIBUTE_CONST constexpr int32_t sign(unsigned short x) noexcept {
+    return x > 0 ? 1 : 0;
+}
 
 [[nodiscard]] ATTRIBUTE_CONST constexpr int32_t sign(int x) noexcept {
     return int32_t(x > 0) - int32_t(x < 0);
@@ -672,19 +686,12 @@ int32_t sign(unsigned char x) = delete;
     return ::math_functions::sign(a) == ::math_functions::sign(b);
 }
 
-constexpr bool uabs(bool n) = delete;
+bool uabs(bool n)          = delete;
+unsigned char uabs(char n) = delete;
 
 [[nodiscard]] ATTRIBUTE_CONST constexpr unsigned char uabs(signed char n) noexcept {
     return n >= 0 ? static_cast<unsigned char>(n)
                   : static_cast<unsigned char>(-static_cast<unsigned char>(n));
-}
-
-[[nodiscard]] ATTRIBUTE_CONST constexpr unsigned char uabs(char n) noexcept {
-    if constexpr (std::is_signed_v<char>) {
-        return uabs(static_cast<signed char>(n));
-    } else {
-        return static_cast<unsigned char>(n);
-    }
 }
 
 [[nodiscard]] ATTRIBUTE_CONST constexpr unsigned char uabs(unsigned char n) noexcept {
@@ -1977,7 +1984,7 @@ public:
     }
 
     [[nodiscard]]
-    constexpr std::uint32_t number_of_unique_prime_factors(std::uint32_t n) const noexcept {
+    CONSTEXPR_VECTOR std::uint32_t number_of_unique_prime_factors(std::uint32_t n) const noexcept {
         return ::math_functions::Factorizer::number_of_unique_prime_factors_impl(
             least_prime_factor.data(), n);
     }

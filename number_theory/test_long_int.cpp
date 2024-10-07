@@ -6,61 +6,97 @@
 
 namespace long_int_tests {
 
-static void TestOperatorEqualsInt() {
+namespace {
+
+void TestOperatorEqualsInt() {
     test_tools::log_tests_started();
     longint n;
 
-    constexpr int32_t K = 131072;
-    for (int32_t i = -K; i < 0; i++) {
-        n = i;
-        assert(n.sign() == -1);
-        assert(n.size_ == -1 && n.nums_[0] == uint32_t(-i));
-    }
+    constexpr int32_t K = 200'000;
+
     n = 0;
     assert(n.sign() == 0);
     assert(n.size_ == 0);
+    assert(n == 0);
     for (int32_t i = 1; i <= K; i++) {
         n = i;
         assert(n.sign() == 1);
         assert(n.size_ == 1 && n.nums_[0] == uint32_t(i));
+        assert(n == i);
+        assert(n != -i);
+    }
+    for (int32_t i = -K; i < 0; i++) {
+        n = i;
+        assert(n.sign() == -1);
+        assert(n.size_ == -1 && n.nums_[0] == uint32_t(-i));
+        assert(n == i);
+        assert(n != -i);
     }
 
     n = 0u;
     assert(n.sign() == 0);
     assert(n.size_ == 0);
-    for (uint32_t i = 1; i < 2 * K; i++) {
+    assert(n == 0u);
+    for (uint32_t i = 1; i <= K; i++) {
         n = i;
         assert(n.sign() == 1);
         assert(n.size_ == 1 && n.nums_[0] == i);
+        assert(n == i);
     }
 
-    for (int64_t i = -K; i < 0; i++) {
-        n = i;
-        assert(n.sign() == -1);
-        assert(n.size_ == -1 && n.nums_[0] == uint32_t(-i));
-    }
-    n = uint64_t(0);
+    n = int64_t{0};
     assert(n.sign() == 0);
     assert(n.size_ == 0);
+    assert(n == int64_t{0});
     for (int64_t i = 1; i <= K; i++) {
         n = i;
         assert(n.sign() == 1);
         assert(n.size_ == 1 && n.nums_[0] == uint32_t(i));
+        assert(n == i);
+        assert(n != -i);
+    }
+    for (int64_t i = -K; i < 0; i++) {
+        n = i;
+        assert(n.sign() == -1);
+        assert(n.size_ == -1 && n.nums_[0] == uint32_t(-i));
+        assert(n == i);
+        assert(n != -i);
     }
 
-    n = uint64_t(0);
+    n = uint64_t{0};
     assert(n.sign() == 0);
     assert(n.size_ == 0);
-    for (uint64_t i = 1; i < 2 * K; i++) {
+    assert(n == uint64_t{0});
+    for (uint64_t i = 1; i < K; i++) {
         n = i;
         assert(n.sign() == 1);
         assert(n.size_ == 1 && n.nums_[0] == i);
+        assert(n == i);
     }
 
-    n = uint128_t(0);
+    n = int128_t{0};
     assert(n.sign() == 0);
     assert(n.size_ == 0);
-    n = uint128_t(-1);
+    assert(n == int128_t{0});
+    for (int64_t i = 1; i <= K; i++) {
+        n = int128_t{i};
+        assert(n.sign() == 1);
+        assert(n.size_ == 1 && n.nums_[0] == uint32_t(i));
+        assert(n == int128_t{i});
+        assert(n != -int128_t{i});
+    }
+    for (int64_t i = -K; i < 0; i++) {
+        n = int128_t{i};
+        assert(n.sign() == -1);
+        assert(n.size_ == -1 && n.nums_[0] == uint32_t(-i));
+        assert(n == int128_t{i});
+        assert(n != -int128_t{i});
+    }
+
+    n = uint128_t{0};
+    assert(n.sign() == 0);
+    assert(n.size_ == 0);
+    n = static_cast<uint128_t>(-1);
     assert(n.sign() == 1);
     assert(n.size_ == 4);
     assert(n.nums_[0] == uint32_t(-1) && n.nums_[1] == uint32_t(-1) && n.nums_[2] == uint32_t(-1) &&
@@ -69,10 +105,8 @@ static void TestOperatorEqualsInt() {
     for (uint64_t i = uint64_t(-1) - K; i != 0; i++) {
         n = i;
         assert(n == i);
-    }
-    for (uint64_t i = uint64_t(-1) - K; i != 0; i++) {
         n = uint128_t(i);
-        assert(n == i);
+        assert(n == uint128_t{i});
     }
     for (uint128_t i = uint128_t(-1) - K; i != 0; i++) {
         n = i;
@@ -80,7 +114,7 @@ static void TestOperatorEqualsInt() {
     }
 }
 
-static void TestLongIntMult() {
+void TestLongIntMult() {
     test_tools::log_tests_started();
 
     longint n1;
@@ -426,7 +460,7 @@ static void TestLongIntMult() {
     assert(n1 == n2 && "Long test failed");
 }
 
-static void TestLongIntSquare() {
+void TestLongIntSquare() {
     test_tools::log_tests_started();
 
     longint n;
@@ -509,7 +543,7 @@ static void TestLongIntSquare() {
     assert(n == m);
 }
 
-static void TestUIntMult() {
+void TestUIntMult() {
     test_tools::log_tests_started();
 
     longint n;
@@ -547,7 +581,7 @@ static void TestUIntMult() {
     }
 }
 
-static void TestUIntAdd() {
+void TestUIntAdd() {
     test_tools::log_tests_started();
 
     longint n(longint::Reserve(4));
@@ -646,7 +680,7 @@ static void TestUIntAdd() {
     }
 }
 
-static void TestInt32Div() {
+void TestInt32Div() {
     test_tools::log_tests_started();
 
     longint n(longint::Reserve(4));
@@ -668,7 +702,7 @@ static void TestInt32Div() {
     }
 }
 
-static void TestLongIntAdd() {
+void TestLongIntAdd() {
     test_tools::log_tests_started();
     longint n(longint::Reserve(4));
     longint m(longint::Reserve(4));
@@ -720,7 +754,7 @@ static void TestLongIntAdd() {
     }
 }
 
-static void TestLongUIntSub() {
+void TestLongUIntSub() {
     test_tools::log_tests_started();
 
     longint n;
@@ -732,6 +766,10 @@ static void TestLongUIntSub() {
             n = i;
             assert(n == i);
             n -= j;
+            if (unlikely(i == j)) {
+                assert(!n);
+                assert(n.iszero());
+            }
             assert(n == int64_t(i) - int64_t(j));
         }
     }
@@ -741,12 +779,16 @@ static void TestLongUIntSub() {
             n = i;
             assert(n == i);
             n -= j;
+            if (unlikely(i == j)) {
+                assert(!n);
+                assert(n.iszero());
+            }
             assert(n == int64_t(i) - int64_t(j));
         }
     }
 }
 
-static void TestSetString() {
+void TestSetString() {
     test_tools::log_tests_started();
     constexpr int64_t numbersI64[] = {
         0,
@@ -856,7 +898,7 @@ static void TestSetString() {
     }
 }
 
-static void TestToString() {
+void TestToString() {
     test_tools::log_tests_started();
     std::string buffer;
 
@@ -976,7 +1018,7 @@ static void TestToString() {
     assert(buffer1 == ans && "Long int set to_string test failed");
 }
 
-static void TestBitShifts() {
+void TestBitShifts() {
     test_tools::log_tests_started();
     constexpr uint32_t k = 4096;
     longint n;
@@ -1018,7 +1060,7 @@ static void TestBitShifts() {
     }
 }
 
-static void TestDecimal() {
+void TestDecimal() {
     test_tools::log_tests_started();
     longint::Decimal d1(0u);
     longint::Decimal d2(0u);
@@ -1233,7 +1275,7 @@ static void TestDecimal() {
     }
 }
 
-static void TestToIntTypes() {
+void TestToIntTypes() {
     test_tools::log_tests_started();
     constexpr uint32_t kC = 1000000;
 
@@ -1283,6 +1325,8 @@ static void TestToIntTypes() {
         test(i);
     }
 }
+
+}  // namespace
 
 }  // namespace long_int_tests
 

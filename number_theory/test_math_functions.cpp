@@ -1191,53 +1191,88 @@ void test_general_asserts() {
     ASSERT_THAT(!same_sign(-1, 0));
     ASSERT_THAT(same_sign(-1, -1));
 
-    ASSERT_THAT(uabs(static_cast<char>(0)) == 0);
+    ASSERT_THAT(uabs(static_cast<signed char>(0)) == 0);
+    ASSERT_THAT(uabs(static_cast<unsigned char>(0)) == 0);
     ASSERT_THAT(uabs(static_cast<short>(0)) == 0);
+    ASSERT_THAT(uabs(static_cast<unsigned short>(0)) == 0);
     ASSERT_THAT(uabs(static_cast<int>(0)) == 0);
+    ASSERT_THAT(uabs(static_cast<unsigned int>(0)) == 0);
     ASSERT_THAT(uabs(static_cast<long>(0)) == 0);
+    ASSERT_THAT(uabs(static_cast<unsigned long>(0)) == 0);
     ASSERT_THAT(uabs(static_cast<long long>(0)) == 0);
+    ASSERT_THAT(uabs(static_cast<unsigned long long>(0)) == 0);
 
-    ASSERT_THAT(uabs(static_cast<char>(-1)) == 1);
+    ASSERT_THAT(uabs(static_cast<signed char>(-1)) == 1);
+    ASSERT_THAT(uabs(static_cast<unsigned char>(1)) == 1);
     ASSERT_THAT(uabs(static_cast<short>(-1)) == 1);
+    ASSERT_THAT(uabs(static_cast<unsigned short>(1)) == 1);
     ASSERT_THAT(uabs(static_cast<int>(-1)) == 1);
+    ASSERT_THAT(uabs(static_cast<unsigned>(1)) == 1);
     ASSERT_THAT(uabs(static_cast<long>(-1)) == 1);
+    ASSERT_THAT(uabs(static_cast<unsigned long>(1)) == 1);
     ASSERT_THAT(uabs(static_cast<long long>(-1)) == 1);
+    ASSERT_THAT(uabs(static_cast<unsigned long long>(1)) == 1);
 
-    ASSERT_THAT(uabs(static_cast<char>(-128)) == 128);
+    ASSERT_THAT(uabs(static_cast<signed char>(-128)) == 128);
+    ASSERT_THAT(uabs(static_cast<signed char>(128)) == 128);
     ASSERT_THAT(uabs(static_cast<short>(-128)) == 128);
+    ASSERT_THAT(uabs(static_cast<short>(128)) == 128);
     ASSERT_THAT(uabs(static_cast<int>(-128)) == 128);
+    ASSERT_THAT(uabs(static_cast<int>(128)) == 128);
     ASSERT_THAT(uabs(static_cast<long>(-128)) == 128);
+    ASSERT_THAT(uabs(static_cast<long>(128)) == 128);
     ASSERT_THAT(uabs(static_cast<long long>(-128)) == 128);
+    ASSERT_THAT(uabs(static_cast<long long>(128)) == 128);
 
     ASSERT_THAT(uabs(std::numeric_limits<long long>::min()) ==
                 -static_cast<unsigned long long>(std::numeric_limits<long long>::min()));
 
-    ASSERT_THAT(uabs(int8_t(0)) == 0);
-    ASSERT_THAT(uabs(int32_t(0)) == 0);
-    ASSERT_THAT(uabs(int64_t(0)) == 0);
-    ASSERT_THAT(uabs(int8_t(-1)) == 1);
-    ASSERT_THAT(uabs(int32_t(-1)) == 1);
-    ASSERT_THAT(uabs(int64_t(-1)) == 1);
-    ASSERT_THAT(uabs(int8_t(-128)) == 128);
-    ASSERT_THAT(uabs(int32_t(-128)) == 128);
-    ASSERT_THAT(uabs(int64_t(-128)) == 128);
+    ASSERT_THAT(uabs(int8_t{0}) == 0);
+    ASSERT_THAT(uabs(uint8_t{0}) == 0);
+    ASSERT_THAT(uabs(int32_t{0}) == 0);
+    ASSERT_THAT(uabs(uint32_t{0}) == 0);
+    ASSERT_THAT(uabs(int64_t{0}) == 0);
+    ASSERT_THAT(uabs(uint64_t{0}) == 0);
+    ASSERT_THAT(uabs(int8_t{-1}) == 1);
+    ASSERT_THAT(uabs(uint8_t{1}) == 1);
+    ASSERT_THAT(uabs(int32_t{-1}) == 1);
+    ASSERT_THAT(uabs(uint32_t{1}) == 1);
+    ASSERT_THAT(uabs(int64_t{-1}) == 1);
+    ASSERT_THAT(uabs(uint64_t{1}) == 1);
+    ASSERT_THAT(uabs(int8_t{-128}) == 128);
+    ASSERT_THAT(uabs(uint8_t{128}) == 128);
+    ASSERT_THAT(uabs(int32_t{-128}) == 128);
+    ASSERT_THAT(uabs(uint32_t{128}) == 128);
+    ASSERT_THAT(uabs(int64_t{-128}) == 128);
+    ASSERT_THAT(uabs(uint64_t{128}) == 128);
 
+    ASSERT_THAT(uabs(std::numeric_limits<int32_t>::min()) ==
+                -static_cast<uint32_t>(std::numeric_limits<int32_t>::min()));
     ASSERT_THAT(uabs(std::numeric_limits<int64_t>::min()) ==
                 -static_cast<uint64_t>(std::numeric_limits<int64_t>::min()));
 
 #if defined(HAS_I128_CONSTEXPR) && HAS_I128_CONSTEXPR
-    ASSERT_THAT(uabs(int128_t(0)) == 0);
-    ASSERT_THAT(uabs(int128_t(1)) == 1);
-    ASSERT_THAT(uabs(int128_t(-1)) == 1);
-    ASSERT_THAT(uabs(int128_t(4)) == 4);
-    ASSERT_THAT(uabs(int128_t(-4)) == 4);
-    ASSERT_THAT(uabs(int128_t(18446744073709551615ull)) == 18446744073709551615ull);
-    ASSERT_THAT(uabs(-int128_t(18446744073709551615ull)) == 18446744073709551615ull);
-    ASSERT_THAT(uabs(int128_t(1) << 126) == uint128_t(1) << 126);
-    ASSERT_THAT(uabs(-(int128_t(1) << 126)) == uint128_t(1) << 126);
-    ASSERT_THAT(uabs(int128_t((uint128_t(1) << 127) - 1)) == (uint128_t(1) << 127) - 1);
-    ASSERT_THAT(uabs(int128_t(-((uint128_t(1) << 127) - 1))) == (uint128_t(1) << 127) - 1);
-    ASSERT_THAT(uabs(int128_t(-(uint128_t(1) << 127))) == uint128_t(1) << 127);
+    ASSERT_THAT(uabs(int128_t{0}) == 0);
+    ASSERT_THAT(uabs(uint128_t{0}) == 0);
+    ASSERT_THAT(uabs(int128_t{-1}) == 1);
+    ASSERT_THAT(uabs(int128_t{1}) == 1);
+    ASSERT_THAT(uabs(uint128_t{1}) == 1);
+    ASSERT_THAT(uabs(int128_t{-4}) == 4);
+    ASSERT_THAT(uabs(int128_t{4}) == 4);
+    ASSERT_THAT(uabs(uint128_t{4}) == 4);
+    ASSERT_THAT(uabs(-int128_t{18446744073709551615ull}) == 18446744073709551615ull);
+    ASSERT_THAT(uabs(int128_t{18446744073709551615ull}) == 18446744073709551615ull);
+    ASSERT_THAT(uabs(uint128_t{18446744073709551615ull}) == 18446744073709551615ull);
+    ASSERT_THAT(uabs(-(int128_t{1} << 126)) == uint128_t{1} << 126);
+    ASSERT_THAT(uabs(int128_t{1} << 126) == uint128_t{1} << 126);
+    ASSERT_THAT(uabs(uint128_t{1} << 126) == uint128_t{1} << 126);
+    ASSERT_THAT(uabs(static_cast<int128_t>(-((uint128_t{1} << 127) - 1))) ==
+                (uint128_t{1} << 127) - 1);
+    ASSERT_THAT(uabs(static_cast<int128_t>((uint128_t{1} << 127) - 1)) ==
+                (uint128_t{1} << 127) - 1);
+    ASSERT_THAT(uabs((uint128_t{1} << 127) - 1) == (uint128_t{1} << 127) - 1);
+    ASSERT_THAT(uabs(static_cast<int128_t>(-(uint128_t{1} << 127))) == uint128_t{1} << 127);
+    ASSERT_THAT(uabs(static_cast<uint128_t>(-(uint128_t{1} << 127))) == uint128_t{1} << 127);
 #endif
 
 #if CONFIG_HAS_AT_LEAST_CXX_20
