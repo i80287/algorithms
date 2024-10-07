@@ -230,10 +230,10 @@ template <class T>
             }
         } while (r >= l);
         ATTRIBUTE_ASSUME(((l - 1) >> 32) == 0);
-        return uint32_t(l - 1);
+        return static_cast<std::uint32_t>(l - 1);
 #if defined(__GNUG__) || defined(__clang__) || CONFIG_HAS_AT_LEAST_CXX_20
     } else {
-        return static_cast<uint32_t>(std::sqrt(static_cast<long double>(n)));
+        return static_cast<std::uint32_t>(std::sqrt(static_cast<long double>(n)));
     }
 #endif
 }
@@ -335,7 +335,7 @@ template <class T>
         }
     }
     ATTRIBUTE_ASSUME(y <= 2642245u);
-    return uint32_t(y);
+    return static_cast<std::uint32_t>(y);
 }
 
 /// @brief Return integer part of the fourth root of n, i.e. ⌊n^0.25⌋
@@ -370,9 +370,9 @@ struct IsPerfectSquareResult {
 
 /// @brief Checks whether @a `n` is perfect square or not.
 /// @param[in] n
-/// @return {true, sqrt(n)} if @a `n` is perfect square and {false, undefined value} otherwise.
-[[nodiscard]] ATTRIBUTE_CONST constexpr IsPerfectSquareResult<uint32_t> is_perfect_square(
-    uint32_t n) noexcept {
+/// @return {true, sqrt(n)} if @a `n` is perfect square and {false, 0} otherwise.
+[[nodiscard]]
+ATTRIBUTE_CONST constexpr IsPerfectSquareResult<uint32_t> is_perfect_square(uint32_t n) noexcept {
     // clang-format off
     /**
      * +------------+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+
@@ -390,8 +390,9 @@ struct IsPerfectSquareResult {
         case 1:
         case 4:
         case 9: {
-            uint32_t root = ::math_functions::isqrt(n);
-            return {root * root == n, root};
+            const uint32_t root       = ::math_functions::isqrt(n);
+            const bool is_perf_square = root * root == n;
+            return {is_perf_square, is_perf_square ? root : 0};
         }
         default:
             return {false, 0};
@@ -400,9 +401,9 @@ struct IsPerfectSquareResult {
 
 /// @brief Checks whether @a `n` is perfect square or not.
 /// @param[in] n
-/// @return {true, sqrt(n)} if @a `n` is perfect square and {false, undefined value} otherwise.
-[[nodiscard]] ATTRIBUTE_CONST constexpr IsPerfectSquareResult<uint64_t> is_perfect_square(
-    uint64_t n) noexcept {
+/// @return {true, sqrt(n)} if @a `n` is perfect square and {false, 0} otherwise.
+[[nodiscard]]
+ATTRIBUTE_CONST constexpr IsPerfectSquareResult<uint32_t> is_perfect_square(uint64_t n) noexcept {
     // clang-format off
     /**
      * +------------+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+
@@ -420,8 +421,9 @@ struct IsPerfectSquareResult {
         case 1:
         case 4:
         case 9: {
-            uint64_t root = ::math_functions::isqrt(n);
-            return {root * root == n, root};
+            const uint32_t root       = ::math_functions::isqrt(n);
+            const bool is_perf_square = uint64_t{root} * root == n;
+            return {is_perf_square, is_perf_square ? root : 0};
         }
         default:
             return {false, 0};
@@ -432,9 +434,10 @@ struct IsPerfectSquareResult {
 
 /// @brief Checks whether @a `n` is perfect square or not.
 /// @param[in] n
-/// @return {true, sqrt(n)} if @a `n` is perfect square and {false, undefined value} otherwise.
-[[nodiscard]] ATTRIBUTE_CONST I128_CONSTEXPR IsPerfectSquareResult<uint128_t> is_perfect_square(
-    uint128_t n) noexcept {
+/// @return {true, sqrt(n)} if @a `n` is perfect square and {false, 0} otherwise.
+[[nodiscard]]
+ATTRIBUTE_CONST I128_CONSTEXPR
+    IsPerfectSquareResult<uint64_t> is_perfect_square(uint128_t n) noexcept {
     // clang-format off
     /**
      * +------------+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+
@@ -452,8 +455,9 @@ struct IsPerfectSquareResult {
         case 1:
         case 4:
         case 9: {
-            uint64_t root = ::math_functions::isqrt(n);
-            return {uint128_t(root) * root == n, root};
+            uint64_t root             = ::math_functions::isqrt(n);
+            const bool is_perf_square = uint128_t{root} * root == n;
+            return {is_perf_square, is_perf_square ? root : 0};
         }
         default:
             return {false, 0};
@@ -467,7 +471,7 @@ struct IsPerfectSquareResult {
 /// @return 8-bit number whose bits are reversed bits of the @a `b`.
 [[nodiscard]] ATTRIBUTE_CONST constexpr uint8_t bit_reverse(uint8_t b) noexcept {
     // See https://graphics.stanford.edu/~seander/bithacks.html#RoundUpPowerOf2
-    return uint8_t(((b * 0x80200802ULL) & 0x0884422110ULL) * 0x0101010101ULL >> 32);
+    return static_cast<uint8_t>(((b * 0x80200802ULL) & 0x0884422110ULL) * 0x0101010101ULL >> 32);
 }
 
 /// @brief This function reverses bits of the @a `n`
@@ -528,13 +532,13 @@ struct IsPerfectSquareResult {
 
 template <class Functor>
 #if CONFIG_HAS_AT_LEAST_CXX_20
-    requires requires(Functor f) { f(uint64_t()); }
+    requires requires(Functor f, uint64_t mask) { f(uint64_t{mask}); }
 #endif
 ATTRIBUTE_ALWAYS_INLINE constexpr void visit_all_submasks(uint64_t mask, Functor visiter) noexcept(
-    noexcept(visiter(uint64_t()))) {
+    std::is_nothrow_invocable_v<Functor, const uint64_t>) {
     uint64_t s = mask;
     do {
-        visiter(s);
+        visiter(uint64_t{s});
         s = (s - 1) & mask;
     } while (s != 0);
 }
@@ -571,7 +575,7 @@ int32_t sign(unsigned char x) = delete;
 #if defined(INTEGERS_128_BIT_HPP)
 
 [[nodiscard]] ATTRIBUTE_CONST I128_CONSTEXPR int32_t sign(int128_t x) noexcept {
-    uint32_t sign_bit = uint32_t(uint128_t(x) >> 127);
+    const auto sign_bit = static_cast<std::uint32_t>(uint128_t(x) >> 127);
     return int32_t(x != 0) - int32_t(2 * sign_bit);
 }
 
@@ -1161,7 +1165,8 @@ template <class T>
     uint32_t t = x | (x - 1);
     // Next set to 1 the most significant bit to change,
     // set to 0 the least significant ones, and add the necessary 1 bits.
-    return (t + 1) | uint32_t(uint64_t(((~t & -~t) - 1)) >> (::math_functions::countr_zero(x) + 1));
+    return (t + 1) | static_cast<std::uint32_t>(std::uint64_t{(~t & -~t) - 1} >>
+                                                (::math_functions::countr_zero(x) + 1));
 }
 
 [[nodiscard]] ATTRIBUTE_CONST constexpr bool is_power_of_two(signed char n) noexcept {
@@ -1223,24 +1228,29 @@ template <class T>
 
 #endif
 
-[[nodiscard]] ATTRIBUTE_CONST constexpr uint64_t nearest_greater_equal_power_of_two(
-    uint32_t n) noexcept {
-    return uint64_t(1ull) << (32 - uint32_t(::math_functions::countl_zero(n | 1)) -
-                              ((n & (n - 1)) == 0));
+[[nodiscard]]
+ATTRIBUTE_CONST constexpr uint64_t nearest_greater_equal_power_of_two(uint32_t n) noexcept {
+    const auto shift = 32 - static_cast<std::uint32_t>(::math_functions::countl_zero(n | 1)) -
+                       ((n & (n - 1)) == 0);
+    return static_cast<std::uint64_t>(1ull) << shift;
 }
 
-[[nodiscard]] ATTRIBUTE_CONST constexpr uint64_t nearest_greater_power_of_two(uint32_t n) noexcept {
-    return uint64_t(1ull) << (32 - uint32_t(::math_functions::countl_zero(n)));
+[[nodiscard]]
+ATTRIBUTE_CONST constexpr uint64_t nearest_greater_power_of_two(uint32_t n) noexcept {
+    const auto shift = 32 - static_cast<std::uint32_t>(::math_functions::countl_zero(n));
+    return static_cast<std::uint64_t>(1ull) << shift;
 }
 
 [[nodiscard]] ATTRIBUTE_CONST constexpr uint64_t nearest_greater_equal_power_of_two(
     uint64_t n) noexcept {
-    return uint64_t(1ull) << (64 - uint32_t(::math_functions::countl_zero(n | 1)) -
-                              ((n & (n - 1)) == 0));
+    const auto shift = 64 - static_cast<std::uint32_t>(::math_functions::countl_zero(n | 1)) -
+                       ((n & (n - 1)) == 0);
+    return static_cast<std::uint64_t>(1ull) << shift;
 }
 
 [[nodiscard]] ATTRIBUTE_CONST constexpr uint64_t nearest_greater_power_of_two(uint64_t n) noexcept {
-    return uint64_t(1ull) << (64 - uint32_t(::math_functions::countl_zero(n)));
+    const auto shift = 64 - static_cast<std::uint32_t>(::math_functions::countl_zero(n));
+    return static_cast<std::uint64_t>(1ull) << shift;
 }
 
 /// @brief If @a n != 0, return number that is power of 2 and
@@ -1272,7 +1282,8 @@ namespace detail {
 /// @param[in] base
 /// @return
 template <class T>
-ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_CONST constexpr uint32_t base_b_len(
+[[nodiscard]]
+ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_CONST constexpr uint32_t base_b_len_impl(
     T value, const uint8_t base = 10) noexcept {
     const uint32_t b  = base;
     const uint32_t b2 = b * b;
@@ -1325,9 +1336,9 @@ template <typename T>
 
     if constexpr (kIsSigned) {
         std::uint32_t is_negative = value < 0;
-        return is_negative + ::math_functions::detail::base_b_len(uabs(value), base);
+        return is_negative + ::math_functions::detail::base_b_len_impl(uabs(value), base);
     } else {
-        return ::math_functions::detail::base_b_len(value, base);
+        return ::math_functions::detail::base_b_len_impl(value, base);
     }
 }
 
@@ -1335,7 +1346,7 @@ template <typename T>
 /// @param[in] n
 /// @return
 [[nodiscard]] ATTRIBUTE_CONST constexpr uint32_t log2_floor(uint32_t n) noexcept {
-    return 31 - uint32_t(::math_functions::countl_zero(n));
+    return 31 - static_cast<std::uint32_t>(::math_functions::countl_zero(n));
 }
 
 /// @brief For n > 0 returns ⌈log_2(n)⌉. For n = 0 returns (uint32_t)-1
@@ -1349,7 +1360,7 @@ template <typename T>
 /// @param[in] n
 /// @return
 [[nodiscard]] ATTRIBUTE_CONST constexpr uint32_t log2_floor(uint64_t n) noexcept {
-    return 63 - uint32_t(::math_functions::countl_zero(n));
+    return 63 - static_cast<std::uint32_t>(::math_functions::countl_zero(n));
 }
 
 /// @brief For n > 0 returns ⌈log_2(n)⌉. For n = 0 returns (uint32_t)-1
@@ -1364,9 +1375,9 @@ template <typename T>
 /// @param[in] n
 /// @return
 [[nodiscard]] ATTRIBUTE_CONST I128_CONSTEXPR uint32_t log2_floor(uint128_t n) noexcept {
-    uint64_t hi = uint64_t(n >> 64);
-    return hi != 0 ? (127 - uint32_t(::math_functions::countl_zero(hi)))
-                   : (::math_functions::log2_floor(uint64_t(n)));
+    const auto hi = static_cast<std::uint64_t>(n >> 64);
+    return hi != 0 ? (127 - static_cast<std::uint32_t>(::math_functions::countl_zero(hi)))
+                   : (::math_functions::log2_floor(static_cast<std::uint64_t>(n)));
 }
 
 /// @brief For n > 0 returns ⌈log_2(n)⌉. For n = 0 returns (uint32_t)-1
@@ -1566,8 +1577,8 @@ ATTRIBUTE_CONST static inline uint32_t log10_floor_runtime_impl(uint64_t n,
 
 template <class T>
 struct ExtractPow2Result {
-    T q;
-    std::uint32_t r;
+    T odd_part;
+    std::uint32_t power;
 };
 
 /// @brief Find q and r such n = q * (2 ^ r), q is odd if n != 0
@@ -1909,15 +1920,15 @@ class [[nodiscard]] Factorizer final {
 public:
     using PrimeFactors = std::vector<PrimeFactor<std::uint32_t>>;
 
-    CONSTEXPR_VECTOR Factorizer(std::uint32_t n) : least_prime_factor(std::size_t(n) + 1) {
-        for (uint32_t i = 2; i <= std::size_t(n); i++) {
+    CONSTEXPR_VECTOR Factorizer(std::uint32_t n) : least_prime_factor(std::size_t{n} + 1) {
+        for (uint32_t i = 2; i <= std::size_t{n}; i++) {
             if (least_prime_factor[i] == 0) {
                 least_prime_factor[i] = i;
                 primes.push_back(i);
             }
             for (std::size_t prime_index = 0;; prime_index++) {
                 const auto p = primes[prime_index];
-                const auto x = std::size_t(p) * i;
+                const auto x = std::size_t{p} * i;
                 if (x > n) {
                     break;
                 }
@@ -1945,7 +1956,7 @@ public:
         PrimeFactors pfs;
         if (n % 2 == 0 && n > 0) {
             const auto [n_div_pow_of_2, power_of_2] = ::math_functions::extract_pow2(n);
-            pfs.emplace_back(std::uint32_t(2), power_of_2);
+            pfs.emplace_back(std::uint32_t{2}, power_of_2);
             n = n_div_pow_of_2;
         }
 
@@ -1953,7 +1964,7 @@ public:
             const auto lpf = least_prime_factor[n];
             if (pfs.empty() || pfs.back().factor != lpf) {
                 // assert(pfs.empty() || pfs.back().factor < lpf);
-                pfs.emplace_back(lpf, std::uint32_t(1));
+                pfs.emplace_back(lpf, std::uint32_t{1});
             } else {
                 pfs.back().factor_power++;
             }
@@ -1965,7 +1976,38 @@ public:
         return pfs;
     }
 
+    [[nodiscard]]
+    constexpr std::uint32_t number_of_unique_prime_factors(std::uint32_t n) const noexcept {
+        return ::math_functions::Factorizer::number_of_unique_prime_factors_impl(
+            least_prime_factor.data(), n);
+    }
+
 private:
+    ATTRIBUTE_PURE
+    ATTRIBUTE_SIZED_ACCESS(read_only, 1, 2)
+    static constexpr std::uint32_t number_of_unique_prime_factors_impl(
+        const uint32_t* least_prime_factor, std::uint32_t n) noexcept {
+        std::uint32_t unique_pfs_count = 0;
+        std::uint32_t last_pf          = 0;
+        if (n % 2 == 0) {
+            if (unlikely(n == 0)) {
+                return unique_pfs_count;
+            }
+            n       = ::math_functions::extract_pow2(n).odd_part;
+            last_pf = 2;
+            unique_pfs_count++;
+        }
+
+        while (n >= 3) {
+            const std::uint32_t least_pf = least_prime_factor[n];
+            unique_pfs_count += least_pf != last_pf;
+            n /= least_pf;
+            last_pf = least_pf;
+        }
+
+        return unique_pfs_count;
+    }
+
     std::vector<std::uint32_t> primes;
     std::vector<std::uint32_t> least_prime_factor;
 };
@@ -1974,7 +2016,7 @@ private:
 /// @param n inclusive upper bound
 /// @return vector, such that vector[n] == true \iff n is prime
 [[nodiscard]] CONSTEXPR_VECTOR auto dynamic_primes_sieve(std::uint32_t n) {
-    std::vector<bool> primes(std::size_t(n) + 1, true);
+    std::vector<bool> primes(std::size_t{n} + 1, true);
     primes[0] = false;
     if (likely(n > 0)) {
         primes[1]                = false;
@@ -2018,7 +2060,7 @@ private:
 /// @return bitset, such that bitset[n] == true \iff n is prime
 template <std::uint32_t N>
 [[nodiscard]] CONSTEXPR_FIXED_PRIMES_SIEVE inline const auto& fixed_primes_sieve() noexcept {
-    using PrimesSet                                         = std::bitset<std::size_t(N) + 1>;
+    using PrimesSet                                         = std::bitset<std::size_t{N} + 1>;
     static CONSTEXPR_PRIMES_SIEVE const PrimesSet primes_bs = []() CONSTEXPR_BITSET_OPS noexcept {
         PrimesSet primes{};
         primes.set();
@@ -2732,8 +2774,8 @@ namespace std {
         return a;
     }
 
-    uint32_t ra   = uint32_t(::math_functions::countr_zero(a));
-    uint32_t rb   = uint32_t(::math_functions::countr_zero(b));
+    uint32_t ra   = static_cast<std::uint32_t>(::math_functions::countr_zero(a));
+    uint32_t rb   = static_cast<std::uint32_t>(::math_functions::countr_zero(b));
     uint32_t mult = std::min(ra, rb);
     a >>= ra;
     b >>= rb;

@@ -376,17 +376,21 @@ void test_factorizer() {
     }
 
     for (std::uint32_t i = 0; i <= N; i++) {
+        auto pfs = fact.prime_factors(i);
+        if (pfs.size() != fact.number_of_unique_prime_factors(i))
+            std::cerr << i << '\n'
+                      << pfs.size() << '\n'
+                      << fact.number_of_unique_prime_factors(i) << '\n';
+        assert(pfs.size() == fact.number_of_unique_prime_factors(i));
+        auto pfs_v = prime_factors_as_vector(i);
 #if CONFIG_HAS_AT_LEAST_CXX_20
-        assert(std::ranges::equal(fact.prime_factors(i), prime_factors_as_vector(i),
-                                  [](auto pf1, auto pf2) constexpr noexcept {
-                                      return pf1.factor == pf2.factor &&
-                                             pf1.factor_power == pf2.factor_power;
-                                  }));
+        assert(std::ranges::equal(
+            pfs, prime_factors_as_vector(i), [](auto pf1, auto pf2) constexpr noexcept {
+                return pf1.factor == pf2.factor && pf1.factor_power == pf2.factor_power;
+            }));
 #else
-        auto&& range1 = fact.prime_factors(i);
-        auto&& range2 = prime_factors_as_vector(i);
-        assert(range1.size() == range2.size() &&
-               std::equal(range1.begin(), range1.end(), range2.begin(), [](auto pf1, auto pf2) {
+        assert(pfs.size() == pfs_v.size() &&
+               std::equal(pfs.begin(), pfs.end(), pfs_v.begin(), [](auto pf1, auto pf2) {
                    return pf1.factor == pf2.factor && pf1.factor_power == pf2.factor_power;
                }));
 #endif
@@ -646,11 +650,6 @@ void test_inv_mod_m() {
         }
     }
 
-    constexpr std::mt19937_64::result_type kSeed = 372'134'058;
-    std::mt19937_64 rnd_gen(kSeed);
-    constexpr std::size_t n = 25'000;
-    std::vector<uint64_t> nums(n);
-
     auto make_rbtree_set = [](const std::vector<std::uint64_t>& nums) {
         return std::set<std::uint64_t>(nums.begin(), nums.end());
     };
@@ -669,6 +668,11 @@ void test_inv_mod_m() {
         nums.erase(iter, nums.end());
         return std::list<std::uint64_t>(nums.begin(), nums.end());
     };
+
+    constexpr std::mt19937_64::result_type kSeed = 372'134'058;
+    std::mt19937_64 rnd_gen(kSeed);
+    constexpr std::size_t n = 25'000;
+    std::vector<uint64_t> nums(n);
 
     for (const std::uint32_t m : first_prime_nums) {
         std::generate(nums.begin(), nums.end(), [&rnd_gen, m]() noexcept {
