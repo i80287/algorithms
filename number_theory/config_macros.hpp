@@ -80,7 +80,7 @@
 #endif
 
 // https://en.cppreference.com/w/cpp/feature_test
-#if defined(__cpp_concepts) && __cpp_concepts >= 202002L
+#if defined(__cpp_concepts) && __cpp_concepts >= 201907L
 #define CONFIG_HAS_CONCEPTS 1
 #else
 #define CONFIG_HAS_CONCEPTS 0
