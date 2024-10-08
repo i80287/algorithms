@@ -2762,6 +2762,49 @@ template <std::uint32_t M>
 
 #endif
 
+template <class T>
+[[nodiscard]] CONSTEXPR_VECTOR std::vector<T> arange(T begin, T end, T step) {
+    static_assert(std::is_integral_v<T>);
+
+    const std::size_t size = [begin, end, step]() mutable constexpr noexcept -> std::size_t {
+        if (step == 0) {
+            return 0;
+        }
+
+        if constexpr (std::is_signed_v<T>) {
+            if (step < 0) {
+                step = -step;
+                std::swap(begin, end);
+            }
+        }
+        auto approx_size = (end - begin + step - 1) / step;
+        if constexpr (std::is_signed_v<T>) {
+            return static_cast<std::size_t>(std::max(approx_size, T{0}));
+        } else {
+            return std::size_t{approx_size};
+        }
+    }();
+
+    std::vector<T> rng(size);
+    T i = begin;
+    for (T& elem : rng) {
+        elem = i;
+        i += step;
+    }
+
+    return rng;
+}
+
+template <class T>
+[[nodiscard]] CONSTEXPR_VECTOR std::vector<T> arange(T n, T step) {
+    return ::math_functions::arange(0, n, step);
+}
+
+template <class T>
+[[nodiscard]] CONSTEXPR_VECTOR std::vector<T> arange(T n) {
+    return ::math_functions::arange(n, 1);
+}
+
 }  // namespace math_functions
 
 #if defined(INTEGERS_128_BIT_HPP)
