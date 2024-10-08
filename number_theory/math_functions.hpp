@@ -746,6 +746,37 @@ unsigned char uabs(char n) = delete;
 
 namespace detail {
 
+#ifdef INTEGERS_128_BIT_HPP
+namespace helper_ns = int128_traits;
+#else
+namespace helper_ns = std;
+#endif
+
+template <class T>
+inline constexpr bool is_integral_v = ::math_functions::detail::helper_ns::is_integral_v<T>;
+
+template <class T>
+inline constexpr bool is_unsigned_v = ::math_functions::detail::helper_ns::is_unsigned_v<T>;
+
+template <class T>
+inline constexpr bool is_signed_v = ::math_functions::detail::helper_ns::is_signed_v<T>;
+
+template <class T>
+using make_unsigned_t = typename ::math_functions::detail::helper_ns::make_unsigned_t<T>;
+
+#if CONFIG_HAS_CONCEPTS
+
+template <class T>
+concept integral = ::math_functions::detail::helper_ns::integral<T>;
+
+template <class T>
+concept signed_integral = ::math_functions::detail::helper_ns::signed_integral<T>;
+
+template <class T>
+concept unsigned_integral = ::math_functions::detail::helper_ns::unsigned_integral<T>;
+
+#endif
+
 [[nodiscard]] ATTRIBUTE_CONST inline uint32_t log2_floor_software(uint64_t n) {
     static const uint64_t t[6] = {0xFFFFFFFF00000000ull, 0x00000000FFFF0000ull,
                                   0x000000000000FF00ull, 0x00000000000000F0ull,
@@ -958,13 +989,12 @@ namespace detail {
 /// @param[in] n
 /// @return trailing zeros count (sizeof(n) * 8 for n = 0)
 template <typename T>
-#if CONFIG_HAS_AT_LEAST_CXX_20
-    requires std::is_unsigned_v<T>
-#if defined(INTEGERS_128_BIT_HPP)
-             || std::is_same_v<T, uint128_t>
-#endif
+#if CONFIG_HAS_CONCEPTS
+    requires ::math_functions::detail::unsigned_integral<T>
 #endif
 [[nodiscard]] ATTRIBUTE_CONST constexpr int32_t countr_zero(T n) noexcept {
+    static_assert(::math_functions::detail::is_unsigned_v<T>, "Unsigned integral type expected");
+
     if (unlikely(n == 0)) {
         return sizeof(n) * CHAR_BIT;
     }
@@ -1029,13 +1059,12 @@ template <typename T>
 /// @param[in] n
 /// @return leading zeros count (sizeof(n) * 8 for n = 0)
 template <typename T>
-#if CONFIG_HAS_AT_LEAST_CXX_20
-    requires std::is_unsigned_v<T>
-#if defined(INTEGERS_128_BIT_HPP)
-             || std::is_same_v<T, uint128_t>
-#endif
+#if CONFIG_HAS_CONCEPTS
+    requires ::math_functions::detail::unsigned_integral<T>
 #endif
 [[nodiscard]] ATTRIBUTE_CONST constexpr int32_t countl_zero(T n) noexcept {
+    static_assert(::math_functions::detail::is_unsigned_v<T>, "Unsigned integral type expected");
+
     if (unlikely(n == 0)) {
         return sizeof(n) * CHAR_BIT;
     }
@@ -1096,13 +1125,12 @@ template <typename T>
 }
 
 template <class T>
-#if CONFIG_HAS_AT_LEAST_CXX_20
-    requires std::is_unsigned_v<T>
-#if defined(INTEGERS_128_BIT_HPP)
-             || std::is_same_v<T, uint128_t>
-#endif
+#if CONFIG_HAS_CONCEPTS
+    requires ::math_functions::detail::unsigned_integral<T>
 #endif
 [[nodiscard]] ATTRIBUTE_CONST constexpr int32_t popcount(T n) noexcept {
+    static_assert(::math_functions::detail::is_unsigned_v<T>, "Unsigned integral type expected");
+
 #if defined(INTEGERS_128_BIT_HPP)
     if constexpr (std::is_same_v<T, uint128_t>) {
         // Reason: cppcheck can not deduce that n is uint128_t here
@@ -1162,9 +1190,6 @@ template <class T>
 /// @param[in] x
 /// @return
 [[nodiscard]] ATTRIBUTE_CONST constexpr uint32_t next_n_bits_permutation(uint32_t x) noexcept {
-    if (x == 0) {
-        return 0;
-    }
     // See
     // https://graphics.stanford.edu/~seander/bithacks.html#RoundUpPowerOf2
 
@@ -1268,14 +1293,9 @@ ATTRIBUTE_CONST constexpr uint64_t nearest_greater_power_of_two(uint32_t n) noex
 /// @return
 template <class IntType>
 [[nodiscard]] ATTRIBUTE_CONST constexpr IntType least_bit_set(IntType n) noexcept {
-    namespace helper_ns =
-#ifdef INTEGERS_128_BIT_HPP
-        int128_traits;
-#else
-        std;
-#endif
-    static_assert(helper_ns::is_integral_v<IntType>, "integral type expected");
-    using UIntType              = helper_ns::make_unsigned_t<IntType>;
+    static_assert(::math_functions::detail::is_integral_v<IntType>, "integral type expected");
+
+    using UIntType              = ::math_functions::detail::make_unsigned_t<IntType>;
     using UIntTypeAtLeastUInt32 = std::common_type_t<UIntType, uint32_t>;
     auto unsigned_n             = static_cast<UIntTypeAtLeastUInt32>(static_cast<UIntType>(n));
     return static_cast<IntType>(unsigned_n & -unsigned_n);
@@ -1328,22 +1348,12 @@ ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_CONST constexpr uint32_t base_b_len_impl(
 template <typename T>
 [[nodiscard]] ATTRIBUTE_CONST constexpr uint32_t base_b_len(T value,
                                                             const uint8_t base = 10) noexcept {
-#if defined(INTEGERS_128_BIT_HPP)
-    static_assert(int128_traits::is_integral_v<T>);
-#else
-    static_assert(std::is_integral_v<T>);
-#endif
+    static_assert(::math_functions::detail::is_integral_v<T>);
 
-    constexpr bool kIsSigned =
-#if defined(INTEGERS_128_BIT_HPP)
-        int128_traits::is_signed_v<T>;
-#else
-        std::is_signed_v<T>;
-#endif
-
-    if constexpr (kIsSigned) {
+    if constexpr (::math_functions::detail::is_signed_v<T>) {
         std::uint32_t is_negative = value < 0;
-        return is_negative + ::math_functions::detail::base_b_len_impl(uabs(value), base);
+        return is_negative +
+               ::math_functions::detail::base_b_len_impl(::math_functions::uabs(value), base);
     } else {
         return ::math_functions::detail::base_b_len_impl(value, base);
     }
@@ -1419,37 +1429,6 @@ template <typename T>
 #endif
 
 namespace detail {
-
-#ifdef INTEGERS_128_BIT_HPP
-namespace helper_ns = int128_traits;
-#else
-namespace helper_ns = std;
-#endif
-
-template <class T>
-inline constexpr bool is_integral_v = ::math_functions::detail::helper_ns::is_integral_v<T>;
-
-template <class T>
-inline constexpr bool is_unsigned_v = ::math_functions::detail::helper_ns::is_unsigned_v<T>;
-
-template <class T>
-inline constexpr bool is_signed_v = ::math_functions::detail::helper_ns::is_signed_v<T>;
-
-template <class T>
-using make_unsigned_t = typename ::math_functions::detail::helper_ns::make_unsigned_t<T>;
-
-#if CONFIG_HAS_CONCEPTS
-
-template <class T>
-concept integral = ::math_functions::detail::helper_ns::integral<T>;
-
-template <class T>
-concept signed_integral = ::math_functions::detail::helper_ns::signed_integral<T>;
-
-template <class T>
-concept unsigned_integral = ::math_functions::detail::helper_ns::unsigned_integral<T>;
-
-#endif
 
 ATTRIBUTE_CONST constexpr uint32_t log10_floor_compile_time_impl(uint32_t n) noexcept {
     constexpr uint8_t table1[33] = {
@@ -1624,11 +1603,8 @@ struct ExtractPow2Result {
 /// @param[in] n
 /// @return Pair of q and r
 template <typename T>
-#if CONFIG_HAS_AT_LEAST_CXX_20
-    requires std::is_unsigned_v<T>
-#if defined(INTEGERS_128_BIT_HPP)
-             || std::is_same_v<T, uint128_t>
-#endif
+#if CONFIG_HAS_CONCEPTS
+    requires ::math_functions::detail::unsigned_integral<T>
 #endif
 [[nodiscard]] ATTRIBUTE_CONST constexpr ExtractPow2Result<T> extract_pow2(T n) noexcept {
     auto r = static_cast<std::uint32_t>(::math_functions::countr_zero(n));
@@ -1854,9 +1830,9 @@ struct [[nodiscard]] PrimeFactor final {
 #endif
 
 template <class NumericType, class Function>
-#if CONFIG_HAS_AT_LEAST_CXX_20
+#if CONFIG_HAS_CONCEPTS
     requires(sizeof(NumericType) >= sizeof(int)) &&
-            ::math_functions::detail::is_integral_v<NumericType> &&
+            ::math_functions::detail::integral<NumericType> &&
             std::is_invocable_v<
                 Function, typename ::math_functions::PrimeFactor<
                               typename ::math_functions::detail::make_unsigned_t<NumericType>>>
@@ -2154,7 +2130,7 @@ struct [[nodiscard]] ExtEuclidAlgoRet {
 template <typename IntType>
 [[nodiscard]] ATTRIBUTE_CONST constexpr auto extended_euclid_algorithm(IntType a,
                                                                        IntType b) noexcept {
-    static_assert(std::is_integral_v<IntType>, "Integral type expected");
+    static_assert(::math_functions::detail::is_integral_v<IntType>, "Integral type expected");
 
     std::int64_t u_previous = a != 0;
     std::int64_t u_current  = 0;
@@ -2181,7 +2157,7 @@ template <typename IntType>
         v_current                 = v_next;
     }
 
-    if constexpr (std::is_signed_v<CompIntType>) {
+    if constexpr (::math_functions::detail::is_signed_v<CompIntType>) {
         if (r_previous < 0) {
             u_previous = -u_previous;
             v_previous = -v_previous;
@@ -2264,8 +2240,9 @@ ATTRIBUTE_CONST constexpr std::uint32_t solve_congruence_modulo_m_impl(std::uint
 template <class T>
 ATTRIBUTE_CONST ATTRIBUTE_ALWAYS_INLINE constexpr std::uint32_t congruence_arg(
     T x, [[maybe_unused]] std::uint32_t m) noexcept {
-    static_assert(std::is_integral_v<T>, "Expected integral type in the congruence");
-    if constexpr (std::is_unsigned_v<T>) {
+    static_assert(::math_functions::detail::is_integral_v<T>,
+                  "Expected integral type in the congruence");
+    if constexpr (::math_functions::detail::is_unsigned_v<T>) {
         if constexpr (sizeof(x) > sizeof(std::uint32_t)) {
             return static_cast<std::uint32_t>(x % m);
         } else {
@@ -2354,10 +2331,9 @@ ATTRIBUTE_CONST constexpr std::uint32_t inv_mod_m(IntType a, std::uint32_t m) no
 /// @param m
 /// @return
 template <class IntType>
-[[nodiscard]]
-ATTRIBUTE_CONST
-constexpr
-std::enable_if_t<std::is_integral_v<IntType>, std::uint32_t> inv_mod_m(IntType a, std::uint32_t m) noexcept {
+[[nodiscard]] ATTRIBUTE_CONST constexpr
+std::enable_if_t<::math_functions::detail::is_integral_v<IntType>, std::uint32_t>
+inv_mod_m(IntType a, std::uint32_t m) noexcept {
     return ::math_functions::solve_congruence_modulo_m(a, std::uint32_t{1}, m);
 }
 
@@ -2418,7 +2394,7 @@ CONSTEXPR_VECTOR typename ::math_functions::InverseResult inv_mod_m_impl(Iter nu
 // clang-format off
 
 template <std::forward_iterator Iter>
-    requires std::integral<typename std::iter_value_t<Iter>> &&
+    requires ::math_functions::detail::integral<typename std::iter_value_t<Iter>> &&
              (!std::same_as<typename std::iter_value_t<Iter>, bool>)
 [[nodiscard]]
 CONSTEXPR_VECTOR
@@ -2445,21 +2421,20 @@ typename ::math_functions::InverseResult inv_mod_m(const Container& nums, std::u
 
 template <class Iter>
 [[nodiscard]]
-CONSTEXPR_VECTOR
-    std::enable_if_t<std::is_integral_v<typename std::iterator_traits<Iter>::value_type> &&
-                         !std::is_same_v<typename std::iterator_traits<Iter>::value_type, bool>,
-                     typename ::math_functions::InverseResult> inv_mod_m(Iter nums_iter_begin,
-                                                                         Iter nums_iter_end,
-                                                                         std::uint32_t m) {
+CONSTEXPR_VECTOR std::enable_if_t<
+    ::math_functions::detail::is_integral_v<typename std::iterator_traits<Iter>::value_type> &&
+        !std::is_same_v<typename std::iterator_traits<Iter>::value_type, bool>,
+    typename ::math_functions::InverseResult> inv_mod_m(Iter nums_iter_begin, Iter nums_iter_end,
+                                                        std::uint32_t m) {
     return ::math_functions::detail::inv_mod_m_impl(nums_iter_begin, nums_iter_end, m);
 }
 
 template <class Container>
 [[nodiscard]]
 CONSTEXPR_VECTOR
-    std::enable_if_t<std::is_integral_v<typename std::iterator_traits<
-                         decltype(std::begin(std::declval<Container&>()))>::value_type> &&
-                         std::is_integral_v<typename std::iterator_traits<
+    std::enable_if_t<::math_functions::detail::is_integral_v<typename std::iterator_traits<
+                         decltype(std::begin(std::declval<Container&>()))>::value_type>&& ::
+                         math_functions::detail::is_integral_v<typename std::iterator_traits<
                              decltype(std::end(std::declval<Container&>()))>::value_type>,
                      typename ::math_functions::InverseResult> inv_mod_m(const Container& nums,
                                                                          std::uint32_t m) {
@@ -2798,21 +2773,21 @@ template <std::uint32_t M>
 
 template <class T>
 [[nodiscard]] CONSTEXPR_VECTOR std::vector<T> arange(T begin, T end, T step) {
-    static_assert(std::is_integral_v<T>);
+    static_assert(::math_functions::detail::is_integral_v<T>);
 
     const std::size_t size = [begin, end, step]() mutable constexpr noexcept -> std::size_t {
         if (step == 0) {
             return 0;
         }
 
-        if constexpr (std::is_signed_v<T>) {
+        if constexpr (::math_functions::detail::is_signed_v<T>) {
             if (step < 0) {
                 step = -step;
                 std::swap(begin, end);
             }
         }
         auto approx_size = (end - begin + step - 1) / step;
-        if constexpr (std::is_signed_v<T>) {
+        if constexpr (::math_functions::detail::is_signed_v<T>) {
             return static_cast<std::size_t>(std::max(approx_size, T{0}));
         } else {
             return std::size_t{approx_size};

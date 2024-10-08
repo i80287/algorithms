@@ -1348,6 +1348,8 @@ void test_general_asserts() {
     ASSERT_THAT(detail::tz_count_64_software(~1u) == 1);
     ASSERT_THAT(detail::tz_count_64_software(uint32_t(-1)) == 0);
 
+    ASSERT_THAT(next_n_bits_permutation(0) == 0);
+
     ASSERT_THAT(next_n_bits_permutation(0b0010011) == 0b0010101);
     ASSERT_THAT(next_n_bits_permutation(0b0010101) == 0b0010110);
     ASSERT_THAT(next_n_bits_permutation(0b0010110) == 0b0011001);
