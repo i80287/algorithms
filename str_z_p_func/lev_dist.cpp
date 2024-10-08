@@ -3,26 +3,27 @@
 #include <string_view>
 #include <vector>
 
-template <uint32_t ReplacementCost = 1, uint32_t DeletionCost = 1,
-          uint32_t InsertionCost = 1>
-constexpr uint32_t ldist(const std::string_view s1,
-                         const std::string_view s2) noexcept {
-    std::vector<uint32_t> dp1(s2.size() + 1);
-    std::vector<uint32_t> dp2(s2.size() + 1);
+using std::size_t;
+using std::uint32_t;
+
+template <size_t ReplacementCost = 1, size_t DeletionCost = 1, size_t InsertionCost = 1>
+constexpr size_t ldist(std::string_view s1, std::string_view s2) {
+    if (s1.size() < s2.size()) {
+        s1.swap(s2);
+    }
+    std::vector<size_t> dp1(s2.size() + 1);
+    std::vector<size_t> dp2(s2.size() + 1);
     for (size_t j = 0; j <= s2.size(); j++) {
-        dp1[j] = uint32_t(j);
+        dp1[j] = j;
     }
 
     for (size_t i = 1; i <= s1.size(); i++) {
-        dp2[0] = uint32_t(i);
+        dp2[0] = i;
         for (size_t j = 1; j <= s2.size(); j++) {
-            dp2[j] =
-                std::min(dp1[j - 1] + uint32_t(s1[i - 1] != s2[j - 1]) *
-                                          ReplacementCost,
-                         std::min(dp1[j] + DeletionCost,
-                                  dp2[j - 1] + InsertionCost));
+            dp2[j] = std::min(dp1[j - 1] + size_t(s1[i - 1] != s2[j - 1]) * ReplacementCost,
+                              std::min(dp1[j] + DeletionCost, dp2[j - 1] + InsertionCost));
         }
-        std::swap(dp1, dp2);
+        dp1.swap(dp2);
     }
 
     return dp1[s2.size()];
@@ -65,13 +66,11 @@ consteval bool verify() {
     };
     // clang-format on
 
-    constexpr auto kMaxSizeFn =
-        [](const TestCase& test) constexpr noexcept {
-            return std::max(test.s1.size(), test.s2.size());
-        };
-    constexpr size_t kMaxSize    = kMaxSizeFn(std::ranges::max(
-        tests,
-        [&](const TestCase& t1, const TestCase& t2) constexpr noexcept {
+    constexpr auto kMaxSizeFn = [](const TestCase& test) constexpr noexcept {
+        return std::max(test.s1.size(), test.s2.size());
+    };
+    constexpr size_t kMaxSize = kMaxSizeFn(
+        std::ranges::max(tests, [&](const TestCase& t1, const TestCase& t2) constexpr noexcept {
             return kMaxSizeFn(t1) < kMaxSizeFn(t2);
         }));
     constexpr size_t kBufferSize = kMaxSize + 1;

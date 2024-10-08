@@ -34,6 +34,18 @@ static_assert(int128_traits::is_signed_v<int64_t>);
 static_assert(std::is_same_v<int128_traits::make_unsigned_t<int64_t>, uint64_t>);
 static_assert(std::is_same_v<int128_traits::make_signed_t<int64_t>, int64_t>);
 
+#if CONFIG_HAS_CONCEPTS
+
+static_assert(int128_traits::integral<int128_t>);
+static_assert(!int128_traits::unsigned_integral<int128_t>);
+static_assert(int128_traits::signed_integral<int128_t>);
+
+static_assert(int128_traits::integral<uint128_t>);
+static_assert(int128_traits::unsigned_integral<uint128_t>);
+static_assert(!int128_traits::signed_integral<uint128_t>);
+
+#endif
+
 int main() {
     constexpr uint64_t k = 20000;
     for (uint64_t n = 0; n <= k; n++) {

@@ -226,6 +226,21 @@ using make_unsigned_t = typename ::int128_traits::make_unsigned<T>::type;
 template <typename T>
 using make_signed_t = typename ::int128_traits::make_signed<T>::type;
 
+#if CONFIG_HAS_CONCEPTS
+
+template <class T>
+concept integral = std::integral<T> || int128_traits::is_integral_v<T>;
+
+template <class T>
+concept signed_integral =
+    std::signed_integral<T> || (int128_traits::integral<T> && int128_traits::is_signed_v<T>);
+
+template <class T>
+concept unsigned_integral =
+    std::unsigned_integral<T> || (int128_traits::integral<T> && !int128_traits::signed_integral<T>);
+
+#endif
+
 }  // namespace int128_traits
 
 inline std::ostream& operator<<(std::ostream& out, uint128_t number) {
