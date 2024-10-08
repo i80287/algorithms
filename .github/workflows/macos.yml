@@ -1,6 +1,6 @@
 name: macOS CI
 
-on: [push, pull_request, workflow_dispatch]
+on: [push, workflow_dispatch]
 
 permissions:
   contents: read
@@ -13,7 +13,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        macos_versions: [13]
+        macos_versions: [13, 14]
 
     steps:
     - uses: actions/checkout@v4
@@ -28,12 +28,7 @@ jobs:
         # > to your PATH from your bashrc like:
         export PATH="/usr/local/opt/make/libexec/gnubin:$PATH"
 
-        brew reinstall gmp mpfr
-        brew unlink gmp && brew link gmp
-        brew unlink mpfr && brew link mpfr
-
     - name: Run tests
-      if: matrix.macos_versions <= 13
       run: |
         cd ./tests
         chmod +x run_macos_clang_tests.sh
