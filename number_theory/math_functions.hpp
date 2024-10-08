@@ -1420,6 +1420,37 @@ template <typename T>
 
 namespace detail {
 
+#ifdef INTEGERS_128_BIT_HPP
+namespace helper_ns = int128_traits;
+#else
+namespace helper_ns = std;
+#endif
+
+template <class T>
+inline constexpr bool is_integral_v = ::math_functions::detail::helper_ns::is_integral_v<T>;
+
+template <class T>
+inline constexpr bool is_unsigned_v = ::math_functions::detail::helper_ns::is_unsigned_v<T>;
+
+template <class T>
+inline constexpr bool is_signed_v = ::math_functions::detail::helper_ns::is_signed_v<T>;
+
+template <class T>
+using make_unsigned_t = typename ::math_functions::detail::helper_ns::make_unsigned_t<T>;
+
+#if CONFIG_HAS_CONCEPTS
+
+template <class T>
+concept integral = ::math_functions::detail::helper_ns::integral<T>;
+
+template <class T>
+concept signed_integral = ::math_functions::detail::helper_ns::signed_integral<T>;
+
+template <class T>
+concept unsigned_integral = ::math_functions::detail::helper_ns::unsigned_integral<T>;
+
+#endif
+
 ATTRIBUTE_CONST constexpr uint32_t log10_floor_compile_time_impl(uint32_t n) noexcept {
     constexpr uint8_t table1[33] = {
         10, 9, 9, 8, 8, 8, 7, 7, 7, 6, 6, 6, 6, 5, 5, 5, 4,
@@ -1614,6 +1645,29 @@ template <typename T>
     return (x | y) & (y | z) & (x | z);
 }
 
+#if CONFIG_HAS_CONCEPTS
+
+template <::math_functions::detail::unsigned_integral T>
+[[nodiscard]] ATTRIBUTE_CONST constexpr T next_even(T n) noexcept {
+    return n + 2 - n % 2;
+}
+
+#else
+
+// clang-format off
+
+template <class T>
+[[nodiscard]]
+ATTRIBUTE_CONST
+constexpr
+std::enable_if_t<::math_functions::detail::is_unsigned_v<T>, T> next_even(T n) noexcept {
+    return n + 2 - n % 2;
+}
+
+// clang-format on
+
+#endif
+
 template <class FloatType>
 struct SumSinCos {
     FloatType sines_sum;
@@ -1798,26 +1852,6 @@ struct [[nodiscard]] PrimeFactor final {
 #else
 #define CONSTEXPR_VECTOR inline
 #endif
-
-namespace detail {
-
-#ifdef INTEGERS_128_BIT_HPP
-template <class T>
-inline constexpr bool is_integral_v = int128_traits::is_integral_v<T>;
-#else
-template <class T>
-inline constexpr bool is_integral_v = std::is_integral_v<T>;
-#endif
-
-#ifdef INTEGERS_128_BIT_HPP
-template <class T>
-using make_unsigned_t = typename int128_traits::make_unsigned_t<T>;
-#else
-template <class T>
-using make_unsigned_t = typename std::make_unsigned_t<T>;
-#endif
-
-}  // namespace detail
 
 template <class NumericType, class Function>
 #if CONFIG_HAS_AT_LEAST_CXX_20
@@ -2301,7 +2335,7 @@ solve_congruence_modulo_m(T1 a, T2 c, std::uint32_t m) noexcept {
 /// @param a
 /// @param m
 /// @return
-template <std::integral IntType>
+template <::math_functions::detail::integral IntType>
     requires(!std::is_same_v<IntType, bool>)
 [[nodiscard]]
 ATTRIBUTE_CONST constexpr std::uint32_t inv_mod_m(IntType a, std::uint32_t m) noexcept {

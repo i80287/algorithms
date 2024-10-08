@@ -1948,6 +1948,41 @@ void test_general_asserts() {
 
 #endif
 
+    ASSERT_THAT(next_even(0u) == 2);
+    ASSERT_THAT(next_even(1u) == 2);
+    ASSERT_THAT(next_even(2u) == 4);
+    ASSERT_THAT(next_even(0ul) == 2);
+    ASSERT_THAT(next_even(1ul) == 2);
+    ASSERT_THAT(next_even(2ul) == 4);
+    ASSERT_THAT(next_even(0ull) == 2);
+    ASSERT_THAT(next_even(1ull) == 2);
+    ASSERT_THAT(next_even(2ull) == 4);
+#ifdef INTEGERS_128_BIT_HPP
+    ASSERT_THAT(next_even(uint128_t{0}) == 2);
+    ASSERT_THAT(next_even(uint128_t{1}) == 2);
+    ASSERT_THAT(next_even(uint128_t{2}) == 4);
+#endif
+
+    constexpr auto kMaxU32 = std::numeric_limits<uint32_t>::max();
+    ASSERT_THAT(next_even(kMaxU32 - 3) == kMaxU32 - 1);
+    ASSERT_THAT(next_even(kMaxU32 - 2) == kMaxU32 - 1);
+    ASSERT_THAT(next_even(kMaxU32 - 1) == 0);
+    ASSERT_THAT(next_even(kMaxU32) == 0);
+
+    constexpr auto kMaxU64 = std::numeric_limits<uint64_t>::max();
+    ASSERT_THAT(next_even(kMaxU64 - 3) == kMaxU64 - 1);
+    ASSERT_THAT(next_even(kMaxU64 - 2) == kMaxU64 - 1);
+    ASSERT_THAT(next_even(kMaxU64 - 1) == 0);
+    ASSERT_THAT(next_even(kMaxU64 - 0) == 0);
+
+#ifdef INTEGERS_128_BIT_HPP
+    constexpr auto kMaxU128 = static_cast<uint128_t>(-1);
+    ASSERT_THAT(next_even(kMaxU128 - 3) == kMaxU128 - 1);
+    ASSERT_THAT(next_even(kMaxU128 - 2) == kMaxU128 - 1);
+    ASSERT_THAT(next_even(kMaxU128 - 1) == 0);
+    ASSERT_THAT(next_even(kMaxU128 - 0) == 0);
+#endif
+
 #undef STRINGIFY
 #undef ASSERT_THAT
 #undef LOG10_ASSERT_THAT
