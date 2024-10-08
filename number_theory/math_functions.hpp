@@ -1201,6 +1201,9 @@ template <class T>
                                                 (::math_functions::countr_zero(x) + 1));
 }
 
+bool is_power_of_two(bool) = delete;
+bool is_power_of_two(char) = delete;
+
 [[nodiscard]] ATTRIBUTE_CONST constexpr bool is_power_of_two(signed char n) noexcept {
     // Cast to unsigned to avoid potential overflow (ub for signed char)
     uint32_t m = static_cast<unsigned char>(n);
@@ -1209,11 +1212,6 @@ template <class T>
 
 [[nodiscard]] ATTRIBUTE_CONST constexpr bool is_power_of_two(unsigned char n) noexcept {
     return (n & (n - 1)) == 0 && n != 0;
-}
-
-[[nodiscard]] ATTRIBUTE_CONST constexpr bool is_power_of_two(char n) noexcept {
-    using corr_char_t = std::conditional_t<std::is_signed_v<char>, signed char, unsigned char>;
-    return ::math_functions::is_power_of_two(static_cast<corr_char_t>(n));
 }
 
 [[nodiscard]] ATTRIBUTE_CONST constexpr bool is_power_of_two(int n) noexcept {
