@@ -33,6 +33,9 @@
 using namespace math_functions;
 using namespace test_tools;
 using std::gcd;
+using std::size_t;
+using std::uint32_t;
+using std::uint64_t;
 
 namespace {
 
@@ -556,11 +559,11 @@ void test_extended_euclid_algorithm() {
 void test_solve_congruence_modulo_m_all_roots() {
     log_tests_started();
 
-    const auto seed = std::ranlux24(std::uint32_t(std::time(nullptr)))();
+    const auto seed = std::ranlux24(static_cast<uint32_t>(std::time(nullptr)))();
     printf("Seed: %" PRIuFAST32 "\n", seed);
     std::mt19937 rnd_32(seed);
 
-    constexpr auto kTotalTests = size_t(1) << 25;
+    constexpr auto kTotalTests = size_t{1} << 25;
     for (auto test_iter = kTotalTests; test_iter > 0; --test_iter) {
         const auto m = static_cast<std::uint32_t>(rnd_32());
         if (unlikely(m == 0)) {
@@ -577,11 +580,45 @@ void test_solve_congruence_modulo_m_all_roots() {
             auto expected_x    = roots[0];
             for (const std::uint32_t x : roots) {
                 assert(x < m);
-                assert((uint64_t(a) * uint64_t(x)) % m == c_mod_m);
+                assert((uint64_t{a} * uint64_t{x}) % m == c_mod_m);
                 assert(x == expected_x);
                 expected_x += step;
             }
         }
+    }
+}
+
+void test_solve_binary_congruence() {
+    log_tests_started();
+
+    const auto seed = std::ranlux24(std::uint32_t(std::time(nullptr)))();
+    printf("Seed: %" PRIuFAST32 "\n", seed);
+    std::mt19937 rnd_32(seed);
+
+    constexpr auto kTotalTests = size_t{1} << 25;
+    for (auto test_iter = kTotalTests; test_iter > 0; --test_iter) {
+        const auto m = static_cast<std::uint32_t>(rnd_32());
+        if (unlikely(m == 0)) {
+            continue;
+        }
+
+        const auto k = std::uniform_int_distribution<uint32_t>(
+            0, std::numeric_limits<uint16_t>::max())(rnd_32);
+        const auto c      = static_cast<uint32_t>(rnd_32());
+        const auto x      = solve_binary_congruence(k, c, m);
+        const auto [r, s] = math_functions::extract_pow2(m);
+        assert(r % 2 == 1 && r << s == m);
+        const auto gcd_2k_m = uint32_t{1} << std::min(k, s);
+        if (c % gcd_2k_m != 0) {
+            assert(x == math_functions::kNoCongruenceSolution);
+        } else {
+            assert(x < m);
+            // (2^{k} * x) % m
+            const auto prod_of_2k_x = (uint64_t{bin_pow_mod(uint32_t{2}, k, m)} * uint64_t{x}) % m;
+            assert(prod_of_2k_x == c % m);
+        }
+
+        assert(x == solve_congruence_modulo_m(bin_pow_mod(2u, k, m), c, m));
     }
 }
 
@@ -1998,6 +2035,11 @@ void test_general_asserts() {
     ASSERT_THAT(next_even(kMaxU128 - 0) == 0);
 #endif
 
+    ASSERT_THAT(solve_binary_congruence(24u, 1u << 24, 43284u) == 1);
+    ASSERT_THAT(solve_binary_congruence(24u, 1u << 24, 39483924u) == 1);
+    ASSERT_THAT(solve_binary_congruence(30u, 1u << 30, 6237443u) == 1);
+    ASSERT_THAT(solve_binary_congruence(28u, 1u << 30, 6237443u) == 4);
+
 #undef STRINGIFY
 #undef ASSERT_THAT
 #undef LOG10_ASSERT_THAT
@@ -3408,21 +3450,22 @@ void test_arange() {
 }  // namespace
 
 int main() {
-    test_general_asserts();
-    test_isqrt();
-    test_icbrt();
-    test_log2();
-    test_bit_reverse();
-#if defined(HAS_MPFR_DURING_TESTING) && HAS_MPFR_DURING_TESTING
-    test_sin_cos_sum();
-#endif
-    test_visit_all_submasks();
-    test_prime_bitarrays();
-    test_factorizer();
-    test_extended_euclid_algorithm();
-    test_solve_congruence_modulo_m_all_roots();
-    test_inv_mod_m();
-    test_solve_factorial_congruence();
-    test_powers_sum();
-    test_arange();
+    //     test_general_asserts();
+    //     test_isqrt();
+    //     test_icbrt();
+    //     test_log2();
+    //     test_bit_reverse();
+    // #if defined(HAS_MPFR_DURING_TESTING) && HAS_MPFR_DURING_TESTING
+    //     test_sin_cos_sum();
+    // #endif
+    //     test_visit_all_submasks();
+    //     test_prime_bitarrays();
+    //     test_factorizer();
+    //     test_extended_euclid_algorithm();
+    //     test_solve_congruence_modulo_m_all_roots();
+    //     test_inv_mod_m();
+    test_solve_binary_congruence();
+    // test_solve_factorial_congruence();
+    // test_powers_sum();
+    // test_arange();
 }

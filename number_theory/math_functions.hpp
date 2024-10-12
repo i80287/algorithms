@@ -129,16 +129,16 @@ template <class T>
 /// @param[in] p
 /// @param[in] mod
 /// @return (n ^ p) % mod
-[[nodiscard]] ATTRIBUTE_CONST constexpr uint32_t bin_pow_mod(uint32_t n, uint32_t p,
+[[nodiscard]] ATTRIBUTE_CONST constexpr uint32_t bin_pow_mod(uint32_t n, uint64_t p,
                                                              uint32_t mod) noexcept {
     uint64_t res     = mod != 1;
     uint64_t widen_n = n;
     while (true) {
-        if (p & 1) {
+        if (p % 2 != 0) {
             ATTRIBUTE_ASSUME(widen_n < (1ull << 32));
             res = (res * widen_n) % mod;
         }
-        p >>= 1;
+        p /= 2;
         if (p == 0) {
             return static_cast<uint32_t>(res);
         }
@@ -2436,42 +2436,83 @@ CONSTEXPR_VECTOR
                              decltype(std::end(std::declval<Container&>()))>::value_type>,
                      typename ::math_functions::InverseResult> inv_mod_m(const Container& nums,
                                                                          std::uint32_t m) {
-    return ::math_functions::detail::inv_mod_m_impl(std::begin(nums), std::end(nums), m);
+    return ::math_functions::inv_mod_m(std::begin(nums), std::end(nums), m);
 }
 
 #endif
 
 /// @brief Solve congruence 2^k * x ≡ c (mod m),
-///        Where gcd(c, m) = 1 and m ≡ 1 mod 2
-///        Works in O(k)
+///        Works in O(min(k, log(m)))
 /// @note  Faster implementation of @fn solve_congruence_modulo_m
 ///        for a = 2^k.
 /// @param k
 /// @param c
 /// @param m
 /// @return
-[[nodiscard]] ATTRIBUTE_CONST constexpr std::uint64_t solve_binary_congruence(
-    std::uint32_t k, const std::uint32_t c, const std::uint32_t m) noexcept {
-    ATTRIBUTE_ASSUME(m % 2 == 1);
-    ATTRIBUTE_ASSUME(m % 4 == 1 || m % 4 == 3);
-
-    /**
-     * The algorithm can be modified by checking:
-     * if c % 4 = 1, then if m % 4 = 3, c += m, else c -= m
-     * or
-     * if c % 4 = 3, then if m % 4 = 3, c -= m, else c += m
-     * then
-     * k -= 2, c /= 4
-     */
-    std::uint64_t c64 = c % m;
-    while (k > 0) {
-        if (c64 % 2 != 0) {
-            c64 += m;
-        }
-        c64 /= 2;
-        k--;
+[[nodiscard]]
+ATTRIBUTE_CONST constexpr std::uint32_t solve_binary_congruence(const std::uint32_t k,
+                                                                const std::uint32_t c,
+                                                                const std::uint32_t m) noexcept {
+    if (m == 0) {
+        return ::math_functions::kNoCongruenceSolution;
     }
-    return c64;
+
+    const auto [r, s]  = ::math_functions::extract_pow2(m);
+    const auto min_k_s = std::min(k, std::uint32_t{s});
+    ATTRIBUTE_ASSUME(min_k_s < 32);
+    // gcd(2^k, m)
+    const auto gcd_2k_m = std::uint32_t{1} << min_k_s;
+    if (c % gcd_2k_m != 0) {
+        return ::math_functions::kNoCongruenceSolution;
+    }
+
+    const auto c_       = c >> min_k_s;
+    const auto m_       = m >> min_k_s;
+    const auto c_mod_m_ = c_ % m_;
+    if (min_k_s == k) {
+        return c_mod_m_;
+    }
+
+    ATTRIBUTE_ASSUME(min_k_s == s);
+    ATTRIBUTE_ASSUME(k > s);
+    ATTRIBUTE_ASSUME(m_ == r);
+    ATTRIBUTE_ASSUME(m_ % 2 == 1);
+    /**
+     * Solve 2^{k-s} * x ≡ c / 2^{s} (mod r), where r = m_ = m / 2^{s}
+     */
+    std::uint64_t rhs  = c_mod_m_;
+    auto lhs_bin_power = k - s;
+
+    if (lhs_bin_power > 64) {
+        const std::int64_t u_ =
+            ::math_functions::extended_euclid_algorithm<std::uint32_t>(
+                ::math_functions::bin_pow_mod(uint32_t{2}, lhs_bin_power, m_), m_)
+                .u_value;
+        ATTRIBUTE_ASSUME(u_ < m_);
+        const auto unsigned_u_ = static_cast<std::uint64_t>(u_ >= 0 ? u_ : u_ + m_);
+        ATTRIBUTE_ASSUME(unsigned_u_ < m_);
+        rhs *= unsigned_u_;
+    } else {
+        /**
+         * The algorithm can be modified by checking:
+         * if c % 4 = 1, then if m % 4 = 3, c += m, else c -= m
+         * or
+         * if c % 4 = 3, then if m % 4 = 3, c -= m, else c += m
+         * then
+         * k -= 2, c /= 4
+         */
+        while (lhs_bin_power > 0) {
+            if (rhs % 2 != 0) {
+                rhs += m_;
+            }
+            rhs /= 2;
+            lhs_bin_power--;
+        }
+    }
+
+    const auto x0 = static_cast<uint32_t>(rhs % m_);
+    ATTRIBUTE_ASSUME(x0 != ::math_functions::kNoCongruenceSolution);
+    return x0;
 }
 
 /// @brief Return max q, such that n! ≡ 0 mod(k^q), where k > 1 and n >= 0
