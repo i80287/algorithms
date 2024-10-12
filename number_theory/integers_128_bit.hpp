@@ -10,6 +10,39 @@
  *
  */
 
+#include "config_macros.hpp"
+
+#if (defined(__clang__) || defined(__GNUC__)) && defined(__SIZEOF_INT128__)
+
+typedef __uint128_t uint128_t;
+typedef __int128_t int128_t;
+
+#define HAS_INT128_TYPEDEF 1
+
+#elif defined(_MSC_VER) && CONFIG_HAS_INCLUDE(<__msvc_int128.hpp>)
+
+#include <__msvc_int128.hpp>
+typedef std::_Unsigned128 uint128_t;
+typedef std::_Signed128 int128_t;
+
+#define HAS_INT128_TYPEDEF 1
+
+#else
+
+#ifdef defined(__clang__) || defined(__GNUC__)
+// cppcheck-suppress [preprocessorErrorDirective]
+#warning "Unsupported compiler, typedef 128-bit integer specific for your compiler"
+#elif defined(_MSC_VER)
+// cppcheck-suppress [preprocessorErrorDirective]
+#pragma message WARN("your warning message here")
+#endif
+
+#define HAS_INT128_TYPEDEF 0
+
+#endif
+
+#if HAS_INT128_TYPEDEF
+
 #ifndef INTEGERS_128_BIT_HPP
 #define INTEGERS_128_BIT_HPP 1
 
@@ -19,23 +52,6 @@
 #include <string>
 #include <string_view>
 #include <type_traits>
-
-#if defined(__clang__)
-typedef __uint128_t uint128_t;
-typedef __int128_t int128_t;
-#elif defined(__GNUC__)
-typedef __uint128_t uint128_t;
-typedef __int128_t int128_t;
-#elif defined(_MSC_VER)
-#include <__msvc_int128.hpp>
-typedef std::_Unsigned128 uint128_t;
-typedef std::_Signed128 int128_t;
-#else
-// cppcheck-suppress [preprocessorErrorDirective]
-#error "Unsupported compiler, typedef 128-bit integer specific for your compiler"
-#endif
-
-#include "config_macros.hpp"
 
 #if CONFIG_HAS_AT_LEAST_CXX_20 && !defined(__APPLE__) && \
     (defined(__GNUC__) || defined(__clang__)) && CONFIG_HAS_INCLUDE(<format>)
@@ -383,3 +399,7 @@ struct std::formatter<int128_t, CharT> {
 #undef SPECIALIZE_STD_FORMAT
 
 #endif  // !INTEGERS_128_BIT_HPP
+
+#endif  // HAS_INT128_TYPEDEF
+
+#undef HAS_INT128_TYPEDEF
