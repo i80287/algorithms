@@ -41,7 +41,7 @@ namespace longint_allocator {
 
 // #define DEBUG_LI_ALLOC_PRINTING 1
 
-class inner_impl {
+class inner_impl final {
 private:
     static constexpr std::size_t kPageMemoryOffsetInBytes = sizeof(void*);
 
@@ -155,17 +155,23 @@ private:
     }
 #endif
 
-    static inline bool IsSmallPage(const std::byte* offset_memory) noexcept {
-        const std::byte* fsp =
-            reinterpret_cast<const std::byte*>(std::addressof(first_small_page[0]));
-        return static_cast<std::size_t>(offset_memory - fsp) < kTotalSmallPages * sizeof(SmallPage);
+    template <class PageType, std::size_t TotalPages>
+    ATTRIBUTE_ALWAYS_INLINE static bool IsPage(const std::byte* memory,
+                                               const PageType (&pages_array)[TotalPages]) {
+        const auto mem_addr = reinterpret_cast<std::uintptr_t>(memory);
+        const auto first_page_addr =
+            reinterpret_cast<std::uintptr_t>(std::addressof(pages_array[0]));
+        return mem_addr - first_page_addr < TotalPages * sizeof(PageType);
     }
 
-    static inline bool IsMiddlePage(const std::byte* offset_memory) noexcept {
-        const std::byte* fmp =
-            reinterpret_cast<const std::byte*>(std::addressof(first_middle_page[0]));
-        return static_cast<std::size_t>(offset_memory - fmp) <
-               kTotalMiddlePages * sizeof(MiddlePage);
+    [[nodiscard]]
+    ATTRIBUTE_ALWAYS_INLINE static bool IsSmallPage(const std::byte* offset_memory) noexcept {
+        return inner_impl::IsPage(offset_memory, first_small_page);
+    }
+
+    [[nodiscard]]
+    ATTRIBUTE_ALWAYS_INLINE static bool IsMiddlePage(const std::byte* offset_memory) noexcept {
+        return inner_impl::IsPage(offset_memory, first_middle_page);
     }
 
     friend inline void* Allocate(std::size_t size);
@@ -183,7 +189,7 @@ inline void Deallocate(void* memory) noexcept {
         inner_impl::current_small_pages_used--;
         assert(inner_impl::current_small_pages_used >= 0);
 #endif
-        inner_impl::SmallPage* page       = reinterpret_cast<inner_impl::SmallPage*>(p);
+        auto* page                        = reinterpret_cast<inner_impl::SmallPage*>(p);
         page->next                        = inner_impl::free_small_pages_head;
         inner_impl::free_small_pages_head = page;
         return;
@@ -194,7 +200,7 @@ inline void Deallocate(void* memory) noexcept {
         inner_impl::current_middle_pages_used--;
         assert(inner_impl::current_middle_pages_used >= 0);
 #endif
-        inner_impl::MiddlePage* page       = reinterpret_cast<inner_impl::MiddlePage*>(p);
+        auto* page                         = reinterpret_cast<inner_impl::MiddlePage*>(p);
         page->next                         = inner_impl::free_middle_pages_head;
         inner_impl::free_middle_pages_head = page;
         return;
@@ -233,7 +239,6 @@ ATTRIBUTE_ALLOC_SIZE(1) INLINE_LONGINT_ALLOCATE void* Allocate(std::size_t size)
         inner_impl::total_small_pages_used++;
 #endif
         inner_impl::free_small_pages_head = p->next;
-
         return static_cast<void*>(std::addressof(p->memory[0]));
     }
 
@@ -584,7 +589,7 @@ struct longint {
             const bool high_precision = n > kFFTPrecisionBorder;
             n <<= high_precision;
             // Allocate n complex numbers for p1 and n complex numbers for p2
-            std::unique_ptr<fft::complex, struct ComplexDeleter> p1(
+            const std::unique_ptr<fft::complex, struct ComplexDeleter> p1(
                 allocate_complex_array_for_unique_ptr(2 * n));
             fft::complex* p = p1.get();
             if (likely(!high_precision)) {
@@ -2276,7 +2281,7 @@ private:
 
 namespace longint_detail {
 
-struct longint_static_storage {
+struct longint_static_storage final {
 private:
     friend longint;
 
