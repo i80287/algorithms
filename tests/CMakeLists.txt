@@ -92,6 +92,8 @@ function(configure_gcc_or_clang_gcc_options)
         -Wcast-align
         -Warray-bounds
         -Wformat=2
+        -Werror
+        -pedantic-errors
     )
     if (NOT USING_MINGW_GCC)
         set(LOCAL_FN_TEST_COMPILE_OPTIONS
@@ -110,16 +112,22 @@ function(configure_gcc_or_clang_gcc_options)
     if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
         set(LOCAL_FN_TEST_COMPILE_DEFINITIONS
             ${LOCAL_FN_TEST_COMPILE_DEFINITIONS}
-            _LIBCPP_ENABLE_ASSERTIONS=1)
+            _LIBCPP_ENABLE_ASSERTIONS)
     endif()
     if (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 10.0)
         # In gcc with version < 10.0 these checks break `constexpr`-tivity of some std:: functions
         set(LOCAL_FN_TEST_COMPILE_DEFINITIONS
             ${LOCAL_FN_TEST_COMPILE_DEFINITIONS}
-            _GLIBCXX_DEBUG=1
-            _GLIBCXX_DEBUG_PEDANTIC=1
-            _GLIBCXX_CONCEPT_CHECKS=1)
+            _GLIBCXX_DEBUG
+            _GLIBCXX_DEBUG_PEDANTIC
+            _GLIBCXX_CONCEPT_CHECKS)
     endif()
+    set(LOCAL_FN_TEST_COMPILE_DEFINITIONS
+        ${LOCAL_FN_TEST_COMPILE_DEFINITIONS}
+        _GLIBCXX_SANITIZE_VECTOR)
+    set(LOCAL_FN_TEST_COMPILE_OPTIONS
+        ${LOCAL_FN_TEST_COMPILE_OPTIONS}
+        -U_GLIBCXX_USE_DEPRECATED)
 
     string(REGEX REPLACE "-D\\s?NDEBUG(=\\d)?" "" LOCAL_FN_CMAKE_CXX_FLAGS_RELWITHDEBINFO "${LOCAL_FN_CMAKE_CXX_FLAGS_RELWITHDEBINFO}")
 
