@@ -2163,7 +2163,7 @@ template <typename IntType>
         }
     }
 
-    using RetUIntType = std::make_unsigned_t<CompIntType>;
+    using RetUIntType = typename ::math_functions::detail::make_unsigned_t<CompIntType>;
     return ExtEuclidAlgoRet<RetUIntType>{
         u_previous,
         v_previous,
@@ -2450,9 +2450,8 @@ CONSTEXPR_VECTOR
 /// @param m
 /// @return
 [[nodiscard]]
-ATTRIBUTE_CONST constexpr std::uint32_t solve_binary_congruence(const std::uint32_t k,
-                                                                const std::uint32_t c,
-                                                                const std::uint32_t m) noexcept {
+ATTRIBUTE_CONST constexpr std::uint32_t solve_binary_congruence_modulo_m(
+    const std::uint32_t k, const std::uint32_t c, const std::uint32_t m) noexcept {
     if (m == 0) {
         return ::math_functions::kNoCongruenceSolution;
     }
@@ -2483,7 +2482,8 @@ ATTRIBUTE_CONST constexpr std::uint32_t solve_binary_congruence(const std::uint3
     std::uint64_t rhs  = c_mod_m_;
     auto lhs_bin_power = k - s;
 
-    if (lhs_bin_power > 64) {
+    constexpr unsigned kThreshold = 60;
+    if (lhs_bin_power > kThreshold) {
         const std::int64_t u_ =
             ::math_functions::extended_euclid_algorithm<std::uint32_t>(
                 ::math_functions::bin_pow_mod(uint32_t{2}, lhs_bin_power, m_), m_)

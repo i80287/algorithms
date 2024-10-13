@@ -588,7 +588,7 @@ void test_solve_congruence_modulo_m_all_roots() {
     }
 }
 
-void test_solve_binary_congruence() {
+void test_solve_binary_congruence_modulo_m() {
     log_tests_started();
 
     const auto seed = std::ranlux24(std::uint32_t(std::time(nullptr)))();
@@ -605,7 +605,7 @@ void test_solve_binary_congruence() {
         const auto k = std::uniform_int_distribution<uint32_t>(
             0, std::numeric_limits<uint16_t>::max())(rnd_32);
         const auto c      = static_cast<uint32_t>(rnd_32());
-        const auto x      = solve_binary_congruence(k, c, m);
+        const auto x      = solve_binary_congruence_modulo_m(k, c, m);
         const auto [r, s] = math_functions::extract_pow2(m);
         assert(r % 2 == 1 && r << s == m);
         const auto gcd_2k_m = uint32_t{1} << std::min(k, s);
@@ -2035,10 +2035,10 @@ void test_general_asserts() {
     ASSERT_THAT(next_even(kMaxU128 - 0) == 0);
 #endif
 
-    ASSERT_THAT(solve_binary_congruence(24u, 1u << 24, 43284u) == 1);
-    ASSERT_THAT(solve_binary_congruence(24u, 1u << 24, 39483924u) == 1);
-    ASSERT_THAT(solve_binary_congruence(30u, 1u << 30, 6237443u) == 1);
-    ASSERT_THAT(solve_binary_congruence(28u, 1u << 30, 6237443u) == 4);
+    ASSERT_THAT(solve_binary_congruence_modulo_m(24u, 1u << 24, 43284u) == 1);
+    ASSERT_THAT(solve_binary_congruence_modulo_m(24u, 1u << 24, 39483924u) == 1);
+    ASSERT_THAT(solve_binary_congruence_modulo_m(30u, 1u << 30, 6237443u) == 1);
+    ASSERT_THAT(solve_binary_congruence_modulo_m(28u, 1u << 30, 6237443u) == 4);
 
 #undef STRINGIFY
 #undef ASSERT_THAT
@@ -3450,22 +3450,22 @@ void test_arange() {
 }  // namespace
 
 int main() {
-    //     test_general_asserts();
-    //     test_isqrt();
-    //     test_icbrt();
-    //     test_log2();
-    //     test_bit_reverse();
-    // #if defined(HAS_MPFR_DURING_TESTING) && HAS_MPFR_DURING_TESTING
-    //     test_sin_cos_sum();
-    // #endif
-    //     test_visit_all_submasks();
-    //     test_prime_bitarrays();
-    //     test_factorizer();
-    //     test_extended_euclid_algorithm();
-    //     test_solve_congruence_modulo_m_all_roots();
-    //     test_inv_mod_m();
-    test_solve_binary_congruence();
-    // test_solve_factorial_congruence();
-    // test_powers_sum();
-    // test_arange();
+    test_general_asserts();
+    test_isqrt();
+    test_icbrt();
+    test_log2();
+    test_bit_reverse();
+#if defined(HAS_MPFR_DURING_TESTING) && HAS_MPFR_DURING_TESTING
+    test_sin_cos_sum();
+#endif
+    test_visit_all_submasks();
+    test_prime_bitarrays();
+    test_factorizer();
+    test_extended_euclid_algorithm();
+    test_solve_congruence_modulo_m_all_roots();
+    test_inv_mod_m();
+    test_solve_binary_congruence_modulo_m();
+    test_solve_factorial_congruence();
+    test_powers_sum();
+    test_arange();
 }
