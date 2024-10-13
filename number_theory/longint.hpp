@@ -1192,9 +1192,11 @@ struct longint {
     }
     [[nodiscard]] ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_PURE constexpr std::size_t usize()
         const noexcept {
-        // std::abs is not used in order to make method constexpr
-        const std::size_t value = math_functions::uabs(size_);
-        if (value > max_size() || value > capacity_) {
+        return usize32();
+    }
+    [[nodiscard]] ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_PURE constexpr std::uint32_t usize32() const noexcept {
+        const auto value = math_functions::uabs(size_);
+        if (value > max_size()) {
             CONFIG_UNREACHABLE();
         }
         return value;
@@ -1391,8 +1393,8 @@ struct longint {
             ans.push_back('-');
         }
 
-        const std::size_t usize_value = usize();
-        switch (usize_value) {
+        const std::uint32_t usize32_value = usize32();
+        switch (usize32_value) {
             case 0:
                 ans = "0";
                 return;
@@ -1406,11 +1408,11 @@ struct longint {
                 break;
         }
 
-        std::size_t n =
-            math_functions::nearest_greater_equal_power_of_two(static_cast<uint64_t>(usize_value));
+        std::uint64_t n =
+            math_functions::nearest_greater_equal_power_of_two(usize32_value);
         ensureBinBasePowsCapacity(math_functions::log2_floor(static_cast<uint64_t>(n)));
         digit_t* const knums = allocate(n);
-        std::fill_n(std::copy_n(nums_, usize_value, knums), n - usize_value, digit_t{0});
+        std::fill_n(std::copy_n(nums_, usize32_value, knums), n - usize32_value, digit_t{0});
         const Decimal result = convertBinBase(knums, n);
         deallocate(knums);
         assert(result.size_ >= 3);
