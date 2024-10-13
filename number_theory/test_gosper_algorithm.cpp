@@ -60,8 +60,8 @@ void test3() noexcept {
     }
     constexpr size_t kPeriod = 4;
     assert(lambda == kPeriod);
-    auto fillarray = [](std::array<int32_t, kPeriod>& mem, int32_t xi) constexpr noexcept {
-        mem[0] = xi;
+    auto fillarray = [](std::array<int32_t, kPeriod>& mem, int32_t xi_arg) constexpr noexcept {
+        mem[0] = xi_arg;
         for (size_t i = 1; i < kPeriod; i++) {
             mem[i] = f3(mem[i - 1]);
         }
