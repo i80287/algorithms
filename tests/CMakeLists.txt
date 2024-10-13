@@ -336,6 +336,12 @@ list(APPEND TestCxxVersions "17 20 23 26")
 list(APPEND TestDependencies "")
 list(APPEND TestOptionalDependencies "")
 
+list(APPEND TestFilenames "test_cnk_counter")
+list(APPEND TestDirectories "number_theory")
+list(APPEND TestCxxVersions "17 20 23 26")
+list(APPEND TestDependencies "")
+list(APPEND TestOptionalDependencies "")
+
 set(mingw_gcc_or_clang USING_MINGW_GCC OR CMAKE_CXX_COMPILER_ID STREQUAL "Clang" OR CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang")
 if ((NOT mingw_gcc_or_clang) OR (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER 10.0.0))
     # gcc mingw w64 10.0.0 supports C++20 but doesn't have std::bit_cast, same with clang

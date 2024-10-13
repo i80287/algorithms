@@ -1,119 +1,17 @@
-#include <array>
+#include <algorithm>
 #include <cassert>
-#include <climits>
 #include <cstddef>
 #include <cstdint>
-#include <cstdio>
-#include <cstdlib>
-#include <cstring>
-#include <iostream>
 #include <random>
 #include <unordered_map>
-#include <vector>
+#include <utility>
 
-#include "config_macros.hpp"
+#include "CNKCounter.hpp"
+#include "test_tools.hpp"
 
-template <uint64_t Mod = 0>
-class CNKCounter {
-    static_assert(Mod == 0 || (Mod + 1 < 0xffffffffffffffffULL / 2 && Mod + Mod > Mod),
-                  "Mod is so big so that adding numbers may cause overflow");
-
-public:
-    size_t max_cashed_n_;
-    uint64_t** c_n_k_table_;
-
-    explicit CNKCounter(size_t max_cashed_n) noexcept(false) : max_cashed_n_{max_cashed_n} {
-        uint64_t** c_n_k =
-            static_cast<uint64_t**>(operator new(sizeof(uint64_t*) * (max_cashed_n + 1)));
-        std::memset(c_n_k, 0, sizeof(uint64_t*) * (max_cashed_n_ + 1));
-
-        for (size_t n = 0; n <= max_cashed_n; ++n) {
-            c_n_k[n]    = static_cast<uint64_t*>(operator new(sizeof(uint64_t) * (n + 1)));
-            c_n_k[n][0] = 1;
-            c_n_k[n][n] = 1;
-        }
-
-        for (size_t n = 2; n <= max_cashed_n; ++n) {
-            for (size_t k = 1; k < n; ++k) {
-                c_n_k[n][k] = ByMod(c_n_k[n - 1][k] + c_n_k[n - 1][k - 1]);
-            }
-        }
-
-        c_n_k_table_ = c_n_k;
-    }
-
-    uint64_t operator()(size_t n, size_t k) const noexcept {
-        if (n < k) {
-            return 0;
-        }
-        // C(n, k) = C(n, n - k)
-        k = std::min(k, n - k);
-        if (n <= max_cashed_n_) {
-            return c_n_k_table_[n][k];
-        }
-
-        switch (k) {
-            case 0:
-                return 1;
-            case 1:
-                return ByMod(n);
-        }
-
-        uint64_t C_n_1_k_1 = operator()(n - 1, k - 1);
-        uint64_t C_n_1_k   = operator()(n - 1, k);
-        return ByMod(C_n_1_k_1 + C_n_1_k);
-    }
-
-    CNKCounter(const CNKCounter& other) : max_cashed_n_{other.max_cashed_n_} {
-        uint64_t** c_n_k =
-            static_cast<uint64_t**>(operator new(sizeof(uint64_t*) * (max_cashed_n_ + 1)));
-        std::memset(c_n_k, 0, sizeof(uint64_t*) * (max_cashed_n_ + 1));
-
-        for (size_t n = 0; n <= max_cashed_n_; ++n) {
-            c_n_k[n] = static_cast<uint64_t*>(operator new(sizeof(uint64_t) * (n + 1)));
-            std::memcpy(c_n_k[n], other.c_n_k_table_[n], (n + 1) * sizeof(uint64_t));
-        }
-
-        c_n_k_table_ = c_n_k;
-    }
-
-    CNKCounter& operator=(const CNKCounter& other) {
-        return *this = CNKCounter(other);
-    }
-
-    constexpr CNKCounter(CNKCounter&& other) noexcept
-        : max_cashed_n_{other.max_cashed_n_}, c_n_k_table_{other.c_n_k_table_} {
-        other.max_cashed_n_ = 0;
-        other.c_n_k_table_  = nullptr;
-    }
-
-    constexpr CNKCounter& operator=(CNKCounter&& other) noexcept {
-        auto tmp_max_cashed_n = other.max_cashed_n_;
-        auto tmp_c_n_k_table  = other.c_n_k_table_;
-        other.max_cashed_n_   = 0;
-        other.c_n_k_table_    = nullptr;
-        max_cashed_n_         = tmp_max_cashed_n;
-        c_n_k_table_          = tmp_c_n_k_table;
-        return *this;
-    }
-
-    ~CNKCounter() {
-        for (size_t i = 0; i <= max_cashed_n_; ++i) {
-            operator delete(c_n_k_table_[i]);
-        }
-
-        operator delete(c_n_k_table_);
-    }
-
-private:
-    static constexpr uint64_t ByMod(uint64_t num) noexcept {
-        if constexpr (Mod != 0) {
-            return num % Mod;
-        } else {
-            return num;
-        }
-    }
-};
+using std::size_t;
+using std::uint32_t;
+using std::uint64_t;
 
 template <>
 struct std::hash<std::pair<uint32_t, uint32_t>> {
@@ -125,6 +23,8 @@ struct std::hash<std::pair<uint32_t, uint32_t>> {
         }
     }
 };
+
+namespace {
 
 uint64_t C_n_k(const uint32_t n, uint32_t k) {
     static std::unordered_map<std::pair<uint32_t, uint32_t>, uint64_t> C_n_k_table;
@@ -140,9 +40,6 @@ uint64_t C_n_k(const uint32_t n, uint32_t k) {
         case 1:
             return n;
     }
-
-    // ATTRIBUTE_ASSUME(2 <= k);
-    // ATTRIBUTE_ASSUME(k <= n / 2);
 
     if (n > 20) {
         {
@@ -266,8 +163,10 @@ uint64_t C_n_k_mod_M(uint32_t n, uint32_t k, uint64_t mod) {
 }
 
 void C_n_k_Test() {
-    constexpr size_t N          = 128;
+    test_tools::log_tests_started();
+    constexpr size_t N          = 256;
     static uint64_t c_n_k[N][N] = {};
+    CNKCounter<> c_n_k_counter(uint32_t{N} - 10);
 
     for (size_t n = 0; n < N; ++n) {
         c_n_k[n][0] = 1;
@@ -288,23 +187,21 @@ void C_n_k_Test() {
 
     for (uint32_t n = 0; n < N; n++) {
         for (uint32_t k = 0; k < N; k++) {
-            uint64_t cnk0 = C_n_k(n, k);
-            uint64_t cnk1 = c_n_k[n][k];
-            if (cnk0 != cnk1) {
-                std::cout << "C_n_k(" << n << ',' << k << ") = " << cnk0 << "; c_n_k[" << n << "]["
-                          << k << "] = " << cnk1 << '\n';
-                return;
-            }
+            const uint64_t cnk0 = C_n_k(n, k);
+            const uint64_t cnk1 = c_n_k[n][k];
+            assert(cnk0 == cnk1);
+            const uint64_t cnk2 = c_n_k_counter(n, k);
+            assert(cnk1 == cnk2);
         }
     }
-
-    std::cout << "All tests in \"" << __PRETTY_FUNCTION__ << "\" passed\n";
 }
 
 void C_n_k_mod_M_Test() {
-    constexpr uint64_t Mod      = 1'000'000'000 + 7;
-    constexpr size_t N          = 128;
+    test_tools::log_tests_started();
+    constexpr uint32_t Mod      = 1'000'000'000 + 7;
+    constexpr size_t N          = 256;
     static uint64_t c_n_k[N][N] = {};
+    CNKCounter<Mod> c_n_k_counter(uint32_t{N} - 10);
 
     for (size_t n = 0; n < N; ++n) {
         c_n_k[n][0] = 1;
@@ -327,32 +224,20 @@ void C_n_k_mod_M_Test() {
     std::mt19937 mt_prnd_engine(std::random_device{}());
 
     for (size_t i = 0; i < TotalTests; ++i) {
-        uint_fast32_t n = mt_prnd_engine() % N;
-        uint_fast32_t k = mt_prnd_engine() % N;
-        uint64_t cnk0   = C_n_k_mod_M(n, k, Mod);
-        uint64_t cnk1   = c_n_k[n][k] % Mod;
-
-        if (cnk0 != cnk1) {
-            std::cout << "C_n_k_mod_M(" << n << ',' << k << ',' << Mod << ") = " << cnk0
-                      << "; c_n_k[" << n << "][" << k << "] % " << Mod << " = " << cnk1 << '\n';
-            return;
-        }
+        const auto n        = static_cast<uint32_t>(mt_prnd_engine() % N);
+        const auto k        = static_cast<uint32_t>(mt_prnd_engine() % N);
+        const uint64_t cnk0 = C_n_k_mod_M(n, k, Mod);
+        const uint64_t cnk1 = c_n_k[n][k] % Mod;
+        assert(cnk0 == cnk1);
+        const uint64_t cnk2 = c_n_k_counter(n, k);
+        assert(cnk1 == cnk2);
     }
-
-    std::cout << "All tests in \"" << __PRETTY_FUNCTION__ << "\" passed\n";
 }
 
-int main() {
-    constexpr uint64_t Mod = 1e9 + 7;
-    CNKCounter<Mod> C(120);
-    const size_t n = 42;
-    for (size_t k = 0; k <= n; ++k) {
-        std::cout << C(n, k) << ' ';
-    }
-    std::cout << '\n';
+}  // namespace
 
+int main() {
     C_n_k_Test();
     C_n_k_mod_M_Test();
-
     return 0;
 }
