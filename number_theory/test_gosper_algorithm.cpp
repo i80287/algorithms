@@ -2,6 +2,7 @@
 #include <clocale>
 #include <cstdio>
 #include <cwchar>
+#include <array>
 
 #include "gosper_algorithm.hpp"
 
@@ -60,16 +61,17 @@ void test3() noexcept {
     }
     constexpr size_t kPeriod = 4;
     assert(lambda == kPeriod);
-    auto fillarray = [](std::array<int32_t, kPeriod>& mem, int32_t xi_arg) constexpr noexcept {
-        mem[0] = xi_arg;
-        for (size_t i = 1; i < kPeriod; i++) {
+    using PeriodicValues = std::array<int32_t, kPeriod>;
+    auto fillarray = [](PeriodicValues& mem, int32_t x_start) constexpr noexcept {
+        mem[0] = x_start;
+        for (size_t i = 1; i < mem.size(); i++) {
             mem[i] = f3(mem[i - 1]);
         }
     };
-    std::array<int32_t, kPeriod> mem{};
+    PeriodicValues mem{};
     fillarray(mem, xi);
     for (size_t iter = 100; iter > 0; iter--) {
-        std::array<int32_t, kPeriod> next_mem{};
+        PeriodicValues next_mem{};
         fillarray(next_mem, f3(mem.back()));
         assert(mem == next_mem);
         mem = next_mem;
