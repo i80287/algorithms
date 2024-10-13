@@ -16,91 +16,91 @@ void TestOperatorEqualsInt() {
 
     n = 0;
     assert(n.sign() == 0);
-    assert(n.size_ == 0);
+    assert(n.size() == 0);
     assert(n == 0);
     for (int32_t i = 1; i <= K; i++) {
         n = i;
         assert(n.sign() == 1);
-        assert(n.size_ == 1 && n.nums_[0] == uint32_t(i));
+        assert(n.size() == 1 && n.begin()[0] == uint32_t(i));
         assert(n == i);
         assert(n != -i);
     }
     for (int32_t i = -K; i < 0; i++) {
         n = i;
         assert(n.sign() == -1);
-        assert(n.size_ == -1 && n.nums_[0] == uint32_t(-i));
+        assert(n.size() == -1 && n.begin()[0] == uint32_t(-i));
         assert(n == i);
         assert(n != -i);
     }
 
     n = 0u;
     assert(n.sign() == 0);
-    assert(n.size_ == 0);
+    assert(n.size() == 0);
     assert(n == 0u);
     for (uint32_t i = 1; i <= K; i++) {
         n = i;
         assert(n.sign() == 1);
-        assert(n.size_ == 1 && n.nums_[0] == i);
+        assert(n.size() == 1 && n.begin()[0] == i);
         assert(n == i);
     }
 
     n = int64_t{0};
     assert(n.sign() == 0);
-    assert(n.size_ == 0);
+    assert(n.size() == 0);
     assert(n == int64_t{0});
     for (int64_t i = 1; i <= K; i++) {
         n = i;
         assert(n.sign() == 1);
-        assert(n.size_ == 1 && n.nums_[0] == uint32_t(i));
+        assert(n.size() == 1 && n.begin()[0] == uint32_t(i));
         assert(n == i);
         assert(n != -i);
     }
     for (int64_t i = -K; i < 0; i++) {
         n = i;
         assert(n.sign() == -1);
-        assert(n.size_ == -1 && n.nums_[0] == uint32_t(-i));
+        assert(n.size() == -1 && n.begin()[0] == uint32_t(-i));
         assert(n == i);
         assert(n != -i);
     }
 
     n = uint64_t{0};
     assert(n.sign() == 0);
-    assert(n.size_ == 0);
+    assert(n.size() == 0);
     assert(n == uint64_t{0});
     for (uint64_t i = 1; i < K; i++) {
         n = i;
         assert(n.sign() == 1);
-        assert(n.size_ == 1 && n.nums_[0] == i);
+        assert(n.size() == 1 && n.begin()[0] == i);
         assert(n == i);
     }
 
     n = int128_t{0};
     assert(n.sign() == 0);
-    assert(n.size_ == 0);
+    assert(n.size() == 0);
     assert(n == int128_t{0});
     for (int64_t i = 1; i <= K; i++) {
         n = int128_t{i};
         assert(n.sign() == 1);
-        assert(n.size_ == 1 && n.nums_[0] == uint32_t(i));
+        assert(n.size() == 1 && n.begin()[0] == uint32_t(i));
         assert(n == int128_t{i});
         assert(n != -int128_t{i});
     }
     for (int64_t i = -K; i < 0; i++) {
         n = int128_t{i};
         assert(n.sign() == -1);
-        assert(n.size_ == -1 && n.nums_[0] == uint32_t(-i));
+        assert(n.size() == -1 && n.begin()[0] == uint32_t(-i));
         assert(n == int128_t{i});
         assert(n != -int128_t{i});
     }
 
     n = uint128_t{0};
     assert(n.sign() == 0);
-    assert(n.size_ == 0);
+    assert(n.size() == 0);
     n = static_cast<uint128_t>(-1);
     assert(n.sign() == 1);
-    assert(n.size_ == 4);
-    assert(n.nums_[0] == uint32_t(-1) && n.nums_[1] == uint32_t(-1) && n.nums_[2] == uint32_t(-1) &&
-           n.nums_[3] == uint32_t(-1));
+    assert(n.size() == 4);
+    assert(n.begin()[0] == uint32_t(-1) && n.begin()[1] == uint32_t(-1) &&
+           n.begin()[2] == uint32_t(-1) && n.begin()[3] == uint32_t(-1));
 
     for (uint64_t i = uint64_t(-1) - K; i != 0; i++) {
         n = i;
@@ -487,7 +487,7 @@ void TestLongIntSquare() {
     for (uint32_t p = 32; p <= 96; p += 32) {
         n = uint128_t(1) << p;
         n.SquareInplace();
-        assert(n.size_ == int32_t((p + p) / 32 + 1));
+        assert(n.size() == int32_t((p + p) / 32 + 1));
         for (std::size_t i = 0; i < (p + p) / 32; i++) {
             assert(n[i] == 0);
         }
@@ -1058,6 +1058,51 @@ void TestBitShifts() {
         m >>= (255 - shift);
         assert(m == uint128_t(1) << shift);
     }
+
+    for (uint32_t r = 0; r <= k; r++) {
+        n = 0;
+        assert(n.iszero());
+        assert(n.sign() == 0);
+        assert(n.size() == 0);
+        n <<= r;
+        assert(n == 0);
+        assert(n.iszero());
+        assert(n.sign() == 0);
+        assert(n.size() == 0);
+    }
+    for (uint32_t i = 1; i < k; i++) {
+        const auto max_k = math_functions::log2_floor(static_cast<uint128_t>(-1) / i);
+        for (uint32_t r = 0; r <= max_k; r++) {
+            n = i;
+            assert(n == i);
+            n <<= r;
+            assert(n == uint128_t{i} << r);
+            assert(n.size() > 0);
+        }
+    }
+
+    n = 1;
+    n <<= 255;
+    m.set_string("57896044618658097711785492504343953926634992332820282019728792003956564819968");
+    assert(n == m);
+    n = 1u;
+    n <<= 4000;
+    m.set_string(
+        "131820409343094310010388979423659136318401916109327276909280345024175692811283445510797521"
+        "231721220331409407564807168230384468176942405812817310624525121840385446744443868889563289"
+        "706427719939300365865529242495144888321833894158323756200092849226089461110385787540779132"
+        "654409185831255860504316472846036364908238500078268116724689002106891044880894853471921527"
+        "088201197650061259448583977618746693012787452335047965869945140544352170538037327032402834"
+        "008159261693483647994727160945768940072431686625688866030658324868306061250176433564697324"
+        "072528745672177336948242366753233417556818392219546938204560720202538843712268268448586361"
+        "942128751395665874453900680147479758139717481147704392488266886671292379541285558418744606"
+        "657296304926586001793382725791100208812287673612006034789731201688939975743537276539989692"
+        "230927982557016660679726989062369216287647728379155260864643891615705346169567037448405029"
+        "752790940875872989684235165316260908983893514490200568512210790489667188789433092320719785"
+        "756398772086212370409401269127676106581410793787580434036114254547441805771508552049371634"
+        "609025127325512605396392214570059772472666763440181556475095153967113514875460624794445927"
+        "79055555421362722504575706910949376");
+    assert(n == m);
 }
 
 void TestDecimal() {

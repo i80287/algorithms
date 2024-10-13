@@ -19,14 +19,15 @@ using complex = std::complex<f64>;
 
 /// @brief Multiply polinomials @a p1 and @a p2 of size @a n
 ///         and store their product into @a p2
-/// @param p1 
-/// @param p2 
-/// @param n 
+/// @param p1
+/// @param p2
+/// @param n
 ATTRIBUTE_SIZED_ACCESS(read_write, 1, 3)
 ATTRIBUTE_SIZED_ACCESS(read_write, 2, 3)
 ATTRIBUTE_NONNULL(1)
 ATTRIBUTE_NONNULL(2)
-inline void forward_backward_fft(complex* RESTRICT_QUALIFIER p1, complex* RESTRICT_QUALIFIER p2, const std::size_t n);
+inline void forward_backward_fft(complex* RESTRICT_QUALIFIER p1, complex* RESTRICT_QUALIFIER p2,
+                                 const std::size_t n);
 
 namespace detail {
 
