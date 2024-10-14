@@ -94,11 +94,11 @@ function(configure_gcc_or_clang_gcc_options)
         -Wformat=2
         -Werror
         -pedantic-errors
-        -fstack-protector-strong
     )
     if (NOT USING_MINGW_GCC AND CMAKE_SYSTEM_NAME MATCHES "Linux")
         set(LOCAL_FN_TEST_COMPILE_OPTIONS
             ${LOCAL_FN_TEST_COMPILE_OPTIONS}
+            -fstack-protector-strong
             -mshstk
         )
     endif()
