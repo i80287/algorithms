@@ -2558,7 +2558,7 @@ private:
         const char* function_name) {
         char message[1024]      = {};
         const int bytes_written = std::snprintf(
-            message, std::size(message), "%s:%u: size error at %s: %zu > %zu = max_size()",
+            message, std::size(message), "%s:%u: size error at %s: %zu > %u = max_size()",
             file_name, line, function_name, new_size, max_size());
         if (unlikely(bytes_written < 0)) {
             constexpr const char kFallbackMessage[] = "size error at ";
