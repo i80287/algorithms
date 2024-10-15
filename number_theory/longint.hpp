@@ -529,6 +529,16 @@ struct longint {
         ATTRIBUTE_LIFETIME_BOUND {
         return std::make_reverse_iterator(begin());
     }
+    [[nodiscard]]
+    ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_PURE constexpr const_reverse_iterator crbegin() const noexcept
+        ATTRIBUTE_LIFETIME_BOUND {
+        return rbegin();
+    }
+    [[nodiscard]]
+    ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_PURE constexpr const_reverse_iterator crend() const noexcept
+        ATTRIBUTE_LIFETIME_BOUND {
+        return rend();
+    }
     constexpr void change_sign() noexcept {
         size_ = -size_;
     }
@@ -767,8 +777,9 @@ struct longint {
         static_assert(max_size() + 1 > max_size());
         const size_type usize1 =
             set_size_at_least(std::max(usize32(), usize2) + (find_sum ? 1 : 0));
-        ATTRIBUTE_ASSUME(usize1 > usize2);
+        ATTRIBUTE_ASSUME(usize1 >= usize2);
         if (find_sum) {
+            ATTRIBUTE_ASSUME(usize1 > usize2);
             longint_add_with_free_space(nums_, usize1, other.nums_, usize2);
         } else {
             if (longint_subtract_with_free_space(nums_, usize1, other.nums_, usize2)) {
