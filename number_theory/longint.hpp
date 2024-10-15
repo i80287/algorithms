@@ -278,14 +278,17 @@ struct longint_static_storage;
 }
 
 struct longint {
-    using digit_t        = std::uint32_t;
-    using double_digit_t = std::uint64_t;
-    using pointer        = digit_t*;
-    using const_pointer  = const digit_t*;
-    using iterator       = pointer;
-    using const_iterator = const_pointer;
-    using size_type      = std::uint32_t;
-    using ssize_type     = std::int32_t;
+    using digit_t                = std::uint32_t;
+    using double_digit_t         = std::uint64_t;
+    using pointer                = digit_t*;
+    using const_pointer          = const digit_t*;
+    using iterator               = pointer;
+    using const_iterator         = const_pointer;
+    using reverse_iterator       = typename std::reverse_iterator<iterator>;
+    using const_reverse_iterator = typename std::reverse_iterator<const_iterator>;
+
+    using size_type  = std::uint32_t;
+    using ssize_type = std::int32_t;
 
     static constexpr std::size_t kDefaultLINumsCapacity32  = 2;
     static constexpr std::size_t kDefaultLINumsCapacity64  = 2;
@@ -418,91 +421,112 @@ struct longint {
     }
 #endif
 
-    [[nodiscard]] ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_PURE constexpr ssize_type size()
-        const noexcept {
+    [[nodiscard]]
+    ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_CONST static constexpr size_type max_size() noexcept {
+        constexpr auto kMaxSSize = std::numeric_limits<decltype(size_)>::max();
+        static_assert(kMaxSSize > 0);
+        constexpr auto kMaxUSize = std::numeric_limits<decltype(capacity_)>::max();
+        return static_cast<size_type>(
+            std::min({static_cast<std::size_t>(kMaxSSize), static_cast<std::size_t>(kMaxUSize),
+                      std::numeric_limits<std::size_t>::max() / sizeof(digit_t)}));
+    }
+    [[nodiscard]]
+    ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_PURE constexpr ssize_type size() const noexcept {
         const auto value = size_;
-        if (value > static_cast<std::int64_t>(max_size())) {
+        static_assert(static_cast<ssize_type>(max_size()) == static_cast<std::int64_t>(max_size()));
+        if (value > static_cast<ssize_type>(max_size())) {
             CONFIG_UNREACHABLE();
         }
         return value;
     }
-    [[nodiscard]] ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_PURE constexpr std::size_t usize()
-        const noexcept {
+    [[nodiscard]]
+    ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_PURE constexpr std::size_t usize() const noexcept {
         return usize32();
     }
-    [[nodiscard]] ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_PURE constexpr size_type usize32()
-        const noexcept {
+    [[nodiscard]]
+    ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_PURE constexpr size_type usize32() const noexcept {
         const auto value = math_functions::uabs(size());
         if (value > max_size()) {
             CONFIG_UNREACHABLE();
         }
         return value;
     }
-    [[nodiscard]] ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_PURE constexpr size_type capacity()
-        const noexcept {
+    [[nodiscard]]
+    ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_PURE constexpr size_type capacity() const noexcept {
         const auto value = capacity_;
         if (value > max_size()) {
             CONFIG_UNREACHABLE();
         }
         return value;
     }
-    [[nodiscard]] ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_PURE constexpr std::int32_t sign()
-        const noexcept {
+    [[nodiscard]]
+    ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_PURE constexpr std::int32_t sign() const noexcept {
         return math_functions::sign(size());
     }
-    [[nodiscard]] ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_PURE constexpr bool iszero() const noexcept {
+    [[nodiscard]]
+    ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_PURE constexpr bool iszero() const noexcept {
         return size() == 0;
     }
-    [[nodiscard]] ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_PURE constexpr bool empty() const noexcept {
+    [[nodiscard]]
+    ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_PURE constexpr bool empty() const noexcept {
         return iszero();
     }
-    [[nodiscard]] ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_PURE explicit constexpr operator bool()
-        const noexcept {
+    [[nodiscard]]
+    ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_PURE explicit constexpr operator bool() const noexcept {
         return !iszero();
     }
-    [[nodiscard]] ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_PURE constexpr bool operator!() const noexcept {
+    [[nodiscard]]
+    ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_PURE constexpr bool operator!() const noexcept {
         return iszero();
     }
-    [[nodiscard]] ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_PURE constexpr iterator begin() noexcept
+    [[nodiscard]]
+    ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_PURE constexpr iterator begin() noexcept
         ATTRIBUTE_LIFETIME_BOUND {
         return nums_;
     }
-    [[nodiscard]] ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_PURE constexpr iterator end() noexcept
+    [[nodiscard]]
+    ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_PURE constexpr iterator end() noexcept
         ATTRIBUTE_LIFETIME_BOUND {
         return nums_ + usize();
     }
-    [[nodiscard]] ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_PURE constexpr const_iterator begin()
-        const noexcept ATTRIBUTE_LIFETIME_BOUND {
+    [[nodiscard]]
+    ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_PURE constexpr const_iterator begin() const noexcept
+        ATTRIBUTE_LIFETIME_BOUND {
         return nums_;
     }
-    [[nodiscard]] ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_PURE constexpr const_iterator end()
-        const noexcept ATTRIBUTE_LIFETIME_BOUND {
+    [[nodiscard]]
+    ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_PURE constexpr const_iterator end() const noexcept
+        ATTRIBUTE_LIFETIME_BOUND {
         return nums_ + usize();
     }
-    [[nodiscard]] ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_PURE constexpr const_iterator cbegin()
-        const noexcept ATTRIBUTE_LIFETIME_BOUND {
+    [[nodiscard]]
+    ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_PURE constexpr const_iterator cbegin() const noexcept
+        ATTRIBUTE_LIFETIME_BOUND {
         return begin();
     }
-    [[nodiscard]] ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_PURE constexpr const_iterator cend()
-        const noexcept ATTRIBUTE_LIFETIME_BOUND {
+    [[nodiscard]]
+    ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_PURE constexpr const_iterator cend() const noexcept
+        ATTRIBUTE_LIFETIME_BOUND {
         return end();
     }
-    [[nodiscard]] ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_PURE constexpr std::reverse_iterator<iterator>
-    rbegin() noexcept ATTRIBUTE_LIFETIME_BOUND {
+    [[nodiscard]]
+    ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_PURE constexpr reverse_iterator rbegin() noexcept
+        ATTRIBUTE_LIFETIME_BOUND {
         return std::make_reverse_iterator(end());
     }
-    [[nodiscard]] ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_PURE constexpr std::reverse_iterator<iterator>
-    rend() noexcept ATTRIBUTE_LIFETIME_BOUND {
+    [[nodiscard]]
+    ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_PURE constexpr reverse_iterator rend() noexcept
+        ATTRIBUTE_LIFETIME_BOUND {
         return std::make_reverse_iterator(begin());
     }
-    [[nodiscard]] ATTRIBUTE_ALWAYS_INLINE
-        ATTRIBUTE_PURE constexpr std::reverse_iterator<const_iterator>
-        rbegin() const noexcept ATTRIBUTE_LIFETIME_BOUND {
+    [[nodiscard]]
+    ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_PURE constexpr const_reverse_iterator rbegin() const noexcept
+        ATTRIBUTE_LIFETIME_BOUND {
         return std::make_reverse_iterator(end());
     }
-    [[nodiscard]] ATTRIBUTE_ALWAYS_INLINE
-        ATTRIBUTE_PURE constexpr std::reverse_iterator<const_iterator>
-        rend() const noexcept ATTRIBUTE_LIFETIME_BOUND {
+    [[nodiscard]]
+    ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_PURE constexpr const_reverse_iterator rend() const noexcept
+        ATTRIBUTE_LIFETIME_BOUND {
         return std::make_reverse_iterator(begin());
     }
     constexpr void change_sign() noexcept {
@@ -510,14 +534,6 @@ struct longint {
     }
     constexpr void set_zero() noexcept {
         size_ = 0;
-    }
-    [[nodiscard]] ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_CONST static constexpr std::size_t
-    max_size() noexcept {
-        constexpr auto kMaxSSize = std::numeric_limits<decltype(size_)>::max();
-        static_assert(kMaxSSize > 0);
-        constexpr auto kMaxUSize = std::numeric_limits<decltype(capacity_)>::max();
-        return std::min({static_cast<std::size_t>(kMaxSSize), static_cast<std::size_t>(kMaxUSize),
-                         std::numeric_limits<std::size_t>::max() / sizeof(digit_t)});
     }
 
     longint& pow(std::size_t p) {
@@ -615,7 +631,7 @@ struct longint {
         SquareThisTo(*this);
         return *this;
     }
-    [[nodiscard]] constexpr uint32_t operator[](std::size_t pos) const noexcept {
+    [[nodiscard]] constexpr digit_t operator[](std::size_t pos) const noexcept {
         return nums_[pos];
     }
     longint& operator*=(const longint& other) {
@@ -1030,7 +1046,7 @@ struct longint {
 
         double_digit_t carry     = 0;
         const double_digit_t b_0 = x;
-        const uint32_t u32size   = usize32();
+        const size_type u32size  = usize32();
         for (digit_t *nums_it = nums_, *nums_it_end = nums_it + u32size; nums_it != nums_it_end;
              ++nums_it) {
             const double_digit_t res = *nums_it * b_0 + carry;
@@ -1102,7 +1118,7 @@ struct longint {
             return *this;
         }
 
-        size_type usize_value        = usize32();
+        size_type usize_value      = usize32();
         const size_type uints_move = shift / kNumsBits;
         if (uints_move >= usize_value) {
             set_zero();
