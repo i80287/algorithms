@@ -2209,7 +2209,7 @@ constexpr HelperRetType congruence_helper(const std::uint32_t a, const std::uint
         return {};
     }
 
-    ATTRIBUTE_ASSUME(a >= d);
+    ATTRIBUTE_ASSUME(a == 0 || a >= d);
     ATTRIBUTE_ASSUME(a % d == 0);
     ATTRIBUTE_ASSUME(m >= d);
     ATTRIBUTE_ASSUME(m % d == 0);
@@ -2475,7 +2475,7 @@ ATTRIBUTE_CONST constexpr std::uint32_t solve_binary_congruence_modulo_m(
         return ::math_functions::kNoCongruenceSolution;
     }
 
-    const auto [r, s]  = ::math_functions::extract_pow2(m);
+    const auto [r, s] = ::math_functions::extract_pow2(m);
     ATTRIBUTE_ASSUME(r >= 1);
     const auto min_k_s = std::min(k, std::uint32_t{s});
     ATTRIBUTE_ASSUME(min_k_s < 32);
@@ -2485,8 +2485,8 @@ ATTRIBUTE_CONST constexpr std::uint32_t solve_binary_congruence_modulo_m(
         return ::math_functions::kNoCongruenceSolution;
     }
 
-    const auto c_       = c >> min_k_s;
-    const auto m_       = m >> min_k_s;
+    const auto c_ = c >> min_k_s;
+    const auto m_ = m >> min_k_s;
 #ifdef __clang_analyzer__
     [[clang::suppress]]
 #endif
