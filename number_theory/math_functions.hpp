@@ -1262,26 +1262,44 @@ bool is_power_of_two(char) = delete;
 ATTRIBUTE_CONST constexpr uint64_t nearest_greater_equal_power_of_two(uint32_t n) noexcept {
     const auto shift = 32 - static_cast<std::uint32_t>(::math_functions::countl_zero(n | 1)) -
                        ((n & (n - 1)) == 0);
-    return static_cast<std::uint64_t>(1ull) << shift;
+    return uint64_t{1} << shift;
 }
 
 [[nodiscard]]
 ATTRIBUTE_CONST constexpr uint64_t nearest_greater_power_of_two(uint32_t n) noexcept {
     const auto shift = 32 - static_cast<std::uint32_t>(::math_functions::countl_zero(n));
-    return static_cast<std::uint64_t>(1ull) << shift;
+    return uint64_t{1} << shift;
 }
 
-[[nodiscard]] ATTRIBUTE_CONST constexpr uint64_t nearest_greater_equal_power_of_two(
-    uint64_t n) noexcept {
+[[nodiscard]]
+ATTRIBUTE_CONST constexpr uint64_t nearest_greater_equal_power_of_two(uint64_t n) noexcept {
     const auto shift = 64 - static_cast<std::uint32_t>(::math_functions::countl_zero(n | 1)) -
                        ((n & (n - 1)) == 0);
-    return static_cast<std::uint64_t>(1ull) << shift;
+    return uint64_t{1} << shift;
 }
 
-[[nodiscard]] ATTRIBUTE_CONST constexpr uint64_t nearest_greater_power_of_two(uint64_t n) noexcept {
+[[nodiscard]]
+ATTRIBUTE_CONST constexpr uint64_t nearest_greater_power_of_two(uint64_t n) noexcept {
     const auto shift = 64 - static_cast<std::uint32_t>(::math_functions::countl_zero(n));
-    return static_cast<std::uint64_t>(1ull) << shift;
+    return uint64_t{1} << shift;
 }
+
+#if defined(INTEGERS_128_BIT_HPP)
+
+[[nodiscard]]
+ATTRIBUTE_CONST I128_CONSTEXPR uint128_t nearest_greater_equal_power_of_two(uint128_t n) noexcept {
+    const auto shift = 128 - static_cast<std::uint32_t>(::math_functions::countl_zero(n | 1)) -
+                       ((n & (n - 1)) == 0);
+    return uint128_t{1} << shift;
+}
+
+[[nodiscard]]
+ATTRIBUTE_CONST I128_CONSTEXPR uint128_t nearest_greater_power_of_two(uint128_t n) noexcept {
+    const auto shift = 128 - static_cast<std::uint32_t>(::math_functions::countl_zero(n));
+    return uint128_t{1} << shift;
+}
+
+#endif
 
 /// @brief If @a n != 0, return number that is power of 2 and
 ///         whose only bit is the lowest bit set in the @a n
@@ -2829,7 +2847,15 @@ template <class T>
         if constexpr (::math_functions::detail::is_signed_v<T>) {
             return static_cast<std::size_t>(std::max(approx_size, T{0}));
         } else {
-            return std::size_t{approx_size};
+#if defined(INTEGERS_128_BIT_HPP)
+            if constexpr (std::is_same_v<T, uint128_t>) {
+                constexpr auto kUsizeMax = std::numeric_limits<std::size_t>::max();
+                return approx_size <= kUsizeMax ? static_cast<std::size_t>(approx_size) : kUsizeMax;
+            } else
+#endif
+            {
+                return std::size_t{approx_size};
+            }
         }
     }();
 
@@ -2844,13 +2870,13 @@ template <class T>
 }
 
 template <class T>
-[[nodiscard]] CONSTEXPR_VECTOR std::vector<T> arange(T n, T step) {
-    return ::math_functions::arange(0, n, step);
+[[nodiscard]] CONSTEXPR_VECTOR std::vector<T> arange(T begin, T end) {
+    return ::math_functions::arange(begin, end, T{1});
 }
 
 template <class T>
 [[nodiscard]] CONSTEXPR_VECTOR std::vector<T> arange(T n) {
-    return ::math_functions::arange(n, 1);
+    return ::math_functions::arange(T{0}, n);
 }
 
 }  // namespace math_functions
