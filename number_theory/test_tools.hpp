@@ -140,13 +140,10 @@ ATTRIBUTE_ALWAYS_INLINE inline void log_tests_started_impl(const char* function_
 
 struct FilePtr final {
     using FileHandle = std::FILE*;
-    FileHandle const file;
+    FileHandle const file;  // NOLINT(misc-misplaced-const)
 
     [[nodiscard]] constexpr operator FileHandle() noexcept {
         return file;
-    }
-    [[nodiscard]] constexpr std::FILE& operator*() noexcept {
-        return *file;
     }
     [[nodiscard]] constexpr std::FILE* operator->() noexcept {
         return file;
@@ -166,6 +163,7 @@ struct FilePtr final {
 private:
     ATTRIBUTE_RETURNS_NONNULL ATTRIBUTE_ALWAYS_INLINE static FileHandle DoFOpenOrThrow(
         const char* fname, const char* mode) {
+        // NOLINTNEXTLINE(misc-misplaced-const)
         FileHandle const file_handle = std::fopen(fname, mode);
         if (unlikely(file_handle == nullptr)) {
             ThrowOnFOpenFail(fname, mode);

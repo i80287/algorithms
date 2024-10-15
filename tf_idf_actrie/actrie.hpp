@@ -17,7 +17,7 @@ class ACTrieBuilder;
 
 template <std::uint8_t AlphabetStart = 'A', std::uint8_t AlphabetEnd = 'z',
           bool IsCaseInsensetive = false>
-class ACTrie final {
+class [[nodiscard]] ACTrie final {
 public:
     friend class ACTrieBuilder<AlphabetStart, AlphabetEnd, IsCaseInsensetive>;
 
@@ -27,13 +27,15 @@ public:
     using StoredPatternIndex = std::uint32_t;
 
 private:
-    static constexpr std::uint8_t kAlphabetStart     = AlphabetStart;
-    static constexpr std::uint8_t kAlphabetEnd       = AlphabetEnd;
-    static constexpr std::uint8_t kIsCaseInsensetive = IsCaseInsensetive;
+    using Symbol = unsigned char;
+
+    static constexpr Symbol kAlphabetStart     = AlphabetStart;
+    static constexpr Symbol kAlphabetEnd       = AlphabetEnd;
+    static constexpr Symbol kIsCaseInsensetive = IsCaseInsensetive;
 
     static_assert('\0' < kAlphabetStart && kAlphabetStart < kAlphabetEnd &&
                   kAlphabetEnd < std::numeric_limits<char>::max());
-    static constexpr std::uint8_t kAlphabetLength = kAlphabetEnd - kAlphabetStart + 1;
+    static constexpr Symbol kAlphabetLength = kAlphabetEnd - kAlphabetStart + 1;
 
     static constexpr StoredNodeIndex kNullNodeIndex        = 0;
     static constexpr StoredNodeIndex kFakePrerootNodeIndex = kNullNodeIndex + 1;
@@ -56,21 +58,19 @@ private:
         StoredNodeIndex compressed_suffix_link = kNullNodeIndex;
         StoredPatternIndex pattern_index       = kMissingWordIndex;
 
-        constexpr StoredNodeIndex operator[](size_type index) const noexcept {
+        [[nodiscard]] constexpr StoredNodeIndex operator[](size_type index) const noexcept {
             return edges[index];
         }
-
-        constexpr StoredNodeIndex& operator[](size_type index) noexcept {
+        [[nodiscard]] constexpr StoredNodeIndex& operator[](size_type index) noexcept {
             return edges[index];
         }
-
-        constexpr bool IsTerminal() const noexcept {
+        [[nodiscard]] constexpr bool IsTerminal() const noexcept {
             return pattern_index != kMissingWordIndex;
         }
     };
 
 public:
-    constexpr bool ContainsPattern(std::string_view pattern) const noexcept {
+    [[nodiscard]] constexpr bool ContainsPattern(std::string_view pattern) const noexcept {
         if (std::is_constant_evaluated()) {
             return ContainsPatternImpl(pattern.begin(), pattern.end(), nodes_);
         } else {
@@ -137,7 +137,7 @@ public:
     }
 
     template <bool IsExactWordsMatching = true, bool CountEmptyLines = true,
-              uint8_t LinesDelimeter = '\n', typename QueryWordCallback, typename NewLineCallback>
+              Symbol LinesDelimeter = '\n', typename QueryWordCallback, typename NewLineCallback>
         requires requires(QueryWordCallback func, size_type line_number,
                           StoredPatternIndex query_word_index) {
             func(line_number, query_word_index);
@@ -145,6 +145,7 @@ public:
                       size_type line_start_index, size_type line_end_index) {
             func(line_number, words_on_current_line, line_start_index, line_end_index);
         }
+    [[nodiscard]]
     constexpr size_type FindAllSubstringsInTextAndCountLines(std::string_view text,
                                                              QueryWordCallback find_callback,
                                                              NewLineCallback line_callback) const {
@@ -170,8 +171,8 @@ public:
         size_type lines_count           = 0;
         bool prev_symbol_in_alphabet    = false;
         for (auto iter = text.begin(), end = text.end(); iter != end; ++iter, ++i) {
-            auto symbol            = static_cast<std::uint8_t>(*iter);
-            size_type symbol_index = SymbolToIndex(symbol);
+            const Symbol symbol          = CharToSymbol(*iter);
+            const size_type symbol_index = SymbolToIndex(symbol);
             if (symbol_index >= kAlphabetLength) {
                 current_node_index = kRootNodeIndex;
                 words_on_current_line += prev_symbol_in_alphabet;
@@ -243,7 +244,7 @@ public:
             prev_symbol_in_alphabet = true;
         }
 
-        if (!text.empty() && text.back() != LinesDelimeter) {
+        if (!text.empty() && CharToSymbol(text.back()) != LinesDelimeter) {
             lines_count++;
         }
 
@@ -260,6 +261,7 @@ private:
         : nodes_(std::move(nodes)), patterns_lengths_(std::move(words_lengths)) {}
 
     template <class PatternIterator>
+    [[nodiscard]]
     static constexpr bool ContainsPatternImpl(PatternIterator pattern_iter_begin,
                                               PatternIterator pattern_iter_end,
                                               const std::vector<Node>& nodes) noexcept {
@@ -281,24 +283,20 @@ private:
         return nodes[current_node_index].IsTerminal();
     }
 
-    static constexpr int32_t ToLowerImpl(int32_t c) noexcept {
+    [[nodiscard]] static constexpr int32_t ToLowerImpl(int32_t c) noexcept {
         static_assert('a' - 'A' == (1 << 5));
         return c | (IsUpperImpl(c) * ('a' - 'A'));
     }
-
-    static constexpr bool IsUpperImpl(int32_t c) noexcept {
+    [[nodiscard]] static constexpr bool IsUpperImpl(int32_t c) noexcept {
         return static_cast<std::uint32_t>(c) - 'A' <= 'Z' - 'A';
     }
-
-    static constexpr bool IsInAlphabet(unsigned char symbol) noexcept {
+    [[nodiscard]] static constexpr bool IsInAlphabet(Symbol symbol) noexcept {
         return static_cast<std::uint32_t>(symbol) - kAlphabetStart <= kAlphabetEnd - kAlphabetStart;
     }
-
-    static constexpr bool IsInAlphabet(char symbol) noexcept {
-        return IsInAlphabet(static_cast<unsigned char>(symbol));
+    [[nodiscard]] static constexpr bool IsInAlphabet(char symbol) noexcept {
+        return IsInAlphabet(CharToSymbol(symbol));
     }
-
-    static constexpr size_type SymbolToIndex(unsigned char symbol) noexcept {
+    [[nodiscard]] static constexpr size_type SymbolToIndex(Symbol symbol) noexcept {
         std::int32_t symbol_as_int = symbol;
         if constexpr (kIsCaseInsensetive) {
             // We don't use std::tolower because we know that all
@@ -310,9 +308,12 @@ private:
 
         return static_cast<size_type>(static_cast<std::uint32_t>(symbol_as_int)) - kAlphabetStart;
     }
-
-    static constexpr size_type SymbolToIndex(char symbol) noexcept {
-        return SymbolToIndex(static_cast<unsigned char>(symbol));
+    [[nodiscard]] static constexpr size_type SymbolToIndex(char chr) noexcept {
+        return SymbolToIndex(CharToSymbol(chr));
+    }
+    [[nodiscard]] static constexpr Symbol CharToSymbol(char chr) noexcept {
+        static_assert(std::is_same_v<Symbol, unsigned char>);
+        return static_cast<Symbol>(chr);
     }
 
     std::vector<Node> nodes_;
@@ -320,7 +321,7 @@ private:
 };
 
 template <std::uint8_t AlphabetStart, std::uint8_t AlphabetEnd, bool IsCaseInsensetive>
-class ACTrieBuilder final {
+class [[nodiscard]] ACTrieBuilder final {
 public:
     using ACTrieType         = ACTrie<AlphabetStart, AlphabetEnd, IsCaseInsensetive>;
     using size_type          = typename ACTrieType::size_type;
@@ -353,7 +354,7 @@ public:
         patterns_lengths_.reserve(patterns_capacity);
     }
 
-    constexpr bool AddPattern(std::string_view pattern) {
+    [[nodiscard]] constexpr bool AddPattern(std::string_view pattern) {
         if (std::is_constant_evaluated()) {
             return AddPatternImpl(pattern.begin(), pattern.end(), nodes_, patterns_lengths_);
         } else {
@@ -364,7 +365,7 @@ public:
         }
     }
 
-    constexpr bool ContainsPattern(std::string_view pattern) const noexcept {
+    [[nodiscard]] constexpr bool ContainsPattern(std::string_view pattern) const noexcept {
         if (std::is_constant_evaluated()) {
             return ContainsPatternImpl(pattern.begin(), pattern.end(), nodes_);
         } else {
@@ -375,7 +376,7 @@ public:
         }
     }
 
-    constexpr ACTrieType Build() && {
+    [[nodiscard]] constexpr ACTrieType Build() && {
         nodes_[kRootNodeIndex].suffix_link            = kFakePrerootNodeIndex;
         nodes_[kRootNodeIndex].compressed_suffix_link = kRootNodeIndex;
         nodes_[kFakePrerootNodeIndex].edges.fill(kRootNodeIndex);
@@ -417,6 +418,7 @@ private:
     }
 
     template <class PatternIterator>
+    [[nodiscard]]
     static constexpr bool AddPatternImpl(PatternIterator pattern_iter_begin,
                                          PatternIterator pattern_iter_end, std::vector<Node>& nodes,
                                          std::vector<StoredPatternSize>& words_lengths) noexcept {

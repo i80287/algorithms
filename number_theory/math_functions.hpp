@@ -2033,6 +2033,7 @@ private:
 
         while (n >= 3) {
             const std::uint32_t least_pf = least_prime_factor[n];
+            ATTRIBUTE_ASSUME(least_pf >= 2);
             unique_pfs_count += least_pf != last_pf;
             n /= least_pf;
             last_pf = least_pf;
@@ -2475,6 +2476,7 @@ ATTRIBUTE_CONST constexpr std::uint32_t solve_binary_congruence_modulo_m(
     }
 
     const auto [r, s]  = ::math_functions::extract_pow2(m);
+    ATTRIBUTE_ASSUME(r >= 1);
     const auto min_k_s = std::min(k, std::uint32_t{s});
     ATTRIBUTE_ASSUME(min_k_s < 32);
     // gcd(2^k, m)
@@ -2485,6 +2487,9 @@ ATTRIBUTE_CONST constexpr std::uint32_t solve_binary_congruence_modulo_m(
 
     const auto c_       = c >> min_k_s;
     const auto m_       = m >> min_k_s;
+#ifdef __clang_analyzer__
+    [[clang::suppress]]
+#endif
     const auto c_mod_m_ = c_ % m_;
     if (min_k_s == k) {
         return c_mod_m_;
@@ -2885,6 +2890,8 @@ template <class T>
 
 namespace std {
 
+// NOLINTBEGIN(cert-dcl58-cpp)
+
 /// @brief Computes greaters common divisor of @a `a` and @a `b`
 ///         using Stein's algorithm (binary gcd). Here gcd(0, 0) = 0.
 /// @param[in] a
@@ -2940,6 +2947,8 @@ namespace std {
     uint64_t b2 = uint64_t(a1 % b1);  // b1 < 2^64 => b2 = a1 % b1 < 2^64
     return std::gcd(a2, b2);
 }
+
+// NOLINTEND(cert-dcl58-cpp)
 
 }  // namespace std
 

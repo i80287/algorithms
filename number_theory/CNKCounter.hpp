@@ -202,6 +202,7 @@ public:
     using int_type         = typename storage::value_type;
 
     static_assert(std::is_unsigned_v<int_type>, "");
+    // NOLINTNEXTLINE(misc-redundant-expression)
     static_assert(Mod == kNoMod || Mod <= std::numeric_limits<int_type>::max(),
                   "Too big Mod value");
 

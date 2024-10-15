@@ -13,13 +13,26 @@ using std::size_t;
 using std::uint32_t;
 using std::uint64_t;
 
+struct NK final {
+    uint32_t n{};
+    uint32_t k{};
+
+#if CONFIG_HAS_AT_LEAST_CXX_20
+    constexpr bool operator==(const NK&) const noexcept = default;
+#else
+    constexpr bool operator==(const NK& other) const noexcept {
+        return n == other.n && k == other.k;
+    }
+#endif
+};
+
 template <>
-struct std::hash<std::pair<uint32_t, uint32_t>> {
-    constexpr size_t operator()(const std::pair<uint32_t, uint32_t>& pair) const noexcept {
+struct ::std::hash<NK> {
+    constexpr size_t operator()(const NK& pair) const noexcept {
         if constexpr (sizeof(size_t) == 2 * sizeof(uint32_t)) {
-            return (static_cast<size_t>(pair.first) << 32) | (static_cast<size_t>(pair.second));
+            return (static_cast<size_t>(pair.n) << 32) | (static_cast<size_t>(pair.k));
         } else {
-            return static_cast<size_t>(pair.first ^ pair.second);
+            return static_cast<size_t>(pair.n ^ pair.k);
         }
     }
 };
@@ -27,7 +40,7 @@ struct std::hash<std::pair<uint32_t, uint32_t>> {
 namespace {
 
 uint64_t C_n_k(const uint32_t n, uint32_t k) {
-    static std::unordered_map<std::pair<uint32_t, uint32_t>, uint64_t> C_n_k_table;
+    static std::unordered_map<NK, uint64_t> C_n_k_table;
 
     if (n < k) {
         return 0;
@@ -39,11 +52,13 @@ uint64_t C_n_k(const uint32_t n, uint32_t k) {
             return 1;
         case 1:
             return n;
+        default:
+            break;
     }
 
     if (n > 20) {
         {
-            auto it = C_n_k_table.find({n, k});
+            auto it = C_n_k_table.find(NK{n, k});
             if (it != C_n_k_table.end()) {
                 return it->second;
             }
@@ -110,7 +125,7 @@ uint64_t C_n_k(const uint32_t n, uint32_t k) {
 }
 
 uint64_t C_n_k_mod_M(uint32_t n, uint32_t k, uint64_t mod) {
-    static std::unordered_map<std::pair<uint32_t, uint32_t>, uint64_t> C_n_k_table;
+    static std::unordered_map<NK, uint64_t> C_n_k_table;
 
     uint64_t diff = n - k;
     if (k == 0 || diff == 0) {
@@ -123,7 +138,7 @@ uint64_t C_n_k_mod_M(uint32_t n, uint32_t k, uint64_t mod) {
 
     if (n > 20) {
         {
-            auto it = C_n_k_table.find({n, k});
+            auto it = C_n_k_table.find(NK{n, k});
             if (it != C_n_k_table.end()) {
                 return it->second;
             }

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-build_dir=cmake-build-codechecked
+build_dir=cmake-build-codechecker
 
 mkdir -p "$build_dir"
 cd ./$build_dir || exit 1
