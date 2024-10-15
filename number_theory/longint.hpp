@@ -1097,13 +1097,13 @@ struct longint {
         return this->divmod_impl(n);
     }
 
-    constexpr longint& operator>>=(std::uint32_t shift) noexcept {
+    constexpr longint& operator>>=(size_type shift) noexcept {
         if ((config::is_constant_evaluated() || config::is_gcc_constant_p(shift)) && shift == 0) {
             return *this;
         }
 
         size_type usize_value        = usize32();
-        const std::size_t uints_move = shift / kNumsBits;
+        const size_type uints_move = shift / kNumsBits;
         if (uints_move >= usize_value) {
             set_zero();
             return *this;
@@ -1137,18 +1137,18 @@ struct longint {
 
         return *this;
     }
-    constexpr longint& operator<<=(std::uint32_t shift) {
+    constexpr longint& operator<<=(size_type shift) {
         if ((config::is_constant_evaluated() || config::is_gcc_constant_p(shift)) && shift == 0) {
             return *this;
         }
 
-        std::size_t usize_value = usize();
+        size_type usize_value = usize32();
         if (usize_value == 0) {
             return *this;
         }
 
         static_assert(sizeof(digit_t) == sizeof(uint32_t));
-        const std::uint32_t new_trailig_zeros_digits = shift / kNumsBits;
+        const size_type new_trailig_zeros_digits = shift / kNumsBits;
         // + 1 for potentially new back digit (at the end of the nums_ array)
         const auto new_size = usize_value + new_trailig_zeros_digits + 1;
         reserve(new_size);
