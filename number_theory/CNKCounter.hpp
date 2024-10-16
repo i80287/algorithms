@@ -19,13 +19,13 @@
 
 class SquareMatrix final {
 public:
-    using side_type              = typename std::uint32_t;
-    using value_type             = typename std::uint64_t;
+    using side_type              = std::uint32_t;
+    using value_type             = std::uint64_t;
     using reference              = value_type&;
     using const_reference        = const value_type&;
     using pointer                = value_type*;
     using const_pointer          = const value_type*;
-    using size_type              = typename std::size_t;
+    using size_type              = std::size_t;
     using allocator_type         = typename std::allocator<value_type>;
     using iterator               = pointer;
     using const_iterator         = const_pointer;
@@ -202,6 +202,7 @@ public:
     using int_type         = typename storage::value_type;
 
     static_assert(std::is_unsigned_v<int_type>, "");
+    // NOLINTNEXTLINE(misc-redundant-expression)
     static_assert(Mod == kNoMod || Mod <= std::numeric_limits<int_type>::max(),
                   "Too big Mod value");
 

@@ -1,4 +1,6 @@
 #include <chrono>
+#include <type_traits>
+#include <vector>
 
 #include "config_macros.hpp"
 #include "longint.hpp"
@@ -8,109 +10,161 @@ namespace long_int_tests {
 
 namespace {
 
+void AssertInvariants(const longint& n) noexcept {
+    static_assert(noexcept(n.size()));
+    static_assert(noexcept(n.usize()));
+    static_assert(noexcept(n.capacity()));
+    static_assert(noexcept(n.begin()));
+    static_assert(noexcept(n.end()));
+    static_assert(noexcept(n.cbegin()));
+    static_assert(noexcept(n.cend()));
+    static_assert(noexcept(n.rbegin()));
+    static_assert(noexcept(n.rend()));
+    static_assert(noexcept(*n.begin()));
+    static_assert(noexcept(*n.end()));
+    static_assert(noexcept(n.empty()));
+    static_assert(noexcept(n.iszero()));
+    static_assert(noexcept(static_cast<bool>(n)));
+    static_assert(noexcept(!n));
+    assert(math_functions::uabs(n.size()) == n.usize());
+    assert(n.usize() <= n.capacity());
+    assert(n.capacity() <= longint::max_size());
+    if (n.empty()) {
+        assert(n.size() == 0);
+        assert(n.begin() == n.end());
+    } else {
+        assert(n.size() != 0);
+        assert(n.begin() < n.end());
+        const auto last_digit = *(n.end() - 1);
+        assert(last_digit > 0);
+    }
+}
+
 void TestOperatorEqualsInt() {
     test_tools::log_tests_started();
     longint n;
 
-    constexpr int32_t K = 200'000;
+    constexpr int32_t K = 150'000;
 
     n = 0;
     assert(n.sign() == 0);
-    assert(n.size_ == 0);
+    assert(n.size() == 0);
     assert(n == 0);
+    AssertInvariants(n);
     for (int32_t i = 1; i <= K; i++) {
         n = i;
         assert(n.sign() == 1);
-        assert(n.size_ == 1 && n.nums_[0] == uint32_t(i));
+        assert(n.size() == 1 && n.begin()[0] == uint32_t(i));
         assert(n == i);
         assert(n != -i);
+        AssertInvariants(n);
     }
     for (int32_t i = -K; i < 0; i++) {
         n = i;
         assert(n.sign() == -1);
-        assert(n.size_ == -1 && n.nums_[0] == uint32_t(-i));
+        assert(n.size() == -1 && n.begin()[0] == uint32_t(-i));
         assert(n == i);
         assert(n != -i);
+        AssertInvariants(n);
     }
 
     n = 0u;
     assert(n.sign() == 0);
-    assert(n.size_ == 0);
+    assert(n.size() == 0);
     assert(n == 0u);
+    AssertInvariants(n);
     for (uint32_t i = 1; i <= K; i++) {
         n = i;
         assert(n.sign() == 1);
-        assert(n.size_ == 1 && n.nums_[0] == i);
+        assert(n.size() == 1 && n.begin()[0] == i);
         assert(n == i);
+        assert(n != -int64_t{i});
+        AssertInvariants(n);
     }
 
     n = int64_t{0};
     assert(n.sign() == 0);
-    assert(n.size_ == 0);
+    assert(n.size() == 0);
     assert(n == int64_t{0});
+    AssertInvariants(n);
     for (int64_t i = 1; i <= K; i++) {
         n = i;
         assert(n.sign() == 1);
-        assert(n.size_ == 1 && n.nums_[0] == uint32_t(i));
+        assert(n.size() == 1 && n.begin()[0] == uint32_t(i));
         assert(n == i);
         assert(n != -i);
+        AssertInvariants(n);
     }
     for (int64_t i = -K; i < 0; i++) {
         n = i;
         assert(n.sign() == -1);
-        assert(n.size_ == -1 && n.nums_[0] == uint32_t(-i));
+        assert(n.size() == -1 && n.begin()[0] == uint32_t(-i));
         assert(n == i);
         assert(n != -i);
+        AssertInvariants(n);
     }
 
     n = uint64_t{0};
     assert(n.sign() == 0);
-    assert(n.size_ == 0);
+    assert(n.size() == 0);
     assert(n == uint64_t{0});
+    AssertInvariants(n);
     for (uint64_t i = 1; i < K; i++) {
         n = i;
         assert(n.sign() == 1);
-        assert(n.size_ == 1 && n.nums_[0] == i);
+        assert(n.size() == 1 && n.begin()[0] == i);
         assert(n == i);
+        assert(n != -int128_t{i});
+        AssertInvariants(n);
     }
 
     n = int128_t{0};
     assert(n.sign() == 0);
-    assert(n.size_ == 0);
+    assert(n.size() == 0);
     assert(n == int128_t{0});
+    AssertInvariants(n);
     for (int64_t i = 1; i <= K; i++) {
         n = int128_t{i};
         assert(n.sign() == 1);
-        assert(n.size_ == 1 && n.nums_[0] == uint32_t(i));
+        assert(n.size() == 1 && n.begin()[0] == uint32_t(i));
         assert(n == int128_t{i});
         assert(n != -int128_t{i});
+        AssertInvariants(n);
     }
     for (int64_t i = -K; i < 0; i++) {
         n = int128_t{i};
         assert(n.sign() == -1);
-        assert(n.size_ == -1 && n.nums_[0] == uint32_t(-i));
+        assert(n.size() == -1 && n.begin()[0] == uint32_t(-i));
         assert(n == int128_t{i});
         assert(n != -int128_t{i});
+        AssertInvariants(n);
     }
 
     n = uint128_t{0};
     assert(n.sign() == 0);
-    assert(n.size_ == 0);
+    assert(n.size() == 0);
+    AssertInvariants(n);
     n = static_cast<uint128_t>(-1);
     assert(n.sign() == 1);
-    assert(n.size_ == 4);
-    assert(n.nums_[0] == uint32_t(-1) && n.nums_[1] == uint32_t(-1) && n.nums_[2] == uint32_t(-1) &&
-           n.nums_[3] == uint32_t(-1));
+    assert(n.size() == 4);
+    assert(n.begin()[0] == uint32_t(-1) && n.begin()[1] == uint32_t(-1) &&
+           n.begin()[2] == uint32_t(-1) && n.begin()[3] == uint32_t(-1));
+    AssertInvariants(n);
 
     for (uint64_t i = uint64_t(-1) - K; i != 0; i++) {
         n = i;
         assert(n == i);
         n = uint128_t(i);
         assert(n == uint128_t{i});
+        assert(n != -int128_t{i});
+        AssertInvariants(n);
     }
     for (uint128_t i = uint128_t(-1) - K; i != 0; i++) {
         n = i;
         assert(n == i);
+        assert(n != (i - 1));
+        assert(n != (i + 1));
+        AssertInvariants(n);
     }
 }
 
@@ -119,7 +173,7 @@ void TestLongIntMult() {
 
     longint n1;
     longint n2;
-    constexpr uint64_t K = 6000;
+    constexpr uint64_t K = 5000;
     for (uint32_t i = 1; i <= K; i++) {
         for (uint32_t j = 1; j <= K; j++) {
             n1 = i;
@@ -127,6 +181,8 @@ void TestLongIntMult() {
             assert((n1 < n2) == (i < j));
             n1 *= n2;
             assert(n1 == i * j);
+            AssertInvariants(n1);
+            AssertInvariants(n2);
         }
     }
 
@@ -137,6 +193,8 @@ void TestLongIntMult() {
             assert((n1 < n2) == (i < j));
             n1 *= n2;
             assert(n1 == (uint128_t(i) * uint128_t(j)));
+            AssertInvariants(n1);
+            AssertInvariants(n2);
         }
     }
 
@@ -437,6 +495,8 @@ void TestLongIntMult() {
         n1 *= n2;
         n2.set_string(test[2]);
         assert(n1 == n2);
+        AssertInvariants(n1);
+        AssertInvariants(n2);
     }
 
     namespace chrono = std::chrono;
@@ -458,6 +518,8 @@ void TestLongIntMult() {
     ans[2 * k - 1] = '1';
     n2.set_string(ans);
     assert(n1 == n2 && "Long test failed");
+    AssertInvariants(n1);
+    AssertInvariants(n2);
 }
 
 void TestLongIntSquare() {
@@ -465,33 +527,37 @@ void TestLongIntSquare() {
 
     longint n;
     n.reserve(4);
-    constexpr uint64_t K = 8192;
+    constexpr uint64_t K = 5000;
     for (uint32_t i = 0; i <= K; i++) {
         n = i;
         n.SquareInplace();
         assert(n == i * i);
+        AssertInvariants(n);
     }
 
     for (uint32_t i = uint32_t(-1) - K; i != 0; i++) {
         n = i;
         n.SquareInplace();
         assert(n == uint64_t(i) * i);
+        AssertInvariants(n);
     }
 
     for (uint64_t i = uint64_t(-1) - K; i != 0; i++) {
         n = i;
         n.SquareInplace();
         assert(n == uint128_t(i) * i);
+        AssertInvariants(n);
     }
 
     for (uint32_t p = 32; p <= 96; p += 32) {
         n = uint128_t(1) << p;
         n.SquareInplace();
-        assert(n.size_ == int32_t((p + p) / 32 + 1));
+        assert(n.size() == int32_t((p + p) / 32 + 1));
         for (std::size_t i = 0; i < (p + p) / 32; i++) {
             assert(n[i] == 0);
         }
         assert(n[(p + p) / 32] == 1);
+        AssertInvariants(n);
     }
 
     n.set_string(
@@ -503,6 +569,8 @@ void TestLongIntSquare() {
         "5617262278768667220143322390759183606834362732983828281970077858087036"
         "385802059859918841");
     assert(n == m);
+    AssertInvariants(n);
+    AssertInvariants(m);
 
     n.set_string(
         "3987458973628574634853764897536498753648546347568931275834617531694764"
@@ -516,6 +584,8 @@ void TestLongIntSquare() {
         "7562909249999415428178628916845259551990543478811824314012734813631382"
         "118576370159280787133667092453147336676963742481629288647119195025");
     assert(n == m);
+    AssertInvariants(n);
+    AssertInvariants(m);
 
     n.set_string(
         "5387142880920439806100373072696674167138705550241027216564196797793749"
@@ -530,6 +600,8 @@ void TestLongIntSquare() {
         "5324274094747281376624252088869179157020712829629393206019374225902765"
         "5131589237232055417058854401516386978283594190583849");
     assert(n == m);
+    AssertInvariants(n);
+    AssertInvariants(m);
 
     constexpr std::size_t k = 572;
     std::string long_ten_pow(k + 1, '0');
@@ -541,18 +613,21 @@ void TestLongIntSquare() {
     long_ten_pow_square[0] = '1';
     m.set_string(long_ten_pow_square);
     assert(n == m);
+    AssertInvariants(n);
+    AssertInvariants(m);
 }
 
 void TestUIntMult() {
     test_tools::log_tests_started();
 
     longint n;
-    constexpr uint64_t K = 6000;
+    constexpr uint64_t K = 5000;
     for (uint64_t i = 0; i <= K; i++) {
         for (uint32_t j = 0; j <= K; j++) {
             n = i;
             n *= j;
             assert(n == i * j);
+            AssertInvariants(n);
         }
     }
 
@@ -561,6 +636,7 @@ void TestUIntMult() {
             n = i;
             n *= j;
             assert(n == i * j);
+            AssertInvariants(n);
         }
     }
 
@@ -569,6 +645,7 @@ void TestUIntMult() {
             n = i;
             n *= uint32_t(j);
             assert(n == uint64_t(i) * uint64_t(j));
+            AssertInvariants(n);
         }
     }
 
@@ -577,21 +654,34 @@ void TestUIntMult() {
             n = i;
             n *= j;
             assert(n == uint128_t(i) * j);
+            AssertInvariants(n);
         }
     }
 }
 
-void TestUIntAdd() {
+void TestUIntAddAndSub() {
     test_tools::log_tests_started();
 
     longint n(longint::Reserve(4));
-    constexpr uint32_t K = 6000;
+    constexpr uint32_t K = 4000;
+    n -= std::numeric_limits<uint32_t>::max();
+    assert(n == -int64_t(std::numeric_limits<uint32_t>::max()));
     for (uint32_t i = 0; i <= K; i++) {
         for (uint32_t j = 0; j <= K; j++) {
             n = i;
             assert(n == i);
             n += j;
             assert(n == i + j);
+            AssertInvariants(n);
+            n = i;
+            assert(n == i);
+            n -= j;
+            if (unlikely(i == j)) {
+                assert(!n);
+                assert(n.iszero());
+            }
+            assert(n == int64_t(i) - int64_t(j));
+            AssertInvariants(n);
         }
     }
 
@@ -601,6 +691,16 @@ void TestUIntAdd() {
             assert(n == uint64_t(i));
             n += j;
             assert(n == uint64_t(i) + uint64_t(j));
+            AssertInvariants(n);
+            n = i;
+            assert(n == i);
+            n -= j;
+            if (unlikely(i == j)) {
+                assert(!n);
+                assert(n.iszero());
+            }
+            assert(n == int64_t(i) - int64_t(j));
+            AssertInvariants(n);
         }
     }
 
@@ -610,6 +710,7 @@ void TestUIntAdd() {
             assert(n == i);
             n += j;
             assert(n == uint128_t(i) + uint128_t(j));
+            AssertInvariants(n);
         }
     }
 
@@ -619,6 +720,7 @@ void TestUIntAdd() {
             assert(n == i);
             n += j;
             assert(n == i + j);
+            AssertInvariants(n);
         }
     }
 
@@ -628,6 +730,7 @@ void TestUIntAdd() {
             n = i;
             n += j;
             assert(n == i + j);
+            AssertInvariants(n);
         }
     }
 
@@ -636,6 +739,7 @@ void TestUIntAdd() {
             n = i;
             n += j;
             assert(n == i + int32_t(j));
+            AssertInvariants(n);
         }
     }
 
@@ -644,6 +748,7 @@ void TestUIntAdd() {
             n = i;
             n += j;
             assert(n == i + int64_t(j));
+            AssertInvariants(n);
         }
     }
 
@@ -652,6 +757,7 @@ void TestUIntAdd() {
             n = i;
             n += j;
             assert(n == i + int32_t(j));
+            AssertInvariants(n);
         }
     }
 
@@ -660,6 +766,7 @@ void TestUIntAdd() {
             n = i;
             n += j;
             assert(n == i + int64_t(j));
+            AssertInvariants(n);
         }
     }
 
@@ -668,6 +775,7 @@ void TestUIntAdd() {
             n = i;
             n += j;
             assert(n == i + int32_t(j));
+            AssertInvariants(n);
         }
     }
 
@@ -676,6 +784,7 @@ void TestUIntAdd() {
             n = i;
             n += j;
             assert(n == i + int64_t(j));
+            AssertInvariants(n);
         }
     }
 }
@@ -684,35 +793,82 @@ void TestInt32Div() {
     test_tools::log_tests_started();
 
     longint n(longint::Reserve(4));
-    constexpr uint32_t K = 6000;
+    constexpr uint32_t K = 5000;
 
     for (uint32_t i = 0; i <= K; i++) {
         for (uint32_t j = 1; j <= K; j++) {
             n = i;
             n /= j;
             assert(n == i / j);
+            AssertInvariants(n);
         }
+
+        n = i;
+        n /= uint32_t{1} << 0;
+        assert(n == i >> 0);
+        AssertInvariants(n);
+        n = i;
+        n /= uint32_t{1} << 1;
+        assert(n == i >> 1);
+        AssertInvariants(n);
+        n = i;
+        n /= uint32_t{1} << 2;
+        assert(n == i >> 2);
+        AssertInvariants(n);
+        n = i;
+        n /= uint32_t{1} << 15;
+        assert(n == i >> 15);
+        AssertInvariants(n);
+        n = i;
+        n /= uint32_t{1} << 31;
+        assert(n == i >> 31);
     }
     for (uint32_t i = uint32_t(-1) - K; i != 0; i++) {
         for (uint32_t j = uint32_t(-1) - K; j != 0; j++) {
             n = i;
             n /= j;
             assert(n == i / j);
+            AssertInvariants(n);
         }
+
+        n = i;
+        n /= uint32_t{1} << 0;
+        assert(n == i >> 0);
+        AssertInvariants(n);
+        n = i;
+        n /= uint32_t{1} << 1;
+        assert(n == i >> 1);
+        AssertInvariants(n);
+        n = i;
+        n /= uint32_t{1} << 2;
+        assert(n == i >> 2);
+        AssertInvariants(n);
+        n = i;
+        n /= uint32_t{1} << 15;
+        assert(n == i >> 15);
+        AssertInvariants(n);
+        n = i;
+        n /= uint32_t{1} << 31;
+        assert(n == i >> 31);
     }
 }
 
-void TestLongIntAdd() {
+void TestLongIntAddAndSub() {
     test_tools::log_tests_started();
     longint n(longint::Reserve(4));
     longint m(longint::Reserve(4));
-    constexpr uint32_t K = 6000;
+    constexpr uint32_t K = 5000;
     for (uint32_t i = 0; i <= K; i++) {
         for (uint32_t j = 1; j <= K; j++) {
             n = i;
             m = j;
             n += m;
             assert(n == i + j);
+            AssertInvariants(n);
+            n = i;
+            n -= m;
+            assert(n == int64_t{i} - int64_t{j});
+            AssertInvariants(n);
         }
     }
 
@@ -722,15 +878,25 @@ void TestLongIntAdd() {
             m = j;
             n += m;
             assert(n == i + uint64_t(j));
+            AssertInvariants(n);
+            n = i;
+            n -= m;
+            assert(n == int64_t{i} - int64_t(j));
+            AssertInvariants(n);
         }
     }
 
     for (uint64_t i = uint64_t(-1) - uint32_t(-1) - K; i != uint64_t(-1) - uint32_t(-1); i++) {
         for (uint32_t j = uint32_t(-1) - K; j != 0; j++) {
             n = i;
-            m = uint32_t(j);
+            m = j;
             n += m;
             assert(n == i + j);
+            AssertInvariants(n);
+            n = i;
+            n -= m;
+            assert(n == i - j);
+            AssertInvariants(n);
         }
     }
 
@@ -740,50 +906,26 @@ void TestLongIntAdd() {
             m = j;
             n += m;
             assert(n == i + j);
+            AssertInvariants(n);
+            n = i;
+            n -= m;
+            assert(n == i - j);
+            AssertInvariants(n);
         }
     }
 
     const uint128_t h = uint128_t(-1) / 2;
-    for (uint128_t i = h - 2 * K; i != h; i++) {
-        for (uint128_t j = h - 2 * K; j != h; j++) {
+    for (uint128_t i = h - 2 * K; i < h; i++) {
+        for (uint128_t j = h - 2 * K; j < h; j++) {
             n = i;
             m = j;
             n += m;
             assert(n == i + j);
-        }
-    }
-}
-
-void TestLongUIntSub() {
-    test_tools::log_tests_started();
-
-    longint n;
-    n -= std::numeric_limits<uint32_t>::max();
-    assert(n == -int64_t(std::numeric_limits<uint32_t>::max()));
-    constexpr uint32_t K = 6000;
-    for (uint32_t i = 0; i <= K; i++) {
-        for (uint32_t j = 0; j <= K; j++) {
+            AssertInvariants(n);
             n = i;
-            assert(n == i);
-            n -= j;
-            if (unlikely(i == j)) {
-                assert(!n);
-                assert(n.iszero());
-            }
-            assert(n == int64_t(i) - int64_t(j));
-        }
-    }
-
-    for (uint32_t i = uint32_t(-1) - K; i != 0; i++) {
-        for (uint32_t j = uint32_t(-1) - K; j != 0; j++) {
-            n = i;
-            assert(n == i);
-            n -= j;
-            if (unlikely(i == j)) {
-                assert(!n);
-                assert(n.iszero());
-            }
-            assert(n == int64_t(i) - int64_t(j));
+            n -= m;
+            assert(n == static_cast<int64_t>(i - j));
+            AssertInvariants(n);
         }
     }
 }
@@ -823,6 +965,7 @@ void TestSetString() {
     for (int64_t number : numbersI64) {
         n.set_string(std::to_string(number));
         assert(n == number);
+        AssertInvariants(n);
     }
 
     constexpr uint64_t numbersU64[] = {
@@ -843,6 +986,7 @@ void TestSetString() {
     for (uint64_t number : numbersU64) {
         n.set_string(std::to_string(number));
         assert(n == number);
+        AssertInvariants(n);
     }
 
     constexpr uint128_t numbersU128[]{
@@ -863,6 +1007,7 @@ void TestSetString() {
     for (uint128_t number : numbersU128) {
         n.set_string(to_string(number));
         assert(n == number);
+        AssertInvariants(n);
     }
 
     uint128_t c = 0;
@@ -885,6 +1030,7 @@ void TestSetString() {
     for (std::size_t i = 0; i < nums_count; i++) {
         assert(n[i] == uint32_t(-1));
     }
+    AssertInvariants(n);
 
     // 2^512 - 1
     n.set_string(
@@ -896,6 +1042,7 @@ void TestSetString() {
     for (std::size_t i = 0; i < nums_count; i++) {
         assert(n[i] == uint32_t(-1));
     }
+    AssertInvariants(n);
 }
 
 void TestToString() {
@@ -936,6 +1083,7 @@ void TestToString() {
         n = number;
         n.to_string(buffer);
         assert(buffer == std::to_string(number));
+        AssertInvariants(n);
     }
 
     constexpr uint64_t numbersU64[] = {
@@ -958,6 +1106,7 @@ void TestToString() {
         n = number;
         n.to_string(buffer);
         assert(buffer == std::to_string(number));
+        AssertInvariants(n);
     }
 
     constexpr uint128_t numbersU128[] = {
@@ -978,6 +1127,7 @@ void TestToString() {
         n = number;
         n.to_string(buffer);
         assert(buffer == to_string(number));
+        AssertInvariants(n);
     }
 
     uint128_t c = 0;
@@ -994,12 +1144,14 @@ void TestToString() {
         assert(n == c);
         n.to_string(buffer);
         assert(buffer == s);
+        AssertInvariants(n);
     }
 
     constexpr std::size_t k             = std::size_t(1e6);
     constexpr std::size_t kSquareDigits = 2 * k;
     n.set_string(std::string(k, '9'));
     n.SquareInplace();
+    AssertInvariants(n);
 
     std::string ans(kSquareDigits, '\0');
     std::memset(ans.data(), '9', (k - 1) * sizeof(char));
@@ -1016,11 +1168,12 @@ void TestToString() {
     assert(buffer[0] == '-');
     std::string_view buffer1(&buffer[1], kSquareDigits);
     assert(buffer1 == ans && "Long int set to_string test failed");
+    AssertInvariants(n);
 }
 
 void TestBitShifts() {
     test_tools::log_tests_started();
-    constexpr uint32_t k = 4096;
+    constexpr uint32_t k = 5000;
     longint n;
     n.reserve(4);
     for (uint32_t i = 0; i <= k; i++) {
@@ -1028,11 +1181,13 @@ void TestBitShifts() {
             n = i;
             n >>= shift;
             assert(n == (i >> shift));
+            AssertInvariants(n);
         }
         for (uint32_t j = 0; j <= 16; j++) {
             n = i;
             n >>= 32 + j;
             assert(n == 0);
+            AssertInvariants(n);
         }
     }
 
@@ -1041,11 +1196,13 @@ void TestBitShifts() {
             n = i;
             n >>= shift;
             assert(n == (i >> shift));
+            AssertInvariants(n);
         }
         for (uint32_t j = 0; j <= 16; j++) {
             n = i;
             n >>= 128 + j;
             assert(n == 0);
+            AssertInvariants(n);
         }
     }
 
@@ -1053,10 +1210,131 @@ void TestBitShifts() {
     n.set_string("57896044618658097711785492504343953926634992332820282019728792003956564819968");
     longint m;
     m.reserve(uint32_t(n.usize()));
+    AssertInvariants(n);
     for (uint32_t shift = 0; shift <= 127; shift++) {
         m = n;
         m >>= (255 - shift);
         assert(m == uint128_t(1) << shift);
+        AssertInvariants(m);
+    }
+
+    for (uint32_t r = 0; r <= k; r++) {
+        n = 0;
+        assert(n.iszero());
+        assert(n.sign() == 0);
+        assert(n.size() == 0);
+        AssertInvariants(n);
+        n <<= r;
+        assert(n == 0);
+        assert(n.iszero());
+        assert(n.sign() == 0);
+        assert(n.size() == 0);
+        AssertInvariants(n);
+    }
+    for (uint32_t i = 1; i < k; i++) {
+        const auto max_k = math_functions::log2_floor(static_cast<uint128_t>(-1) / i);
+        for (uint32_t r = 0; r <= max_k; r++) {
+            n = i;
+            assert(n == i);
+            n <<= r;
+            assert(n == uint128_t{i} << r);
+            assert(n.size() > 0);
+            AssertInvariants(n);
+        }
+    }
+
+    n = 1;
+    n <<= 255;
+    m.set_string("57896044618658097711785492504343953926634992332820282019728792003956564819968");
+    assert(n == m);
+    AssertInvariants(n);
+    AssertInvariants(m);
+    n = 1u;
+    n <<= 4000;
+    m.set_string(
+        "131820409343094310010388979423659136318401916109327276909280345024175692811283445510797521"
+        "231721220331409407564807168230384468176942405812817310624525121840385446744443868889563289"
+        "706427719939300365865529242495144888321833894158323756200092849226089461110385787540779132"
+        "654409185831255860504316472846036364908238500078268116724689002106891044880894853471921527"
+        "088201197650061259448583977618746693012787452335047965869945140544352170538037327032402834"
+        "008159261693483647994727160945768940072431686625688866030658324868306061250176433564697324"
+        "072528745672177336948242366753233417556818392219546938204560720202538843712268268448586361"
+        "942128751395665874453900680147479758139717481147704392488266886671292379541285558418744606"
+        "657296304926586001793382725791100208812287673612006034789731201688939975743537276539989692"
+        "230927982557016660679726989062369216287647728379155260864643891615705346169567037448405029"
+        "752790940875872989684235165316260908983893514490200568512210790489667188789433092320719785"
+        "756398772086212370409401269127676106581410793787580434036114254547441805771508552049371634"
+        "609025127325512605396392214570059772472666763440181556475095153967113514875460624794445927"
+        "79055555421362722504575706910949376");
+    assert(n == m);
+    AssertInvariants(n);
+    AssertInvariants(m);
+
+    auto test_compile_time_bit_shifts = [&n, &m](uint64_t i) {
+        n = i;
+        m = i;
+        n /= uint32_t{1} << 0;
+        m >>= 0;
+        assert(n == m);
+        assert(!(n != m));
+        assert(n == (i >> 0));
+        assert(m == (i >> 0));
+        AssertInvariants(n);
+        AssertInvariants(m);
+
+        n = i;
+        m = i;
+        n /= uint32_t{1} << 1;
+        m >>= 1;
+        assert(n == m);
+        assert(!(n != m));
+        assert(n == (i >> 1));
+        assert(m == (i >> 1));
+        AssertInvariants(n);
+        AssertInvariants(m);
+
+        n = i;
+        m = i;
+        n /= uint32_t{1} << 2;
+        m >>= 2;
+        assert(n == m);
+        assert(!(n != m));
+        assert(n == (i >> 2));
+        assert(m == (i >> 2));
+        AssertInvariants(n);
+        AssertInvariants(m);
+
+        n = i;
+        m = i;
+        n /= uint32_t{1} << 15;
+        m >>= 15;
+        assert(n == m);
+        assert(!(n != m));
+        assert(n == (i >> 15));
+        assert(m == (i >> 15));
+        AssertInvariants(n);
+        AssertInvariants(m);
+
+        n = i;
+        m = i;
+        n /= uint32_t{1} << 31;
+        m >>= 31;
+        assert(n == m);
+        assert(!(n != m));
+        assert(n == (i >> 31));
+        assert(m == (i >> 31));
+        AssertInvariants(n);
+        AssertInvariants(m);
+    };
+    for (uint64_t i = 1; i < k; i++) {
+        test_compile_time_bit_shifts(i);
+    }
+    for (uint64_t i = std::numeric_limits<uint32_t>::max() - k; static_cast<uint32_t>(i) != 0;
+         i++) {
+        test_compile_time_bit_shifts(i);
+    }
+    for (uint64_t i = std::numeric_limits<uint64_t>::max() - k; i != 0; i++) {
+        test_compile_time_bit_shifts(i);
     }
 }
 
@@ -1064,7 +1342,7 @@ void TestDecimal() {
     test_tools::log_tests_started();
     longint::Decimal d1(0u);
     longint::Decimal d2(0u);
-    constexpr uint32_t kC = 2000;
+    constexpr uint32_t kC = 2500;
 
     for (uint32_t i = 0; i <= kC; i++) {
         for (uint32_t j = 0; j <= kC; j++) {
@@ -1286,11 +1564,6 @@ void TestToIntTypes() {
             assert(n.fits_in_uint32());
             assert(n.to_uint32() == i);
             uint32_t j = n;
-            if constexpr (sizeof(i) == 4) {
-                if (i != j) {
-                    printf("%u %u %zu %d\n", i, j, n.usize(), n.size());
-                }
-            }
             assert(j == i);
         }
         if constexpr (sizeof(i) <= sizeof(uint64_t)) {
@@ -1305,6 +1578,7 @@ void TestToIntTypes() {
             uint128_t j = n;
             assert(j == i);
         }
+        AssertInvariants(n);
     };
     for (uint32_t i = 0; i <= kC; i++) {
         test(i);
@@ -1326,6 +1600,97 @@ void TestToIntTypes() {
     }
 }
 
+template <class T, T k>
+void TestDivModImpl() {
+    test_tools::log_tests_started();
+
+    auto concat = [](std::vector<T> lhs, const std::vector<T>& rhs) {
+        lhs.insert(lhs.end(), rhs.begin(), rhs.end());
+        return lhs;
+    };
+    static_assert(k > 10);
+    const auto i_range = concat(math_functions::arange(T{0}, k + 1),
+                                math_functions::arange(std::numeric_limits<T>::max() - k, T{0}));
+    const auto j_range = concat(math_functions::arange(T{1}, k + 1),
+                                math_functions::arange(std::numeric_limits<T>::max() - k, T{0}));
+
+    auto test_i_j = [n = longint{}, m = longint{}, li_rem = longint{}](const T i,
+                                                                       const T j) mutable {
+        if constexpr (std::is_same_v<T, uint32_t>) {
+            n              = i;
+            const auto rem = n.divmod(j);
+            assert(n == i / j);
+            assert(rem == i % j);
+            AssertInvariants(n);
+        }
+
+        n = i;
+        m = j;
+        n.divmod(m, li_rem);
+        assert(n == i / j);
+        assert(li_rem == i % j);
+        AssertInvariants(n);
+    };
+
+    for (T i : i_range) {
+        for (T j : j_range) {
+            test_i_j(i, j);
+        }
+    }
+}
+
+void TestDivMod() {
+    test_tools::log_tests_started();
+    TestDivModImpl<uint32_t, 6000>();
+    TestDivModImpl<uint64_t, 6000>();
+    TestDivModImpl<uint128_t, 6000>();
+
+    longint n;
+    longint m;
+    longint rem;
+    constexpr std::string_view big_ints[] = {
+        "538714288092043980610037307269667416713870555024102721656419679779374"
+        "923813527446566333299023119588532960327655160416672952650552265438069"
+        "480844921279178590685230852805810043617124500309990368055562957",
+        "290213084194517758966516201644973136574935912430101593678728719207376"
+        "239283543794185421070570977723421111953765127658270193387362711172917"
+        "254842491555209808089298233500256901159707774581220239792305894702400"
+        "718422627848242457771440142125225540017207158668021195884313003164633"
+        "568953242740947472813766242520888691791570207128296293932060193742259"
+        "027655131589237232055417058854401516386978283594190583849",
+        "999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999"
+        "999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999"
+        "999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999"
+        "999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999"
+        "999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999"
+        "99999999999999999999999999999999999999999999999999999999999999",
+        "131820409343094310010388979423659136318401916109327276909280345024175692811283445510797521"
+        "231721220331409407564807168230384468176942405812817310624525121840385446744443868889563289"
+        "706427719939300365865529242495144888321833894158323756200092849226089461110385787540779132"
+        "654409185831255860504316472846036364908238500078268116724689002106891044880894853471921527"
+        "088201197650061259448583977618746693012787452335047965869945140544352170538037327032402834"
+        "008159261693483647994727160945768940072431686625688866030658324868306061250176433564697324"
+        "072528745672177336948242366753233417556818392219546938204560720202538843712268268448586361"
+        "942128751395665874453900680147479758139717481147704392488266886671292379541285558418744606"
+        "657296304926586001793382725791100208812287673612006034789731201688939975743537276539989692"
+        "230927982557016660679726989062369216287647728379155260864643891615705346169567037448405029"
+        "752790940875872989684235165316260908983893514490200568512210790489667188789433092320719785"
+        "756398772086212370409401269127676106581410793787580434036114254547441805771508552049371634"
+        "609025127325512605396392214570059772472666763440181556475095153967113514875460624794445927"
+        "79055555421362722504575706910949376",
+    };
+    for (std::string_view s : big_ints) {
+        n.set_string(s);
+        m = n;
+        assert(n == m);
+        n.divmod(m, rem);
+        assert(n == 1);
+        assert(rem == 0);
+        AssertInvariants(n);
+        AssertInvariants(m);
+    }
+}
+
 }  // namespace
 
 }  // namespace long_int_tests
@@ -1333,18 +1698,18 @@ void TestToIntTypes() {
 int main() {
     using namespace long_int_tests;
     TestOperatorEqualsInt();
+    TestToIntTypes();
     TestUIntMult();
-    TestUIntAdd();
+    TestUIntAddAndSub();
     TestInt32Div();
+    TestLongIntAddAndSub();
     TestLongIntMult();
-    TestLongIntAdd();
-    TestLongUIntSub();
     TestLongIntSquare();
+    TestDivMod();
     TestBitShifts();
     TestDecimal();
     TestSetString();
     TestToString();
-    TestToIntTypes();
 
     // std::ios::sync_with_stdio(false);
     // std::cin.tie(nullptr);

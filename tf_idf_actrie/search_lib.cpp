@@ -35,7 +35,7 @@ ACTrie ParseQuery(string_view query) {
         if (uint8_t(query[i]) == uint8_t(QueryWordsDelimiter)) {
             string_view slice(query.data() + (prev_delim_index + 1), i - (prev_delim_index + 1));
             if (!slice.empty()) {
-                act.AddPattern(slice);
+                [[maybe_unused]] bool was_added = act.AddPattern(slice);
             }
 
             prev_delim_index = i;
@@ -44,7 +44,7 @@ ACTrie ParseQuery(string_view query) {
 
     string_view slice(query.data() + (prev_delim_index + 1), query.size() - (prev_delim_index + 1));
     if (!slice.empty()) {
-        act.AddPattern(slice);
+        [[maybe_unused]] bool was_added = act.AddPattern(slice);
     }
 
     return std::move(act).Build();
@@ -82,7 +82,7 @@ std::vector<string_view> Search(string_view text, string_view query, size_t max_
             [&query_words_on_lines](size_t line_number, size_t words_on_current_line,
                                     size_t line_start_index,
                                     size_t line_end_index) constexpr noexcept {
-                if (query_words_on_lines.empty()) [[unlikely]] {
+                if (query_words_on_lines.empty()) {
                     return;
                 }
 

@@ -293,11 +293,14 @@
  *   and https://clang.llvm.org/docs/AttributeReference.html#id664 for more info
  */
 #if CONFIG_GNUC_AT_LEAST(3, 3) || CONFIG_HAS_GCC_ATTRIBUTE(nonnull)
-#define ATTRIBUTE_NONNULL(...) __attribute__((nonnull(__VA_ARGS__)))
+#define ATTRIBUTE_NONNULL(...)     __attribute__((nonnull(__VA_ARGS__)))
+#define ATTRIBUTE_NONNULL_ALL_ARGS __attribute__((nonnull))
 #elif CONFIG_HAS_AT_LEAST_CXX_17 && (defined(__GNUG__) || defined(__clang__))
-#define ATTRIBUTE_NONNULL(...) [[gnu::nonnull(__VA_ARGS__)]]
+#define ATTRIBUTE_NONNULL(...)     [[gnu::nonnull(__VA_ARGS__)]]
+#define ATTRIBUTE_NONNULL_ALL_ARGS [[gnu::nonnull]]
 #else
 #define ATTRIBUTE_NONNULL(...)
+#define ATTRIBUTE_NONNULL_ALL_ARGS
 #endif
 
 #if CONFIG_GNUC_AT_LEAST(4, 9) || CONFIG_HAS_GCC_ATTRIBUTE(returns_nonnull)

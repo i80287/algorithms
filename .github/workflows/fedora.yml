@@ -5,6 +5,10 @@ on: [push, workflow_dispatch]
 permissions:
     contents: read
 
+env:
+    UBSAN_OPTIONS: print_stacktrace=1
+    ASAN_OPTIONS: print_stats=1:atexit=1
+
 jobs:
 
   fedora-cmake-gcc:

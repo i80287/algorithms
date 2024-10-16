@@ -367,7 +367,7 @@ inline int print_u128_newline(uint128_t number) noexcept {
 #if SPECIALIZE_STD_FORMAT
 
 template <class CharT>
-struct std::formatter<uint128_t, CharT> {
+struct std::formatter<uint128_t, CharT> {  // NOLINT(cert-dcl58-cpp)
     template <class ParseContext>
     constexpr typename ParseContext::iterator parse(ParseContext& ctx) {
         return ctx.begin();
@@ -381,7 +381,7 @@ struct std::formatter<uint128_t, CharT> {
 };
 
 template <class CharT>
-struct std::formatter<int128_t, CharT> {
+struct std::formatter<int128_t, CharT> {  // NOLINT(cert-dcl58-cpp)
     template <class ParseContext>
     constexpr typename ParseContext::iterator parse(ParseContext& ctx) {
         return ctx.begin();

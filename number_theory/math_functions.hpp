@@ -1262,26 +1262,44 @@ bool is_power_of_two(char) = delete;
 ATTRIBUTE_CONST constexpr uint64_t nearest_greater_equal_power_of_two(uint32_t n) noexcept {
     const auto shift = 32 - static_cast<std::uint32_t>(::math_functions::countl_zero(n | 1)) -
                        ((n & (n - 1)) == 0);
-    return static_cast<std::uint64_t>(1ull) << shift;
+    return uint64_t{1} << shift;
 }
 
 [[nodiscard]]
 ATTRIBUTE_CONST constexpr uint64_t nearest_greater_power_of_two(uint32_t n) noexcept {
     const auto shift = 32 - static_cast<std::uint32_t>(::math_functions::countl_zero(n));
-    return static_cast<std::uint64_t>(1ull) << shift;
+    return uint64_t{1} << shift;
 }
 
-[[nodiscard]] ATTRIBUTE_CONST constexpr uint64_t nearest_greater_equal_power_of_two(
-    uint64_t n) noexcept {
+[[nodiscard]]
+ATTRIBUTE_CONST constexpr uint64_t nearest_greater_equal_power_of_two(uint64_t n) noexcept {
     const auto shift = 64 - static_cast<std::uint32_t>(::math_functions::countl_zero(n | 1)) -
                        ((n & (n - 1)) == 0);
-    return static_cast<std::uint64_t>(1ull) << shift;
+    return uint64_t{1} << shift;
 }
 
-[[nodiscard]] ATTRIBUTE_CONST constexpr uint64_t nearest_greater_power_of_two(uint64_t n) noexcept {
+[[nodiscard]]
+ATTRIBUTE_CONST constexpr uint64_t nearest_greater_power_of_two(uint64_t n) noexcept {
     const auto shift = 64 - static_cast<std::uint32_t>(::math_functions::countl_zero(n));
-    return static_cast<std::uint64_t>(1ull) << shift;
+    return uint64_t{1} << shift;
 }
+
+#if defined(INTEGERS_128_BIT_HPP)
+
+[[nodiscard]]
+ATTRIBUTE_CONST I128_CONSTEXPR uint128_t nearest_greater_equal_power_of_two(uint128_t n) noexcept {
+    const auto shift = 128 - static_cast<std::uint32_t>(::math_functions::countl_zero(n | 1)) -
+                       ((n & (n - 1)) == 0);
+    return uint128_t{1} << shift;
+}
+
+[[nodiscard]]
+ATTRIBUTE_CONST I128_CONSTEXPR uint128_t nearest_greater_power_of_two(uint128_t n) noexcept {
+    const auto shift = 128 - static_cast<std::uint32_t>(::math_functions::countl_zero(n));
+    return uint128_t{1} << shift;
+}
+
+#endif
 
 /// @brief If @a n != 0, return number that is power of 2 and
 ///         whose only bit is the lowest bit set in the @a n
@@ -2015,6 +2033,7 @@ private:
 
         while (n >= 3) {
             const std::uint32_t least_pf = least_prime_factor[n];
+            ATTRIBUTE_ASSUME(least_pf >= 2);
             unique_pfs_count += least_pf != last_pf;
             n /= least_pf;
             last_pf = least_pf;
@@ -2190,7 +2209,7 @@ constexpr HelperRetType congruence_helper(const std::uint32_t a, const std::uint
         return {};
     }
 
-    ATTRIBUTE_ASSUME(a >= d);
+    ATTRIBUTE_ASSUME(a == 0 || a >= d);
     ATTRIBUTE_ASSUME(a % d == 0);
     ATTRIBUTE_ASSUME(m >= d);
     ATTRIBUTE_ASSUME(m % d == 0);
@@ -2456,7 +2475,8 @@ ATTRIBUTE_CONST constexpr std::uint32_t solve_binary_congruence_modulo_m(
         return ::math_functions::kNoCongruenceSolution;
     }
 
-    const auto [r, s]  = ::math_functions::extract_pow2(m);
+    const auto [r, s] = ::math_functions::extract_pow2(m);
+    ATTRIBUTE_ASSUME(r >= 1);
     const auto min_k_s = std::min(k, std::uint32_t{s});
     ATTRIBUTE_ASSUME(min_k_s < 32);
     // gcd(2^k, m)
@@ -2465,8 +2485,11 @@ ATTRIBUTE_CONST constexpr std::uint32_t solve_binary_congruence_modulo_m(
         return ::math_functions::kNoCongruenceSolution;
     }
 
-    const auto c_       = c >> min_k_s;
-    const auto m_       = m >> min_k_s;
+    const auto c_ = c >> min_k_s;
+    const auto m_ = m >> min_k_s;
+#ifdef __clang_analyzer__
+    [[clang::suppress]]
+#endif
     const auto c_mod_m_ = c_ % m_;
     if (min_k_s == k) {
         return c_mod_m_;
@@ -2829,7 +2852,15 @@ template <class T>
         if constexpr (::math_functions::detail::is_signed_v<T>) {
             return static_cast<std::size_t>(std::max(approx_size, T{0}));
         } else {
-            return std::size_t{approx_size};
+#if defined(INTEGERS_128_BIT_HPP)
+            if constexpr (std::is_same_v<T, uint128_t>) {
+                constexpr auto kUsizeMax = std::numeric_limits<std::size_t>::max();
+                return approx_size <= kUsizeMax ? static_cast<std::size_t>(approx_size) : kUsizeMax;
+            } else
+#endif
+            {
+                return std::size_t{approx_size};
+            }
         }
     }();
 
@@ -2844,13 +2875,13 @@ template <class T>
 }
 
 template <class T>
-[[nodiscard]] CONSTEXPR_VECTOR std::vector<T> arange(T n, T step) {
-    return ::math_functions::arange(0, n, step);
+[[nodiscard]] CONSTEXPR_VECTOR std::vector<T> arange(T begin, T end) {
+    return ::math_functions::arange(begin, end, T{1});
 }
 
 template <class T>
 [[nodiscard]] CONSTEXPR_VECTOR std::vector<T> arange(T n) {
-    return ::math_functions::arange(n, 1);
+    return ::math_functions::arange(T{0}, n);
 }
 
 }  // namespace math_functions
@@ -2858,6 +2889,8 @@ template <class T>
 #if defined(INTEGERS_128_BIT_HPP)
 
 namespace std {
+
+// NOLINTBEGIN(cert-dcl58-cpp)
 
 /// @brief Computes greaters common divisor of @a `a` and @a `b`
 ///         using Stein's algorithm (binary gcd). Here gcd(0, 0) = 0.
@@ -2914,6 +2947,8 @@ namespace std {
     uint64_t b2 = uint64_t(a1 % b1);  // b1 < 2^64 => b2 = a1 % b1 < 2^64
     return std::gcd(a2, b2);
 }
+
+// NOLINTEND(cert-dcl58-cpp)
 
 }  // namespace std
 

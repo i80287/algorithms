@@ -1,3 +1,4 @@
+#include <array>
 #include <cassert>
 #include <clocale>
 #include <cstdio>
@@ -5,36 +6,33 @@
 
 #include "gosper_algorithm.hpp"
 
-static constexpr int32_t f1(int32_t x) noexcept {
-    return int32_t(uint32_t(x) + 1024);
+namespace {
+
+using std::int32_t;
+using std::size_t;
+using std::uint32_t;
+
+[[nodiscard]] ATTRIBUTE_CONST constexpr int32_t f2(int32_t x) noexcept {
+    return static_cast<int32_t>(math_functions::uabs(x) + 1000);
 }
 
-static constexpr int32_t f2(int32_t x) noexcept {
-    return int32_t(math_functions::uabs(x) + 1000);
+[[nodiscard]] ATTRIBUTE_CONST constexpr int32_t f3(int32_t x) noexcept {
+    constexpr int32_t m = 19;
+    constexpr int32_t c = 100;
+    x %= m;
+    return (x * x + c) % m;
 }
 
-static void show_to_console() noexcept {
-    const int32_t x0                        = 0;
-    const auto [mu_lower, mu_upper, lambda] = math_functions::loop_detection_Gosper(f1, x0);
-    const bool utf_letters =
-        setlocale(LC_ALL, "el_GR.utf8") != nullptr || setlocale(LC_ALL, "el_GR") != nullptr ||
-        setlocale(LC_ALL, "greek") != nullptr || setlocale(LC_ALL, "en_US.utf8") != nullptr;
-    if (utf_letters) {
-        std::wprintf(L"start point μ0 in [%d %u] | period λ = %u\n", mu_lower, mu_upper, lambda);
-    } else {
-        std::printf("start point mu_0 in [%d %u] | period lambda = %u\n", mu_lower, mu_upper,
-                    lambda);
-    }
-}
-
-static void test1() noexcept {
+void test1() noexcept {
     const int32_t x0                        = 0;
     const auto [mu_lower, mu_upper, lambda] = math_functions::loop_detection_Gosper(f2, x0);
     assert(lambda == 2);
-    assert(uint32_t(mu_lower) == mu_upper);
+    assert(mu_lower == mu_upper);
 
     int32_t x = x0;
-    for (uint32_t k = 0; k <= mu_upper; k++) x = f2(x);
+    for (size_t k = 0; k <= mu_upper; k++) {
+        x = f2(x);
+    }
 
     for (int i = 0; i < 1000; i++) {
         x     = f2(x);
@@ -43,18 +41,47 @@ static void test1() noexcept {
     }
 }
 
-static void test2() noexcept {
-    const int32_t x0 = 0;
-
+void test2() noexcept {
+    constexpr int32_t x0 = 0;
     for (int32_t p : {2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 33}) {
         const auto [mu_lower, mu_upper, lambda] = math_functions::loop_detection_Gosper(
-            [=](int32_t n) constexpr noexcept { return ((n + 1) % p + p) % p; }, x0);
-        assert(lambda == uint32_t(p));
+            [p](int32_t n) constexpr noexcept { return ((n + 1) % p + p) % p; }, x0);
+        assert(lambda == static_cast<uint32_t>(p));
+        assert(mu_lower <= mu_upper);
     }
 }
+
+void test3() noexcept {
+    const int32_t x0                        = 0;
+    const auto [mu_lower, mu_upper, lambda] = math_functions::loop_detection_Gosper(f3, x0);
+    assert(mu_lower <= mu_upper);
+    int xi = x0;
+    for (size_t i = 1; i <= mu_upper; i++) {
+        xi = f3(xi);
+    }
+    constexpr size_t kPeriod = 4;
+    assert(lambda == kPeriod);
+    using PeriodicValues = std::array<int32_t, kPeriod>;
+    auto fillarray       = [](PeriodicValues& mem, int32_t x_start) constexpr noexcept {
+        mem[0] = x_start;
+        for (size_t i = 1; i < mem.size(); i++) {
+            mem[i] = f3(mem[i - 1]);
+        }
+    };
+    PeriodicValues mem{};
+    fillarray(mem, xi);
+    for (size_t iter = 100; iter > 0; iter--) {
+        PeriodicValues next_mem{};
+        fillarray(next_mem, f3(mem.back()));
+        assert(mem == next_mem);
+        mem = next_mem;
+    }
+}
+
+}  // namespace
 
 int main() {
     test1();
     test2();
-    show_to_console();
+    test3();
 }
