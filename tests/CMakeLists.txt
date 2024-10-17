@@ -81,17 +81,23 @@ function(configure_gcc_or_clang_gcc_options)
         -Wpedantic
         -Wshift-overflow
         -Wunused
-        -Wconversion
         -Wshadow
         -Wnull-dereference
         -Wundef
         -Wwrite-strings
         -Wsign-conversion
+        -Wsign-compare
+        -Wsign-promo
+        -Wconversion
         -Wmissing-noreturn
         -Wunreachable-code
         -Wcast-align
         -Warray-bounds
         -Wformat=2
+        -Wswitch-bool
+        -Wswitch-default
+        -Wswitch-enum
+        -Wold-style-cast
         -Werror
         -pedantic-errors
     )
@@ -110,6 +116,14 @@ function(configure_gcc_or_clang_gcc_options)
             -Wduplicated-cond)
     endif()
     if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+        set(LOCAL_FN_TEST_COMPILE_OPTIONS
+            ${LOCAL_FN_TEST_COMPILE_OPTIONS}
+            -Wshift-sign-overflow
+            -Wshorten-64-to-32
+            -Wdeprecated-dynamic-exception-spec
+            -Wthread-safety
+            -Wtype-limits
+            -Wzero-as-null-pointer-constant)
         set(LOCAL_FN_TEST_COMPILE_DEFINITIONS
             ${LOCAL_FN_TEST_COMPILE_DEFINITIONS}
             _LIBCPP_ENABLE_ASSERTIONS)
@@ -362,6 +376,12 @@ if ((NOT mingw_gcc_or_clang) OR (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER 10.0
     list(APPEND TestOptionalDependencies "")
 endif()
 unset(mingw_gcc_or_clang)
+
+list(APPEND TestFilenames "test_actrie")
+list(APPEND TestDirectories "tf_idf_actrie")
+list(APPEND TestCxxVersions "20 23 26")
+list(APPEND TestDependencies "")
+list(APPEND TestOptionalDependencies "")
 
 list(APPEND TestFilenames "test_tf_idf_actrie search_lib")
 list(APPEND TestDirectories "tf_idf_actrie")
