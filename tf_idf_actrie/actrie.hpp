@@ -332,14 +332,14 @@ class [[nodiscard]] ReplacingACTrie final
     : private ACTrie<AlphabetStart, AlphabetEnd, IsCaseInsensetive> {
 private:
     using Base = ACTrie<AlphabetStart, AlphabetEnd, IsCaseInsensetive>;
-    using Node = Base::Node;
+    using Node = typename Base::Node;
     friend class ReplacingACTrieBuilder<AlphabetStart, AlphabetEnd, IsCaseInsensetive>;
 
 public:
-    using size_type          = Base::size_type;
-    using StoredNodeIndex    = Base::StoredNodeIndex;
-    using StoredPatternSize  = Base::StoredPatternSize;
-    using StoredPatternIndex = Base::StoredPatternIndex;
+    using size_type          = typename Base::size_type;
+    using StoredNodeIndex    = typename Base::StoredNodeIndex;
+    using StoredPatternSize  = typename Base::StoredPatternSize;
+    using StoredPatternIndex = typename Base::StoredPatternIndex;
 
     using Base::ContainsPattern;
     using Base::FindAllSubstringsInText;
@@ -436,8 +436,7 @@ public:
         }
 
         assert(replaced_occurances + planned_replacements.size() <= max_replacements);
-        // char* const c_string =
-        for (const ReplacementInfo& info : std::ranges::reverse_view(planned_replacements)) {
+        for (const ReplacementInfo& info : std::ranges::views::reverse(planned_replacements)) {
             const size_type pattern_index        = info.pattern_index;
             const StoredPatternSize pattern_size = Base::patterns_lengths_[pattern_index];
             const size_type l_index_in_text      = info.l_index_in_text;
@@ -672,14 +671,14 @@ class [[nodiscard]] ReplacingACTrieBuilder final
     : private ACTrieBuilder<AlphabetStart, AlphabetEnd, IsCaseInsensetive> {
 private:
     using Base = ACTrieBuilder<AlphabetStart, AlphabetEnd, IsCaseInsensetive>;
-    using Node = Base::Node;
+    using Node = typename Base::Node;
 
 public:
     using ACTrieType         = ReplacingACTrie<AlphabetStart, AlphabetEnd, IsCaseInsensetive>;
-    using size_type          = Base::size_type;
-    using StoredNodeIndex    = Base::StoredNodeIndex;
-    using StoredPatternSize  = Base::StoredPatternSize;
-    using StoredPatternIndex = Base::StoredPatternIndex;
+    using size_type          = typename Base::size_type;
+    using StoredNodeIndex    = typename Base::StoredNodeIndex;
+    using StoredPatternSize  = typename Base::StoredPatternSize;
+    using StoredPatternIndex = typename Base::StoredPatternIndex;
 
     [[nodiscard]]
     static constexpr ReplacingACTrieBuilder WithCapacity(size_type patterns_capacity) {

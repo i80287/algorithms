@@ -434,16 +434,10 @@ struct longint {
     ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_PURE constexpr ssize_type size() const noexcept {
         const auto value = size_;
         static_assert(static_cast<ssize_type>(max_size()) == static_cast<std::int64_t>(max_size()));
-#ifdef __clang__
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wtautological-type-limit-compare"
-#endif
         if (value > static_cast<ssize_type>(max_size())) {
             CONFIG_UNREACHABLE();
         }
-#ifdef __clang__
-#pragma clang diagnostic pop
-#endif
+
         return value;
     }
     [[nodiscard]]
