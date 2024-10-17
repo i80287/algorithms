@@ -79,7 +79,6 @@ function(configure_gcc_or_clang_gcc_options)
         -Wextra
         -Wcast-qual
         -Wpedantic
-        -Wshift-overflow
         -Wunused
         -Wshadow
         -Wnull-dereference
@@ -92,7 +91,6 @@ function(configure_gcc_or_clang_gcc_options)
         -Wmissing-noreturn
         -Wunreachable-code
         -Wcast-align
-        -Warray-bounds
         -Wformat=2
         -Wswitch-bool
         -Wswitch-default
@@ -111,6 +109,8 @@ function(configure_gcc_or_clang_gcc_options)
     if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
         set(LOCAL_FN_TEST_COMPILE_OPTIONS
             ${LOCAL_FN_TEST_COMPILE_OPTIONS}
+            -Warray-bounds=2
+            -Wshift-overflow=2
             -Wlogical-op
             -Wunsafe-loop-optimizations
             -Wduplicated-cond)
@@ -118,6 +118,8 @@ function(configure_gcc_or_clang_gcc_options)
     if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
         set(LOCAL_FN_TEST_COMPILE_OPTIONS
             ${LOCAL_FN_TEST_COMPILE_OPTIONS}
+            -Warray-bounds
+            -Wshift-overflow
             -Wshift-sign-overflow
             -Wshorten-64-to-32
             -Wdeprecated-dynamic-exception-spec
