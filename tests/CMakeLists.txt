@@ -122,7 +122,6 @@ function(configure_gcc_or_clang_gcc_options)
             -Wshorten-64-to-32
             -Wdeprecated-dynamic-exception-spec
             -Wthread-safety
-            -Wtype-limits
             -Wzero-as-null-pointer-constant)
         set(LOCAL_FN_TEST_COMPILE_DEFINITIONS
             ${LOCAL_FN_TEST_COMPILE_DEFINITIONS}
