@@ -113,7 +113,10 @@ function(configure_gcc_or_clang_gcc_options)
             -Wshift-overflow=2
             -Wlogical-op
             -Wunsafe-loop-optimizations
-            -Wduplicated-cond)
+            -Wduplicated-cond
+            -Weffc++
+            -Wsign-promo
+            -fdiagnostics-color=always)
     endif()
     if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
         set(LOCAL_FN_TEST_COMPILE_OPTIONS
@@ -124,7 +127,9 @@ function(configure_gcc_or_clang_gcc_options)
             -Wshorten-64-to-32
             -Wdeprecated-dynamic-exception-spec
             -Wthread-safety
-            -Wzero-as-null-pointer-constant)
+            -fcolor-diagnostics
+            -fansi-escape-codes
+            -ftemplate-backtrace-limit=0)
         set(LOCAL_FN_TEST_COMPILE_DEFINITIONS
             ${LOCAL_FN_TEST_COMPILE_DEFINITIONS}
             _LIBCPP_ENABLE_ASSERTIONS)

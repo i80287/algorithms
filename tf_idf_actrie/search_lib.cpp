@@ -62,7 +62,7 @@ std::vector<string_view> Search(string_view text, string_view query, size_t max_
         size_t WordsCount     = 0;
         size_t LineStartIndex = 0;
         size_t LineEndIndex   = 0;
-        std::unordered_map<size_t, uint32_t> QueryWordsIndexes;
+        std::unordered_map<size_t, uint32_t> QueryWordsIndexes{};
     };
 
     std::vector<LineInfo> query_words_on_lines;

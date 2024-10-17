@@ -14,6 +14,8 @@
 
 namespace hungarian_algo {
 
+namespace detail {
+
 template <class TMatrixRow>
 using MatrixRowValueType =
     typename std::iterator_traits<typename std::ranges::iterator_t<TMatrixRow>>::value_type;
@@ -55,6 +57,10 @@ public:
         return g.accumulate_over(matrix_iter_begin);
     }
 
+    MinAssignmentGraph(const MinAssignmentGraph&)            = delete;
+    MinAssignmentGraph(MinAssignmentGraph&&)                 = delete;
+    MinAssignmentGraph& operator=(const MinAssignmentGraph&) = delete;
+    MinAssignmentGraph& operator=(MinAssignmentGraph&&)      = delete;
     ~MinAssignmentGraph() {
         operator delete(std::bit_cast<std::byte*>(matrix_));
     }
@@ -405,15 +411,18 @@ private:
     const std::size_t size_;
 };
 
-template <MatrixIterator Iterator>
+}  // namespace detail
+
+template <hungarian_algo::detail::MatrixIterator Iterator>
 auto min_assignment(Iterator matrix_iter_begin, Iterator matrix_iter_end) {
-    using T = MatrixValueType<Iterator>;
-    return MinAssignmentGraph<T>::min_assignment(matrix_iter_begin, matrix_iter_end);
+    using T = typename hungarian_algo::detail::MatrixValueType<Iterator>;
+    return hungarian_algo::detail::MinAssignmentGraph<T>::min_assignment(matrix_iter_begin,
+                                                                         matrix_iter_end);
 }
 
 template <std::ranges::random_access_range TMatrix>
 auto min_assignment(const TMatrix& matrix) {
-    return min_assignment(std::begin(matrix), std::end(matrix));
+    return hungarian_algo::min_assignment(std::begin(matrix), std::end(matrix));
 }
 
 }  // namespace hungarian_algo

@@ -369,7 +369,8 @@ public:
             size_type pattern_index{};
         };
 
-        std::vector<ReplacementInfo> planned_replacements;
+        using ReplacementInfoVector = typename std::vector<ReplacementInfo>;
+        ReplacementInfoVector planned_replacements;
         size_type new_length               = text.size();
         StoredNodeIndex current_node_index = Base::kRootNodeIndex;
         for (auto iter = text.begin(), end = text.end(); iter != end; ++iter) {
@@ -436,7 +437,25 @@ public:
         }
 
         assert(replaced_occurances + planned_replacements.size() <= max_replacements);
-        for (const ReplacementInfo& info : std::ranges::views::reverse(planned_replacements)) {
+        auto reverse = [](const ReplacementInfoVector& vec) noexcept {
+            using Iterator = typename ReplacementInfoVector::const_reverse_iterator;
+            struct RevStruct {
+                Iterator begin_iter;
+                Iterator end_iter;
+                Iterator begin() const noexcept {
+                    return begin_iter;
+                }
+                Iterator end() const noexcept {
+                    return end_iter;
+                }
+            };
+            return RevStruct{
+                .begin_iter = vec.rbegin(),
+                .end_iter   = vec.rend(),
+            };
+        };
+        // std::ranges::reverse fails to call begin on clang 14.0.0
+        for (const ReplacementInfo& info : reverse(planned_replacements)) {
             const size_type pattern_index        = info.pattern_index;
             const StoredPatternSize pattern_size = Base::patterns_lengths_[pattern_index];
             const size_type l_index_in_text      = info.l_index_in_text;
@@ -553,7 +572,7 @@ protected:
     static constexpr auto kFakePrerootNodeIndex = ACTrieType::kFakePrerootNodeIndex;
 
 public:
-    constexpr ACTrieBuilder() {
+    constexpr ACTrieBuilder() : nodes_(), patterns_lengths_() {
         constexpr size_type kDefaultNodesSize =
             std::max({kNullNodeIndex, kFakePrerootNodeIndex, kRootNodeIndex}) + 1;
         constexpr size_type kDefaultNodesCapacity = std::max(kDefaultNodesSize, size_type(32));
@@ -690,7 +709,7 @@ public:
 
     using Base::ContainsPattern;
     using Base::PatternsSize;
-    constexpr bool AddPatternWithReplacement(std::string_view pattern, std::string replacement) {
+    bool AddPatternWithReplacement(std::string_view pattern, std::string replacement) {
         bool added = Base::AddPattern(pattern);
         if (added) {
             words_replacements_.push_back(std::move(replacement));
@@ -704,7 +723,7 @@ public:
     }
 
 private:
-    std::vector<std::string> words_replacements_;
+    std::vector<std::string> words_replacements_{};
 };
 
 // cppcheck-suppress-end [duplInheritedMember]
