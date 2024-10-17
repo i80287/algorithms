@@ -122,10 +122,7 @@ ATTRIBUTE_CONST I128_CONSTEXPR bool is_strong_lucas_prp(uint64_t n, uint32_t p,
     ATTRIBUTE_ASSUME(nmj >= 2);
 
     /* Find s and r satisfying: nmj = s * (2 ^ r), s odd */
-    const auto res = ::math_functions::extract_pow2(nmj);
-    const auto s = res.odd_part;
-    const auto r = res.power;
-    // const auto [s, r] = 
+    const auto [s, r] = ::math_functions::extract_pow2(nmj);
     ATTRIBUTE_ASSUME(r >= 1);
     ATTRIBUTE_ASSUME(s % 2 == 1);
     // Redundant but still
