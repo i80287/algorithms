@@ -356,10 +356,12 @@ public:
         size_type replaced_occurances = 0;
         switch (max_replacements) {
             case 1:
-                replaced_occurances += ReplaceFirstOccurance(text) ? 1 : 0;
+                replaced_occurances += ReplaceFirstOccurance(text) ? size_type{1} : size_type{0};
                 [[fallthrough]];
             case 0:
                 return replaced_occurances;
+            default:
+                break;
         }
 
         struct ReplacementInfo {
@@ -529,6 +531,8 @@ private:
     ReplacementsVector words_replacements_;
 };
 
+// cppcheck-suppress-begin [duplInheritedMember]
+
 template <Symbol AlphabetStart, Symbol AlphabetEnd, bool IsCaseInsensetive>
 class [[nodiscard]] ACTrieBuilder {
 public:
@@ -677,8 +681,6 @@ public:
     using StoredPatternSize  = Base::StoredPatternSize;
     using StoredPatternIndex = Base::StoredPatternIndex;
 
-    // cppcheck-suppress-begin [cppcheck-duplInheritedMember]
-
     [[nodiscard]]
     static constexpr ReplacingACTrieBuilder WithCapacity(size_type patterns_capacity) {
         ReplacingACTrieBuilder builder;
@@ -702,9 +704,10 @@ public:
                           std::move(words_replacements_));
     }
 
-    // cppcheck-suppress-end [cppcheck-duplInheritedMember]
 private:
     std::vector<std::string> words_replacements_;
 };
+
+// cppcheck-suppress-end [duplInheritedMember]
 
 }  // namespace actrie
