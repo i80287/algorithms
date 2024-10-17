@@ -5,19 +5,38 @@
 #include <cassert>
 #include <cstdint>
 #include <limits>
+#include <ranges>
+#include <string>
 #include <string_view>
 #include <type_traits>
+#include <utility>
 #include <vector>
 
 namespace actrie {
 
-template <std::uint8_t AlphabetStart = 'A', std::uint8_t AlphabetEnd = 'z',
+using Symbol = unsigned char;
+
+inline constexpr Symbol kDefaultAlphabetStart = 'A';
+inline constexpr Symbol kDefaultAlphabetEnd   = 'z';
+
+template <Symbol AlphabetStart = kDefaultAlphabetStart, Symbol AlphabetEnd = kDefaultAlphabetEnd,
+          bool IsCaseInsensetive = false>
+class ACTrie;
+
+template <Symbol AlphabetStart = kDefaultAlphabetStart, Symbol AlphabetEnd = kDefaultAlphabetEnd,
+          bool IsCaseInsensetive = false>
+class ReplacingACTrie;
+
+template <Symbol AlphabetStart = kDefaultAlphabetStart, Symbol AlphabetEnd = kDefaultAlphabetEnd,
           bool IsCaseInsensetive = false>
 class ACTrieBuilder;
 
-template <std::uint8_t AlphabetStart = 'A', std::uint8_t AlphabetEnd = 'z',
+template <Symbol AlphabetStart = kDefaultAlphabetStart, Symbol AlphabetEnd = kDefaultAlphabetEnd,
           bool IsCaseInsensetive = false>
-class [[nodiscard]] ACTrie final {
+class ReplacingACTrieBuilder;
+
+template <Symbol AlphabetStart, Symbol AlphabetEnd, bool IsCaseInsensetive>
+class [[nodiscard]] ACTrie {
 public:
     friend class ACTrieBuilder<AlphabetStart, AlphabetEnd, IsCaseInsensetive>;
 
@@ -26,9 +45,7 @@ public:
     using StoredPatternSize  = std::uint32_t;
     using StoredPatternIndex = std::uint32_t;
 
-private:
-    using Symbol = unsigned char;
-
+protected:
     static constexpr Symbol kAlphabetStart     = AlphabetStart;
     static constexpr Symbol kAlphabetEnd       = AlphabetEnd;
     static constexpr Symbol kIsCaseInsensetive = IsCaseInsensetive;
@@ -71,22 +88,14 @@ private:
 
 public:
     [[nodiscard]] constexpr bool ContainsPattern(std::string_view pattern) const noexcept {
-        if (std::is_constant_evaluated()) {
-            return ContainsPatternImpl(pattern.begin(), pattern.end(), nodes_);
-        } else {
-            const unsigned char* pattern_iter_begin =
-                reinterpret_cast<const unsigned char*>(pattern.data());
-            const unsigned char* pattern_iter_end = pattern_iter_begin + pattern.size();
-            return ContainsPatternImpl(pattern_iter_begin, pattern_iter_end, nodes_);
-        }
+        return ContainsPatternImpl(pattern.begin(), pattern.end(), nodes_);
     }
-
     template <typename FindCallback>
         requires requires(FindCallback func, std::string_view found_word,
                           size_type start_index_in_original_text) {
             func(found_word, start_index_in_original_text);
         }
-    constexpr void FindAllSubstringsInText(std::string_view text,
+    constexpr void FindAllSubstringsInText(const std::string_view text,
                                            FindCallback find_callback) const {
         if constexpr (std::is_convertible_v<decltype(find_callback), bool>) {
             if (!std::is_constant_evaluated()) {
@@ -97,7 +106,7 @@ public:
         auto current_node_index = kRootNodeIndex;
         size_type i             = 0;
         for (auto iter = text.begin(), end = text.end(); iter != end; ++iter, ++i) {
-            size_type symbol_index = SymbolToIndex(*iter);
+            const size_type symbol_index = CharToIndex(*iter);
             if (symbol_index >= kAlphabetLength) {
                 current_node_index = kRootNodeIndex;
                 continue;
@@ -113,9 +122,9 @@ public:
                 if (!std::is_constant_evaluated()) {
                     assert(pattern_index < patterns_lengths_.size());
                 }
-                size_type word_length = patterns_lengths_[pattern_index];
-                size_type l           = i + 1 - word_length;
-                find_callback(text.substr(l, word_length), l);
+                size_type pattern_size = patterns_lengths_[pattern_index];
+                size_type l            = i + 1 - pattern_size;
+                find_callback(text.substr(l, pattern_size), l);
             }
 
             for (auto terminal_node_index = node.compressed_suffix_link;
@@ -129,13 +138,12 @@ public:
                 if (!std::is_constant_evaluated()) {
                     assert(pattern_index < patterns_lengths_.size());
                 }
-                size_type word_length = patterns_lengths_[pattern_index];
-                size_type l           = i + 1 - word_length;
-                find_callback(text.substr(l, word_length), l);
+                size_type pattern_size = patterns_lengths_[pattern_index];
+                size_type l            = i + 1 - pattern_size;
+                find_callback(text.substr(l, pattern_size), l);
             }
         }
     }
-
     template <bool IsExactWordsMatching = true, bool CountEmptyLines = true,
               Symbol LinesDelimeter = '\n', typename QueryWordCallback, typename NewLineCallback>
         requires requires(QueryWordCallback func, size_type line_number,
@@ -203,8 +211,8 @@ public:
                 }
 
                 if constexpr (IsExactWordsMatching) {
-                    size_type word_length      = patterns_lengths_[pattern_index];
-                    size_type word_begin_index = i + 1 - word_length;
+                    size_type pattern_size     = patterns_lengths_[pattern_index];
+                    size_type word_begin_index = i + 1 - pattern_size;
                     bool prev_symbol_and_next_symbol_not_in_the_alphabet =
                         (word_begin_index == 0 || !IsInAlphabet(text[word_begin_index - 1])) &&
                         (i + 1 == text.size() || !IsInAlphabet(text[i + 1]));
@@ -230,8 +238,8 @@ public:
                 }
 
                 if constexpr (IsExactWordsMatching) {
-                    size_type word_length = patterns_lengths_[pattern_index];
-                    size_type l           = i + 1 - word_length;
+                    size_type pattern_size = patterns_lengths_[pattern_index];
+                    size_type l            = i + 1 - pattern_size;
                     if ((l == 0 || !IsInAlphabet(text[l - 1])) &&
                         (i + 1 == text.size() || !IsInAlphabet(text[i + 1]))) {
                         find_callback(current_line, pattern_index);
@@ -250,16 +258,14 @@ public:
 
         return lines_count;
     }
-
-    constexpr size_type PatternsSize() const noexcept {
+    [[nodiscard]] constexpr size_type PatternsSize() const noexcept {
         return patterns_lengths_.size();
     }
 
-private:
+protected:
     constexpr ACTrie(std::vector<Node>&& nodes,
                      std::vector<StoredPatternSize>&& words_lengths) noexcept
         : nodes_(std::move(nodes)), patterns_lengths_(std::move(words_lengths)) {}
-
     template <class PatternIterator>
     [[nodiscard]]
     static constexpr bool ContainsPatternImpl(PatternIterator pattern_iter_begin,
@@ -267,12 +273,12 @@ private:
                                               const std::vector<Node>& nodes) noexcept {
         size_type current_node_index = kRootNodeIndex;
         for (; pattern_iter_begin != pattern_iter_end; ++pattern_iter_begin) {
-            size_type index = SymbolToIndex(*pattern_iter_begin);
+            const size_type index = CharToIndex(*pattern_iter_begin);
             if (index >= kAlphabetLength) {
                 return false;
             }
 
-            size_type next_node_index = nodes[current_node_index][index];
+            const size_type next_node_index = nodes[current_node_index][index];
             if (next_node_index != kNullNodeIndex) {
                 current_node_index = next_node_index;
             } else {
@@ -281,14 +287,6 @@ private:
         }
 
         return nodes[current_node_index].IsTerminal();
-    }
-
-    [[nodiscard]] static constexpr int32_t ToLowerImpl(int32_t c) noexcept {
-        static_assert('a' - 'A' == (1 << 5));
-        return c | (IsUpperImpl(c) * ('a' - 'A'));
-    }
-    [[nodiscard]] static constexpr bool IsUpperImpl(int32_t c) noexcept {
-        return static_cast<std::uint32_t>(c) - 'A' <= 'Z' - 'A';
     }
     [[nodiscard]] static constexpr bool IsInAlphabet(Symbol symbol) noexcept {
         return static_cast<std::uint32_t>(symbol) - kAlphabetStart <= kAlphabetEnd - kAlphabetStart;
@@ -308,7 +306,7 @@ private:
 
         return static_cast<size_type>(static_cast<std::uint32_t>(symbol_as_int)) - kAlphabetStart;
     }
-    [[nodiscard]] static constexpr size_type SymbolToIndex(char chr) noexcept {
+    [[nodiscard]] static constexpr size_type CharToIndex(char chr) noexcept {
         return SymbolToIndex(CharToSymbol(chr));
     }
     [[nodiscard]] static constexpr Symbol CharToSymbol(char chr) noexcept {
@@ -316,12 +314,223 @@ private:
         return static_cast<Symbol>(chr);
     }
 
+private:
+    [[nodiscard]] static constexpr std::int32_t ToLowerImpl(std::int32_t c) noexcept {
+        return c | (IsUpperImpl(c) * ('a' - 'A'));
+    }
+    [[nodiscard]] static constexpr bool IsUpperImpl(std::int32_t c) noexcept {
+        return static_cast<std::uint32_t>(c) - 'A' <= 'Z' - 'A';
+    }
+
+protected:
     std::vector<Node> nodes_;
     std::vector<StoredPatternSize> patterns_lengths_;
 };
 
-template <std::uint8_t AlphabetStart, std::uint8_t AlphabetEnd, bool IsCaseInsensetive>
-class [[nodiscard]] ACTrieBuilder final {
+template <Symbol AlphabetStart, Symbol AlphabetEnd, bool IsCaseInsensetive>
+class [[nodiscard]] ReplacingACTrie final
+    : private ACTrie<AlphabetStart, AlphabetEnd, IsCaseInsensetive> {
+private:
+    using Base = ACTrie<AlphabetStart, AlphabetEnd, IsCaseInsensetive>;
+    using Node = Base::Node;
+    friend class ReplacingACTrieBuilder<AlphabetStart, AlphabetEnd, IsCaseInsensetive>;
+
+public:
+    using size_type          = Base::size_type;
+    using StoredNodeIndex    = Base::StoredNodeIndex;
+    using StoredPatternSize  = Base::StoredPatternSize;
+    using StoredPatternIndex = Base::StoredPatternIndex;
+
+    using Base::ContainsPattern;
+    using Base::FindAllSubstringsInText;
+    using Base::FindAllSubstringsInTextAndCountLines;
+    using Base::PatternsSize;
+
+    static constexpr size_type kAllOccurances = std::numeric_limits<size_type>::max();
+
+    size_type ReplaceAllOccurances(std::string& text) const {
+        return ReplaceAtMostKOccurances(text, kAllOccurances);
+    }
+    size_type ReplaceAtMostKOccurances(std::string& text,
+                                       const size_type max_replacements = kAllOccurances) const {
+        size_type replaced_occurances = 0;
+        switch (max_replacements) {
+            case 1:
+                replaced_occurances += ReplaceFirstOccurance(text) ? 1 : 0;
+                [[fallthrough]];
+            case 0:
+                return replaced_occurances;
+        }
+
+        struct ReplacementInfo {
+            size_type l_index_in_text{};
+            size_type pattern_index{};
+        };
+
+        std::vector<ReplacementInfo> planned_replacements;
+        size_type new_length               = text.size();
+        StoredNodeIndex current_node_index = Base::kRootNodeIndex;
+        for (auto iter = text.begin(), end = text.end(); iter != end; ++iter) {
+            const size_type symbol_index = Base::CharToIndex(*iter);
+            if (symbol_index >= Base::kAlphabetLength) {
+                current_node_index = Base::kRootNodeIndex;
+                continue;
+            }
+
+            current_node_index = this->nodes_[current_node_index][symbol_index];
+            assert(current_node_index != Base::kNullNodeIndex);
+            const Node& current_node                     = Base::nodes_[current_node_index];
+            const bool current_node_is_terminal          = current_node.IsTerminal();
+            const StoredNodeIndex compressed_suffix_link = current_node.compressed_suffix_link;
+
+            const bool no_match =
+                !current_node_is_terminal && compressed_suffix_link == Base::kRootNodeIndex;
+            if (no_match) {
+                continue;
+            }
+
+            assert(current_node_is_terminal || this->nodes_[compressed_suffix_link].IsTerminal());
+            const StoredPatternIndex pattern_index =
+                current_node_is_terminal ? current_node.pattern_index
+                                         : this->nodes_[compressed_suffix_link].pattern_index;
+
+            const size_type r_index_including = static_cast<size_type>(iter - text.begin());
+            assert(pattern_index < this->patterns_lengths_.size());
+            const StoredPatternSize pattern_length = this->patterns_lengths_[pattern_index];
+            const size_type l_index_including      = r_index_including + 1 - pattern_length;
+            const std::string& replacement         = words_replacements_[pattern_index];
+
+            bool replace_inplace =
+                planned_replacements.empty() && pattern_length == replacement.size();
+            if (replace_inplace) {
+                std::char_traits<char>::copy(text.data() + l_index_including, replacement.data(),
+                                             pattern_length);
+                replaced_occurances++;
+            } else {
+                planned_replacements.push_back(ReplacementInfo{
+                    .l_index_in_text = l_index_including,
+                    .pattern_index   = pattern_index,
+                });
+                new_length += (replacement.size() - pattern_length);
+            }
+
+            assert(replaced_occurances + planned_replacements.size() <= max_replacements);
+            if (replaced_occurances + planned_replacements.size() == max_replacements) {
+                break;
+            }
+
+            current_node_index = Base::kRootNodeIndex;
+        }
+
+        if (text.size() == new_length) {
+            assert(planned_replacements.empty());
+            return replaced_occurances;
+        }
+
+        size_type right_boundary = text.size();
+        size_type right_offset   = 0;
+        if (new_length > text.size()) {
+            text.resize(new_length);
+        }
+
+        assert(replaced_occurances + planned_replacements.size() <= max_replacements);
+        // char* const c_string =
+        for (const ReplacementInfo& info : std::ranges::reverse_view(planned_replacements)) {
+            const size_type pattern_index        = info.pattern_index;
+            const StoredPatternSize pattern_size = Base::patterns_lengths_[pattern_index];
+            const size_type l_index_in_text      = info.l_index_in_text;
+            const size_type r_index_in_text      = l_index_in_text + pattern_size;
+            size_type moved_part_length          = right_boundary - r_index_in_text;
+            char* dst_address = text.data() + (new_length - right_offset - moved_part_length);
+            const char* const src_address = text.data() + r_index_in_text;
+            if (dst_address != src_address) {
+                std::char_traits<char>::move(dst_address, src_address, moved_part_length);
+            }
+
+            size_type replacement_length = words_replacements_[pattern_index].size();
+            dst_address -= replacement_length;
+
+            std::char_traits<char>::copy(dst_address, words_replacements_[pattern_index].c_str(),
+                                         replacement_length);
+            replaced_occurances++;
+
+            right_boundary = l_index_in_text;
+            right_offset += moved_part_length + replacement_length;
+        }
+
+        if (new_length < text.size()) {
+            text.resize(new_length);
+        }
+
+        return replaced_occurances;
+    }
+    constexpr bool ReplaceFirstOccurance(std::string& text) const {
+        StoredNodeIndex current_node_index = Base::kRootNodeIndex;
+        for (auto iter = text.begin(), end = text.end(); iter != end; ++iter) {
+            const size_type symbol_index = Base::CharToIndex(*iter);
+            if (symbol_index >= Base::kAlphabetLength) {
+                current_node_index = Base::kRootNodeIndex;
+                continue;
+            }
+
+            current_node_index = this->nodes_[current_node_index][symbol_index];
+            assert(current_node_index != Base::kNullNodeIndex);
+            const Node& current_node                  = this->nodes_[current_node_index];
+            bool current_node_is_terminal             = current_node.IsTerminal();
+            StoredPatternIndex compressed_suffix_link = current_node.compressed_suffix_link;
+
+            const bool no_match =
+                !current_node_is_terminal && compressed_suffix_link == Base::kRootNodeIndex;
+            if (no_match) {
+                continue;
+            }
+            assert(current_node_is_terminal || this->nodes_[compressed_suffix_link].IsTerminal());
+            StoredPatternIndex pattern_index =
+                current_node_is_terminal ? current_node.pattern_index
+                                         : this->nodes_[compressed_suffix_link].pattern_index;
+            ReplaceOccuranceWithResize(text, iter, pattern_index, this->patterns_lengths_,
+                                       words_replacements_);
+            return true;
+        }
+
+        return false;
+    }
+
+private:
+    using ReplacementsVector = std::vector<std::string>;
+
+    static constexpr void ReplaceOccuranceWithResize(
+        std::string& text, std::string::iterator occurance_last_position_iter,
+        StoredPatternIndex pattern_index, const std::vector<StoredPatternSize>& patterns_lengths,
+        const ReplacementsVector& words_replacements) {
+        const size_type r_index_including =
+            static_cast<size_type>(occurance_last_position_iter - text.begin());
+        assert(pattern_index < patterns_lengths.size());
+        const StoredPatternSize pattern_size = patterns_lengths[pattern_index];
+        const size_type l_index_including    = r_index_including + 1 - pattern_size;
+        const std::string& replacement       = words_replacements[pattern_index];
+
+        if (replacement.size() != pattern_size) {
+            text.resize(text.size() - pattern_size + replacement.size());
+            std::char_traits<char>::move(text.data() + l_index_including + replacement.size(),
+                                         std::as_const(text).data() + r_index_including + 1,
+                                         text.size() - 1 - r_index_including);
+        }
+
+        std::char_traits<char>::copy(text.data() + l_index_including, replacement.data(),
+                                     replacement.size());
+    }
+    constexpr ReplacingACTrie(std::vector<Node>&& nodes,
+                              std::vector<StoredPatternSize>&& words_lengths,
+                              ReplacementsVector&& words_replacements) noexcept
+        : Base(std::move(nodes), std::move(words_lengths)),
+          words_replacements_(std::move(words_replacements)) {}
+
+    ReplacementsVector words_replacements_;
+};
+
+template <Symbol AlphabetStart, Symbol AlphabetEnd, bool IsCaseInsensetive>
+class [[nodiscard]] ACTrieBuilder {
 public:
     using ACTrieType         = ACTrie<AlphabetStart, AlphabetEnd, IsCaseInsensetive>;
     using size_type          = typename ACTrieType::size_type;
@@ -329,7 +538,7 @@ public:
     using StoredPatternSize  = typename ACTrieType::StoredPatternSize;
     using StoredPatternIndex = typename ACTrieType::StoredPatternIndex;
 
-private:
+protected:
     using Node = typename ACTrieType::Node;
 
     static constexpr auto kAlphabetStart        = ACTrieType::kAlphabetStart;
@@ -349,48 +558,40 @@ public:
         nodes_.reserve(kDefaultNodesCapacity);
         nodes_.resize(kDefaultNodesSize);
     }
-
-    constexpr ACTrieBuilder(size_type patterns_capacity) : ACTrieBuilder() {
-        patterns_lengths_.reserve(patterns_capacity);
+    [[nodiscard]] static constexpr ACTrieBuilder WithCapacity(size_type patterns_capacity) {
+        ACTrieBuilder builder;
+        builder.patterns_lengths_.reserve(patterns_capacity);
+        return builder;
     }
-
-    [[nodiscard]] constexpr bool AddPattern(std::string_view pattern) {
-        if (std::is_constant_evaluated()) {
-            return AddPatternImpl(pattern.begin(), pattern.end(), nodes_, patterns_lengths_);
-        } else {
-            const unsigned char* pattern_iter_begin =
-                reinterpret_cast<const unsigned char*>(pattern.data());
-            const unsigned char* pattern_iter_end = pattern_iter_begin + pattern.size();
-            return AddPatternImpl(pattern_iter_begin, pattern_iter_end, nodes_, patterns_lengths_);
-        }
+    [[nodiscard]] constexpr size_type PatternsSize() const noexcept {
+        return patterns_lengths_.size();
     }
-
+    constexpr bool AddPattern(std::string_view pattern) {
+        return this->AddPatternImpl(pattern.begin(), pattern.end(), nodes_, patterns_lengths_);
+    }
     [[nodiscard]] constexpr bool ContainsPattern(std::string_view pattern) const noexcept {
-        if (std::is_constant_evaluated()) {
-            return ContainsPatternImpl(pattern.begin(), pattern.end(), nodes_);
-        } else {
-            const unsigned char* pattern_iter_begin =
-                reinterpret_cast<const unsigned char*>(pattern.data());
-            const unsigned char* pattern_iter_end = pattern_iter_begin + pattern.size();
-            return ContainsPatternImpl(pattern_iter_begin, pattern_iter_end, nodes_);
-        }
+        return ACTrieType::ContainsPatternImpl(pattern.begin(), pattern.end(), nodes_);
+    }
+    [[nodiscard]] constexpr ACTrieType Build() && {
+        this->ComputeLinksForNodes(nodes_);
+        return ACTrieType(std::move(nodes_), std::move(patterns_lengths_));
     }
 
-    [[nodiscard]] constexpr ACTrieType Build() && {
-        nodes_[kRootNodeIndex].suffix_link            = kFakePrerootNodeIndex;
-        nodes_[kRootNodeIndex].compressed_suffix_link = kRootNodeIndex;
-        nodes_[kFakePrerootNodeIndex].edges.fill(kRootNodeIndex);
+protected:
+    static constexpr void ComputeLinksForNodes(std::vector<Node>& nodes) {
+        nodes[kRootNodeIndex].suffix_link            = kFakePrerootNodeIndex;
+        nodes[kRootNodeIndex].compressed_suffix_link = kRootNodeIndex;
+        nodes[kFakePrerootNodeIndex].edges.fill(kRootNodeIndex);
         // We use std::vector instead of std::queue
         //  in order to make this method constexpr.
-        std::vector<size_type> bfs_queue(nodes_.size());
+        std::vector<size_type> bfs_queue(nodes.size());
         size_type queue_head    = 0;
         size_type queue_tail    = 0;
         bfs_queue[queue_tail++] = kRootNodeIndex;
         do {
             size_type node_index = bfs_queue[queue_head++];
-            ComputeLinksForNodeChildren(node_index, nodes_, bfs_queue, queue_tail);
+            ComputeLinksForNodeChildren(node_index, nodes, bfs_queue, queue_tail);
         } while (queue_head < queue_tail);
-        return ACTrieType(std::move(nodes_), std::move(patterns_lengths_));
     }
 
 private:
@@ -418,14 +619,13 @@ private:
     }
 
     template <class PatternIterator>
-    [[nodiscard]]
     static constexpr bool AddPatternImpl(PatternIterator pattern_iter_begin,
                                          PatternIterator pattern_iter_end, std::vector<Node>& nodes,
-                                         std::vector<StoredPatternSize>& words_lengths) noexcept {
+                                         std::vector<StoredPatternSize>& words_lengths) {
         const auto pattern_size = static_cast<size_type>(pattern_iter_end - pattern_iter_begin);
         size_type current_node_index = kRootNodeIndex;
         for (; pattern_iter_begin != pattern_iter_end; ++pattern_iter_begin) {
-            auto symbol_index = ACTrieType::SymbolToIndex(*pattern_iter_begin);
+            const size_type symbol_index = ACTrieType::CharToIndex(*pattern_iter_begin);
             if (symbol_index >= kAlphabetLength) {
                 return false;
             }
@@ -442,7 +642,7 @@ private:
         nodes.reserve(nodes.size() + lasted_max_length);
         for (size_type new_node_index = nodes.size(); pattern_iter_begin != pattern_iter_end;
              ++pattern_iter_begin) {
-            auto symbol_index = ACTrieType::SymbolToIndex(*pattern_iter_begin);
+            const size_type symbol_index = ACTrieType::CharToIndex(*pattern_iter_begin);
             if (symbol_index >= kAlphabetLength) {
                 return false;
             }
@@ -458,8 +658,53 @@ private:
         return true;
     }
 
+protected:
     std::vector<Node> nodes_;
     std::vector<StoredPatternSize> patterns_lengths_;
+};
+
+template <Symbol AlphabetStart, Symbol AlphabetEnd, bool IsCaseInsensetive>
+class [[nodiscard]] ReplacingACTrieBuilder final
+    : private ACTrieBuilder<AlphabetStart, AlphabetEnd, IsCaseInsensetive> {
+private:
+    using Base = ACTrieBuilder<AlphabetStart, AlphabetEnd, IsCaseInsensetive>;
+    using Node = Base::Node;
+
+public:
+    using ACTrieType         = ReplacingACTrie<AlphabetStart, AlphabetEnd, IsCaseInsensetive>;
+    using size_type          = Base::size_type;
+    using StoredNodeIndex    = Base::StoredNodeIndex;
+    using StoredPatternSize  = Base::StoredPatternSize;
+    using StoredPatternIndex = Base::StoredPatternIndex;
+
+    // cppcheck-suppress-begin [cppcheck-duplInheritedMember]
+
+    [[nodiscard]]
+    static constexpr ReplacingACTrieBuilder WithCapacity(size_type patterns_capacity) {
+        ReplacingACTrieBuilder builder;
+        builder.patterns_lengths_.reserve(patterns_capacity);
+        builder.words_replacements_.reserve(patterns_capacity);
+        return builder;
+    }
+
+    using Base::ContainsPattern;
+    using Base::PatternsSize;
+    constexpr bool AddPatternWithReplacement(std::string_view pattern, std::string replacement) {
+        bool added = Base::AddPattern(pattern);
+        if (added) {
+            words_replacements_.push_back(std::move(replacement));
+        }
+        return added;
+    }
+    [[nodiscard]] constexpr ACTrieType Build() && {
+        Base::ComputeLinksForNodes(Base::nodes_);
+        return ACTrieType(std::move(Base::nodes_), std::move(Base::patterns_lengths_),
+                          std::move(words_replacements_));
+    }
+
+    // cppcheck-suppress-end [cppcheck-duplInheritedMember]
+private:
+    std::vector<std::string> words_replacements_;
 };
 
 }  // namespace actrie
