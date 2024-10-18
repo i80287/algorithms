@@ -71,7 +71,7 @@ if (CMAKE_SYSTEM_NAME MATCHES "Linux")
             endif()
         endif()
         if (CMAKE_CXX_CPPCHECK)
-            if (LSB_DISTRIBUTOR_ID_SHORT STREQUAL "ubuntu" AND LSB_RELEASE_VERSION_SHORT VERSION_LESS_EQUAL "24.04")
+            if (LSB_DISTRIBUTOR_ID_SHORT STREQUAL "ubuntu" AND LSB_RELEASE_VERSION_SHORT VERSION_GREATER_EQUAL "24.04")
                 set(CPPCHECK_EXITCODE_ON_ERROR 1)
                 list(APPEND
                     CMAKE_CXX_CPPCHECK
