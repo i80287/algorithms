@@ -96,6 +96,8 @@ function(configure_gcc_or_clang_gcc_options)
         -Wswitch-default
         -Wswitch-enum
         -Wold-style-cast
+        -Wdeprecated
+        -Weffc++
         -Werror
         -pedantic-errors
     )
@@ -114,7 +116,6 @@ function(configure_gcc_or_clang_gcc_options)
             -Wlogical-op
             -Wunsafe-loop-optimizations
             -Wduplicated-cond
-            -Weffc++
             -Wsign-promo
             -fdiagnostics-color=always)
     endif()
@@ -125,7 +126,6 @@ function(configure_gcc_or_clang_gcc_options)
             -Wshift-overflow
             -Wshift-sign-overflow
             -Wshorten-64-to-32
-            -Wdeprecated-dynamic-exception-spec
             -Wthread-safety
             -fcolor-diagnostics
             -fansi-escape-codes
@@ -279,6 +279,7 @@ if (CMAKE_SYSTEM_NAME MATCHES "Linux")
             "--template=gcc"
             "--error-exitcode=0"
             "--inline-suppr"
+            "--check-level=exhaustive"
         )
     endif()
 endif()

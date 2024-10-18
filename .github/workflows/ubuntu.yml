@@ -7,7 +7,7 @@ permissions:
 
 env:
     UBSAN_OPTIONS: print_stacktrace=1
-    ASAN_OPTIONS: print_stats=1:atexit=1
+    ASAN_OPTIONS: print_stats=1:atexit=1:detect_odr_violation=2
 
 jobs:
 
