@@ -31,7 +31,21 @@ endif()
 
 set(LINK_THREADS_LIBRARY_MANUALLY False)
 
-if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND CMAKE_SYSTEM_NAME MATCHES "Linux")
+
+if (CMAKE_SYSTEM_NAME MATCHES "Linux")
+    find_program(CMAKE_CXX_CPPCHECK NAMES cppcheck)
+    if (CMAKE_CXX_CPPCHECK)
+        set(CPPCHECK_EXITCODE_ON_ERROR 0)
+        list(APPEND
+            CMAKE_CXX_CPPCHECK
+            "--force"
+            "--template=gcc"
+            "--inline-suppr"
+        )
+    else()
+        message(WARNING "Could not find cppcheck")
+    endif()
+
     find_program(LSB_RELEASE_EXEC lsb_release)
     if (NOT LSB_RELEASE_EXEC)
         message(WARNING "Could not get linux distro info, pthread linking on ubuntu 20 with g++ might be broken")
@@ -49,11 +63,29 @@ if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND CMAKE_SYSTEM_NAME MATCHES "Linux")
         list(GET LSB_DISTRIBUTOR_ID_AND_RELEASE_VERSION_SHORT 1 LSB_RELEASE_VERSION_SHORT)
 
         string(TOLOWER "${LSB_DISTRIBUTOR_ID_SHORT}" LSB_DISTRIBUTOR_ID_SHORT)
-        if (LSB_DISTRIBUTOR_ID_SHORT STREQUAL "ubuntu" AND LSB_RELEASE_VERSION_SHORT VERSION_LESS_EQUAL "20.04")
-            set(LINK_THREADS_LIBRARY_MANUALLY True)
-            set(THREADS_PREFER_PTHREAD_FLAG ON)
-            find_package(Threads REQUIRED)
+        if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+            if (LSB_DISTRIBUTOR_ID_SHORT STREQUAL "ubuntu" AND LSB_RELEASE_VERSION_SHORT VERSION_LESS_EQUAL "20.04")
+                set(LINK_THREADS_LIBRARY_MANUALLY True)
+                set(THREADS_PREFER_PTHREAD_FLAG ON)
+                find_package(Threads REQUIRED)
+            endif()
         endif()
+        if (CMAKE_CXX_CPPCHECK)
+            if (LSB_DISTRIBUTOR_ID_SHORT STREQUAL "ubuntu" AND LSB_RELEASE_VERSION_SHORT VERSION_LESS_EQUAL "24.04")
+                set(CPPCHECK_EXITCODE_ON_ERROR 1)
+                list(APPEND
+                    CMAKE_CXX_CPPCHECK
+                    "--check-level=exhaustive"
+                )
+            endif()
+        endif()
+    endif()
+
+    if (CMAKE_CXX_CPPCHECK)
+        list(APPEND
+            CMAKE_CXX_CPPCHECK
+            "--error-exitcode=${CPPCHECK_EXITCODE_ON_ERROR}"
+        )
     endif()
 endif()
 
@@ -267,22 +299,6 @@ function(manually_add_byte_order_to_cppcheck_arguments)
     endif()
 endfunction()
 
-
-if (CMAKE_SYSTEM_NAME MATCHES "Linux")
-    find_program(CMAKE_CXX_CPPCHECK NAMES cppcheck)
-    if (NOT CMAKE_CXX_CPPCHECK)
-        message(WARNING "Could not find cppcheck")
-    else()
-        list(APPEND
-            CMAKE_CXX_CPPCHECK
-            "--force"
-            "--template=gcc"
-            "--error-exitcode=0"
-            "--inline-suppr"
-            "--check-level=exhaustive"
-        )
-    endif()
-endif()
 
 message(STATUS "+-")
 message(STATUS "| TEST_COMPILE_DEFINITIONS = ${TEST_COMPILE_DEFINITIONS}")
