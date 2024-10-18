@@ -437,6 +437,7 @@ struct longint {
         if (value > static_cast<ssize_type>(max_size())) {
             CONFIG_UNREACHABLE();
         }
+
         return value;
     }
     [[nodiscard]]

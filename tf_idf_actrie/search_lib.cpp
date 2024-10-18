@@ -28,14 +28,14 @@ ACTrie ParseQuery(string_view query) {
                             return current_count + (uint8_t(c) == uint8_t(QueryWordsDelimiter));
                         });
 
-    ACTrieBuilder act(query_words_count);
+    auto act_builder = ACTrieBuilder::WithCapacity(query_words_count);
 
     size_t prev_delim_index = static_cast<size_t>(-1);
     for (size_t i = 0, query_size = query.size(); i < query_size; i++) {
         if (uint8_t(query[i]) == uint8_t(QueryWordsDelimiter)) {
             string_view slice(query.data() + (prev_delim_index + 1), i - (prev_delim_index + 1));
             if (!slice.empty()) {
-                [[maybe_unused]] bool was_added = act.AddPattern(slice);
+                act_builder.AddPattern(slice);
             }
 
             prev_delim_index = i;
@@ -44,10 +44,10 @@ ACTrie ParseQuery(string_view query) {
 
     string_view slice(query.data() + (prev_delim_index + 1), query.size() - (prev_delim_index + 1));
     if (!slice.empty()) {
-        [[maybe_unused]] bool was_added = act.AddPattern(slice);
+        act_builder.AddPattern(slice);
     }
 
-    return std::move(act).Build();
+    return std::move(act_builder).Build();
 }
 
 }  // namespace
@@ -62,7 +62,7 @@ std::vector<string_view> Search(string_view text, string_view query, size_t max_
         size_t WordsCount     = 0;
         size_t LineStartIndex = 0;
         size_t LineEndIndex   = 0;
-        std::unordered_map<size_t, uint32_t> QueryWordsIndexes;
+        std::unordered_map<size_t, uint32_t> QueryWordsIndexes{};
     };
 
     std::vector<LineInfo> query_words_on_lines;

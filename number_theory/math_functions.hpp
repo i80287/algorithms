@@ -1953,7 +1953,8 @@ class [[nodiscard]] Factorizer final {
 public:
     using PrimeFactors = std::vector<PrimeFactor<std::uint32_t>>;
 
-    CONSTEXPR_VECTOR Factorizer(std::uint32_t n) : least_prime_factor(std::size_t{n} + 1) {
+    CONSTEXPR_VECTOR Factorizer(std::uint32_t n)
+        : primes(), least_prime_factor(std::size_t{n} + 1) {
         for (uint32_t i = 2; i <= std::size_t{n}; i++) {
             if (least_prime_factor[i] == 0) {
                 least_prime_factor[i] = i;
