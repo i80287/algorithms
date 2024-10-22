@@ -1,20 +1,22 @@
-#if !defined(MEMSET_COUNT_H)
-#define MEMSET_COUNT_H 1
+#if !defined(MEMCOUNT_H)
+#define MEMCOUNT_H 1
+
+#if defined(__cplusplus)
+#define EXTERN_WITH_C_LINKAGE_BEGIN extern "C" {
+#define EXTERN_WITH_C_LINKAGE_END   }
+#else
+#define EXTERN_WITH_C_LINKAGE_BEGIN
+#define EXTERN_WITH_C_LINKAGE_END
+#endif
 
 #include <stdint.h>
-#if defined(__cplusplus)
-extern "C" {
-#endif  // __cplusplus
+EXTERN_WITH_C_LINKAGE_BEGIN
 #include <x86intrin.h>
-#if defined(__cplusplus)
-}
-#endif  // __cplusplus
+EXTERN_WITH_C_LINKAGE_END
 
 #include "config_macros.hpp"
 
-#if defined(__cplusplus)
-extern "C" {
-#endif  // __cplusplus
+EXTERN_WITH_C_LINKAGE_BEGIN
 
 #define MEMCOUNT_ATTRIBUTES                                                                \
     ATTRIBUTE_NODISCARD_WITH_MESSAGE("return value of the memcount should not be ommited") \
@@ -28,31 +30,16 @@ extern "C" {
 
 MEMCOUNT_ATTRIBUTES
 FAST_MEMCOUNT_TARGET_ATTRIBUTE
-size_t memcount_avx(const uint8_t* const src, const uint8_t chr,
-                    size_t size) CONFIG_NOEXCEPT_FUNCTION {
-#if defined(__GNUC__)
-#if !defined(__clang__)
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wnonnull-compare"
-#else
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wtautological-pointer-compare"
-#endif
-    if (__builtin_expect(src == NULL, 0))
-        return 0;
-#if !defined(__clang__)
-#pragma GCC diagnostic pop
-#else
-#pragma clang diagnostic pop
-#endif
-#else
-    if (src == NULL)
-        return 0;
-#endif
-
+static inline size_t memcount_avx(const uint8_t* const src, const uint8_t chr,
+                                  size_t size) CONFIG_NOEXCEPT_FUNCTION {
+#if defined(__cplusplus)
 #if defined(__clang__)
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wold-style-cast"
+#elif defined(__GNUC__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wold-style-cast"
+#endif
 #endif
 
     const uint8_t* not_aligned_address = src;
@@ -60,12 +47,9 @@ size_t memcount_avx(const uint8_t* const src, const uint8_t chr,
         (const __m256i*)(((uintptr_t)not_aligned_address + 31) & ~(uintptr_t)31);
 
     uintptr_t mem_offset = (uintptr_t)aligned_32_address - (uintptr_t)not_aligned_address;
-#if defined(__GNUC__)
-    if (__builtin_expect(mem_offset > size, 0))
-#else
-    if (mem_offset > size)
-#endif
+    if (unlikely(mem_offset > size)) {
         mem_offset = size;
+    }
     size -= mem_offset;
 
     size_t eq_count = 0;
@@ -89,8 +73,12 @@ size_t memcount_avx(const uint8_t* const src, const uint8_t chr,
         eq_count += *not_aligned_address == cmp_chr_u32;
     }
 
+#if defined(__cplusplus)
 #if defined(__clang__)
 #pragma clang diagnostic pop
+#elif defined(__GNUC__)
+#pragma GCC diagnostic pop
+#endif
 #endif
 
     return eq_count;
@@ -99,8 +87,8 @@ size_t memcount_avx(const uint8_t* const src, const uint8_t chr,
 #undef FAST_MEMCOUNT_TARGET_ATTRIBUTE
 
 MEMCOUNT_ATTRIBUTES
-size_t memcount_default(const uint8_t* const src, const uint8_t chr,
-                        size_t size) CONFIG_NOEXCEPT_FUNCTION {
+static inline size_t memcount_default(const uint8_t* const src, const uint8_t chr,
+                                      size_t size) CONFIG_NOEXCEPT_FUNCTION {
     size_t cnt       = 0;
     const uint32_t c = chr;
     for (const uint8_t* s = src; size > 0; ++s, --size) {
@@ -111,8 +99,6 @@ size_t memcount_default(const uint8_t* const src, const uint8_t chr,
 
 #if defined(__GNUC__) || defined(__clang__)
 
-// clang-format off
-
 ATTRIBUTE_NODISCARD_WITH_MESSAGE("this function is resolver and should not be used")
 ATTRIBUTE_MAYBE_UNUSED
 ATTRIBUTE_NOTHROW
@@ -122,8 +108,7 @@ __attribute__((no_sanitize("address", "thread", "memory", "undefined")))
 #elif defined(__GNUC__)
 __attribute__((no_sanitize_address, no_sanitize_thread, no_sanitize_undefined))
 #endif
-static inline size_t (*resolve_memcount(void))(const uint8_t*, uint8_t,
-                                               size_t) {
+static inline size_t (*resolve_memcount(void))(const uint8_t*, uint8_t, size_t) {
     __builtin_cpu_init();
     return __builtin_cpu_supports("avx2") && __builtin_cpu_supports("popcnt") ? memcount_avx
                                                                               : memcount_default;
@@ -131,13 +116,15 @@ static inline size_t (*resolve_memcount(void))(const uint8_t*, uint8_t,
 
 #if defined(linux) || defined(__linux__)
 
+// clang-format off
+
 MEMCOUNT_ATTRIBUTES
 #if defined(__cplusplus) && defined(__clang__)
 __attribute__((ifunc("_ZL16resolve_memcountv")))
 #else
 __attribute__((ifunc("resolve_memcount")))
 #endif
-size_t memcount(const uint8_t* const src, const uint8_t chr, size_t size) CONFIG_NOEXCEPT_FUNCTION;
+static inline size_t memcount(const uint8_t* const src, const uint8_t chr, size_t size) CONFIG_NOEXCEPT_FUNCTION;
 
 #else  // !__linux__
 
@@ -152,15 +139,17 @@ size_t (*const memcount)(const uint8_t* const src, const uint8_t chr, size_t siz
 
 size_t (*memcount)(const uint8_t* const src, const uint8_t chr, size_t size) = NULL;
 
-__attribute__((constructor)) static inline void memcount_initializer(void) {
+// clang-format on
+
+ATTRIBUTE_NOTHROW
+__attribute__((constructor)) static inline void memcount_initializer(void)
+    CONFIG_NOEXCEPT_FUNCTION {
     memcount = resolve_memcount();
 }
 
 #endif
 
 #endif
-
-// clang-format on
 
 #else  // !__GNUC__
 
@@ -173,8 +162,11 @@ static inline size_t memcount(const uint8_t* const src, const uint8_t chr,
 
 #endif
 
-#if defined(__cplusplus)
-}
-#endif  // __cplusplus
+#undef MEMCOUNT_ATTRIBUTES
 
-#endif  // !MEMSET_COUNT_H
+EXTERN_WITH_C_LINKAGE_END
+
+#undef EXTERN_WITH_C_LINKAGE_END
+#undef EXTERN_WITH_C_LINKAGE_BEGIN
+
+#endif  // !MEMCOUNT_H

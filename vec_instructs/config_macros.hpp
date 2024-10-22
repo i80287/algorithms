@@ -79,6 +79,24 @@
 #define CONFIG_HAS_AT_LEAST_CXX_23 0
 #endif
 
+#if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L
+#define CONFIG_HAS_AT_LEAST_C_11 1
+#else
+#define CONFIG_HAS_AT_LEAST_C_11 0
+#endif
+
+#if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201710L
+#define CONFIG_HAS_AT_LEAST_C_17 1
+#else
+#define CONFIG_HAS_AT_LEAST_C_17 0
+#endif
+
+#if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 202311L
+#define CONFIG_HAS_AT_LEAST_C_23 1
+#else
+#define CONFIG_HAS_AT_LEAST_C_23 0
+#endif
+
 // https://en.cppreference.com/w/cpp/feature_test
 #if defined(__cpp_concepts) && __cpp_concepts >= 201907L
 #define CONFIG_HAS_CONCEPTS 1
@@ -346,17 +364,12 @@
 
 #if CONFIG_HAS_AT_LEAST_CXX_11
 #define ATTRIBUTE_NORETURN [[noreturn]]
-#elif (!defined(__STDC_VERSION__) || __STDC_VERSION__ < 201112L) && \
-    (CONFIG_GNUC_AT_LEAST(2, 8) || CONFIG_HAS_GCC_ATTRIBUTE(noreturn))
-#define ATTRIBUTE_NORETURN __attribute__((noreturn))
-#elif defined(__STDC_VERSION__)
-#if __STDC_VERSION__ > 201710L
+#elif CONFIG_HAS_AT_LEAST_C_23
 #define ATTRIBUTE_NORETURN [[noreturn]]
-#elif __STDC_VERSION__ >= 201112L
+#elif CONFIG_HAS_AT_LEAST_C_11
 #define ATTRIBUTE_NORETURN _Noreturn
-#else
-#define ATTRIBUTE_NORETURN
-#endif
+#elif CONFIG_GNUC_AT_LEAST(2, 8) || CONFIG_HAS_GCC_ATTRIBUTE(noreturn)
+#define ATTRIBUTE_NORETURN __attribute__((noreturn))
 #else
 #define ATTRIBUTE_NORETURN
 #endif
@@ -375,6 +388,16 @@
 #define ATTRIBUTE_NOTHROW __attribute__((nothrow))
 #else
 #define ATTRIBUTE_NOTHROW
+#endif
+
+#if CONFIG_HAS_AT_LEAST_CXX_17
+#define ATTRIBUTE_FALLTHROUGH [[fallthrough]]
+#elif CONFIG_HAS_AT_LEAST_C_23
+#define ATTRIBUTE_FALLTHROUGH [[fallthrough]]
+#elif CONFIG_GNUC_AT_LEAST(7, 1) || CONFIG_HAS_GCC_ATTRIBUTE(fallthrough)
+#define ATTRIBUTE_FALLTHROUGH __attribute__((fallthrough))
+#else
+#define ATTRIBUTE_FALLTHROUGH
 #endif
 
 // Copypasted from LLVM's int_endianness.h

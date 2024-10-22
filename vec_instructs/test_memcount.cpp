@@ -5,6 +5,7 @@
 
 #include <cassert>
 #include <cstdint>
+#include <cstdlib>
 
 #include "memcount.h"
 
@@ -38,7 +39,7 @@ int main() {
         "aaaaaabacccccccbbdddddddaaabaaaaaaaaaabacccccccbbdddddddaaabaaaaaaaaaa"
         "bacccccccbbdddddddaaabaaaaaaaaaabacccccccbbdddddddaaabaaaaaaaaaabacccc"
         "cccbbdddddddaaabaaaaaaaaaabacccccccbbddddddd";
-    constexpr uint8_t c      = 'a';
+    const uint8_t c          = static_cast<uint8_t>(std::atoi("97"));
     constexpr size_t arr_len = sizeof(arr) - 1;
     for (size_t slice_len = 0; slice_len < arr_len; slice_len++) {
         for (size_t slice_start = 0; slice_start + slice_len <= arr_len; slice_start++) {
