@@ -22,7 +22,7 @@
 #define CONFIG_HAS_GCC_ATTRIBUTE(attr) 0
 #endif
 
-#ifdef __has_cpp_attribute
+#if defined(__cplusplus) && defined(__has_cpp_attribute)
 #define CONFIG_HAS_CPP_ATTRIBUTE(attr) __has_cpp_attribute(attr)
 #else
 #define CONFIG_HAS_CPP_ATTRIBUTE(attr) 0
@@ -501,13 +501,21 @@ namespace config {
 namespace detail {
 
 #if (defined(_MSC_VER) || defined(__MINGW32__)) && CONFIG_HAS_INCLUDE(<intrin.h>)
-ATTRIBUTE_NOINLINE inline void sink_char_ptr(char const volatile*) {}
+#if defined(__GNUC__)
+// inline function 'sink_char_ptr' given attribute 'noinline'
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wattributes"
+#endif
+ATTRIBUTE_NOINLINE static inline void sink_char_ptr(char const volatile*) {}
+#if defined(__GNUC__)
+#pragma GCC diagnostic pop
+#endif
 #endif
 
 }  // namespace detail
 
 template <class T>
-ATTRIBUTE_ALWAYS_INLINE inline void do_not_optimize_away(T&& expr) noexcept {
+ATTRIBUTE_ALWAYS_INLINE static inline void do_not_optimize_away(T&& expr) noexcept {
 #if (defined(_MSC_VER) || defined(__MINGW32__)) && CONFIG_HAS_INCLUDE(<intrin.h>)
     ::config::detail::sink_char_ptr(&reinterpret_cast<volatile const char&>(expr));
     _ReadWriteBarrier();
@@ -560,7 +568,16 @@ ATTRIBUTE_ALWAYS_INLINE constexpr bool is_gcc_constant_p(ATTRIBUTE_MAYBE_UNUSED 
 
 #if (defined(_MSC_VER) || defined(__MINGW32__)) && CONFIG_HAS_INCLUDE(<intrin.h>)
 #include <intrin.h>  // for _ReadWriteBarrier
-ATTRIBUTE_NOINLINE inline void sink_char_ptr(char const volatile*) {}
+#if defined(__GNUC__)
+// inline function 'sink_char_ptr' given attribute 'noinline'
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wattributes"
+#endif
+ATTRIBUTE_NOINLINE static inline void sink_char_ptr(
+    ATTRIBUTE_MAYBE_UNUSED char const volatile* ptr) {}
+#if defined(__GNUC__)
+#pragma GCC diagnostic pop
+#endif
 
 #define do_not_optimize_away(expr)                    \
     do {                                              \
