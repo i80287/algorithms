@@ -8,13 +8,16 @@
 #include <sys/types.h>
 #include <time.h>
 
+#include "config_macros.hpp"
 #include "memset_int.h"
 
-const size_t kTests = 32;
+const size_t kTests      = 32;
 const size_t kBufferSize = 10000000;
 
-__attribute__((__noinline__)) uint64_t measure_memset(int32_t* buffer,
-                                                      int32_t value) {
+ATTRIBUTE_NOINLINE
+ATTRIBUTE_ACCESS(write_only, 1)
+ATTRIBUTE_NODISCARD_WITH_MESSAGE("returned time should be used")
+uint64_t measure_memset(int32_t* const buffer, const int32_t value) {
     struct timespec start;
     struct timespec end;
     uint64_t avg_time = 0;
@@ -29,8 +32,10 @@ __attribute__((__noinline__)) uint64_t measure_memset(int32_t* buffer,
     return avg_time / kTests;
 }
 
-__attribute__((__noinline__)) uint64_t measure_memset_int(int32_t* buffer,
-                                                          int32_t value) {
+ATTRIBUTE_NOINLINE
+ATTRIBUTE_ACCESS(write_only, 1)
+ATTRIBUTE_NODISCARD_WITH_MESSAGE("returned time should be used")
+uint64_t measure_memset_int(int32_t* const buffer, const int32_t value) {
     struct timespec start;
     struct timespec end;
     uint64_t avg_time = 0;
@@ -46,45 +51,44 @@ __attribute__((__noinline__)) uint64_t measure_memset_int(int32_t* buffer,
 }
 
 int main(void) {
-    int32_t* buffer = (int32_t*)malloc(kBufferSize * sizeof(int32_t));
-    if (buffer == NULL)
+    int32_t* const buffer = (int32_t*)calloc(kBufferSize, sizeof(int32_t));
+    if (buffer == NULL) {
         return EXIT_FAILURE;
-    int32_t value = atoi("255");
+    }
 
-    measure_memset(buffer, value);
-    measure_memset_int(buffer, value);
-    measure_memset(buffer, value);
-    measure_memset_int(buffer, value);
+    const int32_t value = atoi("255");
 
-    uint64_t time1 = measure_memset_int(buffer, value);
-    uint64_t time2 = measure_memset(buffer, value);
+    do_not_optimize_away(measure_memset(buffer, value));
+    do_not_optimize_away(measure_memset_int(buffer, value));
+    do_not_optimize_away(measure_memset(buffer, value));
+    do_not_optimize_away(measure_memset_int(buffer, value));
 
-    measure_memset(buffer, value);
-    measure_memset_int(buffer, value);
-    measure_memset(buffer, value);
-    measure_memset_int(buffer, value);
+    const uint64_t time1 = measure_memset_int(buffer, value);
+    const uint64_t time2 = measure_memset(buffer, value);
 
-    uint64_t time3 = measure_memset(buffer, value);
-    uint64_t time4 = measure_memset_int(buffer, value);
+    do_not_optimize_away(measure_memset(buffer, value));
+    do_not_optimize_away(measure_memset_int(buffer, value));
+    do_not_optimize_away(measure_memset(buffer, value));
+    do_not_optimize_away(measure_memset_int(buffer, value));
 
-    printf(
+    const uint64_t time3 = measure_memset(buffer, value);
+    const uint64_t time4 = measure_memset_int(buffer, value);
+
+    // clang-format off
+    int ret = printf(
         "memset_int:\n"
-        "  test 1: %" PRIu64
-        " ns\n"
-        "  test 2: %" PRIu64
-        " ns\n"
-        "  avrg  : %" PRIu64
-        " ns\n"
+        "  test 1: %" PRIu64 " ns\n"
+        "  test 2: %" PRIu64 " ns\n"
+        "  avrg  : %" PRIu64 " ns\n"
         "memset:\n"
-        "  test 1: %" PRIu64
-        " ns\n"
-        "  test 2: %" PRIu64
-        " ns\n"
+        "  test 1: %" PRIu64 " ns\n"
+        "  test 2: %" PRIu64 " ns\n"
         "  avrg  : %" PRIu64 " ns\n",
         time1, time4, (time1 + time4) / 2, time2, time3, (time2 + time3) / 2);
+    // clang-format on
 
     free(buffer);
-    return EXIT_SUCCESS;
+    return ret > 0 ? EXIT_SUCCESS : EXIT_FAILURE;
 }
 
 /**
@@ -136,5 +140,26 @@ int main(void) {
  *   test 1: 1281240 ns
  *   test 2: 1312409 ns
  *   avrg  : 1296824 ns
+ *
+ *
+ *-----------------------
+ *
+ * memset_int:
+ *   test 1: 3670030 ns
+ *   test 2: 3668985 ns
+ *   avrg  : 3669507 ns
+ * memset:
+ *   test 1: 3679393 ns
+ *   test 2: 3690278 ns
+ *   avrg  : 3684835 ns
+ *
+ * memset_int:
+ *   test 1: 3677818 ns
+ *   test 2: 3668477 ns
+ *   avrg  : 3673147 ns
+ * memset:
+ *   test 1: 3686079 ns
+ *   test 2: 3687984 ns
+ *   avrg  : 3687031 ns
  *
  */

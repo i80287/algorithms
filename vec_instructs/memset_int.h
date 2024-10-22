@@ -1,36 +1,28 @@
 #if !defined(MEMSET_INT_H)
 #define MEMSET_INT_H 1
 
-#if defined(__cplusplus)
-extern "C" {
-#endif  // __cplusplus
-
 #if defined(__GNUC__)
 #if !defined(__clang__)
 #pragma GCC push_options
 #pragma GCC target("avx")
 #else
-#pragma clang attribute push(__attribute__((target("avx"))), \
-                             apply_to = function)
+#pragma clang attribute push(__attribute__((target("avx"))), apply_to = function)
 #endif  // !__clang__
 #endif  // __GNUC__
 
 #include <stdint.h>
 #include <x86intrin.h>
 
-#if defined(__GNUC__)
-#if !defined(__clang__)
-#define MEMSET_INT_FUNC_ATTRIBUTES \
-    __attribute__((nonnull(1))) __attribute__((access(write_only, 1, 3)))
-#else
-#define MEMSET_INT_FUNC_ATTRIBUTES __attribute__((nonnull(1)))
-#endif  // !__clang__
-#else
-#define MEMSET_INT_FUNC_ATTRIBUTES
-#endif  // __GNUC__
+#include "config_macros.hpp"
+
+#if defined(__cplusplus)
+extern "C" {
+#endif  // __cplusplus
+
+#define MEMSET_INT_FUNC_ATTRIBUTES ATTRIBUTE_NOTHROW ATTRIBUTE_SIZED_ACCESS(write_only, 1, 3)
 
 MEMSET_INT_FUNC_ATTRIBUTES
-void memset_int_avx(int32_t* dst, int32_t value, size_t size) {
+void memset_int_avx(int32_t* dst, int32_t value, size_t size) CONFIG_NOEXCEPT_FUNCTION {
 #if defined(__GNUC__)
 #if !defined(__clang__)
 #pragma GCC diagnostic push
@@ -52,11 +44,10 @@ void memset_int_avx(int32_t* dst, int32_t value, size_t size) {
 #endif
 
     uint32_t* aligned_4_address = (uint32_t*)dst;
-    __m256i* aligned_32_address =
-        (__m256i*)(((uintptr_t)aligned_4_address + 31) & ~(uintptr_t)31);
-    const uint32_t uvalue_32 = (uint32_t)value;
+    __m256i* aligned_32_address = (__m256i*)(((uintptr_t)aligned_4_address + 31) & ~(uintptr_t)31);
+    const uint32_t uvalue_32    = (uint32_t)value;
     uintptr_t offset =
-        ((uintptr_t)aligned_32_address - (uintptr_t)aligned_4_address) / 4;
+        ((uintptr_t)aligned_32_address - (uintptr_t)aligned_4_address) / sizeof(uint32_t);
 #if defined(__GNUC__)
     if (__builtin_expect(offset > size, 0))
 #else
@@ -69,14 +60,13 @@ void memset_int_avx(int32_t* dst, int32_t value, size_t size) {
         ++aligned_4_address;
     }
 
-    for (const __m256i value_vector = _mm256_set1_epi32(value); size >= 8;
-         size -= 8) {
+    for (const __m256i value_vector = _mm256_set1_epi32(value); size >= 8; size -= 8) {
         _mm256_store_si256(aligned_32_address, value_vector);
         ++aligned_32_address;
     }
 
     uint64_t* aligned_8_address = (uint64_t*)aligned_32_address;
-    const uint64_t uvalue_64 = ((uint64_t)uvalue_32 << 32) | uvalue_32;
+    const uint64_t uvalue_64    = ((uint64_t)uvalue_32 << 32) | uvalue_32;
     switch (size / 2) {
         case 3:
             *aligned_8_address = uvalue_64;
@@ -94,16 +84,16 @@ void memset_int_avx(int32_t* dst, int32_t value, size_t size) {
             *aligned_8_address = uvalue_64;
             ++aligned_8_address;
             break;
-#if defined(__GNUC__)
         case 0:
             break;
         default:
+#if defined(__GNUC__)
             __builtin_unreachable();
-            break;
 #endif
+            break;
     }
     if (size % 2) {
-        aligned_4_address = (uint32_t*)aligned_8_address;
+        aligned_4_address  = (uint32_t*)aligned_8_address;
         *aligned_4_address = uvalue_32;
     }
 }
@@ -117,7 +107,7 @@ void memset_int_avx(int32_t* dst, int32_t value, size_t size) {
 #endif  // __GNUC__
 
 MEMSET_INT_FUNC_ATTRIBUTES
-void memset_int_default(int32_t* dst, int32_t value, size_t size) {
+void memset_int_default(int32_t* dst, int32_t value, size_t size) CONFIG_NOEXCEPT_FUNCTION {
 #if defined(__GNUC__)
 #if !defined(__clang__)
 #pragma GCC diagnostic push
@@ -173,11 +163,11 @@ void memset_int_default(int32_t* dst, int32_t value, size_t size) {
 
 #if defined(__GNUC__)
 
-#if (defined(linux) || defined(__linux__))
-
-__attribute__((unused)) static void (*resolve_memset_int(void))(int32_t*,
-                                                                int32_t,
-                                                                size_t) {
+ATTRIBUTE_NODISCARD_WITH_MESSAGE("this function is resolver and should not be used")
+ATTRIBUTE_MAYBE_UNUSED
+ATTRIBUTE_NOTHROW
+ATTRIBUTE_RETURNS_NONNULL
+static inline void (*resolve_memset_int(void))(int32_t*, int32_t, size_t) CONFIG_NOEXCEPT_FUNCTION {
     __builtin_cpu_init();
     if (__builtin_cpu_supports("avx")) {
         return memset_int_avx;
@@ -185,27 +175,39 @@ __attribute__((unused)) static void (*resolve_memset_int(void))(int32_t*,
     return memset_int_default;
 }
 
-MEMSET_INT_FUNC_ATTRIBUTES
-__attribute__((ifunc("resolve_memset_int"))) void memset_int(int32_t* dst,
-                                                             int32_t value,
-                                                             size_t size);
+#if defined(linux) || defined(__linux__)
 
+// clang-format off
+
+MEMSET_INT_FUNC_ATTRIBUTES
+#if defined(__cplusplus) && defined(__clang__)
+__attribute__((ifunc("resolve_memset_int")))
 #else
+__attribute__((ifunc("resolve_memset_int")))
+#endif
+void memset_int(int32_t* dst, int32_t value, size_t size) CONFIG_NOEXCEPT_FUNCTION;
+
+// clang-format on
+
+#else  // !__linux__
 
 MEMSET_INT_FUNC_ATTRIBUTES
 void (*memset_int)(int32_t* dst, int32_t value, size_t size) = NULL;
 
-__attribute__((constructor)) static inline void memset_int_initializer(void) {
-    memset_int =
-        __builtin_cpu_supports("avx") ? memset_int_avx : memset_int_default;
+ATTRIBUTE_NOTHROW
+__attribute__((constructor)) static inline void memset_int_initializer(void)
+    CONFIG_NOEXCEPT_FUNCTION {
+    __builtin_cpu_init();
+    memset_int = resolve_memset_int();
 }
 
 #endif
 
-#else
+#else  // !__GNUC__
 
 MEMSET_INT_FUNC_ATTRIBUTES
-static inline memset_int(int32_t* dst, int32_t value, size_t size) {
+ATTRIBUTE_ALWAYS_INLINE
+static inline memset_int(int32_t* dst, int32_t value, size_t size) CONFIG_NOEXCEPT_FUNCTION {
     return memset_int_default(dst, value, size);
 }
 
