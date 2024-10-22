@@ -314,17 +314,17 @@ private:
     static_assert(sizeof(std::bitset<N>) == sizeof(std::bitset<kBits>),
                   "Invalid word_type passed to the square_bitmatrix");
 
-    template <class TFunction>
+    template <class Function>
     static constexpr bool is_noexcept_index_fn() noexcept {
-        return noexcept(std::declval<TFunction>()(size_type{}));
+        return noexcept(std::declval<Function>()(size_type{}));
     }
-    template <class TFunction>
+    template <class Function>
     static constexpr bool is_noexcept_coords_fn() noexcept {
-        return noexcept(std::declval<TFunction>()(size_type{}, size_type{}));
+        return noexcept(std::declval<Function>()(size_type{}, size_type{}));
     }
-    template <class TFunction>
+    template <class Function>
     static constexpr bool is_noexcept_bit_reference_fn() noexcept {
-        return noexcept(std::declval<TFunction>()(std::declval<bit_reference>()));
+        return noexcept(std::declval<Function>()(std::declval<bit_reference>()));
     }
 
 public:
@@ -458,53 +458,83 @@ public:
         return m;
     }
 
-    [[nodiscard]] ATTRIBUTE_ALWAYS_INLINE constexpr iterator begin() noexcept
-        ATTRIBUTE_LIFETIME_BOUND {
+    // clang-format off
+
+    [[nodiscard]]
+    ATTRIBUTE_ALWAYS_INLINE
+    ATTRIBUTE_PURE
+    constexpr iterator begin() noexcept ATTRIBUTE_LIFETIME_BOUND {
         return data_.begin();
     }
-    [[nodiscard]] ATTRIBUTE_ALWAYS_INLINE constexpr iterator end() noexcept
-        ATTRIBUTE_LIFETIME_BOUND {
+    [[nodiscard]]
+    ATTRIBUTE_ALWAYS_INLINE
+    ATTRIBUTE_PURE
+    constexpr iterator end() noexcept ATTRIBUTE_LIFETIME_BOUND {
         return begin() + N;
     }
-    [[nodiscard]] ATTRIBUTE_ALWAYS_INLINE constexpr const_iterator begin() const noexcept
-        ATTRIBUTE_LIFETIME_BOUND {
+    [[nodiscard]]
+    ATTRIBUTE_ALWAYS_INLINE
+    ATTRIBUTE_PURE
+    constexpr const_iterator begin() const noexcept ATTRIBUTE_LIFETIME_BOUND {
         return data_.begin();
     }
-    [[nodiscard]] ATTRIBUTE_ALWAYS_INLINE constexpr const_iterator end() const noexcept
-        ATTRIBUTE_LIFETIME_BOUND {
+    [[nodiscard]]
+    ATTRIBUTE_ALWAYS_INLINE
+    ATTRIBUTE_PURE
+    constexpr const_iterator end() const noexcept ATTRIBUTE_LIFETIME_BOUND {
         return begin() + N;
     }
-    [[nodiscard]] ATTRIBUTE_ALWAYS_INLINE constexpr const_iterator cbegin() const noexcept
-        ATTRIBUTE_LIFETIME_BOUND {
+    [[nodiscard]]
+    ATTRIBUTE_ALWAYS_INLINE
+    ATTRIBUTE_PURE
+    constexpr const_iterator cbegin() const noexcept ATTRIBUTE_LIFETIME_BOUND {
         return data_.cbegin();
     }
-    [[nodiscard]] ATTRIBUTE_ALWAYS_INLINE constexpr const_iterator cend() const noexcept
-        ATTRIBUTE_LIFETIME_BOUND {
+    [[nodiscard]]
+    ATTRIBUTE_ALWAYS_INLINE
+    ATTRIBUTE_PURE
+    constexpr const_iterator cend() const noexcept ATTRIBUTE_LIFETIME_BOUND {
         return cbegin() + N;
     }
-    [[nodiscard]] ATTRIBUTE_ALWAYS_INLINE constexpr pointer data() noexcept
-        ATTRIBUTE_LIFETIME_BOUND {
+    [[nodiscard]]
+    ATTRIBUTE_ALWAYS_INLINE
+    ATTRIBUTE_PURE
+    constexpr pointer data() noexcept ATTRIBUTE_LIFETIME_BOUND {
         return data_.data();
     }
-    [[nodiscard]] ATTRIBUTE_ALWAYS_INLINE constexpr const_pointer data() const noexcept
-        ATTRIBUTE_LIFETIME_BOUND {
+    [[nodiscard]]
+    ATTRIBUTE_ALWAYS_INLINE
+    ATTRIBUTE_PURE
+    constexpr const_pointer data() const noexcept ATTRIBUTE_LIFETIME_BOUND {
         return data_.data();
     }
 
-    [[nodiscard]] ATTRIBUTE_ALWAYS_INLINE constexpr size_type size() const noexcept {
+    [[nodiscard]]
+    ATTRIBUTE_ALWAYS_INLINE
+    ATTRIBUTE_CONST
+    constexpr size_type size() const noexcept {
         return N;
     }
-    [[nodiscard]] ATTRIBUTE_ALWAYS_INLINE constexpr size_type rows() const noexcept {
+    [[nodiscard]]
+    ATTRIBUTE_ALWAYS_INLINE
+    ATTRIBUTE_CONST
+    constexpr size_type rows() const noexcept {
         return N;
     }
-    [[nodiscard]] ATTRIBUTE_ALWAYS_INLINE constexpr size_type columns() const noexcept {
+    [[nodiscard]]
+    ATTRIBUTE_ALWAYS_INLINE
+    ATTRIBUTE_CONST
+    constexpr size_type columns() const noexcept {
         return N;
     }
     struct matrix_shape {
         size_type rows;
         size_type columns;
     };
-    [[nodiscard]] ATTRIBUTE_ALWAYS_INLINE constexpr matrix_shape shape() const noexcept {
+    [[nodiscard]]
+    ATTRIBUTE_ALWAYS_INLINE
+    ATTRIBUTE_CONST
+    constexpr matrix_shape shape() const noexcept {
 #if CONFIG_HAS_AT_LEAST_CXX_20
         return {
             .rows    = rows(),
@@ -514,93 +544,120 @@ public:
         return {rows(), columns()};
 #endif
     }
-    [[nodiscard]] ATTRIBUTE_ALWAYS_INLINE constexpr size_type flat_size() const noexcept {
+    [[nodiscard]]
+    ATTRIBUTE_ALWAYS_INLINE
+    ATTRIBUTE_CONST
+    constexpr size_type flat_size() const noexcept {
         return rows() * columns();
     }
-    ATTRIBUTE_REINITIALIZES constexpr void clear() noexcept {
+    ATTRIBUTE_REINITIALIZES
+    constexpr void clear() noexcept {
         *this = allzeros();
     }
 
-    [[nodiscard]] ATTRIBUTE_ALWAYS_INLINE constexpr reference operator[](size_type index) noexcept
-        ATTRIBUTE_LIFETIME_BOUND {
+    [[nodiscard]]
+    ATTRIBUTE_ALWAYS_INLINE
+    constexpr reference operator[](size_type index) noexcept ATTRIBUTE_LIFETIME_BOUND {
         return data_[index];
     }
-    [[nodiscard]] ATTRIBUTE_ALWAYS_INLINE constexpr const_reference operator[](
-        size_type index) const noexcept ATTRIBUTE_LIFETIME_BOUND {
+    [[nodiscard]]
+    ATTRIBUTE_ALWAYS_INLINE
+    constexpr const_reference operator[](size_type index) const noexcept ATTRIBUTE_LIFETIME_BOUND {
         return data_[index];
     }
-    [[nodiscard]] ATTRIBUTE_ALWAYS_INLINE CONSTEXPR_BITSET_OPS bit_reference
-    operator[](std::pair<size_type, size_type> indexes) noexcept ATTRIBUTE_LIFETIME_BOUND {
+    [[nodiscard]]
+    ATTRIBUTE_ALWAYS_INLINE
+    CONSTEXPR_BITSET_OPS
+    bit_reference operator[](std::pair<size_type, size_type> indexes) noexcept ATTRIBUTE_LIFETIME_BOUND {
         return data_[indexes.first][indexes.second];
     }
-    [[nodiscard]] ATTRIBUTE_ALWAYS_INLINE constexpr bool operator[](
-        std::pair<size_type, size_type> indexes) const noexcept {
+    [[nodiscard]]
+    ATTRIBUTE_ALWAYS_INLINE
+    constexpr bool operator[](std::pair<size_type, size_type> indexes) const noexcept {
         return data_[indexes.first][indexes.second];
     }
-    [[nodiscard]] ATTRIBUTE_ALWAYS_INLINE constexpr bool get_unchecked(
-        std::size_t i, std::size_t j) const noexcept {
+    [[nodiscard]]
+    ATTRIBUTE_ALWAYS_INLINE
+    constexpr bool get_unchecked(std::size_t i, std::size_t j) const noexcept {
         return data_[i][j];
     }
-    [[nodiscard]] ATTRIBUTE_ALWAYS_INLINE constexpr bool get_unchecked(
-        std::pair<size_type, size_type> indexes) const noexcept {
+    [[nodiscard]]
+    ATTRIBUTE_ALWAYS_INLINE
+    constexpr bool get_unchecked(std::pair<size_type, size_type> indexes) const noexcept {
         return get_unchecked(indexes.first, indexes.second);
     }
-    [[nodiscard]] ATTRIBUTE_ALWAYS_INLINE constexpr bool get_checked(std::size_t i,
-                                                                     std::size_t j) const {
+    [[nodiscard]]
+    ATTRIBUTE_ALWAYS_INLINE
+    constexpr bool get_checked(std::size_t i, std::size_t j) const {
         return data_[i].test(j);
     }
-    [[nodiscard]] ATTRIBUTE_ALWAYS_INLINE constexpr bool get_checked(
-        std::pair<size_type, size_type> indexes) const {
+    [[nodiscard]]
+    ATTRIBUTE_ALWAYS_INLINE
+    constexpr bool get_checked(std::pair<size_type, size_type> indexes) const {
         return get_checked(indexes.first, indexes.second);
     }
-    ATTRIBUTE_ALWAYS_INLINE CONSTEXPR_BITSET_OPS void set_unchecked(std::size_t i, std::size_t j,
-                                                                    bool value = true) noexcept {
+    ATTRIBUTE_ALWAYS_INLINE
+    CONSTEXPR_BITSET_OPS
+    void set_unchecked(std::size_t i, std::size_t j, bool value = true) noexcept {
         data_[i][j] = value;
     }
-    ATTRIBUTE_ALWAYS_INLINE CONSTEXPR_BITSET_OPS void set_unchecked(
-        std::pair<size_type, size_type> indexes, bool value = true) noexcept {
+    ATTRIBUTE_ALWAYS_INLINE
+    CONSTEXPR_BITSET_OPS
+    void set_unchecked(std::pair<size_type, size_type> indexes, bool value = true) noexcept {
         set_unchecked(indexes.first, indexes.second, value);
     }
-    ATTRIBUTE_ALWAYS_INLINE CONSTEXPR_BITSET_OPS void set_checked(std::size_t i, std::size_t j,
-                                                                  bool value = true) noexcept {
+    ATTRIBUTE_ALWAYS_INLINE
+    CONSTEXPR_BITSET_OPS
+    void set_checked(std::size_t i, std::size_t j, bool value = true) noexcept {
         data_[i].set(j, value);
     }
-    ATTRIBUTE_ALWAYS_INLINE CONSTEXPR_BITSET_OPS void set_checked(
-        std::pair<size_type, size_type> indexes, bool value = true) noexcept {
+    ATTRIBUTE_ALWAYS_INLINE
+    CONSTEXPR_BITSET_OPS
+    void set_checked(std::pair<size_type, size_type> indexes, bool value = true) noexcept {
         set_checked(indexes.first, indexes.second, value);
     }
 
-    CONSTEXPR_BITSET_OPS square_bitmatrix& operator|=(const square_bitmatrix& other) noexcept {
+    CONSTEXPR_BITSET_OPS
+    square_bitmatrix& operator|=(const square_bitmatrix& other) noexcept ATTRIBUTE_LIFETIME_BOUND {
         do_bitwise_or(other.data());
         return *this;
     }
-    [[nodiscard]] ATTRIBUTE_PURE CONSTEXPR_BITSET_OPS square_bitmatrix
-    operator|(const square_bitmatrix& other) const noexcept {
+    [[nodiscard]]
+    ATTRIBUTE_PURE
+    CONSTEXPR_BITSET_OPS
+    square_bitmatrix operator|(const square_bitmatrix& other) const noexcept {
         square_bitmatrix copy(*this);
         copy |= other;
         return copy;
     }
-    CONSTEXPR_BITSET_OPS square_bitmatrix& operator&=(const square_bitmatrix& other) noexcept {
+    CONSTEXPR_BITSET_OPS
+    square_bitmatrix& operator&=(const square_bitmatrix& other) noexcept ATTRIBUTE_LIFETIME_BOUND {
         do_bitwise_and(other.data());
         return *this;
     }
-    [[nodiscard]] ATTRIBUTE_PURE CONSTEXPR_BITSET_OPS square_bitmatrix
-    operator&(const square_bitmatrix& other) const noexcept {
+    [[nodiscard]]
+    ATTRIBUTE_PURE
+    CONSTEXPR_BITSET_OPS
+    square_bitmatrix operator&(const square_bitmatrix& other) const noexcept {
         square_bitmatrix copy(*this);
         copy &= other;
         return copy;
     }
-    CONSTEXPR_BITSET_OPS square_bitmatrix& operator^=(const square_bitmatrix& other) noexcept {
+    CONSTEXPR_BITSET_OPS
+    square_bitmatrix& operator^=(const square_bitmatrix& other) noexcept ATTRIBUTE_LIFETIME_BOUND {
         do_bitwise_xor(other.data());
         return *this;
     }
-    [[nodiscard]] ATTRIBUTE_PURE CONSTEXPR_BITSET_OPS square_bitmatrix
-    operator^(const square_bitmatrix& other) const noexcept {
+    [[nodiscard]]
+    ATTRIBUTE_PURE
+    CONSTEXPR_BITSET_OPS
+    square_bitmatrix operator^(const square_bitmatrix& other) const noexcept {
         square_bitmatrix copy(*this);
         copy ^= other;
         return copy;
     }
-    CONSTEXPR_BITSET_OPS square_bitmatrix& operator*=(const square_bitmatrix& other) noexcept {
+    CONSTEXPR_BITSET_OPS
+    square_bitmatrix& operator*=(const square_bitmatrix& other) noexcept ATTRIBUTE_LIFETIME_BOUND {
         if (unlikely(std::addressof(*this) == std::addressof(other))) {
             square_bitmatrix copy(*this);
             do_multiply_over_z2(copy.data());
@@ -609,59 +666,83 @@ public:
         }
         return *this;
     }
-    [[nodiscard]] ATTRIBUTE_PURE CONSTEXPR_BITSET_OPS square_bitmatrix
-    operator*(const square_bitmatrix& other) const noexcept {
+    [[nodiscard]]
+    ATTRIBUTE_PURE
+    CONSTEXPR_BITSET_OPS
+    square_bitmatrix operator*(const square_bitmatrix& other) const noexcept {
         square_bitmatrix copy(*this);
         copy *= other;
         return copy;
     }
-    [[nodiscard]] ATTRIBUTE_PURE CONSTEXPR_BITSET_OPS square_bitmatrix
-    operator*(const row_type& vector) const noexcept {
+    [[nodiscard]]
+    ATTRIBUTE_PURE
+    CONSTEXPR_BITSET_OPS
+    square_bitmatrix operator*(const row_type& vector) const noexcept {
         return do_multiply_over_z2(vector);
     }
-    CONSTEXPR_BITSET_OPS square_bitmatrix& flip() noexcept {
+    CONSTEXPR_BITSET_OPS
+    square_bitmatrix& flip() noexcept ATTRIBUTE_LIFETIME_BOUND {
         do_flip_inplace(data_);
         return *this;
     }
     NODISCARD_WITH_MESSAGE("This method is not inplace. Use flip() for this purpose")
-    ATTRIBUTE_PURE CONSTEXPR_BITSET_OPS square_bitmatrix operator~() const noexcept {
+    ATTRIBUTE_PURE
+    CONSTEXPR_BITSET_OPS
+    square_bitmatrix operator~() const noexcept {
         square_bitmatrix copy(*this);
         copy.flip();
         return copy;
     }
-    CONSTEXPR_BITSET_OPS square_bitmatrix& flip_row(size_type row_index) noexcept {
+    CONSTEXPR_BITSET_OPS
+    square_bitmatrix& flip_row(size_type row_index) noexcept ATTRIBUTE_LIFETIME_BOUND {
         do_flip_row_inplace(row_index);
         return *this;
     }
-    CONSTEXPR_BITSET_OPS square_bitmatrix& flip_column(size_type column_index) noexcept {
+    CONSTEXPR_BITSET_OPS
+    square_bitmatrix& flip_column(size_type column_index) noexcept ATTRIBUTE_LIFETIME_BOUND {
         do_flip_column_inplace(column_index);
         return *this;
     }
-    CONSTEXPR_POINTER_CAST square_bitmatrix& transpose() noexcept {
+    CONSTEXPR_POINTER_CAST
+    square_bitmatrix& transpose() noexcept ATTRIBUTE_LIFETIME_BOUND {
         transpose_matrix(data_);
         return *this;
     }
     NODISCARD_WITH_MESSAGE("This method is not inplace. Use transpose() for this purpose")
-    ATTRIBUTE_PURE CONSTEXPR_POINTER_CAST square_bitmatrix T() const noexcept {
+    ATTRIBUTE_PURE
+    CONSTEXPR_POINTER_CAST
+    square_bitmatrix T() const noexcept {
         square_bitmatrix copy(*this);
         copy.transpose();
         return copy;
     }
-    [[nodiscard]] ATTRIBUTE_PURE CONSTEXPR_BITSET_OPS size_type count() const noexcept {
+    [[nodiscard]]
+    ATTRIBUTE_PURE
+    CONSTEXPR_BITSET_OPS
+    size_type count() const noexcept {
         return std::accumulate(
             begin(), end(), size_type(0),
             [](size_type set_bits_count, const row_type& row)
                 CONSTEXPR_BITSET_OPS noexcept { return set_bits_count + row.count(); });
     }
-    [[nodiscard]] ATTRIBUTE_PURE CONSTEXPR_BITSET_OPS bool none() const noexcept {
+    [[nodiscard]]
+    ATTRIBUTE_PURE
+    CONSTEXPR_BITSET_OPS
+    bool none() const noexcept {
         return !any();
     }
-    [[nodiscard]] ATTRIBUTE_PURE CONSTEXPR_BITSET_OPS bool any() const noexcept {
+    [[nodiscard]]
+    ATTRIBUTE_PURE
+    CONSTEXPR_BITSET_OPS
+    bool any() const noexcept {
         return std::any_of(begin(), end(), [](const row_type& row) CONSTEXPR_BITSET_OPS noexcept {
             return row.any();
         });
     }
-    [[nodiscard]] ATTRIBUTE_PURE CONSTEXPR_BITSET_OPS bool all() const noexcept {
+    [[nodiscard]]
+    ATTRIBUTE_PURE
+    CONSTEXPR_BITSET_OPS
+    bool all() const noexcept {
         return std::all_of(begin(), end(), [](const row_type& row) CONSTEXPR_BITSET_OPS noexcept {
             return row.all();
         });
@@ -669,32 +750,35 @@ public:
     constexpr void reset() noexcept {
         data_ = matrix_type{};
     }
-    [[nodiscard]] ATTRIBUTE_PURE CONSTEXPR_BITSET_OPS bool operator==(
-        const square_bitmatrix& other) const noexcept {
+    [[nodiscard]]
+    ATTRIBUTE_PURE
+    CONSTEXPR_BITSET_OPS
+    bool operator==(const square_bitmatrix& other) const noexcept {
         return std::equal(begin(), end(), other.begin());
     }
 #if !defined(__cpp_impl_three_way_comparison) || __cpp_impl_three_way_comparison < 201907L
-    [[nodiscard]] ATTRIBUTE_PURE CONSTEXPR_BITSET_OPS bool operator!=(
-        const square_bitmatrix& other) const noexcept {
+    [[nodiscard]]
+    ATTRIBUTE_PURE
+    CONSTEXPR_BITSET_OPS
+    bool operator!=(const square_bitmatrix& other) const noexcept {
         return !(*this == other);
     }
 #endif
 
-    template <class TFunction>
+    template <class Function>
 #if CONFIG_HAS_AT_LEAST_CXX_20
-        requires requires(TFunction fn, std::size_t i, std::size_t j) {
+        requires requires(Function fn, std::size_t i, std::size_t j) {
             { fn(i, j) };
         }
 #endif
-    constexpr void for_each_set_bit(TFunction fn) const
-        noexcept(is_noexcept_coords_fn<TFunction>()) {
-        auto&& iter     = begin();
-        auto&& iter_end = end();
+    constexpr void for_each_set_bit(Function fn) const noexcept(is_noexcept_coords_fn<Function>()) {
+        const_iterator iter     = begin();
+        const_iterator iter_end = end();
         for (size_type i{}; iter != iter_end; ++iter, ++i) {
             for_each_row_set_bit(*iter, [&](size_type j) { fn(i, j); });
         }
     }
-    friend std::ostream& operator<<(std::ostream& out, const square_bitmatrix& matrix) {
+    friend std::ostream& operator<<(std::ostream& out ATTRIBUTE_LIFETIME_BOUND, const square_bitmatrix& matrix) {
         std::ostringstream str;
         for (const row_type& row : matrix) {
             str << row << '\n';
@@ -720,9 +804,9 @@ private:
         false;
 #endif
 
-    template <class TFunction>
-    ATTRIBUTE_ALWAYS_INLINE static constexpr void for_each_row_set_bit(
-        const row_type& row, TFunction fn) noexcept(is_noexcept_index_fn<TFunction>()) {
+    template <class Function>
+    ATTRIBUTE_ALWAYS_INLINE
+    static constexpr void for_each_row_set_bit(const row_type& row, Function fn) noexcept(is_noexcept_index_fn<Function>()) {
         if constexpr (kUseSGIExtension) {
             for (size_type j = row._Find_first(); j < N; j = row._Find_next(j)) {
                 fn(j);
@@ -736,7 +820,8 @@ private:
         }
     }
 
-    CONSTEXPR_BITSET_OPS void do_bitwise_or(const_pointer other_begin) noexcept {
+    CONSTEXPR_BITSET_OPS
+    void do_bitwise_or(const_pointer other_begin) noexcept {
         std::for_each(begin(), end(),
                       [other_iter = other_begin](
                           row_type& row_reference) mutable CONSTEXPR_BITSET_OPS noexcept {
@@ -744,7 +829,8 @@ private:
                           ++other_iter;
                       });
     }
-    CONSTEXPR_BITSET_OPS void do_bitwise_and(const_pointer other_begin) noexcept {
+    CONSTEXPR_BITSET_OPS
+    void do_bitwise_and(const_pointer other_begin) noexcept {
         std::for_each(begin(), end(),
                       [other_iter = other_begin](
                           row_type& row_reference) mutable CONSTEXPR_BITSET_OPS noexcept {
@@ -752,7 +838,8 @@ private:
                           ++other_iter;
                       });
     }
-    CONSTEXPR_BITSET_OPS void do_bitwise_xor(const_pointer other_begin) noexcept {
+    CONSTEXPR_BITSET_OPS
+    void do_bitwise_xor(const_pointer other_begin) noexcept {
         std::for_each(begin(), end(),
                       [other_iter = other_begin](
                           row_type& row_reference) mutable CONSTEXPR_BITSET_OPS noexcept {
@@ -760,7 +847,8 @@ private:
                           ++other_iter;
                       });
     }
-    CONSTEXPR_BITSET_OPS void do_multiply_over_z2(const_pointer other_begin) noexcept {
+    CONSTEXPR_BITSET_OPS
+    void do_multiply_over_z2(const_pointer other_begin) noexcept {
         std::for_each(
             begin(), end(),
             [other_begin = other_begin](row_type& row_reference) CONSTEXPR_BITSET_OPS noexcept {
@@ -771,23 +859,27 @@ private:
                 row_reference = row_mult;
             });
     }
-    ATTRIBUTE_PURE CONSTEXPR_BITSET_OPS row_type
-    do_multiply_over_z2(const row_type& vector) const noexcept {
+    ATTRIBUTE_PURE
+    CONSTEXPR_BITSET_OPS
+    row_type do_multiply_over_z2(const row_type& vector) const noexcept {
         row_type result_vector{};
         for (size_type i = 0; i < N; i++) {
             result_vector[i] = static_cast<bool>((data_[i] ^ vector).count() % 2);
         }
         return result_vector;
     }
-    CONSTEXPR_BITSET_OPS void do_flip_inplace() noexcept {
+    CONSTEXPR_BITSET_OPS
+    void do_flip_inplace() noexcept {
         std::for_each(begin(), end(), [](row_type& row_reference) CONSTEXPR_BITSET_OPS noexcept {
             row_reference.flip();
         });
     }
-    CONSTEXPR_BITSET_OPS void do_flip_row_inplace(size_type row_index) noexcept {
+    CONSTEXPR_BITSET_OPS
+    void do_flip_row_inplace(size_type row_index) noexcept {
         data_[row_index].flip();
     }
-    CONSTEXPR_BITSET_OPS void do_flip_column_inplace(size_type column_index) noexcept {
+    CONSTEXPR_BITSET_OPS
+    void do_flip_column_inplace(size_type column_index) noexcept {
         if (unlikely(column_index >= columns())) {
             // std::bitset<>::flip() will throw if column_index >= std::bitset<>::size()
             return;
@@ -828,24 +920,24 @@ private:
 #endif
     }
 #if CONFIG_HAS_AT_LEAST_CXX_20
-    template <class TWordType, std::size_t Size>
-    ATTRIBUTE_ALWAYS_INLINE static constexpr void transpose_block_helper(
-        TWordType (&m)[Size]) noexcept {
-        if constexpr (::detail::Transposable64<TWordType, Size>) {
+    template <class WordType, std::size_t Size>
+    ATTRIBUTE_ALWAYS_INLINE
+    static constexpr void transpose_block_helper(WordType (&m)[Size]) noexcept {
+        if constexpr (::detail::Transposable64<WordType, Size>) {
             transpose64(m);
-        } else if constexpr (::detail::Transposable32<TWordType, Size>) {
+        } else if constexpr (::detail::Transposable32<WordType, Size>) {
             transpose32(m);
-        } else if constexpr (::detail::Transposable8<TWordType, Size>) {
+        } else if constexpr (::detail::Transposable8<WordType, Size>) {
             transpose8(m);
         } else {
-            static_assert([]() constexpr { return false; },
+            static_assert([]() constexpr { return false; }(),
                           "Invalid call to transpose_block_helper");
         }
     }
 #else
     template <class = void>
-    ATTRIBUTE_ALWAYS_INLINE static constexpr void transpose_8_fallback(
-        matrix_type& matrix) noexcept {
+    ATTRIBUTE_ALWAYS_INLINE
+    static constexpr void transpose_8_fallback(matrix_type& matrix) noexcept {
         std::uint8_t tmp1[8]{};
         std::uint8_t tmp2[8]{};
 
@@ -867,8 +959,8 @@ private:
         }
     }
     template <class = void>
-    ATTRIBUTE_ALWAYS_INLINE static constexpr void transpose_slow_fallback(
-        matrix_type& matrix) noexcept {
+    ATTRIBUTE_ALWAYS_INLINE
+    static constexpr void transpose_slow_fallback(matrix_type& matrix) noexcept {
         for (size_type i = 0; i < matrix.size(); ++i) {
             for (size_type j = i + 1; j < matrix[i].size(); ++j) {
                 std::swap(matrix[i][j], matrix[j][i]);
@@ -876,6 +968,8 @@ private:
         }
     }
 #endif
+
+    // clang-format on
 
     static constexpr square_bitmatrix create_identity_matrix_impl() noexcept {
         square_bitmatrix m{};
@@ -885,9 +979,6 @@ private:
         return m;
     }
 };
-
-template <std::size_t N>
-using packed_square_bitmatrix = square_bitmatrix<N, std::uint8_t>;
 
 #undef NODISCARD_WITH_MESSAGE
 #undef CONSTEXPR_POINTER_CAST
