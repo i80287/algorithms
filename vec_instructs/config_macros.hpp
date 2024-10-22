@@ -134,15 +134,33 @@
 #elif CONFIG_HAS_BUILTIN(__builtin_unreachable)
 #define CONFIG_UNREACHABLE() __builtin_unreachable()
 #elif CONFIG_HAS_BUILTIN(__builtin_assume)
+#if defined(__cplusplus)
 #define CONFIG_UNREACHABLE() __builtin_assume(false)
+#else
+#define CONFIG_UNREACHABLE() __builtin_assume(0)
+#endif
 #elif CONFIG_GNUC_AT_LEAST(13, 0) && CONFIG_HAS_GCC_ATTRIBUTE(assume)
+#if defined(__cplusplus)
 #define CONFIG_UNREACHABLE() __attribute__((assume(false)))
+#else
+#define CONFIG_UNREACHABLE() __attribute__((assume(0)))
+#endif
 #elif defined(_MSC_VER)
+#if defined(__cplusplus)
 #define CONFIG_UNREACHABLE() __assume(false)
 #else
+#define CONFIG_UNREACHABLE() __assume(0)
+#endif
+#else
+#if defined(__cplusplus)
 #define CONFIG_UNREACHABLE() \
     do {                     \
     } while (false)
+#else
+#define CONFIG_UNREACHABLE() \
+    do {                     \
+    } while (0)
+#endif
 #endif
 
 #if CONFIG_HAS_AT_LEAST_CXX_23 && CONFIG_HAS_CPP_ATTRIBUTE(assume)
@@ -155,12 +173,21 @@
 #elif defined(_MSC_VER)
 #define ATTRIBUTE_ASSUME(expr) __assume(expr)
 #else
+#if defined(__cplusplus)
 #define ATTRIBUTE_ASSUME(expr)    \
     do {                          \
         if (!(expr)) {            \
             CONFIG_UNREACHABLE(); \
         }                         \
     } while (false)
+#else
+#define ATTRIBUTE_ASSUME(expr)    \
+    do {                          \
+        if (!(expr)) {            \
+            CONFIG_UNREACHABLE(); \
+        }                         \
+    } while (0)
+#endif
 #endif
 
 /* __builtin_expect is in gcc 3.0 */
