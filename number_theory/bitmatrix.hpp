@@ -256,14 +256,6 @@ constexpr void transpose64(uint64_t (&src)[64]) noexcept {
 #define CONSTEXPR_POINTER_CAST
 #endif
 
-#if CONFIG_HAS_AT_LEAST_CXX_20
-#define NODISCARD_WITH_MESSAGE(message) [[nodiscard(message)]]
-#elif CONFIG_HAS_AT_LEAST_CXX_17
-#define NODISCARD_WITH_MESSAGE(message) [[nodiscard]]
-#else
-#define NODISCARD_WITH_MESSAGE(message)
-#endif
-
 namespace detail {
 struct square_bitmatrix_helper {
 private:
@@ -685,7 +677,7 @@ public:
         do_flip_inplace(data_);
         return *this;
     }
-    NODISCARD_WITH_MESSAGE("This method is not inplace. Use flip() for this purpose")
+    ATTRIBUTE_NODISCARD_WITH_MESSAGE("This method is not inplace. Use flip() for this purpose")
     ATTRIBUTE_PURE
     CONSTEXPR_BITSET_OPS
     square_bitmatrix operator~() const noexcept {
@@ -708,7 +700,7 @@ public:
         transpose_matrix(data_);
         return *this;
     }
-    NODISCARD_WITH_MESSAGE("This method is not inplace. Use transpose() for this purpose")
+    ATTRIBUTE_NODISCARD_WITH_MESSAGE("This method is not inplace. Use transpose() for this purpose")
     ATTRIBUTE_PURE
     CONSTEXPR_POINTER_CAST
     square_bitmatrix T() const noexcept {
@@ -980,6 +972,5 @@ private:
     }
 };
 
-#undef NODISCARD_WITH_MESSAGE
 #undef CONSTEXPR_POINTER_CAST
 #undef CONSTEXPR_BITSET_OPS

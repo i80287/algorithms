@@ -16,7 +16,7 @@
 #endif
 
 /* Test for __has_attribute as per __glibc_has_attribute in glibc */
-#if defined(__has_attribute) && (!defined(__clang__) || CONFIG_CLANG_AT_LEAST(2, 5))
+#if defined(__has_attribute) && (!defined(__clang__) || CONFIG_CLANG_AT_LEAST(4, 5))
 #define CONFIG_HAS_GCC_ATTRIBUTE(attr) __has_attribute(attr)
 #else
 #define CONFIG_HAS_GCC_ATTRIBUTE(attr) 0
@@ -159,8 +159,8 @@
 #define likely(x)   __builtin_expect(static_cast<bool>(x), true)
 #define unlikely(x) __builtin_expect(static_cast<bool>(x), false)
 #else
-#define likely(x)   __builtin_expect((x), true)
-#define unlikely(x) __builtin_expect((x), false)
+#define likely(x)   __builtin_expect((x), 1)
+#define unlikely(x) __builtin_expect((x), 0)
 #endif
 
 #else
@@ -283,9 +283,15 @@
     __attribute__((access(mode, memory_argument_pos)))
 #define ATTRIBUTE_SIZED_ACCESS(mode, memory_argument_pos, range_size_argument_pos) \
     __attribute__((access(mode, memory_argument_pos, range_size_argument_pos)))
+#if CONFIG_GNUC_AT_LEAST(11, 0)
+#define ATTRIBUTE_ACCESS_NONE(memory_argument_pos) ATTRIBUTE_ACCESS(none, memory_argument_pos)
+#else
+#define ATTRIBUTE_ACCESS_NONE(memory_argument_pos)
+#endif
 #else
 #define ATTRIBUTE_ACCESS(mode, memory_argument_pos)
 #define ATTRIBUTE_SIZED_ACCESS(mode, memory_argument_pos, range_size_argument_pos)
+#define ATTRIBUTE_ACCESS_NONE(memory_argument_pos)
 #endif
 
 /**
@@ -321,6 +327,54 @@
 #define ATTRIBUTE_REINITIALIZES [[clang::reinitializes]]
 #else
 #define ATTRIBUTE_REINITIALIZES
+#endif
+
+#if CONFIG_HAS_AT_LEAST_CXX_17
+#define ATTRIBUTE_NODISCARD [[nodiscard]]
+#if CONFIG_HAS_AT_LEAST_CXX_20
+#define ATTRIBUTE_NODISCARD_WITH_MESSAGE(message) [[nodiscard(message)]]
+#else
+#define ATTRIBUTE_NODISCARD_WITH_MESSAGE(message) [[nodiscard]]
+#endif
+#elif CONFIG_GNUC_AT_LEAST(3, 4) || CONFIG_HAS_GCC_ATTRIBUTE(warn_unused_result)
+#define ATTRIBUTE_NODISCARD                       __attribute__((warn_unused_result))
+#define ATTRIBUTE_NODISCARD_WITH_MESSAGE(message) __attribute__((warn_unused_result))
+#else
+#define ATTRIBUTE_NODISCARD
+#define ATTRIBUTE_NODISCARD_WITH_MESSAGE(message)
+#endif
+
+#if CONFIG_HAS_AT_LEAST_CXX_11
+#define ATTRIBUTE_NORETURN [[noreturn]]
+#elif (!defined(__STDC_VERSION__) || __STDC_VERSION__ < 201112L) && \
+    (CONFIG_GNUC_AT_LEAST(2, 8) || CONFIG_HAS_GCC_ATTRIBUTE(noreturn))
+#define ATTRIBUTE_NORETURN __attribute__((noreturn))
+#elif defined(__STDC_VERSION__)
+#if __STDC_VERSION__ > 201710L
+#define ATTRIBUTE_NORETURN [[noreturn]]
+#elif __STDC_VERSION__ >= 201112L
+#define ATTRIBUTE_NORETURN _Noreturn
+#else
+#define ATTRIBUTE_NORETURN
+#endif
+#else
+#define ATTRIBUTE_NORETURN
+#endif
+
+#if defined(__cplusplus) && (CONFIG_GNUC_AT_LEAST(2, 8) || CONFIG_CLANG_AT_LEAST(4, 0))
+#if CONFIG_HAS_AT_LEAST_CXX_11
+#define CONFIG_NOEXCEPT_FUNCTION noexcept(true)
+#else
+#define CONFIG_NOEXCEPT_FUNCTION throw()
+#endif
+#else
+#define CONFIG_NOEXCEPT_FUNCTION
+#endif
+
+#if CONFIG_GNUC_AT_LEAST(3, 4) || CONFIG_HAS_GCC_ATTRIBUTE(nothrow)
+#define ATTRIBUTE_NOTHROW __attribute__((nothrow))
+#else
+#define ATTRIBUTE_NOTHROW
 #endif
 
 // Copypasted from LLVM's int_endianness.h
@@ -436,6 +490,8 @@
 #error Unable to determine endian
 #endif /* Check we found an endianness correctly. */
 
+#ifdef __cplusplus
+
 #if (defined(_MSC_VER) || defined(__MINGW32__)) && CONFIG_HAS_INCLUDE(<intrin.h>)
 #include <intrin.h>  // for _ReadWriteBarrier
 #endif
@@ -499,5 +555,27 @@ ATTRIBUTE_ALWAYS_INLINE constexpr bool is_gcc_constant_p(ATTRIBUTE_MAYBE_UNUSED 
 }
 
 }  // namespace config
+
+#else
+
+#if (defined(_MSC_VER) || defined(__MINGW32__)) && CONFIG_HAS_INCLUDE(<intrin.h>)
+#include <intrin.h>  // for _ReadWriteBarrier
+ATTRIBUTE_NOINLINE inline void sink_char_ptr(char const volatile*) {}
+
+#define do_not_optimize_away(expr)                    \
+    do {                                              \
+        sink_char_ptr((volatile const char*)&(expr)); \
+        _ReadWriteBarrier();                          \
+    } while (0)
+
+#elif defined(__GNUG__)
+#define do_not_optimize_away(expr) asm volatile("" ::"r,m,i"(expr))
+#elif defined(__GNUC__)
+#define do_not_optimize_away(expr) __asm__ volatile("" ::"r,m,i"(expr))
+#else
+#define do_not_optimize_away(expr) __asm__("" ::"r,m,i"(expr));
+#endif
+
+#endif
 
 #endif  // !CONFIG_MACROS_HPP
