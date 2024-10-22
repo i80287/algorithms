@@ -16,5 +16,6 @@ cmake -D CMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_C_COMPILER=x86_64-w64-mingw32-g
 
 shopt -s nullglob
 for test_executable in *.exe; do
+    echo "Starting $test_executable"
     wine "$test_executable"
 done

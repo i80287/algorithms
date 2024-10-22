@@ -3,6 +3,8 @@
 build_dir=cmake-build-codechecker
 cmake_build_dir=cmake-build-dir
 
+set -e
+
 mkdir -p "$build_dir"
 cp ./.clang-tidy ./$build_dir
 cd ./$build_dir || exit 1

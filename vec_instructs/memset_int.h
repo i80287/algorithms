@@ -2,142 +2,95 @@
 #define MEMSET_INT_H 1
 
 #if defined(__cplusplus)
-extern "C" {
-#endif  // __cplusplus
-
-#if defined(__GNUC__)
-#if !defined(__clang__)
-#pragma GCC push_options
-#pragma GCC target("avx")
+#define EXTERN_WITH_C_LINKAGE_BEGIN extern "C" {
+#define EXTERN_WITH_C_LINKAGE_END   }
 #else
-#pragma clang attribute push(__attribute__((target("avx"))), \
-                             apply_to = function)
-#endif  // !__clang__
-#endif  // __GNUC__
+#define EXTERN_WITH_C_LINKAGE_BEGIN
+#define EXTERN_WITH_C_LINKAGE_END
+#endif
 
 #include <stdint.h>
+EXTERN_WITH_C_LINKAGE_BEGIN
 #include <x86intrin.h>
+EXTERN_WITH_C_LINKAGE_END
 
-#if defined(__GNUC__)
-#if !defined(__clang__)
-#define MEMSET_INT_FUNC_ATTRIBUTES \
-    __attribute__((nonnull(1))) __attribute__((access(write_only, 1, 3)))
+#include "config_macros.hpp"
+
+EXTERN_WITH_C_LINKAGE_BEGIN
+
+#if defined(__cplusplus)
+#if defined(__clang__)
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wold-style-cast"
+#elif defined(__GNUC__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wold-style-cast"
+#endif
+#endif
+
+#define MEMSET_INT_FUNC_ATTRIBUTES ATTRIBUTE_NOTHROW ATTRIBUTE_SIZED_ACCESS(write_only, 1, 3)
+
+#if defined(__GNUC__) || defined(__clang__)
+#define FAST_MEMSET_INT_TARGET_ATTRIBUTE __attribute__((target("avx")))
 #else
-#define MEMSET_INT_FUNC_ATTRIBUTES __attribute__((nonnull(1)))
-#endif  // !__clang__
-#else
-#define MEMSET_INT_FUNC_ATTRIBUTES
-#endif  // __GNUC__
+#define FAST_MEMSET_INT_TARGET_ATTRIBUTE
+#endif
 
 MEMSET_INT_FUNC_ATTRIBUTES
-void memset_int_avx(int32_t* dst, int32_t value, size_t size) {
-#if defined(__GNUC__)
-#if !defined(__clang__)
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wnonnull-compare"
-#else
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wtautological-pointer-compare"
-#endif
-    if (__builtin_expect(dst == NULL, 0))
-        return;
-#if !defined(__clang__)
-#pragma GCC diagnostic pop
-#else
-#pragma clang diagnostic pop
-#endif
-#else
-    if (dst == NULL)
-        return;
-#endif
-
+FAST_MEMSET_INT_TARGET_ATTRIBUTE
+static inline void memset_int_avx(int32_t* dst, int32_t value,
+                                  size_t size) CONFIG_NOEXCEPT_FUNCTION {
     uint32_t* aligned_4_address = (uint32_t*)dst;
-    __m256i* aligned_32_address =
-        (__m256i*)(((uintptr_t)aligned_4_address + 31) & ~(uintptr_t)31);
-    const uint32_t uvalue_32 = (uint32_t)value;
+    __m256i* aligned_32_address = (__m256i*)(((uintptr_t)aligned_4_address + 31) & ~(uintptr_t)31);
+    const uint32_t uvalue_32    = (uint32_t)value;
     uintptr_t offset =
-        ((uintptr_t)aligned_32_address - (uintptr_t)aligned_4_address) / 4;
-#if defined(__GNUC__)
-    if (__builtin_expect(offset > size, 0))
-#else
-    if (offset > size)
-#endif
+        ((uintptr_t)aligned_32_address - (uintptr_t)aligned_4_address) / sizeof(uint32_t);
+    if (unlikely(offset > size)) {
         offset = size;
+    }
     size -= offset;
     while (offset--) {
         *aligned_4_address = uvalue_32;
         ++aligned_4_address;
     }
 
-    for (const __m256i value_vector = _mm256_set1_epi32(value); size >= 8;
-         size -= 8) {
+    for (const __m256i value_vector = _mm256_set1_epi32(value); size >= 8; size -= 8) {
         _mm256_store_si256(aligned_32_address, value_vector);
         ++aligned_32_address;
     }
 
     uint64_t* aligned_8_address = (uint64_t*)aligned_32_address;
-    const uint64_t uvalue_64 = ((uint64_t)uvalue_32 << 32) | uvalue_32;
+    const uint64_t uvalue_64    = ((uint64_t)uvalue_32 << 32) | uvalue_32;
     switch (size / 2) {
         case 3:
             *aligned_8_address = uvalue_64;
             ++aligned_8_address;
-#if defined(__GNUC__)
-            __attribute__((fallthrough));
-#endif
+            ATTRIBUTE_FALLTHROUGH;
         case 2:
             *aligned_8_address = uvalue_64;
             ++aligned_8_address;
-#if defined(__GNUC__)
-            __attribute__((fallthrough));
-#endif
+            ATTRIBUTE_FALLTHROUGH;
         case 1:
             *aligned_8_address = uvalue_64;
             ++aligned_8_address;
             break;
-#if defined(__GNUC__)
         case 0:
             break;
         default:
-            __builtin_unreachable();
+            CONFIG_UNREACHABLE();
             break;
-#endif
     }
     if (size % 2) {
-        aligned_4_address = (uint32_t*)aligned_8_address;
+        aligned_4_address  = (uint32_t*)aligned_8_address;
         *aligned_4_address = uvalue_32;
     }
 }
 
-#if defined(__GNUC__)
-#if !defined(__clang__)
-#pragma GCC pop_options
-#else
-#pragma clang attribute pop
-#endif  // !__clang__
-#endif  // __GNUC__
+#undef FAST_MEMSET_INT_TARGET_ATTRIBUTE
 
 MEMSET_INT_FUNC_ATTRIBUTES
-void memset_int_default(int32_t* dst, int32_t value, size_t size) {
-#if defined(__GNUC__)
-#if !defined(__clang__)
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wnonnull-compare"
-#else
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wtautological-pointer-compare"
-#endif
-    if (__builtin_expect(dst == NULL, 0))
-        return;
-#if !defined(__clang__)
-#pragma GCC diagnostic pop
-#else
-#pragma clang diagnostic pop
-#endif
-#else
-    if (dst == NULL)
-        return;
-#endif
-
+static inline void memset_int_default(int32_t* dst, int32_t value,
+                                      size_t size) CONFIG_NOEXCEPT_FUNCTION {
     while (size >= 4) {
         dst[0] = value;
         dst[1] = value;
@@ -150,71 +103,108 @@ void memset_int_default(int32_t* dst, int32_t value, size_t size) {
     switch (size) {
         case 3:
             dst[2] = value;
-#if defined(__GNUC__)
-            __attribute__((fallthrough));
-#endif
+            ATTRIBUTE_FALLTHROUGH;
         case 2:
             dst[1] = value;
-#if defined(__GNUC__)
-            __attribute__((fallthrough));
-#endif
+            ATTRIBUTE_FALLTHROUGH;
         case 1:
             dst[0] = value;
             break;
-#if defined(__GNUC__)
         case 0:
             break;
         default:
-            __builtin_unreachable();
+            CONFIG_UNREACHABLE();
             break;
+    }
+}
+
+#if defined(__cplusplus)
+#if defined(__clang__)
+#pragma clang diagnostic pop
+#elif defined(__GNUC__)
+#pragma GCC diagnostic pop
 #endif
-    }
-}
+#endif
 
-#if defined(__GNUC__)
+#if defined(__GNUC__) || defined(__clang__)
 
-#if (defined(linux) || defined(__linux__))
+#if defined(__clang__) && defined(__cplusplus) && !CONFIG_HAS_AT_LEAST_CXX_17
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wc++17-compat-mangling"
+#endif
 
-__attribute__((unused)) static void (*resolve_memset_int(void))(int32_t*,
-                                                                int32_t,
-                                                                size_t) {
+ATTRIBUTE_NODISCARD_WITH_MESSAGE("this function is resolver and should not be used")
+ATTRIBUTE_MAYBE_UNUSED
+ATTRIBUTE_NOTHROW
+ATTRIBUTE_RETURNS_NONNULL
+#if defined(__clang__)
+__attribute__((no_sanitize("address", "thread", "memory", "undefined")))
+#elif defined(__GNUC__)
+__attribute__((no_sanitize_address, no_sanitize_thread, no_sanitize_undefined))
+#endif
+static inline void (*resolve_memset_int(void))(int32_t*, int32_t, size_t) CONFIG_NOEXCEPT_FUNCTION {
     __builtin_cpu_init();
-    if (__builtin_cpu_supports("avx")) {
-        return memset_int_avx;
-    }
-    return memset_int_default;
+    return __builtin_cpu_supports("avx") ? memset_int_avx : memset_int_default;
 }
+
+#if defined(__clang__) && defined(__cplusplus) && !CONFIG_HAS_AT_LEAST_CXX_17
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wc++17-compat-mangling"
+#endif
+
+#if defined(linux) || defined(__linux__)
+
+// clang-format off
 
 MEMSET_INT_FUNC_ATTRIBUTES
-__attribute__((ifunc("resolve_memset_int"))) void memset_int(int32_t* dst,
-                                                             int32_t value,
-                                                             size_t size);
+#if defined(__cplusplus) && defined(__clang__)
+__attribute__((ifunc("_ZL18resolve_memset_intv")))
+#else
+__attribute__((ifunc("resolve_memset_int")))
+#endif
+static inline void memset_int(int32_t* dst, int32_t value, size_t size) CONFIG_NOEXCEPT_FUNCTION;
+
+#else  // !__linux__
+
+#if defined(__cplusplus)
+
+#if CONFIG_HAS_AT_LEAST_CXX_17
+static inline
+#endif
+void (*const memset_int)(int32_t* dst, int32_t value, size_t size) CONFIG_NOEXCEPT_FUNCTION = resolve_memset_int();
 
 #else
 
-MEMSET_INT_FUNC_ATTRIBUTES
 void (*memset_int)(int32_t* dst, int32_t value, size_t size) = NULL;
 
-__attribute__((constructor)) static inline void memset_int_initializer(void) {
-    memset_int =
-        __builtin_cpu_supports("avx") ? memset_int_avx : memset_int_default;
+// clang-format on
+
+ATTRIBUTE_NOTHROW
+__attribute__((constructor)) static inline void memset_int_initializer(void)
+    CONFIG_NOEXCEPT_FUNCTION {
+    __builtin_cpu_init();
+    memset_int = resolve_memset_int();
 }
 
 #endif
 
-#else
+#endif
+
+#else  // !__GNUC__
 
 MEMSET_INT_FUNC_ATTRIBUTES
-static inline memset_int(int32_t* dst, int32_t value, size_t size) {
-    return memset_int_default(dst, value, size);
+ATTRIBUTE_ALWAYS_INLINE
+static inline void memset_int(int32_t* dst, int32_t value, size_t size) CONFIG_NOEXCEPT_FUNCTION {
+    memset_int_default(dst, value, size);
 }
 
 #endif
 
 #undef MEMSET_INT_FUNC_ATTRIBUTES
 
-#if defined(__cplusplus)
-}
-#endif  // __cplusplus
+EXTERN_WITH_C_LINKAGE_END
+
+#undef EXTERN_WITH_C_LINKAGE_END
+#undef EXTERN_WITH_C_LINKAGE_BEGIN
 
 #endif  // !MEMSET_INT_H
