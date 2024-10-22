@@ -46,8 +46,8 @@ void test_isqrt() {
 
     constexpr auto test_sqrts = [](uint32_t n, uint32_t n_squared) {
         assert(n == isqrt(n_squared));
-        assert(n == isqrt(uint64_t(n_squared)));
-        assert(n == isqrt(uint128_t(n_squared)));
+        assert(n == isqrt(uint64_t{n_squared}));
+        assert(n == isqrt(uint128_t{n_squared}));
     };
 
     constexpr uint32_t kProbes = 100'000;
@@ -64,39 +64,42 @@ void test_isqrt() {
         assert(r - 1 == isqrt(rs - 1));
         assert(r == isqrt(rs));
         assert(r == isqrt(rs + 1));
-        assert(r - 1 == isqrt(uint128_t(rs - 1)));
-        assert(r == isqrt(uint128_t(rs)));
-        assert(r == isqrt(uint128_t(rs + 1)));
+        assert(r - 1 == isqrt(uint128_t{rs - 1}));
+        assert(r == isqrt(uint128_t{rs}));
+        assert(r == isqrt(uint128_t{rs + 1}));
     }
 
     for (uint64_t r = std::numeric_limits<uint64_t>::max() - kIters; r != 0; r++) {
-        uint128_t rs = uint128_t(r) * r;
-        assert(r - 1 == isqrt(uint128_t(rs - 1)));
-        assert(r == isqrt(uint128_t(rs)));
-        assert(r == isqrt(uint128_t(rs + 1)));
+        uint128_t rs = uint128_t{r} * r;
+        assert(r - 1 == isqrt(uint128_t{rs - 1}));
+        assert(r == isqrt(rs));
+        assert(r == isqrt(rs + 1));
     }
 
     constexpr std::pair<uint64_t, uint128_t> root_with_square[] = {
-        {uint8_t(-1), uint16_t(-1)},
-        {uint16_t(-1), uint32_t(-1)},
-        {uint32_t(-1), uint64_t(-1)},
-        {uint64_t(8347849ull), uint128_t(8347849ull) * 8347849ull},
-        {uint64_t(23896778463ull), uint128_t(23896778463ull) * 23896778463ull},
-        {uint64_t(26900711288786ull),
-         uint128_t(72364826784263874ull) * 10'000'000'000ull + 2'638'723'478},
-        {uint64_t(3748237487274238478ull),
-         uint128_t(3748237487274238478ull) * 3748237487274238478ull},
-        {uint64_t(9472294799293ull), uint128_t(8972436876473126137ull) * 10'000'000ull + 7'236'478},
-        {uint64_t(18015752134763552034ull),
-         (uint128_t(17594829943123320651ull) << 64) | 2622055845271657274ull},
-        {uint64_t(-1), uint128_t(-1)},
+        {uint64_t{std::numeric_limits<uint8_t>::max()},
+         uint128_t{std::numeric_limits<uint16_t>::max()}},
+        {uint64_t{std::numeric_limits<uint16_t>::max()},
+         uint128_t{std::numeric_limits<uint32_t>::max()}},
+        {uint64_t{std::numeric_limits<uint32_t>::max()},
+         uint128_t{std::numeric_limits<uint64_t>::max()}},
+        {uint64_t{8347849ull}, uint128_t{8347849ull} * 8347849ull},
+        {uint64_t{23896778463ull}, uint128_t{23896778463ull} * 23896778463ull},
+        {uint64_t{26900711288786ull},
+         uint128_t{72364826784263874ull} * 10'000'000'000ull + 2'638'723'478},
+        {uint64_t{3748237487274238478ull},
+         uint128_t{3748237487274238478ull} * 3748237487274238478ull},
+        {uint64_t{9472294799293ull}, uint128_t{8972436876473126137ull} * 10'000'000ull + 7'236'478},
+        {uint64_t{18015752134763552034ull},
+         (uint128_t{17594829943123320651ull} << 64) | 2622055845271657274ull},
+        {std::numeric_limits<uint64_t>::max(), static_cast<uint128_t>(-1)},
     };
     for (const auto& [root, square] : root_with_square) {
-        if (uint32_t(square) == square) {
-            assert(root == isqrt(uint32_t(square)));
+        if (static_cast<uint32_t>(square) == square) {
+            assert(root == isqrt(static_cast<uint32_t>(square)));
         }
-        if (uint64_t(square) == square) {
-            assert(root == isqrt(uint64_t(square)));
+        if (static_cast<uint64_t>(square) == square) {
+            assert(root == isqrt(static_cast<uint64_t>(square)));
         }
         assert(root == isqrt(square));
     }
@@ -109,11 +112,11 @@ void test_icbrt() noexcept {
         const uint32_t tr               = n * n * n;
         const uint32_t n_cube_minus_one = tr + 3 * n * n + 3 * n;
         assert(icbrt(tr) == n);
-        assert(icbrt(uint64_t(tr)) == n);
+        assert(icbrt(uint64_t{tr}) == n);
         assert(icbrt(n_cube_minus_one) == n);
-        assert(icbrt(uint64_t(n_cube_minus_one)) == n);
+        assert(icbrt(uint64_t{n_cube_minus_one}) == n);
         assert(icbrt(n_cube_minus_one + 1) == n + 1);
-        assert(icbrt(uint64_t(n_cube_minus_one + 1)) == n + 1);
+        assert(icbrt(uint64_t{n_cube_minus_one + 1}) == n + 1);
     }
     assert(icbrt(1625u * 1625u * 1625u) == 1625);
     assert(icbrt(std::numeric_limits<uint32_t>::max()) == 1625);
@@ -125,7 +128,7 @@ void test_icbrt() noexcept {
         assert(icbrt(n_cube_minus_one) == n);
         assert(icbrt(n_cube_minus_one + 1) == n + 1);
     }
-    assert(icbrt(uint64_t(2642245) * 2642245 * 2642245) == 2642245);
+    assert(icbrt(uint64_t{2642245} * 2642245 * 2642245) == 2642245);
     assert(icbrt(std::numeric_limits<uint64_t>::max()) == 2642245);
 }
 
@@ -133,7 +136,7 @@ void test_log2() noexcept {
     log_tests_started();
 
     for (uint32_t k = 0; k < sizeof(uint32_t) * CHAR_BIT; k++) {
-        uint32_t pw = uint32_t(1) << k;
+        uint32_t pw = uint32_t{1} << k;
         assert(log2_floor(pw) == k);
         assert(log2_ceil(pw) == k);
         if (!is_power_of_two(pw + 1)) {
@@ -143,7 +146,7 @@ void test_log2() noexcept {
     }
 
     for (uint32_t k = 0; k < sizeof(uint64_t) * CHAR_BIT; k++) {
-        uint64_t pw = uint64_t(1) << k;
+        uint64_t pw = uint64_t{1} << k;
         assert(log2_floor(pw) == k);
         assert(log2_ceil(pw) == k);
         if (!is_power_of_two(pw + 1)) {
@@ -153,7 +156,7 @@ void test_log2() noexcept {
     }
 
     for (uint32_t k = 0; k < sizeof(uint128_t) * CHAR_BIT; k++) {
-        uint128_t pw = uint128_t(1) << k;
+        uint128_t pw = uint128_t{1} << k;
         assert(log2_floor(pw) == k);
         assert(log2_ceil(pw) == k);
         if (!is_power_of_two(pw + 1)) {
@@ -162,27 +165,30 @@ void test_log2() noexcept {
         }
     }
 
-    assert(log2_floor(uint32_t(0)) == uint32_t(-1));
-    assert(log2_ceil(uint32_t(0)) == uint32_t(-1));
-    assert(log2_floor(uint64_t(0)) == uint32_t(-1));
-    assert(log2_ceil(uint64_t(0)) == uint32_t(-1));
-    assert(log2_floor(uint128_t(0)) == uint32_t(-1));
-    assert(log2_ceil(uint128_t(0)) == uint32_t(-1));
+    assert(log2_floor(uint32_t{0}) == static_cast<uint32_t>(-1));
+    assert(log2_ceil(uint32_t{0}) == static_cast<uint32_t>(-1));
+    assert(log2_floor(uint64_t{0}) == static_cast<uint32_t>(-1));
+    assert(log2_ceil(uint64_t{0}) == static_cast<uint32_t>(-1));
+    assert(log2_floor(uint128_t{0}) == static_cast<uint32_t>(-1));
+    assert(log2_ceil(uint128_t{0}) == static_cast<uint32_t>(-1));
 }
 
 void test_bit_reverse() noexcept {
     log_tests_started();
 
     for (uint32_t n = 0; n < 256; n++) {
-        assert(bit_reverse(uint8_t(n)) == (bit_reverse(n) >> 24));
+        assert(bit_reverse(static_cast<uint8_t>(n)) == (bit_reverse(n) >> 24));
     }
 
-    constexpr uint32_t shifts[32] = {2,  3,  5,  7,   11,  13,  17,  19,  23,  29, 31,
-                                     37, 41, 43, 47,  53,  59,  61,  67,  71,  73, 79,
-                                     83, 89, 97, 101, 103, 107, 109, 113, 127, 131};
-    uint128_t n                   = uint64_t(-1);
-    for (uint32_t k = uint32_t(1e7); k > 0; k--) {
-        uint128_t b = (uint128_t(bit_reverse(uint64_t(n))) << 64) | bit_reverse(uint64_t(n >> 64));
+    constexpr uint32_t shifts[32] = {
+        2,  3,  5,  7,  11, 13, 17, 19, 23, 29,  31,  37,  41,  43,  47,  53,
+        59, 61, 67, 71, 73, 79, 83, 89, 97, 101, 103, 107, 109, 113, 127, 131,
+    };
+    uint128_t n = std::numeric_limits<uint64_t>::max();
+    for (auto k = static_cast<uint32_t>(1e7); k > 0; k--) {
+        const auto hi_64  = static_cast<uint64_t>(n >> 64);
+        const auto low_64 = static_cast<uint64_t>(n);
+        uint128_t b       = (uint128_t{bit_reverse(low_64)} << 64) | bit_reverse(hi_64);
         assert(bit_reverse(n) == b);
         n += shifts[k % 32];
     }
@@ -368,7 +374,7 @@ void test_prime_bitarrays() {
 void test_factorizer() {
     log_tests_started();
 
-    constexpr auto N = uint32_t(1e7);
+    constexpr auto N = static_cast<uint32_t>(1e7);
     Factorizer fact(N);
     {
         const auto is_prime = dynamic_primes_sieve(N);
@@ -1805,37 +1811,37 @@ void test_general_asserts() {
     ASSERT_THAT(base_b_len(-99ll) == 3);
     ASSERT_THAT(base_b_len(-100ll) == 4);
     ASSERT_THAT(base_b_len(-101ll) == 4);
-    ASSERT_THAT(base_b_len(int64_t(uint64_t(1) << 63)) == 20);
+    ASSERT_THAT(base_b_len(std::numeric_limits<int64_t>::min()) == 20);
 
 #if defined(INTEGERS_128_BIT_HPP) && HAS_I128_CONSTEXPR
 
-    ASSERT_THAT(base_b_len(uint128_t(0)) == 1);
-    ASSERT_THAT(base_b_len(uint128_t(1)) == 1);
-    ASSERT_THAT(base_b_len(uint128_t(9)) == 1);
-    ASSERT_THAT(base_b_len(uint128_t(10)) == 2);
-    ASSERT_THAT(base_b_len(uint128_t(11)) == 2);
-    ASSERT_THAT(base_b_len(uint128_t(99)) == 2);
-    ASSERT_THAT(base_b_len(uint128_t(100)) == 3);
-    ASSERT_THAT(base_b_len(uint128_t(101)) == 3);
+    ASSERT_THAT(base_b_len(uint128_t{0}) == 1);
+    ASSERT_THAT(base_b_len(uint128_t{1}) == 1);
+    ASSERT_THAT(base_b_len(uint128_t{9}) == 1);
+    ASSERT_THAT(base_b_len(uint128_t{10}) == 2);
+    ASSERT_THAT(base_b_len(uint128_t{11}) == 2);
+    ASSERT_THAT(base_b_len(uint128_t{99}) == 2);
+    ASSERT_THAT(base_b_len(uint128_t{100}) == 3);
+    ASSERT_THAT(base_b_len(uint128_t{101}) == 3);
     ASSERT_THAT(base_b_len(uint128_t(-1)) == 39);
 
-    ASSERT_THAT(base_b_len(int128_t(0)) == 1);
-    ASSERT_THAT(base_b_len(int128_t(1)) == 1);
-    ASSERT_THAT(base_b_len(int128_t(9)) == 1);
-    ASSERT_THAT(base_b_len(int128_t(10)) == 2);
-    ASSERT_THAT(base_b_len(int128_t(11)) == 2);
-    ASSERT_THAT(base_b_len(int128_t(99)) == 2);
-    ASSERT_THAT(base_b_len(int128_t(100)) == 3);
-    ASSERT_THAT(base_b_len(int128_t(101)) == 3);
-    ASSERT_THAT(base_b_len(-int128_t(0)) == 1);
-    ASSERT_THAT(base_b_len(-int128_t(1)) == 2);
-    ASSERT_THAT(base_b_len(-int128_t(9)) == 2);
-    ASSERT_THAT(base_b_len(-int128_t(10)) == 3);
-    ASSERT_THAT(base_b_len(-int128_t(11)) == 3);
-    ASSERT_THAT(base_b_len(-int128_t(99)) == 3);
-    ASSERT_THAT(base_b_len(-int128_t(100)) == 4);
-    ASSERT_THAT(base_b_len(-int128_t(101)) == 4);
-    ASSERT_THAT(base_b_len(int128_t(uint128_t(1) << 127)) == 40);
+    ASSERT_THAT(base_b_len(int128_t{0}) == 1);
+    ASSERT_THAT(base_b_len(int128_t{1}) == 1);
+    ASSERT_THAT(base_b_len(int128_t{9}) == 1);
+    ASSERT_THAT(base_b_len(int128_t{10}) == 2);
+    ASSERT_THAT(base_b_len(int128_t{11}) == 2);
+    ASSERT_THAT(base_b_len(int128_t{99}) == 2);
+    ASSERT_THAT(base_b_len(int128_t{100}) == 3);
+    ASSERT_THAT(base_b_len(int128_t{101}) == 3);
+    ASSERT_THAT(base_b_len(-int128_t{0}) == 1);
+    ASSERT_THAT(base_b_len(-int128_t{1}) == 2);
+    ASSERT_THAT(base_b_len(-int128_t{9}) == 2);
+    ASSERT_THAT(base_b_len(-int128_t{10}) == 3);
+    ASSERT_THAT(base_b_len(-int128_t{11}) == 3);
+    ASSERT_THAT(base_b_len(-int128_t{99}) == 3);
+    ASSERT_THAT(base_b_len(-int128_t{100}) == 4);
+    ASSERT_THAT(base_b_len(-int128_t{101}) == 4);
+    ASSERT_THAT(base_b_len(static_cast<int128_t>(uint128_t{1} << 127)) == 40);
 
 #endif  // INTEGERS_128_BIT_HPP
 
@@ -1843,47 +1849,47 @@ void test_general_asserts() {
 
 #if defined(HAS_I128_CONSTEXPR) && HAS_I128_CONSTEXPR
 
-    ASSERT_THAT(gcd(uint128_t(1), uint128_t(1)) == 1);
-    ASSERT_THAT(gcd(uint128_t(3), uint128_t(7)) == 1);
-    ASSERT_THAT(gcd(uint128_t(0), uint128_t(112378432)) == 112378432);
-    ASSERT_THAT(gcd(uint128_t(112378432), uint128_t(0)) == 112378432);
-    ASSERT_THAT(gcd(uint128_t(429384832), uint128_t(324884)) == 4);
-    ASSERT_THAT(gcd(uint128_t(18446744073709551521ull), uint128_t(18446744073709551533ull)) == 1);
-    ASSERT_THAT(gcd(uint128_t(18446744073709551521ull) * 18446744073709551521ull,
-                    uint128_t(18446744073709551521ull)) == 18446744073709551521ull);
-    ASSERT_THAT(gcd(uint128_t(23999993441ull) * 23999993377ull,
-                    uint128_t(23999992931ull) * 23999539633ull) == 1);
-    ASSERT_THAT(gcd(uint128_t(2146514599u) * 2146514603u * 2146514611u,
-                    uint128_t(2146514611u) * 2146514621u * 2146514647u) == 2146514611ull);
-    ASSERT_THAT(gcd(uint128_t(2146514599u) * 2146514603u * 2146514611u * 2,
-                    uint128_t(2146514599u) * 2146514603u * 2146514611u * 3) ==
-                uint128_t(2146514599u) * 2146514603u * 2146514611u);
-    ASSERT_THAT(gcd(uint128_t(100000000000000003ull) * 1000000000000000003ull,
-                    uint128_t(1000000000000000003ull) * 1000000000000000009ull) ==
+    ASSERT_THAT(gcd(uint128_t{1}, uint128_t{1}) == 1);
+    ASSERT_THAT(gcd(uint128_t{3}, uint128_t{7}) == 1);
+    ASSERT_THAT(gcd(uint128_t{0}, uint128_t{112378432}) == 112378432);
+    ASSERT_THAT(gcd(uint128_t{112378432}, uint128_t{0}) == 112378432);
+    ASSERT_THAT(gcd(uint128_t{429384832}, uint128_t{324884}) == 4);
+    ASSERT_THAT(gcd(uint128_t{18446744073709551521ull}, uint128_t{18446744073709551533ull}) == 1);
+    ASSERT_THAT(gcd(uint128_t{18446744073709551521ull} * 18446744073709551521ull,
+                    uint128_t{18446744073709551521ull}) == 18446744073709551521ull);
+    ASSERT_THAT(gcd(uint128_t{23999993441ull} * 23999993377ull,
+                    uint128_t{23999992931ull} * 23999539633ull) == 1);
+    ASSERT_THAT(gcd(uint128_t{2146514599u} * 2146514603u * 2146514611u,
+                    uint128_t{2146514611u} * 2146514621u * 2146514647u) == 2146514611ull);
+    ASSERT_THAT(gcd(uint128_t{2146514599u} * 2146514603u * 2146514611u * 2,
+                    uint128_t{2146514599u} * 2146514603u * 2146514611u * 3) ==
+                uint128_t{2146514599u} * 2146514603u * 2146514611u);
+    ASSERT_THAT(gcd(uint128_t{100000000000000003ull} * 1000000000000000003ull,
+                    uint128_t{1000000000000000003ull} * 1000000000000000009ull) ==
                 1000000000000000003ull);
-    ASSERT_THAT(gcd(uint128_t(3 * 2 * 5 * 7 * 11 * 13 * 17 * 19),
-                    uint128_t(18446744073709551557ull) * 3) == 3);
-    ASSERT_THAT(gcd(uint128_t(1000000000000000009ull),
-                    uint128_t(1000000000000000009ull) * 1000000000000000009ull) ==
+    ASSERT_THAT(gcd(uint128_t{3u * 2 * 5 * 7 * 11 * 13 * 17 * 19},
+                    uint128_t{18446744073709551557ull} * 3) == 3);
+    ASSERT_THAT(gcd(uint128_t{1000000000000000009ull},
+                    uint128_t{1000000000000000009ull} * 1000000000000000009ull) ==
                 1000000000000000009ull);
-    ASSERT_THAT(gcd(uint128_t(0), uint128_t(1000000000000000009ull) * 1000000000000000009ull) ==
-                uint128_t(1000000000000000009ull) * 1000000000000000009ull);
-    ASSERT_THAT(gcd(uint128_t(18446744073709551557ull), uint128_t(0)) == 18446744073709551557ull);
+    ASSERT_THAT(gcd(uint128_t{0}, uint128_t{1000000000000000009ull} * 1000000000000000009ull) ==
+                uint128_t{1000000000000000009ull} * 1000000000000000009ull);
+    ASSERT_THAT(gcd(uint128_t{18446744073709551557ull}, uint128_t(0)) == 18446744073709551557ull);
 
-    ASSERT_THAT(gcd(uint64_t(2), int128_t(4)) == 2);
-    ASSERT_THAT(gcd(uint64_t(2), int128_t(-4)) == 2);
-    ASSERT_THAT(gcd(uint64_t(3), int128_t(7)) == 1);
-    ASSERT_THAT(gcd(uint64_t(3), int128_t(-7)) == 1);
-    ASSERT_THAT(gcd(uint64_t(3), int128_t(18446744073709551557ull) * 3) == 3);
-    ASSERT_THAT(gcd(uint64_t(3), int128_t(18446744073709551557ull) * (-3)) == 3);
-    ASSERT_THAT(gcd(uint64_t(3) * 2 * 5 * 7 * 11 * 13 * 17 * 19,
-                    int128_t(18446744073709551557ull) * 3) == 3);
-    ASSERT_THAT(gcd(uint64_t(1000000000000000009ull),
-                    int128_t(1000000000000000009ll) * 1000000000000000009ll) ==
+    ASSERT_THAT(gcd(uint64_t{2}, int128_t{4}) == 2);
+    ASSERT_THAT(gcd(uint64_t{2}, int128_t{-4}) == 2);
+    ASSERT_THAT(gcd(uint64_t{3}, int128_t{7}) == 1);
+    ASSERT_THAT(gcd(uint64_t{3}, int128_t{-7}) == 1);
+    ASSERT_THAT(gcd(uint64_t{3}, int128_t{18446744073709551557ull} * 3) == 3);
+    ASSERT_THAT(gcd(uint64_t{3}, int128_t{18446744073709551557ull} * (-3)) == 3);
+    ASSERT_THAT(gcd(uint64_t{3} * 2 * 5 * 7 * 11 * 13 * 17 * 19,
+                    int128_t{18446744073709551557ull} * 3) == 3);
+    ASSERT_THAT(gcd(uint64_t{1000000000000000009ull},
+                    int128_t{1000000000000000009ll} * 1000000000000000009ll) ==
                 1000000000000000009ull);
-    ASSERT_THAT(gcd(uint64_t(0), int128_t(1000000000000000009ll) * 1000000000000000009ll) ==
-                uint128_t(1000000000000000009ll) * 1000000000000000009ull);
-    ASSERT_THAT(gcd(uint64_t(18446744073709551557ull), int128_t(0)) == 18446744073709551557ull);
+    ASSERT_THAT(gcd(uint64_t{0}, int128_t{1000000000000000009ll} * 1000000000000000009ll) ==
+                uint128_t{1000000000000000009ll} * 1000000000000000009ull);
+    ASSERT_THAT(gcd(uint64_t{18446744073709551557ull}, int128_t{0}) == 18446744073709551557ull);
 
     ASSERT_THAT(math_functions::popcount(0u) == 0);
     ASSERT_THAT(math_functions::popcount(1u << 1) == 1);
@@ -1950,31 +1956,31 @@ void test_general_asserts() {
 #endif  // defined(HAS_I128_CONSTEXPR) && HAS_I128_CONSTEXPR
 
     ASSERT_THAT(([]() constexpr noexcept {
-        const auto [q, r] = math_functions::extract_pow2(uint32_t(0));
+        const auto [q, r] = math_functions::extract_pow2(uint32_t{0});
         return q == 0 && r == 32;
     }()));
     ASSERT_THAT(([]() constexpr noexcept {
-        const auto [q, r] = math_functions::extract_pow2(uint32_t(1) << 31);
+        const auto [q, r] = math_functions::extract_pow2(uint32_t{1} << 31);
         return q == 1 && r == 31;
     }()));
     ASSERT_THAT(([]() constexpr noexcept {
-        const auto [q, r] = math_functions::extract_pow2(uint64_t(0));
+        const auto [q, r] = math_functions::extract_pow2(uint64_t{0});
         return q == 0 && r == 64;
     }()));
     ASSERT_THAT(([]() constexpr noexcept {
-        const auto [q, r] = math_functions::extract_pow2(uint64_t(1) << 31);
+        const auto [q, r] = math_functions::extract_pow2(uint64_t{1} << 31);
         return q == 1 && r == 31;
     }()));
     ASSERT_THAT(([]() constexpr noexcept {
-        const auto [q, r] = math_functions::extract_pow2(uint64_t(1) << 63);
+        const auto [q, r] = math_functions::extract_pow2(uint64_t{1} << 63);
         return q == 1 && r == 63;
     }()));
     ASSERT_THAT(([]() constexpr noexcept {
-        const auto [q, r] = math_functions::extract_pow2(uint64_t(9221685055305285632ull));
+        const auto [q, r] = math_functions::extract_pow2(uint64_t{9221685055305285632ull});
         return q == 2147090867 && r == 32;
     }()));
     ASSERT_THAT(([]() constexpr noexcept {
-        const auto [q, r] = math_functions::extract_pow2(uint64_t(4610842527652642816ull));
+        const auto [q, r] = math_functions::extract_pow2(uint64_t{4610842527652642816ull});
         return q == 2147090867 && r == 31;
     }()));
 
@@ -1993,8 +1999,8 @@ void test_general_asserts() {
     ASSERT_THAT(
         (math_functions::powers_sum_u128<3>(100) == 100u * 100u * (100u + 1) * (100u + 1) / 4));
 
-    constexpr auto kN    = uint32_t(3e9);
-    constexpr auto kN128 = uint128_t(kN);
+    constexpr auto kN    = static_cast<uint32_t>(3e9);
+    constexpr auto kN128 = static_cast<uint128_t>(kN);
     ASSERT_THAT(
         (math_functions::powers_sum_u128<3>(kN) == kN128 * kN128 * (kN128 + 1) * (kN128 + 1) / 4));
 
