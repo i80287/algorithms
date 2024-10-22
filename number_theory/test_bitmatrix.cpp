@@ -442,11 +442,11 @@ constexpr
     return f1 && f2;
 }
 
-template <std::size_t Size, class TWordType>
+template <std::size_t Size, class WordType>
 void test_for_size() {
     test_tools::log_tests_started();
 
-    using matrix_t = square_bitmatrix<Size, TWordType>;
+    using matrix_t = square_bitmatrix<Size, WordType>;
 
     auto test_identity_matrix = [](const matrix_t& n) {
         assert((n == matrix_t::identity()));
@@ -531,28 +531,28 @@ void test_for_size() {
     test_zero_matrix(ones_matrix);
 }
 
-template <class TWordType>
+template <class WordType>
 void test_for_word_type() {
-    test_for_size<1, TWordType>();
-    test_for_size<2, TWordType>();
-    test_for_size<7, TWordType>();
-    test_for_size<8, TWordType>();
-    test_for_size<9, TWordType>();
-    test_for_size<15, TWordType>();
-    test_for_size<16, TWordType>();
-    test_for_size<17, TWordType>();
-    test_for_size<31, TWordType>();
-    test_for_size<32, TWordType>();
-    test_for_size<33, TWordType>();
-    test_for_size<63, TWordType>();
-    test_for_size<64, TWordType>();
-    test_for_size<65, TWordType>();
-    test_for_size<127, TWordType>();
-    test_for_size<128, TWordType>();
-    test_for_size<129, TWordType>();
-    test_for_size<255, TWordType>();
-    test_for_size<256, TWordType>();
-    test_for_size<257, TWordType>();
+    test_for_size<1, WordType>();
+    test_for_size<2, WordType>();
+    test_for_size<7, WordType>();
+    test_for_size<8, WordType>();
+    test_for_size<9, WordType>();
+    test_for_size<15, WordType>();
+    test_for_size<16, WordType>();
+    test_for_size<17, WordType>();
+    test_for_size<31, WordType>();
+    test_for_size<32, WordType>();
+    test_for_size<33, WordType>();
+    test_for_size<63, WordType>();
+    test_for_size<64, WordType>();
+    test_for_size<65, WordType>();
+    test_for_size<127, WordType>();
+    test_for_size<128, WordType>();
+    test_for_size<129, WordType>();
+    test_for_size<255, WordType>();
+    test_for_size<256, WordType>();
+    test_for_size<257, WordType>();
 }
 
 }  // namespace
