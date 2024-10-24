@@ -131,6 +131,7 @@ function(configure_gcc_or_clang_gcc_options)
         -Wswitch-default
         -Wswitch-enum
         -Wdeprecated
+        -Wtype-limits
         -Werror
         -pedantic-errors
     )
