@@ -127,7 +127,7 @@ public:
                 find_callback(text.substr(l, pattern_size), l);
             }
 
-            for (auto terminal_node_index = node.compressed_suffix_link;
+            for (StoredNodeIndex terminal_node_index = node.compressed_suffix_link;
                  terminal_node_index != kRootNodeIndex;
                  terminal_node_index = nodes_[terminal_node_index].compressed_suffix_link) {
                 if (!std::is_constant_evaluated()) {
@@ -225,7 +225,7 @@ public:
             }
 
             // Jump up through compressed suffix links
-            for (uint32_t terminal_node_index = node.compressed_suffix_link;
+            for (StoredNodeIndex terminal_node_index = node.compressed_suffix_link;
                  terminal_node_index != kRootNodeIndex;
                  terminal_node_index = nodes_[terminal_node_index].compressed_suffix_link) {
                 if (!std::is_constant_evaluated()) {
@@ -288,14 +288,14 @@ protected:
 
         return nodes[current_node_index].IsTerminal();
     }
-    [[nodiscard]] static constexpr bool IsInAlphabet(Symbol symbol) noexcept {
-        return static_cast<std::uint32_t>(symbol) - kAlphabetStart <= kAlphabetEnd - kAlphabetStart;
+    [[nodiscard]] static constexpr bool IsInAlphabet(const Symbol symbol) noexcept {
+        return SymbolToUInt(symbol) - kAlphabetStart <= kAlphabetEnd - kAlphabetStart;
     }
-    [[nodiscard]] static constexpr bool IsInAlphabet(char symbol) noexcept {
+    [[nodiscard]] static constexpr bool IsInAlphabet(const char symbol) noexcept {
         return IsInAlphabet(CharToSymbol(symbol));
     }
-    [[nodiscard]] static constexpr size_type SymbolToIndex(Symbol symbol) noexcept {
-        std::int32_t symbol_as_int = symbol;
+    [[nodiscard]] static constexpr size_type SymbolToIndex(const Symbol symbol) noexcept {
+        std::uint32_t symbol_as_int = SymbolToUInt(symbol);
         if constexpr (kIsCaseInsensetive) {
             // We don't use std::tolower because we know that all
             //  chars are < 128. On the other side, std::tolower makes
@@ -304,22 +304,25 @@ protected:
             symbol_as_int = ToLowerImpl(symbol_as_int);
         }
 
-        return static_cast<size_type>(static_cast<std::uint32_t>(symbol_as_int)) - kAlphabetStart;
+        return size_type{symbol_as_int} - kAlphabetStart;
     }
-    [[nodiscard]] static constexpr size_type CharToIndex(char chr) noexcept {
+    [[nodiscard]] static constexpr std::uint32_t SymbolToUInt(const Symbol symbol) noexcept {
+        return std::uint32_t{symbol};
+    }
+    [[nodiscard]] static constexpr size_type CharToIndex(const char chr) noexcept {
         return SymbolToIndex(CharToSymbol(chr));
     }
-    [[nodiscard]] static constexpr Symbol CharToSymbol(char chr) noexcept {
+    [[nodiscard]] static constexpr Symbol CharToSymbol(const char chr) noexcept {
         static_assert(std::is_same_v<Symbol, unsigned char>);
         return static_cast<Symbol>(chr);
     }
 
 private:
-    [[nodiscard]] static constexpr std::int32_t ToLowerImpl(std::int32_t c) noexcept {
+    [[nodiscard]] static constexpr std::uint32_t ToLowerImpl(const std::uint32_t c) noexcept {
         return c | (IsUpperImpl(c) * ('a' - 'A'));
     }
-    [[nodiscard]] static constexpr bool IsUpperImpl(std::int32_t c) noexcept {
-        return static_cast<std::uint32_t>(c) - 'A' <= 'Z' - 'A';
+    [[nodiscard]] static constexpr bool IsUpperImpl(const std::uint32_t c) noexcept {
+        return c - 'A' <= 'Z' - 'A';
     }
 
 protected:

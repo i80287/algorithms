@@ -1,3 +1,7 @@
+#ifdef NDEBUG
+#error("Can't test properly with NDEBUG macro defined (macro won't be undefined manually)")
+#endif
+
 #include <cassert>
 #include <chrono>
 #include <fstream>
@@ -8,10 +12,6 @@
 #include <utility>
 
 #include "search_lib.hpp"
-
-#ifdef NDEBUG
-#error("Can't test properly with NDEBUG macro defined (macro won't be undefined manually)")
-#endif
 
 namespace {
 

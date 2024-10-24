@@ -5,6 +5,12 @@
 #include <utility>
 #include <vector>
 
+#ifdef NDEBUG
+#error("Can't test properly with NDEBUG macro defined (macro won't be undefined manually)")
+#endif
+
+#include <cassert>
+
 #include "actrie.hpp"
 
 namespace {
