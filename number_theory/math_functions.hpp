@@ -83,7 +83,7 @@ template <InplaceMultipliable T>
 #else
 template <class T>
 #endif
-[[nodiscard]] ATTRIBUTE_CONST constexpr T bin_pow(T n, uint64_t p) noexcept(noexcept(n *= n)) {
+[[nodiscard]] ATTRIBUTE_CONST constexpr T bin_pow(T n, std::size_t p) noexcept(noexcept(n *= n)) {
     T res(1);
     while (true) {
         if (p & 1) {
@@ -107,10 +107,11 @@ template <InplaceMultipliable T>
 #else
 template <class T>
 #endif
-[[nodiscard]] ATTRIBUTE_CONST constexpr T bin_pow(T n, int64_t p) noexcept(noexcept(n *= n) &&
-                                                                           noexcept(1 / n)) {
+[[nodiscard]] ATTRIBUTE_CONST constexpr T bin_pow(T n,
+                                                  std::ptrdiff_t p) noexcept(noexcept(n *= n) &&
+                                                                             noexcept(1 / n)) {
     const bool not_inverse = p >= 0;
-    uint64_t p_u           = p >= 0 ? static_cast<uint64_t>(p) : -static_cast<uint64_t>(p);
+    std::size_t p_u        = p >= 0 ? static_cast<std::size_t>(p) : -static_cast<std::size_t>(p);
     T res(1);
     while (true) {
         if (p_u & 1) {
@@ -1262,12 +1263,14 @@ bool is_power_of_two(char) = delete;
 ATTRIBUTE_CONST constexpr uint64_t nearest_greater_equal_power_of_two(uint32_t n) noexcept {
     const auto shift = 32 - static_cast<std::uint32_t>(::math_functions::countl_zero(n | 1)) -
                        ((n & (n - 1)) == 0);
+    ATTRIBUTE_ASSUME(shift <= 32);
     return uint64_t{1} << shift;
 }
 
 [[nodiscard]]
 ATTRIBUTE_CONST constexpr uint64_t nearest_greater_power_of_two(uint32_t n) noexcept {
     const auto shift = 32 - static_cast<std::uint32_t>(::math_functions::countl_zero(n));
+    ATTRIBUTE_ASSUME(shift <= 32);
     return uint64_t{1} << shift;
 }
 
