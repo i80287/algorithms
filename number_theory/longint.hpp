@@ -667,7 +667,9 @@ struct longint {
         const bool find_sum    = (size_ ^ other.size_) >= 0;
         const size_type usize2 = other.usize();
         static_assert(max_size() + 1 > max_size());
-        const size_type usize1 = set_size_at_least(std::max(usize(), usize2) + (find_sum ? 1 : 0));
+        const size_type min_size_boundary = std::max(usize(), usize2) + (find_sum ? 1 : 0);
+        ATTRIBUTE_ASSUME(usize() < min_size_boundary);
+        const size_type usize1 = set_size_at_least(min_size_boundary);
         ATTRIBUTE_ASSUME(usize1 >= usize2);
         if (find_sum) {
             ATTRIBUTE_ASSUME(usize1 > usize2);
@@ -957,11 +959,12 @@ struct longint {
 
         // x != 0 => sign won't change and there will be no leading zeros
         if (carry != 0) {
-            if (unlikely(usize_value == capacity_)) {
+            assert(usize_value <= capacity_);
+            if (unlikely(usize_value >= capacity_)) {
                 growCapacity();
+                assert(usize_value < capacity_);
             }
 
-            assert(usize_value < capacity_);
             nums_[usize_value] = static_cast<digit_t>(carry);
             size_ += sign();
         }
@@ -1243,9 +1246,9 @@ struct longint {
             full_blocks * kStrConvBaseDigits + math_functions::base_10_len(last_a_i);
         ans.resize(ans.size() + string_size);
         auto* ptr = reinterpret_cast<uint8_t*>(std::addressof(ans[ans.size() - 1]));
-        for (std::size_t i = 0; i < full_blocks; i++) {
+        for (typename Decimal::dec_size_type i = 0; i < full_blocks; i++) {
             typename Decimal::dec_digit_t a_i = result.digits_[i];
-            for (std::size_t j = kStrConvBaseDigits; j > 0; j--) {
+            for (auto j = kStrConvBaseDigits; j > 0; j--) {
                 *ptr = static_cast<uint8_t>('0' + a_i % 10);
                 a_i /= 10;
                 ptr--;
@@ -1362,9 +1365,9 @@ struct longint {
 
         Decimal& operator+=(const Decimal& other) {
             double_dec_digit_t carry = 0;
-            const std::size_t m      = std::min(this->size_, other.size_);
+            const dec_size_type m    = std::min(this->size_, other.size_);
             dec_digit_t* p           = this->digits_;
-            for (std::size_t i = 0; i < m; i++) {
+            for (dec_size_type i = 0; i < m; i++) {
                 const double_dec_digit_t res =
                     double_dec_digit_t{p[i]} + double_dec_digit_t{other.digits_[i]} + carry;
                 p[i]  = static_cast<dec_digit_t>(res % kDecimalBase);
@@ -1380,9 +1383,9 @@ struct longint {
                 size_         = other.size_;
             }
 
-            p                           = this->digits_;
-            const std::size_t this_size = size_;
-            for (std::size_t i = m; carry != 0 && i < this_size; i++) {
+            p                             = this->digits_;
+            const dec_size_type this_size = size_;
+            for (dec_size_type i = m; carry != 0 && i < this_size; i++) {
                 const auto res = double_dec_digit_t{p[i]} + carry;
                 p[i]           = static_cast<dec_digit_t>(res % kDecimalBase);
                 carry          = res / kDecimalBase;
@@ -1391,12 +1394,13 @@ struct longint {
             if (carry == 0) {
                 pop_leading_zeros();
             } else {
-                dec_digit_t* new_digits     = allocate((this_size + 1 + (this_size == 0)));
-                pointer new_digits_copy_end = std::copy_n(digits_, this_size, new_digits);
-                *new_digits_copy_end        = static_cast<dec_digit_t>(carry);
+                dec_digit_t* const new_digits = allocate((this_size + 1 + (this_size == 0)));
+                dec_digit_t* const new_digits_copy_end =
+                    std::copy_n(digits_, this_size, new_digits);
+                *new_digits_copy_end = static_cast<dec_digit_t>(carry);
                 deallocate(this->digits_);
                 this->digits_ = new_digits;
-                size_         = this_size + 1;
+                this->size_   = this_size + 1;
             }
 
             return *this;
@@ -1970,7 +1974,7 @@ private:
                     p++;
                 }
             } else {
-                for (std::size_t i = 0; i < m; i++) {
+                for (size_type i = 0; i < m; i++) {
                     digit_t m_value = m_ptr[i];
                     digit_t k_value = k_ptr[i];
 
@@ -1993,7 +1997,7 @@ private:
                                       static_cast<double>(static_cast<uint8_t>(k_value))};
                     p++;
                 }
-                for (std::size_t i = m; i < k; i++) {
+                for (size_type i = m; i < k; i++) {
                     digit_t k_value = k_ptr[i];
 
                     *p = fft::complex{0.0, static_cast<double>(static_cast<uint8_t>(k_value))};
@@ -2074,12 +2078,11 @@ private:
         double_digit_t carry = 0;
         for (digit_t *const nums_iter_rend = nums_ - 1, *nums_riter = nums_iter_rend + usize();
              nums_riter != nums_iter_rend; --nums_riter) {
-            const double_digit_t cur =
-                (carry << kNumsBits) | static_cast<double_digit_t>(*nums_riter);
-            const double_digit_t q = cur / n;
-            const double_digit_t r = cur - q * n;
-            *nums_riter            = static_cast<digit_t>(q);
-            carry                  = r;
+            const double_digit_t cur = (carry << kNumsBits) | double_digit_t{*nums_riter};
+            const double_digit_t q   = cur / n;
+            const double_digit_t r   = cur - q * n;
+            *nums_riter              = static_cast<digit_t>(q);
+            carry                    = r;
         }
 
         pop_leading_zeros();
@@ -2407,7 +2410,7 @@ private:
         Decimal low_dec  = convertBinBaseImpl(nums, size / 2);
         Decimal high_dec = convertBinBaseImpl(nums + size / 2, size / 2);
 
-        const std::size_t idx = math_functions::log2_floor(size) - 1;
+        const uint32_t idx = math_functions::log2_floor(size) - 1;
         assert(idx < conv_bin_base_pows.size());
         high_dec *= conv_bin_base_pows[idx];
         high_dec += low_dec;
@@ -2435,9 +2438,15 @@ private:
     }
 
     ATTRIBUTE_NOINLINE ATTRIBUTE_COLD void growCapacity() {
-        reserve(static_cast<std::size_t>(capacity_) * 2 | (capacity_ == 0));
+        const size_type current_capacity = capacity();
+        static_assert(max_size() * 2 > max_size());
+        const size_type new_capacity = (current_capacity * 2) | (current_capacity == 0);
+        ATTRIBUTE_ASSUME(capacity_ < new_capacity);
+        reserve(new_capacity);
     }
 
+    ATTRIBUTE_NODISCARD_WITH_MESSAGE("impl error")
+    ATTRIBUTE_ALWAYS_INLINE
     size_type set_size_at_least(size_type new_size) {
         size_type cur_size = usize();
         if (new_size <= cur_size) {

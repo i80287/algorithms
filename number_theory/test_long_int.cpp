@@ -671,18 +671,16 @@ void TestUIntAddAndSub() {
     for (uint32_t i = 0; i <= K; i++) {
         for (uint32_t j = 0; j <= K; j++) {
             n = i;
-            assert(n == i);
             n += j;
             assert(n == i + j);
             AssertInvariants(n);
             n = i;
-            assert(n == i);
             n -= j;
             if (unlikely(i == j)) {
                 assert(!n);
                 assert(n.iszero());
             }
-            assert(n == int64_t(i) - int64_t(j));
+            assert(n == int64_t{i} - int64_t{j});
             AssertInvariants(n);
         }
     }
@@ -690,18 +688,16 @@ void TestUIntAddAndSub() {
     for (uint32_t i = std::numeric_limits<uint32_t>::max() - K; i != 0; i++) {
         for (uint32_t j = std::numeric_limits<uint32_t>::max() - K; j != 0; j++) {
             n = i;
-            assert(n == uint64_t(i));
             n += j;
-            assert(n == uint64_t(i) + uint64_t(j));
+            assert(n == uint64_t{i} + uint64_t{j});
             AssertInvariants(n);
             n = i;
-            assert(n == i);
             n -= j;
             if (unlikely(i == j)) {
                 assert(!n);
                 assert(n.iszero());
             }
-            assert(n == int64_t(i) - int64_t(j));
+            assert(n == int64_t{i} - int64_t{j});
             AssertInvariants(n);
         }
     }
@@ -709,7 +705,6 @@ void TestUIntAddAndSub() {
     for (uint64_t i = std::numeric_limits<uint64_t>::max() - K; i != 0; i++) {
         for (uint32_t j = std::numeric_limits<uint32_t>::max() - K; j != 0; j++) {
             n = i;
-            assert(n == i);
             n += j;
             assert(n == uint128_t{i} + uint128_t{j});
             AssertInvariants(n);
@@ -720,7 +715,6 @@ void TestUIntAddAndSub() {
     for (uint128_t i = kStartPos1; i != uint128_t{kStartPos1} + 2 * K; i++) {
         for (uint32_t j = std::numeric_limits<uint32_t>::max() - K; j != 0; j++) {
             n = i;
-            assert(n == i);
             n += j;
             assert(n == i + j);
             AssertInvariants(n);
