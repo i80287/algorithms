@@ -12,8 +12,8 @@ namespace detail {
 
 ATTRIBUTE_ACCESS(read_write, 1)
 ATTRIBUTE_ACCESS(read_only, 2)
-constexpr void matrix_mul(uint64_t (&m1)[2][2], const uint64_t (&m2)[2][2]) noexcept {
-    const uint64_t tmp[2][2] = {
+constexpr void matrix_mul(std::uint64_t (&m1)[2][2], const std::uint64_t (&m2)[2][2]) noexcept {
+    const std::uint64_t tmp[2][2] = {
         {m1[0][0] * m2[0][0] + m1[0][1] * m2[1][0], m1[0][0] * m2[0][1] + m1[0][1] * m2[1][1]},
         {m1[1][0] * m2[0][0] + m1[1][1] * m2[1][0], m1[1][0] * m2[0][1] + m1[1][1] * m2[1][1]},
     };
@@ -27,9 +27,9 @@ constexpr void matrix_mul(uint64_t (&m1)[2][2], const uint64_t (&m2)[2][2]) noex
 
 struct fibs_pair {
     /// @brief F_{n - 1}
-    uint64_t fib_n_1;
+    std::uint64_t fib_n_1;
     /// @brief F_n
-    uint64_t fib_n;
+    std::uint64_t fib_n;
 };
 
 /// @brief Returns pair (F_{n - 1}, F_n), where F_n
@@ -37,12 +37,13 @@ struct fibs_pair {
 ///        Here we suppose that F_{-1} = 0, F_0 = 1, F_1 = 1.
 /// @param n
 /// @return (F_{n - 1}, F_n)
-ATTRIBUTE_CONST constexpr fibs_pair fibonacci_nums(uint32_t n) noexcept {
-    uint64_t p[2][2] = {
+[[nodiscard]]
+ATTRIBUTE_CONST constexpr fibs_pair fibonacci_nums(std::uint32_t n) noexcept {
+    std::uint64_t p[2][2] = {
         {0, 1},
         {1, 1},
     };
-    uint64_t fibmatrix[2][2] = {
+    std::uint64_t fibmatrix[2][2] = {
         {1, 0},
         {0, 1},
     };
@@ -67,7 +68,8 @@ ATTRIBUTE_CONST constexpr fibs_pair fibonacci_nums(uint32_t n) noexcept {
 ///        Here we suppose that F_{-1} = 0, F_0 = 1, F_1 = 1.
 /// @param n
 /// @return F_n
-ATTRIBUTE_CONST constexpr uint64_t fibonacci_num(uint32_t n) noexcept {
+[[nodiscard]]
+ATTRIBUTE_CONST constexpr std::uint64_t fibonacci_num(std::uint32_t n) noexcept {
     return fibonacci_nums(n).fib_n;
 }
 
@@ -83,7 +85,7 @@ ATTRIBUTE_CONST constexpr uint64_t fibonacci_num(uint32_t n) noexcept {
 ///     fibonacci_num(91) == 7540113804746346429
 ///     fibonacci_num(92) == 12200160415121876738
 ///     fibonacci_num(93) == 1293530146158671551  <- overflow
-inline constexpr uint32_t kMaxFibNonOverflowU64 = 92;
+inline constexpr std::uint32_t kMaxFibNonOverflowU64 = 92;
 
 #if defined(INTEGERS_128_BIT_HPP)
 
@@ -92,7 +94,7 @@ namespace detail {
 
 ATTRIBUTE_ACCESS(read_write, 1)
 ATTRIBUTE_ACCESS(read_only, 2)
-I128_CONSTEXPR void matrix_mul(uint128_t m1[2][2], const uint128_t m2[2][2]) noexcept {
+I128_CONSTEXPR void matrix_mul(uint128_t (&m1)[2][2], const uint128_t (&m2)[2][2]) noexcept {
     const uint128_t tmp[2][2] = {
         {m1[0][0] * m2[0][0] + m1[0][1] * m2[1][0], m1[0][0] * m2[0][1] + m1[0][1] * m2[1][1]},
         {m1[1][0] * m2[0][0] + m1[1][1] * m2[1][0], m1[1][0] * m2[0][1] + m1[1][1] * m2[1][1]},
@@ -117,7 +119,8 @@ struct fibs_pair_u128 {
 ///        Here we suppose that F_{-1} = 0, F_0 = 1, F_1 = 1.
 /// @param n
 /// @return (F_{n - 1}, F_n)
-ATTRIBUTE_CONST I128_CONSTEXPR fibs_pair_u128 fibonacci_nums_u128(uint32_t n) noexcept {
+[[nodiscard]]
+ATTRIBUTE_CONST I128_CONSTEXPR fibs_pair_u128 fibonacci_nums_u128(std::uint32_t n) noexcept {
     uint128_t p[2][2] = {
         {0, 1},
         {1, 1},
@@ -147,7 +150,8 @@ ATTRIBUTE_CONST I128_CONSTEXPR fibs_pair_u128 fibonacci_nums_u128(uint32_t n) no
 ///        Here we suppose that F_{-1} = 0, F_0 = 1, F_1 = 1.
 /// @param n
 /// @return F_n
-ATTRIBUTE_CONST I128_CONSTEXPR uint128_t fibonacci_num_u128(uint32_t n) noexcept {
+[[nodiscard]]
+ATTRIBUTE_CONST I128_CONSTEXPR uint128_t fibonacci_num_u128(std::uint32_t n) noexcept {
     return fibonacci_nums_u128(n).fib_n;
 }
 
@@ -165,7 +169,7 @@ ATTRIBUTE_CONST I128_CONSTEXPR uint128_t fibonacci_num_u128(uint32_t n) noexcept
 ///     fibonacci_num_u128(186) == 198239973509362327032045173661212819077
 ///                                  ^
 ///                               overflow
-inline constexpr uint32_t kMaxFibNonOverflowU128 = 185;
+inline constexpr std::uint32_t kMaxFibNonOverflowU128 = 185;
 
 #endif  // INTEGERS_128_BIT_HPP
 
