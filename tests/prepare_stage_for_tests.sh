@@ -1,4 +1,4 @@
-#!/bin/env bash
+#!/usr/bin/env bash
 
 function prepare_tests_data_and_cd_to_build_dir() {
     build_dir="$1"
