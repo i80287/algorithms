@@ -191,7 +191,8 @@ function(configure_gcc_or_clang_gcc_options)
         -U_GLIBCXX_USE_DEPRECATED)
     set(LOCAL_FN_TEST_COMPILE_DEFINITIONS
         ${LOCAL_FN_TEST_COMPILE_DEFINITIONS}
-        _GLIBCXX_SANITIZE_VECTOR)
+        _GLIBCXX_SANITIZE_VECTOR
+        ENABLE_LONGINT_DEBUG_ASSERTS=1)
     if (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 10.0)
         # In gcc with version < 10.0 these checks break `constexpr`-tivity of some std:: functions
         set(LOCAL_FN_TEST_COMPILE_DEFINITIONS
