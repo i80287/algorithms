@@ -3,11 +3,11 @@ name: Ubuntu CI
 on: [push, workflow_dispatch]
 
 permissions:
-    contents: read
+  contents: read
 
 env:
-    UBSAN_OPTIONS: print_stacktrace=1
-    ASAN_OPTIONS: print_stats=1:atexit=1:detect_odr_violation=2
+  UBSAN_OPTIONS: print_stacktrace=1
+  ASAN_OPTIONS: print_stats=1:atexit=1:detect_odr_violation=2
 
 jobs:
 
@@ -34,9 +34,7 @@ jobs:
 
     - name: Run tests
       run: |
-        cd ./tests
-        chmod +x ./run_gcc_tests.sh
-        ./run_gcc_tests.sh
+        cd ./tests && chmod +x run_gcc_tests.sh && ./run_gcc_tests.sh
 
   ubuntu-cmake-clang:
     name: test-clang-on-ubuntu-${{ matrix.ubuntu_version }}
@@ -61,9 +59,7 @@ jobs:
 
     - name: Run tests
       run: |
-        cd ./tests
-        chmod +x ./run_clang_tests.sh
-        ./run_clang_tests.sh
+        cd ./tests && chmod +x run_clang_tests.sh && ./run_clang_tests.sh
 
   ubuntu-cmake-gcc-mingw-w64-i686-posix:
     name: test-gcc-mingw-w64-i686-posix-on-ubuntu-${{ matrix.ubuntu_version }}
@@ -93,9 +89,7 @@ jobs:
 
     - name: Run tests
       run: |
-        cd ./tests
-        chmod +x ./run_gcc_mingw_32_tests.sh
-        ./run_gcc_mingw_32_tests.sh
+        cd ./tests && chmod +x run_gcc_mingw_32_tests.sh && ./run_gcc_mingw_32_tests.sh
 
   ubuntu-cmake-gcc-mingw-w64-x86_64-posix:
     name: test-gcc-mingw-w64-x86_64-posix-on-ubuntu-${{ matrix.ubuntu_version }}
@@ -125,6 +119,4 @@ jobs:
 
     - name: Run tests
       run: |
-        cd ./tests
-        chmod +x ./run_gcc_mingw_64_tests.sh
-        ./run_gcc_mingw_64_tests.sh
+        cd ./tests && chmod +x run_gcc_mingw_64_tests.sh && ./run_gcc_mingw_64_tests.sh

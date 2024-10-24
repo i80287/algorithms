@@ -30,6 +30,4 @@ jobs:
 
     - name: Run tests
       run: |
-        cd ./tests
-        chmod +x run_macos_clang_tests.sh
-        ./run_macos_clang_tests.sh
+        cd ./tests && chmod +x run_macos_clang_tests.sh && ./run_macos_clang_tests.sh

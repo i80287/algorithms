@@ -3,11 +3,11 @@ name: Fedora CI
 on: [push, workflow_dispatch]
 
 permissions:
-    contents: read
+  contents: read
 
 env:
-    UBSAN_OPTIONS: print_stacktrace=1
-    ASAN_OPTIONS: print_stats=1:atexit=1:detect_odr_violation=2
+  UBSAN_OPTIONS: print_stacktrace=1
+  ASAN_OPTIONS: print_stats=1:atexit=1:detect_odr_violation=2
 
 jobs:
 
@@ -36,8 +36,7 @@ jobs:
     - name: Run tests
       run: |
         cd ./tests
-        chmod +x ./run_gcc_tests.sh
-        ./run_gcc_tests.sh
+        chmod +x run_gcc_tests.sh && ./run_gcc_tests.sh
 
   fedora-cmake-clang:
     name: test-fedora-clang
@@ -63,6 +62,4 @@ jobs:
 
     - name: Run tests
       run: |
-        cd ./tests
-        chmod +x ./run_clang_tests.sh
-        ./run_clang_tests.sh
+        cd ./tests && chmod +x run_clang_tests.sh && ./run_clang_tests.sh
