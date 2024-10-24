@@ -53,7 +53,7 @@ void TestOperatorEqualsInt() {
     assert(n.iszero());
     assert(!n);
     AssertInvariants(n);
-    for (int32_t i = 0; i <= K; i++) {
+    for (int32_t i = 1; i <= K; i++) {
         n = i;
         assert(n.sign() == 1);
         assert(n.size() == 1 && n.begin()[0] == uint32_t(i));
@@ -77,7 +77,7 @@ void TestOperatorEqualsInt() {
     assert(n.iszero());
     assert(!n);
     AssertInvariants(n);
-    for (uint32_t i = 0; i <= K; i++) {
+    for (uint32_t i = 1; i <= K; i++) {
         n = i;
         assert(n.sign() == 1);
         assert(n.size() == 1 && n.begin()[0] == i);
@@ -93,7 +93,7 @@ void TestOperatorEqualsInt() {
     assert(n.iszero());
     assert(!n);
     AssertInvariants(n);
-    for (int64_t i = 0; i <= K; i++) {
+    for (int64_t i = 1; i <= K; i++) {
         n = i;
         assert(n.sign() == 1);
         assert(n.size() == 1 && n.begin()[0] == uint32_t(i));
@@ -117,7 +117,7 @@ void TestOperatorEqualsInt() {
     assert(n.iszero());
     assert(!n);
     AssertInvariants(n);
-    for (uint64_t i = 0; i < K; i++) {
+    for (uint64_t i = 1; i < K; i++) {
         n = i;
         assert(n.sign() == 1);
         assert(n.size() == 1 && n.begin()[0] == i);
@@ -133,7 +133,7 @@ void TestOperatorEqualsInt() {
     assert(n.iszero());
     assert(!n);
     AssertInvariants(n);
-    for (int64_t i = 0; i <= K; i++) {
+    for (int64_t i = 1; i <= K; i++) {
         n = int128_t{i};
         assert(n.sign() == 1);
         assert(n.size() == 1 && n.begin()[0] == uint32_t(i));
@@ -165,7 +165,7 @@ void TestOperatorEqualsInt() {
            n.begin()[3] == std::numeric_limits<uint32_t>::max());
     AssertInvariants(n);
 
-    for (uint64_t i = uint64_t(-1) - K; i != 0; i++) {
+    for (uint64_t i = std::numeric_limits<uint64_t>::max() - K; i != 0; i++) {
         n = i;
         assert(n == i);
         n = uint128_t(i);
