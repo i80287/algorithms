@@ -147,8 +147,10 @@ void TestOperatorEqualsInt() {
     n = static_cast<uint128_t>(-1);
     assert(n.sign() == 1);
     assert(n.size() == 4);
-    assert(n.begin()[0] == uint32_t(-1) && n.begin()[1] == uint32_t(-1) &&
-           n.begin()[2] == uint32_t(-1) && n.begin()[3] == uint32_t(-1));
+    assert(n.begin()[0] == std::numeric_limits<uint32_t>::max() &&
+           n.begin()[1] == std::numeric_limits<uint32_t>::max() &&
+           n.begin()[2] == std::numeric_limits<uint32_t>::max() &&
+           n.begin()[3] == std::numeric_limits<uint32_t>::max());
     AssertInvariants(n);
 
     for (uint64_t i = uint64_t(-1) - K; i != 0; i++) {
@@ -535,7 +537,7 @@ void TestLongIntSquare() {
         AssertInvariants(n);
     }
 
-    for (uint32_t i = uint32_t(-1) - K; i != 0; i++) {
+    for (uint32_t i = std::numeric_limits<uint32_t>::max() - K; i != 0; i++) {
         n = i;
         n.SquareInplace();
         assert(n == uint64_t(i) * i);
@@ -640,8 +642,8 @@ void TestUIntMult() {
         }
     }
 
-    for (uint32_t i = uint32_t(-1) - K; i != 0; i++) {
-        for (uint32_t j = uint32_t(-1) - K; j != 0; j++) {
+    for (uint32_t i = std::numeric_limits<uint32_t>::max() - K; i != 0; i++) {
+        for (uint32_t j = std::numeric_limits<uint32_t>::max() - K; j != 0; j++) {
             n = i;
             n *= uint32_t(j);
             assert(n == uint64_t(i) * uint64_t(j));
@@ -650,7 +652,7 @@ void TestUIntMult() {
     }
 
     for (uint64_t i = uint64_t(-1) - K; i != 0; i++) {
-        for (uint32_t j = uint32_t(-1) - K; j != 0; j++) {
+        for (uint32_t j = std::numeric_limits<uint32_t>::max() - K; j != 0; j++) {
             n = i;
             n *= j;
             assert(n == uint128_t(i) * j);
@@ -685,8 +687,8 @@ void TestUIntAddAndSub() {
         }
     }
 
-    for (uint32_t i = uint32_t(-1) - K; i != 0; i++) {
-        for (uint32_t j = uint32_t(-1) - K; j != 0; j++) {
+    for (uint32_t i = std::numeric_limits<uint32_t>::max() - K; i != 0; i++) {
+        for (uint32_t j = std::numeric_limits<uint32_t>::max() - K; j != 0; j++) {
             n = i;
             assert(n == uint64_t(i));
             n += j;
@@ -704,18 +706,19 @@ void TestUIntAddAndSub() {
         }
     }
 
-    for (uint64_t i = uint64_t(-1) - K; i != 0; i++) {
-        for (uint32_t j = uint32_t(-1) - K; j != 0; j++) {
+    for (uint64_t i = std::numeric_limits<uint64_t>::max() - K; i != 0; i++) {
+        for (uint32_t j = std::numeric_limits<uint32_t>::max() - K; j != 0; j++) {
             n = i;
             assert(n == i);
             n += j;
-            assert(n == uint128_t(i) + uint128_t(j));
+            assert(n == uint128_t{i} + uint128_t{j});
             AssertInvariants(n);
         }
     }
 
-    for (uint128_t i = uint64_t(-1); i != uint128_t(uint64_t(-1)) + 2 * K; i++) {
-        for (uint32_t j = uint32_t(-1) - K; j != 0; j++) {
+    const uint64_t kStartPos1 = std::numeric_limits<uint64_t>::max();
+    for (uint128_t i = kStartPos1; i != uint128_t{kStartPos1} + 2 * K; i++) {
+        for (uint32_t j = std::numeric_limits<uint32_t>::max() - K; j != 0; j++) {
             n = i;
             assert(n == i);
             n += j;
@@ -724,9 +727,9 @@ void TestUIntAddAndSub() {
         }
     }
 
-    const uint128_t h = uint128_t(-1) / 2;
-    for (uint128_t i = h - 2 * K; i != h; i++) {
-        for (uint32_t j = uint32_t(-1) - K; j != 0; j++) {
+    const uint128_t kStartPos2 = uint128_t(-1) / 2;
+    for (uint128_t i = kStartPos2 - 2 * K; i != kStartPos2; i++) {
+        for (uint32_t j = std::numeric_limits<uint32_t>::max() - K; j != 0; j++) {
             n = i;
             n += j;
             assert(n == i + j);
@@ -734,56 +737,59 @@ void TestUIntAddAndSub() {
         }
     }
 
-    for (int32_t i = int32_t(1u << 31); i != int32_t(K) + int32_t(1u << 31); i++) {
+    const int32_t kStartPos3 = std::numeric_limits<int32_t>::min();
+    for (int32_t i = kStartPos3; i != static_cast<int32_t>(K) + kStartPos3; i++) {
         for (uint32_t j = 0; j <= K; j++) {
             n = i;
             n += j;
-            assert(n == i + int32_t(j));
+            assert(n == i + static_cast<int32_t>(j));
             AssertInvariants(n);
         }
     }
 
-    for (int32_t i = int32_t(1u << 31); i != int32_t(K) + int32_t(1u << 31); i++) {
-        for (uint32_t j = uint32_t(-1) - K; j != 0; j++) {
+    for (int32_t i = kStartPos3; i != int32_t(K) + kStartPos3; i++) {
+        for (uint32_t j = std::numeric_limits<uint32_t>::max() - K; j != 0; j++) {
             n = i;
             n += j;
-            assert(n == i + int64_t(j));
+            assert(n == i + int64_t{j});
             AssertInvariants(n);
         }
     }
 
-    for (int64_t i = -int64_t(1ll << 62); i != int64_t(K) - int64_t(1ll << 62); i++) {
+    const int64_t kStartPos4 = -int64_t{1ll << 62};
+    for (int64_t i = kStartPos4; i != int64_t{K} + kStartPos4; i++) {
         for (uint32_t j = 0; j <= K; j++) {
             n = i;
             n += j;
-            assert(n == i + int32_t(j));
+            assert(n == i + static_cast<int32_t>(j));
             AssertInvariants(n);
         }
     }
 
-    for (int64_t i = -int64_t(1ll << 62); i != int64_t(K) - int64_t(1ll << 62); i++) {
-        for (uint32_t j = uint32_t(-1) - K; j != 0; j++) {
+    for (int64_t i = kStartPos4; i != int64_t{K} + kStartPos4; i++) {
+        for (uint32_t j = std::numeric_limits<uint32_t>::max() - K; j != 0; j++) {
             n = i;
             n += j;
-            assert(n == i + int64_t(j));
+            assert(n == i + int64_t{j});
             AssertInvariants(n);
         }
     }
 
-    for (int64_t i = int64_t(1ull << 63); i != K + int64_t(1ull << 63); i++) {
+    const int64_t kStartPos5 = std::numeric_limits<int64_t>::min();
+    for (int64_t i = kStartPos5; i != int64_t{K} + kStartPos5; i++) {
         for (uint32_t j = 0; j <= K; j++) {
             n = i;
             n += j;
-            assert(n == i + int32_t(j));
+            assert(n == i + static_cast<int32_t>(j));
             AssertInvariants(n);
         }
     }
 
-    for (int64_t i = int64_t(1ull << 63); i != K + int64_t(1ull << 63); i++) {
-        for (uint32_t j = uint32_t(-1) - K; j != 0; j++) {
+    for (int64_t i = kStartPos5; i != int64_t{K} + kStartPos5; i++) {
+        for (uint32_t j = std::numeric_limits<uint32_t>::max() - K; j != 0; j++) {
             n = i;
             n += j;
-            assert(n == i + int64_t(j));
+            assert(n == i + int64_t{j});
             AssertInvariants(n);
         }
     }
@@ -823,8 +829,8 @@ void TestInt32Div() {
         n /= uint32_t{1} << 31;
         assert(n == i >> 31);
     }
-    for (uint32_t i = uint32_t(-1) - K; i != 0; i++) {
-        for (uint32_t j = uint32_t(-1) - K; j != 0; j++) {
+    for (uint32_t i = std::numeric_limits<uint32_t>::max() - K; i != 0; i++) {
+        for (uint32_t j = std::numeric_limits<uint32_t>::max() - K; j != 0; j++) {
             n = i;
             n /= j;
             assert(n == i / j);
@@ -872,8 +878,8 @@ void TestLongIntAddAndSub() {
         }
     }
 
-    for (uint32_t i = uint32_t(-1) - K; i != 0; i++) {
-        for (uint32_t j = uint32_t(-1) - K; j != 0; j++) {
+    for (uint32_t i = std::numeric_limits<uint32_t>::max() - K; i != 0; i++) {
+        for (uint32_t j = std::numeric_limits<uint32_t>::max() - K; j != 0; j++) {
             n = i;
             m = j;
             n += m;
@@ -886,8 +892,10 @@ void TestLongIntAddAndSub() {
         }
     }
 
-    for (uint64_t i = uint64_t(-1) - uint32_t(-1) - K; i != uint64_t(-1) - uint32_t(-1); i++) {
-        for (uint32_t j = uint32_t(-1) - K; j != 0; j++) {
+    const auto kStartPos1 =
+        std::numeric_limits<uint64_t>::max() - std::numeric_limits<uint32_t>::max();
+    for (uint64_t i = kStartPos1 - K; i != kStartPos1; i++) {
+        for (uint32_t j = std::numeric_limits<uint32_t>::max() - K; j != 0; j++) {
             n = i;
             m = j;
             n += m;
@@ -900,8 +908,9 @@ void TestLongIntAddAndSub() {
         }
     }
 
-    for (uint128_t i = uint64_t(-1); i != uint128_t(uint64_t(-1)) + 2 * K; i++) {
-        for (uint32_t j = uint32_t(-1) - K; j != 0; j++) {
+    const auto kStartPos2 = std::numeric_limits<uint64_t>::max();
+    for (uint128_t i = kStartPos2; i != uint128_t{kStartPos2} + 2 * K; i++) {
+        for (uint32_t j = std::numeric_limits<uint32_t>::max() - K; j != 0; j++) {
             n = i;
             m = j;
             n += m;
@@ -914,9 +923,9 @@ void TestLongIntAddAndSub() {
         }
     }
 
-    const uint128_t h = uint128_t(-1) / 2;
-    for (uint128_t i = h - 2 * K; i < h; i++) {
-        for (uint128_t j = h - 2 * K; j < h; j++) {
+    const uint128_t kStartPos3 = uint128_t(-1) / 2;
+    for (uint128_t i = kStartPos3 - 2 * K; i < kStartPos3; i++) {
+        for (uint128_t j = kStartPos3 - 2 * K; j < kStartPos3; j++) {
             n = i;
             m = j;
             n += m;
@@ -1028,7 +1037,7 @@ void TestSetString() {
     nums_count = 256 / (sizeof(uint32_t) * 8);
     assert(n.size() == int32_t(nums_count));
     for (std::size_t i = 0; i < nums_count; i++) {
-        assert(n[i] == uint32_t(-1));
+        assert(n[i] == std::numeric_limits<uint32_t>::max());
     }
     AssertInvariants(n);
 
@@ -1040,7 +1049,7 @@ void TestSetString() {
     nums_count = 512 / (sizeof(uint32_t) * 8);
     assert(n.size() == int32_t(nums_count));
     for (std::size_t i = 0; i < nums_count; i++) {
-        assert(n[i] == uint32_t(-1));
+        assert(n[i] == std::numeric_limits<uint32_t>::max());
     }
     AssertInvariants(n);
 }
@@ -1353,8 +1362,8 @@ void TestDecimal() {
         }
     }
 
-    for (uint32_t i = uint32_t(-1) - kC; i != 0; i++) {
-        for (uint32_t j = uint32_t(-1) - kC; j != 0; j++) {
+    for (uint32_t i = std::numeric_limits<uint32_t>::max() - kC; i != 0; i++) {
+        for (uint32_t j = std::numeric_limits<uint32_t>::max() - kC; j != 0; j++) {
             d1 = i;
             d2 = j;
             d1 += d2;
@@ -1395,12 +1404,12 @@ void TestDecimal() {
         }
     }
 
-    for (uint32_t i = uint32_t(-1) - kC; i != 0; i++) {
-        for (uint32_t j = uint32_t(-1) - kC; j != 0; j++) {
+    for (uint32_t i = std::numeric_limits<uint32_t>::max() - kC; i != 0; i++) {
+        for (uint32_t j = std::numeric_limits<uint32_t>::max() - kC; j != 0; j++) {
             d1 = i;
             d2 = j;
             d1 *= d2;
-            assert(d1 == uint64_t(i) * j);
+            assert(d1 == uint64_t{i} * j);
         }
     }
 
@@ -1454,7 +1463,7 @@ void TestDecimal() {
         assert(d1 == i * i);
     }
 
-    for (uint32_t i = uint32_t(-1) - kC; i != 0; i++) {
+    for (uint32_t i = std::numeric_limits<uint32_t>::max() - kC; i != 0; i++) {
         d1 = i;
         d1.SquareThisTo(d1);
         assert(d1 == uint64_t(i) * i);
@@ -1583,7 +1592,7 @@ void TestToIntTypes() {
     for (uint32_t i = 0; i <= kC; i++) {
         test(i);
     }
-    for (uint32_t i = uint32_t(-1) - kC; i != 0; i++) {
+    for (uint32_t i = std::numeric_limits<uint32_t>::max() - kC; i != 0; i++) {
         test(i);
     }
     for (uint64_t i = 0; i <= kC; i++) {
