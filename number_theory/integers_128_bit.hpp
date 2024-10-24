@@ -29,12 +29,16 @@ typedef std::_Signed128 int128_t;
 
 #else
 
-#ifdef defined(__clang__) || defined(__GNUC__)
+#if defined(INTEGERS_128_BIT_HPP_WARN_IF_UNSUPPORED) && INTEGERS_128_BIT_HPP_WARN_IF_UNSUPPORED
+
+#if defined(__clang__) || defined(__GNUC__)
 // cppcheck-suppress [preprocessorErrorDirective]
 #warning "Unsupported compiler, typedef 128-bit integer specific for your compiler"
 #elif defined(_MSC_VER)
 // cppcheck-suppress [preprocessorErrorDirective]
 #pragma message WARN("your warning message here")
+#endif
+
 #endif
 
 #define HAS_INT128_TYPEDEF 0
