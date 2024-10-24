@@ -239,9 +239,9 @@ void test_sin_cos_sum_generic() noexcept {
     log_tests_started();
 
     constexpr uint32_t kMaxN       = 1e2;
-    constexpr int64_t k            = 5;
+    constexpr int32_t k            = 5;
     constexpr uint32_t angle_scale = 10;
-    constexpr double angle_start   = bin_pow(double(angle_scale), -k);
+    constexpr double angle_start   = bin_pow(double(angle_scale), -ptrdiff_t{k});
 
     constexpr FloatType kSumEps = []() constexpr noexcept -> FloatType {
         if constexpr (std::is_same_v<FloatType, float>) {
@@ -747,8 +747,8 @@ void test_inv_mod_m() {
 void test_powers_sum() noexcept {
     log_tests_started();
 
-    constexpr uint64_t kMaxM = 6;
-    for (uint64_t m = 0; m <= kMaxM; m++) {
+    constexpr size_t kMaxM = 6;
+    for (size_t m = 0; m <= kMaxM; m++) {
         static_assert(kMaxM <= 6);
         const auto max_n = [m]() noexcept -> std::uint32_t {
             switch (m) {
@@ -771,15 +771,15 @@ void test_powers_sum() noexcept {
             assert(false);
             std::terminate();
         }();
-        constexpr std::uint32_t kOffset = 50;
+        constexpr uint32_t kOffset = 50;
         assert(max_n >= kOffset);
-        const auto start_n = max_n - kOffset;
-        uint64_t s         = 0;
-        for (uint64_t i = 1; i < start_n; i++) {
+        const uint32_t start_n = max_n - kOffset;
+        uint64_t s             = 0;
+        for (size_t i = 1; i < start_n; i++) {
             s += math_functions::bin_pow(i, m);
         }
         for (uint32_t n = start_n; n <= max_n; n++) {
-            s += math_functions::bin_pow(uint64_t(n), m);
+            s += math_functions::bin_pow(uint64_t{n}, m);
             switch (m) {
                 case 0:
                     assert(math_functions::powers_sum_u64<0>(n) == s);
