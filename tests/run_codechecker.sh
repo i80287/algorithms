@@ -1,9 +1,9 @@
-#!/bin/bash
+#!/usr/bin/env bash
+
+set -e
 
 build_dir=cmake-build-codechecker
 cmake_build_dir=cmake-build-dir
-
-set -e
 
 mkdir -p "$build_dir"
 cp ./.clang-tidy ./$build_dir
@@ -16,13 +16,14 @@ for cc_and_cxx in clang,clang++ gcc,g++ i686-w64-mingw32-gcc-posix,i686-w64-ming
     mkdir -p "$cmake_build_dir"
     set -- $cc_and_cxx
     echo "cc = $1, c++ = $2"
-    cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo \
-        -DCMAKE_C_COMPILER="$1" \
-        -DCMAKE_CXX_COMPILER="$2" \
-        -DCMAKE_EXPORT_COMPILE_COMMANDS=1 \
+
+    cmake -D CMAKE_BUILD_TYPE=RelWithDebInfo \
+        -D CMAKE_C_COMPILER="$1" \
+        -D CMAKE_CXX_COMPILER="$2" \
+        -D CMAKE_EXPORT_COMPILE_COMMANDS=1 \
         -S .. \
         -B $cmake_build_dir
-    cd ./$cmake_build_dir && make all --jobs "$(nproc)" && cd ..
+    cmake --build ./$cmake_build_dir --parallel "$(nproc)"
     CodeChecker analyze \
         ./$cmake_build_dir/compile_commands.json \
         --analyzer-config cppcheck:addons=../cppcheck/addons/misc.py \

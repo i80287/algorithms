@@ -83,7 +83,7 @@ template <InplaceMultipliable T>
 #else
 template <class T>
 #endif
-[[nodiscard]] ATTRIBUTE_CONST constexpr T bin_pow(T n, uint64_t p) noexcept(noexcept(n *= n)) {
+[[nodiscard]] ATTRIBUTE_CONST constexpr T bin_pow(T n, std::size_t p) noexcept(noexcept(n *= n)) {
     T res(1);
     while (true) {
         if (p & 1) {
@@ -107,21 +107,13 @@ template <InplaceMultipliable T>
 #else
 template <class T>
 #endif
-[[nodiscard]] ATTRIBUTE_CONST constexpr T bin_pow(T n, int64_t p) noexcept(noexcept(n *= n) &&
-                                                                           noexcept(1 / n)) {
+[[nodiscard]] ATTRIBUTE_CONST constexpr T bin_pow(T n,
+                                                  std::ptrdiff_t p) noexcept(noexcept(n *= n) &&
+                                                                             noexcept(1 / n)) {
     const bool not_inverse = p >= 0;
-    uint64_t p_u           = p >= 0 ? static_cast<uint64_t>(p) : -static_cast<uint64_t>(p);
-    T res(1);
-    while (true) {
-        if (p_u & 1) {
-            res *= n;
-        }
-        p_u >>= 1;
-        if (p_u == 0) {
-            return not_inverse ? res : 1 / res;
-        }
-        n *= n;
-    }
+    const std::size_t p_u  = p >= 0 ? static_cast<std::size_t>(p) : -static_cast<std::size_t>(p);
+    const T res            = ::math_functions::bin_pow(std::move(n), p_u);
+    return not_inverse ? res : 1 / res;
 }
 
 /// @brief Calculate (n ^ p) % mod
@@ -131,8 +123,8 @@ template <class T>
 /// @return (n ^ p) % mod
 [[nodiscard]] ATTRIBUTE_CONST constexpr uint32_t bin_pow_mod(uint32_t n, uint64_t p,
                                                              uint32_t mod) noexcept {
-    uint64_t res     = mod != 1;
-    uint64_t widen_n = n;
+    std::uint64_t res     = mod != 1;
+    std::uint64_t widen_n = n;
     while (true) {
         if (p % 2 != 0) {
             ATTRIBUTE_ASSUME(widen_n < (1ull << 32));
@@ -140,7 +132,7 @@ template <class T>
         }
         p /= 2;
         if (p == 0) {
-            return static_cast<uint32_t>(res);
+            return static_cast<std::uint32_t>(res);
         }
         ATTRIBUTE_ASSUME(widen_n < (1ull << 32));
         widen_n = (widen_n * widen_n) % mod;
@@ -157,16 +149,16 @@ template <class T>
 /// @return (n ^ p) % mod
 [[nodiscard]]
 ATTRIBUTE_CONST I128_CONSTEXPR uint64_t bin_pow_mod(uint64_t n, uint64_t p, uint64_t mod) noexcept {
-    uint64_t res = mod != 1;
+    std::uint64_t res = mod != 1;
     while (true) {
         if (p & 1) {
-            res = static_cast<uint64_t>((uint128_t{res} * n) % mod);
+            res = static_cast<std::uint64_t>((uint128_t{res} * n) % mod);
         }
         p >>= 1;
         if (p == 0) {
             return res;
         }
-        n = static_cast<uint64_t>((uint128_t{n} * n) % mod);
+        n = static_cast<std::uint64_t>((uint128_t{n} * n) % mod);
     }
 }
 
@@ -187,8 +179,8 @@ ATTRIBUTE_CONST I128_CONSTEXPR uint64_t bin_pow_mod(uint64_t n, uint64_t p, uint
         /**
          * See Hackers Delight Chapter 11.
          */
-        for (uint32_t m = 0x40000000; m != 0; m >>= 2) {
-            uint32_t b = y | m;
+        for (std::uint32_t m = 0x40000000; m != 0; m >>= 2) {
+            std::uint32_t b = y | m;
             y >>= 1;
             if (n >= b) {
                 n -= b;
@@ -216,8 +208,8 @@ ATTRIBUTE_CONST I128_CONSTEXPR uint64_t bin_pow_mod(uint64_t n, uint64_t p, uint
         /**
          * See Hackers Delight Chapter 11.
          */
-        uint64_t l = 1;
-        uint64_t r = std::min((n >> 5) + 8, uint64_t(0xFFFFFFFFull));
+        std::uint64_t l = 1;
+        std::uint64_t r = std::min((n >> 5) + 8, std::uint64_t{0xFFFFFFFFull});
         do {
             ATTRIBUTE_ASSUME(l <= r);
             ATTRIBUTE_ASSUME((r >> 32) == 0);
@@ -244,13 +236,13 @@ ATTRIBUTE_CONST I128_CONSTEXPR uint64_t bin_pow_mod(uint64_t n, uint64_t p, uint
     /**
      * See Hackers Delight Chapter 11.
      */
-    uint64_t l         = 0;
+    std::uint64_t l    = 0;
     uint128_t r_approx = (n >> 6) + 16;
-    uint64_t r =
+    std::uint64_t r =
         r_approx > 0xFFFFFFFFFFFFFFFFull ? uint64_t(0xFFFFFFFFFFFFFFFFull) : uint64_t(r_approx);
     do {
         // m = (l + r + 1) / 2
-        uint64_t m = (l / 2) + (r / 2) + ((r % 2) | (l % 2));
+        std::uint64_t m = (l / 2) + (r / 2) + ((r % 2) | (l % 2));
         if (n >= uint128_t(m) * m) {
             l = m;
         } else {
@@ -289,10 +281,10 @@ ATTRIBUTE_CONST I128_CONSTEXPR uint64_t bin_pow_mod(uint64_t n, uint64_t p, uint
     [[maybe_unused]] const auto n_original_value = n;
 #endif
 
-    uint32_t y = 0;
-    for (int32_t s = 30; s >= 0; s -= 3) {
+    std::uint32_t y = 0;
+    for (std::int32_t s = 30; s >= 0; s -= 3) {
         y *= 2;
-        uint32_t b = (3 * y * (y + 1) | 1) << s;
+        std::uint32_t b = (3 * y * (y + 1) | 1) << s;
         if (n >= b) {
             n -= b;
             y++;
@@ -314,7 +306,7 @@ ATTRIBUTE_CONST I128_CONSTEXPR uint64_t bin_pow_mod(uint64_t n, uint64_t p, uint
 /// @param[in] n
 /// @return ⌊n^(1/3)⌋
 [[nodiscard]] ATTRIBUTE_CONST constexpr uint32_t icbrt(uint64_t n) noexcept {
-    uint64_t y = 0;
+    std::uint64_t y = 0;
     if (n >= 0x1000000000000000ull) {
         if (n >= 0x8000000000000000ull) {
             n -= 0x8000000000000000ull;
@@ -390,7 +382,7 @@ ATTRIBUTE_CONST constexpr IsPerfectSquareResult<uint32_t> is_perfect_square(uint
         case 1:
         case 4:
         case 9: {
-            const uint32_t root       = ::math_functions::isqrt(n);
+            const std::uint32_t root  = ::math_functions::isqrt(n);
             const bool is_perf_square = root * root == n;
             return {is_perf_square, is_perf_square ? root : 0};
         }
@@ -421,8 +413,8 @@ ATTRIBUTE_CONST constexpr IsPerfectSquareResult<uint32_t> is_perfect_square(uint
         case 1:
         case 4:
         case 9: {
-            const uint32_t root       = ::math_functions::isqrt(n);
-            const bool is_perf_square = uint64_t{root} * root == n;
+            const std::uint32_t root  = ::math_functions::isqrt(n);
+            const bool is_perf_square = std::uint64_t{root} * root == n;
             return {is_perf_square, is_perf_square ? root : 0};
         }
         default:
@@ -455,7 +447,7 @@ ATTRIBUTE_CONST I128_CONSTEXPR
         case 1:
         case 4:
         case 9: {
-            uint64_t root             = ::math_functions::isqrt(n);
+            const std::uint64_t root  = ::math_functions::isqrt(n);
             const bool is_perf_square = uint128_t{root} * root == n;
             return {is_perf_square, is_perf_square ? root : 0};
         }
@@ -500,7 +492,7 @@ ATTRIBUTE_CONST I128_CONSTEXPR
     /**
      * See Knuth's algorithm in Hackers Delight 7.4
      */
-    uint64_t t = 0;
+    std::uint64_t t = 0;
     n = (n << 31) | (n >> 33);  // I.e., shlr(x, 31).
     t = (n ^ (n >> 20)) & 0x00000FFF800007FFULL;
     n = (t | (t << 20)) ^ n;
@@ -521,7 +513,7 @@ ATTRIBUTE_CONST I128_CONSTEXPR
 /// @return 128-bit number whose bits are reversed bits of the @a `n`.
 [[nodiscard]] ATTRIBUTE_CONST I128_CONSTEXPR uint128_t bit_reverse(uint128_t n) noexcept {
     uint128_t m = ~uint128_t{0};
-    for (uint32_t s = sizeof(uint128_t) * CHAR_BIT; s >>= 1;) {
+    for (std::uint32_t s = sizeof(uint128_t) * CHAR_BIT; s >>= 1;) {
         m ^= m << s;
         n = ((n >> s) & m) | ((n << s) & ~m);
     }
@@ -535,10 +527,10 @@ template <class Functor>
     requires requires(Functor f, uint64_t mask) { f(uint64_t{mask}); }
 #endif
 ATTRIBUTE_ALWAYS_INLINE constexpr void visit_all_submasks(uint64_t mask, Functor visiter) noexcept(
-    std::is_nothrow_invocable_v<Functor, const uint64_t>) {
-    uint64_t s = mask;
+    std::is_nothrow_invocable_v<Functor, const std::uint64_t>) {
+    std::uint64_t s = mask;
     do {
-        visiter(uint64_t{s});
+        visiter(std::uint64_t{s});
         s = (s - 1) & mask;
     } while (s != 0);
 }
@@ -547,7 +539,7 @@ int32_t sign(bool x) = delete;
 int32_t sign(char x) = delete;
 
 [[nodiscard]] ATTRIBUTE_CONST constexpr int32_t sign(signed char x) noexcept {
-    return int32_t(x > 0) - int32_t(x < 0);
+    return std::int32_t(x > 0) - std::int32_t(x < 0);
 }
 
 [[nodiscard]] ATTRIBUTE_CONST constexpr int32_t sign(unsigned char x) noexcept {
@@ -555,7 +547,7 @@ int32_t sign(char x) = delete;
 }
 
 [[nodiscard]] ATTRIBUTE_CONST constexpr int32_t sign(short x) noexcept {
-    return int32_t(x > 0) - int32_t(x < 0);
+    return std::int32_t(x > 0) - std::int32_t(x < 0);
 }
 
 [[nodiscard]] ATTRIBUTE_CONST constexpr int32_t sign(unsigned short x) noexcept {
@@ -563,7 +555,7 @@ int32_t sign(char x) = delete;
 }
 
 [[nodiscard]] ATTRIBUTE_CONST constexpr int32_t sign(int x) noexcept {
-    return int32_t(x > 0) - int32_t(x < 0);
+    return std::int32_t(x > 0) - std::int32_t(x < 0);
 }
 
 [[nodiscard]] ATTRIBUTE_CONST constexpr int32_t sign(unsigned x) noexcept {
@@ -571,7 +563,7 @@ int32_t sign(char x) = delete;
 }
 
 [[nodiscard]] ATTRIBUTE_CONST constexpr int32_t sign(long x) noexcept {
-    return int32_t(x > 0) - int32_t(x < 0);
+    return std::int32_t(x > 0) - std::int32_t(x < 0);
 }
 
 [[nodiscard]] ATTRIBUTE_CONST constexpr int32_t sign(unsigned long x) noexcept {
@@ -579,7 +571,7 @@ int32_t sign(char x) = delete;
 }
 
 [[nodiscard]] ATTRIBUTE_CONST constexpr int32_t sign(long long x) noexcept {
-    return int32_t(x > 0) - int32_t(x < 0);
+    return std::int32_t(x > 0) - std::int32_t(x < 0);
 }
 
 [[nodiscard]] ATTRIBUTE_CONST constexpr int32_t sign(unsigned long long x) noexcept {
@@ -589,7 +581,7 @@ int32_t sign(char x) = delete;
 #if defined(INTEGERS_128_BIT_HPP)
 
 [[nodiscard]] ATTRIBUTE_CONST I128_CONSTEXPR int32_t sign(int128_t x) noexcept {
-    const auto sign_bit = static_cast<std::uint32_t>(uint128_t(x) >> 127);
+    const auto sign_bit = static_cast<std::uint32_t>(static_cast<uint128_t>(x) >> 127);
     return int32_t(x != 0) - int32_t(2 * sign_bit);
 }
 
@@ -734,8 +726,8 @@ unsigned char uabs(char n) = delete;
 #if defined(INTEGERS_128_BIT_HPP)
 
 [[nodiscard]] ATTRIBUTE_CONST I128_CONSTEXPR uint128_t uabs(int128_t n) noexcept {
-    uint128_t t = uint128_t(n >> 127);
-    return (uint128_t(n) ^ t) - t;
+    const uint128_t t = static_cast<uint128_t>(n >> 127);
+    return (static_cast<uint128_t>(n) ^ t) - t;
 }
 
 [[nodiscard]] ATTRIBUTE_CONST I128_CONSTEXPR uint128_t uabs(uint128_t n) noexcept {
@@ -782,11 +774,11 @@ concept unsigned_integral = ::math_functions::detail::helper_ns::unsigned_integr
                                   0x000000000000FF00ull, 0x00000000000000F0ull,
                                   0x000000000000000Cull, 0x0000000000000002ull};
 
-    uint32_t y = 0;
-    uint32_t j = 32;
+    std::uint32_t y = 0;
+    std::uint32_t j = 32;
 
-    for (size_t i = 0; i != 6; ++i) {
-        uint32_t k = (((n & t[i]) == 0) ? 0 : j);
+    for (std::size_t i = 0; i != 6; ++i) {
+        std::uint32_t k = (((n & t[i]) == 0) ? 0 : j);
         y += k;
         n >>= k;
         j >>= 1;
@@ -831,7 +823,7 @@ concept unsigned_integral = ::math_functions::detail::helper_ns::unsigned_integr
     if (unlikely(n == 0)) {
         return 32;
     }
-    uint32_t m = 1;
+    std::uint32_t m = 1;
     if ((n >> 16) == 0) {
         m += 16;
         n <<= 16;
@@ -860,7 +852,7 @@ concept unsigned_integral = ::math_functions::detail::helper_ns::unsigned_integr
     if (unlikely(n == 0)) {
         return 64;
     }
-    uint32_t m = 1;
+    std::uint32_t m = 1;
     if ((n >> 32) == 0) {
         m += 32;
         n <<= 32;
@@ -881,7 +873,7 @@ concept unsigned_integral = ::math_functions::detail::helper_ns::unsigned_integr
         m += 2;
         n <<= 2;
     }
-    m -= uint32_t(n >> 63);
+    m -= static_cast<std::uint32_t>(n >> 63);
     ATTRIBUTE_ASSUME(m <= 63);
     return m;
 }
@@ -893,7 +885,7 @@ concept unsigned_integral = ::math_functions::detail::helper_ns::unsigned_integr
     if (unlikely(n == 0)) {
         return 32;
     }
-    uint32_t m = 1;
+    std::uint32_t m = 1;
     if ((n & 0x0000FFFFu) == 0) {
         m += 16;
         n >>= 16;
@@ -916,7 +908,7 @@ concept unsigned_integral = ::math_functions::detail::helper_ns::unsigned_integr
 }
 
 [[nodiscard]] ATTRIBUTE_CONST constexpr uint32_t tz_count_64_software(uint64_t n) noexcept {
-    uint32_t m = 0;
+    std::uint32_t m = 0;
     for (n = ~n & (n - 1); n != 0; n >>= 1) {
         m++;
     }
@@ -966,18 +958,18 @@ concept unsigned_integral = ::math_functions::detail::helper_ns::unsigned_integr
     x = (x & 0x0F0F0F0F) + ((x >> 4) & 0x0F0F0F0F);
     x = x + (x >> 8);
     x = x + (x >> 16);
-    return static_cast<int32_t>(x & 0x0000007F) - 32;
+    return static_cast<std::int32_t>(x & 0x0000007F) - 32;
 }
 
 [[nodiscard]] ATTRIBUTE_CONST constexpr int32_t pop_cmp(uint32_t x, uint32_t y) noexcept {
     /**
      * See Hackers Delight Chapter 5.
      */
-    uint32_t n = x & ~y;  // Clear bits where
-    uint32_t m = y & ~x;  // both bits are 1
+    std::uint32_t n = x & ~y;  // Clear bits where
+    std::uint32_t m = y & ~x;  // both bits are 1
     while (true) {
         if (n == 0)
-            return static_cast<int32_t>(m | -m);
+            return static_cast<std::int32_t>(m | -m);
         if (m == 0)
             return 1;
         n &= n - 1;  // Clear one bit
@@ -1001,7 +993,7 @@ template <typename T>
 
 #if defined(INTEGERS_128_BIT_HPP)
     if constexpr (std::is_same_v<T, uint128_t>) {
-        uint64_t low = static_cast<uint64_t>(n);
+        const std::uint64_t low = static_cast<std::uint64_t>(n);
         if (low != 0) {
 #if CONFIG_HAS_AT_LEAST_CXX_20
             return std::countr_zero(low);
@@ -1012,7 +1004,7 @@ template <typename T>
 #endif
         }
 
-        uint64_t high = static_cast<uint64_t>(n >> 64);
+        const std::uint64_t high = static_cast<std::uint64_t>(n >> 64);
         ATTRIBUTE_ASSUME(high != 0);
 #if CONFIG_HAS_AT_LEAST_CXX_20
         int32_t high_trailing_zeros_count = std::countr_zero(high);
@@ -1062,7 +1054,7 @@ template <typename T>
 #if CONFIG_HAS_CONCEPTS
     requires ::math_functions::detail::unsigned_integral<T>
 #endif
-[[nodiscard]] ATTRIBUTE_CONST constexpr int32_t countl_zero(T n) noexcept {
+[[nodiscard]] ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_CONST constexpr int32_t countl_zero(T n) noexcept {
     static_assert(::math_functions::detail::is_unsigned_v<T>, "Unsigned integral type expected");
 
     if (unlikely(n == 0)) {
@@ -1071,7 +1063,7 @@ template <typename T>
 
 #if defined(INTEGERS_128_BIT_HPP)
     if constexpr (std::is_same_v<T, uint128_t>) {
-        uint64_t high = static_cast<uint64_t>(n >> 64);
+        const std::uint64_t high = static_cast<std::uint64_t>(n >> 64);
         if (high != 0) {
             // Avoid recursive call to countl_zero<uint64_t>
 #if CONFIG_HAS_AT_LEAST_CXX_20
@@ -1083,7 +1075,7 @@ template <typename T>
 #endif
         }
 
-        uint64_t low = static_cast<uint64_t>(n);
+        const std::uint64_t low = static_cast<std::uint64_t>(n);
         ATTRIBUTE_ASSUME(low != 0);
         // Avoid recursive call to countl_zero<uint64_t>
 #if CONFIG_HAS_AT_LEAST_CXX_20
@@ -1135,8 +1127,8 @@ template <class T>
     if constexpr (std::is_same_v<T, uint128_t>) {
         // Reason: cppcheck can not deduce that n is uint128_t here
         // cppcheck-suppress [shiftTooManyBits]
-        uint64_t high = static_cast<uint64_t>(n >> 64);
-        uint64_t low  = static_cast<uint64_t>(n);
+        const std::uint64_t high = static_cast<std::uint64_t>(n >> 64);
+        const std::uint64_t low  = static_cast<std::uint64_t>(n);
 #if CONFIG_HAS_AT_LEAST_CXX_20
         return std::popcount(high) + std::popcount(low);
 #elif defined(__GNUG__)
@@ -1194,7 +1186,7 @@ template <class T>
     // https://graphics.stanford.edu/~seander/bithacks.html#RoundUpPowerOf2
 
     // t gets x's least significant 0 bits set to 1
-    uint32_t t = x | (x - 1);
+    const std::uint32_t t = x | (x - 1);
     // Next set to 1 the most significant bit to change,
     // set to 0 the least significant ones, and add the necessary 1 bits.
     return (t + 1) | static_cast<std::uint32_t>(std::uint64_t{(~t & -~t) - 1} >>
@@ -1258,48 +1250,36 @@ bool is_power_of_two(char) = delete;
 
 #endif
 
+template <class UIntType>
 [[nodiscard]]
-ATTRIBUTE_CONST constexpr uint64_t nearest_greater_equal_power_of_two(uint32_t n) noexcept {
-    const auto shift = 32 - static_cast<std::uint32_t>(::math_functions::countl_zero(n | 1)) -
-                       ((n & (n - 1)) == 0);
-    return uint64_t{1} << shift;
+ATTRIBUTE_CONST constexpr auto nearest_greater_equal_power_of_two(const UIntType n) noexcept {
+    static_assert(
+        ::math_functions::detail::is_unsigned_v<UIntType> && sizeof(UIntType) >= sizeof(unsigned),
+        "unsigned integral type (at least unsigned int) is expected");
+
+    using ShiftType       = std::int32_t;
+    const ShiftType shift = ShiftType{sizeof(n) * CHAR_BIT} -
+                            ShiftType{::math_functions::countl_zero(n | 1)} -
+                            ShiftType{(n & (n - 1)) == 0};
+    using RetType = typename std::conditional_t<(sizeof(UIntType) > sizeof(std::uint32_t)),
+                                                UIntType, std::uint64_t>;
+    return RetType{1} << shift;
 }
 
+template <class UIntType>
 [[nodiscard]]
-ATTRIBUTE_CONST constexpr uint64_t nearest_greater_power_of_two(uint32_t n) noexcept {
-    const auto shift = 32 - static_cast<std::uint32_t>(::math_functions::countl_zero(n));
-    return uint64_t{1} << shift;
+ATTRIBUTE_CONST constexpr auto nearest_greater_power_of_two(const UIntType n) noexcept {
+    static_assert(
+        ::math_functions::detail::is_unsigned_v<UIntType> && sizeof(UIntType) >= sizeof(unsigned),
+        "unsigned integral type (at least unsigned int) is expected");
+
+    using ShiftType = std::int32_t;
+    const ShiftType shift =
+        ShiftType{sizeof(n) * CHAR_BIT} - ShiftType{::math_functions::countl_zero(n)};
+    using RetType = typename std::conditional_t<(sizeof(UIntType) > sizeof(std::uint32_t)),
+                                                UIntType, std::uint64_t>;
+    return RetType{1} << shift;
 }
-
-[[nodiscard]]
-ATTRIBUTE_CONST constexpr uint64_t nearest_greater_equal_power_of_two(uint64_t n) noexcept {
-    const auto shift = 64 - static_cast<std::uint32_t>(::math_functions::countl_zero(n | 1)) -
-                       ((n & (n - 1)) == 0);
-    return uint64_t{1} << shift;
-}
-
-[[nodiscard]]
-ATTRIBUTE_CONST constexpr uint64_t nearest_greater_power_of_two(uint64_t n) noexcept {
-    const auto shift = 64 - static_cast<std::uint32_t>(::math_functions::countl_zero(n));
-    return uint64_t{1} << shift;
-}
-
-#if defined(INTEGERS_128_BIT_HPP)
-
-[[nodiscard]]
-ATTRIBUTE_CONST I128_CONSTEXPR uint128_t nearest_greater_equal_power_of_two(uint128_t n) noexcept {
-    const auto shift = 128 - static_cast<std::uint32_t>(::math_functions::countl_zero(n | 1)) -
-                       ((n & (n - 1)) == 0);
-    return uint128_t{1} << shift;
-}
-
-[[nodiscard]]
-ATTRIBUTE_CONST I128_CONSTEXPR uint128_t nearest_greater_power_of_two(uint128_t n) noexcept {
-    const auto shift = 128 - static_cast<std::uint32_t>(::math_functions::countl_zero(n));
-    return uint128_t{1} << shift;
-}
-
-#endif
 
 /// @brief If @a n != 0, return number that is power of 2 and
 ///         whose only bit is the lowest bit set in the @a n
@@ -1375,74 +1355,56 @@ template <typename T>
     }
 }
 
-/// @brief For n > 0 returns ⌊log_2(n)⌋. For n = 0 returns (uint32_t)-1
-/// @param[in] n
-/// @return
-[[nodiscard]] ATTRIBUTE_CONST constexpr uint32_t log2_floor(uint32_t n) noexcept {
-    return 31 - static_cast<std::uint32_t>(::math_functions::countl_zero(n));
-}
-
 /// @brief For n > 0 returns ⌈log_2(n)⌉. For n = 0 returns (uint32_t)-1
+/// @tparam UIntType unsigned integral type (at least unsigned int in size)
 /// @param[in] n
 /// @return
-[[nodiscard]] ATTRIBUTE_CONST constexpr uint32_t log2_ceil(uint32_t n) noexcept {
-    return ::math_functions::log2_floor(n) + ((n & (n - 1)) != 0);
-}
-
-/// @brief For n > 0 returns ⌊log_2(n)⌋. For n = 0 returns (uint32_t)-1
-/// @param[in] n
-/// @return
-[[nodiscard]] ATTRIBUTE_CONST constexpr uint32_t log2_floor(uint64_t n) noexcept {
-    return 63 - static_cast<std::uint32_t>(::math_functions::countl_zero(n));
-}
-
-/// @brief For n > 0 returns ⌈log_2(n)⌉. For n = 0 returns (uint32_t)-1
-/// @param[in] n
-/// @return
-[[nodiscard]] ATTRIBUTE_CONST constexpr uint32_t log2_ceil(uint64_t n) noexcept {
-    return ::math_functions::log2_floor(n) + ((n & (n - 1)) != 0);
-}
+template <class UIntType>
+#if CONFIG_HAS_CONCEPTS
+    requires ::math_functions::detail::unsigned_integral<UIntType>
+#endif
+[[nodiscard]]
+ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_CONST constexpr uint32_t log2_floor(const UIntType n) noexcept {
+    static_assert(
+        ::math_functions::detail::is_unsigned_v<UIntType> && sizeof(UIntType) >= sizeof(unsigned),
+        "unsigned integral type (at least unsigned int) is expected");
 
 #if defined(INTEGERS_128_BIT_HPP)
-/// @brief For n > 0 returns ⌊log_2(n)⌋. For n = 0 returns (uint32_t)-1
-/// @param[in] n
-/// @return
-[[nodiscard]] ATTRIBUTE_CONST I128_CONSTEXPR uint32_t log2_floor(uint128_t n) noexcept {
-    const auto hi = static_cast<std::uint64_t>(n >> 64);
-    return hi != 0 ? (127 - static_cast<std::uint32_t>(::math_functions::countl_zero(hi)))
-                   : (::math_functions::log2_floor(static_cast<std::uint64_t>(n)));
+    if constexpr (std::is_same_v<UIntType, uint128_t>) {
+        const auto hi = static_cast<std::uint64_t>(n >> 64);
+        return hi != 0 ? (127 - static_cast<std::uint32_t>(::math_functions::countl_zero(hi)))
+                       : (::math_functions::log2_floor(static_cast<std::uint64_t>(n)));
+    } else
+#endif
+    {
+        return std::uint32_t{sizeof(n) * CHAR_BIT - 1} -
+               static_cast<std::uint32_t>(::math_functions::countl_zero(n));
+    }
 }
 
 /// @brief For n > 0 returns ⌈log_2(n)⌉. For n = 0 returns (uint32_t)-1
+/// @tparam UIntType unsigned integral type (at least unsigned int in size)
 /// @param[in] n
 /// @return
-[[nodiscard]] ATTRIBUTE_CONST I128_CONSTEXPR uint32_t log2_ceil(uint128_t n) noexcept {
+template <class UIntType>
+#if CONFIG_HAS_CONCEPTS
+    requires ::math_functions::detail::unsigned_integral<UIntType>
+#endif
+[[nodiscard]]
+ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_CONST constexpr uint32_t log2_ceil(const UIntType n) noexcept {
     return ::math_functions::log2_floor(n) + ((n & (n - 1)) != 0);
 }
 
+template <class UIntType>
+#if CONFIG_HAS_CONCEPTS
+    requires ::math_functions::detail::unsigned_integral<UIntType>
 #endif
-
-[[nodiscard]] ATTRIBUTE_CONST constexpr uint32_t base_2_len(uint32_t n) noexcept {
+[[nodiscard]]
+ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_CONST constexpr uint32_t base_2_len(const UIntType n) noexcept {
     // " | 1" operation does not affect answer for all
     //  numbers except n = 0. For n = 0 answer is 1.
     return ::math_functions::log2_floor(n | 1) + 1;
 }
-
-[[nodiscard]] ATTRIBUTE_CONST constexpr uint32_t base_2_len(uint64_t n) noexcept {
-    // " | 1" operation does not affect answer for all
-    //  numbers except n = 0. For n = 0 answer is 1.
-    return ::math_functions::log2_floor(n | 1) + 1;
-}
-
-#if defined(INTEGERS_128_BIT_HPP)
-
-[[nodiscard]] ATTRIBUTE_CONST I128_CONSTEXPR uint32_t base_2_len(uint128_t n) noexcept {
-    // " | 1" operation does not affect answer for all
-    //  numbers except n = 0. For n = 0 answer is 1.
-    return ::math_functions::log2_floor(n | 1) + 1;
-}
-
-#endif
 
 namespace detail {
 
@@ -1695,8 +1657,8 @@ struct SumSinCos {
 ///            + cos(alpha + (n - 1) beta)
 ///         )
 template <class FloatType>
-#if CONFIG_HAS_AT_LEAST_CXX_20
-    requires std::is_floating_point_v<FloatType>
+#if CONFIG_HAS_CONCEPTS
+    requires std::floating_point<FloatType>
 #endif
 [[nodiscard]] ATTRIBUTE_CONST SumSinCos<FloatType> sum_of_sines_and_cosines(FloatType alpha,
                                                                             FloatType beta,

@@ -1,18 +1,17 @@
-#!/bin/bash
-
-build_dir=cmake-build-tests-gcc-mingw-w64
+#!/usr/bin/env bash
 
 set -e
 
-if [ -d "$build_dir" ]; then rm -r "$build_dir"; fi
-mkdir -p "$build_dir"
-cp ../number_theory/u64-primes.txt ./$build_dir/u64-primes.txt
-cp ../number_theory/u128-primes.txt ./$build_dir/u128-primes.txt
-cp ../tf_idf_actrie/Anglo_Saxon_Chronicle.txt ./$build_dir/Anglo_Saxon_Chronicle.txt
-cd ./$build_dir
+build_dir=cmake-build-tests-gcc-mingw-w64
 
-cmake -D CMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_C_COMPILER=x86_64-w64-mingw32-gcc-posix -DCMAKE_CXX_COMPILER=x86_64-w64-mingw32-g++-posix -S .. -B . &&
-    make all --jobs "$(nproc)"
+. ./prepare_stage_for_tests.sh
+prepare_tests_data_and_cd_to_build_dir "$build_dir"
+
+cmake -D CMAKE_BUILD_TYPE=RelWithDebInfo \
+    -D CMAKE_C_COMPILER=x86_64-w64-mingw32-gcc-posix \
+    -D CMAKE_CXX_COMPILER=x86_64-w64-mingw32-g++-posix \
+    -S .. -B . &&
+    cmake --build . --parallel "$(nproc)"
 
 shopt -s nullglob
 for test_executable in *.exe; do
