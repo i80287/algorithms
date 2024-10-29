@@ -11,21 +11,21 @@ set(COMPILER_SUPPORTED_C_VERSIONS "99")
 set(COMPILER_SUPPORTED_CXX_VERSIONS "11;14;17")
 
 string(TOLOWER ${CMAKE_CXX_COMPILER} STRING_LOWER_CMAKE_CXX_COMPILER)
-if (MINGW OR MSYS)
+if(MINGW OR MSYS)
     set(USING_MINGW_GCC True)
     if((WIN32 AND NOT MSVC) OR MSYS)
         set(USING_MSYS2_MINGW_GCC True)
     endif()
 else()
     string(FIND ${STRING_LOWER_CMAKE_CXX_COMPILER} "mingw" pos)
-    if (NOT pos EQUAL -1)
+    if(NOT pos EQUAL -1)
         set(USING_MINGW_GCC True)
     endif()
 endif()
 
-if (USING_MINGW_GCC)
+if(USING_MINGW_GCC)
     string(FIND ${STRING_LOWER_CMAKE_CXX_COMPILER} "i686" pos)
-    if (NOT pos EQUAL -1)
+    if(NOT pos EQUAL -1)
         set(USING_MINGW_GCC_32 True)
     endif()
 endif()
@@ -34,9 +34,9 @@ set(LINK_THREADS_LIBRARY_MANUALLY False)
 set(LINK_COMPILER_RT_BUILTINS_MANUALLY False)
 
 
-if (CMAKE_SYSTEM_NAME MATCHES "Linux")
+if(CMAKE_SYSTEM_NAME MATCHES "Linux")
     find_program(CMAKE_CXX_CPPCHECK NAMES cppcheck)
-    if (CMAKE_CXX_CPPCHECK)
+    if(CMAKE_CXX_CPPCHECK)
         set(CPPCHECK_EXITCODE_ON_ERROR 0)
         list(APPEND
             CMAKE_CXX_CPPCHECK
@@ -49,7 +49,7 @@ if (CMAKE_SYSTEM_NAME MATCHES "Linux")
     endif()
 
     find_program(LSB_RELEASE_EXEC lsb_release)
-    if (NOT LSB_RELEASE_EXEC)
+    if(NOT LSB_RELEASE_EXEC)
         message(WARNING "Could not get linux distro info, pthread linking on ubuntu 20 with g++ might be broken")
     else()
         execute_process(COMMAND ${LSB_RELEASE_EXEC} -irs
@@ -65,13 +65,13 @@ if (CMAKE_SYSTEM_NAME MATCHES "Linux")
         list(GET LSB_DISTRIBUTOR_ID_AND_RELEASE_VERSION_SHORT 1 LSB_RELEASE_VERSION_SHORT)
 
         string(TOLOWER "${LSB_DISTRIBUTOR_ID_SHORT}" LSB_DISTRIBUTOR_ID_SHORT)
-        if (LSB_DISTRIBUTOR_ID_SHORT STREQUAL "ubuntu" AND LSB_RELEASE_VERSION_SHORT VERSION_LESS_EQUAL "20.04")
+        if(LSB_DISTRIBUTOR_ID_SHORT STREQUAL "ubuntu" AND LSB_RELEASE_VERSION_SHORT VERSION_LESS_EQUAL "20.04")
             set(LINK_THREADS_LIBRARY_MANUALLY True)
             set(THREADS_PREFER_PTHREAD_FLAG ON)
             find_package(Threads REQUIRED)
         endif()
-        if (CMAKE_CXX_CPPCHECK)
-            if (LSB_DISTRIBUTOR_ID_SHORT STREQUAL "ubuntu" AND LSB_RELEASE_VERSION_SHORT VERSION_GREATER_EQUAL "24.04")
+        if(CMAKE_CXX_CPPCHECK)
+            if(LSB_DISTRIBUTOR_ID_SHORT STREQUAL "ubuntu" AND LSB_RELEASE_VERSION_SHORT VERSION_GREATER_EQUAL "24.04")
                 set(CPPCHECK_EXITCODE_ON_ERROR 1)
                 list(APPEND
                     CMAKE_CXX_CPPCHECK
@@ -81,7 +81,7 @@ if (CMAKE_SYSTEM_NAME MATCHES "Linux")
         endif()
     endif()
 
-    if (CMAKE_CXX_CPPCHECK)
+    if(CMAKE_CXX_CPPCHECK)
         list(APPEND
             CMAKE_CXX_CPPCHECK
             "--error-exitcode=${CPPCHECK_EXITCODE_ON_ERROR}"
@@ -95,7 +95,7 @@ set(TEST_CXX_COMPILE_OPTIONS)
 set(TEST_COMPILE_DEFINITIONS)
 
 function(configure_gcc_or_clang_gcc_options)
-    if (MSVC)
+    if(MSVC)
         message(FATAL_ERROR "ClangCL should not be configured with this function")
     endif()
 
@@ -138,7 +138,7 @@ function(configure_gcc_or_clang_gcc_options)
         -Werror
         -pedantic-errors
     )
-    if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+    if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
         cmake_host_system_information(RESULT phys_mem_in_mb QUERY TOTAL_PHYSICAL_MEMORY)
         math(EXPR allocation_limit_in_bytes "(${phys_mem_in_mb} * 1024 * 1024) * 9 / 10")
 
@@ -161,7 +161,7 @@ function(configure_gcc_or_clang_gcc_options)
             -Wattribute-alias=2
             -fdiagnostics-color=always)
     endif()
-    if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+    if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
         set(LOCAL_FN_TEST_CXX_COMPILE_OPTIONS
             ${LOCAL_FN_TEST_CXX_COMPILE_OPTIONS}
             -Warray-bounds
@@ -186,22 +186,22 @@ function(configure_gcc_or_clang_gcc_options)
             -fcolor-diagnostics
             -fansi-escape-codes
             -ftemplate-backtrace-limit=0)
-        if (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 11.0.0)
+        if(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 11.0.0)
             set(LOCAL_FN_TEST_CXX_COMPILE_OPTIONS
                 ${LOCAL_FN_TEST_CXX_COMPILE_OPTIONS}
                 -Wframe-address)
         endif()
-        if (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 13.0.0)
+        if(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 13.0.0)
             set(LOCAL_FN_TEST_CXX_COMPILE_OPTIONS
                 ${LOCAL_FN_TEST_CXX_COMPILE_OPTIONS}
                 -Wnull-pointer-subtraction)
         endif()
-        if (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 15.0.0)
+        if(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 15.0.0)
             set(LOCAL_FN_TEST_CXX_COMPILE_OPTIONS
                 ${LOCAL_FN_TEST_CXX_COMPILE_OPTIONS}
                 -Warray-parameter)
         endif()
-        if (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 16.0.0)
+        if(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 16.0.0)
             set(LOCAL_FN_TEST_CXX_COMPILE_OPTIONS
                 ${LOCAL_FN_TEST_CXX_COMPILE_OPTIONS}
                 -Wincompatible-function-pointer-types-strict)
@@ -210,7 +210,7 @@ function(configure_gcc_or_clang_gcc_options)
             ${LOCAL_FN_TEST_COMPILE_DEFINITIONS}
             _LIBCPP_ENABLE_ASSERTIONS)
     endif()
-    if (NOT USING_MINGW_GCC AND CMAKE_SYSTEM_NAME MATCHES "Linux")
+    if(NOT USING_MINGW_GCC AND CMAKE_SYSTEM_NAME MATCHES "Linux")
         set(LOCAL_FN_TEST_CXX_COMPILE_OPTIONS
             ${LOCAL_FN_TEST_CXX_COMPILE_OPTIONS}
             -fstack-protector-strong
@@ -229,7 +229,7 @@ function(configure_gcc_or_clang_gcc_options)
         -Wbad-function-cast
         -Wint-conversion
     )
-    if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 11.0.0)
+    if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 11.0.0)
         set(LOCAL_FN_TEST_C_COMPILE_OPTIONS
             ${LOCAL_FN_TEST_C_COMPILE_OPTIONS}
             -fanalyzer
@@ -242,13 +242,13 @@ function(configure_gcc_or_clang_gcc_options)
         -Wsign-promo
         -Wold-style-cast
     )
-    if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+    if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
         set(LOCAL_FN_TEST_CXX_COMPILE_OPTIONS
             ${LOCAL_FN_TEST_CXX_COMPILE_OPTIONS}
             -Wsigned-enum-bitfield
         )
     endif()
-    if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 16.0.0)
+    if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 16.0.0)
         set(LOCAL_FN_TEST_CXX_COMPILE_OPTIONS
             ${LOCAL_FN_TEST_CXX_COMPILE_OPTIONS}
             -fanalyzer
@@ -262,7 +262,7 @@ function(configure_gcc_or_clang_gcc_options)
         ${LOCAL_FN_TEST_COMPILE_DEFINITIONS}
         _GLIBCXX_SANITIZE_VECTOR
         ENABLE_LONGINT_DEBUG_ASSERTS=1)
-    if (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 10.0)
+    if(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 10.0)
         # In gcc with version < 10.0 these checks break `constexpr`-tivity of some std:: functions
         set(LOCAL_FN_TEST_COMPILE_DEFINITIONS
             ${LOCAL_FN_TEST_COMPILE_DEFINITIONS}
@@ -287,7 +287,7 @@ function(configure_gcc_or_clang_gcc_options)
     set(CMAKE_C_FLAGS_RELWITHDEBINFO
         ${LOCAL_FN_CMAKE_C_FLAGS_RELWITHDEBINFO}
         PARENT_SCOPE)
-    if (NOT USING_MINGW_GCC)
+    if(NOT USING_MINGW_GCC)
         set (LOCAL_FN_CMAKE_C_FLAGS_RELWITHDEBINFO "${LOCAL_FN_CMAKE_C_FLAGS_RELWITHDEBINFO} -fsanitize=address,undefined" PARENT_SCOPE)
         set (LOCAL_FN_CMAKE_CXX_FLAGS_RELWITHDEBINFO "${LOCAL_FN_CMAKE_CXX_FLAGS_RELWITHDEBINFO} -fsanitize=address,undefined" PARENT_SCOPE)
     endif()
@@ -309,7 +309,7 @@ function(configure_msvc_or_clang_msvc_options)
         ${LOCAL_FN_TEST_COMPILE_DEFINITIONS}
         _CRT_SECURE_NO_WARNINGS=1)
 
-    if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+    if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
         set(LOCAL_FN_TEST_CXX_COMPILE_OPTIONS
             ${LOCAL_FN_TEST_CXX_COMPILE_OPTIONS}
             -UNDEBUG)
@@ -319,7 +319,7 @@ function(configure_msvc_or_clang_msvc_options)
         )
         set(LINK_COMPILER_RT_BUILTINS_MANUALLY True PARENT_SCOPE)
     else()
-        if (MSVC_VERSION GREATER_EQUAL 1914)
+        if(MSVC_VERSION GREATER_EQUAL 1914)
             set(LOCAL_FN_TEST_CXX_COMPILE_OPTIONS
                 ${LOCAL_FN_TEST_CXX_COMPILE_OPTIONS}
                 "/Zc:__cplusplus")
@@ -349,73 +349,73 @@ endfunction(configure_msvc_or_clang_msvc_options)
 
 
 # https://en.cppreference.com/w/cpp/compiler_support
-if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang" OR CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang")
-    if (CMAKE_CXX_COMPILER_FRONTEND_VARIANT STREQUAL "MSVC")
+if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang" OR CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang")
+    if(CMAKE_CXX_COMPILER_FRONTEND_VARIANT STREQUAL "MSVC")
         configure_msvc_or_clang_msvc_options()
-    elseif (CMAKE_CXX_COMPILER_FRONTEND_VARIANT STREQUAL "GNU")
+    elseif(CMAKE_CXX_COMPILER_FRONTEND_VARIANT STREQUAL "GNU")
         configure_gcc_or_clang_gcc_options()
     else()
         message(FATAL_ERROR "Clang with unknown frontend")
     endif()
 
-    if (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 4.0.0)
+    if(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 4.0.0)
         list(APPEND COMPILER_SUPPORTED_C_VERSIONS 11)
     endif()
-    if (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 6.0.0)
+    if(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 6.0.0)
         list(APPEND COMPILER_SUPPORTED_C_VERSIONS 17)
     endif()
-    if (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 10.0.0)
+    if(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 10.0.0)
         list(APPEND COMPILER_SUPPORTED_CXX_VERSIONS 20)
     endif()
-    if (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 15.0.0)
+    if(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 15.0.0)
         list(APPEND COMPILER_SUPPORTED_CXX_VERSIONS 23)
     endif()
-    if (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 18.0.0)
+    if(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 18.0.0)
         list(APPEND COMPILER_SUPPORTED_C_VERSIONS 23)
     endif()
-    if (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 19.0.0)
+    if(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 19.0.0)
         list(APPEND COMPILER_SUPPORTED_CXX_VERSIONS 26)
     endif()
-elseif (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+elseif(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
     configure_gcc_or_clang_gcc_options()
-    if (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 5.0.0)
+    if(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 5.0.0)
         list(APPEND COMPILER_SUPPORTED_C_VERSIONS 11)
     endif()
-    if (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 8.0.0)
+    if(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 8.0.0)
         list(APPEND COMPILER_SUPPORTED_C_VERSIONS 17)
     endif()
-    if (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 10.0.0)
+    if(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 10.0.0)
         list(APPEND COMPILER_SUPPORTED_CXX_VERSIONS 20)
     endif()
-    if (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 13.0.0)
+    if(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 13.0.0)
         list(APPEND COMPILER_SUPPORTED_CXX_VERSIONS 23)
     endif()
-    if (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 14.0.0)
+    if(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 14.0.0)
         list(APPEND COMPILER_SUPPORTED_C_VERSIONS 23)
     endif()
-    if (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 15.0.0)
+    if(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 15.0.0)
         list(APPEND COMPILER_SUPPORTED_CXX_VERSIONS 26)
     endif()
-elseif (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
+elseif(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
     configure_msvc_or_clang_msvc_options()
-    if (MSVC_VERSION GREATER_EQUAL 1928)
+    if(MSVC_VERSION GREATER_EQUAL 1928)
         list(APPEND COMPILER_SUPPORTED_CXX_VERSIONS 20)
     endif()
-    if (MSVC_VERSION GREATER_EQUAL 1937)
+    if(MSVC_VERSION GREATER_EQUAL 1937)
         list(APPEND COMPILER_SUPPORTED_CXX_VERSIONS 23)
     endif()
 endif()
 
 
 function(manually_add_byte_order_to_cppcheck_arguments)
-    if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang" OR CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-        if (CMAKE_CXX_BYTE_ORDER STREQUAL "LITTLE_ENDIAN")
+    if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang" OR CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+        if(CMAKE_CXX_BYTE_ORDER STREQUAL "LITTLE_ENDIAN")
             list(APPEND CMAKE_CXX_CPPCHECK
                 "-D__ORDER_LITTLE_ENDIAN__=1234"
                 "-D__ORDER_BIG_ENDIAN__=4321"
                 "-D__BYTE_ORDER__=1234"
             )
-        elseif (CMAKE_CXX_BYTE_ORDER STREQUAL "BIG_ENDIAN")
+        elseif(CMAKE_CXX_BYTE_ORDER STREQUAL "BIG_ENDIAN")
             list(APPEND CMAKE_CXX_CPPCHECK
                 "-D__ORDER_LITTLE_ENDIAN__=1234"
                 "-D__ORDER_BIG_ENDIAN__=4321"
@@ -423,7 +423,7 @@ function(manually_add_byte_order_to_cppcheck_arguments)
             )
         endif()
     endif()
-endfunction()
+endfunction(manually_add_byte_order_to_cppcheck_arguments)
 
 
 message(STATUS "+-")
@@ -445,7 +445,7 @@ set(TestDependencies "dummy")
 set(TestOptionalDependencies "dummy")
 set(TestIsCProject "dummy")
 
-if (NOT USING_MINGW_GCC_32)
+if(NOT USING_MINGW_GCC_32)
     list(APPEND TestFilenames "test_fibonacci_num.cpp")
     list(APPEND TestDirectories "number_theory")
     list(APPEND TestLangVersions "17 20 23 26")
@@ -471,7 +471,7 @@ if (NOT USING_MINGW_GCC_32)
     list(APPEND TestDirectories "number_theory")
     list(APPEND TestLangVersions "17 20 23 26")
     list(APPEND TestDependencies "")
-    if (LINUX AND (CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_FRONTEND_VARIANT STREQUAL "GNU"))
+    if(LINUX AND (CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_FRONTEND_VARIANT STREQUAL "GNU"))
         list(APPEND TestOptionalDependencies "mpfr")
     else()
         list(APPEND TestOptionalDependencies "")
@@ -482,7 +482,7 @@ if (NOT USING_MINGW_GCC_32)
     list(APPEND TestDirectories "number_theory")
     list(APPEND TestLangVersions "17 20 23 26")
     list(APPEND TestDependencies "")
-    if (LINUX AND (CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_FRONTEND_VARIANT STREQUAL "GNU"))
+    if(LINUX AND (CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_FRONTEND_VARIANT STREQUAL "GNU"))
         list(APPEND TestOptionalDependencies "gmp")
     else()
         list(APPEND TestOptionalDependencies "")
@@ -493,7 +493,7 @@ if (NOT USING_MINGW_GCC_32)
     list(APPEND TestDirectories "number_theory")
     list(APPEND TestLangVersions "17 20 23 26")
     list(APPEND TestDependencies "")
-    if (LINUX AND (CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_FRONTEND_VARIANT STREQUAL "GNU"))
+    if(LINUX AND (CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_FRONTEND_VARIANT STREQUAL "GNU"))
         list(APPEND TestOptionalDependencies "gmp gmpxx")
     else()
         list(APPEND TestOptionalDependencies "")
@@ -523,7 +523,7 @@ list(APPEND TestOptionalDependencies "")
 list(APPEND TestIsCProject False)
 
 set(mingw_gcc_or_clang USING_MINGW_GCC OR CMAKE_CXX_COMPILER_ID STREQUAL "Clang" OR CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang")
-if ((NOT mingw_gcc_or_clang) OR (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER 10.0.0))
+if((NOT mingw_gcc_or_clang) OR (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER 10.0.0))
     # gcc mingw w64 10.0.0 supports C++20 but doesn't have std::bit_cast, same with clang
     # gcc:   https://gcc.gnu.org/projects/cxx-status.html
     # clang: https://clang.llvm.org/cxx_status.html
@@ -536,12 +536,12 @@ if ((NOT mingw_gcc_or_clang) OR (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER 10.0
 endif()
 unset(mingw_gcc_or_clang)
 
-# list(APPEND TestFilenames "test_actrie.cpp")
-# list(APPEND TestDirectories "tf_idf_actrie")
-# list(APPEND TestLangVersions "20 23 26")
-# list(APPEND TestDependencies "")
-# list(APPEND TestOptionalDependencies "")
-# list(APPEND TestIsCProject False)
+list(APPEND TestFilenames "test_actrie.cpp")
+list(APPEND TestDirectories "tf_idf_actrie")
+list(APPEND TestLangVersions "20 23 26")
+list(APPEND TestDependencies "")
+list(APPEND TestOptionalDependencies "")
+list(APPEND TestIsCProject False)
 
 list(APPEND TestFilenames "test_tf_idf_actrie.cpp search_lib.cpp")
 list(APPEND TestDirectories "tf_idf_actrie")
@@ -550,7 +550,7 @@ list(APPEND TestDependencies "")
 list(APPEND TestOptionalDependencies "")
 list(APPEND TestIsCProject False)
 
-if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR (CMAKE_CXX_COMPILER_ID STREQUAL "Clang" AND CMAKE_CXX_COMPILER_FRONTEND_VARIANT STREQUAL "GNU") AND NOT APPLE)
+if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR (CMAKE_CXX_COMPILER_ID STREQUAL "Clang" AND CMAKE_CXX_COMPILER_FRONTEND_VARIANT STREQUAL "GNU") AND NOT APPLE)
     list(APPEND TestFilenames "test_memcount.c")
     list(APPEND TestDirectories "vec_instructs")
     list(APPEND TestLangVersions "99 11 17 23")
@@ -609,19 +609,19 @@ function(
     list(GET target_filenames 0 first_target_filename)
     # remove file extension
     string(REGEX REPLACE "\\.[^.]*$" "" first_target_filename ${first_target_filename})
-    if (is_c_project)
+    if(is_c_project)
         set(target "target_c_${target_lang_version}_${first_target_filename}")
     else()
         set(target "target_cxx_${target_lang_version}_${first_target_filename}")
     endif()
 
     string(COMPARE EQUAL "${target_dependencies}" "" empty_dependencies)
-    if (NOT empty_dependencies)
+    if(NOT empty_dependencies)
         string(REPLACE " " ";" target_dependencies "${target_dependencies}")
     endif()
 
     string(COMPARE EQUAL "${target_optional_dependencies}" "" empty_optional_dependencies)
-    if (NOT empty_optional_dependencies)
+    if(NOT empty_optional_dependencies)
         string(REPLACE " " ";" target_optional_dependencies "${target_optional_dependencies}")
     endif()
 
@@ -643,17 +643,17 @@ function(
         endif()
     endforeach()
 
-    if (has_missing_dependency)
+    if(has_missing_dependency)
         return()
     endif()
 
     add_executable(${target} ${target_full_filenames})
 
-    if (NOT empty_dependencies)
+    if(NOT empty_dependencies)
         target_link_libraries(${target} PUBLIC ${target_dependencies})
     endif()
 
-    if (NOT empty_optional_dependencies)
+    if(NOT empty_optional_dependencies)
         foreach(target_optional_dependency ${target_optional_dependencies})
             find_library(dependency_lib ${target_optional_dependency})
             if(NOT dependency_lib)
@@ -664,20 +664,20 @@ function(
         endforeach()
     endif()
 
-    if (LINK_THREADS_LIBRARY_MANUALLY)
+    if(LINK_THREADS_LIBRARY_MANUALLY)
         target_link_libraries(${target} PUBLIC Threads::Threads)
     endif()
 
-    if (LINK_COMPILER_RT_BUILTINS_MANUALLY)
+    if(LINK_COMPILER_RT_BUILTINS_MANUALLY)
         target_link_libraries(${target} PUBLIC clang_rt.builtins-x86_64)
     endif()
 
-    if (USING_MINGW_GCC AND NOT WIN32)
+    if(USING_MINGW_GCC AND NOT WIN32)
         target_link_options(${target} PUBLIC -static -static-libgcc -static-libstdc++)
     endif()
 
     target_compile_definitions(${target} PUBLIC ${TEST_COMPILE_DEFINITIONS})
-    if (is_c_project)
+    if(is_c_project)
         target_compile_options(${target} PUBLIC ${TEST_C_COMPILE_OPTIONS})
         set_target_properties(${target} PROPERTIES
             C_STANDARD ${target_lang_version}
@@ -704,7 +704,7 @@ foreach(target_filenames target_dir target_supported_lang_versions target_depend
         TestIsCProject)
     string(REPLACE " " ";" target_supported_lang_versions "${target_supported_lang_versions}")
     foreach(version ${target_supported_lang_versions})
-        if (
+        if(
             (NOT is_c_project AND ${version} IN_LIST COMPILER_SUPPORTED_CXX_VERSIONS)
             OR
             (is_c_project AND ${version} IN_LIST COMPILER_SUPPORTED_C_VERSIONS)
