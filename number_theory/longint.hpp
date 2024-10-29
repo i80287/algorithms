@@ -24,16 +24,15 @@
 #endif
 #include "math_functions.hpp"
 
-#if !defined(__GNUG__)
-// cppcheck-suppress [preprocessorErrorDirective]
-#error "Current implementation works only with GCC"
-#endif
-
 #if defined(ENABLE_LONGINT_DEBUG_ASSERTS) && ENABLE_LONGINT_DEBUG_ASSERTS
 #define LONGINT_DEBUG_ASSERT(expr) assert(expr)
 #else
 #define LONGINT_DEBUG_ASSERT(expr)
 #endif
+
+#if defined(__GNUG__) || defined(__clang__)
+
+#define HAS_CUSTOM_LONGINT_ALLOCATOR 1
 
 namespace longint_allocator {
 
@@ -270,6 +269,10 @@ ATTRIBUTE_ALLOC_SIZE(1) INLINE_LONGINT_ALLOCATE void* Allocate(std::size_t size)
 #endif
 
 }  // namespace longint_allocator
+
+#else
+#define HAS_CUSTOM_LONGINT_ALLOCATOR 0
+#endif
 
 namespace longint_detail {
 struct longint_static_storage;
@@ -780,7 +783,7 @@ struct longint {
         }
     }
 #if defined(INTEGERS_128_BIT_HPP)
-    [[nodiscard]] ATTRIBUTE_PURE constexpr bool operator==(uint128_t n) const noexcept {
+    [[nodiscard]] ATTRIBUTE_PURE I128_CONSTEXPR bool operator==(uint128_t n) const noexcept {
         if ((config::is_constant_evaluated() || config::is_gcc_constant_p(n)) && n == 0) {
             return iszero();
         }
@@ -806,7 +809,7 @@ struct longint {
                 return false;
         }
     }
-    [[nodiscard]] ATTRIBUTE_PURE constexpr bool operator==(int128_t n) const noexcept {
+    [[nodiscard]] ATTRIBUTE_PURE I128_CONSTEXPR bool operator==(int128_t n) const noexcept {
         if ((config::is_constant_evaluated() || config::is_gcc_constant_p(n)) && n == 0) {
             return iszero();
         }
@@ -905,10 +908,10 @@ struct longint {
         return !(*this == n);
     }
 #if defined(INTEGERS_128_BIT_HPP)
-    [[nodiscard]] ATTRIBUTE_PURE constexpr bool operator!=(uint128_t n) const noexcept {
+    [[nodiscard]] ATTRIBUTE_PURE I128_CONSTEXPR bool operator!=(uint128_t n) const noexcept {
         return !(*this == n);
     }
-    [[nodiscard]] ATTRIBUTE_PURE constexpr bool operator!=(int128_t n) const noexcept {
+    [[nodiscard]] ATTRIBUTE_PURE I128_CONSTEXPR bool operator!=(int128_t n) const noexcept {
         return !(*this == n);
     }
 #endif
@@ -1173,7 +1176,7 @@ struct longint {
         return static_cast<size_type>(size()) <= 4;
     }
     [[nodiscard]]
-    ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_PURE constexpr uint128_t to_uint128() const noexcept {
+    ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_PURE I128_CONSTEXPR uint128_t to_uint128() const noexcept {
         uint128_t value = 0;
         static_assert(kNumsBits == 32);
         switch (usize()) {
@@ -1199,7 +1202,7 @@ struct longint {
         }
         return value;
     }
-    [[nodiscard]] ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_PURE /* implicit */ constexpr
+    [[nodiscard]] ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_PURE /* implicit */ I128_CONSTEXPR
     operator uint128_t() const noexcept {
         return to_uint128();
     }
@@ -1865,7 +1868,11 @@ struct longint {
     };
 
 private:
+#if HAS_CUSTOM_LONGINT_ALLOCATOR
     static constexpr bool kUseCustomLongIntAllocator = false;
+#else
+    static constexpr bool kUseCustomLongIntAllocator = false;
+#endif
 
     struct LongIntNaive final {
         ATTRIBUTE_SIZED_ACCESS(read_only, 1, 2)
@@ -1905,7 +1912,9 @@ private:
                           2 * max_size());
             poly_size_type n = 2 * math_functions::nearest_greater_equal_power_of_two(product_size);
             const bool need_high_precision = n > kFFTPrecisionBorder;
-            n <<= need_high_precision;
+            if (need_high_precision) {
+                n *= 2;
+            }
             LONGINT_DEBUG_ASSERT(math_functions::is_power_of_two(n));
             ATTRIBUTE_ASSUME(math_functions::is_power_of_two(n));
             return {n, need_high_precision};
@@ -2041,7 +2050,10 @@ private:
                     p++;
                 }
             }
-            const size_type complex_nums_filled = (2 * k) << need_high_precision;
+            size_type complex_nums_filled = (2 * k);
+            if (need_high_precision) {
+                complex_nums_filled *= 2;
+            }
             std::memset(static_cast<void*>(p), 0, (n - complex_nums_filled) * sizeof(fft::complex));
         }
 
@@ -2099,7 +2111,10 @@ private:
                     p++;
                 }
             }
-            const size_type complex_nums_filled = (2 * nums_size) << need_high_precision;
+            size_type complex_nums_filled = (2 * nums_size);
+            if (need_high_precision) {
+                complex_nums_filled *= 2;
+            }
             std::memset(static_cast<void*>(p), 0, (n - complex_nums_filled) * sizeof(fft::complex));
         }
     };
@@ -2569,7 +2584,7 @@ private:
             allocate_default_capacity_128();
         }
     }
-    constexpr void assign_u128_unchecked(uint128_t n) noexcept {
+    I128_CONSTEXPR void assign_u128_unchecked(uint128_t n) noexcept {
         size_    = n != 0;
         nums_[0] = static_cast<uint32_t>(n);
         n >>= 32;
@@ -2582,7 +2597,7 @@ private:
         size_ += n != 0;
         nums_[3] = static_cast<uint32_t>(n);
     }
-    constexpr void assign_i128_unchecked(int128_t n) noexcept {
+    I128_CONSTEXPR void assign_i128_unchecked(int128_t n) noexcept {
         const std::int32_t sgn = math_functions::sign(n);
         assign_u128_unchecked(math_functions::uabs(n));
         size_ *= sgn;
@@ -2720,16 +2735,22 @@ private:
     }
 
     ATTRIBUTE_ALWAYS_INLINE static digit_t* allocate(std::size_t nums) {
+#if HAS_CUSTOM_LONGINT_ALLOCATOR
         if constexpr (kUseCustomLongIntAllocator) {
             return static_cast<digit_t*>(::longint_allocator::Allocate(nums * sizeof(digit_t)));
-        } else {
+        } else
+#endif
+        {
             return static_cast<digit_t*>(::operator new(nums * sizeof(digit_t)));
         }
     }
     ATTRIBUTE_ALWAYS_INLINE static void deallocate(digit_t* nums) noexcept {
+#if HAS_CUSTOM_LONGINT_ALLOCATOR
         if constexpr (kUseCustomLongIntAllocator) {
             ::longint_allocator::Deallocate(static_cast<void*>(nums));
-        } else {
+        } else
+#endif
+        {
             ::operator delete(static_cast<void*>(nums));
         }
     }
@@ -2930,3 +2951,6 @@ inline void longint::set_str_impl(const unsigned char* str, const std::size_t st
     }
     set_ssize_from_size_and_sign(usize_value, sgn);
 }
+
+#undef HAS_CUSTOM_LONGINT_ALLOCATOR
+#undef LONGINT_DEBUG_ASSERT

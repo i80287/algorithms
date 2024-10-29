@@ -428,7 +428,7 @@
 #endif
 
 #if defined(__clang__)
-#define CONFIG_CLANG_NONNULL_QUALIFIER _Nonnull
+#define CONFIG_CLANG_NONNULL_QUALIFIER  _Nonnull
 #define CONFIG_CLANG_NULLABLE_QUALIFIER _Nullable
 #else
 #define CONFIG_CLANG_NONNULL_QUALIFIER
@@ -609,11 +609,12 @@ namespace config {
 
 template <class T>
 ATTRIBUTE_ALWAYS_INLINE constexpr bool is_gcc_constant_p(ATTRIBUTE_MAYBE_UNUSED T expr) noexcept {
+#if CONFIG_HAS_BUILTIN(__builtin_constant_p)
 #if CONFIG_HAS_INCLUDE(<type_traits>)
+    // not std::is_trivial_v for backward compatibility with old compilers C++ versions
     static_assert(std::is_trivial<T>::value,
                   "Type passed to the is_gcc_constant_p() should be trivial");
 #endif
-#if CONFIG_HAS_BUILTIN(__builtin_constant_p)
     return static_cast<bool>(__builtin_constant_p(expr));
 #else
     return false;

@@ -166,30 +166,46 @@ function(configure_gcc_or_clang_gcc_options)
             ${LOCAL_FN_TEST_CXX_COMPILE_OPTIONS}
             -Warray-bounds
             -Warray-bounds-pointer-arithmetic
-            -Warray-parameter
             -Wshift-overflow
             -Wshift-sign-overflow
             -Wshorten-64-to-32
             -Wthread-safety
             -Wnull-pointer-arithmetic
-            -Wnull-pointer-subtraction
             -Wnullable-to-nonnull-conversion
             -Wsometimes-uninitialized
             -Wstatic-in-inline
             -Wformat-pedantic
             -Wformat-type-confusion
             -Wfour-char-constants
-            -Wframe-address
             -Wgcc-compat
             -Wgnu
             -Widiomatic-parentheses
             -Wimplicit
             -Wimplicit-fallthrough
-            -Wincompatible-function-pointer-types-strict
             -Winconsistent-missing-destructor-override
             -fcolor-diagnostics
             -fansi-escape-codes
             -ftemplate-backtrace-limit=0)
+        if (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 11.0.0)
+            set(LOCAL_FN_TEST_CXX_COMPILE_OPTIONS
+                ${LOCAL_FN_TEST_CXX_COMPILE_OPTIONS}
+                -Wframe-address)
+        endif()
+        if (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 13.0.0)
+            set(LOCAL_FN_TEST_CXX_COMPILE_OPTIONS
+                ${LOCAL_FN_TEST_CXX_COMPILE_OPTIONS}
+                -Wnull-pointer-subtraction)
+        endif()
+        if (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 15.0.0)
+            set(LOCAL_FN_TEST_CXX_COMPILE_OPTIONS
+                ${LOCAL_FN_TEST_CXX_COMPILE_OPTIONS}
+                -Warray-parameter)
+        endif()
+        if (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 16.0.0)
+            set(LOCAL_FN_TEST_CXX_COMPILE_OPTIONS
+                ${LOCAL_FN_TEST_CXX_COMPILE_OPTIONS}
+                -Wincompatible-function-pointer-types-strict)
+        endif()
         set(LOCAL_FN_TEST_COMPILE_DEFINITIONS
             ${LOCAL_FN_TEST_COMPILE_DEFINITIONS}
             _LIBCPP_ENABLE_ASSERTIONS)
@@ -455,7 +471,7 @@ if (NOT USING_MINGW_GCC_32)
     list(APPEND TestDirectories "number_theory")
     list(APPEND TestLangVersions "17 20 23 26")
     list(APPEND TestDependencies "")
-    if (LINUX)
+    if (LINUX AND (CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_FRONTEND_VARIANT STREQUAL "GNU"))
         list(APPEND TestOptionalDependencies "mpfr")
     else()
         list(APPEND TestOptionalDependencies "")
@@ -466,7 +482,7 @@ if (NOT USING_MINGW_GCC_32)
     list(APPEND TestDirectories "number_theory")
     list(APPEND TestLangVersions "17 20 23 26")
     list(APPEND TestDependencies "")
-    if (LINUX)
+    if (LINUX AND (CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_FRONTEND_VARIANT STREQUAL "GNU"))
         list(APPEND TestOptionalDependencies "gmp")
     else()
         list(APPEND TestOptionalDependencies "")
@@ -477,21 +493,19 @@ if (NOT USING_MINGW_GCC_32)
     list(APPEND TestDirectories "number_theory")
     list(APPEND TestLangVersions "17 20 23 26")
     list(APPEND TestDependencies "")
-    if (LINUX)
+    if (LINUX AND (CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_FRONTEND_VARIANT STREQUAL "GNU"))
         list(APPEND TestOptionalDependencies "gmp gmpxx")
     else()
         list(APPEND TestOptionalDependencies "")
     endif()
     list(APPEND TestIsCProject False)
 
-    if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_FRONTEND_VARIANT STREQUAL "GNU")
-        list(APPEND TestFilenames "test_long_int.cpp")
-        list(APPEND TestDirectories "number_theory")
-        list(APPEND TestLangVersions "17 20 23 26")
-        list(APPEND TestDependencies "")
-        list(APPEND TestOptionalDependencies "")
-        list(APPEND TestIsCProject False)
-    endif()
+    list(APPEND TestFilenames "test_long_int.cpp")
+    list(APPEND TestDirectories "number_theory")
+    list(APPEND TestLangVersions "17 20 23 26")
+    list(APPEND TestDependencies "")
+    list(APPEND TestOptionalDependencies "")
+    list(APPEND TestIsCProject False)
 endif()
 
 list(APPEND TestFilenames "test_bitmatrix.cpp")
