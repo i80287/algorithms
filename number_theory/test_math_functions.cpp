@@ -510,7 +510,7 @@ template <class IntType>
     std::atomic_flag result = ATOMIC_FLAG_INIT;
     for (size_t i = 0; i < kTotalThreads; ++i) {
         threads.emplace_back([thread_id = i, &result
-#if defined(_MSC_VER)
+#if defined(_MSC_VER) && !defined(__clang__)
                               ,
                               kTestsPerThread
 #endif

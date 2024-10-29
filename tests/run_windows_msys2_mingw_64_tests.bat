@@ -8,7 +8,9 @@ copy "..\tf_idf_actrie\Anglo_Saxon_Chronicle.txt" ".\%build_dir%\Anglo_Saxon_Chr
 
 cd ".\%build_dir%"
 
-cmake -G "MSYS Makefiles" -DCMAKE_BUILD_TYPE=RelWithDebInfo -S .. -B .
+@REM "MSYS Makefiles" - may use clang-cl instead of gcc / clang
+@REM "MinGW Makefiles" - may use clang-cl instead of gcc / clang
+cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=RelWithDebInfo -S .. -B .
 if %errorlevel% neq 0 exit /b %errorlevel%
 
 make all --jobs %NUMBER_OF_PROCESSORS%
