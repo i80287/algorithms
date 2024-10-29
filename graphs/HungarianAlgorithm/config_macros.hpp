@@ -427,7 +427,23 @@
 #define ATTRIBUTE_FALLTHROUGH
 #endif
 
-#if defined(__clang__)
+#if CONFIG_CLANG_AT_LEAST(3, 7)
+/*
+ * nullability specifier is a Clang extension
+ * Possible warning can be suppressed with the following code:
+ *
+ * #if defined(__clang__)
+ * #pragma clang diagnostic push
+ * #pragma clang diagnostic ignored "-Wnullability-extension"
+ * #endif
+ *
+ * Some code that uses CONFIG_CLANG_NONNULL_QUALIFIER or CONFIG_CLANG_NULLABLE_QUALIFIER
+ *
+ * #if defined(__clang__)
+ * #pragma clang diagnostic pop
+ * #endif
+ *
+ **/
 #define CONFIG_CLANG_NONNULL_QUALIFIER  _Nonnull
 #define CONFIG_CLANG_NULLABLE_QUALIFIER _Nullable
 #else
