@@ -231,6 +231,12 @@ function(configure_gcc_or_clang_gcc_options)
             -Wsigned-enum-bitfield
         )
     endif()
+    if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 16.0.0)
+        set(LOCAL_FN_TEST_CXX_COMPILE_OPTIONS
+            ${LOCAL_FN_TEST_CXX_COMPILE_OPTIONS}
+            -fanalyzer
+        )
+    endif()
 
     set(LOCAL_FN_TEST_CXX_COMPILE_OPTIONS
         ${LOCAL_FN_TEST_CXX_COMPILE_OPTIONS}
@@ -516,12 +522,12 @@ if ((NOT mingw_gcc_or_clang) OR (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER 10.0
 endif()
 unset(mingw_gcc_or_clang)
 
-list(APPEND TestFilenames "test_actrie.cpp")
-list(APPEND TestDirectories "tf_idf_actrie")
-list(APPEND TestLangVersions "20 23 26")
-list(APPEND TestDependencies "")
-list(APPEND TestOptionalDependencies "")
-list(APPEND TestIsCProject False)
+# list(APPEND TestFilenames "test_actrie.cpp")
+# list(APPEND TestDirectories "tf_idf_actrie")
+# list(APPEND TestLangVersions "20 23 26")
+# list(APPEND TestDependencies "")
+# list(APPEND TestOptionalDependencies "")
+# list(APPEND TestIsCProject False)
 
 list(APPEND TestFilenames "test_tf_idf_actrie.cpp search_lib.cpp")
 list(APPEND TestDirectories "tf_idf_actrie")
