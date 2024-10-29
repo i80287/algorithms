@@ -153,6 +153,9 @@ function(configure_gcc_or_clang_gcc_options)
             -Wshift-sign-overflow
             -Wshorten-64-to-32
             -Wthread-safety
+            -Wnull-pointer-arithmetic
+            -Wnull-pointer-subtraction
+            -Wnullable-to-nonnull-conversion
             -fcolor-diagnostics
             -fansi-escape-codes
             -ftemplate-backtrace-limit=0)
