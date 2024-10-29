@@ -170,11 +170,11 @@ static void CheckJacobiBasic() noexcept {
     }
 
     for (int32_t k = -int32_t(kLen); k <= int32_t(kLen); k++) {
-        const int32_t b = k == 1 || k == -1;
-        assert(kronecker_symbol(k, int32_t(0)) == b);
-        assert(kronecker_symbol(k, uint32_t(0)) == b);
-        assert(kronecker_symbol(int64_t(k), int64_t(0)) == b);
-        assert(kronecker_symbol(int64_t(k), uint64_t(0)) == b);
+        const int32_t b = k == 1 || k == -1 ? 1 : 0;
+        assert(kronecker_symbol(k, int32_t{0}) == b);
+        assert(kronecker_symbol(k, uint32_t{0}) == b);
+        assert(kronecker_symbol(int64_t{k}, int64_t{0}) == b);
+        assert(kronecker_symbol(int64_t{k}, uint64_t{0}) == b);
     }
 
     for (size_t i = 0; i < 30; i++) {

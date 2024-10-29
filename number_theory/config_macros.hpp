@@ -428,7 +428,7 @@
 #endif
 
 #if defined(__clang__)
-#define CONFIG_CLANG_NONNULL_QUALIFIER _Nonnull
+#define CONFIG_CLANG_NONNULL_QUALIFIER  _Nonnull
 #define CONFIG_CLANG_NULLABLE_QUALIFIER _Nullable
 #else
 #define CONFIG_CLANG_NONNULL_QUALIFIER

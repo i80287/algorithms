@@ -3,21 +3,26 @@
 
 /* Test for gcc >= maj.min, as per __GNUC_PREREQ in glibc */
 #if defined(__GNUC__) && defined(__GNUC_MINOR__)
-#define CONFIG_GNUC_PREREQ(maj, min) ((__GNUC__ << 16) + __GNUC_MINOR__ >= ((maj) << 16) + (min))
+#define CONFIG_GNUC_AT_LEAST(maj, min) ((__GNUC__ << 16) + __GNUC_MINOR__ >= ((maj) << 16) + (min))
 #else
-#define CONFIG_GNUC_PREREQ(maj, min) 0
+#define CONFIG_GNUC_AT_LEAST(maj, min) 0
 #endif
 
-#if (defined(__GNUC__) || defined(__GNUG__) || defined(__clang__)) && \
-    (defined(__has_attribute) &&                                      \
-     (!defined(__clang_major__) || 3 < __clang_major__ + (5 <= __clang_minor__)))
+#if defined(__clang__) && defined(__clang_major__) && defined(__clang_minor__)
+#define CONFIG_CLANG_AT_LEAST(maj, min) \
+    ((__clang_major__ << 16) + __clang_minor__ >= ((maj) << 16) + (min))
+#else
+#define CONFIG_CLANG_AT_LEAST(maj, min) 0
+#endif
+
 /* Test for __has_attribute as per __glibc_has_attribute in glibc */
+#if defined(__has_attribute) && (!defined(__clang__) || CONFIG_CLANG_AT_LEAST(4, 5))
 #define CONFIG_HAS_GCC_ATTRIBUTE(attr) __has_attribute(attr)
 #else
 #define CONFIG_HAS_GCC_ATTRIBUTE(attr) 0
 #endif
 
-#ifdef __has_cpp_attribute
+#if defined(__cplusplus) && defined(__has_cpp_attribute)
 #define CONFIG_HAS_CPP_ATTRIBUTE(attr) __has_cpp_attribute(attr)
 #else
 #define CONFIG_HAS_CPP_ATTRIBUTE(attr) 0
@@ -43,6 +48,18 @@
 #include <iso646.h>
 #endif
 
+#if defined(__cplusplus) && __cplusplus >= 201103L
+#define CONFIG_HAS_AT_LEAST_CXX_11 1
+#else
+#define CONFIG_HAS_AT_LEAST_CXX_11 0
+#endif
+
+#if defined(__cplusplus) && __cplusplus >= 201402L
+#define CONFIG_HAS_AT_LEAST_CXX_14 1
+#else
+#define CONFIG_HAS_AT_LEAST_CXX_14 0
+#endif
+
 // https://en.cppreference.com/w/cpp/feature_test
 #if defined(__cplusplus) && __cplusplus >= 201703L
 #define CONFIG_HAS_AT_LEAST_CXX_17 1
@@ -62,8 +79,26 @@
 #define CONFIG_HAS_AT_LEAST_CXX_23 0
 #endif
 
+#if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L
+#define CONFIG_HAS_AT_LEAST_C_11 1
+#else
+#define CONFIG_HAS_AT_LEAST_C_11 0
+#endif
+
+#if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201710L
+#define CONFIG_HAS_AT_LEAST_C_17 1
+#else
+#define CONFIG_HAS_AT_LEAST_C_17 0
+#endif
+
+#if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 202311L
+#define CONFIG_HAS_AT_LEAST_C_23 1
+#else
+#define CONFIG_HAS_AT_LEAST_C_23 0
+#endif
+
 // https://en.cppreference.com/w/cpp/feature_test
-#if defined(__cpp_concepts) && __cpp_concepts >= 202002L
+#if defined(__cpp_concepts) && __cpp_concepts >= 201907L
 #define CONFIG_HAS_CONCEPTS 1
 #else
 #define CONFIG_HAS_CONCEPTS 0
@@ -99,20 +134,38 @@
 #elif CONFIG_HAS_BUILTIN(__builtin_unreachable)
 #define CONFIG_UNREACHABLE() __builtin_unreachable()
 #elif CONFIG_HAS_BUILTIN(__builtin_assume)
+#if defined(__cplusplus)
 #define CONFIG_UNREACHABLE() __builtin_assume(false)
-#elif CONFIG_GNUC_PREREQ(13, 0) && CONFIG_HAS_GCC_ATTRIBUTE(assume)
+#else
+#define CONFIG_UNREACHABLE() __builtin_assume(0)
+#endif
+#elif CONFIG_GNUC_AT_LEAST(13, 0) && CONFIG_HAS_GCC_ATTRIBUTE(assume)
+#if defined(__cplusplus)
 #define CONFIG_UNREACHABLE() __attribute__((assume(false)))
+#else
+#define CONFIG_UNREACHABLE() __attribute__((assume(0)))
+#endif
 #elif defined(_MSC_VER)
+#if defined(__cplusplus)
 #define CONFIG_UNREACHABLE() __assume(false)
 #else
+#define CONFIG_UNREACHABLE() __assume(0)
+#endif
+#else
+#if defined(__cplusplus)
 #define CONFIG_UNREACHABLE() \
     do {                     \
     } while (false)
+#else
+#define CONFIG_UNREACHABLE() \
+    do {                     \
+    } while (0)
+#endif
 #endif
 
 #if CONFIG_HAS_AT_LEAST_CXX_23 && CONFIG_HAS_CPP_ATTRIBUTE(assume)
 #define ATTRIBUTE_ASSUME(expr) [[assume(expr)]]
-#elif CONFIG_GNUC_PREREQ(13, 0) && CONFIG_HAS_GCC_ATTRIBUTE(assume)
+#elif CONFIG_GNUC_AT_LEAST(13, 0) && CONFIG_HAS_GCC_ATTRIBUTE(assume)
 #define ATTRIBUTE_ASSUME(expr) __attribute__((assume(expr)))
 #elif defined(__clang__) && CONFIG_HAS_BUILTIN(__builtin_assume)
 // Side effect of expr is discarded
@@ -120,16 +173,25 @@
 #elif defined(_MSC_VER)
 #define ATTRIBUTE_ASSUME(expr) __assume(expr)
 #else
+#if defined(__cplusplus)
 #define ATTRIBUTE_ASSUME(expr)    \
     do {                          \
         if (!(expr)) {            \
             CONFIG_UNREACHABLE(); \
         }                         \
     } while (false)
+#else
+#define ATTRIBUTE_ASSUME(expr)    \
+    do {                          \
+        if (!(expr)) {            \
+            CONFIG_UNREACHABLE(); \
+        }                         \
+    } while (0)
+#endif
 #endif
 
 /* __builtin_expect is in gcc 3.0 */
-#if CONFIG_GNUC_PREREQ(3, 0) && CONFIG_HAS_BUILTIN(__builtin_expect)
+#if CONFIG_GNUC_AT_LEAST(3, 0) || CONFIG_HAS_BUILTIN(__builtin_expect)
 
 #if defined(likely)
 #undef likely
@@ -142,8 +204,8 @@
 #define likely(x)   __builtin_expect(static_cast<bool>(x), true)
 #define unlikely(x) __builtin_expect(static_cast<bool>(x), false)
 #else
-#define likely(x)   __builtin_expect((x), true)
-#define unlikely(x) __builtin_expect((x), false)
+#define likely(x)   __builtin_expect((x), 1)
+#define unlikely(x) __builtin_expect((x), 0)
 #endif
 
 #else
@@ -166,68 +228,73 @@
 
 #endif
 
-/* Copied from the cdefs.h from the glibc */
+/* Copied from the sys/cdefs.h from the glibc */
 #if !(defined(__GNUC__) || defined(__clang__))
 #define __attribute__(...)
 #endif
 
-#if CONFIG_GNUC_PREREQ(2, 6) || CONFIG_HAS_GCC_ATTRIBUTE(__const__)
+#if CONFIG_GNUC_AT_LEAST(2, 6) || CONFIG_HAS_GCC_ATTRIBUTE(__const__)
 #define ATTRIBUTE_CONST __attribute__((__const__))
-#elif CONFIG_HAS_AT_LEAST_CXX_17 && (defined(__GNUG__) || defined(__clang__))
-#define ATTRIBUTE_COLD [[gnu::const]]
+#elif (defined(__GNUG__) || defined(__clang__)) && CONFIG_HAS_CPP_ATTRIBUTE(gnu::__const__)
+#define ATTRIBUTE_CONST [[gnu::__const__]]
 #else
 #define ATTRIBUTE_CONST
 #endif
 
-#if CONFIG_GNUC_PREREQ(2, 7) || CONFIG_HAS_GCC_ATTRIBUTE(__unused__)
-#define ATTRIBUTE_MAYBE_UNUSED __attribute__((__unused__))
+#if CONFIG_GNUC_AT_LEAST(2, 7) || CONFIG_HAS_GCC_ATTRIBUTE(unused)
+#define ATTRIBUTE_MAYBE_UNUSED __attribute__((unused))
+#elif CONFIG_HAS_AT_LEAST_CXX_17
+#define ATTRIBUTE_MAYBE_UNUSED [[maybe_unused]]
 #else
 #define ATTRIBUTE_MAYBE_UNUSED
 #endif
 
-#if CONFIG_GNUC_PREREQ(2, 96) || CONFIG_HAS_GCC_ATTRIBUTE(__pure__)
-#define ATTRIBUTE_PURE __attribute__((__pure__))
+#if CONFIG_GNUC_AT_LEAST(2, 96) || CONFIG_HAS_GCC_ATTRIBUTE(pure)
+#define ATTRIBUTE_PURE __attribute__((pure))
+#elif defined(__GNUG__) && CONFIG_HAS_CPP_ATTRIBUTE(gnu::pure)
+#define ATTRIBUTE_PURE [[gnu::pure]]
 #else
 #define ATTRIBUTE_PURE
 #endif
 
-#if CONFIG_GNUC_PREREQ(3, 0) || CONFIG_HAS_GCC_ATTRIBUTE(__noinline__)
-#define ATTRIBUTE_NOINLINE __attribute__((__noinline__))
-#elif CONFIG_HAS_AT_LEAST_CXX_17 && defined(__clang__)
+#if CONFIG_GNUC_AT_LEAST(3, 0) || CONFIG_HAS_GCC_ATTRIBUTE(noinline)
+#define ATTRIBUTE_NOINLINE __attribute__((noinline))
+#elif defined(__clang__) && CONFIG_HAS_CPP_ATTRIBUTE(clang::noinline)
 #define ATTRIBUTE_NOINLINE [[clang::noinline]]
-#elif CONFIG_HAS_AT_LEAST_CXX_17 && defined(__GNUG__)
+#elif defined(__GNUG__) && CONFIG_HAS_CPP_ATTRIBUTE(gnu::noinline)
 #define ATTRIBUTE_NOINLINE [[gnu::noinline]]
-#elif CONFIG_HAS_AT_LEAST_CXX_20 && defined(_MSC_VER)
+#elif defined(_MSC_VER) && CONFIG_HAS_CPP_ATTRIBUTE(msvc::noinline)
 #define ATTRIBUTE_NOINLINE [[msvc::noinline]]
-#elif defined(_MSC_VER)
+#elif defined(_MSC_VER) && \
+    (_MSC_VER >= 1920 || defined(_MSC_FULL_VER) && _MSC_FULL_VER >= 191025017)
 #define ATTRIBUTE_NOINLINE __declspec(noinline)
 #else
 #define ATTRIBUTE_NOINLINE
 #endif
 
-#if CONFIG_GNUC_PREREQ(3, 2) || CONFIG_HAS_GCC_ATTRIBUTE(__always_inline__)
-#define ATTRIBUTE_ALWAYS_INLINE __attribute__((__always_inline__))
-#elif CONFIG_HAS_AT_LEAST_CXX_17 && defined(__clang__)
+#if CONFIG_GNUC_AT_LEAST(3, 2) || CONFIG_HAS_GCC_ATTRIBUTE(always_inline)
+#define ATTRIBUTE_ALWAYS_INLINE __attribute__((always_inline))
+#elif defined(__clang__) && CONFIG_HAS_CPP_ATTRIBUTE(clang::always_inline)
 #define ATTRIBUTE_ALWAYS_INLINE [[clang::always_inline]]
-#elif CONFIG_HAS_AT_LEAST_CXX_17 && defined(__GNUG__)
+#elif defined(__GNUG__) && CONFIG_HAS_CPP_ATTRIBUTE(gnu::always_inline)
 #define ATTRIBUTE_ALWAYS_INLINE [[gnu::always_inline]]
-#elif CONFIG_HAS_AT_LEAST_CXX_20 && defined(_MSC_VER)
+#elif defined(_MSC_VER) && CONFIG_HAS_CPP_ATTRIBUTE(msvc::forceinline)
 #define ATTRIBUTE_ALWAYS_INLINE [[msvc::forceinline]]
 #else
 #define ATTRIBUTE_ALWAYS_INLINE
 #endif
 
-#if CONFIG_GNUC_PREREQ(4, 3) || CONFIG_HAS_GCC_ATTRIBUTE(__cold__)
-#define ATTRIBUTE_COLD __attribute__((__cold__))
-#elif CONFIG_HAS_AT_LEAST_CXX_17 && (defined(__GNUG__) || defined(__clang__))
+#if CONFIG_GNUC_AT_LEAST(4, 3) || CONFIG_HAS_GCC_ATTRIBUTE(cold)
+#define ATTRIBUTE_COLD __attribute__((cold))
+#elif (defined(__GNUG__) || defined(__clang__)) && CONFIG_HAS_CPP_ATTRIBUTE(gnu::cold)
 #define ATTRIBUTE_COLD [[gnu::cold]]
 #else
 #define ATTRIBUTE_COLD
 #endif
 
-#if CONFIG_GNUC_PREREQ(4, 3) && CONFIG_HAS_GCC_ATTRIBUTE(hot)
+#if CONFIG_GNUC_AT_LEAST(4, 3) || CONFIG_HAS_GCC_ATTRIBUTE(hot)
 #define ATTRIBUTE_HOT __attribute__((hot))
-#elif CONFIG_HAS_AT_LEAST_CXX_17 && (defined(__GNUG__) || defined(__clang__))
+#elif (defined(__GNUG__) || defined(__clang__)) && CONFIG_HAS_CPP_ATTRIBUTE(gnu::hot)
 #define ATTRIBUTE_HOT [[gnu::hot]]
 #else
 #define ATTRIBUTE_HOT
@@ -239,9 +306,9 @@
  *  indicate the size of the allocation.
  * Clang docs: https://clang.llvm.org/docs/AttributeReference.html#alloc-size
  */
-#if CONFIG_GNUC_PREREQ(4, 3) || CONFIG_HAS_GCC_ATTRIBUTE(__alloc_size__)
-#define ATTRIBUTE_ALLOC_SIZE(...) __attribute__((__alloc_size__(__VA_ARGS__)))
-#elif CONFIG_HAS_AT_LEAST_CXX_17 && (defined(__GNUG__) || defined(__clang__))
+#if CONFIG_GNUC_AT_LEAST(4, 3) || CONFIG_HAS_GCC_ATTRIBUTE(alloc_size)
+#define ATTRIBUTE_ALLOC_SIZE(...) __attribute__((alloc_size(__VA_ARGS__)))
+#elif (defined(__GNUG__) || defined(__clang__)) && CONFIG_HAS_CPP_ATTRIBUTE(gnu::alloc_size)
 #define ATTRIBUTE_ALLOC_SIZE(...) [[gnu::alloc_size(__VA_ARGS__)]]
 #else
 #define ATTRIBUTE_ALLOC_SIZE(...)
@@ -249,53 +316,123 @@
 
 /**
  *  mode in { "read_only", "read_write", "write_only", "none" },
- *  mode "none" is valid iff CONFIG_GNUC_PREREQ(11, 0)
+ *  mode "none" is valid iff CONFIG_GNUC_AT_LEAST(11, 0)
  *
  *  memory_argument_pos >= 1
  *  range_size_argument_pos >= 1
  *
  *  See https://gcc.gnu.org/onlinedocs/gcc/Common-Function-Attributes.html for more info
  */
-#if CONFIG_GNUC_PREREQ(10, 0)
+#if CONFIG_GNUC_AT_LEAST(10, 0)
 #define ATTRIBUTE_ACCESS(mode, memory_argument_pos) \
     __attribute__((access(mode, memory_argument_pos)))
 #define ATTRIBUTE_SIZED_ACCESS(mode, memory_argument_pos, range_size_argument_pos) \
     __attribute__((access(mode, memory_argument_pos, range_size_argument_pos)))
+#if CONFIG_GNUC_AT_LEAST(11, 0)
+#define ATTRIBUTE_ACCESS_NONE(memory_argument_pos) ATTRIBUTE_ACCESS(none, memory_argument_pos)
+#else
+#define ATTRIBUTE_ACCESS_NONE(memory_argument_pos)
+#endif
 #else
 #define ATTRIBUTE_ACCESS(mode, memory_argument_pos)
 #define ATTRIBUTE_SIZED_ACCESS(mode, memory_argument_pos, range_size_argument_pos)
+#define ATTRIBUTE_ACCESS_NONE(memory_argument_pos)
 #endif
 
 /**
  *  See https://gcc.gnu.org/onlinedocs/gcc/Common-Function-Attributes.html
  *   and https://clang.llvm.org/docs/AttributeReference.html#id664 for more info
  */
-#if CONFIG_GNUC_PREREQ(3, 3) || CONFIG_HAS_GCC_ATTRIBUTE(__nonnull__)
-#define ATTRIBUTE_NONNULL(...) __attribute__((__nonnull__(__VA_ARGS__)))
+#if CONFIG_GNUC_AT_LEAST(3, 3) || CONFIG_HAS_GCC_ATTRIBUTE(nonnull)
+#define ATTRIBUTE_NONNULL(...)     __attribute__((nonnull(__VA_ARGS__)))
+#define ATTRIBUTE_NONNULL_ALL_ARGS __attribute__((nonnull))
 #elif CONFIG_HAS_AT_LEAST_CXX_17 && (defined(__GNUG__) || defined(__clang__))
-#define ATTRIBUTE_NONNULL(...) [[gnu::nonnull(__VA_ARGS__)]]
+#define ATTRIBUTE_NONNULL(...)     [[gnu::nonnull(__VA_ARGS__)]]
+#define ATTRIBUTE_NONNULL_ALL_ARGS [[gnu::nonnull]]
 #else
 #define ATTRIBUTE_NONNULL(...)
+#define ATTRIBUTE_NONNULL_ALL_ARGS
 #endif
 
-#if CONFIG_GNUC_PREREQ(4, 9) || CONFIG_HAS_GCC_ATTRIBUTE(__returns_nonnull__)
-#define ATTRIBUTE_RETURNS_NONNULL __attribute__((__returns_nonnull__))
-#elif CONFIG_HAS_AT_LEAST_CXX_17 && (defined(__GNUG__) || defined(__clang__))
+#if CONFIG_GNUC_AT_LEAST(4, 9) || CONFIG_HAS_GCC_ATTRIBUTE(returns_nonnull)
+#define ATTRIBUTE_RETURNS_NONNULL __attribute__((returns_nonnull))
+#elif (defined(__GNUG__) || defined(__clang__)) && CONFIG_HAS_CPP_ATTRIBUTE(gnu::returns_nonnull)
 #define ATTRIBUTE_RETURNS_NONNULL [[gnu::returns_nonnull]]
 #else
 #define ATTRIBUTE_RETURNS_NONNULL
 #endif
 
-#if defined(__clang__) && CONFIG_HAS_AT_LEAST_CXX_17
+#if defined(__clang__) && CONFIG_HAS_CPP_ATTRIBUTE(clang::lifetimebound)
 #define ATTRIBUTE_LIFETIME_BOUND [[clang::lifetimebound]]
 #else
 #define ATTRIBUTE_LIFETIME_BOUND
 #endif
 
-#if defined(__clang__) && CONFIG_HAS_AT_LEAST_CXX_17
+#if defined(__clang__) && CONFIG_HAS_CPP_ATTRIBUTE(clang::reinitializes)
 #define ATTRIBUTE_REINITIALIZES [[clang::reinitializes]]
 #else
 #define ATTRIBUTE_REINITIALIZES
+#endif
+
+#if CONFIG_HAS_AT_LEAST_CXX_17
+#define ATTRIBUTE_NODISCARD [[nodiscard]]
+#if CONFIG_HAS_AT_LEAST_CXX_20
+#define ATTRIBUTE_NODISCARD_WITH_MESSAGE(message) [[nodiscard(message)]]
+#else
+#define ATTRIBUTE_NODISCARD_WITH_MESSAGE(message) [[nodiscard]]
+#endif
+#elif CONFIG_GNUC_AT_LEAST(3, 4) || CONFIG_HAS_GCC_ATTRIBUTE(warn_unused_result)
+#define ATTRIBUTE_NODISCARD                       __attribute__((warn_unused_result))
+#define ATTRIBUTE_NODISCARD_WITH_MESSAGE(message) __attribute__((warn_unused_result))
+#else
+#define ATTRIBUTE_NODISCARD
+#define ATTRIBUTE_NODISCARD_WITH_MESSAGE(message)
+#endif
+
+#if CONFIG_HAS_AT_LEAST_CXX_11
+#define ATTRIBUTE_NORETURN [[noreturn]]
+#elif CONFIG_HAS_AT_LEAST_C_23
+#define ATTRIBUTE_NORETURN [[noreturn]]
+#elif CONFIG_HAS_AT_LEAST_C_11
+#define ATTRIBUTE_NORETURN _Noreturn
+#elif CONFIG_GNUC_AT_LEAST(2, 8) || CONFIG_HAS_GCC_ATTRIBUTE(noreturn)
+#define ATTRIBUTE_NORETURN __attribute__((noreturn))
+#else
+#define ATTRIBUTE_NORETURN
+#endif
+
+#if defined(__cplusplus) && (CONFIG_GNUC_AT_LEAST(2, 8) || CONFIG_CLANG_AT_LEAST(4, 0))
+#if CONFIG_HAS_AT_LEAST_CXX_11
+#define CONFIG_NOEXCEPT_FUNCTION noexcept(true)
+#else
+#define CONFIG_NOEXCEPT_FUNCTION throw()
+#endif
+#else
+#define CONFIG_NOEXCEPT_FUNCTION
+#endif
+
+#if CONFIG_GNUC_AT_LEAST(3, 4) || CONFIG_HAS_GCC_ATTRIBUTE(nothrow)
+#define ATTRIBUTE_NOTHROW __attribute__((nothrow))
+#else
+#define ATTRIBUTE_NOTHROW
+#endif
+
+#if CONFIG_HAS_AT_LEAST_CXX_17
+#define ATTRIBUTE_FALLTHROUGH [[fallthrough]]
+#elif CONFIG_HAS_AT_LEAST_C_23
+#define ATTRIBUTE_FALLTHROUGH [[fallthrough]]
+#elif CONFIG_GNUC_AT_LEAST(7, 1) || CONFIG_HAS_GCC_ATTRIBUTE(fallthrough)
+#define ATTRIBUTE_FALLTHROUGH __attribute__((fallthrough))
+#else
+#define ATTRIBUTE_FALLTHROUGH
+#endif
+
+#if defined(__clang__)
+#define CONFIG_CLANG_NONNULL_QUALIFIER _Nonnull
+#define CONFIG_CLANG_NULLABLE_QUALIFIER _Nullable
+#else
+#define CONFIG_CLANG_NONNULL_QUALIFIER
+#define CONFIG_CLANG_NULLABLE_QUALIFIER
 #endif
 
 // Copypasted from LLVM's int_endianness.h
@@ -411,6 +548,8 @@
 #error Unable to determine endian
 #endif /* Check we found an endianness correctly. */
 
+#ifdef __cplusplus
+
 #if (defined(_MSC_VER) || defined(__MINGW32__)) && CONFIG_HAS_INCLUDE(<intrin.h>)
 #include <intrin.h>  // for _ReadWriteBarrier
 #endif
@@ -420,7 +559,15 @@ namespace config {
 namespace detail {
 
 #if (defined(_MSC_VER) || defined(__MINGW32__)) && CONFIG_HAS_INCLUDE(<intrin.h>)
+#if defined(__GNUC__)
+// inline function 'sink_char_ptr' given attribute 'noinline'
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wattributes"
+#endif
 ATTRIBUTE_NOINLINE static inline void sink_char_ptr(char const volatile*) {}
+#if defined(__GNUC__)
+#pragma GCC diagnostic pop
+#endif
 #endif
 
 }  // namespace detail
@@ -458,21 +605,52 @@ ATTRIBUTE_ALWAYS_INLINE constexpr bool is_constant_evaluated() noexcept {
 
 }  // namespace config
 
-#if CONFIG_HAS_INCLUDE(<utility>)
-#include <utility>
-#endif
-
 namespace config {
 
 template <class T>
-ATTRIBUTE_ALWAYS_INLINE constexpr bool is_gcc_constant_p([[maybe_unused]] T&& expr) noexcept {
+ATTRIBUTE_ALWAYS_INLINE constexpr bool is_gcc_constant_p(ATTRIBUTE_MAYBE_UNUSED T expr) noexcept {
+#if CONFIG_HAS_INCLUDE(<type_traits>)
+    static_assert(std::is_trivial<T>::value,
+                  "Type passed to the is_gcc_constant_p() should be trivial");
+#endif
 #if CONFIG_HAS_BUILTIN(__builtin_constant_p)
-    return static_cast<bool>(__builtin_constant_p(std::forward<T>(expr)));
+    return static_cast<bool>(__builtin_constant_p(expr));
 #else
     return false;
 #endif
 }
 
 }  // namespace config
+
+#else
+
+#if (defined(_MSC_VER) || defined(__MINGW32__)) && CONFIG_HAS_INCLUDE(<intrin.h>)
+#include <intrin.h>  // for _ReadWriteBarrier
+#if defined(__GNUC__)
+// inline function 'sink_char_ptr' given attribute 'noinline'
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wattributes"
+#endif
+ATTRIBUTE_NOINLINE static inline void sink_char_ptr(
+    ATTRIBUTE_MAYBE_UNUSED char const volatile* ptr) {}
+#if defined(__GNUC__)
+#pragma GCC diagnostic pop
+#endif
+
+#define do_not_optimize_away(expr)                    \
+    do {                                              \
+        sink_char_ptr((volatile const char*)&(expr)); \
+        _ReadWriteBarrier();                          \
+    } while (0)
+
+#elif defined(__GNUG__)
+#define do_not_optimize_away(expr) asm volatile("" ::"r,m,i"(expr))
+#elif defined(__GNUC__)
+#define do_not_optimize_away(expr) __asm__ volatile("" ::"r,m,i"(expr))
+#else
+#define do_not_optimize_away(expr) __asm__("" ::"r,m,i"(expr));
+#endif
+
+#endif
 
 #endif  // !CONFIG_MACROS_HPP
