@@ -292,7 +292,7 @@
 #define ATTRIBUTE_COLD
 #endif
 
-#if CONFIG_GNUC_AT_LEAST(4, 4) || CONFIG_HAS_GCC_ATTRIBUTE(hot)
+#if CONFIG_GNUC_AT_LEAST(4, 3) || CONFIG_HAS_GCC_ATTRIBUTE(hot)
 #define ATTRIBUTE_HOT __attribute__((hot))
 #elif (defined(__GNUG__) || defined(__clang__)) && CONFIG_HAS_CPP_ATTRIBUTE(gnu::hot)
 #define ATTRIBUTE_HOT [[gnu::hot]]
@@ -425,6 +425,14 @@
 #define ATTRIBUTE_FALLTHROUGH __attribute__((fallthrough))
 #else
 #define ATTRIBUTE_FALLTHROUGH
+#endif
+
+#if defined(__clang__)
+#define CONFIG_CLANG_NONNULL_QUALIFIER _Nonnull
+#define CONFIG_CLANG_NULLABLE_QUALIFIER _Nullable
+#else
+#define CONFIG_CLANG_NONNULL_QUALIFIER
+#define CONFIG_CLANG_NULLABLE_QUALIFIER
 #endif
 
 // Copypasted from LLVM's int_endianness.h
