@@ -132,10 +132,15 @@ function(configure_gcc_or_clang_gcc_options)
         -Wswitch-enum
         -Wdeprecated
         -Wtype-limits
+        -Wshift-negative-value
+        -Walloca
         -Werror
         -pedantic-errors
     )
     if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+        cmake_host_system_information(RESULT phys_mem_in_mb QUERY TOTAL_PHYSICAL_MEMORY)
+        math(EXPR allocation_limit_in_bytes "(${phys_mem_in_mb} * 1024 * 1024) * 9 / 10")
+
         set(LOCAL_FN_TEST_CXX_COMPILE_OPTIONS
             ${LOCAL_FN_TEST_CXX_COMPILE_OPTIONS}
             -Warray-bounds=2
@@ -143,12 +148,24 @@ function(configure_gcc_or_clang_gcc_options)
             -Wlogical-op
             -Wunsafe-loop-optimizations
             -Wduplicated-cond
+            -Wstrict-overflow=1
+            -Wformat-overflow=2
+            -Wsuggest-final-types
+            -Wsuggest-attribute=const
+            -Wsuggest-attribute=noreturn
+            -Wsuggest-attribute=format
+            -Wsuggest-attribute=cold
+            -Wsuggest-attribute=malloc
+            -Walloc-size-larger-than=${allocation_limit_in_bytes}
+            -Wattribute-alias=2
             -fdiagnostics-color=always)
     endif()
     if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
         set(LOCAL_FN_TEST_CXX_COMPILE_OPTIONS
             ${LOCAL_FN_TEST_CXX_COMPILE_OPTIONS}
             -Warray-bounds
+            -Warray-bounds-pointer-arithmetic
+            -Warray-parameter
             -Wshift-overflow
             -Wshift-sign-overflow
             -Wshorten-64-to-32
@@ -156,6 +173,19 @@ function(configure_gcc_or_clang_gcc_options)
             -Wnull-pointer-arithmetic
             -Wnull-pointer-subtraction
             -Wnullable-to-nonnull-conversion
+            -Wsometimes-uninitialized
+            -Wstatic-in-inline
+            -Wformat-pedantic
+            -Wformat-type-confusion
+            -Wfour-char-constants
+            -Wframe-address
+            -Wgcc-compat
+            -Wgnu
+            -Widiomatic-parentheses
+            -Wimplicit
+            -Wimplicit-fallthrough
+            -Wincompatible-function-pointer-types-strict
+            -Winconsistent-missing-destructor-override
             -fcolor-diagnostics
             -fansi-escape-codes
             -ftemplate-backtrace-limit=0)
@@ -182,6 +212,12 @@ function(configure_gcc_or_clang_gcc_options)
         -Wbad-function-cast
         -Wint-conversion
     )
+    if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 11.0.0)
+        set(LOCAL_FN_TEST_C_COMPILE_OPTIONS
+            ${LOCAL_FN_TEST_C_COMPILE_OPTIONS}
+            -fanalyzer
+        )
+    endif()
     # Flags for C++ only
     set(LOCAL_FN_TEST_CXX_COMPILE_OPTIONS
         ${LOCAL_FN_TEST_CXX_COMPILE_OPTIONS}
@@ -189,6 +225,13 @@ function(configure_gcc_or_clang_gcc_options)
         -Wsign-promo
         -Wold-style-cast
     )
+    if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+        set(LOCAL_FN_TEST_CXX_COMPILE_OPTIONS
+            ${LOCAL_FN_TEST_CXX_COMPILE_OPTIONS}
+            -Wsigned-enum-bitfield
+        )
+    endif()
+
     set(LOCAL_FN_TEST_CXX_COMPILE_OPTIONS
         ${LOCAL_FN_TEST_CXX_COMPILE_OPTIONS}
         -U_GLIBCXX_USE_DEPRECATED)
@@ -221,14 +264,13 @@ function(configure_gcc_or_clang_gcc_options)
     set(CMAKE_C_FLAGS_RELWITHDEBINFO
         ${LOCAL_FN_CMAKE_C_FLAGS_RELWITHDEBINFO}
         PARENT_SCOPE)
+    if (NOT USING_MINGW_GCC)
+        set (LOCAL_FN_CMAKE_C_FLAGS_RELWITHDEBINFO "${LOCAL_FN_CMAKE_C_FLAGS_RELWITHDEBINFO} -fsanitize=address,undefined" PARENT_SCOPE)
+        set (LOCAL_FN_CMAKE_CXX_FLAGS_RELWITHDEBINFO "${LOCAL_FN_CMAKE_CXX_FLAGS_RELWITHDEBINFO} -fsanitize=address,undefined" PARENT_SCOPE)
+    endif()
     set(CMAKE_CXX_FLAGS_RELWITHDEBINFO
         ${LOCAL_FN_CMAKE_CXX_FLAGS_RELWITHDEBINFO}
         PARENT_SCOPE)
-
-    if (NOT USING_MINGW_GCC)
-        # set(CMAKE_C_FLAGS_RELWITHDEBINFO ${CMAKE_C_FLAGS_RELWITHDEBINFO} -fsanitize=address,undefined PARENT_SCOPE)
-        # set(CMAKE_CXX_FLAGS_RELWITHDEBINFO ${CMAKE_CXX_FLAGS_RELWITHDEBINFO} -fsanitize=address,undefined PARENT_SCOPE)
-    endif()
 
 endfunction(configure_gcc_or_clang_gcc_options)
 
