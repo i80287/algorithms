@@ -159,6 +159,7 @@ private:
         return ans;
     }
 
+    ATTRIBUTE_NONNULL_ALL_ARGS
     constexpr MinAssignmentGraph(vertex_t* RESTRICT_QUALIFIER first_part_matches,
                                  vertex_t* RESTRICT_QUALIFIER second_part_matches,
                                  bool* RESTRICT_QUALIFIER first_part_visited,
@@ -177,6 +178,8 @@ private:
           matrix_(matrix),
           size_(size) {}
 
+    [[nodiscard]]
+    ATTRIBUTE_CONST
     static constexpr std::size_t align_size(std::size_t n) noexcept {
         n = (n + 32) & ~std::size_t(31);
         ATTRIBUTE_ASSUME(n % 32 == 0);
@@ -188,6 +191,7 @@ private:
     /// @param matrix
     /// @param matrix_copy
     template <class Iterator>
+    ATTRIBUTE_ACCESS(read_write, 3)
     static void copy_matrix_with_subtraction(Iterator original_matrix_iter_begin, std::size_t n,
                                              T** RESTRICT_QUALIFIER matrix_copy) noexcept {
         for (std::size_t i = 0; i < n; ++original_matrix_iter_begin, ++i) {

@@ -292,7 +292,7 @@
 #define ATTRIBUTE_COLD
 #endif
 
-#if CONFIG_GNUC_AT_LEAST(4, 4) || CONFIG_HAS_GCC_ATTRIBUTE(hot)
+#if CONFIG_GNUC_AT_LEAST(4, 3) || CONFIG_HAS_GCC_ATTRIBUTE(hot)
 #define ATTRIBUTE_HOT __attribute__((hot))
 #elif (defined(__GNUG__) || defined(__clang__)) && CONFIG_HAS_CPP_ATTRIBUTE(gnu::hot)
 #define ATTRIBUTE_HOT [[gnu::hot]]
@@ -425,6 +425,30 @@
 #define ATTRIBUTE_FALLTHROUGH __attribute__((fallthrough))
 #else
 #define ATTRIBUTE_FALLTHROUGH
+#endif
+
+#if CONFIG_CLANG_AT_LEAST(3, 7)
+/*
+ * nullability specifier is a Clang extension
+ * Possible warning can be suppressed with the following code:
+ *
+ * #if defined(__clang__)
+ * #pragma clang diagnostic push
+ * #pragma clang diagnostic ignored "-Wnullability-extension"
+ * #endif
+ *
+ * Some code that uses CONFIG_CLANG_NONNULL_QUALIFIER or CONFIG_CLANG_NULLABLE_QUALIFIER
+ *
+ * #if defined(__clang__)
+ * #pragma clang diagnostic pop
+ * #endif
+ *
+ **/
+#define CONFIG_CLANG_NONNULL_QUALIFIER  _Nonnull
+#define CONFIG_CLANG_NULLABLE_QUALIFIER _Nullable
+#else
+#define CONFIG_CLANG_NONNULL_QUALIFIER
+#define CONFIG_CLANG_NULLABLE_QUALIFIER
 #endif
 
 // Copypasted from LLVM's int_endianness.h
@@ -601,11 +625,12 @@ namespace config {
 
 template <class T>
 ATTRIBUTE_ALWAYS_INLINE constexpr bool is_gcc_constant_p(ATTRIBUTE_MAYBE_UNUSED T expr) noexcept {
+#if CONFIG_HAS_BUILTIN(__builtin_constant_p)
 #if CONFIG_HAS_INCLUDE(<type_traits>)
+    // not std::is_trivial_v for backward compatibility with old compilers C++ versions
     static_assert(std::is_trivial<T>::value,
                   "Type passed to the is_gcc_constant_p() should be trivial");
 #endif
-#if CONFIG_HAS_BUILTIN(__builtin_constant_p)
     return static_cast<bool>(__builtin_constant_p(expr));
 #else
     return false;
