@@ -191,7 +191,6 @@ function(configure_gcc_or_clang_gcc_options)
             -Watomic-implicit-seq-cst
             -Wbad-function-cast
             -Wbind-to-temporary-copy
-            -Wcast-function-type
             -Wcomma
             -Wc++-compat
             -Wconditional-uninitialized
