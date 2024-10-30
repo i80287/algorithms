@@ -274,16 +274,15 @@ static void CheckJacobiBasic() noexcept {
         }
 
         for (uint32_t a = 0; a <= kLen; a++) {
-            int32_t j_a_p = kronecker_symbol(a, p);
+            const int32_t j_a_p = kronecker_symbol(a, p);
             assert(j_a_p == -1 || j_a_p == 0 || j_a_p == 1);
-            ATTRIBUTE_ASSUME(j_a_p == -1 || j_a_p == 0 || j_a_p == 1);
-            uint32_t j_a_p_mod_p = j_a_p == -1 ? p - 1 : uint32_t(j_a_p);
-            uint32_t a_p12       = math_functions::bin_pow_mod(a, (p - 1) / 2, p);
+            const uint32_t j_a_p_mod_p = j_a_p == -1 ? p - 1 : uint32_t(j_a_p);
+            const uint32_t a_p12       = math_functions::bin_pow_mod(a, (p - 1) / 2, p);
             assert(j_a_p_mod_p == a_p12);
             for (uint32_t b = 0; b <= kLen; b++) {
-                int32_t j_b_p = kronecker_symbol(b, p);
+                const int32_t j_b_p = kronecker_symbol(b, p);
                 assert(a % p != b % p || j_a_p == j_b_p);
-                int32_t j_ab_p = kronecker_symbol(a * b, p);
+                const int32_t j_ab_p = kronecker_symbol(a * b, p);
                 assert(j_ab_p == j_a_p * j_b_p);
             }
         }

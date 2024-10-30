@@ -52,13 +52,13 @@ constexpr LoopDetectResult loop_detection_Gosper(Function f, std::int32_t x0) no
                  * m = j - 1
                  */
                 const std::uint32_t m = ((((n >> k) - 1) | 1) << k) - 1;
-                ATTRIBUTE_ASSUME(m < n);
+                CONFIG_ASSUME_STATEMENT(m < n);
                 const std::uint32_t lambda = n - m;
-                ATTRIBUTE_ASSUME(lambda >= 1);
+                CONFIG_ASSUME_STATEMENT(lambda >= 1);
                 const auto mu_upper = m;
                 const auto gap      = std::max(1u, lambda - 1) - 1;
                 const auto mu_lower = mu_upper >= gap ? mu_upper - gap : 0;
-                ATTRIBUTE_ASSUME(mu_lower <= mu_upper);
+                CONFIG_ASSUME_STATEMENT(mu_lower <= mu_upper);
                 return {mu_lower, mu_upper, lambda};
             }
         }

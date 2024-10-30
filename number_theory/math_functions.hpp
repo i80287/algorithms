@@ -127,16 +127,16 @@ template <class T>
     std::uint64_t widen_n = n;
     while (true) {
         if (p % 2 != 0) {
-            ATTRIBUTE_ASSUME(widen_n < (1ull << 32));
+            CONFIG_ASSUME_STATEMENT(widen_n < (1ull << 32));
             res = (res * widen_n) % mod;
         }
         p /= 2;
         if (p == 0) {
             return static_cast<std::uint32_t>(res);
         }
-        ATTRIBUTE_ASSUME(widen_n < (1ull << 32));
+        CONFIG_ASSUME_STATEMENT(widen_n < (1ull << 32));
         widen_n = (widen_n * widen_n) % mod;
-        ATTRIBUTE_ASSUME(widen_n < (1ull << 32));
+        CONFIG_ASSUME_STATEMENT(widen_n < (1ull << 32));
     }
 }
 
@@ -193,7 +193,7 @@ ATTRIBUTE_CONST I128_CONSTEXPR uint64_t bin_pow_mod(uint64_t n, uint64_t p, uint
     }
 #endif
 
-    ATTRIBUTE_ASSUME(y < (1u << 16));
+    CONFIG_ASSUME_STATEMENT(y < (1u << 16));
     return y;
 }
 
@@ -211,17 +211,17 @@ ATTRIBUTE_CONST I128_CONSTEXPR uint64_t bin_pow_mod(uint64_t n, uint64_t p, uint
         std::uint64_t l = 1;
         std::uint64_t r = std::min((n >> 5) + 8, std::uint64_t{0xFFFFFFFFull});
         do {
-            ATTRIBUTE_ASSUME(l <= r);
-            ATTRIBUTE_ASSUME((r >> 32) == 0);
+            CONFIG_ASSUME_STATEMENT(l <= r);
+            CONFIG_ASSUME_STATEMENT((r >> 32) == 0);
             uint64_t m = (l + r) / 2;
-            ATTRIBUTE_ASSUME((m >> 32) == 0);
+            CONFIG_ASSUME_STATEMENT((m >> 32) == 0);
             if (n >= m * m) {
                 l = m + 1;
             } else {
                 r = m - 1;
             }
         } while (r >= l);
-        ATTRIBUTE_ASSUME(((l - 1) >> 32) == 0);
+        CONFIG_ASSUME_STATEMENT(((l - 1) >> 32) == 0);
         return static_cast<std::uint32_t>(l - 1);
 #if defined(__GNUG__) || defined(__clang__) || CONFIG_HAS_AT_LEAST_CXX_20
     } else {
@@ -238,12 +238,12 @@ ATTRIBUTE_CONST I128_CONSTEXPR uint64_t bin_pow_mod(uint64_t n, uint64_t p, uint
      */
     std::uint64_t l    = 0;
     uint128_t r_approx = (n >> 6) + 16;
-    std::uint64_t r =
-        r_approx > 0xFFFFFFFFFFFFFFFFull ? uint64_t(0xFFFFFFFFFFFFFFFFull) : uint64_t(r_approx);
+    std::uint64_t r    = r_approx > 0xFFFFFFFFFFFFFFFFull ? std::uint64_t{0xFFFFFFFFFFFFFFFFull}
+                                                          : static_cast<std::uint64_t>(r_approx);
     do {
         // m = (l + r + 1) / 2
         std::uint64_t m = (l / 2) + (r / 2) + ((r % 2) | (l % 2));
-        if (n >= uint128_t(m) * m) {
+        if (n >= uint128_t{m} * m) {
             l = m;
         } else {
             r = m - 1;
@@ -291,11 +291,11 @@ ATTRIBUTE_CONST I128_CONSTEXPR uint64_t bin_pow_mod(uint64_t n, uint64_t p, uint
         }
     }
     // 1625^3 = 4291015625 < 2^32 - 1 = 4294967295 < 4298942376 = 1626^3
-    ATTRIBUTE_ASSUME(y <= 1625u);
+    CONFIG_ASSUME_STATEMENT(y <= 1625u);
 #if defined(__GNUG__) && !defined(__clang__) && CONFIG_HAS_AT_LEAST_CXX_17
     // Clang ignores this assumption because it contains potential side effects (fpu register
     // flags), while GCC has made almost all math functions constexpr long before the C++26
-    ATTRIBUTE_ASSUME(
+    CONFIG_ASSUME_STATEMENT(
         y == (static_cast<std::uint32_t>(std::cbrt(static_cast<long double>(n_original_value)))));
 #endif
     return y;
@@ -317,16 +317,16 @@ ATTRIBUTE_CONST I128_CONSTEXPR uint64_t bin_pow_mod(uint64_t n, uint64_t p, uint
         }
     }
     for (int32_t s = 57; s >= 0; s -= 3) {
-        ATTRIBUTE_ASSUME(y <= 1321122u);
+        CONFIG_ASSUME_STATEMENT(y <= 1321122u);
         y *= 2;
-        ATTRIBUTE_ASSUME(y <= 2642244u);
+        CONFIG_ASSUME_STATEMENT(y <= 2642244u);
         uint64_t bs = (3 * y * (y + 1) | 1) << s;
         if (n >= bs) {
             n -= bs;
             y++;
         }
     }
-    ATTRIBUTE_ASSUME(y <= 2642245u);
+    CONFIG_ASSUME_STATEMENT(y <= 2642245u);
     return static_cast<std::uint32_t>(y);
 }
 
@@ -352,8 +352,8 @@ ATTRIBUTE_CONST I128_CONSTEXPR uint64_t bin_pow_mod(uint64_t n, uint64_t p, uint
 
 template <class T>
 struct IsPerfectSquareResult {
-    bool is_perfect_square;
-    T root;
+    T root{};
+    bool is_perfect_square{};
 
     [[nodiscard]] constexpr explicit operator bool() const noexcept {
         return is_perfect_square;
@@ -384,10 +384,10 @@ ATTRIBUTE_CONST constexpr IsPerfectSquareResult<uint32_t> is_perfect_square(uint
         case 9: {
             const std::uint32_t root  = ::math_functions::isqrt(n);
             const bool is_perf_square = root * root == n;
-            return {is_perf_square, is_perf_square ? root : 0};
+            return {is_perf_square ? root : 0, is_perf_square};
         }
         default:
-            return {false, 0};
+            return {0, false};
     }
 }
 
@@ -415,10 +415,10 @@ ATTRIBUTE_CONST constexpr IsPerfectSquareResult<uint32_t> is_perfect_square(uint
         case 9: {
             const std::uint32_t root  = ::math_functions::isqrt(n);
             const bool is_perf_square = std::uint64_t{root} * root == n;
-            return {is_perf_square, is_perf_square ? root : 0};
+            return {is_perf_square ? root : 0, is_perf_square};
         }
         default:
-            return {false, 0};
+            return {0, false};
     }
 }
 
@@ -449,10 +449,10 @@ ATTRIBUTE_CONST I128_CONSTEXPR
         case 9: {
             const std::uint64_t root  = ::math_functions::isqrt(n);
             const bool is_perf_square = uint128_t{root} * root == n;
-            return {is_perf_square, is_perf_square ? root : 0};
+            return {is_perf_square ? root : 0, is_perf_square};
         }
         default:
-            return {false, 0};
+            return {0, false};
     }
 }
 
@@ -539,7 +539,7 @@ int32_t sign(bool x) = delete;
 int32_t sign(char x) = delete;
 
 [[nodiscard]] ATTRIBUTE_CONST constexpr int32_t sign(signed char x) noexcept {
-    return std::int32_t(x > 0) - std::int32_t(x < 0);
+    return static_cast<std::int32_t>(x > 0) - static_cast<std::int32_t>(x < 0);
 }
 
 [[nodiscard]] ATTRIBUTE_CONST constexpr int32_t sign(unsigned char x) noexcept {
@@ -547,7 +547,7 @@ int32_t sign(char x) = delete;
 }
 
 [[nodiscard]] ATTRIBUTE_CONST constexpr int32_t sign(short x) noexcept {
-    return std::int32_t(x > 0) - std::int32_t(x < 0);
+    return static_cast<std::int32_t>(x > 0) - static_cast<std::int32_t>(x < 0);
 }
 
 [[nodiscard]] ATTRIBUTE_CONST constexpr int32_t sign(unsigned short x) noexcept {
@@ -555,7 +555,7 @@ int32_t sign(char x) = delete;
 }
 
 [[nodiscard]] ATTRIBUTE_CONST constexpr int32_t sign(int x) noexcept {
-    return std::int32_t(x > 0) - std::int32_t(x < 0);
+    return static_cast<std::int32_t>(x > 0) - static_cast<std::int32_t>(x < 0);
 }
 
 [[nodiscard]] ATTRIBUTE_CONST constexpr int32_t sign(unsigned x) noexcept {
@@ -563,7 +563,7 @@ int32_t sign(char x) = delete;
 }
 
 [[nodiscard]] ATTRIBUTE_CONST constexpr int32_t sign(long x) noexcept {
-    return std::int32_t(x > 0) - std::int32_t(x < 0);
+    return static_cast<std::int32_t>(x > 0) - static_cast<std::int32_t>(x < 0);
 }
 
 [[nodiscard]] ATTRIBUTE_CONST constexpr int32_t sign(unsigned long x) noexcept {
@@ -571,7 +571,7 @@ int32_t sign(char x) = delete;
 }
 
 [[nodiscard]] ATTRIBUTE_CONST constexpr int32_t sign(long long x) noexcept {
-    return std::int32_t(x > 0) - std::int32_t(x < 0);
+    return static_cast<std::int32_t>(x > 0) - static_cast<std::int32_t>(x < 0);
 }
 
 [[nodiscard]] ATTRIBUTE_CONST constexpr int32_t sign(unsigned long long x) noexcept {
@@ -581,8 +581,8 @@ int32_t sign(char x) = delete;
 #if defined(INTEGERS_128_BIT_HPP)
 
 [[nodiscard]] ATTRIBUTE_CONST I128_CONSTEXPR int32_t sign(int128_t x) noexcept {
-    const auto sign_bit = static_cast<std::uint32_t>(static_cast<uint128_t>(x) >> 127);
-    return int32_t(x != 0) - int32_t(2 * sign_bit);
+    const std::uint32_t sign_bit = static_cast<std::uint32_t>(static_cast<uint128_t>(x) >> 127);
+    return static_cast<std::int32_t>(x != 0) - static_cast<std::int32_t>(2 * sign_bit);
 }
 
 [[nodiscard]] ATTRIBUTE_CONST constexpr int32_t sign(uint128_t x) noexcept {
@@ -841,7 +841,7 @@ concept unsigned_integral = ::math_functions::detail::helper_ns::unsigned_integr
         n <<= 2;
     }
     m -= n >> 31;
-    ATTRIBUTE_ASSUME(m <= 31);
+    CONFIG_ASSUME_STATEMENT(m <= 31);
     return m;
 }
 
@@ -874,7 +874,7 @@ concept unsigned_integral = ::math_functions::detail::helper_ns::unsigned_integr
         n <<= 2;
     }
     m -= static_cast<std::uint32_t>(n >> 63);
-    ATTRIBUTE_ASSUME(m <= 63);
+    CONFIG_ASSUME_STATEMENT(m <= 63);
     return m;
 }
 
@@ -903,7 +903,7 @@ concept unsigned_integral = ::math_functions::detail::helper_ns::unsigned_integr
         n >>= 2;
     }
     m -= (n & 1);
-    ATTRIBUTE_ASSUME(m <= 31);
+    CONFIG_ASSUME_STATEMENT(m <= 31);
     return m;
 }
 
@@ -912,7 +912,7 @@ concept unsigned_integral = ::math_functions::detail::helper_ns::unsigned_integr
     for (n = ~n & (n - 1); n != 0; n >>= 1) {
         m++;
     }
-    ATTRIBUTE_ASSUME(m <= 64);
+    CONFIG_ASSUME_STATEMENT(m <= 64);
     return m;
 }
 
@@ -925,7 +925,7 @@ concept unsigned_integral = ::math_functions::detail::helper_ns::unsigned_integr
     n = (n & 0x0F0F0F0F) + ((n >> 4) & 0x0F0F0F0F);
     n = (n & 0x00FF00FF) + ((n >> 8) & 0x00FF00FF);
     n = (n & 0x0000FFFF) + ((n >> 16) & 0x0000FFFF);
-    ATTRIBUTE_ASSUME(n <= 32);
+    CONFIG_ASSUME_STATEMENT(n <= 32);
     return n;
 }
 
@@ -939,7 +939,7 @@ concept unsigned_integral = ::math_functions::detail::helper_ns::unsigned_integr
     n = (n & 0x00FF00FF00FF00FFull) + ((n >> 8) & 0x00FF00FF00FF00FFull);
     n = (n & 0x0000FFFF0000FFFFull) + ((n >> 16) & 0x0000FFFF0000FFFFull);
     n = (n & 0x00000000FFFFFFFFull) + ((n >> 32) & 0x00000000FFFFFFFFull);
-    ATTRIBUTE_ASSUME(n <= 64);
+    CONFIG_ASSUME_STATEMENT(n <= 64);
     return n;
 }
 
@@ -1005,7 +1005,7 @@ template <typename T>
         }
 
         const std::uint64_t high = static_cast<std::uint64_t>(n >> 64);
-        ATTRIBUTE_ASSUME(high != 0);
+        CONFIG_ASSUME_STATEMENT(high != 0);
 #if CONFIG_HAS_AT_LEAST_CXX_20
         int32_t high_trailing_zeros_count = std::countr_zero(high);
 #elif defined(__GNUG__)
@@ -1076,7 +1076,7 @@ template <typename T>
         }
 
         const std::uint64_t low = static_cast<std::uint64_t>(n);
-        ATTRIBUTE_ASSUME(low != 0);
+        CONFIG_ASSUME_STATEMENT(low != 0);
         // Avoid recursive call to countl_zero<uint64_t>
 #if CONFIG_HAS_AT_LEAST_CXX_20
         return 64 + std::countl_zero(low);
@@ -1495,8 +1495,9 @@ ATTRIBUTE_CONST constexpr uint32_t log10_floor_compile_time_impl(uint64_t n,
         999999999999999999ull,
         9999999999999999999ull,
     };
-    const auto adjustment = int32_t((table2[uint32_t(approx_log10 + 1)] - n) >> 63);
-    return uint32_t(approx_log10 + adjustment);
+    const int32_t adjustment =
+        static_cast<int32_t>((table2[static_cast<uint32_t>(approx_log10 + 1)] - n) >> 63);
+    return static_cast<uint32_t>(approx_log10 + adjustment);
 }
 
 ATTRIBUTE_CONST static inline uint32_t log10_floor_runtime_impl(uint64_t n,
@@ -1528,8 +1529,9 @@ ATTRIBUTE_CONST static inline uint32_t log10_floor_runtime_impl(uint64_t n,
             999999999999999999ull,
             9999999999999999999ull,
         };
-    const auto adjustment = int32_t((table2[uint32_t(approx_log10 + 1)] - n) >> 63);
-    return uint32_t(approx_log10 + adjustment);
+    const int32_t adjustment =
+        static_cast<int32_t>((table2[static_cast<uint32_t>(approx_log10 + 1)] - n) >> 63);
+    return static_cast<uint32_t>(approx_log10 + adjustment);
 }
 
 }  // namespace detail
@@ -1543,9 +1545,9 @@ ATTRIBUTE_CONST static inline uint32_t log10_floor_runtime_impl(uint64_t n,
      * See Hackers Delight 11-4
      */
 
-    static_assert(::math_functions::countl_zero(uint64_t(0)) == 64, "countl_zero detail error");
-    const int32_t approx_log10 = (19 * (63 - int32_t(::math_functions::countl_zero(n)))) >> 6;
-    ATTRIBUTE_ASSUME((-19 >> 6) <= approx_log10 && approx_log10 <= ((19 * 63) >> 6));
+    static_assert(::math_functions::countl_zero(uint64_t{0}) == 64, "countl_zero detail error");
+    const int32_t approx_log10 = (19 * (63 - ::math_functions::countl_zero(n))) >> 6;
+    CONFIG_ASSUME_STATEMENT((-19 >> 6) <= approx_log10 && approx_log10 <= ((19 * 63) >> 6));
 
 #if CONFIG_HAS_AT_LEAST_CXX_20 || \
     (CONFIG_HAS_AT_LEAST_CXX_17 && (defined(__clang__) || CONFIG_GNUC_AT_LEAST(10, 0)))
@@ -1586,7 +1588,7 @@ template <typename T>
 #endif
 [[nodiscard]] ATTRIBUTE_CONST constexpr ExtractPow2Result<T> extract_pow2(T n) noexcept {
     auto r = static_cast<std::uint32_t>(::math_functions::countr_zero(n));
-    ATTRIBUTE_ASSUME(r <= sizeof(n) * CHAR_BIT);
+    CONFIG_ASSUME_STATEMENT(r <= sizeof(n) * CHAR_BIT);
     return {n != 0 ? (n >> r) : 0, r};
 }
 
@@ -1831,16 +1833,16 @@ visit_prime_factors(NumericType n, Function visitor) noexcept(
         auto [s, pow_of_2] = ::math_functions::extract_pow2(n_abs);
         n_abs              = s;
         if constexpr (check_early_exit) {
-            if (!visitor(PrimeFactorType(UnsignedNumericType(2), pow_of_2))) {
+            if (!visitor(PrimeFactorType{UnsignedNumericType{2}, pow_of_2})) {
                 return;
             }
         } else {
-            visitor(PrimeFactorType(UnsignedNumericType(2), pow_of_2));
+            visitor(PrimeFactorType{UnsignedNumericType{2}, pow_of_2});
         }
     }
 
     for (UnsignedNumericType d = 3; d * d <= n_abs; d += 2) {
-        ATTRIBUTE_ASSUME(d >= 3);
+        CONFIG_ASSUME_STATEMENT(d >= 3);
         if (n_abs % d == 0) {
             std::uint32_t pow_of_d = 0;
             do {
@@ -1859,13 +1861,7 @@ visit_prime_factors(NumericType n, Function visitor) noexcept(
     }
 
     if (n_abs > 1) {
-        if constexpr (check_early_exit) {
-            if (!visitor(PrimeFactorType(n_abs, std::uint32_t(1)))) {
-                return;
-            }
-        } else {
-            visitor(PrimeFactorType(n_abs, std::uint32_t(1)));
-        }
+        visitor(PrimeFactorType(n_abs, std::uint32_t{1}));
     }
 }
 
@@ -1965,7 +1961,7 @@ public:
                 pfs.back().factor_power++;
             }
             // assert(n % lpf == 0);
-            ATTRIBUTE_ASSUME(n % lpf == 0);
+            CONFIG_ASSUME_STATEMENT(n % lpf == 0);
             n /= lpf;
         }
 
@@ -1996,7 +1992,7 @@ private:
 
         while (n >= 3) {
             const std::uint32_t least_pf = least_prime_factor[n];
-            ATTRIBUTE_ASSUME(least_pf >= 2);
+            CONFIG_ASSUME_STATEMENT(least_pf >= 2);
             unique_pfs_count += least_pf != last_pf;
             n /= least_pf;
             last_pf = least_pf;
@@ -2172,10 +2168,10 @@ constexpr HelperRetType congruence_helper(const std::uint32_t a, const std::uint
         return {};
     }
 
-    ATTRIBUTE_ASSUME(a == 0 || a >= d);
-    ATTRIBUTE_ASSUME(a % d == 0);
-    ATTRIBUTE_ASSUME(m >= d);
-    ATTRIBUTE_ASSUME(m % d == 0);
+    CONFIG_ASSUME_STATEMENT(a == 0 || a >= d);
+    CONFIG_ASSUME_STATEMENT(a % d == 0);
+    CONFIG_ASSUME_STATEMENT(m >= d);
+    CONFIG_ASSUME_STATEMENT(m % d == 0);
 
     /*
      * Solves a_ * x === c_ (mod m_) as gcd(a_, m_) == 1
@@ -2192,7 +2188,7 @@ constexpr HelperRetType congruence_helper(const std::uint32_t a, const std::uint
     // a * (u_ * c_) + m * (v_ * c_) == c
     // x0 = u_ * c_
     const auto x0 = static_cast<std::uint32_t>((unsigned_u_ * c_) % m_);
-    ATTRIBUTE_ASSUME(x0 != ::math_functions::kNoCongruenceSolution);
+    CONFIG_ASSUME_STATEMENT(x0 != ::math_functions::kNoCongruenceSolution);
     return {x0, d, m_};
 }
 
@@ -2439,9 +2435,9 @@ ATTRIBUTE_CONST constexpr std::uint32_t solve_binary_congruence_modulo_m(
     }
 
     const auto [r, s] = ::math_functions::extract_pow2(m);
-    ATTRIBUTE_ASSUME(r >= 1);
+    CONFIG_ASSUME_STATEMENT(r >= 1);
     const auto min_k_s = std::min(k, std::uint32_t{s});
-    ATTRIBUTE_ASSUME(min_k_s < 32);
+    CONFIG_ASSUME_STATEMENT(min_k_s < 32);
     // gcd(2^k, m)
     const auto gcd_2k_m = std::uint32_t{1} << min_k_s;
     if (c % gcd_2k_m != 0) {
@@ -2458,10 +2454,10 @@ ATTRIBUTE_CONST constexpr std::uint32_t solve_binary_congruence_modulo_m(
         return c_mod_m_;
     }
 
-    ATTRIBUTE_ASSUME(min_k_s == s);
-    ATTRIBUTE_ASSUME(k > s);
-    ATTRIBUTE_ASSUME(m_ == r);
-    ATTRIBUTE_ASSUME(m_ % 2 == 1);
+    CONFIG_ASSUME_STATEMENT(min_k_s == s);
+    CONFIG_ASSUME_STATEMENT(k > s);
+    CONFIG_ASSUME_STATEMENT(m_ == r);
+    CONFIG_ASSUME_STATEMENT(m_ % 2 == 1);
     /**
      * Solve 2^{k-s} * x ≡ c / 2^{s} (mod r), where r = m_ = m / 2^{s}
      */
@@ -2474,9 +2470,9 @@ ATTRIBUTE_CONST constexpr std::uint32_t solve_binary_congruence_modulo_m(
             ::math_functions::extended_euclid_algorithm<std::uint32_t>(
                 ::math_functions::bin_pow_mod(uint32_t{2}, lhs_bin_power, m_), m_)
                 .u_value;
-        ATTRIBUTE_ASSUME(u_ < m_);
+        CONFIG_ASSUME_STATEMENT(u_ < m_);
         const auto unsigned_u_ = static_cast<std::uint64_t>(u_ >= 0 ? u_ : u_ + m_);
-        ATTRIBUTE_ASSUME(unsigned_u_ < m_);
+        CONFIG_ASSUME_STATEMENT(unsigned_u_ < m_);
         rhs *= unsigned_u_;
     } else {
         /**
@@ -2497,7 +2493,7 @@ ATTRIBUTE_CONST constexpr std::uint32_t solve_binary_congruence_modulo_m(
     }
 
     const auto x0 = static_cast<uint32_t>(rhs % m_);
-    ATTRIBUTE_ASSUME(x0 != ::math_functions::kNoCongruenceSolution);
+    CONFIG_ASSUME_STATEMENT(x0 != ::math_functions::kNoCongruenceSolution);
     return x0;
 }
 
@@ -2544,7 +2540,7 @@ ATTRIBUTE_CONST constexpr std::uint32_t solve_binary_congruence_modulo_m(
 
             std::uint32_t b_i = 0;
             do {
-                b_i += n / std::uint32_t(pow_of_p_i);
+                b_i += n / static_cast<std::uint32_t>(pow_of_p_i);
                 pow_of_p_i *= pf.factor;
             } while (pow_of_p_i <= n);
 
@@ -2637,8 +2633,8 @@ ATTRIBUTE_CONST constexpr std::uint32_t solve_binary_congruence_modulo_m(
 #if defined(INTEGERS_128_BIT_HPP)
 
 [[nodiscard]] ATTRIBUTE_CONST I128_CONSTEXPR bool is_perfect_number(uint128_t n) noexcept {
-    return n > std::numeric_limits<uint64_t>::max()
-               ? n == (((uint128_t(1) << 61) - 1) << (61 - 1))
+    return n > std::numeric_limits<std::uint64_t>::max()
+               ? n == (((uint128_t{1} << 61) - 1) << (61 - 1))
                : ::math_functions::is_perfect_number(static_cast<std::uint64_t>(n));
 }
 
@@ -2740,12 +2736,12 @@ ATTRIBUTE_CONST constexpr T powers_sum(const std::uint32_t n) noexcept {
                 if (n_minus_1 % 3 == 0) {
                     return tmp2 * (tmp3 + (n_minus_1 / 3));
                 } else {
-                    ATTRIBUTE_ASSUME(tmp2 % 3 == 0);
+                    CONFIG_ASSUME_STATEMENT(tmp2 % 3 == 0);
                     return tmp2 * tmp3 + ((tmp2 / 3) * n_minus_1);
                 }
             }
             case 1: {
-                ATTRIBUTE_ASSUME(two_n_plus_3_u64 % 5 == 0);
+                CONFIG_ASSUME_STATEMENT(two_n_plus_3_u64 % 5 == 0);
                 const auto lhs = static_cast<T>(n_square_u64) * (two_n_plus_3_u64 / 5);
                 const std::uint32_t n_minus_1_over_5 = n_minus_1 / 5;
                 if (n_minus_1_over_5 % 3 == 0) {
@@ -2899,7 +2895,7 @@ namespace std {
     // gcd(a, b) = gcd(a, b0) = gcd(b0, a % b0) = gcd(a1, b1)
     uint128_t a1 = b0;
     // b1 = a % b0
-    uint64_t b1 = a < b0 ? a : a % uint64_t(b0);  // a < 2^64 => b1 < 2^64
+    uint64_t b1 = a < b0 ? a : a % static_cast<uint64_t>(b0);  // a < 2^64 => b1 < 2^64
     if (b1 == 0) {
         return a1;
     }
@@ -2907,7 +2903,7 @@ namespace std {
     uint64_t a2 = b1;  // b1 < 2^64 => a2 < 2^64
     // b2 = a1 % b1
     // a1 = b0, b1 = a % b0 => b1 < a1
-    uint64_t b2 = uint64_t(a1 % b1);  // b1 < 2^64 => b2 = a1 % b1 < 2^64
+    uint64_t b2 = static_cast<uint64_t>(a1 % b1);  // b1 < 2^64 => b2 = a1 % b1 < 2^64
     return std::gcd(a2, b2);
 }
 

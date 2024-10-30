@@ -5,9 +5,11 @@
 
 #include "memset_int.h"
 
+enum { kArrLen = 512 };
+
 int main(void) {
-    const size_t arr_len = 512;
-    int32_t buffer[arr_len + 1];
+    const size_t arr_len = kArrLen;
+    int32_t buffer[kArrLen + 1];
     const int32_t k = atoi("-1345452112");
 
     for (size_t offset = 0; offset <= 1; offset++) {

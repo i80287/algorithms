@@ -179,10 +179,8 @@ private:
           size_(size) {}
 
     [[nodiscard]]
-    ATTRIBUTE_CONST
-    static constexpr std::size_t align_size(std::size_t n) noexcept {
-        n = (n + 32) & ~std::size_t(31);
-        ATTRIBUTE_ASSUME(n % 32 == 0);
+    ATTRIBUTE_CONST static constexpr std::size_t align_size(std::size_t n) noexcept {
+        n = (n + 32) & ~std::size_t{31};
         return n;
     }
 

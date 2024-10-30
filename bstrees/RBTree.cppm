@@ -1161,7 +1161,7 @@ protected:
     [[nodiscard]] ATTRIBUTE_PURE constexpr size_type size() const noexcept {
         const size_type value = Base::Size();
         RBTREE_ASSERT_INVARIANT(value <= max_size());
-        ATTRIBUTE_ASSUME(value <= max_size());
+        CONFIG_ASSUME_STATEMENT(value <= max_size());
         return value;
     }
 

@@ -6,7 +6,15 @@ set(USING_MINGW_GCC False)
 set(USING_MINGW_GCC_32 False)
 set(USING_MSYS2_MINGW_GCC False)
 
-# other versions can be added below depending on the compiler version
+set(LINK_THREADS_LIBRARY_MANUALLY False)
+set(LINK_COMPILER_RT_BUILTINS_MANUALLY False)
+
+# Empty by default
+set(TEST_C_COMPILE_OPTIONS)
+set(TEST_CXX_COMPILE_OPTIONS)
+set(TEST_COMPILE_DEFINITIONS)
+
+# Other versions can be added below depending on the compiler version
 set(COMPILER_SUPPORTED_C_VERSIONS "99")
 set(COMPILER_SUPPORTED_CXX_VERSIONS "11;14;17")
 
@@ -29,9 +37,6 @@ if(USING_MINGW_GCC)
         set(USING_MINGW_GCC_32 True)
     endif()
 endif()
-
-set(LINK_THREADS_LIBRARY_MANUALLY False)
-set(LINK_COMPILER_RT_BUILTINS_MANUALLY False)
 
 
 if(CMAKE_SYSTEM_NAME MATCHES "Linux")
@@ -89,11 +94,6 @@ if(CMAKE_SYSTEM_NAME MATCHES "Linux")
     endif()
 endif()
 
-# Empty by default
-set(TEST_C_COMPILE_OPTIONS)
-set(TEST_CXX_COMPILE_OPTIONS)
-set(TEST_COMPILE_DEFINITIONS)
-
 function(configure_gcc_or_clang_gcc_options)
     if(MSVC)
         message(FATAL_ERROR "ClangCL should not be configured with this function")
@@ -135,6 +135,8 @@ function(configure_gcc_or_clang_gcc_options)
         -Wtype-limits
         -Wshift-negative-value
         -Walloca
+        -Wdate-time
+        -Wdouble-promotion
         -Werror
         -pedantic-errors
     )
@@ -170,7 +172,6 @@ function(configure_gcc_or_clang_gcc_options)
             -Wshift-sign-overflow
             -Wshorten-64-to-32
             -Wthread-safety
-            -Wnull-pointer-arithmetic
             -Wnullable-to-nonnull-conversion
             -Wsometimes-uninitialized
             -Wstatic-in-inline
@@ -183,18 +184,65 @@ function(configure_gcc_or_clang_gcc_options)
             -Wimplicit
             -Wimplicit-fallthrough
             -Winconsistent-missing-destructor-override
+            -Wabstract-vbase-init
+            -Warc-repeated-use-of-weak
+            -Wassign-enum
+            -Watomic-properties
+            -Watomic-implicit-seq-cst
+            -Wbad-function-cast
+            -Wbind-to-temporary-copy
+            -Wcomma
+            -Wc++-compat
+            -Wconditional-uninitialized
+            -Wconsumed
+            -Wdeprecated-implementations
+            -Wdirect-ivar-access
+            -Wdisabled-macro-expansion
+            # -Wdocumentation # TODO:
+            -Wduplicate-decl-specifier
+            -Wduplicate-enum
+            -Wduplicate-method-arg
+            -Wduplicate-method-match
+            -Wexpansion-to-defined # enabled by the -Wextra on gcc
+            -Wexplicit-ownership-type
+            -Wloop-analysis
+            -Wextra-semi
+            -Wextra-semi-stmt
+            -Wheader-hygiene
+            -Wimplicit-retain-self
+            -Wimport-preprocessor-directive-pedantic
+            -Winvalid-or-nonexistent-directory
+            -Wmain # enabled by the -Wpedantic on gcc
+            -Wmethod-signatures
+            -Wmicrosoft
+            -Wnarrowing # enabled by the -Wpedantic on gcc
+            -Wnewline-eof
+            -Wover-aligned
+            -Woverriding-method-mismatch
+            -Wunguarded-availability
+            -Wunused-member-function
+            -Wused-but-marked-unused
+            -Wvector-conversion
+            -Wvla
             -fcolor-diagnostics
             -fansi-escape-codes
             -ftemplate-backtrace-limit=0)
         if(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 11.0.0)
             set(LOCAL_FN_TEST_CXX_COMPILE_OPTIONS
                 ${LOCAL_FN_TEST_CXX_COMPILE_OPTIONS}
-                -Wframe-address)
+                -Wframe-address
+                -Wdtor-name)
+        endif()
+        if(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 12.0.0)
+            set(LOCAL_FN_TEST_CXX_COMPILE_OPTIONS
+                ${LOCAL_FN_TEST_CXX_COMPILE_OPTIONS}
+                -Wcalled-once-parameter
+                -Wcompound-token-split)
         endif()
         if(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 13.0.0)
             set(LOCAL_FN_TEST_CXX_COMPILE_OPTIONS
                 ${LOCAL_FN_TEST_CXX_COMPILE_OPTIONS}
-                -Wnull-pointer-subtraction)
+                -Wcast-function-type)
         endif()
         if(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 15.0.0)
             set(LOCAL_FN_TEST_CXX_COMPILE_OPTIONS
@@ -226,14 +274,33 @@ function(configure_gcc_or_clang_gcc_options)
     set(LOCAL_FN_TEST_C_COMPILE_OPTIONS
         ${LOCAL_FN_TEST_C_COMPILE_OPTIONS}
         -Wwrite-strings
-        -Wbad-function-cast
         -Wint-conversion
     )
-    if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 11.0.0)
+    if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
         set(LOCAL_FN_TEST_C_COMPILE_OPTIONS
             ${LOCAL_FN_TEST_C_COMPILE_OPTIONS}
-            -fanalyzer
+            -Wincompatible-pointer-types # TODO: may be turned on by -Wpedantic ?
+            -Wbad-function-cast # added on the C++ stage if Clang is used
         )
+        if(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 11.0.0)
+            set(LOCAL_FN_TEST_C_COMPILE_OPTIONS
+                ${LOCAL_FN_TEST_C_COMPILE_OPTIONS}
+                -fanalyzer
+            )
+        endif()
+    endif()
+    if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+        set(LOCAL_FN_TEST_C_COMPILE_OPTIONS
+            ${LOCAL_FN_TEST_C_COMPILE_OPTIONS}
+            -Wc11-extensions
+        )
+        if(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 18.0.1)
+            set(LOCAL_FN_TEST_C_COMPILE_OPTIONS
+                ${LOCAL_FN_TEST_C_COMPILE_OPTIONS}
+                -Wc23-compat
+                -Wc23-extensions
+            )
+        endif()
     endif()
     # Flags for C++ only
     set(LOCAL_FN_TEST_CXX_COMPILE_OPTIONS
@@ -249,6 +316,12 @@ function(configure_gcc_or_clang_gcc_options)
         )
     endif()
     if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 16.0.0)
+        set(LOCAL_FN_TEST_CXX_COMPILE_OPTIONS
+            ${LOCAL_FN_TEST_CXX_COMPILE_OPTIONS}
+            -Wcomma-subscript
+            -Wregister
+            -Wchanges-meaning
+        )
         set(LOCAL_FN_TEST_CXX_COMPILE_OPTIONS
             ${LOCAL_FN_TEST_CXX_COMPILE_OPTIONS}
             -fanalyzer
@@ -346,7 +419,6 @@ function(configure_msvc_or_clang_msvc_options)
         ${LOCAL_FN_TEST_COMPILE_DEFINITIONS}
         PARENT_SCOPE)
 endfunction(configure_msvc_or_clang_msvc_options)
-
 
 # https://en.cppreference.com/w/cpp/compiler_support
 if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang" OR CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang")
