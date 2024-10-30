@@ -660,7 +660,18 @@ ATTRIBUTE_ALWAYS_INLINE constexpr bool is_gcc_constant_p(ATTRIBUTE_MAYBE_UNUSED 
     static_assert(std::is_trivial<T>::value,
                   "Type passed to the is_gcc_constant_p() should be trivial");
 #endif
+
+#if defined(__clang__)
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wused-but-marked-unused"
+#endif
+
     return static_cast<bool>(__builtin_constant_p(expr));
+
+#if defined(__clang__)
+#pragma clang diagnostic pop
+#endif
+
 #else
     return false;
 #endif

@@ -131,7 +131,7 @@ ATTRIBUTE_ALWAYS_INLINE inline void log_tests_started_impl(const char* function_
 
 #define log_tests_started() test_tools_detail::log_tests_started_impl(FUNCTION_MACRO)
 
-#define log_location() test_tools_detail::log_location_impl(__FILE__, __LINE__, FUNCTION_MACRO);
+#define log_location() test_tools_detail::log_location_impl(__FILE__, __LINE__, FUNCTION_MACRO)
 
 #define log_message(message) \
     test_tools_detail::log_message_impl(__FILE__, __LINE__, FUNCTION_MACRO, message);

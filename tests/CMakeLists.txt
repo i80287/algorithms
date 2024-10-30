@@ -194,15 +194,12 @@ function(configure_gcc_or_clang_gcc_options)
             -Wcast-function-type
             -Wcomma
             -Wc++-compat
-            -Wcalled-once-parameter
-            -Wcompound-token-split
             -Wconditional-uninitialized
             -Wconsumed
             -Wdeprecated-implementations
             -Wdirect-ivar-access
             -Wdisabled-macro-expansion
             # -Wdocumentation # TODO:
-            -Wdtor-name
             -Wduplicate-decl-specifier
             -Wduplicate-enum
             -Wduplicate-method-arg
@@ -234,7 +231,19 @@ function(configure_gcc_or_clang_gcc_options)
         if(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 11.0.0)
             set(LOCAL_FN_TEST_CXX_COMPILE_OPTIONS
                 ${LOCAL_FN_TEST_CXX_COMPILE_OPTIONS}
-                -Wframe-address)
+                -Wframe-address
+                -Wdtor-name)
+        endif()
+        if(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 12.0.0)
+            set(LOCAL_FN_TEST_CXX_COMPILE_OPTIONS
+                ${LOCAL_FN_TEST_CXX_COMPILE_OPTIONS}
+                -Wcalled-once-parameter
+                -Wcompound-token-split)
+        endif()
+        if(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 13.0.0)
+            set(LOCAL_FN_TEST_CXX_COMPILE_OPTIONS
+                ${LOCAL_FN_TEST_CXX_COMPILE_OPTIONS}
+                -Wcast-function-type)
         endif()
         if(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 15.0.0)
             set(LOCAL_FN_TEST_CXX_COMPILE_OPTIONS

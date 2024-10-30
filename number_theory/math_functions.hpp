@@ -352,8 +352,8 @@ ATTRIBUTE_CONST I128_CONSTEXPR uint64_t bin_pow_mod(uint64_t n, uint64_t p, uint
 
 template <class T>
 struct IsPerfectSquareResult {
-    bool is_perfect_square;
-    T root;
+    T root{};
+    bool is_perfect_square{};
 
     [[nodiscard]] constexpr explicit operator bool() const noexcept {
         return is_perfect_square;
@@ -384,10 +384,10 @@ ATTRIBUTE_CONST constexpr IsPerfectSquareResult<uint32_t> is_perfect_square(uint
         case 9: {
             const std::uint32_t root  = ::math_functions::isqrt(n);
             const bool is_perf_square = root * root == n;
-            return {is_perf_square, is_perf_square ? root : 0};
+            return {is_perf_square ? root : 0, is_perf_square};
         }
         default:
-            return {false, 0};
+            return {0, false};
     }
 }
 
@@ -415,10 +415,10 @@ ATTRIBUTE_CONST constexpr IsPerfectSquareResult<uint32_t> is_perfect_square(uint
         case 9: {
             const std::uint32_t root  = ::math_functions::isqrt(n);
             const bool is_perf_square = std::uint64_t{root} * root == n;
-            return {is_perf_square, is_perf_square ? root : 0};
+            return {is_perf_square ? root : 0, is_perf_square};
         }
         default:
-            return {false, 0};
+            return {0, false};
     }
 }
 
@@ -449,10 +449,10 @@ ATTRIBUTE_CONST I128_CONSTEXPR
         case 9: {
             const std::uint64_t root  = ::math_functions::isqrt(n);
             const bool is_perf_square = uint128_t{root} * root == n;
-            return {is_perf_square, is_perf_square ? root : 0};
+            return {is_perf_square ? root : 0, is_perf_square};
         }
         default:
-            return {false, 0};
+            return {0, false};
     }
 }
 
