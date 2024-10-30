@@ -293,9 +293,14 @@ function(configure_gcc_or_clang_gcc_options)
         set(LOCAL_FN_TEST_C_COMPILE_OPTIONS
             ${LOCAL_FN_TEST_C_COMPILE_OPTIONS}
             -Wc11-extensions
-            -Wc23-compat
-            -Wc23-extensions
         )
+        if(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 18.0.1)
+            set(LOCAL_FN_TEST_C_COMPILE_OPTIONS
+                ${LOCAL_FN_TEST_C_COMPILE_OPTIONS}
+                -Wc23-compat
+                -Wc23-extensions
+            )
+        endif()
     endif()
     # Flags for C++ only
     set(LOCAL_FN_TEST_CXX_COMPILE_OPTIONS
