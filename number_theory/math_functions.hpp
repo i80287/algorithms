@@ -127,16 +127,16 @@ template <class T>
     std::uint64_t widen_n = n;
     while (true) {
         if (p % 2 != 0) {
-            CONFIG_ASSUME_STATEMENT(widen_n < (1ull << 32));
+            CONFIG_ASSUME_STATEMENT(widen_n < (std::uint64_t{1} << 32));
             res = (res * widen_n) % mod;
         }
         p /= 2;
         if (p == 0) {
             return static_cast<std::uint32_t>(res);
         }
-        CONFIG_ASSUME_STATEMENT(widen_n < (1ull << 32));
+        CONFIG_ASSUME_STATEMENT(widen_n < (std::uint64_t{1} << 32));
         widen_n = (widen_n * widen_n) % mod;
-        CONFIG_ASSUME_STATEMENT(widen_n < (1ull << 32));
+        CONFIG_ASSUME_STATEMENT(widen_n < (std::uint64_t{1} << 32));
     }
 }
 
@@ -209,7 +209,7 @@ ATTRIBUTE_CONST I128_CONSTEXPR uint64_t bin_pow_mod(uint64_t n, uint64_t p, uint
          * See Hackers Delight Chapter 11.
          */
         std::uint64_t l = 1;
-        std::uint64_t r = std::min((n >> 5) + 8, std::uint64_t{0xFFFFFFFFull});
+        std::uint64_t r = std::min((n >> 5) + 8, std::uint64_t{std::numeric_limits<std::uint32_t>::max()});
         do {
             CONFIG_ASSUME_STATEMENT(l <= r);
             CONFIG_ASSUME_STATEMENT((r >> 32) == 0);
@@ -238,7 +238,7 @@ ATTRIBUTE_CONST I128_CONSTEXPR uint64_t bin_pow_mod(uint64_t n, uint64_t p, uint
      */
     std::uint64_t l    = 0;
     uint128_t r_approx = (n >> 6) + 16;
-    std::uint64_t r    = r_approx > 0xFFFFFFFFFFFFFFFFull ? std::uint64_t{0xFFFFFFFFFFFFFFFFull}
+    std::uint64_t r    = r_approx > std::numeric_limits<std::uint64_t>::max() ? std::numeric_limits<std::uint64_t>::max()
                                                           : static_cast<std::uint64_t>(r_approx);
     do {
         // m = (l + r + 1) / 2
@@ -2570,7 +2570,7 @@ ATTRIBUTE_CONST constexpr std::uint32_t solve_binary_congruence_modulo_m(
 #if MATH_FUNCTIONS_HPP_ENABLE_TARGET_OPTIONS
     const auto [q, pm1] = extract_pow2(n);
     const auto p        = pm1 + 1;
-    if (q != (1ull << p) - 1) {
+    if (q != (std::uint64_t{1} << p) - 1) {
         return false;
     }
     switch (p) {

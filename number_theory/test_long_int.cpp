@@ -1691,7 +1691,8 @@ void TestDivMod() {
     test_tools::log_tests_started();
     TestDivModImpl<uint32_t, 6000>();
     TestDivModImpl<uint64_t, 6000>();
-#if defined(INTEGERS_128_BIT_HPP) && INTEGERS_128_BIT_HPP && (defined(__GNUG__) || defined(__clang__))
+#if defined(INTEGERS_128_BIT_HPP) && INTEGERS_128_BIT_HPP && \
+    (defined(__GNUG__) || defined(__clang__))
     TestDivModImpl<uint128_t, 6000>();
 #endif
 
