@@ -6,7 +6,15 @@ set(USING_MINGW_GCC False)
 set(USING_MINGW_GCC_32 False)
 set(USING_MSYS2_MINGW_GCC False)
 
-# other versions can be added below depending on the compiler version
+set(LINK_THREADS_LIBRARY_MANUALLY False)
+set(LINK_COMPILER_RT_BUILTINS_MANUALLY False)
+
+# Empty by default
+set(TEST_C_COMPILE_OPTIONS)
+set(TEST_CXX_COMPILE_OPTIONS)
+set(TEST_COMPILE_DEFINITIONS)
+
+# Other versions can be added below depending on the compiler version
 set(COMPILER_SUPPORTED_C_VERSIONS "99")
 set(COMPILER_SUPPORTED_CXX_VERSIONS "11;14;17")
 
@@ -29,9 +37,6 @@ if(USING_MINGW_GCC)
         set(USING_MINGW_GCC_32 True)
     endif()
 endif()
-
-set(LINK_THREADS_LIBRARY_MANUALLY False)
-set(LINK_COMPILER_RT_BUILTINS_MANUALLY False)
 
 
 if(CMAKE_SYSTEM_NAME MATCHES "Linux")
@@ -88,11 +93,6 @@ if(CMAKE_SYSTEM_NAME MATCHES "Linux")
         )
     endif()
 endif()
-
-# Empty by default
-set(TEST_C_COMPILE_OPTIONS)
-set(TEST_CXX_COMPILE_OPTIONS)
-set(TEST_COMPILE_DEFINITIONS)
 
 function(configure_gcc_or_clang_gcc_options)
     if(MSVC)
@@ -347,7 +347,6 @@ function(configure_msvc_or_clang_msvc_options)
         PARENT_SCOPE)
 endfunction(configure_msvc_or_clang_msvc_options)
 
-
 # https://en.cppreference.com/w/cpp/compiler_support
 if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang" OR CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang")
     if(CMAKE_CXX_COMPILER_FRONTEND_VARIANT STREQUAL "MSVC")
@@ -536,12 +535,12 @@ if((NOT mingw_gcc_or_clang) OR (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER 10.0.
 endif()
 unset(mingw_gcc_or_clang)
 
-# list(APPEND TestFilenames "test_actrie.cpp")
-# list(APPEND TestDirectories "tf_idf_actrie")
-# list(APPEND TestLangVersions "20 23 26")
-# list(APPEND TestDependencies "")
-# list(APPEND TestOptionalDependencies "")
-# list(APPEND TestIsCProject False)
+list(APPEND TestFilenames "test_actrie.cpp")
+list(APPEND TestDirectories "tf_idf_actrie")
+list(APPEND TestLangVersions "20 23 26")
+list(APPEND TestDependencies "")
+list(APPEND TestOptionalDependencies "")
+list(APPEND TestIsCProject False)
 
 list(APPEND TestFilenames "test_tf_idf_actrie.cpp search_lib.cpp")
 list(APPEND TestDirectories "tf_idf_actrie")
