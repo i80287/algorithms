@@ -419,7 +419,7 @@ static void TestRandomPrimesGMP() noexcept {
         mp_limb_t* const n_gmp_array = mpz_limbs_write(n_gmp, 1);
         for (size_t test = kTotalTests; test != 0; test--) {
             const uint64_t n = rnd() | 1;
-            ATTRIBUTE_ASSUME(n % 2 == 1);
+            assert(n % 2 == 1);
 
             n_gmp_array[0] = n;
             mpz_limbs_finish(n_gmp, 1);
@@ -430,7 +430,7 @@ static void TestRandomPrimesGMP() noexcept {
     } else if constexpr (sizeof(unsigned long) == sizeof(uint32_t)) {
         for (size_t test = kTotalTests; test != 0; test--) {
             const uint64_t n = rnd() | 1;
-            ATTRIBUTE_ASSUME(n % 2 == 1);
+            assert(n % 2 == 1);
 
             mpz_set_ui(n_gmp, static_cast<unsigned long int>(n >> 32));
             mpz_mul_2exp(n_gmp, n_gmp, 32);

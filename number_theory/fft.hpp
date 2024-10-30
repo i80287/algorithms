@@ -46,7 +46,7 @@ private:
     ATTRIBUTE_SIZED_ACCESS(read_write, 1, 2)
     ATTRIBUTE_NONNULL(1) static void forward_or_backward_fft(complex* const p,
                                                              const std::size_t k) noexcept {
-        ATTRIBUTE_ASSUME(k > 0 && (k & (k - 1)) == 0);
+        CONFIG_ASSUME_STATEMENT(k > 0 && (k & (k - 1)) == 0);
 
         for (std::size_t i = 1, k_reversed_i = 0; i < k; i++) {
             // 'Increase' k_reversed_i by one
@@ -100,17 +100,17 @@ private:
     }
 
     static void ensure_roots_capacity(const std::size_t n) {
-        ATTRIBUTE_ASSUME(n > 0 && (n & (n - 1)) == 0);
+        CONFIG_ASSUME_STATEMENT(n > 0 && (n & (n - 1)) == 0);
 
         std::size_t current_len = fft_roots.size();
         assert(current_len >= 2 && (current_len & (current_len - 1)) == 0);
-        ATTRIBUTE_ASSUME(current_len >= 2 && (current_len & (current_len - 1)) == 0);
+        CONFIG_ASSUME_STATEMENT(current_len >= 2 && (current_len & (current_len - 1)) == 0);
         if (current_len >= n) {
             return;
         }
 
         assert(n >= 4);
-        ATTRIBUTE_ASSUME(n >= 4);
+        CONFIG_ASSUME_STATEMENT(n >= 4);
 
         fft_roots.reserve(n);
         auto add_point = [fft_roots_data = fft_roots.data(), &current_len](std::size_t i) noexcept {
@@ -142,7 +142,7 @@ private:
 
 inline void forward_backward_fft(complex* p1, complex* p2, const std::size_t n) {
     assert(n > 0 && (n & (n - 1)) == 0);
-    ATTRIBUTE_ASSUME(n > 0 && (n & (n - 1)) == 0);
+    CONFIG_ASSUME_STATEMENT(n > 0 && (n & (n - 1)) == 0);
 
     fft::detail::private_impl::ensure_roots_capacity(n);
     fft::detail::private_impl::forward_or_backward_fft</*IsBackwardFFT = */ false>(p1, n);

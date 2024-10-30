@@ -30,14 +30,8 @@ EXTERN_WITH_C_LINKAGE_BEGIN
 
 #define MEMSET_INT_FUNC_ATTRIBUTES ATTRIBUTE_NOTHROW ATTRIBUTE_SIZED_ACCESS(write_only, 1, 3)
 
-#if defined(__GNUC__) || defined(__clang__)
-#define FAST_MEMSET_INT_TARGET_ATTRIBUTE __attribute__((target("avx")))
-#else
-#define FAST_MEMSET_INT_TARGET_ATTRIBUTE
-#endif
-
 MEMSET_INT_FUNC_ATTRIBUTES
-FAST_MEMSET_INT_TARGET_ATTRIBUTE
+ATTRIBUTE_TARGET("avx")
 static inline void memset_int_avx(int32_t* dst, int32_t value,
                                   size_t size) CONFIG_NOEXCEPT_FUNCTION {
     uint32_t* aligned_4_address = (uint32_t*)dst;
@@ -86,8 +80,6 @@ static inline void memset_int_avx(int32_t* dst, int32_t value,
     }
 }
 
-#undef FAST_MEMSET_INT_TARGET_ATTRIBUTE
-
 MEMSET_INT_FUNC_ATTRIBUTES
 static inline void memset_int_default(int32_t* dst, int32_t value,
                                       size_t size) CONFIG_NOEXCEPT_FUNCTION {
@@ -133,10 +125,10 @@ static inline void memset_int_default(int32_t* dst, int32_t value,
 #pragma clang diagnostic ignored "-Wc++17-compat-mangling"
 #endif
 
-ATTRIBUTE_NODISCARD_WITH_MESSAGE("this function is resolver and should not be used")
-ATTRIBUTE_MAYBE_UNUSED
 ATTRIBUTE_NOTHROW
 ATTRIBUTE_RETURNS_NONNULL
+ATTRIBUTE_MAYBE_UNUSED
+ATTRIBUTE_NODISCARD_WITH_MESSAGE("this function is resolver and should not be used")
 #if defined(__clang__)
 __attribute__((no_sanitize("address", "thread", "memory", "undefined")))
 #elif defined(__GNUC__)

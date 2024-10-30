@@ -18,18 +18,13 @@ EXTERN_WITH_C_LINKAGE_END
 
 EXTERN_WITH_C_LINKAGE_BEGIN
 
-#define MEMCOUNT_ATTRIBUTES                                                                \
-    ATTRIBUTE_NODISCARD_WITH_MESSAGE("return value of the memcount should not be ommited") \
-    ATTRIBUTE_NOTHROW ATTRIBUTE_SIZED_ACCESS(read_only, 1, 3) ATTRIBUTE_PURE
+#define MEMCOUNT_ATTRIBUTES                                            \
+    ATTRIBUTE_PURE ATTRIBUTE_NOTHROW ATTRIBUTE_NODISCARD_WITH_MESSAGE( \
+        "return value of the memcount should not be ommited")          \
+        ATTRIBUTE_SIZED_ACCESS(read_only, 1, 3)
 
-#if defined(__GNUC__) || defined(__clang__)
-#define FAST_MEMCOUNT_TARGET_ATTRIBUTE __attribute__((target("popcnt,avx,avx2")))
-#else
-#define FAST_MEMCOUNT_TARGET_ATTRIBUTE
-#endif
-
+ATTRIBUTE_TARGET("popcnt,avx,avx2")
 MEMCOUNT_ATTRIBUTES
-FAST_MEMCOUNT_TARGET_ATTRIBUTE
 static inline size_t memcount_avx(const uint8_t* const src, const uint8_t chr,
                                   size_t size) CONFIG_NOEXCEPT_FUNCTION {
 #if defined(__cplusplus)
@@ -84,8 +79,6 @@ static inline size_t memcount_avx(const uint8_t* const src, const uint8_t chr,
     return eq_count;
 }
 
-#undef FAST_MEMCOUNT_TARGET_ATTRIBUTE
-
 MEMCOUNT_ATTRIBUTES
 static inline size_t memcount_default(const uint8_t* const src, const uint8_t chr,
                                       size_t size) CONFIG_NOEXCEPT_FUNCTION {
@@ -99,10 +92,10 @@ static inline size_t memcount_default(const uint8_t* const src, const uint8_t ch
 
 #if defined(__GNUC__) || defined(__clang__)
 
+ATTRIBUTE_RETURNS_NONNULL
+ATTRIBUTE_NOTHROW
 ATTRIBUTE_NODISCARD_WITH_MESSAGE("this function is resolver and should not be used")
 ATTRIBUTE_MAYBE_UNUSED
-ATTRIBUTE_NOTHROW
-ATTRIBUTE_RETURNS_NONNULL
 #if defined(__clang__)
 __attribute__((no_sanitize("address", "thread", "memory", "undefined")))
 #elif defined(__GNUC__)

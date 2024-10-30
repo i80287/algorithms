@@ -27,7 +27,7 @@ ATTRIBUTE_CONST constexpr std::int32_t kronecker_symbol_ui(Uint a, Uint n) noexc
         }
 
         auto [q, p] = ::math_functions::extract_pow2(n);
-        ATTRIBUTE_ASSUME(q % 2 == 1);
+        CONFIG_ASSUME_STATEMENT(q % 2 == 1);
         n = q;
 
         switch (a % 8) {
@@ -43,7 +43,7 @@ ATTRIBUTE_CONST constexpr std::int32_t kronecker_symbol_ui(Uint a, Uint n) noexc
                 // a === +-3 (mod 8)
                 // t = (-1) ^ p
                 t -= static_cast<std::int32_t>((p % 2) * 2);
-                ATTRIBUTE_ASSUME(t == -1 || t == 1);
+                CONFIG_ASSUME_STATEMENT(t == -1 || t == 1);
                 break;
             case 1:
             case 7:
@@ -57,9 +57,9 @@ ATTRIBUTE_CONST constexpr std::int32_t kronecker_symbol_ui(Uint a, Uint n) noexc
         }
     }
 
-    ATTRIBUTE_ASSUME(n % 2 == 1);
+    CONFIG_ASSUME_STATEMENT(n % 2 == 1);
     // Redundant but still
-    ATTRIBUTE_ASSUME(n != 0);
+    CONFIG_ASSUME_STATEMENT(n != 0);
     // step 1
     a %= n;
     Uint r = 0;
@@ -70,7 +70,7 @@ ATTRIBUTE_CONST constexpr std::int32_t kronecker_symbol_ui(Uint a, Uint n) noexc
             auto [a_odd_part, a_exp] = ::math_functions::extract_pow2(a);
             a                        = a_odd_part;
             r                        = n % 8;
-            ATTRIBUTE_ASSUME(r <= 7);
+            CONFIG_ASSUME_STATEMENT(r <= 7);
             switch (r) {
                 case 3:
                 case 5:
@@ -91,7 +91,7 @@ ATTRIBUTE_CONST constexpr std::int32_t kronecker_symbol_ui(Uint a, Uint n) noexc
         a %= n;
     }
 
-    ATTRIBUTE_ASSUME(t == -1 || t == 1);
+    CONFIG_ASSUME_STATEMENT(t == -1 || t == 1);
     return (n == 1) ? t : 0;
 }
 
@@ -113,7 +113,7 @@ ATTRIBUTE_CONST constexpr std::int32_t kronecker_symbol_si(Sint a, Sint n) noexc
         }
 
         auto [q, p] = ::math_functions::extract_pow2(n_u);
-        ATTRIBUTE_ASSUME(q % 2 == 1);
+        CONFIG_ASSUME_STATEMENT(q % 2 == 1);
         n_u = q;
 
         switch (static_cast<std::uint32_t>((a % 8) + 8) % 8) {
@@ -129,7 +129,7 @@ ATTRIBUTE_CONST constexpr std::int32_t kronecker_symbol_si(Sint a, Sint n) noexc
                 // a === +-3 (mod 8)
                 // t = (-1) ^ p
                 t -= static_cast<std::int32_t>((p % 2) * 2);
-                ATTRIBUTE_ASSUME(t == -1 || t == 1);
+                CONFIG_ASSUME_STATEMENT(t == -1 || t == 1);
                 break;
             case 1:
             case 7:
@@ -143,9 +143,9 @@ ATTRIBUTE_CONST constexpr std::int32_t kronecker_symbol_si(Sint a, Sint n) noexc
         }
     }
 
-    ATTRIBUTE_ASSUME(n_u % 2 == 1);
+    CONFIG_ASSUME_STATEMENT(n_u % 2 == 1);
     // Redundant but still
-    ATTRIBUTE_ASSUME(n_u > 0);
+    CONFIG_ASSUME_STATEMENT(n_u > 0);
     // step 1
     Uint a_u = (static_cast<Uint>(a % static_cast<Sint>(n_u)) + n_u) % n_u;
     Uint r   = 0;
@@ -156,7 +156,7 @@ ATTRIBUTE_CONST constexpr std::int32_t kronecker_symbol_si(Sint a, Sint n) noexc
             auto [a_u_odd_part, a_u_exp] = ::math_functions::extract_pow2(a_u);
             a_u                          = a_u_odd_part;
             r                            = n_u % 8;
-            ATTRIBUTE_ASSUME(r <= 7);
+            CONFIG_ASSUME_STATEMENT(r <= 7);
             switch (r) {
                 case 3:
                 case 5:
@@ -177,7 +177,7 @@ ATTRIBUTE_CONST constexpr std::int32_t kronecker_symbol_si(Sint a, Sint n) noexc
         a_u %= n_u;
     }
 
-    ATTRIBUTE_ASSUME(t == -1 || t == 1);
+    CONFIG_ASSUME_STATEMENT(t == -1 || t == 1);
     return (n_u == 1) ? (!carry ? t : -t) : 0;
 }
 
@@ -196,7 +196,7 @@ ATTRIBUTE_CONST constexpr int32_t kronecker_symbol_si_ui(Sint a, Uint n) noexcep
         }
 
         auto [q, p] = ::math_functions::extract_pow2(n);
-        ATTRIBUTE_ASSUME(q % 2 == 1);
+        CONFIG_ASSUME_STATEMENT(q % 2 == 1);
         n = q;
 
         switch (static_cast<std::uint32_t>((a % 8) + 8) % 8) {
@@ -212,7 +212,7 @@ ATTRIBUTE_CONST constexpr int32_t kronecker_symbol_si_ui(Sint a, Uint n) noexcep
                 // a === +-3 (mod 8)
                 // t = (-1) ^ p
                 t -= static_cast<std::int32_t>((p % 2) * 2);
-                ATTRIBUTE_ASSUME(t == -1 || t == 1);
+                CONFIG_ASSUME_STATEMENT(t == -1 || t == 1);
                 break;
             case 1:
             case 7:
@@ -226,9 +226,9 @@ ATTRIBUTE_CONST constexpr int32_t kronecker_symbol_si_ui(Sint a, Uint n) noexcep
         }
     }
 
-    ATTRIBUTE_ASSUME(n % 2 == 1);
+    CONFIG_ASSUME_STATEMENT(n % 2 == 1);
     // Redundant but still
-    ATTRIBUTE_ASSUME(n != 0);
+    CONFIG_ASSUME_STATEMENT(n != 0);
     // step 1
     //  a_u = a mod n
     Uint a_u = (a >= 0 ? static_cast<Uint>(a) : (n - (-static_cast<Uint>(a)) % n)) % n;
@@ -260,7 +260,7 @@ ATTRIBUTE_CONST constexpr int32_t kronecker_symbol_si_ui(Sint a, Uint n) noexcep
         a_u %= n;
     }
 
-    ATTRIBUTE_ASSUME(t == -1 || t == 1);
+    CONFIG_ASSUME_STATEMENT(t == -1 || t == 1);
     return (n == 1) ? t : 0;
 }
 

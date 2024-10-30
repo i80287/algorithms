@@ -287,7 +287,7 @@ inline std::ostream& operator<<(std::ostream& out, int128_t number) {
     }
 
     char* ptr = ::format_impl_uint128_t::uint128_t_format_fill_chars_buffer(
-        uint128_t(number), &digits[buffer_size - 1]);
+        static_cast<uint128_t>(number), &digits[buffer_size - 1]);
     if (negative) {
         *--ptr = '-';
     }
@@ -352,8 +352,8 @@ inline int print_u128_newline(uint128_t number) noexcept {
     char digits[buffer_size];
     digits[buffer_size - 1] = '\0';
 
-    uint128_t t          = uint128_t(number >> 127);
-    uint128_t number_abs = (uint128_t(number) ^ t) - t;
+    const uint128_t t          = static_cast<uint128_t>(number >> 127);
+    const uint128_t number_abs = (static_cast<uint128_t>(number) ^ t) - t;
 
     char* ptr = ::format_impl_uint128_t::uint128_t_format_fill_chars_buffer(
         number_abs, &digits[buffer_size - 1]);

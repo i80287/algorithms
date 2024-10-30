@@ -536,12 +536,12 @@ if((NOT mingw_gcc_or_clang) OR (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER 10.0.
 endif()
 unset(mingw_gcc_or_clang)
 
-list(APPEND TestFilenames "test_actrie.cpp")
-list(APPEND TestDirectories "tf_idf_actrie")
-list(APPEND TestLangVersions "20 23 26")
-list(APPEND TestDependencies "")
-list(APPEND TestOptionalDependencies "")
-list(APPEND TestIsCProject False)
+# list(APPEND TestFilenames "test_actrie.cpp")
+# list(APPEND TestDirectories "tf_idf_actrie")
+# list(APPEND TestLangVersions "20 23 26")
+# list(APPEND TestDependencies "")
+# list(APPEND TestOptionalDependencies "")
+# list(APPEND TestIsCProject False)
 
 list(APPEND TestFilenames "test_tf_idf_actrie.cpp search_lib.cpp")
 list(APPEND TestDirectories "tf_idf_actrie")

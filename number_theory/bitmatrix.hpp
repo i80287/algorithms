@@ -115,37 +115,37 @@ constexpr void transpose8(const uint8_t (&src)[8], uint8_t (&dst)[8]) noexcept {
         ((x >> 28) & 0x00000000F0F0F0F0ULL);
 
     if constexpr (!AgainstMinorDiagonal) {
-        dst[0] = uint8_t(x);
+        dst[0] = static_cast<uint8_t>(x);
         x >>= 8;
-        dst[1] = uint8_t(x);
+        dst[1] = static_cast<uint8_t>(x);
         x >>= 8;
-        dst[2] = uint8_t(x);
+        dst[2] = static_cast<uint8_t>(x);
         x >>= 8;
-        dst[3] = uint8_t(x);
+        dst[3] = static_cast<uint8_t>(x);
         x >>= 8;
-        dst[4] = uint8_t(x);
+        dst[4] = static_cast<uint8_t>(x);
         x >>= 8;
-        dst[5] = uint8_t(x);
+        dst[5] = static_cast<uint8_t>(x);
         x >>= 8;
-        dst[6] = uint8_t(x);
+        dst[6] = static_cast<uint8_t>(x);
         x >>= 8;
-        dst[7] = uint8_t(x);
+        dst[7] = static_cast<uint8_t>(x);
     } else {
-        dst[7] = uint8_t(x);
+        dst[7] = static_cast<uint8_t>(x);
         x >>= 8;
-        dst[6] = uint8_t(x);
+        dst[6] = static_cast<uint8_t>(x);
         x >>= 8;
-        dst[5] = uint8_t(x);
+        dst[5] = static_cast<uint8_t>(x);
         x >>= 8;
-        dst[4] = uint8_t(x);
+        dst[4] = static_cast<uint8_t>(x);
         x >>= 8;
-        dst[3] = uint8_t(x);
+        dst[3] = static_cast<uint8_t>(x);
         x >>= 8;
-        dst[2] = uint8_t(x);
+        dst[2] = static_cast<uint8_t>(x);
         x >>= 8;
-        dst[1] = uint8_t(x);
+        dst[1] = static_cast<uint8_t>(x);
         x >>= 8;
-        dst[0] = uint8_t(x);
+        dst[0] = static_cast<uint8_t>(x);
     }
 }
 
@@ -453,50 +453,50 @@ public:
     // clang-format off
 
     [[nodiscard]]
-    ATTRIBUTE_ALWAYS_INLINE
     ATTRIBUTE_PURE
+    ATTRIBUTE_ALWAYS_INLINE
     constexpr iterator begin() noexcept ATTRIBUTE_LIFETIME_BOUND {
         return data_.begin();
     }
     [[nodiscard]]
-    ATTRIBUTE_ALWAYS_INLINE
     ATTRIBUTE_PURE
+    ATTRIBUTE_ALWAYS_INLINE
     constexpr iterator end() noexcept ATTRIBUTE_LIFETIME_BOUND {
         return begin() + N;
     }
     [[nodiscard]]
-    ATTRIBUTE_ALWAYS_INLINE
     ATTRIBUTE_PURE
+    ATTRIBUTE_ALWAYS_INLINE
     constexpr const_iterator begin() const noexcept ATTRIBUTE_LIFETIME_BOUND {
         return data_.begin();
     }
     [[nodiscard]]
-    ATTRIBUTE_ALWAYS_INLINE
     ATTRIBUTE_PURE
+    ATTRIBUTE_ALWAYS_INLINE
     constexpr const_iterator end() const noexcept ATTRIBUTE_LIFETIME_BOUND {
         return begin() + N;
     }
     [[nodiscard]]
-    ATTRIBUTE_ALWAYS_INLINE
     ATTRIBUTE_PURE
+    ATTRIBUTE_ALWAYS_INLINE
     constexpr const_iterator cbegin() const noexcept ATTRIBUTE_LIFETIME_BOUND {
         return data_.cbegin();
     }
     [[nodiscard]]
-    ATTRIBUTE_ALWAYS_INLINE
     ATTRIBUTE_PURE
+    ATTRIBUTE_ALWAYS_INLINE
     constexpr const_iterator cend() const noexcept ATTRIBUTE_LIFETIME_BOUND {
         return cbegin() + N;
     }
     [[nodiscard]]
-    ATTRIBUTE_ALWAYS_INLINE
     ATTRIBUTE_PURE
+    ATTRIBUTE_ALWAYS_INLINE
     constexpr pointer data() noexcept ATTRIBUTE_LIFETIME_BOUND {
         return data_.data();
     }
     [[nodiscard]]
-    ATTRIBUTE_ALWAYS_INLINE
     ATTRIBUTE_PURE
+    ATTRIBUTE_ALWAYS_INLINE
     constexpr const_pointer data() const noexcept ATTRIBUTE_LIFETIME_BOUND {
         return data_.data();
     }
