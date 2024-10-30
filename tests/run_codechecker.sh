@@ -1,7 +1,5 @@
 #!/usr/bin/env bash
 
-set -e
-
 build_dir=cmake-build-codechecker
 cmake_build_dir=cmake-build-dir
 
