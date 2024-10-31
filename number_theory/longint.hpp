@@ -2946,7 +2946,7 @@ inline void longint::set_str_impl(const unsigned char* str, const std::size_t st
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wcast-align"
 #endif
-    assert(aligned_str_conv_digits_size % alignof(fft::complex) == 0);
+    assert((aligned_str_conv_digits_size * sizeof(digit_t)) % alignof(fft::complex) == 0);
     assert(reinterpret_cast<std::uintptr_t>(mult_add_buffer) % alignof(fft::complex) == 0);
     auto* const fft_poly_buffer =
         reinterpret_cast<fft::complex*>(mult_add_buffer + aligned_str_conv_digits_size);
