@@ -20,6 +20,10 @@
 #include "math_functions.hpp"
 #include "test_tools.hpp"
 
+#if CONFIG_HAS_AT_LEAST_CXX_20
+#include <bit>
+#endif
+
 #if CONFIG_HAS_INCLUDE(<mpfr.h>)
 #include <mpfr.h>
 #define HAS_MPFR_DURING_TESTING 1
@@ -3461,6 +3465,33 @@ void test_arange() {
     assert((arange(11, 11, 11).empty()));
 }
 
+void test_masked_popcount_sum() noexcept {
+    log_tests_started();
+
+    auto check_n_k = [](uint32_t n, uint32_t k) noexcept {
+        uint32_t correct_sum = 0;
+        for (uint32_t i = 0; i <= n; i++) {
+#if CONFIG_HAS_AT_LEAST_CXX_20
+            int popcnt = std::popcount(i & k);
+#else
+            int popcnt = math_functions::popcount(i & k);
+#endif
+            correct_sum += static_cast<std::uint32_t>(popcnt);
+        }
+        const uint32_t fast_calc_sum = masked_popcount_sum(n, k);
+        assert(correct_sum == fast_calc_sum);
+    };
+    constexpr uint32_t K = 5000;
+    for (uint32_t n = 0; n <= K; n++) {
+        for (uint32_t k = 0; k <= K; k++) {
+            check_n_k(n, k);
+        }
+        for (uint32_t k = std::numeric_limits<uint32_t>::max() - K; k != 0; k++) {
+            check_n_k(n, k);
+        }
+    }
+}
+
 }  // namespace
 
 int main() {
@@ -3482,4 +3513,5 @@ int main() {
     test_solve_factorial_congruence();
     test_powers_sum();
     test_arange();
+    test_masked_popcount_sum();
 }

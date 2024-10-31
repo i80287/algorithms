@@ -18,6 +18,7 @@
 
 #include <algorithm>
 #include <bitset>
+#include <cassert>
 #include <climits>
 #include <cmath>
 #include <cstddef>
@@ -209,7 +210,8 @@ ATTRIBUTE_CONST I128_CONSTEXPR uint64_t bin_pow_mod(uint64_t n, uint64_t p, uint
          * See Hackers Delight Chapter 11.
          */
         std::uint64_t l = 1;
-        std::uint64_t r = std::min((n >> 5) + 8, std::uint64_t{std::numeric_limits<std::uint32_t>::max()});
+        std::uint64_t r =
+            std::min((n >> 5) + 8, std::uint64_t{std::numeric_limits<std::uint32_t>::max()});
         do {
             CONFIG_ASSUME_STATEMENT(l <= r);
             CONFIG_ASSUME_STATEMENT((r >> 32) == 0);
@@ -238,8 +240,9 @@ ATTRIBUTE_CONST I128_CONSTEXPR uint64_t bin_pow_mod(uint64_t n, uint64_t p, uint
      */
     std::uint64_t l    = 0;
     uint128_t r_approx = (n >> 6) + 16;
-    std::uint64_t r    = r_approx > std::numeric_limits<std::uint64_t>::max() ? std::numeric_limits<std::uint64_t>::max()
-                                                          : static_cast<std::uint64_t>(r_approx);
+    std::uint64_t r    = r_approx > std::numeric_limits<std::uint64_t>::max()
+                             ? std::numeric_limits<std::uint64_t>::max()
+                             : static_cast<std::uint64_t>(r_approx);
     do {
         // m = (l + r + 1) / 2
         std::uint64_t m = (l / 2) + (r / 2) + ((r % 2) | (l % 2));
@@ -1295,6 +1298,57 @@ template <class IntType>
     using UIntTypeAtLeastUInt32 = std::common_type_t<UIntType, uint32_t>;
     auto unsigned_n             = static_cast<UIntTypeAtLeastUInt32>(static_cast<UIntType>(n));
     return static_cast<IntType>(unsigned_n & -unsigned_n);
+}
+
+/// @brief Return sum: sum of popcount(i & k) for all i from 0 to n inclusive
+///  Tex form: \sum_{i = 0}^{n} popcount(i bitand k)
+/// @tparam IntType
+/// @param n
+/// @param k
+/// @return
+template <class IntType>
+#if CONFIG_HAS_CONCEPTS
+    requires ::math_functions::detail::is_unsigned_v<IntType> &&
+             (sizeof(IntType) >= sizeof(unsigned))
+#endif
+[[nodiscard]] ATTRIBUTE_CONST constexpr IntType masked_popcount_sum(IntType n, IntType k) noexcept {
+    static_assert(
+        ::math_functions::detail::is_unsigned_v<IntType> && sizeof(IntType) >= sizeof(unsigned),
+        "unsigned integral type (at least unsigned int) is expected");
+
+    IntType popcount_sum = 0;
+    for (std::uint32_t j = 0; j < sizeof(IntType) * CHAR_BIT; j++) {
+        const bool k_has_jth_bit = (k & (IntType{1} << j)) != 0;
+        if (!k_has_jth_bit) {
+            continue;
+        }
+
+        if ((n >> j) == 0) {
+            break;
+        }
+
+        const bool n_has_jth_bit                           = (n & (IntType{1} << j)) != 0;
+        const IntType number_of_full_blocks_with_j_bit_set = ((n >> j) / 2);
+        const IntType nums_from_last_possibly_nonfull_block =
+            n_has_jth_bit ? n - (((n >> j) << j) - 1) : IntType{0};
+        const IntType number_of_nums_with_j_bit_set_from_blocks =
+            number_of_full_blocks_with_j_bit_set << j;
+        popcount_sum +=
+            number_of_nums_with_j_bit_set_from_blocks + nums_from_last_possibly_nonfull_block;
+    }
+
+    return popcount_sum;
+}
+
+/// @brief Return sum: sum of popcount(i) for all i from 0 to n inclusive
+///  Tex form: \sum_{i = 0}^{n} popcount(i)
+/// @tparam IntType
+/// @param n
+/// @param k
+/// @return
+template <class IntType>
+[[nodiscard]] ATTRIBUTE_CONST constexpr IntType popcount_sum(IntType n) noexcept {
+    return ::math_functions::masked_popcount_sum(n, ~IntType{0});
 }
 
 namespace detail {
@@ -2797,7 +2851,7 @@ template <class T>
     static_assert(::math_functions::detail::is_integral_v<T>);
 
     const std::size_t size = [begin, end, step]() mutable constexpr noexcept -> std::size_t {
-        if (step == 0) {
+        if (unlikely(step == 0)) {
             return 0;
         }
 
@@ -2807,19 +2861,22 @@ template <class T>
                 std::swap(begin, end);
             }
         }
-        auto approx_size = (end - begin + step - 1) / step;
+
+        T approx_size = (end - begin + step - 1) / step;
         if constexpr (::math_functions::detail::is_signed_v<T>) {
-            return static_cast<std::size_t>(std::max(approx_size, T{0}));
-        } else {
+            approx_size = std::max(approx_size, T{0});
+        }
+
 #if defined(INTEGERS_128_BIT_HPP)
-            if constexpr (std::is_same_v<T, uint128_t>) {
-                constexpr auto kUsizeMax = std::numeric_limits<std::size_t>::max();
-                return approx_size <= kUsizeMax ? static_cast<std::size_t>(approx_size) : kUsizeMax;
-            } else
+        if constexpr (std::is_same_v<T, int128_t> || std::is_same_v<T, uint128_t>) {
+            constexpr auto kUsizeMax = std::numeric_limits<std::size_t>::max();
+            return approx_size <= kUsizeMax ? static_cast<std::size_t>(approx_size) : kUsizeMax;
+        } else
 #endif
-            {
-                return std::size_t{approx_size};
-            }
+            if constexpr (::math_functions::detail::is_signed_v<T>) {
+            return static_cast<std::size_t>(approx_size);
+        } else {
+            return std::size_t{approx_size};
         }
     }();
 
@@ -2864,9 +2921,9 @@ namespace std {
         return a;
     }
 
-    uint32_t ra   = static_cast<std::uint32_t>(::math_functions::countr_zero(a));
-    uint32_t rb   = static_cast<std::uint32_t>(::math_functions::countr_zero(b));
-    uint32_t mult = std::min(ra, rb);
+    const uint32_t ra   = static_cast<std::uint32_t>(::math_functions::countr_zero(a));
+    const uint32_t rb   = static_cast<std::uint32_t>(::math_functions::countr_zero(b));
+    const uint32_t mult = std::min(ra, rb);
     a >>= ra;
     b >>= rb;
     while (true) {
@@ -2887,23 +2944,23 @@ namespace std {
 }
 
 [[nodiscard]] ATTRIBUTE_CONST I128_CONSTEXPR uint128_t gcd(uint64_t a, int128_t b) noexcept {
-    uint128_t b0 = ::math_functions::uabs(b);
+    const uint128_t b0 = ::math_functions::uabs(b);
     if (unlikely(b0 == 0)) {
         return a;
     }
 
     // gcd(a, b) = gcd(a, b0) = gcd(b0, a % b0) = gcd(a1, b1)
-    uint128_t a1 = b0;
+    const uint128_t a1 = b0;
     // b1 = a % b0
-    uint64_t b1 = a < b0 ? a : a % static_cast<uint64_t>(b0);  // a < 2^64 => b1 < 2^64
+    const uint64_t b1 = a < b0 ? a : a % static_cast<uint64_t>(b0);  // a < 2^64 => b1 < 2^64
     if (b1 == 0) {
         return a1;
     }
     // gcd(a1, b1) = gcd(b1, a1 % b1) = gcd(a2, b2)
-    uint64_t a2 = b1;  // b1 < 2^64 => a2 < 2^64
+    const uint64_t a2 = b1;  // b1 < 2^64 => a2 < 2^64
     // b2 = a1 % b1
     // a1 = b0, b1 = a % b0 => b1 < a1
-    uint64_t b2 = static_cast<uint64_t>(a1 % b1);  // b1 < 2^64 => b2 = a1 % b1 < 2^64
+    const uint64_t b2 = static_cast<uint64_t>(a1 % b1);  // b1 < 2^64 => b2 = a1 % b1 < 2^64
     return std::gcd(a2, b2);
 }
 
