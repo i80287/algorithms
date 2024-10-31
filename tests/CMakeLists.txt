@@ -239,11 +239,10 @@ function(configure_gcc_or_clang_gcc_options)
             -Wunreachable-code-aggressive
             -Wunsupported-dll-base-class-template
             -Wunused-template
-            -Winvalid-or-nonexistent-directory
             -Wunused-exception-parameter
+            -ftemplate-backtrace-limit=0
             -fcolor-diagnostics
-            -fansi-escape-codes
-            -ftemplate-backtrace-limit=0)
+            -fansi-escape-codes)
         if(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 11.0.0)
             set(LOCAL_FN_TEST_CXX_COMPILE_OPTIONS
                 ${LOCAL_FN_TEST_CXX_COMPILE_OPTIONS}
@@ -346,12 +345,6 @@ function(configure_gcc_or_clang_gcc_options)
         -Wsign-promo
         -Wold-style-cast
     )
-    if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
-        set(LOCAL_FN_TEST_CXX_COMPILE_OPTIONS
-            ${LOCAL_FN_TEST_CXX_COMPILE_OPTIONS}
-            -Wsigned-enum-bitfield
-        )
-    endif()
     if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
         set(LOCAL_FN_TEST_CXX_COMPILE_OPTIONS
             ${LOCAL_FN_TEST_CXX_COMPILE_OPTIONS}
@@ -365,6 +358,12 @@ function(configure_gcc_or_clang_gcc_options)
                 -fanalyzer
             )
         endif()
+    endif()
+    if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+        set(LOCAL_FN_TEST_CXX_COMPILE_OPTIONS
+            ${LOCAL_FN_TEST_CXX_COMPILE_OPTIONS}
+            -Wsigned-enum-bitfield
+        )
     endif()
 
     set(LOCAL_FN_TEST_CXX_COMPILE_OPTIONS

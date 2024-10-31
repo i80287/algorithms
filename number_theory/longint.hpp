@@ -1027,7 +1027,7 @@ struct longint {
             }
 
             static_assert(kNumsBits >= 32);
-            const auto shift     = static_cast<uint32_t>(math_functions::countr_zero(n));
+            const auto shift         = static_cast<uint32_t>(math_functions::countr_zero(n));
             const uint32_t remainder = uint32_t{size_ == 0 ? digit_t{0} : nums_[0] % n};
             this->operator>>=(shift);
             return remainder;
@@ -2936,11 +2936,11 @@ inline void longint::set_str_impl(const unsigned char* str, const std::size_t st
     // Allocate m complex numbers for p1 and m complex numbers for p2
     const std::size_t max_fft_poly_length = 2 * m;
     static_assert(sizeof(fft::complex) % sizeof(digit_t) == 0);
-    const std::size_t allocated_nums_and_poly_size = std::size_t{aligned_str_conv_digits_size} + 
+    const std::size_t allocated_nums_and_poly_size =
+        std::size_t{aligned_str_conv_digits_size} +
         max_fft_poly_length * (sizeof(fft::complex) / sizeof(digit_t));
-    digit_t* const mult_add_buffer     = std::allocator<digit_t>{}.allocate(
-        allocated_nums_and_poly_size
-    );
+    digit_t* const mult_add_buffer =
+        std::allocator<digit_t>{}.allocate(allocated_nums_and_poly_size);
 
 #if defined(__GNUG__) && !defined(__clang__)
 #pragma GCC diagnostic push
@@ -2966,9 +2966,7 @@ inline void longint::set_str_impl(const unsigned char* str, const std::size_t st
                                   mult_add_buffer, fft_poly_buffer);
         }
     }
-    std::allocator<digit_t>{}.deallocate(
-        mult_add_buffer, allocated_nums_and_poly_size
-    );
+    std::allocator<digit_t>{}.deallocate(mult_add_buffer, allocated_nums_and_poly_size);
 
     size_type usize_value = aligned_str_conv_digits_size;
     while (usize_value > 0 && nums_[usize_value - 1] == 0) {

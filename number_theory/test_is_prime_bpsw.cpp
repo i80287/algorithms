@@ -414,8 +414,7 @@ static void TestRandomPrimesGMP() noexcept {
     mpz_t n_gmp;
     mpz_init(n_gmp);
     using GmpUi = unsigned long int;
-    static_assert(sizeof(mp_limb_t) >= sizeof(uint64_t) ||
-                  sizeof(GmpUi) == sizeof(uint32_t));
+    static_assert(sizeof(mp_limb_t) >= sizeof(uint64_t) || sizeof(GmpUi) == sizeof(uint32_t));
     if constexpr (sizeof(mp_limb_t) >= sizeof(uint64_t)) {
         mp_limb_t* const n_gmp_array = mpz_limbs_write(n_gmp, 1);
         for (size_t test = kTotalTests; test != 0; test--) {

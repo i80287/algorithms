@@ -224,6 +224,8 @@
 #undef unlikely
 #endif
 
+// clang-format off
+
 #if defined(__cplusplus)
 #define likely(x)   bool{x}
 #define unlikely(x) bool{x}
@@ -231,6 +233,8 @@
 #define likely(x)   !!(x)
 #define unlikely(x) !!(x)
 #endif
+
+// clang-format on
 
 #endif
 
