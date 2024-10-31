@@ -274,7 +274,7 @@ TEST_TOOLS_CONSTEVAL std::size_t get_typename_end_pos_impl(const std::string_vie
 #define CONSTEVAL_ASSERT(expr)                                                    \
     do {                                                                          \
         [[maybe_unused]] const int CONSTEVAL_ASSERT_GENERATE_UNIQUE_NAME(guard) = \
-            static_cast<bool>(expr) ? 0 : throw 0;                                \
+            bool{expr} ? 0 : throw 0;                                \
     } while (false)
 
 TEST_TOOLS_CONSTEVAL std::string_view get_typename_impl(const std::string_view function_name) {

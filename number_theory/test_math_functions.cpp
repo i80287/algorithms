@@ -1256,34 +1256,34 @@ void test_general_asserts() {
     ASSERT_THAT(uabs(static_cast<unsigned char>(0)) == 0);
     ASSERT_THAT(uabs(static_cast<short>(0)) == 0);
     ASSERT_THAT(uabs(static_cast<unsigned short>(0)) == 0);
-    ASSERT_THAT(uabs(static_cast<int>(0)) == 0);
-    ASSERT_THAT(uabs(static_cast<unsigned int>(0)) == 0);
-    ASSERT_THAT(uabs(static_cast<long>(0)) == 0);
-    ASSERT_THAT(uabs(static_cast<unsigned long>(0)) == 0);
-    ASSERT_THAT(uabs(static_cast<long long>(0)) == 0);
-    ASSERT_THAT(uabs(static_cast<unsigned long long>(0)) == 0);
+    ASSERT_THAT(uabs(0) == 0);
+    ASSERT_THAT(uabs(0u) == 0);
+    ASSERT_THAT(uabs(0l) == 0);
+    ASSERT_THAT(uabs(0ul) == 0);
+    ASSERT_THAT(uabs(0ll) == 0);
+    ASSERT_THAT(uabs(0ull) == 0);
 
     ASSERT_THAT(uabs(static_cast<signed char>(-1)) == 1);
     ASSERT_THAT(uabs(static_cast<unsigned char>(1)) == 1);
     ASSERT_THAT(uabs(static_cast<short>(-1)) == 1);
     ASSERT_THAT(uabs(static_cast<unsigned short>(1)) == 1);
-    ASSERT_THAT(uabs(static_cast<int>(-1)) == 1);
-    ASSERT_THAT(uabs(static_cast<unsigned>(1)) == 1);
-    ASSERT_THAT(uabs(static_cast<long>(-1)) == 1);
-    ASSERT_THAT(uabs(static_cast<unsigned long>(1)) == 1);
-    ASSERT_THAT(uabs(static_cast<long long>(-1)) == 1);
-    ASSERT_THAT(uabs(static_cast<unsigned long long>(1)) == 1);
+    ASSERT_THAT(uabs(-1) == 1);
+    ASSERT_THAT(uabs(1u) == 1);
+    ASSERT_THAT(uabs(-1l) == 1);
+    ASSERT_THAT(uabs(1ul) == 1);
+    ASSERT_THAT(uabs(-1ll) == 1);
+    ASSERT_THAT(uabs(1ull) == 1);
 
     ASSERT_THAT(uabs(static_cast<signed char>(-128)) == 128);
     ASSERT_THAT(uabs(static_cast<signed char>(128)) == 128);
-    ASSERT_THAT(uabs(static_cast<short>(-128)) == 128);
-    ASSERT_THAT(uabs(static_cast<short>(128)) == 128);
-    ASSERT_THAT(uabs(static_cast<int>(-128)) == 128);
-    ASSERT_THAT(uabs(static_cast<int>(128)) == 128);
-    ASSERT_THAT(uabs(static_cast<long>(-128)) == 128);
-    ASSERT_THAT(uabs(static_cast<long>(128)) == 128);
-    ASSERT_THAT(uabs(static_cast<long long>(-128)) == 128);
-    ASSERT_THAT(uabs(static_cast<long long>(128)) == 128);
+    ASSERT_THAT(uabs(short{-128}) == 128);
+    ASSERT_THAT(uabs(short{128}) == 128);
+    ASSERT_THAT(uabs(-128) == 128);
+    ASSERT_THAT(uabs(128) == 128);
+    ASSERT_THAT(uabs(-128l) == 128);
+    ASSERT_THAT(uabs(128l) == 128);
+    ASSERT_THAT(uabs(-128ll) == 128);
+    ASSERT_THAT(uabs(128ll) == 128);
 
     ASSERT_THAT(uabs(std::numeric_limits<long long>::min()) ==
                 -static_cast<unsigned long long>(std::numeric_limits<long long>::min()));
@@ -1333,7 +1333,7 @@ void test_general_asserts() {
                 (uint128_t{1} << 127) - 1);
     ASSERT_THAT(uabs((uint128_t{1} << 127) - 1) == (uint128_t{1} << 127) - 1);
     ASSERT_THAT(uabs(static_cast<int128_t>(-(uint128_t{1} << 127))) == uint128_t{1} << 127);
-    ASSERT_THAT(uabs(static_cast<uint128_t>(-(uint128_t{1} << 127))) == uint128_t{1} << 127);
+    ASSERT_THAT(uabs(-(uint128_t{1} << 127)) == uint128_t{1} << 127);
 #endif
 
 #if CONFIG_HAS_AT_LEAST_CXX_20

@@ -1028,7 +1028,7 @@ struct longint {
 
             static_assert(kNumsBits >= 32);
             const auto shift     = static_cast<uint32_t>(math_functions::countr_zero(n));
-            const auto remainder = static_cast<uint32_t>(size_ == 0 ? digit_t{0} : nums_[0] % n);
+            const uint32_t remainder = uint32_t{size_ == 0 ? digit_t{0} : nums_[0] % n};
             this->operator>>=(shift);
             return remainder;
         }

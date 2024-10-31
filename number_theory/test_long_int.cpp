@@ -1224,7 +1224,7 @@ void TestBitShifts() {
     // 1 << 255
     n.set_string("57896044618658097711785492504343953926634992332820282019728792003956564819968");
     longint m;
-    m.reserve(uint32_t(n.usize()));
+    m.reserve(n.usize());
     AssertInvariants(n);
     for (uint32_t shift = 0; shift <= 127; shift++) {
         m = n;
@@ -1427,8 +1427,8 @@ void TestDecimal() {
     }
 
     {
-        d1 = uint32_t(999'999'999u);
-        d2 = uint64_t(999'999'999'999'999'999ull);
+        d1 = uint32_t{999'999'999u};
+        d2 = uint64_t{999'999'999'999'999'999ull};
         d1 += d2;
         assert(d1.size_ == 3 && d1.digits_[0] == 999999998 && d1.digits_[1] == 0 &&
                d1.digits_[2] == 1);
@@ -1552,8 +1552,8 @@ void TestDecimal() {
                d1.digits_[6] == 195423570 && d1.digits_[7] == 89237316 && d1.digits_[8] == 115792);
     }
     {
-        d1 = uint64_t(2327846273287647234ull);
-        d2 = uint64_t(3457132687423462ull);
+        d1 = uint64_t{2327846273287647234ull};
+        d2 = uint64_t{3457132687423462ull};
         assert(d1.size_ == 3);
         assert(d1.digits_[0] == 287647234 && d1.digits_[1] == 327846273 && d1.digits_[2] == 2);
         assert(d2.size_ == 2);

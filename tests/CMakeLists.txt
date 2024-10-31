@@ -166,7 +166,6 @@ function(configure_gcc_or_clang_gcc_options)
             -Wframe-larger-than=${allocation_limit_in_bytes}
             -Wstack-usage=${allocation_limit_in_bytes}
             -Wattribute-alias=2
-            # -Wuseless-cast
             -Wstringop-overflow=4
             -Wduplicated-branches
             -Walloc-zero
@@ -353,17 +352,19 @@ function(configure_gcc_or_clang_gcc_options)
             -Wsigned-enum-bitfield
         )
     endif()
-    if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 16.0.0)
+    if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
         set(LOCAL_FN_TEST_CXX_COMPILE_OPTIONS
             ${LOCAL_FN_TEST_CXX_COMPILE_OPTIONS}
             -Wcomma-subscript
             -Wregister
             -Wchanges-meaning
         )
-        set(LOCAL_FN_TEST_CXX_COMPILE_OPTIONS
-            ${LOCAL_FN_TEST_CXX_COMPILE_OPTIONS}
-            -fanalyzer
-        )
+        if(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 16.0.0)
+            set(LOCAL_FN_TEST_CXX_COMPILE_OPTIONS
+                ${LOCAL_FN_TEST_CXX_COMPILE_OPTIONS}
+                -fanalyzer
+            )
+        endif()
     endif()
 
     set(LOCAL_FN_TEST_CXX_COMPILE_OPTIONS

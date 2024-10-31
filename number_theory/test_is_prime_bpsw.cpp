@@ -413,8 +413,9 @@ static void TestRandomPrimesGMP() noexcept {
 
     mpz_t n_gmp;
     mpz_init(n_gmp);
+    using GmpUi = unsigned long int;
     static_assert(sizeof(mp_limb_t) >= sizeof(uint64_t) ||
-                  sizeof(unsigned long) == sizeof(uint32_t));
+                  sizeof(GmpUi) == sizeof(uint32_t));
     if constexpr (sizeof(mp_limb_t) >= sizeof(uint64_t)) {
         mp_limb_t* const n_gmp_array = mpz_limbs_write(n_gmp, 1);
         for (size_t test = kTotalTests; test != 0; test--) {
@@ -427,15 +428,13 @@ static void TestRandomPrimesGMP() noexcept {
             const bool is_prime = mpz_probab_prime_p(n_gmp, 30) != 0;
             assert(is_prime_bpsw(n) == is_prime);
         }
-    } else if constexpr (sizeof(unsigned long) == sizeof(uint32_t)) {
+    } else if constexpr (sizeof(GmpUi) == sizeof(uint32_t)) {
         for (size_t test = kTotalTests; test != 0; test--) {
             const uint64_t n = rnd() | 1;
             assert(n % 2 == 1);
-
-            mpz_set_ui(n_gmp, static_cast<unsigned long int>(n >> 32));
+            mpz_set_ui(n_gmp, static_cast<GmpUi>(n >> 32));
             mpz_mul_2exp(n_gmp, n_gmp, 32);
-            mpz_add_ui(n_gmp, n_gmp, static_cast<unsigned long int>(n & 0xFFFFFFFFu));
-
+            mpz_add_ui(n_gmp, n_gmp, static_cast<GmpUi>(n & 0xFFFFFFFFu));
             const bool is_prime = mpz_probab_prime_p(n_gmp, 30) != 0;
             assert(is_prime_bpsw(n) == is_prime);
         }
