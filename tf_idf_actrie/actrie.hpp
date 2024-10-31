@@ -319,7 +319,7 @@ protected:
 
 private:
     [[nodiscard]] static constexpr std::uint32_t ToLowerImpl(const std::uint32_t c) noexcept {
-        return c | (IsUpperImpl(c) * ('a' - 'A'));
+        return c | (IsUpperImpl(c) * std::uint32_t{'a' - 'A'});
     }
     [[nodiscard]] static constexpr bool IsUpperImpl(const std::uint32_t c) noexcept {
         return c - 'A' <= 'Z' - 'A';

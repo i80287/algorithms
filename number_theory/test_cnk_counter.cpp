@@ -30,9 +30,9 @@ template <>
 struct std::hash<NK> {
     constexpr size_t operator()(const NK& pair) const noexcept {
         if constexpr (sizeof(size_t) == 2 * sizeof(uint32_t)) {
-            return (static_cast<size_t>(pair.n) << 32) | (static_cast<size_t>(pair.k));
+            return (size_t{pair.n} << 32) | size_t{pair.k};
         } else {
-            return static_cast<size_t>(pair.n ^ pair.k);
+            return size_t{pair.n ^ pair.k};
         }
     }
 };

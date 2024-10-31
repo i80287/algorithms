@@ -137,6 +137,8 @@ function(configure_gcc_or_clang_gcc_options)
         -Walloca
         -Wdate-time
         -Wdouble-promotion
+        -Wfloat-equal
+        -Wunused-macros
         -Werror
         -pedantic-errors
     )
@@ -160,8 +162,34 @@ function(configure_gcc_or_clang_gcc_options)
             -Wsuggest-attribute=cold
             -Wsuggest-attribute=malloc
             -Walloc-size-larger-than=${allocation_limit_in_bytes}
+            -Wlarger-than=${allocation_limit_in_bytes}
+            -Wframe-larger-than=${allocation_limit_in_bytes}
+            -Wstack-usage=${allocation_limit_in_bytes}
             -Wattribute-alias=2
+            -Wstringop-overflow=4
+            -Wduplicated-branches
+            -Walloc-zero
+            -Wtrampolines
+            -Wcast-align=strict
             -fdiagnostics-color=always)
+        if(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 10.1.0)
+            set(LOCAL_FN_TEST_CXX_COMPILE_OPTIONS
+                ${LOCAL_FN_TEST_CXX_COMPILE_OPTIONS}
+                -Warith-conversion
+            )
+        endif()
+        if(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 11.1.0)
+            set(LOCAL_FN_TEST_CXX_COMPILE_OPTIONS
+                ${LOCAL_FN_TEST_CXX_COMPILE_OPTIONS}
+                -Wenum-conversion # enabled by the -Wconversion if Clang is used or by the gcc in C mode (-Werror)
+            )
+        endif()
+        if(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 13.1.0)
+            set(LOCAL_FN_TEST_CXX_COMPILE_OPTIONS
+                ${LOCAL_FN_TEST_CXX_COMPILE_OPTIONS}
+                -Winvalid-utf8 # enabled by default by Clang but Clang only warns about invalid utf in the comments
+            )
+        endif()
     endif()
     if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
         set(LOCAL_FN_TEST_CXX_COMPILE_OPTIONS
@@ -173,7 +201,6 @@ function(configure_gcc_or_clang_gcc_options)
             -Wshorten-64-to-32
             -Wthread-safety
             -Wnullable-to-nonnull-conversion
-            -Wsometimes-uninitialized
             -Wstatic-in-inline
             -Wformat-pedantic
             -Wformat-type-confusion
@@ -224,13 +251,17 @@ function(configure_gcc_or_clang_gcc_options)
             -Wused-but-marked-unused
             -Wvector-conversion
             -Wvla
+            -Wunreachable-code-aggressive
+            -Wunsupported-dll-base-class-template
+            -Wunused-template
+            -Wunused-exception-parameter
+            -ftemplate-backtrace-limit=0
             -fcolor-diagnostics
-            -fansi-escape-codes
-            -ftemplate-backtrace-limit=0)
+            -fansi-escape-codes)
         if(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 11.0.0)
             set(LOCAL_FN_TEST_CXX_COMPILE_OPTIONS
                 ${LOCAL_FN_TEST_CXX_COMPILE_OPTIONS}
-                -Wframe-address
+                -Wframe-address # enabled by the -Wall on gcc
                 -Wdtor-name)
         endif()
         if(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 12.0.0)
@@ -247,12 +278,22 @@ function(configure_gcc_or_clang_gcc_options)
         if(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 15.0.0)
             set(LOCAL_FN_TEST_CXX_COMPILE_OPTIONS
                 ${LOCAL_FN_TEST_CXX_COMPILE_OPTIONS}
-                -Warray-parameter)
+                -Warray-parameter) # enabled as -Warray-parameter=2 by the -Wall on gcc
         endif()
         if(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 16.0.0)
             set(LOCAL_FN_TEST_CXX_COMPILE_OPTIONS
                 ${LOCAL_FN_TEST_CXX_COMPILE_OPTIONS}
                 -Wincompatible-function-pointer-types-strict)
+        endif()
+        if(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 18.1.0)
+            set(LOCAL_FN_TEST_CXX_COMPILE_OPTIONS
+                ${LOCAL_FN_TEST_CXX_COMPILE_OPTIONS}
+                -Wunsafe-buffer-usage-in-container)
+        endif()
+        if(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 19.1.0)
+            set(LOCAL_FN_TEST_CXX_COMPILE_OPTIONS
+                ${LOCAL_FN_TEST_CXX_COMPILE_OPTIONS}
+                -Wfunction-effects)
         endif()
         set(LOCAL_FN_TEST_COMPILE_DEFINITIONS
             ${LOCAL_FN_TEST_COMPILE_DEFINITIONS}
@@ -279,13 +320,23 @@ function(configure_gcc_or_clang_gcc_options)
     if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
         set(LOCAL_FN_TEST_C_COMPILE_OPTIONS
             ${LOCAL_FN_TEST_C_COMPILE_OPTIONS}
-            -Wincompatible-pointer-types # TODO: may be turned on by -Wpedantic ?
-            -Wbad-function-cast # added on the C++ stage if Clang is used
+            -Wbad-function-cast # added on the C/C++ stage if Clang is used
+            -Wc++-compat # added on the C/C++ stage if Clang is used
+            -Wstrict-prototypes # enabled by default if Clang is used
+            -Wold-style-definition
+            -Wnested-externs
+            -Wc99-c11-compat
         )
         if(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 11.0.0)
             set(LOCAL_FN_TEST_C_COMPILE_OPTIONS
                 ${LOCAL_FN_TEST_C_COMPILE_OPTIONS}
                 -fanalyzer
+            )
+        endif()
+        if(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 14.0.0)
+            set(LOCAL_FN_TEST_C_COMPILE_OPTIONS
+                ${LOCAL_FN_TEST_C_COMPILE_OPTIONS}
+                -Wc11-c23-compat
             )
         endif()
     endif()
@@ -294,7 +345,7 @@ function(configure_gcc_or_clang_gcc_options)
             ${LOCAL_FN_TEST_C_COMPILE_OPTIONS}
             -Wc11-extensions
         )
-        if(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 18.0.1)
+        if(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 18.1.0)
             set(LOCAL_FN_TEST_C_COMPILE_OPTIONS
                 ${LOCAL_FN_TEST_C_COMPILE_OPTIONS}
                 -Wc23-compat
@@ -309,22 +360,34 @@ function(configure_gcc_or_clang_gcc_options)
         -Wsign-promo
         -Wold-style-cast
     )
+    if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+        set(LOCAL_FN_TEST_CXX_COMPILE_OPTIONS
+            ${LOCAL_FN_TEST_CXX_COMPILE_OPTIONS}
+            -Wregister
+        )
+        if(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 10.1.0)
+            set(LOCAL_FN_TEST_CXX_COMPILE_OPTIONS
+                ${LOCAL_FN_TEST_CXX_COMPILE_OPTIONS}
+                -Wcomma-subscript
+            )
+        endif()
+        if(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 13.1.0)
+            set(LOCAL_FN_TEST_CXX_COMPILE_OPTIONS
+                ${LOCAL_FN_TEST_CXX_COMPILE_OPTIONS}
+                -Wchanges-meaning
+            )
+        endif()
+        if(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 16.0.0)
+            set(LOCAL_FN_TEST_CXX_COMPILE_OPTIONS
+                ${LOCAL_FN_TEST_CXX_COMPILE_OPTIONS}
+                -fanalyzer
+            )
+        endif()
+    endif()
     if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
         set(LOCAL_FN_TEST_CXX_COMPILE_OPTIONS
             ${LOCAL_FN_TEST_CXX_COMPILE_OPTIONS}
             -Wsigned-enum-bitfield
-        )
-    endif()
-    if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 16.0.0)
-        set(LOCAL_FN_TEST_CXX_COMPILE_OPTIONS
-            ${LOCAL_FN_TEST_CXX_COMPILE_OPTIONS}
-            -Wcomma-subscript
-            -Wregister
-            -Wchanges-meaning
-        )
-        set(LOCAL_FN_TEST_CXX_COMPILE_OPTIONS
-            ${LOCAL_FN_TEST_CXX_COMPILE_OPTIONS}
-            -fanalyzer
         )
     endif()
 

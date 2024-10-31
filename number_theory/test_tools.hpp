@@ -17,6 +17,7 @@
 #include <type_traits>
 
 #include "config_macros.hpp"
+
 #if defined(__cpp_lib_source_location) && __cpp_lib_source_location >= 201907L && \
     CONFIG_HAS_INCLUDE(<source_location>)
 #define TEST_TOOLS_HAS_SOURCE_LOCATION 1
@@ -161,8 +162,10 @@ struct FilePtr final {
     }
 
 private:
-    ATTRIBUTE_RETURNS_NONNULL ATTRIBUTE_ALWAYS_INLINE static FileHandle DoFOpenOrThrow(
-        const char* fname, const char* mode) {
+    ATTRIBUTE_NODISCARD_WITH_MESSAGE("impl error: retu")
+    ATTRIBUTE_RETURNS_NONNULL
+    ATTRIBUTE_ALWAYS_INLINE
+    static FileHandle DoFOpenOrThrow(const char* fname, const char* mode) {
         // NOLINTNEXTLINE(misc-misplaced-const)
         FileHandle const file_handle = std::fopen(fname, mode);
         if (unlikely(file_handle == nullptr)) {
@@ -194,6 +197,7 @@ private:
 
 namespace test_tools_detail {
 
+ATTRIBUTE_NODISCARD_WITH_MESSAGE("impl error: result should be used")
 TEST_TOOLS_CONSTEVAL std::size_t get_typename_end_pos_impl(const std::string_view s) {
     // Variables are not inside of the for init for
     //  the compatibility with C++17.
@@ -271,13 +275,24 @@ TEST_TOOLS_CONSTEVAL std::size_t get_typename_end_pos_impl(const std::string_vie
 #define CONSTEVAL_ASSERT_GENERATE_UNIQUE_NAME(prefix) \
     CONSTEVAL_ASSERT_CONCAT(prefix, _unique_addendum_, __COUNTER__)
 
+#if CONFIG_GNUC_AT_LEAST(12, 1) || defined(__clang__)
 #define CONSTEVAL_ASSERT(expr)                                                    \
     do {                                                                          \
         [[maybe_unused]] const int CONSTEVAL_ASSERT_GENERATE_UNIQUE_NAME(guard) = \
-            static_cast<bool>(expr) ? 0 : throw 0;                                \
+            bool{(expr)} ? 0 : throw 0;                                           \
     } while (false)
+#else
+#define CONSTEVAL_ASSERT(expr)                                                          \
+    do {                                                                                \
+        ATTRIBUTE_MAYBE_UNUSED const int CONSTEVAL_ASSERT_GENERATE_UNIQUE_NAME(guard) = \
+            static_cast<bool>(expr) ? 0 : throw 0;                                      \
+    } while (false)
+#endif
 
-TEST_TOOLS_CONSTEVAL std::string_view get_typename_impl(const std::string_view function_name) {
+ATTRIBUTE_NODISCARD_WITH_MESSAGE("impl error: result should be used")
+TEST_TOOLS_CONSTEVAL
+std::string_view extract_typename_impl(
+    const std::string_view function_name ATTRIBUTE_LIFETIME_BOUND) {
     const auto is_space = [](char c) constexpr noexcept {
         switch (static_cast<std::uint8_t>(c)) {
             case '\n':
@@ -347,24 +362,38 @@ TEST_TOOLS_CONSTEVAL std::string_view get_typename_impl(const std::string_view f
     return function_name.substr(typename_start_pos, typename_end_pos - typename_start_pos);
 }
 
-}  // namespace test_tools_detail
-
 template <class T>
-[[nodiscard]] TEST_TOOLS_CONSTEVAL std::string_view get_typename() {
+ATTRIBUTE_NODISCARD_WITH_MESSAGE("impl error: result should be used")
+TEST_TOOLS_CONSTEVAL std::string_view get_typename_impl() {
     const std::string_view function_name =
 #if TEST_TOOLS_HAS_SOURCE_LOCATION
         std::source_location::current().function_name();
 #else
         FUNCTION_MACRO;
 #endif
-    return ::test_tools::test_tools_detail::get_typename_impl(function_name);
+
+    return ::test_tools::test_tools_detail::extract_typename_impl(function_name);
+}
+
+}  // namespace test_tools_detail
+
+template <class T>
+ATTRIBUTE_NODISCARD_WITH_MESSAGE("requested name of the type should be used")
+TEST_TOOLS_CONSTEVAL std::string_view get_typename() {
+    constexpr std::string_view kTypename = ::test_tools::test_tools_detail::get_typename_impl<T>();
+    return kTypename;
 }
 
 namespace test_tools_detail {
 
+// clang-format off
+
 template <class EnumType, EnumType EnumValue>
-TEST_TOOLS_CONSTEVAL std::string_view get_enum_value_name_impl(
-    const std::string_view function_name) {
+ATTRIBUTE_NODISCARD_WITH_MESSAGE("impl error: result should be used")
+TEST_TOOLS_CONSTEVAL
+std::string_view extract_enum_value_name_impl(const std::string_view function_name ATTRIBUTE_LIFETIME_BOUND) {
+    // clang-format on
+
     using std::string_view;
 
 #if defined(__GNUG__) || defined(__clang__)
@@ -394,6 +423,19 @@ TEST_TOOLS_CONSTEVAL std::string_view get_enum_value_name_impl(
     return full_name;
 }
 
+template <auto EnumValue, class EnumType>
+ATTRIBUTE_NODISCARD_WITH_MESSAGE("impl error: result should be used")
+TEST_TOOLS_CONSTEVAL std::string_view get_enum_value_name_impl() {
+    const std::string_view function_name =
+#if TEST_TOOLS_HAS_SOURCE_LOCATION
+        std::source_location::current().function_name();
+#else
+        FUNCTION_MACRO;
+#endif
+    return ::test_tools::test_tools_detail::extract_enum_value_name_impl<EnumType, EnumValue>(
+        function_name);
+}
+
 #undef CONSTEVAL_ASSERT
 #undef CONSTEVAL_ASSERT_GENERATE_UNIQUE_NAME
 #undef CONSTEVAL_ASSERT_CONCAT
@@ -401,19 +443,15 @@ TEST_TOOLS_CONSTEVAL std::string_view get_enum_value_name_impl(
 
 }  // namespace test_tools_detail
 
-template <auto EnumValue, class EnumType = decltype(EnumValue)>
-#if __cplusplus >= 202002L
-    requires(std::is_enum_v<EnumType>)
-#endif
-[[nodiscard]] TEST_TOOLS_CONSTEVAL std::string_view get_enum_value_name() {
-    const std::string_view function_name =
-#if TEST_TOOLS_HAS_SOURCE_LOCATION
-        std::source_location::current().function_name();
-#else
-        FUNCTION_MACRO;
-#endif
-    return ::test_tools::test_tools_detail::get_enum_value_name_impl<EnumType, EnumValue>(
-        function_name);
+template <auto EnumValue>
+ATTRIBUTE_NODISCARD_WITH_MESSAGE("requested name of the enum value should be used")
+TEST_TOOLS_CONSTEVAL std::string_view get_enum_value_name() {
+    using EnumType = decltype(EnumValue);
+    static_assert(std::is_enum_v<EnumType>, "Value of the enum is expected");
+
+    constexpr std::string_view kEnumValueName =
+        ::test_tools::test_tools_detail::get_enum_value_name_impl<EnumValue, EnumType>();
+    return kEnumValueName;
 }
 
 template <class Observed = void>

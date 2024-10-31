@@ -261,9 +261,9 @@ private:
     }
     static constexpr int_type ByMod(int_type num) noexcept {
         if constexpr (Mod != kNoMod) {
-            return static_cast<int_type>(num % Mod);
+            return num % Mod;
         } else {
-            return static_cast<int_type>(num);
+            return num;
         }
     }
 };

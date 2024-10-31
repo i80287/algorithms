@@ -181,6 +181,10 @@ inline void Deallocate(void* memory) noexcept {
     }
 
     std::byte* p = static_cast<std::byte*>(memory);
+#if defined(__GNUG__) && !defined(__clang__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wcast-align"
+#endif
     if (inner_impl::IsSmallPage(p)) {
 #ifdef DEBUG_LI_ALLOC_PRINTING
         inner_impl::current_small_pages_used--;
@@ -202,6 +206,9 @@ inline void Deallocate(void* memory) noexcept {
         inner_impl::free_middle_pages_head = page;
         return;
     }
+#if defined(__GNUG__) && !defined(__clang__)
+#pragma GCC diagnostic pop
+#endif
 #ifdef DEBUG_LI_ALLOC_PRINTING
     inner_impl::malloc_free_count--;
     assert(inner_impl::malloc_free_count >= 0);
@@ -1020,8 +1027,8 @@ struct longint {
             }
 
             static_assert(kNumsBits >= 32);
-            const auto shift     = static_cast<uint32_t>(math_functions::countr_zero(n));
-            const auto remainder = static_cast<uint32_t>(size_ == 0 ? digit_t{0} : nums_[0] % n);
+            const auto shift         = static_cast<uint32_t>(math_functions::countr_zero(n));
+            const uint32_t remainder = uint32_t{size_ == 0 ? digit_t{0} : nums_[0] % n};
             this->operator>>=(shift);
             return remainder;
         }
@@ -2925,13 +2932,28 @@ inline void longint::set_str_impl(const unsigned char* str, const std::size_t st
     }
     longint_detail::longint_static_storage::ensureDecBasePowsCapacity(
         math_functions::log2_floor(aligned_str_conv_digits_size));
+
     // Allocate m complex numbers for p1 and m complex numbers for p2
-    std::size_t max_fft_poly_length = 2 * m;
-    auto* const mult_add_buffer     = static_cast<digit_t*>(operator new(
-        std::size_t{aligned_str_conv_digits_size} * sizeof(digit_t) +
-        max_fft_poly_length * sizeof(fft::complex)));
+    const std::size_t max_fft_poly_length = 2 * m;
+    static_assert(sizeof(fft::complex) % sizeof(digit_t) == 0);
+    const std::size_t allocated_nums_and_poly_size =
+        std::size_t{aligned_str_conv_digits_size} +
+        max_fft_poly_length * (sizeof(fft::complex) / sizeof(digit_t));
+    digit_t* const mult_add_buffer =
+        std::allocator<digit_t>{}.allocate(allocated_nums_and_poly_size);
+
+#if defined(__GNUG__) && !defined(__clang__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wcast-align"
+#endif
+    assert((aligned_str_conv_digits_size * sizeof(digit_t)) % alignof(fft::complex) == 0);
+    assert(reinterpret_cast<std::uintptr_t>(mult_add_buffer) % alignof(fft::complex) == 0);
     auto* const fft_poly_buffer =
         reinterpret_cast<fft::complex*>(mult_add_buffer + aligned_str_conv_digits_size);
+#if defined(__GNUG__) && !defined(__clang__)
+#pragma GCC diagnostic pop
+#endif
+
     const longint* conv_dec_base_pows_iter =
         longint_detail::longint_static_storage::conv_dec_base_pows.data();
     static_assert(max_size() * 2 > max_size());
@@ -2944,7 +2966,7 @@ inline void longint::set_str_impl(const unsigned char* str, const std::size_t st
                                   mult_add_buffer, fft_poly_buffer);
         }
     }
-    operator delete(mult_add_buffer);
+    std::allocator<digit_t>{}.deallocate(mult_add_buffer, allocated_nums_and_poly_size);
 
     size_type usize_value = aligned_str_conv_digits_size;
     while (usize_value > 0 && nums_[usize_value - 1] == 0) {

@@ -208,8 +208,13 @@
 #endif
 
 #if defined(__cplusplus)
+#if CONFIG_GNUC_AT_LEAST(12, 1) || defined(__clang__)
+#define likely(x)   __builtin_expect(bool{(x)}, true)
+#define unlikely(x) __builtin_expect(bool{(x)}, false)
+#else
 #define likely(x)   __builtin_expect(static_cast<bool>(x), true)
 #define unlikely(x) __builtin_expect(static_cast<bool>(x), false)
+#endif
 #else
 #define likely(x)   __builtin_expect((x), 1)
 #define unlikely(x) __builtin_expect((x), 0)
@@ -224,13 +229,22 @@
 #undef unlikely
 #endif
 
+// clang-format off
+
 #if defined(__cplusplus)
+#if CONFIG_GNUC_AT_LEAST(12, 1) || defined(__clang__)
+#define likely(x)   bool{(x)}
+#define unlikely(x) bool{(x)}
+#else
 #define likely(x)   static_cast<bool>(x)
 #define unlikely(x) static_cast<bool>(x)
+#endif
 #else
 #define likely(x)   !!(x)
 #define unlikely(x) !!(x)
 #endif
+
+// clang-format on
 
 #endif
 
