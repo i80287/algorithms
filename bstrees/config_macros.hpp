@@ -208,8 +208,8 @@
 #endif
 
 #if defined(__cplusplus)
-#define likely(x)   __builtin_expect(bool{x}, true)
-#define unlikely(x) __builtin_expect(bool{x}, false)
+#define likely(x)   __builtin_expect(bool{(x)}, true)
+#define unlikely(x) __builtin_expect(bool{(x)}, false)
 #else
 #define likely(x)   __builtin_expect((x), 1)
 #define unlikely(x) __builtin_expect((x), 0)
