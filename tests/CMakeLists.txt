@@ -169,12 +169,27 @@ function(configure_gcc_or_clang_gcc_options)
             -Wstringop-overflow=4
             -Wduplicated-branches
             -Walloc-zero
-            -Warith-conversion
             -Wtrampolines
             -Wcast-align=strict
-            -Wenum-conversion # enabled by the -Wconversion if Clang is used of by the gcc in C mode
-            -Winvalid-utf8 # enabled by default by Clang but Clang only warns bout invalid utf in the comments
             -fdiagnostics-color=always)
+        if(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 10.1.0)
+            set(LOCAL_FN_TEST_CXX_COMPILE_OPTIONS
+                ${LOCAL_FN_TEST_CXX_COMPILE_OPTIONS}
+                -Warith-conversion
+            )
+        endif()
+        if(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 11.1.0)
+            set(LOCAL_FN_TEST_CXX_COMPILE_OPTIONS
+                ${LOCAL_FN_TEST_CXX_COMPILE_OPTIONS}
+                -Wenum-conversion # enabled by the -Wconversion if Clang is used or by the gcc in C mode (-Werror)
+            )
+        endif()
+        if(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 13.1.0)
+            set(LOCAL_FN_TEST_CXX_COMPILE_OPTIONS
+                ${LOCAL_FN_TEST_CXX_COMPILE_OPTIONS}
+                -Winvalid-utf8 # enabled by default by Clang but Clang only warns about invalid utf in the comments
+            )
+        endif()
     endif()
     if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
         set(LOCAL_FN_TEST_CXX_COMPILE_OPTIONS
@@ -348,10 +363,20 @@ function(configure_gcc_or_clang_gcc_options)
     if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
         set(LOCAL_FN_TEST_CXX_COMPILE_OPTIONS
             ${LOCAL_FN_TEST_CXX_COMPILE_OPTIONS}
-            -Wcomma-subscript
             -Wregister
-            -Wchanges-meaning
         )
+        if(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 10.1.0)
+            set(LOCAL_FN_TEST_CXX_COMPILE_OPTIONS
+                ${LOCAL_FN_TEST_CXX_COMPILE_OPTIONS}
+                -Wcomma-subscript
+            )
+        endif()
+        if(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 13.1.0)
+            set(LOCAL_FN_TEST_CXX_COMPILE_OPTIONS
+                ${LOCAL_FN_TEST_CXX_COMPILE_OPTIONS}
+                -Wchanges-meaning
+            )
+        endif()
         if(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 16.0.0)
             set(LOCAL_FN_TEST_CXX_COMPILE_OPTIONS
                 ${LOCAL_FN_TEST_CXX_COMPILE_OPTIONS}
