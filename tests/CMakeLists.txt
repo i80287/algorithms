@@ -41,18 +41,20 @@ if(USING_MINGW_GCC)
 endif()
 
 
-if(USE_CPPCHECK_DURING_BUILD AND CMAKE_SYSTEM_NAME MATCHES "Linux")
-    find_program(CMAKE_CXX_CPPCHECK NAMES cppcheck)
-    if(CMAKE_CXX_CPPCHECK)
-        set(CPPCHECK_EXITCODE_ON_ERROR 0)
-        list(APPEND
-            CMAKE_CXX_CPPCHECK
-            "--force"
-            "--template=gcc"
-            "--inline-suppr"
-        )
-    else()
-        message(WARNING "Could not find cppcheck")
+if(CMAKE_SYSTEM_NAME MATCHES "Linux")
+    if(USE_CPPCHECK_DURING_BUILD)
+        find_program(CMAKE_CXX_CPPCHECK NAMES cppcheck)
+        if(CMAKE_CXX_CPPCHECK)
+            set(CPPCHECK_EXITCODE_ON_ERROR 0)
+            list(APPEND
+                CMAKE_CXX_CPPCHECK
+                "--force"
+                "--template=gcc"
+                "--inline-suppr"
+            )
+        else()
+            message(WARNING "Could not find cppcheck")
+        endif()
     endif()
 
     find_program(LSB_RELEASE_EXEC lsb_release)
@@ -77,7 +79,7 @@ if(USE_CPPCHECK_DURING_BUILD AND CMAKE_SYSTEM_NAME MATCHES "Linux")
             set(THREADS_PREFER_PTHREAD_FLAG ON)
             find_package(Threads REQUIRED)
         endif()
-        if(CMAKE_CXX_CPPCHECK)
+        if(USE_CPPCHECK_DURING_BUILD AND CMAKE_CXX_CPPCHECK)
             if(LSB_DISTRIBUTOR_ID_SHORT STREQUAL "ubuntu" AND LSB_RELEASE_VERSION_SHORT VERSION_GREATER_EQUAL "24.04")
                 set(CPPCHECK_EXITCODE_ON_ERROR 1)
                 list(APPEND
@@ -88,7 +90,7 @@ if(USE_CPPCHECK_DURING_BUILD AND CMAKE_SYSTEM_NAME MATCHES "Linux")
         endif()
     endif()
 
-    if(CMAKE_CXX_CPPCHECK)
+    if(USE_CPPCHECK_DURING_BUILD AND CMAKE_CXX_CPPCHECK)
         list(APPEND
             CMAKE_CXX_CPPCHECK
             "--error-exitcode=${CPPCHECK_EXITCODE_ON_ERROR}"
