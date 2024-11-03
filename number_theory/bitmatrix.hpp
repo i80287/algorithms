@@ -8,6 +8,7 @@
 #include <cstdint>
 #include <cstring>
 #include <fstream>
+#include <functional>
 #include <memory>
 #include <numeric>
 #include <sstream>
@@ -19,6 +20,31 @@
 #if CONFIG_HAS_AT_LEAST_CXX_20 && CONFIG_HAS_INCLUDE(<concepts>)
 #include <concepts>
 #endif
+
+using CStyleMatrix8x8 = uint8_t[8];
+using Matrix8x8       = std::array<uint8_t, 8>;
+
+using CStyleMatrix32x32 = uint32_t[32];
+using Matrix32x32       = std::array<uint32_t, 32>;
+
+using CStyleMatrix64x64 = uint64_t[64];
+using Matrix64x64       = std::array<uint64_t, 64>;
+
+namespace bitmatrix_detail {
+
+template <class T>
+inline constexpr bool kIsMatrix8x8 =
+    std::is_same_v<T, Matrix8x8> || std::is_same_v<T, CStyleMatrix8x8>;
+
+template <class T>
+inline constexpr bool kIsMatrix32x32 =
+    std::is_same_v<T, Matrix32x32> || std::is_same_v<T, CStyleMatrix32x32>;
+
+template <class T>
+inline constexpr bool kIsMatrix64x64 =
+    std::is_same_v<T, Matrix64x64> || std::is_same_v<T, CStyleMatrix64x64>;
+
+}  // namespace bitmatrix_detail
 
 // clang-format off
 
@@ -43,7 +69,7 @@
 ///     0b00000000,
 /// }
 ///
-/// If AgainstMinorDiagonal = false, M will become
+/// If AgainstMinorDiagonal = true, M will become
 /// {
 ///     0b00000000,
 ///     0b00000000,
@@ -66,10 +92,12 @@
 ///     0b00000000,
 ///     0b00000000,
 /// }
-template <bool AgainstMinorDiagonal = false>
+template <bool AgainstMinorDiagonal = false, class SrcMatrixType, class DstMatrixType>
 ATTRIBUTE_ACCESS(read_only, 1)
 ATTRIBUTE_ACCESS(write_only, 2)
-constexpr void transpose8(const uint8_t (&src)[8], uint8_t (&dst)[8]) noexcept {
+constexpr void transpose8(const SrcMatrixType& src, DstMatrixType& dst) noexcept {
+    static_assert(bitmatrix_detail::kIsMatrix8x8<SrcMatrixType>, "8x8 matrix as std::array or c-style array (both of uint8_t) was expected");
+    static_assert(bitmatrix_detail::kIsMatrix8x8<DstMatrixType>, "8x8 matrix as std::array or c-style array (both of uint8_t) was expected");
     uint64_t x = 0;
 
     /**
@@ -153,9 +181,9 @@ constexpr void transpose8(const uint8_t (&src)[8], uint8_t (&dst)[8]) noexcept {
 /// @tparam AgainstMinorDiagonal 
 /// @param src source 8x8 matrix
 /// @note see @c transpose8(const uint8_t[8], uint8_t[8]) for the explanation of @a AgainstMinorDiagonal
-template <bool AgainstMinorDiagonal = false>
+template <bool AgainstMinorDiagonal = false, class MatrixType>
 ATTRIBUTE_ACCESS(read_write, 1)
-constexpr void transpose8(uint8_t (&src)[8]) noexcept {
+constexpr void transpose8(MatrixType& src) noexcept {
     transpose8<AgainstMinorDiagonal>(src, src);
 }
 
@@ -164,9 +192,11 @@ constexpr void transpose8(uint8_t (&src)[8]) noexcept {
 /// @tparam AgainstMinorDiagonal
 /// @param src source 32x32 matrix
 /// @note see @c transpose8(const uint8_t[8], uint8_t[8]) for the explanation of @a AgainstMinorDiagonal
-template <bool AgainstMinorDiagonal = false>
+template <bool AgainstMinorDiagonal = false, class MatrixType>
 ATTRIBUTE_ACCESS(read_write, 1)
-constexpr void transpose32(uint32_t (&src)[32]) noexcept {
+constexpr void transpose32(MatrixType& src) noexcept {
+    static_assert(bitmatrix_detail::kIsMatrix32x32<MatrixType>, "32x32 matrix as std::array or c-style array (both of uint32_t) was expected");
+
     uint32_t m = 0x0000FFFFU;
     /**
      * mask m values are {
@@ -192,31 +222,16 @@ constexpr void transpose32(uint32_t (&src)[32]) noexcept {
     }
 }
 
-/// @brief Transposes 32x32 matrix @a src and puts it in into @a dst
-///        @a src and @a dst may overlap
-/// @tparam AgainstMinorDiagonal 
-/// @param src
-/// @param dst
-/// @note see @c transpose8(const uint8_t[8], uint8_t[8]) for the explanation of @a AgainstMinorDiagonal
-template <bool AgainstMinorDiagonal = false>
-ATTRIBUTE_ACCESS(read_only, 1)
-constexpr void transpose32(const uint32_t (&src)[32], uint32_t (&dst)[32]) noexcept {
-    if (std::addressof(dst) < std::addressof(src)) {
-        std::copy(&src[0], &src[32], &dst[0]);
-    } else if (std::addressof(dst) > std::addressof(src)) {
-        std::copy_backward(&src[0], &src[32], &dst[32]);
-    }
-    transpose32(dst);
-}
-
 /// @brief Transposes 64x64 matrix in @a src inplace
 /// @details See Hackers Delight for more info
 /// @tparam AgainstMinorDiagonal
 /// @param src source 64x64 matrix
 /// @note see @c transpose8(const uint8_t[8], uint8_t[8]) for the explanation of @a AgainstMinorDiagonal
-template <bool AgainstMinorDiagonal = false>
+template <bool AgainstMinorDiagonal = false, class MatrixType>
 ATTRIBUTE_ACCESS(read_write, 1)
-constexpr void transpose64(uint64_t (&src)[64]) noexcept {
+constexpr void transpose64(MatrixType& src) noexcept {
+    static_assert(bitmatrix_detail::kIsMatrix64x64<MatrixType>, "64x64 matrix as std::array or c-style array (both of uint64_t) was expected");
+
     uint64_t m = 0x00000000FFFFFFFFULL;
     /**
      * mask m values are {
@@ -930,8 +945,8 @@ private:
     template <class = void>
     ATTRIBUTE_ALWAYS_INLINE
     static constexpr void transpose_8_fallback(matrix_type& matrix) noexcept {
-        std::uint8_t tmp1[8]{};
-        std::uint8_t tmp2[8]{};
+        Matrix8x8 tmp1{};
+        Matrix8x8 tmp2{};
 
         for (size_type i = 0; i < kBits / 8; ++i) {
             for (size_type j = i; j < kBits / 8; ++j) {

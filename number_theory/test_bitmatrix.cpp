@@ -7,14 +7,17 @@
 
 namespace {
 
-ATTRIBUTE_CONST
 #if CONFIG_HAS_AT_LEAST_CXX_20
-constexpr
+#define CONSTEXPR_IF_AT_LEAST_CXX_20 constexpr
+#else
+#define CONSTEXPR_IF_AT_LEAST_CXX_20 inline
 #endif
-    bool
-    test_transpose_8x8() {
+
+ATTRIBUTE_NODISCARD_WITH_MESSAGE("test returns true on success and false otherwise")
+ATTRIBUTE_CONST
+CONSTEXPR_IF_AT_LEAST_CXX_20 bool test_transpose_8x8() noexcept {
     // clang-format off
-    uint8_t a[8] = {
+    CStyleMatrix8x8 a = {
         0b00011000,
         0b00011000,
         0b11111111,
@@ -24,7 +27,7 @@ constexpr
         0b00011000,
         0b10011000,
     };
-    constexpr uint8_t b1[8] = {
+    constexpr CStyleMatrix8x8 a_tr_1 = {
         0b00110100,
         0b00111100,
         0b00111100,
@@ -34,7 +37,7 @@ constexpr
         0b00111100,
         0b10100100,
     };
-    constexpr uint8_t b2[8] = {
+    constexpr CStyleMatrix8x8 a_tr_2 = {
         0b00100101,
         0b00111100,
         0b00111100,
@@ -44,28 +47,78 @@ constexpr
         0b00111100,
         0b00101100,
     };
-    // clang-format on
-    static_assert(sizeof(a) == sizeof(b1));
-    static_assert(sizeof(a) == sizeof(b2));
+    static_assert(sizeof(a) == sizeof(a_tr_1));
+    static_assert(sizeof(a) == sizeof(a_tr_2));
 
-    transpose8(a, a);
-    bool f1 = std::equal(&a[0], &a[8], &b1[0]);
+    transpose8(a);
+    if (!std::equal(&a[0], &a[8], &a_tr_1[0])) {
+        return false;
+    }
 
     // return 'a' to initial state
-    transpose8(a, a);
+    transpose8(a);
 
-    transpose8<true>(a, a);
-    bool f2 = std::equal(&a[0], &a[8], &b2[0]);
+    transpose8</*AgainstMinorDiagonal = */ true>(a);
+    if (!std::equal(&a[0], &a[8], &a_tr_2[0])) {
+        return false;
+    }
 
-    return f1 && f2;
+    if (!config::is_constant_evaluated()) {
+        Matrix8x8 b = {
+            0b00001111,
+            0b00000000,
+            0b00001111,
+            0b00000000,
+            0b00001111,
+            0b00000000,
+            0b00001111,
+            0b00000000,
+        };
+        constexpr Matrix8x8 b_tr_1 = {
+            0b01010101,
+            0b01010101,
+            0b01010101,
+            0b01010101,
+            0b00000000,
+            0b00000000,
+            0b00000000,
+            0b00000000,
+        };
+        constexpr Matrix8x8 b_tr_2 = {
+            0b00000000,
+            0b00000000,
+            0b00000000,
+            0b00000000,
+            0b10101010,
+            0b10101010,
+            0b10101010,
+            0b10101010,
+        };
+        static_assert(sizeof(b) == sizeof(b_tr_1));
+        static_assert(sizeof(b) == sizeof(b_tr_2));
+
+        transpose8(b);
+        if (!std::equal(b.begin(), b.end(), b_tr_1.begin())) {
+            return false;
+        }
+
+        // return 'b' to initial state
+        transpose8(b);
+
+        transpose8</*AgainstMinorDiagonal = */ true>(b);
+
+        // clang-format on
+        if (!std::equal(b.begin(), b.end(), b_tr_2.begin())) {
+            return false;
+        }
+    }
+
+    return true;
 }
 
+ATTRIBUTE_NODISCARD_WITH_MESSAGE("test returns true on success and false otherwise")
 ATTRIBUTE_CONST
-#if CONFIG_HAS_AT_LEAST_CXX_20
-constexpr
-#endif
-    bool
-    test_transpose_32x32() {
+CONSTEXPR_IF_AT_LEAST_CXX_20 bool test_transpose_32x32() noexcept {
     // clang-format off
     uint32_t a[32] = {
         0b00011000000000000000000000000001U,
@@ -101,7 +154,7 @@ constexpr
         0b00000000000000000000000000000000U,
         0b00000000000000000000000000000000U,
     };
-    constexpr uint32_t b1[32] = {
+    constexpr uint32_t a_tr_1[32] = {
         0b00000000000000000000000000000001U,
         0b00000000000000000000000000000010U,
         0b00000000000000000000000000000100U,
@@ -135,7 +188,7 @@ constexpr
         0b00000000000000000000000000111100U,
         0b00000000000000000000000000100100U,
     };
-    constexpr uint32_t b2[32] = {
+    constexpr uint32_t a_tr_2[32] = {
         0b00100100000000000000000000000000U,
         0b00111100000000000000000000000000U,
         0b00111100000000000000000000000000U,
@@ -170,27 +223,24 @@ constexpr
         0b10000000000000000000000000000000U,
     };
     // clang-format on
-    static_assert(sizeof(a) == sizeof(b1));
-    static_assert(sizeof(a) == sizeof(b2));
+    static_assert(sizeof(a) == sizeof(a_tr_1));
+    static_assert(sizeof(a) == sizeof(a_tr_2));
 
     transpose32(a);
-    bool f1 = std::equal(&a[0], &a[32], &b1[0]);
+    bool f1 = std::equal(&a[0], &a[32], &a_tr_1[0]);
 
     // return 'a' to initial state
     transpose32(a);
 
     transpose32<true>(a);
-    bool f2 = std::equal(&a[0], &a[32], &b2[0]);
+    bool f2 = std::equal(&a[0], &a[32], &a_tr_2[0]);
 
     return f1 && f2;
 }
 
+ATTRIBUTE_NODISCARD_WITH_MESSAGE("test returns true on success and false otherwise")
 ATTRIBUTE_CONST
-#if CONFIG_HAS_AT_LEAST_CXX_20
-constexpr
-#endif
-    bool
-    test_transpose_64x64() {
+CONSTEXPR_IF_AT_LEAST_CXX_20 bool test_transpose_64x64() noexcept {
     // clang-format off
     uint64_t a[64] = {
         0b0000000000000000000000000000000000000000000000000000000000010101,
