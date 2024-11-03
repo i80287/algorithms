@@ -715,6 +715,13 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR (CMAKE_CXX_COMPILER_ID STREQUAL "Clan
     list(APPEND TestIsCProject False)
 endif()
 
+list(APPEND TestFilenames "test_string_switch_map.cpp")
+list(APPEND TestDirectories "../string-switch-map/tests")
+list(APPEND TestLangVersions "20 23 26")
+list(APPEND TestDependencies "")
+list(APPEND TestOptionalDependencies "")
+list(APPEND TestIsCProject False)
+
 list(POP_FRONT TestFilenames) # pop dummy
 list(POP_FRONT TestDirectories) # pop dummy
 list(POP_FRONT TestLangVersions) # pop dummy
