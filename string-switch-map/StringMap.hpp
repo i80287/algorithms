@@ -59,7 +59,7 @@ struct [[nodiscard]] CompileTimeStringLiteral {
     ATTRIBUTE_NONNULL_ALL_ARGS
     ATTRIBUTE_ACCESS(read_only, 1)
     /* implicit */ STRING_MAP_CONSTEVAL CompileTimeStringLiteral(const char (&str)[N]) noexcept
-        : length(std::char_traits<char>::length(str)) {
+        : length{std::char_traits<char>::length(str)} {
         std::char_traits<char>::copy(value.data(), str, size());
     }
     [[nodiscard]] STRING_MAP_CONSTEVAL std::size_t size() const noexcept {
@@ -363,9 +363,12 @@ class [[nodiscard]] StringMapImplManyStrings final {
         using pointer    = value_type*;
         using reference  = value_type&;
 
+        // clang-format off
+
         template <std::integral CharType>
-        ATTRIBUTE_NONNULL_ALL_ARGS ATTRIBUTE_ALWAYS_INLINE explicit constexpr InternalIterator(
-            const CharType* ATTRIBUTE_LIFETIME_BOUND str) noexcept {
+        ATTRIBUTE_NONNULL_ALL_ARGS
+        ATTRIBUTE_ALWAYS_INLINE
+        explicit constexpr InternalIterator(const CharType* ATTRIBUTE_LIFETIME_BOUND str) noexcept {
             if constexpr (InCompileTime || std::is_same_v<CharType, value_type>) {
                 pointer_ = str;
             } else {
@@ -376,31 +379,47 @@ class [[nodiscard]] StringMapImplManyStrings final {
 #endif
             }
         }
-        ATTRIBUTE_ALWAYS_INLINE constexpr InternalIterator& operator++() noexcept
-            ATTRIBUTE_LIFETIME_BOUND {
+
+        ATTRIBUTE_ALWAYS_INLINE
+        constexpr InternalIterator& operator++() noexcept ATTRIBUTE_LIFETIME_BOUND {
             ++pointer_;
             return *this;
         }
         [[nodiscard]]
-        ATTRIBUTE_PURE ATTRIBUTE_ALWAYS_INLINE constexpr value_type operator*() const noexcept {
+        ATTRIBUTE_PURE
+        ATTRIBUTE_ALWAYS_INLINE
+        constexpr value_type operator*() const noexcept {
             return *pointer_;
         }
         [[nodiscard]]
-        ATTRIBUTE_PURE ATTRIBUTE_ALWAYS_INLINE constexpr value_type operator[](
-            std::size_t index) const noexcept {
+        ATTRIBUTE_PURE
+        ATTRIBUTE_ALWAYS_INLINE
+        constexpr value_type operator[](std::size_t index) const noexcept {
             return pointer_[index];
         }
         [[nodiscard]]
-        ATTRIBUTE_PURE ATTRIBUTE_ALWAYS_INLINE constexpr bool operator==(
-            const InternalIterator& other) const noexcept {
-            return pointer_ == other.pointer_;
+        ATTRIBUTE_PURE
+        ATTRIBUTE_ALWAYS_INLINE
+        friend constexpr bool operator==(const InternalIterator& lhs, const InternalIterator& rhs) noexcept {
+            return lhs.pointer_ == rhs.pointer_;
         }
+
         struct CStringSentinel final {};
+
         [[nodiscard]]
-        ATTRIBUTE_PURE ATTRIBUTE_ALWAYS_INLINE constexpr bool operator==(
-            const CStringSentinel&) const noexcept {
-            return *pointer_ == '\0';
+        ATTRIBUTE_PURE
+        ATTRIBUTE_ALWAYS_INLINE
+        friend constexpr bool operator==(const InternalIterator& lhs, const CStringSentinel&) noexcept {
+            return *lhs == '\0';
         }
+        [[nodiscard]]
+        ATTRIBUTE_PURE
+        ATTRIBUTE_ALWAYS_INLINE
+        friend constexpr bool operator==(const CStringSentinel&, const InternalIterator& rhs) noexcept {
+            return *rhs == '\0';
+        }
+
+        // clang-format on
 
         pointer pointer_{};
     };
@@ -417,7 +436,7 @@ public:
     static constexpr char kMaxChar            = static_cast<char>(TrieParams.max_char);
 
     STRING_MAP_CONSTEVAL StringMapImplManyStrings() {
-        AddPattern<0, Strings...>(kRootNodeIndex + 1);
+        this->add_pattern<0, Strings...>(kRootNodeIndex + 1);
     }
 
     constexpr MappedType operator()(std::nullptr_t) const              = delete;
@@ -452,20 +471,20 @@ public:
         if (std::is_constant_evaluated()) {
             if constexpr (std::is_same_v<CharType, char>) {
                 using IteratorType = InternalIterator</*InCompileTime = */ true>;
-                return op_call_impl(IteratorType{str}, IteratorType{str + size});
+                return this->op_call_impl(IteratorType{str}, IteratorType{str + size});
             } else {
                 using IteratorType =
                     InternalIterator</*InCompileTime = */ true, /*ForceUnsignedChar = */ true>;
-                return op_call_impl(IteratorType{str}, IteratorType{str + size});
+                return this->op_call_impl(IteratorType{str}, IteratorType{str + size});
             }
         } else {
             if constexpr (std::is_same_v<CharType, char>) {
                 using IteratorType = InternalIterator</*InCompileTime = */ false>;
-                return op_call_impl(IteratorType{str}, IteratorType{str + size});
+                return this->op_call_impl(IteratorType{str}, IteratorType{str + size});
             } else {
                 using IteratorType =
                     InternalIterator</*InCompileTime = */ false, /*ForceUnsignedChar = */ true>;
-                return op_call_impl(IteratorType{str}, IteratorType{str + size});
+                return this->op_call_impl(IteratorType{str}, IteratorType{str + size});
             }
         }
     }
@@ -481,11 +500,11 @@ public:
         } else if (std::is_constant_evaluated()) {
             using IteratorType = InternalIterator</*InCompileTime = */ true>;
             using SentinelType = typename IteratorType::CStringSentinel;
-            return op_call_impl(IteratorType{str}, SentinelType{});
+            return this->op_call_impl(IteratorType{str}, SentinelType{});
         } else {
             using IteratorType = InternalIterator</*InCompileTime = */ false>;
             using SentinelType = typename IteratorType::CStringSentinel;
-            return op_call_impl(IteratorType{str}, SentinelType{});
+            return this->op_call_impl(IteratorType{str}, SentinelType{});
         }
     }
 
@@ -525,7 +544,7 @@ private:
 
     template <std::size_t CurrentPackIndex, strmapdetail::CompileTimeStringLiteral String,
               strmapdetail::CompileTimeStringLiteral... AddStrings>
-    STRING_MAP_CONSTEVAL void AddPattern(std::size_t first_free_node_index) {
+    STRING_MAP_CONSTEVAL void add_pattern(std::size_t first_free_node_index) {
         std::size_t current_node_index = 0;
         constexpr std::size_t len      = String.size();
         for (std::size_t i = 0; i < len; i++) {
@@ -547,7 +566,7 @@ private:
         static_assert(CurrentPackIndex < MappedValues.size(), "impl error");
         nodes_[current_node_index].node_value = MappedValues[CurrentPackIndex];
         if constexpr (sizeof...(AddStrings) >= 1) {
-            AddPattern<CurrentPackIndex + 1, AddStrings...>(first_free_node_index);
+            this->add_pattern<CurrentPackIndex + 1, AddStrings...>(first_free_node_index);
         }
     }
 
@@ -721,7 +740,7 @@ public:
     ATTRIBUTE_SIZED_ACCESS(read_only, 2, 3)
     constexpr MappedType operator()(const CharType* str, std::size_t size) const noexcept(kNoexceptCall) {
         // clang-format on
-        return op_call_impl<CharType, 0, Strings...>(str, size);
+        return this->op_call_impl<CharType, 0, Strings...>(str, size);
     }
 
 #if STRING_MAP_HAS_SPAN
@@ -749,7 +768,8 @@ private:
             static_assert(Index < std::size(MappedValues));
             return MappedValues[Index];
         } else if constexpr (sizeof...(CompStrings) >= 1) {
-            return op_call_impl<CharType, Index + 1, CompStrings...>(str, size);
+            return StringMapImplFewStrings::op_call_impl<CharType, Index + 1, CompStrings...>(str,
+                                                                                              size);
         } else {
             return kDefaultValue;
         }
@@ -761,7 +781,7 @@ private:
 }  // namespace strmapdetail
 
 template <strmapdetail::CompileTimeStringLiteral... Strings>
-struct StringKeys;
+struct StringMapKeys;
 
 template <class T, std::size_t N>
 struct StringMapValues {
@@ -795,7 +815,7 @@ struct StringHelper;
 
 template <strmapdetail::CompileTimeStringLiteral... Strings, StringMapValues MappedValues,
           auto MappedDefaultValue>
-struct StringHelper<StringKeys<Strings...>, MappedValues, MappedDefaultValue> {
+struct StringHelper<StringMapKeys<Strings...>, MappedValues, MappedDefaultValue> {
     static_assert(sizeof...(Strings) == std::size(MappedValues.values),
                   "StringMap should has equal number of keys and values");
 
@@ -833,5 +853,5 @@ using StringMap = typename strmapdetail::StringHelper<Keys, Values, DefaultValue
 
 template <strmapdetail::CompileTimeStringLiteral... Strings>
 using StringMatch =
-    StringMap<StringKeys<Strings...>, strmapdetail::make_index_array<sizeof...(Strings)>(),
+    StringMap<StringMapKeys<Strings...>, strmapdetail::make_index_array<sizeof...(Strings)>(),
               sizeof...(Strings)>;

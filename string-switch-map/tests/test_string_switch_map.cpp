@@ -11,6 +11,136 @@
 
 namespace {
 
+void test_string_match() {
+    static constexpr auto sw = StringMatch<"abc", "def", "ghij", "foo", "bar", "baz", "qux",
+                                           "abacaba", "ring", "ideal", "GLn(F)">();
+    static_assert(sw("abc") == 0);
+    static_assert(sw("def") == 1);
+    static_assert(sw("ghij") == 2);
+    static_assert(sw("foo") == 3);
+    static_assert(sw("bar") == 4);
+    static_assert(sw("baz") == 5);
+    static_assert(sw("qux") == 6);
+    static_assert(sw("abacaba") == 7);
+    static_assert(sw("ring") == 8);
+    static_assert(sw("ideal") == 9);
+    static_assert(sw("GLn(F)") == 10);
+    static_assert(sw.kDefaultValue == sw("GLn(F)") + 1);
+    static_assert(sw.kDefaultValue == 11);
+    static_assert(sw("not_in") == sw.kDefaultValue);
+    static_assert(sw("") == sw.kDefaultValue);
+    static_assert(sw("a") == sw.kDefaultValue);
+    static_assert(sw("A") == sw.kDefaultValue);
+    static_assert(sw("bc") == sw.kDefaultValue);
+    static_assert(sw("de") == sw.kDefaultValue);
+    constexpr const unsigned char kUString[] = "abc";
+    static_assert(sw(kUString, std::size(kUString) - 1) == sw("abc"));
+
+    assert(sw("abc") == 0);
+    assert(sw("def") == 1);
+    assert(sw("ghij") == 2);
+    assert(sw("foo") == 3);
+    assert(sw("bar") == 4);
+    assert(sw("baz") == 5);
+    assert(sw("qux") == 6);
+    assert(sw("abacaba") == 7);
+    assert(sw("ring") == 8);
+    assert(sw("ideal") == 9);
+    assert(sw("GLn(F)") == 10);
+    assert(sw.kDefaultValue == sw("GLn(F)") + 1);
+    assert(sw.kDefaultValue == 11);
+    assert(sw("not_in") == sw.kDefaultValue);
+    assert(sw("") == sw.kDefaultValue);
+    assert(sw("a") == sw.kDefaultValue);
+    assert(sw("A") == sw.kDefaultValue);
+    assert(sw("bc") == sw.kDefaultValue);
+    assert(sw("de") == sw.kDefaultValue);
+    assert(sw(kUString, std::size(kUString) - 1) == sw("abc"));
+
+    static constexpr auto match = StringMatch<"text1", "text2", "text3", "text4">();
+    static_assert(match("text1") == 0);
+    static_assert(match("text2") == 1);
+    static_assert(match("text3") == 2);
+    static_assert(match("text4") == 3);
+    static_assert(match("not in") == match.kDefaultValue);
+    static_assert(match.kDefaultValue == 4);
+
+    assert(match("text1") == 0);
+    assert(match("text2") == 1);
+    assert(match("text3") == 2);
+    assert(match("text4") == 3);
+    assert(match("not in") == match.kDefaultValue);
+    assert(match.kDefaultValue == 4);
+}
+
+void test_str_to_enum() {
+    enum class SomeEnum {
+        kText1,
+        kText2,
+        kText3,
+        kText4,
+        kNone,
+    };
+    using enum SomeEnum;
+    static constexpr auto map =
+        StringMap<StringMapKeys<"text1", "text2", "text3", "text4", "Text1", "Text3">,
+                  StringMapValues{kText1, kText2, kText3, kText4, kText1, kText3}, kNone>();
+
+    static_assert(map("text1") == kText1);
+    static_assert(map("text2") == kText2);
+    static_assert(map("text3") == kText3);
+    static_assert(map("text4") == kText4);
+    static_assert(map("Text1") == kText1);
+    static_assert(map("Text3") == kText3);
+    static_assert(map("something else") == kNone);
+    static_assert(map.kDefaultValue == kNone);
+
+    assert(map("text1") == kText1);
+    assert(map("text2") == kText2);
+    assert(map("text3") == kText3);
+    assert(map("text4") == kText4);
+    assert(map("Text1") == kText1);
+    assert(map("Text3") == kText3);
+    assert(map("something else") == kNone);
+    assert(map.kDefaultValue == kNone);
+}
+
+void test_str_to_user_type() {
+    constexpr std::string_view kMyConstants[] = {"abc", "def", "ghi", "sneaky input"};
+
+    struct MyTrivialType {
+        std::array<int, 2> field1{};
+        int field2{};
+
+        constexpr MyTrivialType(int arg1, int arg2, int arg3) noexcept
+            : field1{arg1, arg2}, field2(arg3) {}
+        constexpr bool operator==(const MyTrivialType&) const noexcept = default;
+    };
+
+    static constexpr auto map =
+        StringMap<StringMapKeys<kMyConstants[0], kMyConstants[1], kMyConstants[2]>,
+                  StringMapValues{MyTrivialType(1, 2, 3), MyTrivialType(4, 5, 6),
+                                  MyTrivialType(7, 8, 9)},
+                  MyTrivialType(0, 0, 0)>();
+
+    static_assert(map(kMyConstants[0]) == MyTrivialType(1, 2, 3));
+    static_assert(map(kMyConstants[1]) == MyTrivialType(4, 5, 6));
+    static_assert(map(kMyConstants[2]) == MyTrivialType(7, 8, 9));
+    static_assert(map(kMyConstants[3]) == MyTrivialType(0, 0, 0));
+    static_assert(map.kDefaultValue == MyTrivialType(0, 0, 0));
+
+    assert(map(kMyConstants[0]) == MyTrivialType(1, 2, 3));
+    assert(map(kMyConstants[1]) == MyTrivialType(4, 5, 6));
+    assert(map(kMyConstants[2]) == MyTrivialType(7, 8, 9));
+    assert(map(kMyConstants[3]) == MyTrivialType(0, 0, 0));
+    assert(map.kDefaultValue == MyTrivialType(0, 0, 0));
+}
+
+#if (defined(_POSIX_C_SOURCE) && _POSIX_C_SOURCE >= 199309L) || \
+    ((defined(__APPLE__) || defined(__linux__)) && (defined(__GNUG__) || defined(__clang__)))
+
+#define CAN_RUN_BENCHMARK
+
 // clang-format off
 inline constexpr std::string_view kStrings[] = {
     "abcdefghijklmnopqrstuvwxyz",
@@ -85,11 +215,6 @@ constexpr uint64_t operator-(const timespec& t2, const timespec& t1) noexcept {
     return nanoseconds_passed;
 }
 
-#if (defined(_POSIX_C_SOURCE) && _POSIX_C_SOURCE >= 199309L) || \
-    ((defined(__APPLE__) || defined(__linux__)) && (defined(__GNUG__) || defined(__clang__)))
-
-#define CAN_RUN_BENCHMARK
-
 void run_bench() {
     constexpr auto kMeasureLimit = 10000u;
 
@@ -134,130 +259,9 @@ void run_bench() {
 }  // namespace
 
 int main() {
-    {
-        static constexpr auto sw = StringMatch<"abc", "def", "ghij", "foo", "bar", "baz", "qux",
-                                               "abacaba", "ring", "ideal", "GLn(F)">();
-        static_assert(sw("abc") == 0);
-        static_assert(sw("def") == 1);
-        static_assert(sw("ghij") == 2);
-        static_assert(sw("foo") == 3);
-        static_assert(sw("bar") == 4);
-        static_assert(sw("baz") == 5);
-        static_assert(sw("qux") == 6);
-        static_assert(sw("abacaba") == 7);
-        static_assert(sw("ring") == 8);
-        static_assert(sw("ideal") == 9);
-        static_assert(sw("GLn(F)") == 10);
-        static_assert(sw.kDefaultValue == sw("GLn(F)") + 1);
-        static_assert(sw.kDefaultValue == 11);
-        static_assert(sw("not_in") == sw.kDefaultValue);
-        static_assert(sw("") == sw.kDefaultValue);
-        static_assert(sw("a") == sw.kDefaultValue);
-        static_assert(sw("A") == sw.kDefaultValue);
-        static_assert(sw("bc") == sw.kDefaultValue);
-        static_assert(sw("de") == sw.kDefaultValue);
-        constexpr const unsigned char kUString[] = "abc";
-        static_assert(sw(kUString, std::size(kUString) - 1) == sw("abc"));
-
-        assert(sw("abc") == 0);
-        assert(sw("def") == 1);
-        assert(sw("ghij") == 2);
-        assert(sw("foo") == 3);
-        assert(sw("bar") == 4);
-        assert(sw("baz") == 5);
-        assert(sw("qux") == 6);
-        assert(sw("abacaba") == 7);
-        assert(sw("ring") == 8);
-        assert(sw("ideal") == 9);
-        assert(sw("GLn(F)") == 10);
-        assert(sw.kDefaultValue == sw("GLn(F)") + 1);
-        assert(sw.kDefaultValue == 11);
-        assert(sw("not_in") == sw.kDefaultValue);
-        assert(sw("") == sw.kDefaultValue);
-        assert(sw("a") == sw.kDefaultValue);
-        assert(sw("A") == sw.kDefaultValue);
-        assert(sw("bc") == sw.kDefaultValue);
-        assert(sw("de") == sw.kDefaultValue);
-        assert(sw(kUString, std::size(kUString) - 1) == sw("abc"));
-    }
-    {
-        static constexpr auto match = StringMatch<"text1", "text2", "text3", "text4">();
-        static_assert(match("text1") == 0);
-        static_assert(match("text2") == 1);
-        static_assert(match("text3") == 2);
-        static_assert(match("text4") == 3);
-        static_assert(match("not in") == match.kDefaultValue);
-        static_assert(match.kDefaultValue == 4);
-
-        assert(match("text1") == 0);
-        assert(match("text2") == 1);
-        assert(match("text3") == 2);
-        assert(match("text4") == 3);
-        assert(match("not in") == match.kDefaultValue);
-        assert(match.kDefaultValue == 4);
-    }
-    {
-        enum class SomeEnum {
-            kText1,
-            kText2,
-            kText3,
-            kText4,
-            kNone,
-        };
-        using enum SomeEnum;
-        static constexpr auto map =
-            StringMap<StringKeys<"text1", "text2", "text3", "text4", "Text1", "Text3">,
-                      StringMapValues{kText1, kText2, kText3, kText4, kText1, kText3}, kNone>();
-
-        static_assert(map("text1") == kText1);
-        static_assert(map("text2") == kText2);
-        static_assert(map("text3") == kText3);
-        static_assert(map("text4") == kText4);
-        static_assert(map("Text1") == kText1);
-        static_assert(map("Text3") == kText3);
-        static_assert(map("something else") == kNone);
-        static_assert(map.kDefaultValue == kNone);
-
-        assert(map("text1") == kText1);
-        assert(map("text2") == kText2);
-        assert(map("text3") == kText3);
-        assert(map("text4") == kText4);
-        assert(map("Text1") == kText1);
-        assert(map("Text3") == kText3);
-        assert(map("something else") == kNone);
-        assert(map.kDefaultValue == kNone);
-    }
-    {
-        constexpr std::string_view kMyConstants[] = {"abc", "def", "ghi", "sneaky input"};
-
-        struct MyTrivialType {
-            std::array<int, 2> field1{};
-            int field2{};
-
-            constexpr MyTrivialType(int arg1, int arg2, int arg3) noexcept
-                : field1{arg1, arg2}, field2(arg3) {}
-            constexpr bool operator==(const MyTrivialType&) const noexcept = default;
-        };
-
-        static constexpr auto map =
-            StringMap<StringKeys<kMyConstants[0], kMyConstants[1], kMyConstants[2]>,
-                      StringMapValues{MyTrivialType(1, 2, 3), MyTrivialType(4, 5, 6),
-                                      MyTrivialType(7, 8, 9)},
-                      MyTrivialType(0, 0, 0)>();
-
-        static_assert(map(kMyConstants[0]) == MyTrivialType(1, 2, 3));
-        static_assert(map(kMyConstants[1]) == MyTrivialType(4, 5, 6));
-        static_assert(map(kMyConstants[2]) == MyTrivialType(7, 8, 9));
-        static_assert(map(kMyConstants[3]) == MyTrivialType(0, 0, 0));
-        static_assert(map.kDefaultValue == MyTrivialType(0, 0, 0));
-
-        assert(map(kMyConstants[0]) == MyTrivialType(1, 2, 3));
-        assert(map(kMyConstants[1]) == MyTrivialType(4, 5, 6));
-        assert(map(kMyConstants[2]) == MyTrivialType(7, 8, 9));
-        assert(map(kMyConstants[3]) == MyTrivialType(0, 0, 0));
-        assert(map.kDefaultValue == MyTrivialType(0, 0, 0));
-    }
-
+    test_string_match();
+    test_str_to_enum();
+    test_str_to_user_type();
 #ifdef CAN_RUN_BENCHMARK
     run_bench();
 #endif

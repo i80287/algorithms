@@ -583,6 +583,7 @@ set(TestLangVersions "dummy")
 set(TestDependencies "dummy")
 set(TestOptionalDependencies "dummy")
 set(TestIsCProject "dummy")
+set(TestCompileOnly "dummy")
 
 if(NOT USING_MINGW_GCC_32)
     list(APPEND TestFilenames "test_fibonacci_num.cpp")
@@ -591,6 +592,7 @@ if(NOT USING_MINGW_GCC_32)
     list(APPEND TestDependencies "")
     list(APPEND TestOptionalDependencies "")
     list(APPEND TestIsCProject False)
+    list(APPEND TestCompileOnly False)
 
     list(APPEND TestFilenames "test_gosper_algorithm.cpp")
     list(APPEND TestDirectories "number_theory")
@@ -598,6 +600,7 @@ if(NOT USING_MINGW_GCC_32)
     list(APPEND TestDependencies "")
     list(APPEND TestOptionalDependencies "")
     list(APPEND TestIsCProject False)
+    list(APPEND TestCompileOnly False)
 
     list(APPEND TestFilenames "test_integers_128_bit.cpp")
     list(APPEND TestDirectories "number_theory")
@@ -605,6 +608,7 @@ if(NOT USING_MINGW_GCC_32)
     list(APPEND TestDependencies "")
     list(APPEND TestOptionalDependencies "")
     list(APPEND TestIsCProject False)
+    list(APPEND TestCompileOnly False)
 
     list(APPEND TestFilenames "test_math_functions.cpp")
     list(APPEND TestDirectories "number_theory")
@@ -616,6 +620,7 @@ if(NOT USING_MINGW_GCC_32)
         list(APPEND TestOptionalDependencies "")
     endif()
     list(APPEND TestIsCProject False)
+    list(APPEND TestCompileOnly False)
 
     list(APPEND TestFilenames "test_is_prime_bpsw.cpp")
     list(APPEND TestDirectories "number_theory")
@@ -627,6 +632,7 @@ if(NOT USING_MINGW_GCC_32)
         list(APPEND TestOptionalDependencies "")
     endif()
     list(APPEND TestIsCProject False)
+    list(APPEND TestCompileOnly False)
 
     list(APPEND TestFilenames "test_kronecker_symbol.cpp")
     list(APPEND TestDirectories "number_theory")
@@ -638,6 +644,7 @@ if(NOT USING_MINGW_GCC_32)
         list(APPEND TestOptionalDependencies "")
     endif()
     list(APPEND TestIsCProject False)
+    list(APPEND TestCompileOnly False)
 
     list(APPEND TestFilenames "test_long_int.cpp")
     list(APPEND TestDirectories "number_theory")
@@ -645,6 +652,7 @@ if(NOT USING_MINGW_GCC_32)
     list(APPEND TestDependencies "")
     list(APPEND TestOptionalDependencies "")
     list(APPEND TestIsCProject False)
+    list(APPEND TestCompileOnly False)
 endif()
 
 list(APPEND TestFilenames "test_bitmatrix.cpp")
@@ -653,6 +661,7 @@ list(APPEND TestLangVersions "17 20 23 26")
 list(APPEND TestDependencies "")
 list(APPEND TestOptionalDependencies "")
 list(APPEND TestIsCProject False)
+list(APPEND TestCompileOnly False)
 
 list(APPEND TestFilenames "test_cnk_counter.cpp")
 list(APPEND TestDirectories "number_theory")
@@ -660,6 +669,7 @@ list(APPEND TestLangVersions "17 20 23 26")
 list(APPEND TestDependencies "")
 list(APPEND TestOptionalDependencies "")
 list(APPEND TestIsCProject False)
+list(APPEND TestCompileOnly False)
 
 set(mingw_gcc_or_clang USING_MINGW_GCC OR CMAKE_CXX_COMPILER_ID STREQUAL "Clang" OR CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang")
 if((NOT mingw_gcc_or_clang) OR (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER 10.0.0))
@@ -672,6 +682,7 @@ if((NOT mingw_gcc_or_clang) OR (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER 10.0.
     list(APPEND TestDependencies "")
     list(APPEND TestOptionalDependencies "")
     list(APPEND TestIsCProject False)
+    list(APPEND TestCompileOnly False)
 endif()
 unset(mingw_gcc_or_clang)
 
@@ -681,6 +692,7 @@ list(APPEND TestLangVersions "20 23 26")
 list(APPEND TestDependencies "")
 list(APPEND TestOptionalDependencies "")
 list(APPEND TestIsCProject False)
+list(APPEND TestCompileOnly False)
 
 list(APPEND TestFilenames "test_tf_idf_actrie.cpp search_lib.cpp")
 list(APPEND TestDirectories "tf_idf_actrie")
@@ -688,6 +700,7 @@ list(APPEND TestLangVersions "20 23 26")
 list(APPEND TestDependencies "")
 list(APPEND TestOptionalDependencies "")
 list(APPEND TestIsCProject False)
+list(APPEND TestCompileOnly False)
 
 if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR (CMAKE_CXX_COMPILER_ID STREQUAL "Clang" AND CMAKE_CXX_COMPILER_FRONTEND_VARIANT STREQUAL "GNU") AND NOT APPLE)
     list(APPEND TestFilenames "test_memcount.c")
@@ -696,6 +709,7 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR (CMAKE_CXX_COMPILER_ID STREQUAL "Clan
     list(APPEND TestDependencies "")
     list(APPEND TestOptionalDependencies "")
     list(APPEND TestIsCProject True)
+    list(APPEND TestCompileOnly False)
 
     list(APPEND TestFilenames "test_memcount.cpp")
     list(APPEND TestDirectories "vec_instructs")
@@ -703,6 +717,7 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR (CMAKE_CXX_COMPILER_ID STREQUAL "Clan
     list(APPEND TestDependencies "")
     list(APPEND TestOptionalDependencies "")
     list(APPEND TestIsCProject False)
+    list(APPEND TestCompileOnly False)
 
     list(APPEND TestFilenames "test_memset_int.c")
     list(APPEND TestDirectories "vec_instructs")
@@ -710,6 +725,7 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR (CMAKE_CXX_COMPILER_ID STREQUAL "Clan
     list(APPEND TestDependencies "")
     list(APPEND TestOptionalDependencies "")
     list(APPEND TestIsCProject True)
+    list(APPEND TestCompileOnly False)
 
     list(APPEND TestFilenames "test_memset_int.cpp")
     list(APPEND TestDirectories "vec_instructs")
@@ -717,6 +733,7 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR (CMAKE_CXX_COMPILER_ID STREQUAL "Clan
     list(APPEND TestDependencies "")
     list(APPEND TestOptionalDependencies "")
     list(APPEND TestIsCProject False)
+    list(APPEND TestCompileOnly False)
 endif()
 
 set(CAN_COMPILE_CONSTEXPR_STRING_MAP True)
@@ -735,6 +752,15 @@ if(CAN_COMPILE_CONSTEXPR_STRING_MAP)
     list(APPEND TestDependencies "")
     list(APPEND TestOptionalDependencies "")
     list(APPEND TestIsCProject False)
+    list(APPEND TestCompileOnly False)
+
+    list(APPEND TestFilenames "usage_example.cpp")
+    list(APPEND TestDirectories "string-switch-map")
+    list(APPEND TestLangVersions "20 23 26")
+    list(APPEND TestDependencies "")
+    list(APPEND TestOptionalDependencies "")
+    list(APPEND TestIsCProject False)
+    list(APPEND TestCompileOnly True)
 endif()
 unset(CAN_COMPILE_CONSTEXPR_STRING_MAP)
 
@@ -744,6 +770,7 @@ list(POP_FRONT TestLangVersions) # pop dummy
 list(POP_FRONT TestDependencies) # pop dummy
 list(POP_FRONT TestOptionalDependencies) # pop dummy
 list(POP_FRONT TestIsCProject) # pop dummy
+list(POP_FRONT TestCompileOnly) # pop dummy
 
 
 function(
@@ -754,6 +781,7 @@ function(
     target_optional_dependencies
     target_lang_version
     is_c_project
+    compile_only
 )
     string(REPLACE " " ";" target_filenames "${target_filenames}")
 
@@ -849,17 +877,26 @@ function(
             CXX_EXTENSIONS OFF
             CXX_STANDARD_REQUIRED ON)
     endif()
-    add_test(NAME ${target} COMMAND $<TARGET_FILE:${target}>)
+    if(NOT compile_only)
+        add_test(NAME ${target} COMMAND $<TARGET_FILE:${target}>)
+    endif()
 endfunction(add_test_target)
 
-foreach(target_filenames target_dir target_supported_lang_versions target_dependencies target_optional_dependencies is_c_project
+foreach(target_filenames
+        target_dir
+        target_supported_lang_versions
+        target_dependencies
+        target_optional_dependencies
+        is_c_project
+        compile_only
     IN ZIP_LISTS
         TestFilenames
         TestDirectories
         TestLangVersions
         TestDependencies
         TestOptionalDependencies
-        TestIsCProject)
+        TestIsCProject
+        TestCompileOnly)
     string(REPLACE " " ";" target_supported_lang_versions "${target_supported_lang_versions}")
     foreach(version ${target_supported_lang_versions})
         if(
@@ -874,6 +911,7 @@ foreach(target_filenames target_dir target_supported_lang_versions target_depend
                 "${target_optional_dependencies}"
                 ${version}
                 ${is_c_project}
+                ${compile_only}
             )
         endif()
     endforeach()

@@ -2,7 +2,7 @@
 ### Compile-time initialized map from string to any trivial constexpr type with linear time lookup (implementation - trie)
 ### Time complexity: `O(min(|S|, |S'|))`, where |S| is the length of the string and |S'| is the max length amongst the strings added to the data structure
 
-#### Required language standard: C++20 (tested with g++ 13.2.0 and clang++ 16.0.5)
+#### Required language standard: C++20 (tested with g++ >= 11.4, clang++ >= 13.0 and msvc >= 19.38)
 
 ### Example of usage as mapper from `N` strings to integers `0`...`N-1` in the switch statement:
 ```c++
@@ -51,9 +51,10 @@
     // Then, pass default value
     // Then, pass N string literals
     static constexpr auto map = StringMap<
-        std::array{kText1, kText2, kText3, kText4, kText1, kText3},
-        /* DefaultMapValue = */ kNone,
-        "text1", "text2", "text3", "text4", "Text1", "Text3">();
+        StringMapKeys<"text1", "text2", "text3", "text4", "Text1", "Text3">,
+        StringMapValues{kText1, kText2, kText3, kText4, kText1, kText3},
+        /* DefaultValue = */ kNone
+    >();
 
     static_assert(map("text1") == kText1);
     static_assert(map("text2") == kText2);
@@ -81,9 +82,10 @@
     };
 
     static constexpr auto map = StringMap<
-        std::array{MyTrivialType(1, 2, 3), MyTrivialType(4, 5, 6), MyTrivialType(7, 8, 9)},
-        /* DefaultMapValue = */ MyTrivialType(0, 0, 0),
-        kMyConstants[0], kMyConstants[1], kMyConstants[2]>();
+        StringMapKeys<kMyConstants[0], kMyConstants[1], kMyConstants[2]>,
+        StringMapValues{MyTrivialType(1, 2, 3), MyTrivialType(4, 5, 6), MyTrivialType(7, 8, 9)},
+        /* DefaultValue = */ MyTrivialType(0, 0, 0)
+    >();
 
     static_assert(map(kMyConstants[0]) == MyTrivialType(1, 2, 3));
     static_assert(map(kMyConstants[1]) == MyTrivialType(4, 5, 6));
