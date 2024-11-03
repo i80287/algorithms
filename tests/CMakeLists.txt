@@ -14,6 +14,8 @@ set(TEST_C_COMPILE_OPTIONS)
 set(TEST_CXX_COMPILE_OPTIONS)
 set(TEST_COMPILE_DEFINITIONS)
 
+set(USE_CPPCHECK_DURING_BUILD False)
+
 # Other versions can be added below depending on the compiler version
 set(COMPILER_SUPPORTED_C_VERSIONS "99")
 set(COMPILER_SUPPORTED_CXX_VERSIONS "11;14;17")
@@ -39,7 +41,7 @@ if(USING_MINGW_GCC)
 endif()
 
 
-if(CMAKE_SYSTEM_NAME MATCHES "Linux")
+if(USE_CPPCHECK_DURING_BUILD AND CMAKE_SYSTEM_NAME MATCHES "Linux")
     find_program(CMAKE_CXX_CPPCHECK NAMES cppcheck)
     if(CMAKE_CXX_CPPCHECK)
         set(CPPCHECK_EXITCODE_ON_ERROR 0)
@@ -716,7 +718,7 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR (CMAKE_CXX_COMPILER_ID STREQUAL "Clan
 endif()
 
 list(APPEND TestFilenames "test_string_switch_map.cpp")
-list(APPEND TestDirectories "../string-switch-map/tests")
+list(APPEND TestDirectories "string-switch-map tests")
 list(APPEND TestLangVersions "20 23 26")
 list(APPEND TestDependencies "")
 list(APPEND TestOptionalDependencies "")

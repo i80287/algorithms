@@ -9,6 +9,8 @@
 #include "../config_macros.hpp"
 #include "../StringMap.hpp"
 
+namespace {
+
 // clang-format off
 inline constexpr std::string_view kStrings[] = {
     "abcdefghijklmnopqrstuvwxyz",
@@ -83,7 +85,12 @@ constexpr uint64_t operator-(const timespec& t2, const timespec& t1) noexcept {
     return nanoseconds_passed;
 }
 
-static void run_bench() {
+#if (defined(_POSIX_C_SOURCE) && _POSIX_C_SOURCE >= 199309L) || \
+    ((defined(__APPLE__) || defined(__linux__)) && (defined(__GNUG__) || defined(__clang__)))
+
+#define CAN_RUN_BENCHMARK
+
+void run_bench() {
     constexpr auto kMeasureLimit = 10000u;
 
     static constexpr auto sw = StringMatch<
@@ -121,6 +128,10 @@ static void run_bench() {
 
     printf("%" PRIu64 " nanoseconds on average\n", (t2 - t1) / kMeasureLimit);
 }
+
+#endif
+
+}  // namespace
 
 int main() {
     {
@@ -196,7 +207,7 @@ int main() {
         using enum SomeEnum;
         static constexpr auto map =
             StringMap<StringKeys<"text1", "text2", "text3", "text4", "Text1", "Text3">,
-                      MapValues{kText1, kText2, kText3, kText4, kText1, kText3}, kNone>();
+                      StringMapValues{kText1, kText2, kText3, kText4, kText1, kText3}, kNone>();
 
         static_assert(map("text1") == kText1);
         static_assert(map("text2") == kText2);
@@ -230,8 +241,8 @@ int main() {
 
         static constexpr auto map =
             StringMap<StringKeys<kMyConstants[0], kMyConstants[1], kMyConstants[2]>,
-                      MapValues{MyTrivialType(1, 2, 3), MyTrivialType(4, 5, 6),
-                                MyTrivialType(7, 8, 9)},
+                      StringMapValues{MyTrivialType(1, 2, 3), MyTrivialType(4, 5, 6),
+                                      MyTrivialType(7, 8, 9)},
                       MyTrivialType(0, 0, 0)>();
 
         static_assert(map(kMyConstants[0]) == MyTrivialType(1, 2, 3));
@@ -247,6 +258,8 @@ int main() {
         assert(map.kDefaultValue == MyTrivialType(0, 0, 0));
     }
 
+#ifdef CAN_RUN_BENCHMARK
     run_bench();
+#endif
     return 0;
 }

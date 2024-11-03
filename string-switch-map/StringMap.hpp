@@ -25,20 +25,29 @@
 #define STRING_MAP_HAS_BIT 0
 #endif
 
+#if defined(__cpp_constexpr) && __cpp_constexpr >= 201907L &&                                     \
+    defined(__cpp_lib_constexpr_dynamic_alloc) && __cpp_lib_constexpr_dynamic_alloc >= 201907L && \
+    !defined(_MSC_VER) && !defined(_GLIBCXX_DEBUG)
+#define CUSTOM_CONSTEXPR_VEC_FOR_OLD_COMPILERS 0
+#include <vector>
+#else
+#define CUSTOM_CONSTEXPR_VEC_FOR_OLD_COMPILERS 1
+#endif
+
 #if defined(__cpp_consteval) && __cpp_consteval >= 201811L
 #define STRING_MAP_CONSTEVAL consteval
 #else
 #define STRING_MAP_CONSTEVAL constexpr
 #endif
 
-namespace string_map_detail {
+namespace strmapdetail {
 
 inline constexpr std::size_t kMaxStringViewSize = 200;
 
 template <std::size_t N = kMaxStringViewSize>
+    requires(N > 0)
 struct [[nodiscard]] CompileTimeStringLiteral {
-    static_assert(N > 0);
-    STRING_MAP_CONSTEVAL CompileTimeStringLiteral(std::string_view str) noexcept
+    /* implicit */ STRING_MAP_CONSTEVAL CompileTimeStringLiteral(std::string_view str) noexcept
         : length(str.size()) {
         const bool fits_in_buffer = str.size() < std::size(value);
         // HINT: Change kMaxStringViewSize if you are using very long strings
@@ -46,7 +55,7 @@ struct [[nodiscard]] CompileTimeStringLiteral {
         [[maybe_unused]] const auto string_view_size_check = 0 / int{fits_in_buffer};
         std::char_traits<char>::copy(value.data(), str.data(), str.size());
     }
-    STRING_MAP_CONSTEVAL CompileTimeStringLiteral(const char (&str)[N]) noexcept
+    /* implicit */ STRING_MAP_CONSTEVAL CompileTimeStringLiteral(const char (&str)[N]) noexcept
         : length(std::char_traits<char>::length(str)) {
         std::char_traits<char>::copy(value.data(), str, size());
     }
@@ -60,10 +69,6 @@ struct [[nodiscard]] CompileTimeStringLiteral {
         ATTRIBUTE_LIFETIME_BOUND {
         return value[index];
     }
-    [[nodiscard]] STRING_MAP_CONSTEVAL std::string_view as_string_view() const noexcept
-        ATTRIBUTE_LIFETIME_BOUND {
-        return std::string_view(value.data(), size());
-    }
 
     // clang-format off
     template <class CharType>
@@ -74,13 +79,22 @@ struct [[nodiscard]] CompileTimeStringLiteral {
         // clang-format on
         static_assert(std::is_same_v<CharType, char> || std::is_same_v<CharType, unsigned char>);
         if constexpr (std::is_same_v<CharType, char>) {
-            return str1.as_string_view() == str2;
+            // replacing .length with .size() may lead gcc 13.2.0 to
+            //  say str1 is not a constant expression
+            return std::string_view(str1.value.data(), str1.length) == str2;
         } else if (std::is_constant_evaluated()) {
+#if STRING_MAP_HAS_BIT
             const auto uvalue = std::bit_cast<std::array<unsigned char, N>>(str1.value);
-            return std::basic_string_view<unsigned char>(uvalue.data(), str1.length) == str2;
+#else
+            std::array<unsigned char, N> uvalue{};
+            for (std::size_t i = 0; i < str1.size(); i++) {
+                uvalue[i] = static_cast<unsigned char>(str1[i]);
+            }
+#endif
+            return std::basic_string_view<unsigned char>(uvalue.data(), str1.size()) == str2;
         } else {
             const std::string_view cstr2(reinterpret_cast<const char*>(str2.data()), str2.size());
-            return str1.as_string_view() == cstr2;
+            return std::string_view(str1.value.data(), str1.size()) == cstr2;
         }
     }  // clang-format off
     template <class CharType>
@@ -122,8 +136,8 @@ struct MinMaxCharsType {
     std::uint32_t max_char;
 };
 
-template <string_map_detail::CompileTimeStringLiteral FirstString,
-          string_map_detail::CompileTimeStringLiteral... Strings>
+template <strmapdetail::CompileTimeStringLiteral FirstString,
+          strmapdetail::CompileTimeStringLiteral... Strings>
 STRING_MAP_CONSTEVAL MinMaxCharsType FindMinMaxChars() noexcept {
     static_assert(FirstString.size() > 0, "Empty string was passed in StringMatch / StringMap");
 
@@ -148,26 +162,33 @@ STRING_MAP_CONSTEVAL MinMaxCharsType FindMinMaxChars() noexcept {
 }
 
 template <std::size_t AlphabetSize>
-struct CountingVector final {
-    struct CountingNode final {
-        std::array<std::uint32_t, AlphabetSize> edges{};
-    };
+struct CountingNode final {
+    std::array<std::uint32_t, AlphabetSize> edges{};
+};
 
-    using value_type = CountingNode;
+#if CUSTOM_CONSTEXPR_VEC_FOR_OLD_COMPILERS
+
+template <std::size_t AlphabetSize>
+struct CountingVector final {
+    using value_type      = CountingNode<AlphabetSize>;
+    using reference       = value_type&;
+    using const_reference = const value_type&;
+    using pointer         = value_type*;
+    using const_pointer   = const value_type*;
+    using size_type       = std::size_t;
 
     struct CountingVectorAllocatorImpl final {
-        [[nodiscard]] constexpr value_type* allocate(std::size_t size) const {
+        [[nodiscard]] constexpr pointer allocate(size_type size) const {
             // Can't call ::operator new(...) in the constexpr context
             return new value_type[size]();
         }
-        constexpr void deallocate(value_type* ptr,
-                                  [[maybe_unused]] std::size_t size) const noexcept {
+        constexpr void deallocate(pointer ptr, [[maybe_unused]] size_type size) const noexcept {
             delete[] ptr;
         }
     };
     using allocator_type = CountingVectorAllocatorImpl;
 
-    explicit constexpr CountingVector(std::size_t size)
+    explicit constexpr CountingVector(size_type size)
         : size_(size), capacity_(size_ > 16 ? size_ : 16) {
         data_ = allocator_type{}.allocate(capacity_);
     }
@@ -206,26 +227,20 @@ struct CountingVector final {
         allocator_type{}.deallocate(data_, capacity_);
         data_ = nullptr;
     }
-    [[nodiscard]] constexpr std::size_t size() const noexcept {
+    [[nodiscard]] constexpr size_type size() const noexcept {
         return size_;
     }
-    [[nodiscard]] constexpr std::size_t capacity() const noexcept {
-        return capacity_;
-    }
-    [[nodiscard]] constexpr bool empty() const noexcept {
-        return size_ == 0;
-    }
-    [[nodiscard]] constexpr value_type& operator[](std::size_t index) noexcept {
+    [[nodiscard]] constexpr value_type& operator[](size_type index) noexcept {
         return data_[index];
     }
-    [[nodiscard]] constexpr const value_type& operator[](std::size_t index) const noexcept {
+    [[nodiscard]] constexpr const value_type& operator[](size_type index) const noexcept {
         return data_[index];
     }
-    constexpr void emplace_back_empty_node() {
+    constexpr reference emplace_back() ATTRIBUTE_LIFETIME_BOUND {
         if (size_ == capacity_) {
             growth_storage();
         }
-        ++size_;
+        return data_[size_++];
     }
     constexpr void growth_storage() {
         const auto new_capacity = capacity_ > 0 ? capacity_ * 2 : 16;
@@ -243,14 +258,18 @@ struct CountingVector final {
         capacity_ = new_capacity;
     }
 
-    value_type* data_{};
-    std::size_t size_{};
-    std::size_t capacity_{};
+    pointer data_{};
+    size_type size_{};
+    size_type capacity_{};
 };
 
-template <trie_tools::TrieParamsType TrieParams,
-          string_map_detail::CompileTimeStringLiteral FirstString,
-          string_map_detail::CompileTimeStringLiteral... Strings>
+#else
+template <std::size_t AlphabetSize>
+using CountingVector = std::vector<CountingNode<AlphabetSize>>;
+#endif
+
+template <trie_tools::TrieParamsType TrieParams, strmapdetail::CompileTimeStringLiteral FirstString,
+          strmapdetail::CompileTimeStringLiteral... Strings>
 STRING_MAP_CONSTEVAL std::pair<std::size_t, std::size_t> CountNodesSizeAndMaxHeightImpl(
     CountingVector<TrieParams.trie_alphabet_size>& nodes, std::size_t max_seen_height) {
     std::size_t current_node_index = 0;
@@ -260,7 +279,7 @@ STRING_MAP_CONSTEVAL std::pair<std::size_t, std::size_t> CountNodesSizeAndMaxHei
         std::size_t next_node_index = nodes[current_node_index].edges[index];
         if (next_node_index == 0) {
             std::size_t new_node_index = nodes.size();
-            nodes.emplace_back_empty_node();
+            nodes.emplace_back();
             nodes[current_node_index].edges[index] = static_cast<std::uint32_t>(new_node_index);
             next_node_index                        = new_node_index;
         }
@@ -276,7 +295,7 @@ STRING_MAP_CONSTEVAL std::pair<std::size_t, std::size_t> CountNodesSizeAndMaxHei
     }
 }
 
-template <TrieParamsType TrieParams, string_map_detail::CompileTimeStringLiteral... Strings>
+template <TrieParamsType TrieParams, strmapdetail::CompileTimeStringLiteral... Strings>
 STRING_MAP_CONSTEVAL std::pair<std::size_t, std::size_t> CountNodesSizeAndMaxHeight() {
     constexpr auto kAlphabetSize = TrieParams.trie_alphabet_size;
     CountingVector<kAlphabetSize> nodes(std::size_t{1});
@@ -284,7 +303,7 @@ STRING_MAP_CONSTEVAL std::pair<std::size_t, std::size_t> CountNodesSizeAndMaxHei
     return CountNodesSizeAndMaxHeightImpl<TrieParams, Strings...>(nodes, max_seen_height);
 }
 
-template <string_map_detail::CompileTimeStringLiteral... Strings>
+template <strmapdetail::CompileTimeStringLiteral... Strings>
 STRING_MAP_CONSTEVAL TrieParamsType TrieParams() {
     constexpr MinMaxCharsType kMinMaxChars    = FindMinMaxChars<Strings...>();
     constexpr TrieParamsType kTrieParamsProto = {
@@ -301,12 +320,12 @@ STRING_MAP_CONSTEVAL TrieParamsType TrieParams() {
     };
 }
 
-template <string_map_detail::CompileTimeStringLiteral... Strings>
+template <strmapdetail::CompileTimeStringLiteral... Strings>
 inline constexpr TrieParamsType kTrieParams = TrieParams<Strings...>();
 
 }  // namespace trie_tools
 
-namespace string_map_impl {
+namespace impl {
 
 template <trie_tools::TrieParamsType TrieParams, std::array MappedValues,
           typename decltype(MappedValues)::value_type DefaultMapValue,
@@ -371,7 +390,9 @@ class [[nodiscard]] StringMapImplManyStrings final {
 
 public:
     using MappedType = typename decltype(MappedValues)::value_type;
-    static_assert(std::is_copy_assignable_v<MappedType>);
+    static_assert(std::is_same_v<MappedType, std::remove_cvref_t<MappedType>>);
+    static_assert(std::is_default_constructible_v<MappedType> &&
+                  std::is_copy_assignable_v<MappedType>);
 
     static constexpr MappedType kDefaultValue = DefaultMapValue;
     static constexpr char kMinChar            = static_cast<char>(TrieParams.min_char);
@@ -482,8 +503,8 @@ private:
 #endif
     ;
 
-    template <std::size_t CurrentPackIndex, string_map_detail::CompileTimeStringLiteral String,
-              string_map_detail::CompileTimeStringLiteral... AddStrings>
+    template <std::size_t CurrentPackIndex, strmapdetail::CompileTimeStringLiteral String,
+              strmapdetail::CompileTimeStringLiteral... AddStrings>
     STRING_MAP_CONSTEVAL void AddPattern(std::size_t first_free_node_index) noexcept {
         std::size_t current_node_index = 0;
         constexpr std::size_t len      = String.size();
@@ -501,7 +522,7 @@ private:
 
         const bool already_added_string = nodes_[current_node_index].node_value != kDefaultValue;
         // HINT: Remove duplicate strings from the StringMatch / StringMap
-        [[maybe_unused]] const auto duplicate_strings_check = 0 / !already_added_string;
+        [[maybe_unused]] const auto duplicate_strings_check = 0 / int{!already_added_string};
 
         static_assert(CurrentPackIndex < MappedValues.size(), "impl error");
         nodes_[current_node_index].node_value = MappedValues[CurrentPackIndex];
@@ -537,8 +558,9 @@ private:
 
         const auto returned_value = nodes_[current_node_index].node_value;
         if constexpr (kMappedTypesInfo.ordered) {
-            if (returned_value != kDefaultValue && (returned_value < kMappedTypesInfo.min_value ||
-                                                    returned_value > kMappedTypesInfo.max_value)) {
+            if (returned_value != kDefaultValue &&
+                (std::less<MappedType>{}(returned_value, kMappedTypesInfo.min_value) ||
+                 std::greater<MappedType>{}(returned_value, kMappedTypesInfo.max_value))) {
                 CONFIG_UNREACHABLE();
             }
         }
@@ -550,12 +572,18 @@ private:
         static constexpr bool kMaybeOrdered =
             std::is_arithmetic_v<MappedType> || std::is_pointer_v<MappedType> ||
             std::is_member_pointer_v<MappedType> ||
-            (std::is_enum_v<MappedType> && requires(MappedType x, MappedType y) {
-                { std::less<MappedType>{}(x, y) } -> std::same_as<bool>;
-                { std::less_equal<MappedType>{}(x, y) } -> std::same_as<bool>;
-                { std::greater<MappedType>{}(x, y) } -> std::same_as<bool>;
-                { std::greater_equal<MappedType>{}(x, y) } -> std::same_as<bool>;
-            });
+            (!std::is_polymorphic_v<MappedType> &&
+             std::is_nothrow_default_constructible_v<MappedType> &&
+             std::is_nothrow_copy_constructible_v<MappedType> &&
+             std::is_nothrow_copy_assignable_v<MappedType> &&
+             std::is_nothrow_move_constructible_v<MappedType> &&
+             std::is_nothrow_move_assignable_v<MappedType> &&
+             std::is_nothrow_destructible_v<MappedType> && requires(MappedType x, MappedType y) {
+                 { std::less<MappedType>{}(x, y) } -> std::same_as<bool>;
+                 { std::less_equal<MappedType>{}(x, y) } -> std::same_as<bool>;
+                 { std::greater<MappedType>{}(x, y) } -> std::same_as<bool>;
+                 { std::greater_equal<MappedType>{}(x, y) } -> std::same_as<bool>;
+             });
         using DefaultConstructibleSentinelType =
             std::conditional_t<std::is_default_constructible_v<MappedType>, MappedType, int>;
 
@@ -702,49 +730,29 @@ private:
     }
 };
 
-}  // namespace string_map_impl
+}  // namespace impl
 
-}  // namespace string_map_detail
+}  // namespace strmapdetail
 
-template <string_map_detail::CompileTimeStringLiteral... Strings>
+template <strmapdetail::CompileTimeStringLiteral... Strings>
 struct StringKeys;
 
 template <class T, std::size_t N>
-struct MapValues {
+struct StringMapValues {
     std::array<T, N> values;
 };
 
 #if defined(__cpp_deduction_guides) && __cpp_deduction_guides >= 201606
 template <typename T, typename... Ts>
-MapValues(T, Ts...)
-    -> MapValues<std::enable_if_t<(std::is_same_v<T, Ts> && ...), T>, 1 + sizeof...(Ts)>;
+StringMapValues(T, Ts...)
+    -> StringMapValues<std::enable_if_t<(std::is_same_v<T, Ts> && ...), T>, 1 + sizeof...(Ts)>;
 #endif
 
-namespace string_map_detail {
-
-template <class Keys, MapValues MappedValues, auto MappedDefaultValue>
-struct StringHelper;
-
-template <string_map_detail::CompileTimeStringLiteral... Strings, MapValues MappedValues,
-          class MappedType, MappedType MappedDefaultValue>
-    requires(sizeof...(Strings) == std::size(MappedValues.values) &&
-             std::size(MappedValues.values) > 0) &&
-            std::is_same_v<typename decltype(MappedValues.values)::value_type, MappedType>
-struct StringHelper<StringKeys<Strings...>, MappedValues, MappedDefaultValue> {
-    using type = typename std::conditional_t<
-        (sizeof...(Strings) <= 4 &&
-         string_map_detail::trie_tools::kTrieParams<Strings...>.max_tree_height <= 15),
-        typename string_map_detail::string_map_impl::StringMapImplFewStrings<
-            string_map_detail::trie_tools::kTrieParams<Strings...>, MappedValues.values,
-            MappedDefaultValue, Strings...>,
-        typename string_map_detail::string_map_impl::StringMapImplManyStrings<
-            string_map_detail::trie_tools::kTrieParams<Strings...>, MappedValues.values,
-            MappedDefaultValue, Strings...>>;
-};
+namespace strmapdetail {
 
 template <std::size_t N>
-STRING_MAP_CONSTEVAL MapValues<std::size_t, N> make_index_array_for_map() noexcept {
-    MapValues<std::size_t, N> index_array{};
+STRING_MAP_CONSTEVAL StringMapValues<std::size_t, N> make_index_array() noexcept {
+    StringMapValues<std::size_t, N> index_array{};
 #if defined(__cpp_lib_constexpr_numeric) && __cpp_lib_constexpr_numeric >= 201911L && \
     !defined(_GLIBCXX_DEBUG) && !defined(_LIBCPP_ENABLE_ASSERTIONS)
     std::iota(index_array.values.begin(), index_array.values.end(), 0);
@@ -756,16 +764,45 @@ STRING_MAP_CONSTEVAL MapValues<std::size_t, N> make_index_array_for_map() noexce
     return index_array;
 }
 
-}  // namespace string_map_detail
+template <class Keys, StringMapValues MappedValues, auto MappedDefaultValue>
+struct StringHelper;
 
+template <strmapdetail::CompileTimeStringLiteral... Strings, StringMapValues MappedValues,
+          auto MappedDefaultValue>
+struct StringHelper<StringKeys<Strings...>, MappedValues, MappedDefaultValue> {
+    static_assert(sizeof...(Strings) == std::size(MappedValues.values),
+                  "StringMap should has equal number of keys and values");
+
+    static_assert(std::size(MappedValues.values) > 0,
+                  "StringMap or StringMatch should has at least one string key");
+
+    static_assert(std::is_same_v<typename decltype(MappedValues.values)::value_type,
+                                 decltype(MappedDefaultValue)>,
+                  "Default value of the StringMap should be of the same type as StringMap values");
+
+    using type = typename std::conditional_t<
+        (sizeof...(Strings) <= 4 &&
+         strmapdetail::trie_tools::kTrieParams<Strings...>.max_tree_height <= 15),
+        typename strmapdetail::impl::StringMapImplFewStrings<
+            strmapdetail::trie_tools::kTrieParams<Strings...>, MappedValues.values,
+            MappedDefaultValue, Strings...>,
+        typename strmapdetail::impl::StringMapImplManyStrings<
+            strmapdetail::trie_tools::kTrieParams<Strings...>, MappedValues.values,
+            MappedDefaultValue, Strings...>>;
+};
+
+}  // namespace strmapdetail
+
+#undef CUSTOM_CONSTEXPR_VEC_FOR_OLD_COMPILERS
 #undef STRING_MAP_CONSTEVAL
 #undef STRING_MAP_HAS_BIT
 #undef STRING_MAP_HAS_SPAN
 
-template <class Keys, MapValues Values, auto DefaultValue>
-using StringMap = typename string_map_detail::StringHelper<Keys, Values, DefaultValue>::type;
+template <class Keys, StringMapValues Values,
+          typename decltype(Values.values)::value_type DefaultValue>
+using StringMap = typename strmapdetail::StringHelper<Keys, Values, DefaultValue>::type;
 
-template <string_map_detail::CompileTimeStringLiteral... Strings>
-using StringMatch = StringMap<StringKeys<Strings...>,
-                              string_map_detail::make_index_array_for_map<sizeof...(Strings)>(),
-                              sizeof...(Strings)>;
+template <strmapdetail::CompileTimeStringLiteral... Strings>
+using StringMatch =
+    StringMap<StringKeys<Strings...>, strmapdetail::make_index_array<sizeof...(Strings)>(),
+              sizeof...(Strings)>;
