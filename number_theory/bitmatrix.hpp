@@ -69,7 +69,7 @@ inline constexpr bool kIsMatrix64x64 =
 ///     0b00000000,
 /// }
 ///
-/// If AgainstMinorDiagonal = false, M will become
+/// If AgainstMinorDiagonal = true, M will become
 /// {
 ///     0b00000000,
 ///     0b00000000,
