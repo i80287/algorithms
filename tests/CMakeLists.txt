@@ -719,12 +719,24 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR (CMAKE_CXX_COMPILER_ID STREQUAL "Clan
     list(APPEND TestIsCProject False)
 endif()
 
-list(APPEND TestFilenames "test_string_switch_map.cpp")
-list(APPEND TestDirectories "string-switch-map tests")
-list(APPEND TestLangVersions "20 23 26")
-list(APPEND TestDependencies "")
-list(APPEND TestOptionalDependencies "")
-list(APPEND TestIsCProject False)
+set(CAN_COMPILE_CONSTEXPR_STRING_MAP True)
+if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+    set(CAN_COMPILE_CONSTEXPR_STRING_MAP CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 13.0)
+elseif(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+    set(CAN_COMPILE_CONSTEXPR_STRING_MAP CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 11.4)
+elseif(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
+    set(CAN_COMPILE_CONSTEXPR_STRING_MAP MSVC_VERSION GREATER_EQUAL 1938)
+endif()
+
+if(CAN_COMPILE_CONSTEXPR_STRING_MAP)
+    list(APPEND TestFilenames "test_string_switch_map.cpp")
+    list(APPEND TestDirectories "string-switch-map tests")
+    list(APPEND TestLangVersions "20 23 26")
+    list(APPEND TestDependencies "")
+    list(APPEND TestOptionalDependencies "")
+    list(APPEND TestIsCProject False)
+endif()
+unset(CAN_COMPILE_CONSTEXPR_STRING_MAP)
 
 list(POP_FRONT TestFilenames) # pop dummy
 list(POP_FRONT TestDirectories) # pop dummy

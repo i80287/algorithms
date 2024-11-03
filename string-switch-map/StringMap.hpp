@@ -27,7 +27,8 @@
 
 #if defined(__cpp_constexpr) && __cpp_constexpr >= 201907L &&                                     \
     defined(__cpp_lib_constexpr_dynamic_alloc) && __cpp_lib_constexpr_dynamic_alloc >= 201907L && \
-    !defined(_MSC_VER) && !defined(_GLIBCXX_DEBUG)
+    (defined(_MSC_VER) ||                                                                         \
+     (!defined(__GNUG__) || (CONFIG_GNUC_AT_LEAST(12, 1) && !defined(_GLIBCXX_DEBUG))))
 #define CUSTOM_CONSTEXPR_VEC_FOR_OLD_COMPILERS 0
 #include <vector>
 #else
@@ -48,13 +49,15 @@ template <std::size_t N = kMaxStringViewSize>
     requires(N > 0)
 struct [[nodiscard]] CompileTimeStringLiteral {
     /* implicit */ STRING_MAP_CONSTEVAL CompileTimeStringLiteral(std::string_view str) noexcept
-        : length(str.size()) {
+        : length{str.size()} {
         const bool fits_in_buffer = str.size() < std::size(value);
         // HINT: Change kMaxStringViewSize if you are using very long strings
         //  in the StringMatch / StringMap.
         [[maybe_unused]] const auto string_view_size_check = 0 / int{fits_in_buffer};
         std::char_traits<char>::copy(value.data(), str.data(), str.size());
     }
+    ATTRIBUTE_NONNULL_ALL_ARGS
+    ATTRIBUTE_ACCESS(read_only, 1)
     /* implicit */ STRING_MAP_CONSTEVAL CompileTimeStringLiteral(const char (&str)[N]) noexcept
         : length(std::char_traits<char>::length(str)) {
         std::char_traits<char>::copy(value.data(), str, size());
@@ -71,7 +74,7 @@ struct [[nodiscard]] CompileTimeStringLiteral {
     }
 
     // clang-format off
-    template <class CharType>
+    template <std::integral CharType>
     [[nodiscard]]
     ATTRIBUTE_PURE
     ATTRIBUTE_ALWAYS_INLINE
@@ -97,7 +100,7 @@ struct [[nodiscard]] CompileTimeStringLiteral {
             return std::string_view(str1.value.data(), str1.size()) == cstr2;
         }
     }  // clang-format off
-    template <class CharType>
+    template <std::integral CharType>
     [[nodiscard]]
     ATTRIBUTE_PURE
     ATTRIBUTE_ALWAYS_INLINE
@@ -131,14 +134,14 @@ struct TrieParamsType final {
     }
 };
 
-struct MinMaxCharsType {
-    std::uint32_t min_char;
-    std::uint32_t max_char;
+struct [[nodiscard]] MinMaxCharsType {
+    std::uint32_t min_char{};
+    std::uint32_t max_char{};
 };
 
 template <strmapdetail::CompileTimeStringLiteral FirstString,
           strmapdetail::CompileTimeStringLiteral... Strings>
-STRING_MAP_CONSTEVAL MinMaxCharsType FindMinMaxChars() noexcept {
+[[nodiscard]] STRING_MAP_CONSTEVAL MinMaxCharsType FindMinMaxChars() noexcept {
     static_assert(FirstString.size() > 0, "Empty string was passed in StringMatch / StringMap");
 
     std::uint32_t min_char    = FirstString[0];
@@ -162,14 +165,14 @@ STRING_MAP_CONSTEVAL MinMaxCharsType FindMinMaxChars() noexcept {
 }
 
 template <std::size_t AlphabetSize>
-struct CountingNode final {
+struct [[nodiscard]] CountingNode final {
     std::array<std::uint32_t, AlphabetSize> edges{};
 };
 
 #if CUSTOM_CONSTEXPR_VEC_FOR_OLD_COMPILERS
 
 template <std::size_t AlphabetSize>
-struct CountingVector final {
+struct [[nodiscard]] CountingVector final {
     using value_type      = CountingNode<AlphabetSize>;
     using reference       = value_type&;
     using const_reference = const value_type&;
@@ -270,8 +273,9 @@ using CountingVector = std::vector<CountingNode<AlphabetSize>>;
 
 template <trie_tools::TrieParamsType TrieParams, strmapdetail::CompileTimeStringLiteral FirstString,
           strmapdetail::CompileTimeStringLiteral... Strings>
-STRING_MAP_CONSTEVAL std::pair<std::size_t, std::size_t> CountNodesSizeAndMaxHeightImpl(
-    CountingVector<TrieParams.trie_alphabet_size>& nodes, std::size_t max_seen_height) {
+[[nodiscard]] STRING_MAP_CONSTEVAL std::pair<std::size_t, std::size_t>
+CountNodesSizeAndMaxHeightImpl(CountingVector<TrieParams.trie_alphabet_size>& nodes,
+                               std::size_t max_seen_height) {
     std::size_t current_node_index = 0;
     constexpr std::size_t len      = FirstString.size();
     for (std::size_t i = 0; i < len; i++) {
@@ -296,7 +300,8 @@ STRING_MAP_CONSTEVAL std::pair<std::size_t, std::size_t> CountNodesSizeAndMaxHei
 }
 
 template <TrieParamsType TrieParams, strmapdetail::CompileTimeStringLiteral... Strings>
-STRING_MAP_CONSTEVAL std::pair<std::size_t, std::size_t> CountNodesSizeAndMaxHeight() {
+[[nodiscard]] STRING_MAP_CONSTEVAL std::pair<std::size_t, std::size_t>
+CountNodesSizeAndMaxHeight() {
     constexpr auto kAlphabetSize = TrieParams.trie_alphabet_size;
     CountingVector<kAlphabetSize> nodes(std::size_t{1});
     std::size_t max_seen_height = 0;
@@ -304,7 +309,7 @@ STRING_MAP_CONSTEVAL std::pair<std::size_t, std::size_t> CountNodesSizeAndMaxHei
 }
 
 template <strmapdetail::CompileTimeStringLiteral... Strings>
-STRING_MAP_CONSTEVAL TrieParamsType TrieParams() {
+[[nodiscard]] STRING_MAP_CONSTEVAL TrieParamsType TrieParams() {
     constexpr MinMaxCharsType kMinMaxChars    = FindMinMaxChars<Strings...>();
     constexpr TrieParamsType kTrieParamsProto = {
         .min_char = kMinMaxChars.min_char,
@@ -327,6 +332,18 @@ inline constexpr TrieParamsType kTrieParams = TrieParams<Strings...>();
 
 namespace impl {
 
+#if defined(__GNUC__) && defined(__GNUC_MINOR__) && __GNUC__ == 13 && __GNUC_MINOR__ == 1
+#define GNU_NODES_FIELD_INIT_BUG 1
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Weffc++"
+#else
+#define GNU_NODES_FIELD_INIT_BUG 0
+#endif
+
+template <class T>
+concept MappableType = std::same_as<T, typename std::remove_cvref_t<T>> &&
+                       std::copy_constructible<T> && std::is_copy_assignable_v<T>;
+
 template <trie_tools::TrieParamsType TrieParams, std::array MappedValues,
           typename decltype(MappedValues)::value_type DefaultMapValue,
           CompileTimeStringLiteral... Strings>
@@ -346,7 +363,7 @@ class [[nodiscard]] StringMapImplManyStrings final {
         using pointer    = value_type*;
         using reference  = value_type&;
 
-        template <class CharType>
+        template <std::integral CharType>
         ATTRIBUTE_NONNULL_ALL_ARGS ATTRIBUTE_ALWAYS_INLINE explicit constexpr InternalIterator(
             const CharType* ATTRIBUTE_LIFETIME_BOUND str) noexcept {
             if constexpr (InCompileTime || std::is_same_v<CharType, value_type>) {
@@ -378,7 +395,7 @@ class [[nodiscard]] StringMapImplManyStrings final {
             const InternalIterator& other) const noexcept {
             return pointer_ == other.pointer_;
         }
-        struct CStringSentinel {};
+        struct CStringSentinel final {};
         [[nodiscard]]
         ATTRIBUTE_PURE ATTRIBUTE_ALWAYS_INLINE constexpr bool operator==(
             const CStringSentinel&) const noexcept {
@@ -390,38 +407,39 @@ class [[nodiscard]] StringMapImplManyStrings final {
 
 public:
     using MappedType = typename decltype(MappedValues)::value_type;
-    static_assert(std::is_same_v<MappedType, std::remove_cvref_t<MappedType>>);
-    static_assert(std::is_default_constructible_v<MappedType> &&
-                  std::is_copy_assignable_v<MappedType>);
 
+private:
+    static constexpr bool kNoexceptCall = std::is_nothrow_copy_constructible_v<MappedType>;
+
+public:
     static constexpr MappedType kDefaultValue = DefaultMapValue;
     static constexpr char kMinChar            = static_cast<char>(TrieParams.min_char);
     static constexpr char kMaxChar            = static_cast<char>(TrieParams.max_char);
 
-    STRING_MAP_CONSTEVAL StringMapImplManyStrings() noexcept {
+    STRING_MAP_CONSTEVAL StringMapImplManyStrings() {
         AddPattern<0, Strings...>(kRootNodeIndex + 1);
     }
 
-    constexpr MappedType operator()(std::nullptr_t) const noexcept              = delete;
-    constexpr MappedType operator()(std::nullptr_t, std::size_t) const noexcept = delete;
+    constexpr MappedType operator()(std::nullptr_t) const              = delete;
+    constexpr MappedType operator()(std::nullptr_t, std::size_t) const = delete;
 
     // clang-format off
     template <std::integral CharType>
     [[nodiscard]]
     ATTRIBUTE_PURE
     ATTRIBUTE_ALWAYS_INLINE
-    constexpr MappedType operator()(std::basic_string_view<CharType> str) const noexcept {
+    constexpr MappedType operator()(std::basic_string_view<CharType> str) const noexcept(kNoexceptCall) {
         // clang-format on
-        return operator()(str.data(), str.size());
+        return (*this)(str.data(), str.size());
     }
     // clang-format off
     template <std::integral CharType>
     [[nodiscard]]
     ATTRIBUTE_PURE
     ATTRIBUTE_ALWAYS_INLINE
-    constexpr MappedType operator()(const std::basic_string<CharType>& str) const noexcept {
+    constexpr MappedType operator()(const std::basic_string<CharType>& str) const noexcept(kNoexceptCall) {
         // clang-format on
-        return operator()(str.data(), str.size());
+        return (*this)(str.data(), str.size());
     }
     // clang-format off
     template <std::integral CharType>
@@ -429,25 +447,25 @@ public:
     ATTRIBUTE_PURE
     ATTRIBUTE_ALWAYS_INLINE
     ATTRIBUTE_SIZED_ACCESS(read_only, 2, 3)
-    constexpr MappedType operator()(const CharType* str, std::size_t size) const noexcept {
+    constexpr MappedType operator()(const CharType* str, std::size_t size) const noexcept(kNoexceptCall) {
         // clang-format on
         if (std::is_constant_evaluated()) {
             if constexpr (std::is_same_v<CharType, char>) {
                 using IteratorType = InternalIterator</*InCompileTime = */ true>;
-                return operator_call_impl(IteratorType{str}, IteratorType{str + size});
+                return op_call_impl(IteratorType{str}, IteratorType{str + size});
             } else {
                 using IteratorType =
                     InternalIterator</*InCompileTime = */ true, /*ForceUnsignedChar = */ true>;
-                return operator_call_impl(IteratorType{str}, IteratorType{str + size});
+                return op_call_impl(IteratorType{str}, IteratorType{str + size});
             }
         } else {
             if constexpr (std::is_same_v<CharType, char>) {
                 using IteratorType = InternalIterator</*InCompileTime = */ false>;
-                return operator_call_impl(IteratorType{str}, IteratorType{str + size});
+                return op_call_impl(IteratorType{str}, IteratorType{str + size});
             } else {
                 using IteratorType =
                     InternalIterator</*InCompileTime = */ false, /*ForceUnsignedChar = */ true>;
-                return operator_call_impl(IteratorType{str}, IteratorType{str + size});
+                return op_call_impl(IteratorType{str}, IteratorType{str + size});
             }
         }
     }
@@ -456,19 +474,18 @@ public:
     ATTRIBUTE_PURE
     ATTRIBUTE_ALWAYS_INLINE
     ATTRIBUTE_ACCESS(read_only, 2)
-    constexpr MappedType operator()(const char* str) const noexcept {
+    constexpr MappedType operator()(const char* str) const noexcept(kNoexceptCall) {
         // clang-format on
         if (str == nullptr) [[unlikely]] {
             return kDefaultValue;
-        }
-        if (std::is_constant_evaluated()) {
+        } else if (std::is_constant_evaluated()) {
             using IteratorType = InternalIterator</*InCompileTime = */ true>;
             using SentinelType = typename IteratorType::CStringSentinel;
-            return operator_call_impl(IteratorType{str}, SentinelType{});
+            return op_call_impl(IteratorType{str}, SentinelType{});
         } else {
             using IteratorType = InternalIterator</*InCompileTime = */ false>;
             using SentinelType = typename IteratorType::CStringSentinel;
-            return operator_call_impl(IteratorType{str}, SentinelType{});
+            return op_call_impl(IteratorType{str}, SentinelType{});
         }
     }
 
@@ -478,9 +495,9 @@ public:
     [[nodiscard]]
     ATTRIBUTE_PURE
     ATTRIBUTE_ALWAYS_INLINE
-    constexpr MappedType operator()(std::span<const CharType, SpanExtent> str) const noexcept {
+    constexpr MappedType operator()(std::span<const CharType, SpanExtent> str) const noexcept(kNoexceptCall) {
         // clang-format on
-        return operator()(str.data(), str.size());
+        return (*this)(str.data(), str.size());
     }
 #endif
 
@@ -495,17 +512,20 @@ private:
         std::array<NodeIndex, kTrieAlphabetSize> edges{};
         MappedType node_value = kDefaultValue;
     };
-    std::array<TrieNodeImpl, kNodesSize> nodes_
-#if !(defined(__GNUC__) && defined(__GNUC_MINOR__) && __GNUC__ == 13 && __GNUC_MINOR__ == 1)
-        // `internal compiler error: Segmentation fault` on gcc 13.1, see
-        // https://godbolt.org/z/6EWrd8sGG
-        {}
+
+    using NodesArray = std::array<TrieNodeImpl, kNodesSize>;
+
+#if GNU_NODES_FIELD_INIT_BUG
+    // `internal compiler error: Segmentation fault` on gcc 13.1, see
+    //  https://godbolt.org/z/PErqd9PEr
+    NodesArray nodes_;
+#else
+    NodesArray nodes_{};
 #endif
-    ;
 
     template <std::size_t CurrentPackIndex, strmapdetail::CompileTimeStringLiteral String,
               strmapdetail::CompileTimeStringLiteral... AddStrings>
-    STRING_MAP_CONSTEVAL void AddPattern(std::size_t first_free_node_index) noexcept {
+    STRING_MAP_CONSTEVAL void AddPattern(std::size_t first_free_node_index) {
         std::size_t current_node_index = 0;
         constexpr std::size_t len      = String.size();
         for (std::size_t i = 0; i < len; i++) {
@@ -534,7 +554,7 @@ private:
     // clang-format off
     template <class IteratorType, class SentinelIteratorType>
     ATTRIBUTE_PURE
-    constexpr MappedType operator_call_impl(IteratorType begin, SentinelIteratorType end) const noexcept {
+    constexpr MappedType op_call_impl(IteratorType begin, SentinelIteratorType end) const noexcept(kNoexceptCall) {
         // clang-format on
 
         std::size_t current_node_index = kRootNodeIndex;
@@ -557,7 +577,7 @@ private:
         }
 
         const auto returned_value = nodes_[current_node_index].node_value;
-        if constexpr (kMappedTypesInfo.ordered) {
+        if constexpr (kMappedTypesInfo.trivially_ordered) {
             if (returned_value != kDefaultValue &&
                 (std::less<MappedType>{}(returned_value, kMappedTypesInfo.min_value) ||
                  std::greater<MappedType>{}(returned_value, kMappedTypesInfo.max_value))) {
@@ -569,7 +589,7 @@ private:
     }
 
     struct TMappedTypesInfo final {
-        static constexpr bool kMaybeOrdered =
+        static constexpr bool kMaybeTriviallyOrdered =
             std::is_arithmetic_v<MappedType> || std::is_pointer_v<MappedType> ||
             std::is_member_pointer_v<MappedType> ||
             (!std::is_polymorphic_v<MappedType> &&
@@ -584,17 +604,15 @@ private:
                  { std::greater<MappedType>{}(x, y) } -> std::same_as<bool>;
                  { std::greater_equal<MappedType>{}(x, y) } -> std::same_as<bool>;
              });
-        using DefaultConstructibleSentinelType =
-            std::conditional_t<std::is_default_constructible_v<MappedType>, MappedType, int>;
 
-        bool ordered = false;
-        DefaultConstructibleSentinelType max_value{};
-        DefaultConstructibleSentinelType min_value{};
+        bool trivially_ordered = false;
+        MappedType max_value{};
+        MappedType min_value{};
     };
 
-    STRING_MAP_CONSTEVAL static TMappedTypesInfo get_mapped_values_info() noexcept {
+    STRING_MAP_CONSTEVAL static TMappedTypesInfo get_mapped_values_info() noexcept(kNoexceptCall) {
         TMappedTypesInfo info{};
-        if constexpr (TMappedTypesInfo::kMaybeOrdered) {
+        if constexpr (TMappedTypesInfo::kMaybeTriviallyOrdered) {
             if constexpr (std::is_floating_point_v<MappedType>) {
                 auto bad_float = [](MappedType x) constexpr noexcept -> bool {
                     return x != x || x >= std::numeric_limits<MappedType>::infinity() ||
@@ -616,9 +634,9 @@ private:
 #endif
             }
 
-            info.ordered   = true;
-            info.min_value = MappedValues.front();
-            info.max_value = MappedValues.front();
+            info.trivially_ordered = true;
+            info.min_value         = MappedValues.front();
+            info.max_value         = MappedValues.front();
             for (const MappedType& value : MappedValues) {
                 if (std::less<MappedType>{}(value, info.min_value)) {
                     info.min_value = value;
@@ -634,8 +652,12 @@ private:
     static constexpr TMappedTypesInfo kMappedTypesInfo = get_mapped_values_info();
 };
 
-template <trie_tools::TrieParamsType TrieParams, std::array MappedValues,
-          typename decltype(MappedValues)::value_type DefaultMapValue,
+#if GNU_NODES_FIELD_INIT_BUG
+#pragma GCC diagnostic pop
+#endif
+#undef GNU_NODES_FIELD_INIT_BUG
+
+template <trie_tools::TrieParamsType TrieParams, std::array MappedValues, auto DefaultMapValue,
           CompileTimeStringLiteral... Strings>
 class [[nodiscard]] StringMapImplFewStrings final {
     static_assert(0 < TrieParams.min_char && TrieParams.min_char <= TrieParams.max_char &&
@@ -646,87 +668,91 @@ class [[nodiscard]] StringMapImplFewStrings final {
 
 public:
     using MappedType = typename decltype(MappedValues)::value_type;
-    static_assert(std::is_copy_assignable_v<MappedType>);
 
+private:
+    static constexpr bool kNoexceptCall = std::is_nothrow_copy_constructible_v<MappedType>;
+
+public:
     static constexpr MappedType kDefaultValue = DefaultMapValue;
     static constexpr char kMinChar            = static_cast<char>(TrieParams.min_char);
     static constexpr char kMaxChar            = static_cast<char>(TrieParams.max_char);
 
     STRING_MAP_CONSTEVAL StringMapImplFewStrings() noexcept = default;
 
-    constexpr MappedType operator()(std::nullptr_t) const noexcept              = delete;
-    constexpr MappedType operator()(std::nullptr_t, std::size_t) const noexcept = delete;
+    constexpr MappedType operator()(std::nullptr_t) const              = delete;
+    constexpr MappedType operator()(std::nullptr_t, std::size_t) const = delete;
 
     // clang-format off
-    template <class CharType>
+    template <std::integral CharType>
     [[nodiscard]]
     ATTRIBUTE_PURE
     ATTRIBUTE_ALWAYS_INLINE
-    constexpr MappedType operator()(std::basic_string_view<CharType> str) const noexcept {
+    constexpr MappedType operator()(std::basic_string_view<CharType> str) const noexcept(kNoexceptCall) {
         // clang-format on
-        return operator()(str.data(), str.size());
+        return (*this)(str.data(), str.size());
     }
     // clang-format off
-    template <class CharType>
+    template <std::integral CharType>
     [[nodiscard]]
     ATTRIBUTE_PURE
     ATTRIBUTE_ALWAYS_INLINE    
-    constexpr MappedType operator()(const std::basic_string<CharType>& str) const noexcept {
+    constexpr MappedType operator()(const std::basic_string<CharType>& str) const noexcept(kNoexceptCall) {
         // clang-format on
-        return operator()(str.data(), str.size());
+        return (*this)(str.data(), str.size());
     }
     // clang-format off
     [[nodiscard]]
     ATTRIBUTE_PURE
     ATTRIBUTE_ALWAYS_INLINE
     ATTRIBUTE_ACCESS(read_only, 2)
-    constexpr MappedType operator()(const char* str) const noexcept {
+    constexpr MappedType operator()(const char* str) const noexcept(kNoexceptCall) {
         // clang-format on
         if (str == nullptr) [[unlikely]] {
             return kDefaultValue;
+        } else {
+            return (*this)(str, std::char_traits<char>::length(str));
         }
-        return operator()(str, std::char_traits<char>::length(str));
     }
     // clang-format off
-    template <class CharType>
+    template <std::integral CharType>
     [[nodiscard]]
     ATTRIBUTE_PURE
     ATTRIBUTE_ALWAYS_INLINE
     ATTRIBUTE_SIZED_ACCESS(read_only, 2, 3)
-    constexpr MappedType operator()(const CharType* str, std::size_t size) const noexcept {
+    constexpr MappedType operator()(const CharType* str, std::size_t size) const noexcept(kNoexceptCall) {
         // clang-format on
-        return operator_call_impl<CharType, 0, Strings...>(str, size);
+        return op_call_impl<CharType, 0, Strings...>(str, size);
     }
 
 #if STRING_MAP_HAS_SPAN
     // clang-format off
-    template <class CharType, std::size_t SpanExtent>
+    template <std::integral CharType, std::size_t SpanExtent>
     [[nodiscard]]
     ATTRIBUTE_PURE
     ATTRIBUTE_ALWAYS_INLINE
-    constexpr MappedType operator()(std::span<const CharType, SpanExtent> str) const noexcept {
+    constexpr MappedType operator()(std::span<const CharType, SpanExtent> str) const noexcept(kNoexceptCall) {
         // clang-format on
-        return operator()(str.data(), str.size());
+        return (*this)(str.data(), str.size());
     }
 #endif
 
 private:
     // clang-format off
-    template <class CharType, std::size_t Index, CompileTimeStringLiteral CompString, CompileTimeStringLiteral... CompStrings>
+    template <std::integral CharType, std::size_t Index, CompileTimeStringLiteral CompString, CompileTimeStringLiteral... CompStrings>
     [[nodiscard]]
     ATTRIBUTE_PURE
     ATTRIBUTE_ALWAYS_INLINE
     ATTRIBUTE_SIZED_ACCESS(read_only, 1, 2)
-    static constexpr MappedType operator_call_impl(const CharType* str, std::size_t size) noexcept {
+    static constexpr MappedType op_call_impl(const CharType* str, std::size_t size) noexcept(kNoexceptCall) {
         // clang-format on
         if (CompString == std::basic_string_view<CharType>(str, size)) {
             static_assert(Index < std::size(MappedValues));
             return MappedValues[Index];
+        } else if constexpr (sizeof...(CompStrings) >= 1) {
+            return op_call_impl<CharType, Index + 1, CompStrings...>(str, size);
+        } else {
+            return kDefaultValue;
         }
-        if constexpr (sizeof...(CompStrings) >= 1) {
-            return operator_call_impl<CharType, Index + 1, CompStrings...>(str, size);
-        }
-        return kDefaultValue;
     }
 };
 
@@ -751,7 +777,7 @@ StringMapValues(T, Ts...)
 namespace strmapdetail {
 
 template <std::size_t N>
-STRING_MAP_CONSTEVAL StringMapValues<std::size_t, N> make_index_array() noexcept {
+[[nodiscard]] STRING_MAP_CONSTEVAL StringMapValues<std::size_t, N> make_index_array() noexcept {
     StringMapValues<std::size_t, N> index_array{};
 #if defined(__cpp_lib_constexpr_numeric) && __cpp_lib_constexpr_numeric >= 201911L && \
     !defined(_GLIBCXX_DEBUG) && !defined(_LIBCPP_ENABLE_ASSERTIONS)
@@ -776,9 +802,13 @@ struct StringHelper<StringKeys<Strings...>, MappedValues, MappedDefaultValue> {
     static_assert(std::size(MappedValues.values) > 0,
                   "StringMap or StringMatch should has at least one string key");
 
-    static_assert(std::is_same_v<typename decltype(MappedValues.values)::value_type,
-                                 decltype(MappedDefaultValue)>,
-                  "Default value of the StringMap should be of the same type as StringMap values");
+    using MappedType = typename decltype(MappedValues.values)::value_type;
+
+    static_assert(
+        std::is_same_v<MappedType, typename std::remove_const_t<decltype(MappedDefaultValue)>>,
+        "Default value of the StringMap should be of the same type as StringMap values");
+
+    static_assert(strmapdetail::impl::MappableType<MappedType>);
 
     using type = typename std::conditional_t<
         (sizeof...(Strings) <= 4 &&
@@ -798,8 +828,7 @@ struct StringHelper<StringKeys<Strings...>, MappedValues, MappedDefaultValue> {
 #undef STRING_MAP_HAS_BIT
 #undef STRING_MAP_HAS_SPAN
 
-template <class Keys, StringMapValues Values,
-          typename decltype(Values.values)::value_type DefaultValue>
+template <class Keys, StringMapValues Values, auto DefaultValue>
 using StringMap = typename strmapdetail::StringHelper<Keys, Values, DefaultValue>::type;
 
 template <strmapdetail::CompileTimeStringLiteral... Strings>
