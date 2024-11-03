@@ -43,7 +43,7 @@ struct [[nodiscard]] CompileTimeStringLiteral {
         const bool fits_in_buffer = str.size() < std::size(value);
         // HINT: Change kMaxStringViewSize if you are using very long strings
         //  in the StringMatch / StringMap.
-        [[maybe_unused]] const auto string_view_size_check = 0 / fits_in_buffer;
+        [[maybe_unused]] const auto string_view_size_check = 0 / int{fits_in_buffer};
         std::char_traits<char>::copy(value.data(), str.data(), str.size());
     }
     STRING_MAP_CONSTEVAL CompileTimeStringLiteral(const char (&str)[N]) noexcept
@@ -340,7 +340,7 @@ class [[nodiscard]] StringMapImplManyStrings final {
 #endif
             }
         }
-        [[nodiscard]] ATTRIBUTE_ALWAYS_INLINE constexpr InternalIterator& operator++() noexcept
+        ATTRIBUTE_ALWAYS_INLINE constexpr InternalIterator& operator++() noexcept
             ATTRIBUTE_LIFETIME_BOUND {
             ++pointer_;
             return *this;
@@ -747,7 +747,7 @@ STRING_MAP_CONSTEVAL MapValues<std::size_t, N> make_index_array_for_map() noexce
     MapValues<std::size_t, N> index_array{};
 #if defined(__cpp_lib_constexpr_numeric) && __cpp_lib_constexpr_numeric >= 201911L && \
     !defined(_GLIBCXX_DEBUG) && !defined(_LIBCPP_ENABLE_ASSERTIONS)
-    std::iota(index_array.begin(), index_array.end(), 0);
+    std::iota(index_array.values.begin(), index_array.values.end(), 0);
 #else
     for (std::size_t i = 0; i < index_array.values.size(); i++) {
         index_array.values[i] = i;
