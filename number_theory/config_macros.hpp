@@ -402,6 +402,8 @@
 
 #if defined(__clang__) && CONFIG_HAS_CPP_ATTRIBUTE(clang::lifetimebound)
 #define ATTRIBUTE_LIFETIME_BOUND [[clang::lifetimebound]]
+#elif defined(_MSC_VER) && CONFIG_HAS_CPP_ATTRIBUTE(msvc::lifetimebound)
+#define ATTRIBUTE_LIFETIME_BOUND [[msvc::lifetimebound]]
 #else
 #define ATTRIBUTE_LIFETIME_BOUND
 #endif

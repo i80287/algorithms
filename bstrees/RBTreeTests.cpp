@@ -1,7 +1,7 @@
 #include <algorithm>
 #include <cassert>
-#include <concepts>
 #include <cstdint>
+#include <iostream>
 #include <iterator>
 #include <ranges>
 #include <set>
@@ -18,16 +18,16 @@ constexpr bool non_intersecting_sets(const int (&s1)[N], const int (&s2)[M]) noe
 
     class Iter {
     public:
-        using difference_type = std::ptrdiff_t;
-        using value_type      = int;
-        using reference       = value_type &;
-        using pointer         = value_type *;
+        using difference_type [[maybe_unused]] = std::ptrdiff_t;
+        using value_type                       = int;
+        using reference                        = value_type &;
+        using pointer                          = value_type *;
 
-        constexpr pointer operator->() noexcept {
+        constexpr pointer operator->() const noexcept {
             was_de_referenced_ = true;
             return std::addressof(dummy_field_);
         }
-        constexpr reference operator*() noexcept {
+        constexpr reference operator*() const noexcept {
             was_de_referenced_ = true;
             return dummy_field_;
         }
@@ -47,14 +47,17 @@ constexpr bool non_intersecting_sets(const int (&s1)[N], const int (&s2)[M]) noe
             operator++();
             return copy;
         }
+        constexpr bool operator==(const Iter &) const noexcept = default;
         [[nodiscard]] constexpr bool WasDeReferenced() const noexcept {
             return was_de_referenced_;
         }
 
     private:
-        int dummy_field_{};
-        bool was_de_referenced_ = false;
+        mutable int dummy_field_{};
+        mutable bool was_de_referenced_ = false;
     };
+
+    static_assert(std::bidirectional_iterator<Iter>);
 
     Iter observer;
     std::ranges::set_intersection(s1, s2, observer);
@@ -62,13 +65,12 @@ constexpr bool non_intersecting_sets(const int (&s1)[N], const int (&s2)[M]) noe
 }
 
 template <std::ranges::forward_range Range1, std::ranges::forward_range Range2>
-    requires(!std::is_abstract_v<std::ranges::range_value_t<Range1>>) &&
-            (std::is_same_v<std::ranges::range_value_t<Range1>, std::ranges::range_value_t<Range2>>)
+    requires(std::is_same_v<std::ranges::range_value_t<Range1>, std::ranges::range_value_t<Range2>>)
 void test_on_range(const Range1 &nums, const Range2 &not_in_nums) {
     using T = std::ranges::range_value_t<Range1>;
     static_assert(std::bidirectional_iterator<typename RBTree<T>::iterator>);
     static_assert(std::ranges::bidirectional_range<RBTree<T>>);
-    static_assert(!std::is_abstract_v<RBTree<T>>);
+    static_assert(!std::is_polymorphic_v<RBTree<T>>);
     static_assert(std::is_nothrow_move_constructible_v<RBTree<T>>);
     static_assert(std::is_nothrow_move_assignable_v<RBTree<T>>);
     static_assert(std::is_swappable_v<RBTree<T>>);
@@ -159,15 +161,11 @@ void test_on_range(const Range1 &nums, const Range2 &not_in_nums) {
         compare(t1, checker);
         t.swap(t1);
         compare(t, checker);
+        t1 = t;
+        compare(t1, checker);
     }
 
     for (const T &elem : nums) {
-        if constexpr (std::is_same_v<T, int>) {
-            if (nums.size() == 5 && nums[0] == 1 && nums[1] == 2) {
-                putchar('\0');
-            }
-        }
-
         assert(t.is_rbtree());
         assert(t.erase(elem) == checker.erase(elem));
         assert(t.size() <= t.max_size());
@@ -183,6 +181,8 @@ void test_on_range(const Range1 &nums, const Range2 &not_in_nums) {
         compare(t1, checker);
         t.swap(t1);
         compare(t, checker);
+        t1 = t;
+        compare(t1, checker);
     }
 }
 
@@ -197,25 +197,29 @@ static void test_on_sub_ranges(const Range1 &range, const Range2 &not_in_range) 
 }
 
 int main() {
-    constexpr const int nums[] = {
-        1,       2,         -3,     4,     0,        -4,    35,         -45,
-        20,      23,        22,     21,    -15,      -28,   56,         57,
-        44,      69,        72,     101,   118,      114,   -114,       -118,
-        -101,    13,        -13,    12,    -12,      32,    23,         12,
-        54,      34,        5645,   2,     34,       234,   23,         4234,
-        4234,    34,        3253,   6546,  567,      5,     736,        462476,
-        4574327, 245762456, 623456, 4256,  52623456, 2454,  1264367436, 743256342,
-        4673345, 34256,     674324, 47643, 2347824,  2178,  12387,      -12387,
-        8123,    67284,     -2348,  12738, 93284,    -1238, 238743,     -1'000'000'000,
+    constexpr int nums[] = {
+        1,       2,         -3,     4,      0,        -4,       35,         -45,
+        20,      23,        22,     21,     -15,      -28,      56,         57,
+        44,      69,        72,     101,    118,      114,      -114,       -118,
+        -101,    13,        -13,    12,     -12,      32,       23,         12,
+        54,      34,        5645,   2,      34,       234,      23,         4234,
+        4234,    34,        3253,   6546,   567,      5,        736,        462476,
+        4574327, 245762456, 623456, 4256,   52623456, 2454,     1264367436, 743256342,
+        4673345, 34256,     674324, 47643,  2347824,  2178,     12387,      -12387,
+        8123,    67284,     -2348,  12738,  93284,    -1238,    238743,     -1'000'000'000,
+        5,       736,       462476, 462475, 462474,   462473,   462472,     462471,
+        12,      13,        14,     1515,   161616,   17171717, 0,          0,
     };
-    constexpr const int not_in_nums[] = {
-        -100, -50, -10, 10, 100, 200, 300, 400, 500, 1000, 20000, 4023087, 2'091'371'239,
+    constexpr int not_in_nums[] = {
+        -100, -50, -10,  10,    100,     200,           300,
+        400,  500, 1000, 20000, 4023087, 2'091'371'239, 2'111'222'333,
     };
+
     static_assert(non_intersecting_sets(nums, not_in_nums));
 
     test_on_sub_ranges(nums, not_in_nums);
 
-    constexpr const std::string_view string_views[] = {
+    constexpr std::string_view string_views[] = {
         "asd",           "3284",
         "f7823h7yf3",    "23f87g2quf",
         "w2uv9f3w",      "v23fvn4ev",
@@ -240,10 +244,15 @@ int main() {
         "cq39fc98hcnac", "acdnbnzxm",
         "dawjcna",       "cawbcawmcnvehvb",
         "vjabevjhnbnsc", "cawjcjawc",
+        "28378234231",   "4928342348",
+        "234823478234",  "53745834543",
+        "234893248234",  "324823748",
+        "4358983459345", "9345834583458",
     };
-    constexpr const std::string_view not_in_string_views[] = {
-        "cjweh",   "dajw",         "awcsn",     "23nmfce",   "cajwbncvuie",
-        "awbcnwn", "vcabndicanjs", "cawbcncaw", "cawbcnawc", "cabwbcnawcn",
+    constexpr std::string_view not_in_string_views[] = {
+        "cjweh",         "dajw",         "awcsn",     "23nmfce",    "cajwbncvuie",
+        "awbcnwn",       "vcabndicanjs", "cawbcncaw", "cawbcnawc",  "cabwbcnawcn",
+        "4398347583458", "345832478324", "428347234", "3492348234", "234u3284234",
     };
     test_on_sub_ranges(string_views, not_in_string_views);
 

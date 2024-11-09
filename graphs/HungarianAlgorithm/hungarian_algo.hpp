@@ -10,7 +10,7 @@
 #include <new>
 #include <type_traits>
 
-#include "config_macros.hpp"
+#include "../../number_theory/config_macros.hpp"
 
 namespace hungarian_algo {
 

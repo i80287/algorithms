@@ -25,7 +25,7 @@ jobs:
     - name: Install dependencies
       run: |
         sudo dnf -y update
-        sudo dnf -y install gcc gcc-c++ libasan libasan-static libubsan libubsan-static cmake make gmp gmp-devel gmp-c++ gmp-devel gmp-static mpfr-devel
+        sudo dnf -y install gcc gcc-c++ libasan libasan-static libubsan libubsan-static make ninja-build cmake gmp gmp-devel gmp-c++ gmp-devel gmp-static mpfr-devel
         sudo dnf upgrade
 
     - name: Install cppcheck
@@ -52,7 +52,7 @@ jobs:
     - name: Install dependencies
       run: |
         sudo dnf -y update
-        sudo dnf -y install gcc libasan libasan-static libubsan libubsan-static clang llvm cmake make gmp gmp-devel gmp-c++ gmp-devel gmp-static mpfr-devel
+        sudo dnf -y install gcc libasan libasan-static libubsan libubsan-static clang llvm make ninja-build cmake gmp gmp-devel gmp-c++ gmp-devel gmp-static mpfr-devel
         sudo dnf upgrade
 
     - name: Install cppcheck

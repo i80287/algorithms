@@ -15,7 +15,8 @@ for cc_and_cxx in clang,clang++ gcc,g++ i686-w64-mingw32-gcc-posix,i686-w64-ming
     set -- $cc_and_cxx
     echo "cc = $1, c++ = $2"
 
-    cmake -D CMAKE_BUILD_TYPE=RelWithDebInfo \
+    cmake -G Ninja \
+        -D CMAKE_BUILD_TYPE=RelWithDebInfo \
         -D CMAKE_C_COMPILER="$1" \
         -D CMAKE_CXX_COMPILER="$2" \
         -D CMAKE_EXPORT_COMPILE_COMMANDS=1 \

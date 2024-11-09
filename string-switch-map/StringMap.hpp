@@ -9,7 +9,7 @@
 #include <type_traits>
 #include <utility>
 
-#include "config_macros.hpp"
+#include "../number_theory/config_macros.hpp"
 
 #if defined(__cpp_lib_span) && __cpp_lib_span >= 202002L && CONFIG_HAS_INCLUDE(<span>)
 #define STRING_MAP_HAS_SPAN 1

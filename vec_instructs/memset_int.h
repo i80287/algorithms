@@ -14,7 +14,7 @@ EXTERN_WITH_C_LINKAGE_BEGIN
 #include <x86intrin.h>
 EXTERN_WITH_C_LINKAGE_END
 
-#include "config_macros.hpp"
+#include "../number_theory/config_macros.hpp"
 
 EXTERN_WITH_C_LINKAGE_BEGIN
 
