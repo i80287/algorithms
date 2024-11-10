@@ -515,9 +515,11 @@ private:
 
     constexpr void AssertBeginInvariants() const noexcept {
         RBTREE_ASSERT_INVARIANT(GetBeginUnchecked() != nullptr);
+#ifdef RBTREE_DEBUG
         const auto invariants_if_not_empty =
             Size() >= 1 && GetBeginUnchecked() != GetEndUnchecked();
         const auto invariants_if_empty = Size() == 0 && GetBeginUnchecked() == GetEndUnchecked();
+#endif
         RBTREE_ASSERT_INVARIANT(invariants_if_not_empty ^ invariants_if_empty);
         RBTREE_ASSERT_INVARIANT(GetBeginUnchecked() == GetEndUnchecked() ||
                                 GetBeginUnchecked()->Left() == nullptr);
@@ -1187,7 +1189,6 @@ class RBTreeContainer : private RBTreeContainerImpl {
     using Base = RBTreeContainerImpl;
 
 protected:
-    using Base::Base;
     using size_type              = std::size_t;
     using difference_type        = std::ptrdiff_t;
     using const_iterator         = Iterator<KeyType, /*IsConstIterator = */ true, DerivedRBTree>;
@@ -1208,7 +1209,7 @@ protected:
 
     static constexpr bool kIsNodeNoexceptDestructible = std::is_nothrow_destructible_v<NodeType>;
 
-    constexpr RBTreeContainer() = default;
+    constexpr RBTreeContainer() noexcept = default;
     constexpr RBTreeContainer(const RBTreeContainer &other) : Base(CloneTree(other)) {}
     constexpr RBTreeContainer &operator=(const RBTreeContainer &other) ATTRIBUTE_LIFETIME_BOUND {
         // NOLINTNEXTLINE(cppcoreguidelines-c-copy-assignment-signature)
@@ -1647,7 +1648,6 @@ public:
     using node_type              = typename Base::node_type;
     using allocator_type         = typename Base::allocator_type;
     using Base::back;
-    using Base::Base;
     using Base::begin;
     using Base::cbegin;
     using Base::cend;
@@ -1662,10 +1662,10 @@ public:
     using Base::rend;
     using Base::size;
 
-    RBTree(std::initializer_list<KeyType> list) : RBTree(list.begin(), list.end()) {}
-
-    template <std::input_iterator Iter>
-    RBTree(Iter begin_iter, Iter end_iter) {
+    constexpr RBTree() noexcept = default;
+    constexpr RBTree(std::initializer_list<KeyType> list) : RBTree(list.begin(), list.end()) {}
+    template <std::input_iterator Iter, std::sentinel_for<Iter> SentinelIter>
+    constexpr RBTree(Iter begin_iter, SentinelIter end_iter) {
         for (; begin_iter != end_iter; ++begin_iter) {
             insert(*begin_iter);  // TODO: insert_hint
         }

@@ -151,13 +151,17 @@ void test_on_range(const Range1 &nums, const Range2 &not_in_nums) {
         static_assert(std::is_same_v<decltype(std::move(t1)), RBTree<T> &&>);
         RBTree<T> t2 = std::move(t1);
         compare(t2, checker);
-        t1 = std::move(t2);
+        RBTree<T> &t1_ref = t1 = std::move(t2);
+        assert(std::addressof(t1_ref) == std::addressof(t1));
         compare(t1, checker);
         t2.clear();
         t2.swap(t1);
         compare(t2, checker);
         t2.swap(t1);
         compare(t1, checker);
+        RBTree<T> &t2_ref = t2 = t1;
+        assert(std::addressof(t2_ref) == std::addressof(t2));
+        compare(t2, checker);
     };
 
     RBTree<T> t;
