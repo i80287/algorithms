@@ -1,13 +1,20 @@
 #include <algorithm>
+#include <array>
 #include <cassert>
 #include <cinttypes>
 #include <cstdint>
+#include <cstdio>
 #include <ctime>
 #include <random>
-#include <ranges>
+#include <string_view>
+#include <type_traits>
 
-#include "../config_macros.hpp"
+#include "../../number_theory/config_macros.hpp"
 #include "../StringMap.hpp"
+
+// clang-format off
+// NOLINTBEGIN(cert-dcl03-c, misc-static-assert, hicpp-static-assert, cppcoreguidelines-avoid-magic-numbers, cert-msc32-c, cert-msc51-cpp)
+// clang-format on
 
 namespace {
 
@@ -33,8 +40,11 @@ void test_string_match() {
     static_assert(sw("A") == sw.kDefaultValue);
     static_assert(sw("bc") == sw.kDefaultValue);
     static_assert(sw("de") == sw.kDefaultValue);
+    // clang-format off
+    // NOLINTNEXTLINE(cppcoreguidelines-avoid-c-arrays, hicpp-avoid-c-arrays, modernize-avoid-c-arrays)
     constexpr const unsigned char kUString[] = "abc";
-    static_assert(sw(kUString, std::size(kUString) - 1) == sw("abc"));
+    // clang-format on
+    static_assert(sw(std::data(kUString), std::size(kUString) - 1) == sw("abc"));
 
     assert(sw("abc") == 0);
     assert(sw("def") == 1);
@@ -55,7 +65,7 @@ void test_string_match() {
     assert(sw("A") == sw.kDefaultValue);
     assert(sw("bc") == sw.kDefaultValue);
     assert(sw("de") == sw.kDefaultValue);
-    assert(sw(kUString, std::size(kUString) - 1) == sw("abc"));
+    assert(sw(std::data(kUString), std::size(kUString) - 1) == sw("abc"));
 
     static constexpr auto match = StringMatch<"text1", "text2", "text3", "text4">();
     static_assert(match("text1") == 0);
@@ -106,7 +116,8 @@ void test_str_to_enum() {
 }
 
 void test_str_to_user_type() {
-    constexpr std::string_view kMyConstants[] = {"abc", "def", "ghi", "sneaky input"};
+    using namespace std::string_view_literals;
+    constexpr std::array kMyConstants{"abc"sv, "def"sv, "ghi"sv, "sneaky input"sv};
 
     struct MyTrivialType {
         std::array<int, 2> field1{};
@@ -141,82 +152,85 @@ void test_str_to_user_type() {
 
 #define CAN_RUN_BENCHMARK
 
+using namespace std::string_view_literals;
+
 // clang-format off
-inline constexpr std::string_view kStrings[] = {
-    "abcdefghijklmnopqrstuvwxyz",
-    "bcdefghijklmnopqrstuvwxyz",
-    "cdefghijklmnopqrstuvwxyz",
-    "defghijklmnopqrstuvwxyz",
-    "efghijklmnopqrstuvwxyz",
-    "fghijklmnopqrstuvwxyz",
-    "ghijklmnopqrstuvwxyz",
-    "hijklmnopqrstuvwxyz",
-    "ijklmnopqrstuvwxyz",
-    "jklmnopqrstuvwxyz",
-    "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz",
-    "abcdefghijklmnopqrstuvwxyzbcdefghijklmnopqrstuvwxyz",
-    "abcdefghijklmnopqrstuvwxyzcdefghijklmnopqrstuvwxyz",
-    "abcdefghijklmnopqrstuvwxyzdefghijklmnopqrstuvwxyz",
-    "abcdefghijklmnopqrstuvwxyzefghijklmnopqrstuvwxyz",
-    "abcdefghijklmnopqrstuvwxyzfghijklmnopqrstuvwxyz",
-    "abcdefghijklmnopqrstuvwxyzghijklmnopqrstuvwxyz",
-    "abcdefghijklmnopqrstuvwxyzhijklmnopqrstuvwxyz",
-    "abcdefghijklmnopqrstuvwxyzijklmnopqrstuvwxyz",
-    "abcdefghijklmnopqrstuvwxyzjklmnopqrstuvwxyz",
-    "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz",
-    "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzbcdefghijklmnopqrstuvwxyz",
-    "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzcdefghijklmnopqrstuvwxyz",
-    "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzdefghijklmnopqrstuvwxyz",
-    "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzefghijklmnopqrstuvwxyz",
-    "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzfghijklmnopqrstuvwxyz",
-    "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzghijklmnopqrstuvwxyz",
-    "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzhijklmnopqrstuvwxyz",
-    "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzijklmnopqrstuvwxyz",
-    "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzjklmnopqrstuvwxyz",
-    "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz",
-    "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzbcdefghijklmnopqrstuvwxyz",
-    "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzcdefghijklmnopqrstuvwxyz",
-    "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzdefghijklmnopqrstuvwxyz",
-    "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzefghijklmnopqrstuvwxyz",
-    "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzfghijklmnopqrstuvwxyz",
-    "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzghijklmnopqrstuvwxyz",
-    "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzhijklmnopqrstuvwxyz",
-    "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzijklmnopqrstuvwxyz",
-    "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzjklmnopqrstuvwxyz",
-    "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz",
-    "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzbcdefghijklmnopqrstuvwxyz",
-    "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzcdefghijklmnopqrstuvwxyz",
-    "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzdefghijklmnopqrstuvwxyz",
-    "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzefghijklmnopqrstuvwxyz",
-    "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzfghijklmnopqrstuvwxyz",
-    "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzghijklmnopqrstuvwxyz",
-    "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzhijklmnopqrstuvwxyz",
-    "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzijklmnopqrstuvwxyz",
-    "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzjklmnopqrstuvwxyz",
-    "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz",
-    "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzbcdefghijklmnopqrstuvwxyz",
-    "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzcdefghijklmnopqrstuvwxyz",
-    "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzdefghijklmnopqrstuvwxyz",
-    "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzefghijklmnopqrstuvwxyz",
-    "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzfghijklmnopqrstuvwxyz",
-    "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzghijklmnopqrstuvwxyz",
-    "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzhijklmnopqrstuvwxyz",
-    "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzijklmnopqrstuvwxyz",
-    "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzjklmnopqrstuvwxyz",
+inline constexpr std::array kStrings{
+    "abcdefghijklmnopqrstuvwxyz"sv,
+    "bcdefghijklmnopqrstuvwxyz"sv,
+    "cdefghijklmnopqrstuvwxyz"sv,
+    "defghijklmnopqrstuvwxyz"sv,
+    "efghijklmnopqrstuvwxyz"sv,
+    "fghijklmnopqrstuvwxyz"sv,
+    "ghijklmnopqrstuvwxyz"sv,
+    "hijklmnopqrstuvwxyz"sv,
+    "ijklmnopqrstuvwxyz"sv,
+    "jklmnopqrstuvwxyz"sv,
+    "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz"sv,
+    "abcdefghijklmnopqrstuvwxyzbcdefghijklmnopqrstuvwxyz"sv,
+    "abcdefghijklmnopqrstuvwxyzcdefghijklmnopqrstuvwxyz"sv,
+    "abcdefghijklmnopqrstuvwxyzdefghijklmnopqrstuvwxyz"sv,
+    "abcdefghijklmnopqrstuvwxyzefghijklmnopqrstuvwxyz"sv,
+    "abcdefghijklmnopqrstuvwxyzfghijklmnopqrstuvwxyz"sv,
+    "abcdefghijklmnopqrstuvwxyzghijklmnopqrstuvwxyz"sv,
+    "abcdefghijklmnopqrstuvwxyzhijklmnopqrstuvwxyz"sv,
+    "abcdefghijklmnopqrstuvwxyzijklmnopqrstuvwxyz"sv,
+    "abcdefghijklmnopqrstuvwxyzjklmnopqrstuvwxyz"sv,
+    "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz"sv,
+    "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzbcdefghijklmnopqrstuvwxyz"sv,
+    "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzcdefghijklmnopqrstuvwxyz"sv,
+    "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzdefghijklmnopqrstuvwxyz"sv,
+    "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzefghijklmnopqrstuvwxyz"sv,
+    "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzfghijklmnopqrstuvwxyz"sv,
+    "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzghijklmnopqrstuvwxyz"sv,
+    "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzhijklmnopqrstuvwxyz"sv,
+    "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzijklmnopqrstuvwxyz"sv,
+    "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzjklmnopqrstuvwxyz"sv,
+    "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz"sv,
+    "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzbcdefghijklmnopqrstuvwxyz"sv,
+    "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzcdefghijklmnopqrstuvwxyz"sv,
+    "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzdefghijklmnopqrstuvwxyz"sv,
+    "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzefghijklmnopqrstuvwxyz"sv,
+    "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzfghijklmnopqrstuvwxyz"sv,
+    "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzghijklmnopqrstuvwxyz"sv,
+    "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzhijklmnopqrstuvwxyz"sv,
+    "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzijklmnopqrstuvwxyz"sv,
+    "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzjklmnopqrstuvwxyz"sv,
+    "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz"sv,
+    "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzbcdefghijklmnopqrstuvwxyz"sv,
+    "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzcdefghijklmnopqrstuvwxyz"sv,
+    "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzdefghijklmnopqrstuvwxyz"sv,
+    "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzefghijklmnopqrstuvwxyz"sv,
+    "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzfghijklmnopqrstuvwxyz"sv,
+    "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzghijklmnopqrstuvwxyz"sv,
+    "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzhijklmnopqrstuvwxyz"sv,
+    "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzijklmnopqrstuvwxyz"sv,
+    "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzjklmnopqrstuvwxyz"sv,
+    "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz"sv,
+    "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzbcdefghijklmnopqrstuvwxyz"sv,
+    "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzcdefghijklmnopqrstuvwxyz"sv,
+    "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzdefghijklmnopqrstuvwxyz"sv,
+    "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzefghijklmnopqrstuvwxyz"sv,
+    "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzfghijklmnopqrstuvwxyz"sv,
+    "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzghijklmnopqrstuvwxyz"sv,
+    "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzhijklmnopqrstuvwxyz"sv,
+    "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzijklmnopqrstuvwxyz"sv,
+    "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzjklmnopqrstuvwxyz"sv,
 };
 // clang-format on
 
 constexpr uint64_t operator-(const timespec& t2, const timespec& t1) noexcept {
-    const auto sec_passed        = static_cast<uint64_t>(t2.tv_sec - t1.tv_sec);
-    auto nanoseconds_passed      = sec_passed * 1'000'000'000;
-    using unsigned_nanoseconds_t = std::make_unsigned_t<decltype(timespec::tv_nsec)>;
+    const uint64_t sec_passed                = static_cast<uint64_t>(t2.tv_sec - t1.tv_sec);
+    constexpr uint64_t kNanoSecondsPerSecond = 1'000'000'000;
+    uint64_t nanoseconds_passed              = sec_passed * kNanoSecondsPerSecond;
+    using unsigned_nanoseconds_t             = std::make_unsigned_t<decltype(timespec::tv_nsec)>;
     nanoseconds_passed += static_cast<unsigned_nanoseconds_t>(t2.tv_nsec);
     nanoseconds_passed -= static_cast<unsigned_nanoseconds_t>(t1.tv_nsec);
     return nanoseconds_passed;
 }
 
 void run_bench() {
-    constexpr auto kMeasureLimit = 10000u;
+    constexpr auto kMeasureLimit = 10000U;
 
     static constexpr auto sw = StringMatch<
         kStrings[0], kStrings[1], kStrings[2], kStrings[3], kStrings[4], kStrings[5], kStrings[6],
@@ -232,31 +246,38 @@ void run_bench() {
 
     std::array<std::size_t, kMeasureLimit> indexes{};
     {
-        std::mt19937 rnd;
+        constexpr std::uint32_t kSeed = 0x2383284;
+        std::mt19937 rnd{kSeed};
         std::generate_n(indexes.begin(), kMeasureLimit,
                         [&]() noexcept { return rnd() % std::size(kStrings); });
     }
 
-    for (auto ind : indexes) {
+    for (const std::size_t ind : indexes) {
         auto ans = sw(kStrings[ind]);
         assert(ans == ind);
     }
 
     timespec t1{};
+    // NOLINTNEXTLINE(misc-include-cleaner)
     clock_gettime(CLOCK_MONOTONIC, &t1);
-    for (auto ind : indexes) {
+    for (const std::size_t ind : indexes) {
         auto ans = sw(kStrings[ind]);
         config::do_not_optimize_away(ans);
     }
     timespec t2{};
+    // NOLINTNEXTLINE(misc-include-cleaner)
     clock_gettime(CLOCK_MONOTONIC, &t2);
 
-    printf("%" PRIu64 " nanoseconds on average\n", (t2 - t1) / kMeasureLimit);
+    std::printf("%" PRIu64 " nanoseconds on average\n", (t2 - t1) / kMeasureLimit);
 }
 
 #endif
 
 }  // namespace
+
+// clang-format off
+// NOLINTEND(cert-dcl03-c, misc-static-assert, hicpp-static-assert, cppcoreguidelines-avoid-magic-numbers, cert-msc32-c, cert-msc51-cpp)
+// clang-format on
 
 int main() {
     test_string_match();

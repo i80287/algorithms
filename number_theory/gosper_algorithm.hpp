@@ -27,12 +27,16 @@ constexpr LoopDetectResult loop_detection_Gosper(Function f, std::int32_t x0) no
     /**
      * See Hackers Delight 5-5.
      */
+    // clang-format off
+    // NOLINTNEXTLINE(cppcoreguidelines-avoid-c-arrays, hicpp-avoid-c-arrays, modernize-avoid-c-arrays, cppcoreguidelines-avoid-magic-numbers)
     std::int32_t f_values[33]
 #if CONFIG_HAS_AT_LEAST_CXX_20
         ;
 #else
         = {};
 #endif
+    // clang-format on
+
     f_values[0]     = x0;
     std::int32_t xn = x0;
     for (std::uint32_t n = 1;;) {
@@ -51,12 +55,12 @@ constexpr LoopDetectResult loop_detection_Gosper(Function f, std::int32_t x0) no
                  * j := r' << k, ctz(j) == k
                  * m = j - 1
                  */
-                const std::uint32_t m = ((((n >> k) - 1) | 1) << k) - 1;
+                const std::uint32_t m = ((((n >> k) - 1U) | 1U) << k) - 1;
                 CONFIG_ASSUME_STATEMENT(m < n);
                 const std::uint32_t lambda = n - m;
                 CONFIG_ASSUME_STATEMENT(lambda >= 1);
                 const auto mu_upper = m;
-                const auto gap      = std::max(1u, lambda - 1) - 1;
+                const auto gap      = std::max(1U, lambda - 1) - 1;
                 const auto mu_lower = mu_upper >= gap ? mu_upper - gap : 0;
                 CONFIG_ASSUME_STATEMENT(mu_lower <= mu_upper);
                 return {mu_lower, mu_upper, lambda};

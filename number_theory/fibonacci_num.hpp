@@ -8,6 +8,8 @@
 
 namespace math_functions {
 
+// NOLINTBEGIN(cppcoreguidelines-avoid-c-arrays, hicpp-avoid-c-arrays, modernize-avoid-c-arrays)
+
 namespace detail {
 
 ATTRIBUTE_ACCESS(read_write, 1)
@@ -172,5 +174,7 @@ ATTRIBUTE_CONST I128_CONSTEXPR uint128_t fibonacci_num_u128(std::uint32_t n) noe
 inline constexpr std::uint32_t kMaxFibNonOverflowU128 = 185;
 
 #endif  // INTEGERS_128_BIT_HPP
+
+// NOLINTEND(cppcoreguidelines-avoid-c-arrays, hicpp-avoid-c-arrays, modernize-avoid-c-arrays)
 
 }  // namespace math_functions

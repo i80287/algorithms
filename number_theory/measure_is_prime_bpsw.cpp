@@ -50,9 +50,9 @@ int main() {
         const std::chrono::nanoseconds time_ms = run_measurements(primes);
         const std::uint64_t ns                 = static_cast<std::uint64_t>(time_ms.count());
         const std::uint64_t ns_per_primes      = ns / primes.size();
-        printf("%" PRIu64
-               " nano seconds\n"
-               "%" PRIu64 " nano seconds per prime on average\n",
-               ns, ns_per_primes);
+        std::printf("%" PRIu64
+                    " nano seconds\n"
+                    "%" PRIu64 " nano seconds per prime on average\n",
+                    ns, ns_per_primes);
     }
 }

@@ -25,8 +25,9 @@ public:
     using const_reference        = const value_type&;
     using pointer                = value_type*;
     using const_pointer          = const value_type*;
-    using size_type              = std::size_t;
     using allocator_type         = typename std::allocator<value_type>;
+    using allocator_traits       = typename std::allocator_traits<allocator_type>;
+    using size_type              = typename allocator_type::size_type;
     using iterator               = pointer;
     using const_iterator         = const_pointer;
     using reverse_iterator       = typename std::reverse_iterator<iterator>;
@@ -39,7 +40,7 @@ public:
     CXX20_CONSTEXPR SquareMatrix(const SquareMatrix& other) : SquareMatrix(other.side_size_) {
         static_assert(std::is_nothrow_default_constructible_v<value_type> &&
                           std::is_nothrow_copy_assignable_v<value_type>,
-                      "");
+                      "impl error");
         std::copy(other.begin(), other.end(), begin());
     }
     CXX20_CONSTEXPR SquareMatrix& operator=(const SquareMatrix& other) {
@@ -178,13 +179,18 @@ public:
 
 private:
     static CXX20_CONSTEXPR allocator_type get_allocator() noexcept {
+        static_assert(
+            sizeof(allocator_type) <= 1 && std::is_nothrow_default_constructible_v<allocator_type>,
+            "impl error: stateless allocator is expected");
         return allocator_type{};
     }
     static CXX20_CONSTEXPR pointer allocate_square_matrix(side_type side_size) {
-        return get_allocator().allocate(size_type{side_size} * size_type{side_size});
+        allocator_type allocator = get_allocator();
+        return allocator_traits::allocate(allocator, size_type{side_size} * size_type{side_size});
     }
     static CXX20_CONSTEXPR void deallocate_square_matrix(pointer data_, size_type size) noexcept {
-        get_allocator().deallocate(data_, size);
+        allocator_type allocator = get_allocator();
+        allocator_traits::deallocate(allocator, data_, size);
     }
 
     pointer data_;
@@ -201,7 +207,7 @@ public:
     using size_type        = typename storage::size_type;
     using int_type         = typename storage::value_type;
 
-    static_assert(std::is_unsigned_v<int_type>, "");
+    static_assert(std::is_unsigned_v<int_type>, "impl error");
     // NOLINTNEXTLINE(misc-redundant-expression)
     static_assert(Mod == kNoMod || Mod <= std::numeric_limits<int_type>::max(),
                   "Too big Mod value");
@@ -222,18 +228,18 @@ public:
         }
         // C(n, k) = C(n, n - k)
         k = std::min(k, n - k);
-        if (precalced_for_n(n)) {
+        if (PrecalculatedForNumber(n)) {
             return c_n_k_table_(n, k);
         }
 
         switch (k) {
             case 0:
-                return ByMod(1);
+                return ByMod(int_type{1});
             case 1:
-                return ByMod(n);
+                return ByMod(int_type{n});
             case 2:
                 if constexpr (CanMultiplyResiduals()) {
-                    return ByMod((ByMod(n) * ByMod(n - 1)) / 2);
+                    return ByMod((ByMod(int_type{n}) * ByMod(int_type{n - 1})) / 2);
                 }
                 break;
             default:
@@ -248,11 +254,11 @@ public:
 private:
     storage c_n_k_table_;
 
-    constexpr bool precalced_for_n(int_type n) const noexcept {
+    [[nodiscard]] constexpr bool PrecalculatedForNumber(int_type n) const noexcept {
         return n < c_n_k_table_.side_size();
     }
 
-    static constexpr bool CanMultiplyResiduals() noexcept {
+    [[nodiscard]] static constexpr bool CanMultiplyResiduals() noexcept {
         if constexpr (Mod != kNoMod) {
             return Mod <= std::numeric_limits<int_type>::max() / Mod;
         } else {

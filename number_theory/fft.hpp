@@ -50,8 +50,8 @@ private:
 
         for (std::size_t i = 1, k_reversed_i = 0; i < k; i++) {
             // 'Increase' k_reversed_i by one
-            std::size_t bit = k >> 1;
-            for (; k_reversed_i >= bit; bit >>= 1) {
+            std::size_t bit = k >> 1U;
+            for (; k_reversed_i >= bit; bit >>= 1U) {
                 k_reversed_i -= bit;
             }
 
@@ -65,15 +65,15 @@ private:
 
         // Unrolled loop for step = 1
         for (std::size_t block_start = 0; block_start < k; block_start += 2) {
-            const complex p0_i = p[block_start];
-            complex w_j_p1_i   = p[block_start + 1];
-            p[block_start]     = p0_i + w_j_p1_i;
-            p[block_start + 1] = p0_i - w_j_p1_i;
+            const complex p0_i     = p[block_start];
+            const complex w_j_p1_i = p[block_start + 1];
+            p[block_start]         = p0_i + w_j_p1_i;
+            p[block_start + 1]     = p0_i - w_j_p1_i;
         }
 
         for (std::size_t step = 2; step < k; step *= 2) {
             for (std::size_t block_start = 0; block_start < k;) {
-                std::size_t block_end = block_start + step;
+                const std::size_t block_end = block_start + step;
                 for (std::size_t pos_in_block = block_start, point_index = step;
                      pos_in_block < block_end; pos_in_block++, point_index++) {
                     const complex p0_i = p[pos_in_block];
@@ -92,7 +92,7 @@ private:
         }
 
         if constexpr (IsBackwardFFT) {
-            f64 one_kth = 1.0 / static_cast<f64>(k);
+            const f64 one_kth = 1.0 / static_cast<f64>(k);
             for (complex *p_iter = p, *p_end = p_iter + k; p_iter != p_end; ++p_iter) {
                 *p_iter *= one_kth;
             }
@@ -121,7 +121,7 @@ private:
 #endif
             fft_roots.emplace_back(fft_roots_data[i]);
             // double phi = 2 * kPi * (2 * i - current_len + 1) / (2 * current_len);
-            f64 phi =
+            const f64 phi =
                 kPi * static_cast<f64>(2 * i - current_len + 1) / static_cast<f64>(current_len);
             fft_roots.emplace_back(std::cos(phi), std::sin(phi));
         };

@@ -20,10 +20,8 @@
 
 #if defined(__cpp_lib_source_location) && __cpp_lib_source_location >= 201907L && \
     CONFIG_HAS_INCLUDE(<source_location>)
-#define TEST_TOOLS_HAS_SOURCE_LOCATION 1
+#define TEST_TOOLS_HAS_SOURCE_LOCATION
 #include <source_location>
-#else
-#define TEST_TOOLS_HAS_SOURCE_LOCATION 0
 #endif
 
 // https://en.cppreference.com/w/cpp/language/consteval
@@ -33,19 +31,32 @@
 #define TEST_TOOLS_CONSTEVAL constexpr
 #endif
 
+// NOLINTBEGIN(cppcoreguidelines-macro-usage)
+
 namespace test_tools {
 namespace test_tools_detail {
 
 [[noreturn]] ATTRIBUTE_COLD inline void throw_impl(const char* message, const char* file_name,
                                                    std::uint32_t line, const char* function_name) {
-    std::array<char, 1024> buffer{};
+    constexpr std::size_t kMaxErrorMessageSize = 1024 * sizeof(char);
+    std::array<char, kMaxErrorMessageSize> buffer{};
     const int bytes_written =
         std::snprintf(buffer.data(), buffer.size(), "Check failed at %s:%u %s\nError message: %s\n",
                       file_name, line, function_name, message);
-    if (bytes_written < 0) {
-        perror("std::snprintf");
-        buffer[0] = '\0';
+    if (unlikely(bytes_written < 0)) {
+        std::perror("std::snprintf");
+#if defined(__cpp_lib_to_array) && __cpp_lib_to_array >= 201907L
+        constexpr std::array msg =
+            std::to_array("std::snprintf failed while filling exception message");
+#else
+        // NOLINTNEXTLINE(cppcoreguidelines-avoid-c-arrays,hicpp-avoid-c-arrays,modernize-avoid-c-arrays)
+        constexpr char msg[] = "std::snprintf failed while filling exception message";
+#endif
+        static_assert(std::size(msg) < kMaxErrorMessageSize, "impl error");
+        std::char_traits<char>::copy(buffer.data(), std::data(msg), std::size(msg));
+        buffer[std::size(msg)] = '\0';
     }
+
     throw std::runtime_error(buffer.data());
 }
 
@@ -67,7 +78,7 @@ inline void log_message_impl(const char* file_name, std::uint32_t line, const ch
 
 }  // namespace test_tools_detail
 
-#if TEST_TOOLS_HAS_SOURCE_LOCATION
+#if defined(TEST_TOOLS_HAS_SOURCE_LOCATION)
 
 inline void throw_if_not(bool expr, const char* message_format,
                          const std::source_location src = std::source_location::current()) {
@@ -143,10 +154,8 @@ struct FilePtr final {
     using FileHandle = std::FILE*;
     FileHandle const file;  // NOLINT(misc-misplaced-const)
 
-    [[nodiscard]] constexpr operator FileHandle() noexcept {
-        return file;
-    }
-    [[nodiscard]] constexpr std::FILE* operator->() noexcept {
+    // NOLINTNEXTLINE(google-explicit-constructor, hicpp-explicit-conversions)
+    [[nodiscard]] /* implicit */ constexpr operator FileHandle() noexcept {
         return file;
     }
 
@@ -162,11 +171,11 @@ struct FilePtr final {
     }
 
 private:
-    ATTRIBUTE_NODISCARD_WITH_MESSAGE("impl error: retu")
+    ATTRIBUTE_NODISCARD_WITH_MESSAGE("impl error")
     ATTRIBUTE_RETURNS_NONNULL
     ATTRIBUTE_ALWAYS_INLINE
     static FileHandle DoFOpenOrThrow(const char* fname, const char* mode) {
-        // NOLINTNEXTLINE(misc-misplaced-const)
+        // NOLINTNEXTLINE(misc-misplaced-const, cppcoreguidelines-owning-memory)
         FileHandle const file_handle = std::fopen(fname, mode);
         if (unlikely(file_handle == nullptr)) {
             ThrowOnFOpenFail(fname, mode);
@@ -175,20 +184,28 @@ private:
         return file_handle;
     }
     [[noreturn]] ATTRIBUTE_COLD static void ThrowOnFOpenFail(const char* fname, const char* mode) {
-        const auto errno_value = errno;
-        std::array<char, 1024> buffer{};
-        int bytes_written = std::snprintf(buffer.data(), buffer.size(),
-                                          "FilePtr::FilePtr(const char* fname, const char* mode): "
-                                          "std::fopen(\"%s\", \"%s\") failed: %s",
-                                          fname, mode, std::strerror(errno_value));
-        if (bytes_written < 0) {
-            constexpr std::string_view msg =
-                "FilePtr::FilePtr(const char* fname,const char* mode): "
-                "std::snprintf failed after std::fopen failed";
-            static_assert(msg.size() < std::size(buffer),
-                          "FilePtr::FilePtr(const char*,const char*)");
-            std::char_traits<char>::copy(buffer.data(), msg.data(), msg.size());
-            buffer[msg.size()] = '\0';
+        constexpr std::size_t kMaxErrorMessageSize = 1024 * sizeof(char);
+        const auto errno_value                     = errno;
+        std::array<char, kMaxErrorMessageSize> buffer{};
+        const int bytes_written = std::snprintf(
+            buffer.data(), buffer.size(),
+            "FilePtr::FilePtr(const char* fname, const char* mode): "
+            "std::fopen(\"%s\", \"%s\") failed: %s",
+            fname, mode, std::strerror(errno_value));  // NOLINT(concurrency-mt-unsafe)
+        if (unlikely(bytes_written < 0)) {
+#if defined(__cpp_lib_to_array) && __cpp_lib_to_array >= 201907L
+            constexpr std::array msg = std::to_array(
+                "FilePtr::FilePtr(const char* fname,const char* mode): std::snprintf failed after "
+                "std::fopen failed");
+#else
+            // NOLINTNEXTLINE(cppcoreguidelines-avoid-c-arrays,hicpp-avoid-c-arrays,modernize-avoid-c-arrays)
+            constexpr char msg[] =
+                "FilePtr::FilePtr(const char* fname,const char* mode): std::snprintf failed after "
+                "std::fopen failed";
+#endif
+            static_assert(std::size(msg) < kMaxErrorMessageSize, "impl error");
+            std::char_traits<char>::copy(buffer.data(), std::data(msg), std::size(msg));
+            buffer[std::size(msg)] = '\0';
         }
 
         throw std::runtime_error(buffer.data());
@@ -197,7 +214,7 @@ private:
 
 namespace test_tools_detail {
 
-ATTRIBUTE_NODISCARD_WITH_MESSAGE("impl error: result should be used")
+ATTRIBUTE_NODISCARD_WITH_MESSAGE("impl error")
 TEST_TOOLS_CONSTEVAL std::size_t get_typename_end_pos_impl(const std::string_view s) {
     // Variables are not inside of the for init for
     //  the compatibility with C++17.
@@ -279,7 +296,7 @@ TEST_TOOLS_CONSTEVAL std::size_t get_typename_end_pos_impl(const std::string_vie
 #define CONSTEVAL_ASSERT(expr)                                                    \
     do {                                                                          \
         [[maybe_unused]] const int CONSTEVAL_ASSERT_GENERATE_UNIQUE_NAME(guard) = \
-            bool{(expr)} ? 0 : throw 0;                                           \
+            bool{(expr)} ? 0 : throw std::runtime_error("consteval guard");       \
     } while (false)
 #else
 #define CONSTEVAL_ASSERT(expr)                                                          \
@@ -289,7 +306,7 @@ TEST_TOOLS_CONSTEVAL std::size_t get_typename_end_pos_impl(const std::string_vie
     } while (false)
 #endif
 
-ATTRIBUTE_NODISCARD_WITH_MESSAGE("impl error: result should be used")
+ATTRIBUTE_NODISCARD_WITH_MESSAGE("impl error")
 TEST_TOOLS_CONSTEVAL
 std::string_view extract_typename_impl(
     const std::string_view function_name ATTRIBUTE_LIFETIME_BOUND) {
@@ -363,10 +380,10 @@ std::string_view extract_typename_impl(
 }
 
 template <class T>
-ATTRIBUTE_NODISCARD_WITH_MESSAGE("impl error: result should be used")
+ATTRIBUTE_NODISCARD_WITH_MESSAGE("impl error")
 TEST_TOOLS_CONSTEVAL std::string_view get_typename_impl() {
     const std::string_view function_name =
-#if TEST_TOOLS_HAS_SOURCE_LOCATION
+#if defined(TEST_TOOLS_HAS_SOURCE_LOCATION)
         std::source_location::current().function_name();
 #else
         FUNCTION_MACRO;
@@ -389,7 +406,7 @@ namespace test_tools_detail {
 // clang-format off
 
 template <class EnumType, EnumType EnumValue>
-ATTRIBUTE_NODISCARD_WITH_MESSAGE("impl error: result should be used")
+ATTRIBUTE_NODISCARD_WITH_MESSAGE("impl error")
 TEST_TOOLS_CONSTEVAL
 std::string_view extract_enum_value_name_impl(const std::string_view function_name ATTRIBUTE_LIFETIME_BOUND) {
     // clang-format on
@@ -424,10 +441,10 @@ std::string_view extract_enum_value_name_impl(const std::string_view function_na
 }
 
 template <auto EnumValue, class EnumType>
-ATTRIBUTE_NODISCARD_WITH_MESSAGE("impl error: result should be used")
+ATTRIBUTE_NODISCARD_WITH_MESSAGE("impl error")
 TEST_TOOLS_CONSTEVAL std::string_view get_enum_value_name_impl() {
     const std::string_view function_name =
-#if TEST_TOOLS_HAS_SOURCE_LOCATION
+#if defined(TEST_TOOLS_HAS_SOURCE_LOCATION)
         std::source_location::current().function_name();
 #else
         FUNCTION_MACRO;
@@ -456,29 +473,37 @@ TEST_TOOLS_CONSTEVAL std::string_view get_enum_value_name() {
 
 template <class Observed = void>
 struct EchoLogger {
+    // NOLINTBEGIN(cert-oop54-cpp)
+
     EchoLogger() {
         ::test_tools::log_location();
     }
-    EchoLogger(const EchoLogger&) noexcept {
+    EchoLogger(const EchoLogger& /*unused*/) noexcept {
         ::test_tools::log_location();
     }
-    EchoLogger(EchoLogger&&) noexcept {
+    EchoLogger(EchoLogger&& /*unused*/) noexcept {
         ::test_tools::log_location();
     }
-    EchoLogger& operator=(const EchoLogger&) noexcept {
+    EchoLogger& operator=(const EchoLogger& /*unused*/) noexcept {
         ::test_tools::log_location();
         return *this;
     }
-    EchoLogger& operator=(EchoLogger&&) noexcept {
+    EchoLogger& operator=(EchoLogger&& /*unused*/) noexcept {
         ::test_tools::log_location();
         return *this;
     }
     ~EchoLogger() {
         ::test_tools::log_location();
     }
+
+    // NOLINTEND(cert-oop54-cpp)
 };
 
 }  // namespace test_tools
 
+// NOLINTEND(cppcoreguidelines-macro-usage)
+
 #undef TEST_TOOLS_CONSTEVAL
+#if defined(TEST_TOOLS_HAS_SOURCE_LOCATION)
 #undef TEST_TOOLS_HAS_SOURCE_LOCATION
+#endif

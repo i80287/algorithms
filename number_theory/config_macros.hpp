@@ -1,5 +1,7 @@
 #ifndef CONFIG_MACROS_HPP
-#define CONFIG_MACROS_HPP 1
+#define CONFIG_MACROS_HPP
+
+// NOLINTBEGIN(cppcoreguidelines-macro-usage)
 
 /* Test for gcc >= maj.min, as per __GNUC_PREREQ in glibc */
 #if defined(__GNUC__) && defined(__GNUC_MINOR__)
@@ -402,6 +404,8 @@
 
 #if defined(__clang__) && CONFIG_HAS_CPP_ATTRIBUTE(clang::lifetimebound)
 #define ATTRIBUTE_LIFETIME_BOUND [[clang::lifetimebound]]
+#elif defined(_MSC_VER) && CONFIG_HAS_CPP_ATTRIBUTE(msvc::lifetimebound)
+#define ATTRIBUTE_LIFETIME_BOUND [[msvc::lifetimebound]]
 #else
 #define ATTRIBUTE_LIFETIME_BOUND
 #endif
@@ -609,6 +613,10 @@
 
 #ifdef __cplusplus
 
+#if CONFIG_HAS_INCLUDE(<type_traits>)
+#include <type_traits>
+#endif
+
 #if (defined(_MSC_VER) || defined(__MINGW32__)) && CONFIG_HAS_INCLUDE(<intrin.h>)
 #include <intrin.h>  // for _ReadWriteBarrier
 #endif
@@ -632,7 +640,8 @@ ATTRIBUTE_NOINLINE static inline void sink_char_ptr(char const volatile*) {}
 }  // namespace detail
 
 template <class T>
-ATTRIBUTE_ALWAYS_INLINE static inline void do_not_optimize_away(T&& expr) noexcept {
+ATTRIBUTE_ALWAYS_INLINE static inline void do_not_optimize_away(T expr) noexcept {
+    // NOLINTBEGIN(hicpp-no-assembler)
 #if (defined(_MSC_VER) || defined(__MINGW32__)) && CONFIG_HAS_INCLUDE(<intrin.h>)
     ::config::detail::sink_char_ptr(&reinterpret_cast<volatile const char&>(expr));
     _ReadWriteBarrier();
@@ -641,13 +650,10 @@ ATTRIBUTE_ALWAYS_INLINE static inline void do_not_optimize_away(T&& expr) noexce
 #else
     __asm__("" ::"r,m,i"(expr));
 #endif
+    // NOLINTEND(hicpp-no-assembler)
 }
 
 }  // namespace config
-
-#if CONFIG_HAS_INCLUDE(<type_traits>)
-#include <type_traits>
-#endif
 
 namespace config {
 
@@ -670,9 +676,11 @@ template <class T>
 ATTRIBUTE_ALWAYS_INLINE constexpr bool is_gcc_constant_p(ATTRIBUTE_MAYBE_UNUSED T expr) noexcept {
 #if CONFIG_HAS_BUILTIN(__builtin_constant_p)
 #if CONFIG_HAS_INCLUDE(<type_traits>)
-    // not std::is_trivial_v for backward compatibility with old compilers C++ versions
+    // NOLINTBEGIN(modernize-type-traits)
+    // not std::is_trivial_v for backward compatibility with old C++ versions and compilers
     static_assert(std::is_trivial<T>::value,
                   "Type passed to the is_gcc_constant_p() should be trivial");
+    // NOLINTEND(modernize-type-traits)
 #endif
 
 #if defined(__clang__)
@@ -723,5 +731,7 @@ ATTRIBUTE_NOINLINE static inline void sink_char_ptr(
 #endif
 
 #endif
+
+// NOLINTEND(cppcoreguidelines-macro-usage)
 
 #endif  // !CONFIG_MACROS_HPP

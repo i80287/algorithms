@@ -1,33 +1,40 @@
 #include <algorithm>
+#include <array>
 #include <cassert>
-#include <concepts>
-#include <cstdint>
+#include <cstddef>
 #include <iterator>
 #include <ranges>
 #include <set>
+#include <string>
+#include <string_view>
 #include <utility>
 
 import rbtree;
 
+namespace {
+
+using rbtree::RBTree;
+
 template <std::size_t N, std::size_t M>
-constexpr bool non_intersecting_sets(const int (&s1)[N], const int (&s2)[M]) noexcept {
-    auto s1_arr = std::to_array(s1);
-    auto s2_arr = std::to_array(s2);
+constexpr bool non_intersecting_sets(const std::array<int, N> &s1,
+                                     const std::array<int, M> &s2) noexcept {
+    std::array<int, N> s1_arr(s1);
+    std::array<int, M> s2_arr(s2);
     std::ranges::sort(s1_arr);
     std::ranges::sort(s2_arr);
 
     class Iter {
     public:
-        using difference_type = std::ptrdiff_t;
-        using value_type      = int;
-        using reference       = value_type &;
-        using pointer         = value_type *;
+        using difference_type [[maybe_unused]] = std::ptrdiff_t;
+        using value_type                       = int;
+        using reference                        = value_type &;
+        using pointer                          = value_type *;
 
-        constexpr pointer operator->() noexcept {
+        constexpr pointer operator->() const noexcept {
             was_de_referenced_ = true;
             return std::addressof(dummy_field_);
         }
-        constexpr reference operator*() noexcept {
+        constexpr reference operator*() const noexcept {
             was_de_referenced_ = true;
             return dummy_field_;
         }
@@ -38,23 +45,26 @@ constexpr bool non_intersecting_sets(const int (&s1)[N], const int (&s2)[M]) noe
             return *this;
         }
         constexpr Iter operator++(int) & noexcept {
-            Iter copy(*this);
+            const Iter copy(*this);
             operator++();
             return copy;
         }
         constexpr Iter operator--(int) & noexcept {
-            Iter copy(*this);
+            const Iter copy(*this);
             operator++();
             return copy;
         }
+        constexpr bool operator==(const Iter &) const noexcept = default;
         [[nodiscard]] constexpr bool WasDeReferenced() const noexcept {
             return was_de_referenced_;
         }
 
     private:
-        int dummy_field_{};
-        bool was_de_referenced_ = false;
+        mutable int dummy_field_{};
+        mutable bool was_de_referenced_ = false;
     };
+
+    static_assert(std::bidirectional_iterator<Iter>);
 
     Iter observer;
     std::ranges::set_intersection(s1, s2, observer);
@@ -62,13 +72,12 @@ constexpr bool non_intersecting_sets(const int (&s1)[N], const int (&s2)[M]) noe
 }
 
 template <std::ranges::forward_range Range1, std::ranges::forward_range Range2>
-    requires(!std::is_abstract_v<std::ranges::range_value_t<Range1>>) &&
-            (std::is_same_v<std::ranges::range_value_t<Range1>, std::ranges::range_value_t<Range2>>)
+    requires(std::is_same_v<std::ranges::range_value_t<Range1>, std::ranges::range_value_t<Range2>>)
 void test_on_range(const Range1 &nums, const Range2 &not_in_nums) {
     using T = std::ranges::range_value_t<Range1>;
     static_assert(std::bidirectional_iterator<typename RBTree<T>::iterator>);
     static_assert(std::ranges::bidirectional_range<RBTree<T>>);
-    static_assert(!std::is_abstract_v<RBTree<T>>);
+    static_assert(!std::is_polymorphic_v<RBTree<T>>);
     static_assert(std::is_nothrow_move_constructible_v<RBTree<T>>);
     static_assert(std::is_nothrow_move_assignable_v<RBTree<T>>);
     static_assert(std::is_swappable_v<RBTree<T>>);
@@ -135,6 +144,26 @@ void test_on_range(const Range1 &nums, const Range2 &not_in_nums) {
         check(std::ranges::views::reverse(not_in_nums));
     };
 
+    auto test_tree = [&compare](const RBTree<T> &t, const std::set<T> &checker) {
+        compare(t, checker);
+        RBTree<T> t1 = t;
+        compare(t1, checker);
+        static_assert(std::is_same_v<decltype(std::move(t1)), RBTree<T> &&>);
+        RBTree<T> t2 = std::move(t1);
+        compare(t2, checker);
+        RBTree<T> &t1_ref = t1 = std::move(t2);
+        assert(std::addressof(t1_ref) == std::addressof(t1));
+        compare(t1, checker);
+        t2.clear();
+        t2.swap(t1);
+        compare(t2, checker);
+        t2.swap(t1);
+        compare(t1, checker);
+        RBTree<T> &t2_ref = t2 = t1;
+        assert(std::addressof(t2_ref) == std::addressof(t2));
+        compare(t2, checker);
+    };
+
     RBTree<T> t;
     std::set<T> checker;
     assert(t.empty());
@@ -142,52 +171,25 @@ void test_on_range(const Range1 &nums, const Range2 &not_in_nums) {
     assert(t.find({}) == t.end());
     assert(t.lower_bound({}) == t.end());
     for (const T &num : nums) {
-        assert(t.is_rbtree());
+        assert(rbtree::IsRBTreeUnitTest(t) == rbtree::TestStatus::kOk);
         t.insert(num);
         assert(t.size() <= t.max_size());
-        assert(t.is_rbtree());
+        assert(rbtree::IsRBTreeUnitTest(t) == rbtree::TestStatus::kOk);
         checker.insert(num);
-
-        compare(t, checker);
-
-        static_assert(std::is_same_v<decltype(std::move(t)), RBTree<T> &&>);
-        RBTree<T> t1(std::move(t));
-        compare(t1, checker);
-        t = std::move(t1);
-        compare(t, checker);
-        t1.swap(t);
-        compare(t1, checker);
-        t.swap(t1);
-        compare(t, checker);
+        test_tree(t, checker);
     }
 
     for (const T &elem : nums) {
-        if constexpr (std::is_same_v<T, int>) {
-            if (nums.size() == 5 && nums[0] == 1 && nums[1] == 2) {
-                putchar('\0');
-            }
-        }
-
-        assert(t.is_rbtree());
+        assert(rbtree::IsRBTreeUnitTest(t) == rbtree::TestStatus::kOk);
         assert(t.erase(elem) == checker.erase(elem));
         assert(t.size() <= t.max_size());
-        assert(t.is_rbtree());
-
-        compare(t, checker);
-
-        RBTree<T> t1(std::move(t));
-        compare(t1, checker);
-        t = std::move(t1);
-        compare(t, checker);
-        t1.swap(t);
-        compare(t1, checker);
-        t.swap(t1);
-        compare(t, checker);
+        assert(rbtree::IsRBTreeUnitTest(t) == rbtree::TestStatus::kOk);
+        test_tree(t, checker);
     }
 }
 
 template <std::ranges::forward_range Range1, std::ranges::forward_range Range2>
-static void test_on_sub_ranges(const Range1 &range, const Range2 &not_in_range) {
+void test_on_sub_ranges(const Range1 &range, const Range2 &not_in_range) {
     for (std::size_t drop_size = 0; drop_size < std::size(range); drop_size++) {
         for (std::size_t take_size = 0; take_size <= std::size(range) - drop_size; take_size++) {
             test_on_range(range | std::views::drop(drop_size) | std::views::take(take_size),
@@ -196,54 +198,67 @@ static void test_on_sub_ranges(const Range1 &range, const Range2 &not_in_range) 
     }
 }
 
+}  // namespace
+
 int main() {
-    constexpr const int nums[] = {
-        1,       2,         -3,     4,     0,        -4,    35,         -45,
-        20,      23,        22,     21,    -15,      -28,   56,         57,
-        44,      69,        72,     101,   118,      114,   -114,       -118,
-        -101,    13,        -13,    12,    -12,      32,    23,         12,
-        54,      34,        5645,   2,     34,       234,   23,         4234,
-        4234,    34,        3253,   6546,  567,      5,     736,        462476,
-        4574327, 245762456, 623456, 4256,  52623456, 2454,  1264367436, 743256342,
-        4673345, 34256,     674324, 47643, 2347824,  2178,  12387,      -12387,
-        8123,    67284,     -2348,  12738, 93284,    -1238, 238743,     -1'000'000'000,
+    constexpr std::array nums = {
+        1,       2,         -3,     4,      0,        -4,       35,         -45,
+        20,      23,        22,     21,     -15,      -28,      56,         57,
+        44,      69,        72,     101,    118,      114,      -114,       -118,
+        -101,    13,        -13,    12,     -12,      32,       23,         12,
+        54,      34,        5645,   2,      34,       234,      23,         4234,
+        4234,    34,        3253,   6546,   567,      5,        736,        462476,
+        4574327, 245762456, 623456, 4256,   52623456, 2454,     1264367436, 743256342,
+        4673345, 34256,     674324, 47643,  2347824,  2178,     12387,      -12387,
+        8123,    67284,     -2348,  12738,  93284,    -1238,    238743,     -1'000'000'000,
+        5,       736,       462476, 462475, 462474,   462473,   462472,     462471,
+        12,      13,        14,     1515,   161616,   17171717, 0,          0,
     };
-    constexpr const int not_in_nums[] = {
-        -100, -50, -10, 10, 100, 200, 300, 400, 500, 1000, 20000, 4023087, 2'091'371'239,
+    constexpr std::array not_in_nums = {
+        -100, -50, -10,  10,    100,     200,           300,
+        400,  500, 1000, 20000, 4023087, 2'091'371'239, 2'111'222'333,
     };
+
     static_assert(non_intersecting_sets(nums, not_in_nums));
 
     test_on_sub_ranges(nums, not_in_nums);
 
-    constexpr const std::string_view string_views[] = {
-        "asd",           "3284",
-        "f7823h7yf3",    "23f87g2quf",
-        "w2uv9f3w",      "v23fvn4ev",
-        "vf324v3hv34v",  "23bvuywvb",
-        "whbuwbhjv",     "f2q3gfyu2bv",
-        "cqw3gbhbve",    "q3wnj",
-        "dawbcnac",      "acdjawbcawc",
-        "awjcbacn",      "awjcbanc",
-        "awkcjakcsn",    "whfjancaw",
-        "cq39fc98hcnac", "acdnbnzxm",
-        "dawjcna",       "cawbcawmcnvehvb",
-        "vjabevjhnbnsc", "cawjcjawc",
-        "asd",           "3284",
-        "f7823h7yf3",    "23f87g2quf",
-        "w2uv9f3w",      "v23fvn4ev",
-        "vf324v3hv34v",  "23bvuywvb",
-        "whbuwbhjv",     "f2q3gfyu2bv",
-        "cqw3gbhbve",    "q3wnj",
-        "dawbcnac",      "acdjawbcawc",
-        "awjcbacn",      "awjcbanc",
-        "awkcjakcsn",    "whfjancaw",
-        "cq39fc98hcnac", "acdnbnzxm",
-        "dawjcna",       "cawbcawmcnvehvb",
-        "vjabevjhnbnsc", "cawjcjawc",
+    using namespace std::string_view_literals;
+
+    constexpr std::array string_views = {
+        "asd"sv,           "3284"sv,
+        "f7823h7yf3"sv,    "23f87g2quf"sv,
+        "w2uv9f3w"sv,      "v23fvn4ev"sv,
+        "vf324v3hv34v"sv,  "23bvuywvb"sv,
+        "whbuwbhjv"sv,     "f2q3gfyu2bv"sv,
+        "cqw3gbhbve"sv,    "q3wnj"sv,
+        "dawbcnac"sv,      "acdjawbcawc"sv,
+        "awjcbacn"sv,      "awjcbanc"sv,
+        "awkcjakcsn"sv,    "whfjancaw"sv,
+        "cq39fc98hcnac"sv, "acdnbnzxm"sv,
+        "dawjcna"sv,       "cawbcawmcnvehvb"sv,
+        "vjabevjhnbnsc"sv, "cawjcjawc"sv,
+        "asd"sv,           "3284"sv,
+        "f7823h7yf3"sv,    "23f87g2quf"sv,
+        "w2uv9f3w"sv,      "v23fvn4ev"sv,
+        "vf324v3hv34v"sv,  "23bvuywvb"sv,
+        "whbuwbhjv"sv,     "f2q3gfyu2bv"sv,
+        "cqw3gbhbve"sv,    "q3wnj"sv,
+        "dawbcnac"sv,      "acdjawbcawc"sv,
+        "awjcbacn"sv,      "awjcbanc"sv,
+        "awkcjakcsn"sv,    "whfjancaw"sv,
+        "cq39fc98hcnac"sv, "acdnbnzxm"sv,
+        "dawjcna"sv,       "cawbcawmcnvehvb"sv,
+        "vjabevjhnbnsc"sv, "cawjcjawc"sv,
+        "28378234231"sv,   "4928342348"sv,
+        "234823478234"sv,  "53745834543"sv,
+        "234893248234"sv,  "324823748"sv,
+        "4358983459345"sv, "9345834583458"sv,
     };
-    constexpr const std::string_view not_in_string_views[] = {
-        "cjweh",   "dajw",         "awcsn",     "23nmfce",   "cajwbncvuie",
-        "awbcnwn", "vcabndicanjs", "cawbcncaw", "cawbcnawc", "cabwbcnawcn",
+    constexpr std::array not_in_string_views = {
+        "cjweh"sv,         "dajw"sv,         "awcsn"sv,     "23nmfce"sv,    "cajwbncvuie"sv,
+        "awbcnwn"sv,       "vcabndicanjs"sv, "cawbcncaw"sv, "cawbcnawc"sv,  "cabwbcnawcn"sv,
+        "4398347583458"sv, "345832478324"sv, "428347234"sv, "3492348234"sv, "234u3284234"sv,
     };
     test_on_sub_ranges(string_views, not_in_string_views);
 

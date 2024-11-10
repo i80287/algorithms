@@ -1,3 +1,4 @@
+#include <array>
 #include <cstddef>
 #include <cstdint>
 #include <iostream>
@@ -8,7 +9,7 @@
 namespace {
 
 int TestHungarianAlgorithm() {
-    const std::vector<std::vector<std::uint32_t>> input[] = {
+    const std::array<std::vector<std::vector<std::uint32_t>>, 8> input{{
         {
             {1},
         },
@@ -80,14 +81,13 @@ int TestHungarianAlgorithm() {
             {0, 1, 1, 0, 0, 0, 0, 0, 0, 0},
             {1, 0, 0, 0, 1, 1, 1, 0, 0, 1},
         },
-    };
-
-    constexpr std::uint32_t output[]  = {1, 11, 39, 0, 194, 125, 149, 0};
+    }};
+    constexpr std::array output       = {1U, 11U, 39U, 0U, 194U, 125U, 149U, 0U};
     constexpr std::size_t total_tests = std::size(output);
-    static_assert(std::size(input) == total_tests);
+    static_assert(input.size() == total_tests);
 
     for (std::size_t k = 0; k < total_tests; k++) {
-        std::uint32_t ans = hungarian_algo::min_assignment(input[k]);
+        const std::uint32_t ans = hungarian_algo::min_assignment(input[k]);
         std::cout << "Test " << (k + 1) << ((ans == output[k]) ? "" : " not")
                   << " passed\nAlgorithm answer: " << ans << "\nCorrect answer: " << output[k]
                   << '\n';

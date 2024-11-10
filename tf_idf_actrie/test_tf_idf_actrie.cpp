@@ -4,12 +4,14 @@
 
 #include <cassert>
 #include <chrono>
+#include <cstddef>
 #include <fstream>
 #include <iostream>
 #include <sstream>
 #include <string>
 #include <string_view>
 #include <utility>
+#include <vector>
 
 #include "search_lib.hpp"
 
@@ -59,9 +61,9 @@ void test2() {
     constexpr auto query              = "london city borough burg"sv;
     constexpr std::size_t result_size = 32;
 
-    const auto start                  = std::chrono::high_resolution_clock::now();
-    std::vector<std::string_view> res = search_lib::Search(text, query, result_size);
-    const auto end                    = std::chrono::high_resolution_clock::now();
+    const auto start                        = std::chrono::high_resolution_clock::now();
+    const std::vector<std::string_view> res = search_lib::Search(text, query, result_size);
+    const auto end                          = std::chrono::high_resolution_clock::now();
     [[maybe_unused]] const auto duration =
         std::chrono::duration_cast<std::chrono::nanoseconds>(end - start);
 
@@ -69,7 +71,7 @@ void test2() {
     if constexpr (kPrintResults) {
         std::cout << "Test 2\nText length: " << text.size() << "\nFound " << res.size()
                   << " lines in " << duration.count() << " ns :\n\n";
-        for (std::string_view line : res) {
+        for (const std::string_view line : res) {
             std::cout << line << '\n';
         }
     }

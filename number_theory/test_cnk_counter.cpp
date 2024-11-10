@@ -1,13 +1,18 @@
 #include <algorithm>
+#include <array>
 #include <cassert>
 #include <cstddef>
 #include <cstdint>
+#include <functional>
 #include <random>
 #include <unordered_map>
 #include <utility>
 
 #include "CNKCounter.hpp"
+#include "config_macros.hpp"
 #include "test_tools.hpp"
+
+// NOLINTBEGIN(cppcoreguidelines-avoid-magic-numbers)
 
 using std::size_t;
 using std::uint32_t;
@@ -28,11 +33,11 @@ struct NK final {
 
 template <>
 struct std::hash<NK> {
-    constexpr size_t operator()(const NK& pair) const noexcept {
+    constexpr size_t operator()(const NK& nk_pair) const noexcept {
         if constexpr (sizeof(size_t) == 2 * sizeof(uint32_t)) {
-            return (size_t{pair.n} << 32) | size_t{pair.k};
+            return (size_t{nk_pair.n} << 32U) | size_t{nk_pair.k};
         } else {
-            return size_t{pair.n ^ pair.k};
+            return size_t{nk_pair.n ^ nk_pair.k};
         }
     }
 };
@@ -144,8 +149,8 @@ uint64_t C_n_k_mod_M(uint32_t n, uint32_t k, uint64_t mod) {
             }
         }
 
-        uint64_t C_n_1_k_1 = C_n_k_mod_M(n - 1, k - 1, mod);
-        uint64_t C_n_1_k   = C_n_k_mod_M(n - 1, k, mod);
+        const uint64_t C_n_1_k_1 = C_n_k_mod_M(n - 1, k - 1, mod);
+        const uint64_t C_n_1_k   = C_n_k_mod_M(n - 1, k, mod);
 
         // Can be optimized: calculate C(n - 1, k) if ((n - k) < (k - 0))
         // const uint64_t q = C_n_1_k_1 / k;
@@ -154,7 +159,7 @@ uint64_t C_n_k_mod_M(uint32_t n, uint32_t k, uint64_t mod) {
         //     ? (q * diff)
         //     : ((C_n_1_k_1 * diff) / k);
 
-        uint64_t ans = ((C_n_1_k_1 + C_n_1_k) % mod + mod) % mod;
+        const uint64_t ans = ((C_n_1_k_1 + C_n_1_k) % mod + mod) % mod;
         C_n_k_table.insert({{n, k}, ans});
         return ans;
     }
@@ -179,9 +184,9 @@ uint64_t C_n_k_mod_M(uint32_t n, uint32_t k, uint64_t mod) {
 
 void C_n_k_Test() {
     test_tools::log_tests_started();
-    constexpr size_t N          = 256;
-    static uint64_t c_n_k[N][N] = {};
-    CNKCounter<> c_n_k_counter(uint32_t{N} - 10);
+    constexpr size_t N                                  = 256;
+    static std::array<std::array<uint64_t, N>, N> c_n_k = {};
+    const CNKCounter<> c_n_k_counter(uint32_t{N} - 10);
 
     for (size_t n = 0; n < N; ++n) {
         c_n_k[n][0] = 1;
@@ -193,8 +198,8 @@ void C_n_k_Test() {
         //     c_n_k[n][k] = c_n_k[n - 1][k] + c_n_k[n - 1][k - 1];
         // }
 
-        const uint64_t* c_n_1_k_values = c_n_k[n - 1];
-        uint64_t* c_n_k_values         = c_n_k[n];
+        const auto& c_n_1_k_values = c_n_k[n - 1];
+        auto& c_n_k_values         = c_n_k[n];
         for (size_t k = 1; k < N; ++k) {
             c_n_k_values[k] = c_n_1_k_values[k] + c_n_1_k_values[k - 1];
         }
@@ -213,10 +218,10 @@ void C_n_k_Test() {
 
 void C_n_k_mod_M_Test() {
     test_tools::log_tests_started();
-    constexpr uint32_t Mod      = 1'000'000'000 + 7;
-    constexpr size_t N          = 256;
-    static uint64_t c_n_k[N][N] = {};
-    CNKCounter<Mod> c_n_k_counter(uint32_t{N} - 10);
+    constexpr uint32_t Mod                              = 1'000'000'000 + 7;
+    constexpr size_t N                                  = 256;
+    static std::array<std::array<uint64_t, N>, N> c_n_k = {};
+    const CNKCounter<Mod> c_n_k_counter(uint32_t{N} - 10);
 
     for (size_t n = 0; n < N; ++n) {
         c_n_k[n][0] = 1;
@@ -228,14 +233,14 @@ void C_n_k_mod_M_Test() {
         //     c_n_k[n][k] = c_n_k[n - 1][k] + c_n_k[n - 1][k - 1];
         // }
 
-        const uint64_t* c_n_1_k_values = c_n_k[n - 1];
-        uint64_t* c_n_k_values         = c_n_k[n];
+        const auto& c_n_1_k_values = c_n_k[n - 1];
+        auto& c_n_k_values         = c_n_k[n];
         for (size_t k = 1; k < N; ++k) {
             c_n_k_values[k] = (c_n_1_k_values[k] + c_n_1_k_values[k - 1]) % Mod;
         }
     }
 
-    constexpr size_t TotalTests = 1ull << 10;
+    constexpr size_t TotalTests = size_t{1} << 10ULL;
     std::mt19937 mt_prnd_engine(std::random_device{}());
 
     for (size_t i = 0; i < TotalTests; ++i) {
@@ -251,6 +256,9 @@ void C_n_k_mod_M_Test() {
 
 }  // namespace
 
+// NOLINTEND(cppcoreguidelines-avoid-magic-numbers)
+
+// NOLINTNEXTLINE(bugprone-exception-escape)
 int main() {
     C_n_k_Test();
     C_n_k_mod_M_Test();

@@ -1,10 +1,18 @@
 #include <array>
 #include <cassert>
 #include <clocale>
+#include <cstddef>
+#include <cstdint>
 #include <cstdio>
 #include <cwchar>
 
+#include "config_macros.hpp"
 #include "gosper_algorithm.hpp"
+#include "math_functions.hpp"
+#include "test_tools.hpp"
+
+// NOLINTBEGIN(cert-dcl03-c, misc-static-assert, hicpp-static-assert,
+// cppcoreguidelines-avoid-magic-numbers)
 
 namespace {
 
@@ -24,6 +32,7 @@ using std::uint32_t;
 }
 
 void test1() noexcept {
+    test_tools::log_tests_started();
     const int32_t x0                        = 0;
     const auto [mu_lower, mu_upper, lambda] = math_functions::loop_detection_Gosper(f2, x0);
     assert(lambda == 2);
@@ -35,23 +44,24 @@ void test1() noexcept {
     }
 
     for (int i = 0; i < 1000; i++) {
-        x     = f2(x);
-        int y = f2(f2(x));
-        assert(x == y);
+        x = f2(x);
+        assert(x == f2(f2(x)));
     }
 }
 
 void test2() noexcept {
+    test_tools::log_tests_started();
     constexpr int32_t x0 = 0;
-    for (int32_t p : {2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 33}) {
+    for (const int32_t p : {2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 33}) {
         const auto [mu_lower, mu_upper, lambda] = math_functions::loop_detection_Gosper(
-            [p](int32_t n) constexpr noexcept { return ((n + 1) % p + p) % p; }, x0);
+            [p](const int32_t n) constexpr noexcept { return ((n + 1) % p + p) % p; }, x0);
         assert(lambda == static_cast<uint32_t>(p));
         assert(mu_lower <= mu_upper);
     }
 }
 
 void test3() noexcept {
+    test_tools::log_tests_started();
     const int32_t x0                        = 0;
     const auto [mu_lower, mu_upper, lambda] = math_functions::loop_detection_Gosper(f3, x0);
     assert(mu_lower <= mu_upper);
@@ -79,6 +89,9 @@ void test3() noexcept {
 }
 
 }  // namespace
+
+// NOLINTEND(cert-dcl03-c, misc-static-assert, hicpp-static-assert,
+// cppcoreguidelines-avoid-magic-numbers)
 
 int main() {
     test1();

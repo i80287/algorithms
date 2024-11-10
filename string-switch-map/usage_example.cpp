@@ -5,6 +5,11 @@
 
 #include "StringMap.hpp"
 
+namespace {
+
+// NOLINTBEGIN(cppcoreguidelines-avoid-magic-numbers)
+// NOLINTBEGIN(cppcoreguidelines-avoid-c-arrays, hicpp-avoid-c-arrays, modernize-avoid-c-arrays)
+
 void StringSwitchExample() {
     static constexpr auto sw = StringMatch<"abc", "def", "ghij", "foo", "bar", "baz", "qux",
                                            "abacaba", "ring", "ideal", "GLn(F)">();
@@ -29,7 +34,7 @@ void StringSwitchExample() {
     static_assert(sw("de") == sw.kDefaultValue);
 
     constexpr const unsigned char kUString[] = "abc";
-    static_assert(sw(kUString, std::size(kUString) - 1) == sw("abc"));
+    static_assert(sw(std::data(kUString), std::size(kUString) - 1) == sw("abc"));
 
     std::cout << "Input string to search:\n> ";
     std::string input;
@@ -126,8 +131,9 @@ void ComileTimeStringMapExample1() {
 
 void ComileTimeStringMapExample2() {
     // clang-format off
+    using namespace std::string_view_literals;
 
-    constexpr std::string_view kMyConstants[] = {"abc", "def", "ghi", "sneaky input"};
+    constexpr std::array kMyConstants = {"abc"sv, "def"sv, "ghi"sv, "sneaky input"sv};
 
     struct MyTrivialType {
         std::array<int, 2> field1{};
@@ -138,20 +144,30 @@ void ComileTimeStringMapExample2() {
         constexpr bool operator==(const MyTrivialType&) const noexcept = default;
     };
 
+    constexpr MyTrivialType kValue1{1, 2, 3};
+    constexpr MyTrivialType kValue2{4, 5, 6};
+    constexpr MyTrivialType kValue3{7, 8, 9};
+    constexpr MyTrivialType kDefaultValue{0, 0, 0};
+
     static constexpr auto map = StringMap<
         StringMapKeys<kMyConstants[0], kMyConstants[1], kMyConstants[2]>,
-        StringMapValues{MyTrivialType(1, 2, 3), MyTrivialType(4, 5, 6), MyTrivialType(7, 8, 9)},
-        /* DefaultValue = */ MyTrivialType(0, 0, 0)
+        StringMapValues{kValue1, kValue2, kValue3},
+        /* DefaultValue = */ kDefaultValue
     >();
 
-    static_assert(map(kMyConstants[0]) == MyTrivialType(1, 2, 3));
-    static_assert(map(kMyConstants[1]) == MyTrivialType(4, 5, 6));
-    static_assert(map(kMyConstants[2]) == MyTrivialType(7, 8, 9));
-    static_assert(map(kMyConstants[3]) == MyTrivialType(0, 0, 0));
-    static_assert(map.kDefaultValue == MyTrivialType(0, 0, 0));
+    static_assert(map(kMyConstants[0]) == kValue1);
+    static_assert(map(kMyConstants[1]) == kValue2);
+    static_assert(map(kMyConstants[2]) == kValue3);
+    static_assert(map(kMyConstants[3]) == kDefaultValue);
+    static_assert(map.kDefaultValue == kDefaultValue);
 
     // clang-format on
 }
+
+// NOLINTEND(cppcoreguidelines-avoid-c-arrays, hicpp-avoid-c-arrays, modernize-avoid-c-arrays)
+// NOLINTEND(cppcoreguidelines-avoid-magic-numbers)
+
+}  // namespace
 
 int main() {
     StringSwitchExample();
