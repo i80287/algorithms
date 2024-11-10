@@ -23,7 +23,12 @@ for cc_and_cxx in clang,clang++ gcc,g++ i686-w64-mingw32-gcc-posix,i686-w64-ming
         -S .. \
         -B $cmake_build_dir
     if [ -e "./$cmake_build_dir/compile_commands.json" ]; then
-        cmake --build ./$cmake_build_dir --parallel "$(nproc)"
+        if [[ "$OSTYPE" == "darwin"* ]]; then
+            cpu_count=$(sysctl -n hw.logicalcpu)
+        else
+            cpu_count=$(nproc)
+        fi
+        cmake --build ./$cmake_build_dir --parallel "$cpu_count"
         CodeChecker analyze \
             ./$cmake_build_dir/compile_commands.json \
             --analyzer-config cppcheck:addons=../cppcheck/addons/misc.py \
