@@ -25,11 +25,11 @@ using ACTrie        = typename ACTrieBuilder::ACTrieType;
 
 template <char QueryWordsDelimiter = ' '>
 ACTrie ParseQuery(string_view query) {
-    const size_t query_words_count =
-        std::accumulate(query.begin(), query.end(), size_t{!query.empty()},
-                        [](size_t current_count, char c) constexpr noexcept -> size_t {
-                            return current_count + (c == QueryWordsDelimiter);
-                        });
+    const size_t query_words_count = std::accumulate(
+        query.begin(), query.end(), query.empty() ? size_t{0} : size_t{1},
+        [](size_t current_count, char c) constexpr noexcept -> size_t {
+            return current_count + (c == QueryWordsDelimiter ? size_t{1} : size_t{0});
+        });
 
     auto act_builder = ACTrieBuilder::WithCapacity(query_words_count);
 

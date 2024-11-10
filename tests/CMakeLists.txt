@@ -201,10 +201,10 @@ if(CAN_COMPILE_CONSTEXPR_STRING_MAP)
 endif()
 unset(CAN_COMPILE_CONSTEXPR_STRING_MAP)
 
-# if (GENERATOR_SUPPORTS_MODULES AND COMPILER_SUPPORTS_MODULES)
-#     add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/../bstrees ${CMAKE_CURRENT_BINARY_DIR}/bstrees)
-#     add_test(NAME rbtree_tests COMMAND $<TARGET_FILE:rbtree_tests>)
-# endif()
+if (GENERATOR_SUPPORTS_MODULES AND COMPILER_SUPPORTS_MODULES)
+    add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/../bstrees ${CMAKE_CURRENT_BINARY_DIR}/bstrees)
+    add_test(NAME rbtree_tests COMMAND $<TARGET_FILE:rbtree_tests>)
+endif()
 
 list(POP_FRONT TestFilenames) # pop dummy
 list(POP_FRONT TestDirectories) # pop dummy

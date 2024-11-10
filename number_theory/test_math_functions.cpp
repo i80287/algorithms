@@ -888,9 +888,17 @@ void test_general_asserts() noexcept {
         static_assert((expr), STRINGIFY(expr)); \
     } while (false)
 #else
-#define LOG10_ASSERT_THAT(expr) \
-    do {                        \
-        assert(expr);           \
+#define LOG10_ASSERT_THAT(expr) assert(expr)
+#endif
+#if defined(INTEGERS_128_BIT_HPP)
+#ifdef HAS_I128_CONSTEXPR
+#define I128_ASSERT_THAT(expr) ASSERT_THAT(expr)
+#else
+#define I128_ASSERT_THAT(expr) assert(expr)
+#endif
+#else
+#define I128_ASSERT_THAT(expr) \
+    do {                       \
     } while (false)
 #endif
 
@@ -902,29 +910,26 @@ void test_general_asserts() noexcept {
     ASSERT_THAT(bin_pow_mod(uint32_t{2146526839U}, uint32_t{578423432U}, uint32_t{2147483629U}) ==
                 281853233U);
 
-#if defined(HAS_I128_CONSTEXPR)
-    ASSERT_THAT(bin_pow_mod(uint64_t{7}, uint64_t{483}, uint64_t{1000000007U}) == 263145387U);
-    ASSERT_THAT(bin_pow_mod(uint64_t{289}, uint64_t{std::numeric_limits<uint32_t>::max()},
-                            uint64_t{2146514599U}) == 1349294778U);
-    ASSERT_THAT(bin_pow_mod(uint64_t{2146526839U}, uint64_t{578423432U}, uint64_t{2147483629U}) ==
-                281853233U);
-    ASSERT_THAT(bin_pow_mod(uint64_t{119999999927ULL}, uint64_t{18446744073709515329ULL},
-                            uint64_t{100000000000000003ULL}) == 85847679703545452ULL);
-    ASSERT_THAT(bin_pow_mod(uint64_t{72057594037927843ULL}, uint64_t{18446744073709515329ULL},
-                            uint64_t{1000000000000000003ULL}) == 404835689235904145ULL);
-    ASSERT_THAT(bin_pow_mod(uint64_t{999999999999999487ULL}, uint64_t{18446744073709551557ULL},
-                            uint64_t{1000000000000000009ULL}) == 802735487082721113ULL);
+    I128_ASSERT_THAT(bin_pow_mod(uint64_t{7}, uint64_t{483}, uint64_t{1000000007U}) == 263145387U);
+    I128_ASSERT_THAT(bin_pow_mod(uint64_t{289}, uint64_t{std::numeric_limits<uint32_t>::max()},
+                                 uint64_t{2146514599U}) == 1349294778U);
+    I128_ASSERT_THAT(bin_pow_mod(uint64_t{2146526839U}, uint64_t{578423432U},
+                                 uint64_t{2147483629U}) == 281853233U);
+    I128_ASSERT_THAT(bin_pow_mod(uint64_t{119999999927ULL}, uint64_t{18446744073709515329ULL},
+                                 uint64_t{100000000000000003ULL}) == 85847679703545452ULL);
+    I128_ASSERT_THAT(bin_pow_mod(uint64_t{72057594037927843ULL}, uint64_t{18446744073709515329ULL},
+                                 uint64_t{1000000000000000003ULL}) == 404835689235904145ULL);
+    I128_ASSERT_THAT(bin_pow_mod(uint64_t{999999999999999487ULL}, uint64_t{18446744073709551557ULL},
+                                 uint64_t{1000000000000000009ULL}) == 802735487082721113ULL);
 
-    ASSERT_THAT(bin_pow_mod(uint64_t{2}, uint64_t{18446744073709551427ULL} - 1,
-                            uint64_t{18446744073709551427ULL}) == 1);
-    ASSERT_THAT(bin_pow_mod(uint64_t{3}, uint64_t{18446744073709551427ULL} - 1,
-                            uint64_t{18446744073709551427ULL}) == 1);
-    ASSERT_THAT(bin_pow_mod(uint64_t{1238873}, uint64_t{18446744073709551427ULL} - 1,
-                            uint64_t{18446744073709551427ULL}) == 1);
-#endif
+    I128_ASSERT_THAT(bin_pow_mod(uint64_t{2}, uint64_t{18446744073709551427ULL} - 1,
+                                 uint64_t{18446744073709551427ULL}) == 1);
+    I128_ASSERT_THAT(bin_pow_mod(uint64_t{3}, uint64_t{18446744073709551427ULL} - 1,
+                                 uint64_t{18446744073709551427ULL}) == 1);
+    I128_ASSERT_THAT(bin_pow_mod(uint64_t{1238873}, uint64_t{18446744073709551427ULL} - 1,
+                                 uint64_t{18446744073709551427ULL}) == 1);
 
 #if CONFIG_HAS_AT_LEAST_CXX_20
-
     ASSERT_THAT(isqrt(0U) == 0);
     ASSERT_THAT(isqrt(1U) == 1);
     ASSERT_THAT(isqrt(4U) == 2);
@@ -941,7 +946,6 @@ void test_general_asserts() noexcept {
     ASSERT_THAT(isqrt(1U << 28U) == 1U << 14U);
     ASSERT_THAT(isqrt(1U << 30U) == 1U << 15U);
     ASSERT_THAT(isqrt(std::numeric_limits<uint32_t>::max()) == (1U << 16U) - 1);
-
 #endif
 
     ASSERT_THAT(isqrt(uint64_t{0}) == 0);
@@ -967,49 +971,47 @@ void test_general_asserts() noexcept {
     ASSERT_THAT(isqrt(uint64_t{1} << 62U) == uint64_t{1} << 31U);
     ASSERT_THAT(isqrt(std::numeric_limits<uint64_t>::max()) == 0xFFFFFFFFU);
 
-#if defined(INTEGERS_128_BIT_HPP) && defined(HAS_I128_CONSTEXPR)
-
-    ASSERT_THAT(isqrt(uint128_t{0}) == 0);
-    ASSERT_THAT(isqrt(uint128_t{1}) == 1);
-    ASSERT_THAT(isqrt(uint128_t{4}) == 2);
-    ASSERT_THAT(isqrt(uint128_t{9}) == 3);
-    ASSERT_THAT(isqrt(uint128_t{10}) == 3);
-    ASSERT_THAT(isqrt(uint128_t{15}) == 3);
-    ASSERT_THAT(isqrt(uint128_t{16}) == 4);
-    ASSERT_THAT(isqrt(uint128_t{257} * 257) == 257);
-    ASSERT_THAT(isqrt(uint128_t{257} * 257 + 1) == 257);
-    ASSERT_THAT(isqrt(uint128_t{258} * 258 - 1) == 257);
-    ASSERT_THAT(isqrt(uint128_t{1} << 12U) == uint64_t{1} << 6U);
-    ASSERT_THAT(isqrt(uint128_t{1} << 14U) == uint64_t{1} << 7U);
-    ASSERT_THAT(isqrt(uint128_t{1} << 16U) == uint64_t{1} << 8U);
-    ASSERT_THAT(isqrt(uint128_t{1} << 28U) == uint64_t{1} << 14U);
-    ASSERT_THAT(isqrt(uint128_t{1} << 30U) == uint64_t{1} << 15U);
-    ASSERT_THAT(isqrt(uint128_t{1} << 54U) == uint64_t{1} << 27U);
-    ASSERT_THAT(isqrt(uint128_t{1} << 56U) == uint64_t{1} << 28U);
-    ASSERT_THAT(isqrt(uint128_t{1} << 58U) == uint64_t{1} << 29U);
-    ASSERT_THAT(isqrt(uint128_t{1} << 60U) == uint64_t{1} << 30U);
-    ASSERT_THAT(isqrt(uint128_t{1} << 62U) == uint64_t{1} << 31U);
-    ASSERT_THAT(isqrt(uint128_t{std::numeric_limits<uint64_t>::max()}) == (uint64_t{1} << 32U) - 1);
-    ASSERT_THAT(isqrt(uint128_t{1} << 126U) == uint64_t{1} << 63U);
-    ASSERT_THAT(isqrt(static_cast<uint128_t>(-1)) == (uint128_t{1} << 64U) - 1);
-    ASSERT_THAT(isqrt(uint128_t{1000000007} * 1000000007) == 1000000007);
-    ASSERT_THAT(isqrt(uint128_t{1000000000000000003ULL} * 1000000000000000003ULL) ==
-                1000000000000000003ULL);
-    ASSERT_THAT(isqrt(uint128_t{1000000000000000009ULL} * 1000000000000000009ULL) ==
-                1000000000000000009ULL);
-    ASSERT_THAT(isqrt(uint128_t{18446744073709551521ULL} * 18446744073709551521ULL) ==
-                18446744073709551521ULL);
-    ASSERT_THAT(isqrt(uint128_t{18446744073709551533ULL} * 18446744073709551533ULL) ==
-                18446744073709551533ULL);
-    ASSERT_THAT(isqrt(uint128_t{18446744073709551557ULL} * 18446744073709551557ULL) ==
-                18446744073709551557ULL);
-    ASSERT_THAT(isqrt(uint128_t{18446744073709551557ULL} * 18446744073709551557ULL + 1) ==
-                18446744073709551557ULL);
-    ASSERT_THAT(isqrt(uint128_t{18446744073709551558ULL} * 18446744073709551558ULL - 1) ==
-                18446744073709551557ULL);
-    ASSERT_THAT(isqrt(uint128_t{18446744073709551558ULL} * 18446744073709551558ULL) ==
-                18446744073709551558ULL);
-#endif
+    I128_ASSERT_THAT(isqrt(uint128_t{0}) == 0);
+    I128_ASSERT_THAT(isqrt(uint128_t{1}) == 1);
+    I128_ASSERT_THAT(isqrt(uint128_t{4}) == 2);
+    I128_ASSERT_THAT(isqrt(uint128_t{9}) == 3);
+    I128_ASSERT_THAT(isqrt(uint128_t{10}) == 3);
+    I128_ASSERT_THAT(isqrt(uint128_t{15}) == 3);
+    I128_ASSERT_THAT(isqrt(uint128_t{16}) == 4);
+    I128_ASSERT_THAT(isqrt(uint128_t{257} * 257) == 257);
+    I128_ASSERT_THAT(isqrt(uint128_t{257} * 257 + 1) == 257);
+    I128_ASSERT_THAT(isqrt(uint128_t{258} * 258 - 1) == 257);
+    I128_ASSERT_THAT(isqrt(uint128_t{1} << 12U) == uint64_t{1} << 6U);
+    I128_ASSERT_THAT(isqrt(uint128_t{1} << 14U) == uint64_t{1} << 7U);
+    I128_ASSERT_THAT(isqrt(uint128_t{1} << 16U) == uint64_t{1} << 8U);
+    I128_ASSERT_THAT(isqrt(uint128_t{1} << 28U) == uint64_t{1} << 14U);
+    I128_ASSERT_THAT(isqrt(uint128_t{1} << 30U) == uint64_t{1} << 15U);
+    I128_ASSERT_THAT(isqrt(uint128_t{1} << 54U) == uint64_t{1} << 27U);
+    I128_ASSERT_THAT(isqrt(uint128_t{1} << 56U) == uint64_t{1} << 28U);
+    I128_ASSERT_THAT(isqrt(uint128_t{1} << 58U) == uint64_t{1} << 29U);
+    I128_ASSERT_THAT(isqrt(uint128_t{1} << 60U) == uint64_t{1} << 30U);
+    I128_ASSERT_THAT(isqrt(uint128_t{1} << 62U) == uint64_t{1} << 31U);
+    I128_ASSERT_THAT(isqrt(uint128_t{std::numeric_limits<uint64_t>::max()}) ==
+                     (uint64_t{1} << 32U) - 1);
+    I128_ASSERT_THAT(isqrt(uint128_t{1} << 126U) == uint64_t{1} << 63U);
+    I128_ASSERT_THAT(isqrt(static_cast<uint128_t>(-1)) == (uint128_t{1} << 64U) - 1);
+    I128_ASSERT_THAT(isqrt(uint128_t{1000000007} * 1000000007) == 1000000007);
+    I128_ASSERT_THAT(isqrt(uint128_t{1000000000000000003ULL} * 1000000000000000003ULL) ==
+                     1000000000000000003ULL);
+    I128_ASSERT_THAT(isqrt(uint128_t{1000000000000000009ULL} * 1000000000000000009ULL) ==
+                     1000000000000000009ULL);
+    I128_ASSERT_THAT(isqrt(uint128_t{18446744073709551521ULL} * 18446744073709551521ULL) ==
+                     18446744073709551521ULL);
+    I128_ASSERT_THAT(isqrt(uint128_t{18446744073709551533ULL} * 18446744073709551533ULL) ==
+                     18446744073709551533ULL);
+    I128_ASSERT_THAT(isqrt(uint128_t{18446744073709551557ULL} * 18446744073709551557ULL) ==
+                     18446744073709551557ULL);
+    I128_ASSERT_THAT(isqrt(uint128_t{18446744073709551557ULL} * 18446744073709551557ULL + 1) ==
+                     18446744073709551557ULL);
+    I128_ASSERT_THAT(isqrt(uint128_t{18446744073709551558ULL} * 18446744073709551558ULL - 1) ==
+                     18446744073709551557ULL);
+    I128_ASSERT_THAT(isqrt(uint128_t{18446744073709551558ULL} * 18446744073709551558ULL) ==
+                     18446744073709551558ULL);
 
     ASSERT_THAT(icbrt(uint32_t{0}) == 0);
     ASSERT_THAT(icbrt(uint32_t{1}) == 1);
@@ -1104,36 +1106,34 @@ void test_general_asserts() noexcept {
     ASSERT_THAT(is_perfect_square(uint64_t{1} << 60U));
     ASSERT_THAT(is_perfect_square(uint64_t{1} << 62U));
 
-#if defined(HAS_I128_CONSTEXPR)
-    ASSERT_THAT(is_perfect_square(uint128_t{0}));
-    ASSERT_THAT(is_perfect_square(uint128_t{1}));
-    ASSERT_THAT(!is_perfect_square(uint128_t{2}));
-    ASSERT_THAT(!is_perfect_square(uint128_t{3}));
-    ASSERT_THAT(is_perfect_square(uint128_t{4}));
-    ASSERT_THAT(!is_perfect_square(uint128_t{5}));
-    ASSERT_THAT(is_perfect_square(uint128_t{9}));
-    ASSERT_THAT(!is_perfect_square(uint128_t{15}));
-    ASSERT_THAT(is_perfect_square(uint128_t{16}));
-    ASSERT_THAT(is_perfect_square(uint128_t{324}));
-    ASSERT_THAT(is_perfect_square(uint128_t{1} << 16U));
-    ASSERT_THAT(is_perfect_square(uint128_t{1} << 24U));
-    ASSERT_THAT(is_perfect_square(uint128_t{1} << 32U));
-    ASSERT_THAT(is_perfect_square(uint128_t{1} << 40U));
-    ASSERT_THAT(is_perfect_square(uint128_t{1} << 48U));
-    ASSERT_THAT(is_perfect_square(uint128_t{1} << 56U));
-    ASSERT_THAT(is_perfect_square(uint128_t{1} << 60U));
-    ASSERT_THAT(is_perfect_square(uint128_t{1} << 62U));
-    ASSERT_THAT(is_perfect_square(uint128_t{1} << 64U));
-    ASSERT_THAT(is_perfect_square(uint128_t{1} << 66U));
-    ASSERT_THAT(is_perfect_square(uint128_t{1} << 68U));
-    ASSERT_THAT(is_perfect_square(uint128_t{1} << 70U));
-    ASSERT_THAT(is_perfect_square(uint128_t{1} << 72U));
-    ASSERT_THAT(is_perfect_square(uint128_t{1} << 74U));
-    ASSERT_THAT(is_perfect_square(uint128_t{1} << 76U));
-    ASSERT_THAT(is_perfect_square(uint128_t{1} << 78U));
-    ASSERT_THAT(is_perfect_square(uint128_t{1} << 80U));
-    ASSERT_THAT(is_perfect_square(uint128_t{1} << 126U));
-#endif
+    I128_ASSERT_THAT(is_perfect_square(uint128_t{0}));
+    I128_ASSERT_THAT(is_perfect_square(uint128_t{1}));
+    I128_ASSERT_THAT(!is_perfect_square(uint128_t{2}));
+    I128_ASSERT_THAT(!is_perfect_square(uint128_t{3}));
+    I128_ASSERT_THAT(is_perfect_square(uint128_t{4}));
+    I128_ASSERT_THAT(!is_perfect_square(uint128_t{5}));
+    I128_ASSERT_THAT(is_perfect_square(uint128_t{9}));
+    I128_ASSERT_THAT(!is_perfect_square(uint128_t{15}));
+    I128_ASSERT_THAT(is_perfect_square(uint128_t{16}));
+    I128_ASSERT_THAT(is_perfect_square(uint128_t{324}));
+    I128_ASSERT_THAT(is_perfect_square(uint128_t{1} << 16U));
+    I128_ASSERT_THAT(is_perfect_square(uint128_t{1} << 24U));
+    I128_ASSERT_THAT(is_perfect_square(uint128_t{1} << 32U));
+    I128_ASSERT_THAT(is_perfect_square(uint128_t{1} << 40U));
+    I128_ASSERT_THAT(is_perfect_square(uint128_t{1} << 48U));
+    I128_ASSERT_THAT(is_perfect_square(uint128_t{1} << 56U));
+    I128_ASSERT_THAT(is_perfect_square(uint128_t{1} << 60U));
+    I128_ASSERT_THAT(is_perfect_square(uint128_t{1} << 62U));
+    I128_ASSERT_THAT(is_perfect_square(uint128_t{1} << 64U));
+    I128_ASSERT_THAT(is_perfect_square(uint128_t{1} << 66U));
+    I128_ASSERT_THAT(is_perfect_square(uint128_t{1} << 68U));
+    I128_ASSERT_THAT(is_perfect_square(uint128_t{1} << 70U));
+    I128_ASSERT_THAT(is_perfect_square(uint128_t{1} << 72U));
+    I128_ASSERT_THAT(is_perfect_square(uint128_t{1} << 74U));
+    I128_ASSERT_THAT(is_perfect_square(uint128_t{1} << 76U));
+    I128_ASSERT_THAT(is_perfect_square(uint128_t{1} << 78U));
+    I128_ASSERT_THAT(is_perfect_square(uint128_t{1} << 80U));
+    I128_ASSERT_THAT(is_perfect_square(uint128_t{1} << 126U));
 
     ASSERT_THAT(bit_reverse(uint8_t{0b00000000}) == 0b00000000);
     ASSERT_THAT(bit_reverse(uint8_t{0b00000010}) == 0b01000000);
@@ -1186,15 +1186,11 @@ void test_general_asserts() noexcept {
             0b11111111'11111111'11111111'11111111'00000000'00000000'00000000'00000000ULL}) ==
         0b00000000'00000000'00000000'00000000'11111111'11111111'11111111'11111111ULL);
 
-#if defined(HAS_I128_CONSTEXPR)
-
-    ASSERT_THAT(bit_reverse(uint128_t{0}) == 0);
-    ASSERT_THAT(bit_reverse(uint128_t{~uint64_t{0}} << 64U) == ~uint64_t{0});
-    ASSERT_THAT(bit_reverse((uint128_t{~uint64_t{0}} << 64U) | 1U) ==
-                ((uint128_t{1} << 127U) | ~uint64_t{0}));
-    ASSERT_THAT(bit_reverse(~uint128_t{0}) == ~uint128_t{0});
-
-#endif
+    I128_ASSERT_THAT(bit_reverse(uint128_t{0}) == 0);
+    I128_ASSERT_THAT(bit_reverse(uint128_t{~uint64_t{0}} << 64U) == ~uint64_t{0});
+    I128_ASSERT_THAT(bit_reverse((uint128_t{~uint64_t{0}} << 64U) | 1U) ==
+                     ((uint128_t{1} << 127U) | ~uint64_t{0}));
+    I128_ASSERT_THAT(bit_reverse(~uint128_t{0}) == ~uint128_t{0});
 
 #if CONFIG_HAS_AT_LEAST_CXX_20
     ASSERT_THAT(int(detail::pop_count_32_software(0U)) == std::popcount(0U));
@@ -1231,9 +1227,7 @@ void test_general_asserts() noexcept {
                 std::popcount(uint64_t{0xFFFFFFFFFFFFFFFFULL - 1}));
     ASSERT_THAT(int(detail::pop_count_64_software(uint64_t{0xFFFFFFFFFFFFFFFFULL})) ==
                 std::popcount(uint64_t{0xFFFFFFFFFFFFFFFFULL}));
-#endif
 
-#if CONFIG_HAS_AT_LEAST_CXX_20
     ASSERT_THAT(std::popcount(0U) - std::popcount(0U) == pop_diff(0, 0));
     ASSERT_THAT(std::popcount(1U) - std::popcount(0U) == pop_diff(1, 0));
     ASSERT_THAT(std::popcount(0U) - std::popcount(1U) == pop_diff(0, 1));
@@ -1251,22 +1245,20 @@ void test_general_asserts() noexcept {
         pop_diff(std::numeric_limits<uint32_t>::max(), std::numeric_limits<uint32_t>::max()));
 #endif
 
-#if defined(HAS_I128_CONSTEXPR)
-    ASSERT_THAT(sign(int128_t{0}) == 0);
-    ASSERT_THAT(sign(int128_t{1}) == 1);
-    ASSERT_THAT(sign(int128_t{-1}) == -1);
-    ASSERT_THAT(sign(int128_t{2}) == 1);
-    ASSERT_THAT(sign(int128_t{-2}) == -1);
-    ASSERT_THAT(sign(int128_t{18446744073709551615ULL}) == 1);
-    ASSERT_THAT(sign(-int128_t{18446744073709551615ULL}) == -1);
-    ASSERT_THAT(sign(int128_t{uint64_t{1} << 63U}) == 1);
-    ASSERT_THAT(sign(-int128_t{uint64_t{1} << 63U}) == -1);
-    ASSERT_THAT(sign(static_cast<int128_t>(uint128_t{1} << 126U)) == 1);
-    ASSERT_THAT(sign(-static_cast<int128_t>(uint128_t{1} << 126U)) == -1);
-    ASSERT_THAT(sign(static_cast<int128_t>((uint128_t{1} << 127U) - 1)) == 1);
-    ASSERT_THAT(sign(static_cast<int128_t>(-((uint128_t{1} << 127U) - 1))) == -1);
-    ASSERT_THAT(sign(static_cast<int128_t>(-(uint128_t{1} << 127U))) == -1);
-#endif
+    I128_ASSERT_THAT(sign(int128_t{0}) == 0);
+    I128_ASSERT_THAT(sign(int128_t{1}) == 1);
+    I128_ASSERT_THAT(sign(int128_t{-1}) == -1);
+    I128_ASSERT_THAT(sign(int128_t{2}) == 1);
+    I128_ASSERT_THAT(sign(int128_t{-2}) == -1);
+    I128_ASSERT_THAT(sign(int128_t{18446744073709551615ULL}) == 1);
+    I128_ASSERT_THAT(sign(-int128_t{18446744073709551615ULL}) == -1);
+    I128_ASSERT_THAT(sign(int128_t{uint64_t{1} << 63U}) == 1);
+    I128_ASSERT_THAT(sign(-int128_t{uint64_t{1} << 63U}) == -1);
+    I128_ASSERT_THAT(sign(static_cast<int128_t>(uint128_t{1} << 126U)) == 1);
+    I128_ASSERT_THAT(sign(-static_cast<int128_t>(uint128_t{1} << 126U)) == -1);
+    I128_ASSERT_THAT(sign(static_cast<int128_t>((uint128_t{1} << 127U) - 1)) == 1);
+    I128_ASSERT_THAT(sign(static_cast<int128_t>(-((uint128_t{1} << 127U) - 1))) == -1);
+    I128_ASSERT_THAT(sign(static_cast<int128_t>(-(uint128_t{1} << 127U))) == -1);
 
     ASSERT_THAT(same_sign_soft(1, 1));
     ASSERT_THAT(same_sign_soft(1, 0));
@@ -1348,32 +1340,29 @@ void test_general_asserts() noexcept {
     ASSERT_THAT(uabs(std::numeric_limits<int64_t>::min()) ==
                 -static_cast<uint64_t>(std::numeric_limits<int64_t>::min()));
 
-#if defined(HAS_I128_CONSTEXPR)
-    ASSERT_THAT(uabs(int128_t{0}) == 0);
-    ASSERT_THAT(uabs(uint128_t{0}) == 0);
-    ASSERT_THAT(uabs(int128_t{-1}) == 1);
-    ASSERT_THAT(uabs(int128_t{1}) == 1);
-    ASSERT_THAT(uabs(uint128_t{1}) == 1);
-    ASSERT_THAT(uabs(int128_t{-4}) == 4);
-    ASSERT_THAT(uabs(int128_t{4}) == 4);
-    ASSERT_THAT(uabs(uint128_t{4}) == 4);
-    ASSERT_THAT(uabs(-int128_t{18446744073709551615ULL}) == 18446744073709551615ULL);
-    ASSERT_THAT(uabs(int128_t{18446744073709551615ULL}) == 18446744073709551615ULL);
-    ASSERT_THAT(uabs(uint128_t{18446744073709551615ULL}) == 18446744073709551615ULL);
-    ASSERT_THAT(uabs(-static_cast<int128_t>(uint128_t{1} << 126U)) == uint128_t{1} << 126U);
-    ASSERT_THAT(uabs(static_cast<int128_t>(uint128_t{1} << 126U)) == uint128_t{1} << 126U);
-    ASSERT_THAT(uabs(uint128_t{1} << 126U) == uint128_t{1} << 126U);
-    ASSERT_THAT(uabs(static_cast<int128_t>(-((uint128_t{1} << 127U) - 1))) ==
-                (uint128_t{1} << 127U) - 1);
-    ASSERT_THAT(uabs(static_cast<int128_t>((uint128_t{1} << 127U) - 1)) ==
-                (uint128_t{1} << 127U) - 1);
-    ASSERT_THAT(uabs((uint128_t{1} << 127U) - 1) == (uint128_t{1} << 127U) - 1);
-    ASSERT_THAT(uabs(static_cast<int128_t>(-(uint128_t{1} << 127U))) == uint128_t{1} << 127U);
-    ASSERT_THAT(uabs(-(uint128_t{1} << 127U)) == uint128_t{1} << 127U);
-#endif
+    I128_ASSERT_THAT(uabs(int128_t{0}) == 0);
+    I128_ASSERT_THAT(uabs(uint128_t{0}) == 0);
+    I128_ASSERT_THAT(uabs(int128_t{-1}) == 1);
+    I128_ASSERT_THAT(uabs(int128_t{1}) == 1);
+    I128_ASSERT_THAT(uabs(uint128_t{1}) == 1);
+    I128_ASSERT_THAT(uabs(int128_t{-4}) == 4);
+    I128_ASSERT_THAT(uabs(int128_t{4}) == 4);
+    I128_ASSERT_THAT(uabs(uint128_t{4}) == 4);
+    I128_ASSERT_THAT(uabs(-int128_t{18446744073709551615ULL}) == 18446744073709551615ULL);
+    I128_ASSERT_THAT(uabs(int128_t{18446744073709551615ULL}) == 18446744073709551615ULL);
+    I128_ASSERT_THAT(uabs(uint128_t{18446744073709551615ULL}) == 18446744073709551615ULL);
+    I128_ASSERT_THAT(uabs(-static_cast<int128_t>(uint128_t{1} << 126U)) == uint128_t{1} << 126U);
+    I128_ASSERT_THAT(uabs(static_cast<int128_t>(uint128_t{1} << 126U)) == uint128_t{1} << 126U);
+    I128_ASSERT_THAT(uabs(uint128_t{1} << 126U) == uint128_t{1} << 126U);
+    I128_ASSERT_THAT(uabs(static_cast<int128_t>(-((uint128_t{1} << 127U) - 1))) ==
+                     (uint128_t{1} << 127U) - 1);
+    I128_ASSERT_THAT(uabs(static_cast<int128_t>((uint128_t{1} << 127U) - 1)) ==
+                     (uint128_t{1} << 127U) - 1);
+    I128_ASSERT_THAT(uabs((uint128_t{1} << 127U) - 1) == (uint128_t{1} << 127U) - 1);
+    I128_ASSERT_THAT(uabs(static_cast<int128_t>(-(uint128_t{1} << 127U))) == uint128_t{1} << 127U);
+    I128_ASSERT_THAT(uabs(-(uint128_t{1} << 127U)) == uint128_t{1} << 127U);
 
 #if CONFIG_HAS_AT_LEAST_CXX_20
-
     ASSERT_THAT(sign(std::popcount(0U) - std::popcount(0U)) == sign(pop_cmp(0, 0)));
     ASSERT_THAT(sign(std::popcount(1U) - std::popcount(0U)) == sign(pop_cmp(1, 0)));
     ASSERT_THAT(sign(std::popcount(0U) - std::popcount(1U)) == sign(pop_cmp(0, 1)));
@@ -1494,27 +1483,24 @@ void test_general_asserts() noexcept {
     ASSERT_THAT(is_power_of_two(1ULL << 62U));
     ASSERT_THAT(is_power_of_two(1ULL << 63U));
 
-#if defined(INTEGERS_128_BIT_HPP)
-
-    ASSERT_THAT(!is_power_of_two(uint128_t{0}));
-    ASSERT_THAT(is_power_of_two(uint128_t{1} << 0U));
-    ASSERT_THAT(is_power_of_two(uint128_t{1} << 1U));
-    ASSERT_THAT(is_power_of_two(uint128_t{1} << 2U));
-    ASSERT_THAT(is_power_of_two(uint128_t{1} << 3U));
-    ASSERT_THAT(is_power_of_two(uint128_t{1} << 4U));
-    ASSERT_THAT(is_power_of_two(uint128_t{1} << 5U));
-    ASSERT_THAT(is_power_of_two(uint128_t{1} << 6U));
-    ASSERT_THAT(is_power_of_two(uint128_t{1} << 7U));
-    ASSERT_THAT(is_power_of_two(uint128_t{1} << 8U));
-    ASSERT_THAT(is_power_of_two(uint128_t{1} << 9U));
-    ASSERT_THAT(is_power_of_two(uint128_t{1} << 60U));
-    ASSERT_THAT(is_power_of_two(uint128_t{1} << 61U));
-    ASSERT_THAT(is_power_of_two(uint128_t{1} << 62U));
-    ASSERT_THAT(is_power_of_two(uint128_t{1} << 63U));
-    ASSERT_THAT(is_power_of_two(uint128_t{1} << 64U));
-    ASSERT_THAT(is_power_of_two(uint128_t{1} << 65U));
-    ASSERT_THAT(is_power_of_two(uint128_t{1} << 127U));
-#endif
+    I128_ASSERT_THAT(!is_power_of_two(uint128_t{0}));
+    I128_ASSERT_THAT(is_power_of_two(uint128_t{1} << 0U));
+    I128_ASSERT_THAT(is_power_of_two(uint128_t{1} << 1U));
+    I128_ASSERT_THAT(is_power_of_two(uint128_t{1} << 2U));
+    I128_ASSERT_THAT(is_power_of_two(uint128_t{1} << 3U));
+    I128_ASSERT_THAT(is_power_of_two(uint128_t{1} << 4U));
+    I128_ASSERT_THAT(is_power_of_two(uint128_t{1} << 5U));
+    I128_ASSERT_THAT(is_power_of_two(uint128_t{1} << 6U));
+    I128_ASSERT_THAT(is_power_of_two(uint128_t{1} << 7U));
+    I128_ASSERT_THAT(is_power_of_two(uint128_t{1} << 8U));
+    I128_ASSERT_THAT(is_power_of_two(uint128_t{1} << 9U));
+    I128_ASSERT_THAT(is_power_of_two(uint128_t{1} << 60U));
+    I128_ASSERT_THAT(is_power_of_two(uint128_t{1} << 61U));
+    I128_ASSERT_THAT(is_power_of_two(uint128_t{1} << 62U));
+    I128_ASSERT_THAT(is_power_of_two(uint128_t{1} << 63U));
+    I128_ASSERT_THAT(is_power_of_two(uint128_t{1} << 64U));
+    I128_ASSERT_THAT(is_power_of_two(uint128_t{1} << 65U));
+    I128_ASSERT_THAT(is_power_of_two(uint128_t{1} << 127U));
 
     ASSERT_THAT(nearest_greater_equal_power_of_two(uint32_t{0U}) == 1U);
     ASSERT_THAT(nearest_greater_equal_power_of_two(uint32_t{1U}) == 1U);
@@ -1799,8 +1785,6 @@ void test_general_asserts() noexcept {
     LOG10_ASSERT_THAT(base_10_len(static_cast<uint64_t>(1e19)) == 20);
     LOG10_ASSERT_THAT(base_10_len(static_cast<uint64_t>(-1)) == 20);
 
-#if CONFIG_HAS_AT_LEAST_CXX_17
-
     ASSERT_THAT(base_b_len(0U) == 1);
     ASSERT_THAT(base_b_len(1U) == 1);
     ASSERT_THAT(base_b_len(9U) == 1);
@@ -1857,83 +1841,79 @@ void test_general_asserts() noexcept {
     ASSERT_THAT(base_b_len(-101LL) == 4);
     ASSERT_THAT(base_b_len(std::numeric_limits<int64_t>::min()) == 20);
 
-#if defined(INTEGERS_128_BIT_HPP)
+    I128_ASSERT_THAT(base_b_len(uint128_t{0}) == 1);
+    I128_ASSERT_THAT(base_b_len(uint128_t{1}) == 1);
+    I128_ASSERT_THAT(base_b_len(uint128_t{9}) == 1);
+    I128_ASSERT_THAT(base_b_len(uint128_t{10}) == 2);
+    I128_ASSERT_THAT(base_b_len(uint128_t{11}) == 2);
+    I128_ASSERT_THAT(base_b_len(uint128_t{99}) == 2);
+    I128_ASSERT_THAT(base_b_len(uint128_t{100}) == 3);
+    I128_ASSERT_THAT(base_b_len(uint128_t{101}) == 3);
+    I128_ASSERT_THAT(base_b_len(static_cast<uint128_t>(-1)) == 39);
 
-    ASSERT_THAT(base_b_len(uint128_t{0}) == 1);
-    ASSERT_THAT(base_b_len(uint128_t{1}) == 1);
-    ASSERT_THAT(base_b_len(uint128_t{9}) == 1);
-    ASSERT_THAT(base_b_len(uint128_t{10}) == 2);
-    ASSERT_THAT(base_b_len(uint128_t{11}) == 2);
-    ASSERT_THAT(base_b_len(uint128_t{99}) == 2);
-    ASSERT_THAT(base_b_len(uint128_t{100}) == 3);
-    ASSERT_THAT(base_b_len(uint128_t{101}) == 3);
-    ASSERT_THAT(base_b_len(static_cast<uint128_t>(-1)) == 39);
+    I128_ASSERT_THAT(base_b_len(int128_t{0}) == 1);
+    I128_ASSERT_THAT(base_b_len(int128_t{1}) == 1);
+    I128_ASSERT_THAT(base_b_len(int128_t{9}) == 1);
+    I128_ASSERT_THAT(base_b_len(int128_t{10}) == 2);
+    I128_ASSERT_THAT(base_b_len(int128_t{11}) == 2);
+    I128_ASSERT_THAT(base_b_len(int128_t{99}) == 2);
+    I128_ASSERT_THAT(base_b_len(int128_t{100}) == 3);
+    I128_ASSERT_THAT(base_b_len(int128_t{101}) == 3);
+    I128_ASSERT_THAT(base_b_len(-int128_t{0}) == 1);
+    I128_ASSERT_THAT(base_b_len(-int128_t{1}) == 2);
+    I128_ASSERT_THAT(base_b_len(-int128_t{9}) == 2);
+    I128_ASSERT_THAT(base_b_len(-int128_t{10}) == 3);
+    I128_ASSERT_THAT(base_b_len(-int128_t{11}) == 3);
+    I128_ASSERT_THAT(base_b_len(-int128_t{99}) == 3);
+    I128_ASSERT_THAT(base_b_len(-int128_t{100}) == 4);
+    I128_ASSERT_THAT(base_b_len(-int128_t{101}) == 4);
+    I128_ASSERT_THAT(base_b_len(static_cast<int128_t>(uint128_t{1} << 127U)) == 40);
 
-    ASSERT_THAT(base_b_len(int128_t{0}) == 1);
-    ASSERT_THAT(base_b_len(int128_t{1}) == 1);
-    ASSERT_THAT(base_b_len(int128_t{9}) == 1);
-    ASSERT_THAT(base_b_len(int128_t{10}) == 2);
-    ASSERT_THAT(base_b_len(int128_t{11}) == 2);
-    ASSERT_THAT(base_b_len(int128_t{99}) == 2);
-    ASSERT_THAT(base_b_len(int128_t{100}) == 3);
-    ASSERT_THAT(base_b_len(int128_t{101}) == 3);
-    ASSERT_THAT(base_b_len(-int128_t{0}) == 1);
-    ASSERT_THAT(base_b_len(-int128_t{1}) == 2);
-    ASSERT_THAT(base_b_len(-int128_t{9}) == 2);
-    ASSERT_THAT(base_b_len(-int128_t{10}) == 3);
-    ASSERT_THAT(base_b_len(-int128_t{11}) == 3);
-    ASSERT_THAT(base_b_len(-int128_t{99}) == 3);
-    ASSERT_THAT(base_b_len(-int128_t{100}) == 4);
-    ASSERT_THAT(base_b_len(-int128_t{101}) == 4);
-    ASSERT_THAT(base_b_len(static_cast<int128_t>(uint128_t{1} << 127U)) == 40);
+    I128_ASSERT_THAT(gcd(uint128_t{1}, uint128_t{1}) == 1);
+    I128_ASSERT_THAT(gcd(uint128_t{3}, uint128_t{7}) == 1);
+    I128_ASSERT_THAT(gcd(uint128_t{0}, uint128_t{112378432}) == 112378432);
+    I128_ASSERT_THAT(gcd(uint128_t{112378432}, uint128_t{0}) == 112378432);
+    I128_ASSERT_THAT(gcd(uint128_t{429384832}, uint128_t{324884}) == 4);
+    I128_ASSERT_THAT(gcd(uint128_t{18446744073709551521ULL}, uint128_t{18446744073709551533ULL}) ==
+                     1);
+    I128_ASSERT_THAT(gcd(uint128_t{18446744073709551521ULL} * 18446744073709551521ULL,
+                         uint128_t{18446744073709551521ULL}) == 18446744073709551521ULL);
+    I128_ASSERT_THAT(gcd(uint128_t{23999993441ULL} * 23999993377ULL,
+                         uint128_t{23999992931ULL} * 23999539633ULL) == 1);
+    I128_ASSERT_THAT(gcd(uint128_t{2146514599U} * 2146514603U * 2146514611U,
+                         uint128_t{2146514611U} * 2146514621U * 2146514647U) == 2146514611ULL);
+    I128_ASSERT_THAT(gcd(uint128_t{2146514599U} * 2146514603U * 2146514611U * 2,
+                         uint128_t{2146514599U} * 2146514603U * 2146514611U * 3) ==
+                     uint128_t{2146514599U} * 2146514603U * 2146514611U);
+    I128_ASSERT_THAT(gcd(uint128_t{100000000000000003ULL} * 1000000000000000003ULL,
+                         uint128_t{1000000000000000003ULL} * 1000000000000000009ULL) ==
+                     1000000000000000003ULL);
+    I128_ASSERT_THAT(gcd(uint128_t{3} * 2 * 5 * 7 * 11 * 13 * 17 * 19,
+                         uint128_t{18446744073709551557ULL} * 3) == 3);
+    I128_ASSERT_THAT(gcd(uint128_t{1000000000000000009ULL},
+                         uint128_t{1000000000000000009ULL} * 1000000000000000009ULL) ==
+                     1000000000000000009ULL);
+    I128_ASSERT_THAT(
+        gcd(uint128_t{0}, uint128_t{1000000000000000009ULL} * 1000000000000000009ULL) ==
+        uint128_t{1000000000000000009ULL} * 1000000000000000009ULL);
+    I128_ASSERT_THAT(gcd(uint128_t{18446744073709551557ULL}, uint128_t{0}) ==
+                     18446744073709551557ULL);
 
-#endif  // INTEGERS_128_BIT_HPP
-
-#endif  // CONFIG_HAS_AT_LEAST_CXX_17
-
-#if defined(HAS_I128_CONSTEXPR)
-
-    ASSERT_THAT(gcd(uint128_t{1}, uint128_t{1}) == 1);
-    ASSERT_THAT(gcd(uint128_t{3}, uint128_t{7}) == 1);
-    ASSERT_THAT(gcd(uint128_t{0}, uint128_t{112378432}) == 112378432);
-    ASSERT_THAT(gcd(uint128_t{112378432}, uint128_t{0}) == 112378432);
-    ASSERT_THAT(gcd(uint128_t{429384832}, uint128_t{324884}) == 4);
-    ASSERT_THAT(gcd(uint128_t{18446744073709551521ULL}, uint128_t{18446744073709551533ULL}) == 1);
-    ASSERT_THAT(gcd(uint128_t{18446744073709551521ULL} * 18446744073709551521ULL,
-                    uint128_t{18446744073709551521ULL}) == 18446744073709551521ULL);
-    ASSERT_THAT(gcd(uint128_t{23999993441ULL} * 23999993377ULL,
-                    uint128_t{23999992931ULL} * 23999539633ULL) == 1);
-    ASSERT_THAT(gcd(uint128_t{2146514599U} * 2146514603U * 2146514611U,
-                    uint128_t{2146514611U} * 2146514621U * 2146514647U) == 2146514611ULL);
-    ASSERT_THAT(gcd(uint128_t{2146514599U} * 2146514603U * 2146514611U * 2,
-                    uint128_t{2146514599U} * 2146514603U * 2146514611U * 3) ==
-                uint128_t{2146514599U} * 2146514603U * 2146514611U);
-    ASSERT_THAT(gcd(uint128_t{100000000000000003ULL} * 1000000000000000003ULL,
-                    uint128_t{1000000000000000003ULL} * 1000000000000000009ULL) ==
-                1000000000000000003ULL);
-    ASSERT_THAT(gcd(uint128_t{3} * 2 * 5 * 7 * 11 * 13 * 17 * 19,
-                    uint128_t{18446744073709551557ULL} * 3) == 3);
-    ASSERT_THAT(gcd(uint128_t{1000000000000000009ULL},
-                    uint128_t{1000000000000000009ULL} * 1000000000000000009ULL) ==
-                1000000000000000009ULL);
-    ASSERT_THAT(gcd(uint128_t{0}, uint128_t{1000000000000000009ULL} * 1000000000000000009ULL) ==
-                uint128_t{1000000000000000009ULL} * 1000000000000000009ULL);
-    ASSERT_THAT(gcd(uint128_t{18446744073709551557ULL}, uint128_t{0}) == 18446744073709551557ULL);
-
-    ASSERT_THAT(gcd(uint64_t{2}, int128_t{4}) == 2);
-    ASSERT_THAT(gcd(uint64_t{2}, int128_t{-4}) == 2);
-    ASSERT_THAT(gcd(uint64_t{3}, int128_t{7}) == 1);
-    ASSERT_THAT(gcd(uint64_t{3}, int128_t{-7}) == 1);
-    ASSERT_THAT(gcd(uint64_t{3}, int128_t{18446744073709551557ULL} * 3) == 3);
-    ASSERT_THAT(gcd(uint64_t{3}, int128_t{18446744073709551557ULL} * (-3)) == 3);
-    ASSERT_THAT(gcd(uint64_t{3} * 2 * 5 * 7 * 11 * 13 * 17 * 19,
-                    int128_t{18446744073709551557ULL} * 3) == 3);
-    ASSERT_THAT(gcd(uint64_t{1000000000000000009ULL},
-                    int128_t{1000000000000000009LL} * 1000000000000000009LL) ==
-                1000000000000000009ULL);
-    ASSERT_THAT(gcd(uint64_t{0}, int128_t{1000000000000000009LL} * 1000000000000000009LL) ==
-                uint128_t{1000000000000000009LL} * 1000000000000000009ULL);
-    ASSERT_THAT(gcd(uint64_t{18446744073709551557ULL}, int128_t{0}) == 18446744073709551557ULL);
+    I128_ASSERT_THAT(gcd(uint64_t{2}, int128_t{4}) == 2);
+    I128_ASSERT_THAT(gcd(uint64_t{2}, int128_t{-4}) == 2);
+    I128_ASSERT_THAT(gcd(uint64_t{3}, int128_t{7}) == 1);
+    I128_ASSERT_THAT(gcd(uint64_t{3}, int128_t{-7}) == 1);
+    I128_ASSERT_THAT(gcd(uint64_t{3}, int128_t{18446744073709551557ULL} * 3) == 3);
+    I128_ASSERT_THAT(gcd(uint64_t{3}, int128_t{18446744073709551557ULL} * (-3)) == 3);
+    I128_ASSERT_THAT(gcd(uint64_t{3} * 2 * 5 * 7 * 11 * 13 * 17 * 19,
+                         int128_t{18446744073709551557ULL} * 3) == 3);
+    I128_ASSERT_THAT(gcd(uint64_t{1000000000000000009ULL},
+                         int128_t{1000000000000000009LL} * 1000000000000000009LL) ==
+                     1000000000000000009ULL);
+    I128_ASSERT_THAT(gcd(uint64_t{0}, int128_t{1000000000000000009LL} * 1000000000000000009LL) ==
+                     uint128_t{1000000000000000009LL} * 1000000000000000009ULL);
+    I128_ASSERT_THAT(gcd(uint64_t{18446744073709551557ULL}, int128_t{0}) ==
+                     18446744073709551557ULL);
 
     ASSERT_THAT(math_functions::popcount(0U) == 0);
     ASSERT_THAT(math_functions::popcount(1U << 1U) == 1);
@@ -1997,8 +1977,6 @@ void test_general_asserts() noexcept {
     ASSERT_THAT(math_functions::bool_median(true, true, false));
     ASSERT_THAT(math_functions::bool_median(false, true, true));
 
-#endif
-
     ASSERT_THAT(([]() constexpr noexcept {
         const auto [q, r] = math_functions::extract_pow2(uint32_t{0});
         return q == 0 && r == 32;
@@ -2034,21 +2012,17 @@ void test_general_asserts() noexcept {
     ASSERT_THAT(
         (math_functions::powers_sum_u64<3>(100) == 100U * 100U * (100U + 1) * (100U + 1) / 4));
 
-#if defined(HAS_I128_CONSTEXPR)
-
-    ASSERT_THAT((math_functions::powers_sum_u128<0>(100) == 100U));
-    ASSERT_THAT((math_functions::powers_sum_u128<1>(100) == 100U * (100U + 1) / 2));
-    ASSERT_THAT(
+    I128_ASSERT_THAT((math_functions::powers_sum_u128<0>(100) == 100U));
+    I128_ASSERT_THAT((math_functions::powers_sum_u128<1>(100) == 100U * (100U + 1) / 2));
+    I128_ASSERT_THAT(
         (math_functions::powers_sum_u128<2>(100) == 100U * (100U + 1) * (2 * 100U + 1) / 6));
-    ASSERT_THAT(
+    I128_ASSERT_THAT(
         (math_functions::powers_sum_u128<3>(100) == 100U * 100U * (100U + 1) * (100U + 1) / 4));
 
     constexpr auto kN    = static_cast<uint32_t>(3e9);
     constexpr auto kN128 = static_cast<uint128_t>(kN);
-    ASSERT_THAT(
+    I128_ASSERT_THAT(
         (math_functions::powers_sum_u128<3>(kN) == kN128 * kN128 * (kN128 + 1) * (kN128 + 1) / 4));
-
-#endif
 
     ASSERT_THAT(next_even(0U) == 2);
     ASSERT_THAT(next_even(1U) == 2);
@@ -2059,11 +2033,9 @@ void test_general_asserts() noexcept {
     ASSERT_THAT(next_even(0ULL) == 2);
     ASSERT_THAT(next_even(1ULL) == 2);
     ASSERT_THAT(next_even(2ULL) == 4);
-#ifdef INTEGERS_128_BIT_HPP
-    ASSERT_THAT(next_even(uint128_t{0}) == 2);
-    ASSERT_THAT(next_even(uint128_t{1}) == 2);
-    ASSERT_THAT(next_even(uint128_t{2}) == 4);
-#endif
+    I128_ASSERT_THAT(next_even(uint128_t{0}) == 2);
+    I128_ASSERT_THAT(next_even(uint128_t{1}) == 2);
+    I128_ASSERT_THAT(next_even(uint128_t{2}) == 4);
 
     constexpr auto kMaxU32 = std::numeric_limits<uint32_t>::max();
     ASSERT_THAT(next_even(kMaxU32 - 3) == kMaxU32 - 1);
@@ -2079,10 +2051,10 @@ void test_general_asserts() noexcept {
 
 #ifdef INTEGERS_128_BIT_HPP
     constexpr auto kMaxU128 = static_cast<uint128_t>(-1);
-    ASSERT_THAT(next_even(kMaxU128 - 3) == kMaxU128 - 1);
-    ASSERT_THAT(next_even(kMaxU128 - 2) == kMaxU128 - 1);
-    ASSERT_THAT(next_even(kMaxU128 - 1) == 0);
-    ASSERT_THAT(next_even(kMaxU128 - 0) == 0);
+    I128_ASSERT_THAT(next_even(kMaxU128 - 3) == kMaxU128 - 1);
+    I128_ASSERT_THAT(next_even(kMaxU128 - 2) == kMaxU128 - 1);
+    I128_ASSERT_THAT(next_even(kMaxU128 - 1) == 0);
+    I128_ASSERT_THAT(next_even(kMaxU128 - 0) == 0);
 #endif
 
     ASSERT_THAT(solve_binary_congruence_modulo_m(24U, 1U << 24U, 43284U) == 1);
@@ -2090,9 +2062,10 @@ void test_general_asserts() noexcept {
     ASSERT_THAT(solve_binary_congruence_modulo_m(30U, 1U << 30U, 6237443U) == 1);
     ASSERT_THAT(solve_binary_congruence_modulo_m(28U, 1U << 30U, 6237443U) == 4);
 
-#undef STRINGIFY
-#undef ASSERT_THAT
+#undef I128_ASSERT_THAT
 #undef LOG10_ASSERT_THAT
+#undef ASSERT_THAT
+#undef STRINGIFY
 }
 
 // NOLINTNEXTLINE(google-readability-function-size, hicpp-function-size)
