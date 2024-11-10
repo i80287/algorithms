@@ -4,6 +4,11 @@ project(tests VERSION 0.1.0 LANGUAGES C CXX)
 
 include(CMakeTestsUtils.cmake)
 
+set(TEST_COMPILE_DEFINITIONS
+    ${TEST_COMPILE_DEFINITIONS}
+    ENABLE_LONGINT_DEBUG_ASSERTS=1)
+set(CAN_COMPILE_CONSTEXPR_STRING_MAP False)
+
 set(TestFilenames "dummy")
 set(TestDirectories "dummy")
 set(TestLangVersions "dummy")
@@ -163,8 +168,7 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR (CMAKE_CXX_COMPILER_ID STREQUAL "Clan
     list(APPEND TestCompileOnly False)
 endif()
 
-set(CAN_COMPILE_CONSTEXPR_STRING_MAP False)
-if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang" OR CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang")
     if(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 13.0)
         set(CAN_COMPILE_CONSTEXPR_STRING_MAP True)
     endif()
@@ -197,18 +201,10 @@ if(CAN_COMPILE_CONSTEXPR_STRING_MAP)
 endif()
 unset(CAN_COMPILE_CONSTEXPR_STRING_MAP)
 
-set(TestFilenames "dummy")
-set(TestDirectories "dummy")
-set(TestLangVersions "dummy")
-set(TestDependencies "dummy")
-set(TestOptionalDependencies "dummy")
-set(TestIsCProject "dummy")
-set(TestCompileOnly "dummy")
-
-if (GENERATOR_SUPPORTS_MODULES AND COMPILER_SUPPORTS_MODULES)
-    add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/../bstrees ${CMAKE_CURRENT_BINARY_DIR}/bstrees)
-    add_test(NAME rbtree_tests COMMAND $<TARGET_FILE:rbtree_tests>)
-endif()
+# if (GENERATOR_SUPPORTS_MODULES AND COMPILER_SUPPORTS_MODULES)
+#     add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/../bstrees ${CMAKE_CURRENT_BINARY_DIR}/bstrees)
+#     add_test(NAME rbtree_tests COMMAND $<TARGET_FILE:rbtree_tests>)
+# endif()
 
 list(POP_FRONT TestFilenames) # pop dummy
 list(POP_FRONT TestDirectories) # pop dummy

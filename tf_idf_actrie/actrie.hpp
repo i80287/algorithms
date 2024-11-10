@@ -211,9 +211,9 @@ public:
                 }
 
                 if constexpr (IsExactWordsMatching) {
-                    size_type pattern_size     = patterns_lengths_[pattern_index];
-                    size_type word_begin_index = i + 1 - pattern_size;
-                    bool prev_symbol_and_next_symbol_not_in_the_alphabet =
+                    const size_type pattern_size     = patterns_lengths_[pattern_index];
+                    const size_type word_begin_index = i + 1 - pattern_size;
+                    const bool prev_symbol_and_next_symbol_not_in_the_alphabet =
                         (word_begin_index == 0 || !IsInAlphabet(text[word_begin_index - 1])) &&
                         (i + 1 == text.size() || !IsInAlphabet(text[i + 1]));
                     if (prev_symbol_and_next_symbol_not_in_the_alphabet) {
@@ -232,14 +232,14 @@ public:
                     assert(terminal_node_index != kNullNodeIndex &&
                            nodes_[terminal_node_index].IsTerminal());
                 }
-                size_type pattern_index = nodes_[terminal_node_index].pattern_index;
+                const size_type pattern_index = nodes_[terminal_node_index].pattern_index;
                 if (!std::is_constant_evaluated()) {
                     assert(pattern_index < patterns_lengths_.size());
                 }
 
                 if constexpr (IsExactWordsMatching) {
-                    size_type pattern_size = patterns_lengths_[pattern_index];
-                    size_type l            = i + 1 - pattern_size;
+                    const size_type pattern_size = patterns_lengths_[pattern_index];
+                    const size_type l            = i + 1 - pattern_size;
                     if ((l == 0 || !IsInAlphabet(text[l - 1])) &&
                         (i + 1 == text.size() || !IsInAlphabet(text[i + 1]))) {
                         find_callback(current_line, pattern_index);
@@ -614,7 +614,7 @@ protected:
         size_type queue_tail    = 0;
         bfs_queue[queue_tail++] = kRootNodeIndex;
         do {
-            size_type node_index = bfs_queue[queue_head++];
+            const size_type node_index = bfs_queue[queue_head++];
             ComputeLinksForNodeChildren(node_index, nodes, bfs_queue, queue_tail);
         } while (queue_head < queue_tail);
     }
@@ -654,7 +654,7 @@ private:
             if (symbol_index >= kAlphabetLength) {
                 return false;
             }
-            size_type next_node_index = nodes[current_node_index][symbol_index];
+            const size_type next_node_index = nodes[current_node_index][symbol_index];
             if (next_node_index != kNullNodeIndex) {
                 current_node_index = next_node_index;
             } else {
@@ -677,7 +677,8 @@ private:
             current_node_index                      = new_node_index++;
         }
 
-        StoredPatternIndex pattern_index = static_cast<StoredPatternIndex>(words_lengths.size());
+        const StoredPatternIndex pattern_index =
+            static_cast<StoredPatternIndex>(words_lengths.size());
         nodes[current_node_index].pattern_index = pattern_index;
         words_lengths.push_back(static_cast<StoredPatternSize>(pattern_size));
         return true;

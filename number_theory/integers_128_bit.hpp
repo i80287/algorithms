@@ -1,3 +1,5 @@
+#pragma once
+
 /*
  * Small chunk of functions (like std::ostream::operator<<, print_u128) and
  * template instantiations (like int128_traits::is_unsigned,
@@ -14,22 +16,22 @@
 
 #if (defined(__clang__) || defined(__GNUC__)) && defined(__SIZEOF_INT128__)
 
-typedef __uint128_t uint128_t;
-typedef __int128_t int128_t;
+using uint128_t = __uint128_t;
+using int128_t  = __int128_t;
 
-#define HAS_INT128_TYPEDEF 1
+#define HAS_INT128_TYPEDEF
 
 #elif defined(_MSC_VER) && CONFIG_HAS_INCLUDE(<__msvc_int128.hpp>)
 
 #include <__msvc_int128.hpp>
-typedef std::_Unsigned128 uint128_t;
-typedef std::_Signed128 int128_t;
+using uint128_t = std::_Unsigned128;
+using int128_t  = std::_Signed128;
 
-#define HAS_INT128_TYPEDEF 1
+#define HAS_INT128_TYPEDEF
 
 #else
 
-#if defined(INTEGERS_128_BIT_HPP_WARN_IF_UNSUPPORED) && INTEGERS_128_BIT_HPP_WARN_IF_UNSUPPORED
+#if defined(INTEGERS_128_BIT_HPP_WARN_IF_UNSUPPORED)
 
 #if defined(__clang__) || defined(__GNUC__)
 // cppcheck-suppress [preprocessorErrorDirective]
@@ -41,14 +43,12 @@ typedef std::_Signed128 int128_t;
 
 #endif
 
-#define HAS_INT128_TYPEDEF 0
-
 #endif
 
-#if HAS_INT128_TYPEDEF
+#if defined(HAS_INT128_TYPEDEF)
 
 #ifndef INTEGERS_128_BIT_HPP
-#define INTEGERS_128_BIT_HPP 1
+#define INTEGERS_128_BIT_HPP
 
 #include <cstddef>
 #include <cstdint>
@@ -59,49 +59,54 @@ typedef std::_Signed128 int128_t;
 
 #if CONFIG_HAS_AT_LEAST_CXX_20 && !defined(__APPLE__) && \
     (defined(__GNUC__) || defined(__clang__)) && CONFIG_HAS_INCLUDE(<format>)
-#define SPECIALIZE_STD_FORMAT 1
+#define SPECIALIZE_STD_FORMAT
 #include <format>
-#else
-#define SPECIALIZE_STD_FORMAT 0
 #endif
 
 /**
- * Macro defined to 1 if current [u]int128_t supports constexpr
- * operations and 0 otherwise.
+ * Macro defined if current [u]int128_t supports constexpr
+ * operations.
  */
 #if (CONFIG_HAS_AT_LEAST_CXX_17 && (defined(__GNUG__) || defined(__clang__))) || \
     (CONFIG_HAS_AT_LEAST_CXX_20 && defined(_MSC_VER))
-#define HAS_I128_CONSTEXPR 1
-#else
-#define HAS_I128_CONSTEXPR 0
+#define HAS_I128_CONSTEXPR
 #endif
 
 /**
  * Macro defined to `constexpr` if current [u]int128_t supports constexpr
  * operations. Defined to empty otherwise.
  */
-#if HAS_I128_CONSTEXPR
+#if defined(HAS_I128_CONSTEXPR)
 #define I128_CONSTEXPR constexpr
 #else
 #define I128_CONSTEXPR inline
 #endif
 
+// clang-format off
+// NOLINTBEGIN(cppcoreguidelines-avoid-c-arrays, hicpp-avoid-c-arrays, modernize-avoid-c-arrays)
+// clang-format on
+
 namespace format_impl_uint128_t {
 
+// NOLINTBEGIN(cppcoreguidelines-avoid-magic-numbers)
+
 #if CONFIG_HAS_AT_LEAST_CXX_20
+
 // 340282366920938463463374607431768211455 == 2^128 - 1
 inline constexpr std::size_t kMaxStringLengthU128 =
     std::char_traits<char>::length("340282366920938463463374607431768211455");
-static_assert(kMaxStringLengthU128 == 39, "");
+static_assert(kMaxStringLengthU128 == 39, "impl error");
 //  170141183460469231731687303715884105727 ==  2^127 - 1
 // -170141183460469231731687303715884105728 == -2^127
 inline constexpr std::size_t kMaxStringLengthI128 =
     std::char_traits<char>::length("-170141183460469231731687303715884105728");
-static_assert(kMaxStringLengthI128 == 40, "");
+static_assert(kMaxStringLengthI128 == 40, "impl error");
 #else
 constexpr std::size_t kMaxStringLengthU128 = 39;
 constexpr std::size_t kMaxStringLengthI128 = 40;
 #endif
+
+// NOLINTEND(cppcoreguidelines-avoid-magic-numbers)
 
 /// @brief Realization taken from the gcc libstdc++ __to_chars_10_impl
 /// @param number
@@ -116,19 +121,22 @@ I128_CONSTEXPR char* uint128_t_format_fill_chars_buffer(uint128_t number,
         "6061626364656667686970717273747576777879"
         "8081828384858687888990919293949596979899";
 
-    while (number >= 100) {
-        const auto remainder_index = std::size_t(number % 100) * 2;
-        number /= 100;
-        *--buffer_ptr = char(remainders[remainder_index + 1]);
-        *--buffer_ptr = char(remainders[remainder_index]);
+    constexpr uint32_t kBase1 = 10;
+    constexpr uint32_t kBase2 = kBase1 * kBase1;
+
+    while (number >= kBase2) {
+        const auto remainder_index = static_cast<std::size_t>(number % kBase2) * 2;
+        number /= kBase2;
+        *--buffer_ptr = static_cast<char>(remainders[remainder_index + 1]);
+        *--buffer_ptr = static_cast<char>(remainders[remainder_index]);
     }
 
-    if (number >= 10) {
-        const auto remainder_index = std::size_t(number) * 2;
-        *--buffer_ptr              = char(remainders[remainder_index + 1]);
-        *--buffer_ptr              = char(remainders[remainder_index]);
+    if (number >= kBase1) {
+        const auto remainder_index = static_cast<std::size_t>(number) * 2;
+        *--buffer_ptr              = static_cast<char>(remainders[remainder_index + 1]);
+        *--buffer_ptr              = static_cast<char>(remainders[remainder_index]);
     } else {
-        *--buffer_ptr = char('0' + number);
+        *--buffer_ptr = static_cast<char>('0' + number);
     }
 
     return buffer_ptr;
@@ -352,7 +360,8 @@ inline int print_u128_newline(uint128_t number) noexcept {
     char digits[buffer_size];
     digits[buffer_size - 1] = '\0';
 
-    const uint128_t t          = static_cast<uint128_t>(number >> 127);
+    // NOLINTNEXTLINE(hicpp-signed-bitwise)
+    const uint128_t t          = static_cast<uint128_t>(number >> 127U);
     const uint128_t number_abs = (static_cast<uint128_t>(number) ^ t) - t;
 
     char* ptr = ::format_impl_uint128_t::uint128_t_format_fill_chars_buffer(
@@ -368,7 +377,11 @@ inline int print_u128_newline(uint128_t number) noexcept {
     return std::string(ptr, length);
 }
 
-#if SPECIALIZE_STD_FORMAT
+// clang-format off
+// NOLINTEND(cppcoreguidelines-avoid-c-arrays, hicpp-avoid-c-arrays, modernize-avoid-c-arrays)
+// clang-format on
+
+#if defined(SPECIALIZE_STD_FORMAT)
 
 template <class CharT>
 struct std::formatter<uint128_t, CharT> {  // NOLINT(cert-dcl58-cpp)
@@ -398,12 +411,12 @@ struct std::formatter<int128_t, CharT> {  // NOLINT(cert-dcl58-cpp)
     }
 };
 
-#endif
-
 #undef SPECIALIZE_STD_FORMAT
+
+#endif
 
 #endif  // !INTEGERS_128_BIT_HPP
 
-#endif  // HAS_INT128_TYPEDEF
-
 #undef HAS_INT128_TYPEDEF
+
+#endif  // HAS_INT128_TYPEDEF

@@ -1,12 +1,12 @@
 #ifndef MATH_FUNCTIONS_HPP
-#define MATH_FUNCTIONS_HPP 1
+#define MATH_FUNCTIONS_HPP
 
 // clang-format off
 /**
- * Define to 1 to if you want to compile some functions
- *  with a bit faster instruction (see description below)
+ * Define (uncomment line with #define) if you want to compile some
+ *  functions with a bit faster instruction (see description below)
  */
-#define MATH_FUNCTIONS_HPP_ENABLE_TARGET_OPTIONS 0
+// #define MATH_FUNCTIONS_HPP_ENABLE_TARGET_OPTIONS
 /**
  * From lzcnt: bsr -> lzcnt (leading zeros count)
  * Used in: log2_floor, log2_ceil, log10_floor, base_10_len
@@ -17,6 +17,7 @@
 // clang-format on
 
 #include <algorithm>
+#include <array>
 #include <bitset>
 #include <cassert>
 #include <climits>
@@ -48,16 +49,18 @@
 #pragma warning(disable : 4146)
 #endif  // _MSC_VER
 
-#if MATH_FUNCTIONS_HPP_ENABLE_TARGET_OPTIONS
+#if defined(MATH_FUNCTIONS_HPP_ENABLE_TARGET_OPTIONS)
 #if defined(__GNUG__)
 #if !defined(__clang__)
 #pragma GCC push_options
 #pragma GCC target("lzcnt,bmi")
 #else
 #pragma clang attribute push(__attribute__((target("lzcnt,bmi"))), apply_to = function)
-#endif  // !__clang__
-#endif  // __GNUC__
-#endif  // MATH_FUNCTIONS_HPP_ENABLE_TARGET_OPTIONS
+#endif
+#endif
+#endif
+
+// NOLINTBEGIN(cppcoreguidelines-avoid-magic-numbers)
 
 namespace math_functions {
 
@@ -84,13 +87,13 @@ template <InplaceMultipliable T>
 #else
 template <class T>
 #endif
-[[nodiscard]] ATTRIBUTE_CONST constexpr T bin_pow(T n, std::size_t p) noexcept(noexcept(n *= n)) {
+[[nodiscard]] ATTRIBUTE_CONST constexpr T bin_pow(T n, size_t p) noexcept(noexcept(n *= n)) {
     T res(1);
     while (true) {
-        if (p & 1) {
+        if (p % 2 != 0) {
             res *= n;
         }
-        p >>= 1;
+        p /= 2;
         if (p == 0) {
             return res;
         }
@@ -112,7 +115,7 @@ template <class T>
                                                   std::ptrdiff_t p) noexcept(noexcept(n *= n) &&
                                                                              noexcept(1 / n)) {
     const bool not_inverse = p >= 0;
-    const std::size_t p_u  = p >= 0 ? static_cast<std::size_t>(p) : -static_cast<std::size_t>(p);
+    const size_t p_u       = p >= 0 ? static_cast<size_t>(p) : -static_cast<size_t>(p);
     const T res            = ::math_functions::bin_pow(std::move(n), p_u);
     return not_inverse ? res : 1 / res;
 }
@@ -124,20 +127,20 @@ template <class T>
 /// @return (n ^ p) % mod
 [[nodiscard]] ATTRIBUTE_CONST constexpr uint32_t bin_pow_mod(uint32_t n, uint64_t p,
                                                              uint32_t mod) noexcept {
-    std::uint64_t res     = mod != 1;
-    std::uint64_t widen_n = n;
+    uint64_t res     = mod != 1;
+    uint64_t widen_n = n;
     while (true) {
         if (p % 2 != 0) {
-            CONFIG_ASSUME_STATEMENT(widen_n < (std::uint64_t{1} << 32));
+            CONFIG_ASSUME_STATEMENT(widen_n < (uint64_t{1} << 32U));
             res = (res * widen_n) % mod;
         }
         p /= 2;
         if (p == 0) {
-            return static_cast<std::uint32_t>(res);
+            return static_cast<uint32_t>(res);
         }
-        CONFIG_ASSUME_STATEMENT(widen_n < (std::uint64_t{1} << 32));
+        CONFIG_ASSUME_STATEMENT(widen_n < (uint64_t{1} << 32U));
         widen_n = (widen_n * widen_n) % mod;
-        CONFIG_ASSUME_STATEMENT(widen_n < (std::uint64_t{1} << 32));
+        CONFIG_ASSUME_STATEMENT(widen_n < (uint64_t{1} << 32U));
     }
 }
 
@@ -150,16 +153,16 @@ template <class T>
 /// @return (n ^ p) % mod
 [[nodiscard]]
 ATTRIBUTE_CONST I128_CONSTEXPR uint64_t bin_pow_mod(uint64_t n, uint64_t p, uint64_t mod) noexcept {
-    std::uint64_t res = mod != 1;
+    uint64_t res = mod != 1U;
     while (true) {
-        if (p & 1) {
-            res = static_cast<std::uint64_t>((uint128_t{res} * n) % mod);
+        if (p % 2 != 0) {
+            res = static_cast<uint64_t>((uint128_t{res} * n) % mod);
         }
-        p >>= 1;
+        p /= 2;
         if (p == 0) {
             return res;
         }
-        n = static_cast<std::uint64_t>((uint128_t{n} * n) % mod);
+        n = static_cast<uint64_t>((uint128_t{n} * n) % mod);
     }
 }
 
@@ -180,9 +183,9 @@ ATTRIBUTE_CONST I128_CONSTEXPR uint64_t bin_pow_mod(uint64_t n, uint64_t p, uint
         /**
          * See Hackers Delight Chapter 11.
          */
-        for (std::uint32_t m = 0x40000000; m != 0; m >>= 2) {
-            std::uint32_t b = y | m;
-            y >>= 1;
+        for (uint32_t m = 0x40000000; m != 0; m >>= 2U) {
+            const uint32_t b = y | m;
+            y >>= 1U;
             if (n >= b) {
                 n -= b;
                 y |= m;
@@ -194,7 +197,7 @@ ATTRIBUTE_CONST I128_CONSTEXPR uint64_t bin_pow_mod(uint64_t n, uint64_t p, uint
     }
 #endif
 
-    CONFIG_ASSUME_STATEMENT(y < (1u << 16));
+    CONFIG_ASSUME_STATEMENT(y < (1U << 16U));
     return y;
 }
 
@@ -209,26 +212,25 @@ ATTRIBUTE_CONST I128_CONSTEXPR uint64_t bin_pow_mod(uint64_t n, uint64_t p, uint
         /**
          * See Hackers Delight Chapter 11.
          */
-        std::uint64_t l = 1;
-        std::uint64_t r =
-            std::min((n >> 5) + 8, std::uint64_t{std::numeric_limits<std::uint32_t>::max()});
+        uint64_t l = 1;
+        uint64_t r = std::min((n >> 5U) + 8U, uint64_t{std::numeric_limits<uint32_t>::max()});
         do {
             CONFIG_ASSUME_STATEMENT(l <= r);
-            CONFIG_ASSUME_STATEMENT((r >> 32) == 0);
-            uint64_t m = (l + r) / 2;
-            CONFIG_ASSUME_STATEMENT((m >> 32) == 0);
+            CONFIG_ASSUME_STATEMENT((r >> 32U) == 0);
+            const uint64_t m = (l + r) / 2;
+            CONFIG_ASSUME_STATEMENT((m >> 32U) == 0);
             if (n >= m * m) {
                 l = m + 1;
             } else {
                 r = m - 1;
             }
         } while (r >= l);
-        CONFIG_ASSUME_STATEMENT(((l - 1) >> 32) == 0);
-        return static_cast<std::uint32_t>(l - 1);
+        CONFIG_ASSUME_STATEMENT(((l - 1) >> 32U) == 0);
+        return static_cast<uint32_t>(l - 1);
 #if defined(__GNUG__) || defined(__clang__) || CONFIG_HAS_AT_LEAST_CXX_20
-    } else {
-        return static_cast<std::uint32_t>(std::sqrt(static_cast<long double>(n)));
     }
+    return static_cast<uint32_t>(std::sqrt(static_cast<long double>(n)));
+
 #endif
 }
 
@@ -238,14 +240,14 @@ ATTRIBUTE_CONST I128_CONSTEXPR uint64_t bin_pow_mod(uint64_t n, uint64_t p, uint
     /**
      * See Hackers Delight Chapter 11.
      */
-    std::uint64_t l    = 0;
-    uint128_t r_approx = (n >> 6) + 16;
-    std::uint64_t r    = r_approx > std::numeric_limits<std::uint64_t>::max()
-                             ? std::numeric_limits<std::uint64_t>::max()
-                             : static_cast<std::uint64_t>(r_approx);
+    uint64_t l               = 0;
+    const uint128_t r_approx = (n >> 6U) + 16U;
+    uint64_t r               = r_approx > std::numeric_limits<uint64_t>::max()
+                                   ? std::numeric_limits<uint64_t>::max()
+                                   : static_cast<uint64_t>(r_approx);
     do {
         // m = (l + r + 1) / 2
-        std::uint64_t m = (l / 2) + (r / 2) + ((r % 2) | (l % 2));
+        const uint64_t m = (l / 2) + (r / 2) + ((r % 2) | (l % 2));
         if (n >= uint128_t{m} * m) {
             l = m;
         } else {
@@ -284,22 +286,23 @@ ATTRIBUTE_CONST I128_CONSTEXPR uint64_t bin_pow_mod(uint64_t n, uint64_t p, uint
     [[maybe_unused]] const auto n_original_value = n;
 #endif
 
-    std::uint32_t y = 0;
-    for (std::int32_t s = 30; s >= 0; s -= 3) {
+    uint32_t y = 0;
+    for (int32_t s = 30; s >= 0; s -= 3) {
         y *= 2;
-        std::uint32_t b = (3 * y * (y + 1) | 1) << s;
+        // NOLINTNEXTLINE(hicpp-signed-bitwise)
+        const uint32_t b = (3U * y * (y + 1) | 1U) << s;
         if (n >= b) {
             n -= b;
             y++;
         }
     }
     // 1625^3 = 4291015625 < 2^32 - 1 = 4294967295 < 4298942376 = 1626^3
-    CONFIG_ASSUME_STATEMENT(y <= 1625u);
+    CONFIG_ASSUME_STATEMENT(y <= 1625U);
 #if defined(__GNUG__) && !defined(__clang__) && CONFIG_HAS_AT_LEAST_CXX_17
     // Clang ignores this assumption because it contains potential side effects (fpu register
     // flags), while GCC has made almost all math functions constexpr long before the C++26
     CONFIG_ASSUME_STATEMENT(
-        y == (static_cast<std::uint32_t>(std::cbrt(static_cast<long double>(n_original_value)))));
+        y == (static_cast<uint32_t>(std::cbrt(static_cast<long double>(n_original_value)))));
 #endif
     return y;
 }
@@ -309,28 +312,29 @@ ATTRIBUTE_CONST I128_CONSTEXPR uint64_t bin_pow_mod(uint64_t n, uint64_t p, uint
 /// @param[in] n
 /// @return ⌊n^(1/3)⌋
 [[nodiscard]] ATTRIBUTE_CONST constexpr uint32_t icbrt(uint64_t n) noexcept {
-    std::uint64_t y = 0;
-    if (n >= 0x1000000000000000ull) {
-        if (n >= 0x8000000000000000ull) {
-            n -= 0x8000000000000000ull;
-            y = 2;
+    uint64_t y = 0;
+    if (n >= 0x1000000000000000ULL) {
+        if (n >= 0x8000000000000000ULL) {
+            n -= 0x8000000000000000ULL;
+            y = 2U;
         } else {
-            n -= 0x1000000000000000ull;
-            y = 1;
+            n -= 0x1000000000000000ULL;
+            y = 1U;
         }
     }
     for (int32_t s = 57; s >= 0; s -= 3) {
-        CONFIG_ASSUME_STATEMENT(y <= 1321122u);
-        y *= 2;
-        CONFIG_ASSUME_STATEMENT(y <= 2642244u);
-        uint64_t bs = (3 * y * (y + 1) | 1) << s;
+        CONFIG_ASSUME_STATEMENT(y <= 1321122U);
+        y *= 2U;
+        CONFIG_ASSUME_STATEMENT(y <= 2642244U);
+        // NOLINTNEXTLINE(hicpp-signed-bitwise)
+        const uint64_t bs = (3U * y * (y + 1) | 1U) << s;
         if (n >= bs) {
             n -= bs;
             y++;
         }
     }
-    CONFIG_ASSUME_STATEMENT(y <= 2642245u);
-    return static_cast<std::uint32_t>(y);
+    CONFIG_ASSUME_STATEMENT(y <= 2642245U);
+    return static_cast<uint32_t>(y);
 }
 
 /// @brief Return integer part of the fourth root of n, i.e. ⌊n^0.25⌋
@@ -380,12 +384,12 @@ ATTRIBUTE_CONST constexpr IsPerfectSquareResult<uint32_t> is_perfect_square(uint
      * but switch statement could be less efficient in this case
      */
     // clang-format on
-    switch (n & 15) {
+    switch (n % 16U) {
         case 0:
         case 1:
         case 4:
         case 9: {
-            const std::uint32_t root  = ::math_functions::isqrt(n);
+            const uint32_t root       = ::math_functions::isqrt(n);
             const bool is_perf_square = root * root == n;
             return {is_perf_square ? root : 0, is_perf_square};
         }
@@ -411,13 +415,13 @@ ATTRIBUTE_CONST constexpr IsPerfectSquareResult<uint32_t> is_perfect_square(uint
      * but switch statement could be less efficient in this case
      */
     // clang-format on
-    switch (n % 16) {
+    switch (n % 16U) {
         case 0:
         case 1:
         case 4:
         case 9: {
-            const std::uint32_t root  = ::math_functions::isqrt(n);
-            const bool is_perf_square = std::uint64_t{root} * root == n;
+            const uint32_t root       = ::math_functions::isqrt(n);
+            const bool is_perf_square = uint64_t{root} * root == n;
             return {is_perf_square ? root : 0, is_perf_square};
         }
         default:
@@ -450,7 +454,7 @@ ATTRIBUTE_CONST I128_CONSTEXPR
         case 1:
         case 4:
         case 9: {
-            const std::uint64_t root  = ::math_functions::isqrt(n);
+            const uint64_t root       = ::math_functions::isqrt(n);
             const bool is_perf_square = uint128_t{root} * root == n;
             return {is_perf_square ? root : 0, is_perf_square};
         }
@@ -466,7 +470,7 @@ ATTRIBUTE_CONST I128_CONSTEXPR
 /// @return 8-bit number whose bits are reversed bits of the @a `b`.
 [[nodiscard]] ATTRIBUTE_CONST constexpr uint8_t bit_reverse(uint8_t b) noexcept {
     // See https://graphics.stanford.edu/~seander/bithacks.html#RoundUpPowerOf2
-    return static_cast<uint8_t>(((b * 0x80200802ULL) & 0x0884422110ULL) * 0x0101010101ULL >> 32);
+    return static_cast<uint8_t>(((b * 0x80200802ULL) & 0x0884422110ULL) * 0x0101010101ULL >> 32U);
 }
 
 /// @brief This function reverses bits of the @a `n`
@@ -477,12 +481,12 @@ ATTRIBUTE_CONST I128_CONSTEXPR
     /**
      * See Hackers Delight 7.1
      */
-    n = ((n & 0x55555555u) << 1) | ((n >> 1) & 0x55555555u);
-    n = ((n & 0x33333333u) << 2) | ((n >> 2) & 0x33333333u);
-    n = ((n & 0x0F0F0F0Fu) << 4) | ((n >> 4) & 0x0F0F0F0Fu);
-    // n = ((n & 0x00FF00FFu) << 8) | ((n >> 8) & 0x00FF00FFu);
-    // n = ((n & 0x0000FFFFu) << 16) | ((n & 0xFFFF0000u) >> 16);
-    n = (n << 24) | ((n & 0xFF00u) << 8) | ((n >> 8) & 0xFF00u) | (n >> 24);
+    n = ((n & 0x55555555U) << 1U) | ((n >> 1U) & 0x55555555U);
+    n = ((n & 0x33333333U) << 2U) | ((n >> 2U) & 0x33333333U);
+    n = ((n & 0x0F0F0F0FU) << 4U) | ((n >> 4U) & 0x0F0F0F0FU);
+    // n = ((n & 0x00FF00FFU) << 8U) | ((n >> 8U) & 0x00FF00FFU);
+    // n = ((n & 0x0000FFFFU) << 16U) | ((n & 0xFFFF0000u) >> 16U);
+    n = (n << 24U) | ((n & 0xFF00U) << 8U) | ((n >> 8U) & 0xFF00U) | (n >> 24U);
     // clang-format on
     return n;
 }
@@ -495,16 +499,16 @@ ATTRIBUTE_CONST I128_CONSTEXPR
     /**
      * See Knuth's algorithm in Hackers Delight 7.4
      */
-    std::uint64_t t = 0;
-    n = (n << 31) | (n >> 33);  // I.e., shlr(x, 31).
-    t = (n ^ (n >> 20)) & 0x00000FFF800007FFULL;
-    n = (t | (t << 20)) ^ n;
-    t = (n ^ (n >> 8)) & 0x00F8000F80700807ULL;
-    n = (t | (t << 8)) ^ n;
-    t = (n ^ (n >> 4)) & 0x0808708080807008ULL;
-    n = (t | (t << 4)) ^ n;
-    t = (n ^ (n >> 2)) & 0x1111111111111111ULL;
-    n = (t | (t << 2)) ^ n;
+    uint64_t t = 0;
+    n = (n << 31U) | (n >> 33U);  // I.e., shlr(x, 31).
+    t = (n ^ (n >> 20U)) & 0x00000FFF800007FFULL;
+    n = (t | (t << 20U)) ^ n;
+    t = (n ^ (n >> 8U)) & 0x00F8000F80700807ULL;
+    n = (t | (t << 8U)) ^ n;
+    t = (n ^ (n >> 4U)) & 0x0808708080807008ULL;
+    n = (t | (t << 4U)) ^ n;
+    t = (n ^ (n >> 2U)) & 0x1111111111111111ULL;
+    n = (t | (t << 2U)) ^ n;
     // clang-format on
     return n;
 }
@@ -516,7 +520,7 @@ ATTRIBUTE_CONST I128_CONSTEXPR
 /// @return 128-bit number whose bits are reversed bits of the @a `n`.
 [[nodiscard]] ATTRIBUTE_CONST I128_CONSTEXPR uint128_t bit_reverse(uint128_t n) noexcept {
     uint128_t m = ~uint128_t{0};
-    for (std::uint32_t s = sizeof(uint128_t) * CHAR_BIT; s >>= 1;) {
+    for (uint32_t s = sizeof(uint128_t) * CHAR_BIT; s >>= 1U;) {
         m ^= m << s;
         n = ((n >> s) & m) | ((n << s) & ~m);
     }
@@ -530,19 +534,21 @@ template <class Functor>
     requires requires(Functor f, uint64_t mask) { f(uint64_t{mask}); }
 #endif
 ATTRIBUTE_ALWAYS_INLINE constexpr void visit_all_submasks(uint64_t mask, Functor visiter) noexcept(
-    std::is_nothrow_invocable_v<Functor, const std::uint64_t>) {
-    std::uint64_t s = mask;
+    std::is_nothrow_invocable_v<Functor, const uint64_t>) {
+    uint64_t s = mask;
     do {
-        visiter(std::uint64_t{s});
+        visiter(uint64_t{s});
         s = (s - 1) & mask;
     } while (s != 0);
 }
+
+// NOLINTBEGIN(google-runtime-int)
 
 int32_t sign(bool x) = delete;
 int32_t sign(char x) = delete;
 
 [[nodiscard]] ATTRIBUTE_CONST constexpr int32_t sign(signed char x) noexcept {
-    return static_cast<std::int32_t>(x > 0) - static_cast<std::int32_t>(x < 0);
+    return static_cast<int32_t>(x > 0) - static_cast<int32_t>(x < 0);
 }
 
 [[nodiscard]] ATTRIBUTE_CONST constexpr int32_t sign(unsigned char x) noexcept {
@@ -550,7 +556,7 @@ int32_t sign(char x) = delete;
 }
 
 [[nodiscard]] ATTRIBUTE_CONST constexpr int32_t sign(short x) noexcept {
-    return static_cast<std::int32_t>(x > 0) - static_cast<std::int32_t>(x < 0);
+    return static_cast<int32_t>(x > 0) - static_cast<int32_t>(x < 0);
 }
 
 [[nodiscard]] ATTRIBUTE_CONST constexpr int32_t sign(unsigned short x) noexcept {
@@ -558,7 +564,7 @@ int32_t sign(char x) = delete;
 }
 
 [[nodiscard]] ATTRIBUTE_CONST constexpr int32_t sign(int x) noexcept {
-    return static_cast<std::int32_t>(x > 0) - static_cast<std::int32_t>(x < 0);
+    return static_cast<int32_t>(x > 0) - static_cast<int32_t>(x < 0);
 }
 
 [[nodiscard]] ATTRIBUTE_CONST constexpr int32_t sign(unsigned x) noexcept {
@@ -566,7 +572,7 @@ int32_t sign(char x) = delete;
 }
 
 [[nodiscard]] ATTRIBUTE_CONST constexpr int32_t sign(long x) noexcept {
-    return static_cast<std::int32_t>(x > 0) - static_cast<std::int32_t>(x < 0);
+    return static_cast<int32_t>(x > 0) - static_cast<int32_t>(x < 0);
 }
 
 [[nodiscard]] ATTRIBUTE_CONST constexpr int32_t sign(unsigned long x) noexcept {
@@ -574,7 +580,7 @@ int32_t sign(char x) = delete;
 }
 
 [[nodiscard]] ATTRIBUTE_CONST constexpr int32_t sign(long long x) noexcept {
-    return static_cast<std::int32_t>(x > 0) - static_cast<std::int32_t>(x < 0);
+    return static_cast<int32_t>(x > 0) - static_cast<int32_t>(x < 0);
 }
 
 [[nodiscard]] ATTRIBUTE_CONST constexpr int32_t sign(unsigned long long x) noexcept {
@@ -584,8 +590,8 @@ int32_t sign(char x) = delete;
 #if defined(INTEGERS_128_BIT_HPP)
 
 [[nodiscard]] ATTRIBUTE_CONST I128_CONSTEXPR int32_t sign(int128_t x) noexcept {
-    const std::uint32_t sign_bit = static_cast<std::uint32_t>(static_cast<uint128_t>(x) >> 127);
-    return static_cast<std::int32_t>(x != 0) - static_cast<std::int32_t>(2 * sign_bit);
+    const uint32_t sign_bit = static_cast<uint32_t>(static_cast<uint128_t>(x) >> 127U);
+    return static_cast<int32_t>(x != 0) - static_cast<int32_t>(2 * sign_bit);
 }
 
 [[nodiscard]] ATTRIBUTE_CONST constexpr int32_t sign(uint128_t x) noexcept {
@@ -604,6 +610,7 @@ int32_t sign(char x) = delete;
 /// @param[in] b
 /// @return
 [[nodiscard]] ATTRIBUTE_CONST constexpr bool same_sign_soft(int a, int b) noexcept {
+    // NOLINTNEXTLINE(hicpp-signed-bitwise)
     return (a ^ b) >= 0;
 }
 
@@ -617,6 +624,7 @@ int32_t sign(char x) = delete;
 /// @param[in] b
 /// @return
 [[nodiscard]] ATTRIBUTE_CONST constexpr bool same_sign_soft(long a, long b) noexcept {
+    // NOLINTNEXTLINE(hicpp-signed-bitwise)
     return (a ^ b) >= 0;
 }
 
@@ -630,6 +638,7 @@ int32_t sign(char x) = delete;
 /// @param[in] b
 /// @return
 [[nodiscard]] ATTRIBUTE_CONST constexpr bool same_sign_soft(long long a, long long b) noexcept {
+    // NOLINTNEXTLINE(hicpp-signed-bitwise)
     return (a ^ b) >= 0;
 }
 
@@ -726,10 +735,13 @@ unsigned char uabs(char n) = delete;
     return n;
 }
 
+// NOLINTEND(google-runtime-int)
+
 #if defined(INTEGERS_128_BIT_HPP)
 
 [[nodiscard]] ATTRIBUTE_CONST I128_CONSTEXPR uint128_t uabs(int128_t n) noexcept {
-    const uint128_t t = static_cast<uint128_t>(n >> 127);
+    // NOLINTNEXTLINE(hicpp-signed-bitwise)
+    const uint128_t t = static_cast<uint128_t>(n >> 127U);
     return (static_cast<uint128_t>(n) ^ t) - t;
 }
 
@@ -741,7 +753,7 @@ unsigned char uabs(char n) = delete;
 
 namespace detail {
 
-#ifdef INTEGERS_128_BIT_HPP
+#if defined(INTEGERS_128_BIT_HPP)
 namespace helper_ns = int128_traits;
 #else
 namespace helper_ns = std;
@@ -773,18 +785,19 @@ concept unsigned_integral = ::math_functions::detail::helper_ns::unsigned_integr
 #endif
 
 [[nodiscard]] ATTRIBUTE_CONST inline uint32_t log2_floor_software(uint64_t n) {
-    static const uint64_t t[6] = {0xFFFFFFFF00000000ull, 0x00000000FFFF0000ull,
-                                  0x000000000000FF00ull, 0x00000000000000F0ull,
-                                  0x000000000000000Cull, 0x0000000000000002ull};
+    static const std::array<uint64_t, 6> t = {
+        0xFFFFFFFF00000000ULL, 0x00000000FFFF0000ULL, 0x000000000000FF00ULL,
+        0x00000000000000F0ULL, 0x000000000000000CULL, 0x0000000000000002ULL,
+    };
 
-    std::uint32_t y = 0;
-    std::uint32_t j = 32;
+    uint32_t y = 0;
+    uint32_t j = 32;
 
-    for (std::size_t i = 0; i != 6; ++i) {
-        std::uint32_t k = (((n & t[i]) == 0) ? 0 : j);
+    for (const uint64_t t_mask : t) {
+        const uint32_t k = (((n & t_mask) == 0) ? 0 : j);
         y += k;
         n >>= k;
-        j >>= 1;
+        j >>= 1U;
     }
 
     return y;
@@ -803,20 +816,21 @@ concept unsigned_integral = ::math_functions::detail::helper_ns::unsigned_integr
     // See
     // https://graphics.stanford.edu/~seander/bithacks.html#RoundUpPowerOf2
 
-    static const unsigned char MultiplyDeBruijnBitPosition[32] = {
+    static const std::array<unsigned char, 32> MultiplyDeBruijnBitPosition = {
         0, 9,  1,  10, 13, 21, 2,  29, 11, 14, 16, 18, 22, 25, 3, 30,
-        8, 12, 20, 28, 15, 17, 24, 7,  19, 27, 23, 6,  26, 5,  4, 31};
+        8, 12, 20, 28, 15, 17, 24, 7,  19, 27, 23, 6,  26, 5,  4, 31,
+    };
 
     // first round down to one less than a power of 2
-    value |= (value >> 1);
-    value |= (value >> 2);
-    value |= (value >> 4);
-    value |= (value >> 8);
-    value |= (value >> 16);
+    value |= (value >> 1U);
+    value |= (value >> 2U);
+    value |= (value >> 4U);
+    value |= (value >> 8U);
+    value |= (value >> 16U);
 
     // Using de Bruijn sequence, k=2, n=5 (2^5=32) :
     // 0b_0000_0111_1100_0100_1010_1100_1101_1101
-    return MultiplyDeBruijnBitPosition[((value * 0x07C4ACDDu) >> 27)];
+    return MultiplyDeBruijnBitPosition[((value * 0x07C4ACDDU) >> 27U)];
 }
 
 [[nodiscard]] ATTRIBUTE_CONST constexpr uint32_t lz_count_32_software(uint32_t n) noexcept {
@@ -824,26 +838,26 @@ concept unsigned_integral = ::math_functions::detail::helper_ns::unsigned_integr
      * See Hackers Delight Chapter 5
      */
     if (unlikely(n == 0)) {
-        return 32;
+        return 32U;
     }
-    std::uint32_t m = 1;
-    if ((n >> 16) == 0) {
-        m += 16;
-        n <<= 16;
+    uint32_t m = 1U;
+    if ((n >> 16U) == 0) {
+        m += 16U;
+        n <<= 16U;
     }
-    if ((n >> 24) == 0) {
-        m += 8;
-        n <<= 8;
+    if ((n >> 24U) == 0) {
+        m += 8U;
+        n <<= 8U;
     }
-    if ((n >> 28) == 0) {
-        m += 4;
-        n <<= 4;
+    if ((n >> 28U) == 0) {
+        m += 4U;
+        n <<= 4U;
     }
-    if ((n >> 30) == 0) {
-        m += 2;
-        n <<= 2;
+    if ((n >> 30U) == 0) {
+        m += 2U;
+        n <<= 2U;
     }
-    m -= n >> 31;
+    m -= n >> 31U;
     CONFIG_ASSUME_STATEMENT(m <= 31);
     return m;
 }
@@ -853,31 +867,31 @@ concept unsigned_integral = ::math_functions::detail::helper_ns::unsigned_integr
      * See Hackers Delight Chapter 5
      */
     if (unlikely(n == 0)) {
-        return 64;
+        return 64U;
     }
-    std::uint32_t m = 1;
-    if ((n >> 32) == 0) {
-        m += 32;
-        n <<= 32;
+    uint32_t m = 1;
+    if ((n >> 32U) == 0) {
+        m += 32U;
+        n <<= 32U;
     }
-    if ((n >> 48) == 0) {
-        m += 16;
-        n <<= 16;
+    if ((n >> 48U) == 0) {
+        m += 16U;
+        n <<= 16U;
     }
-    if ((n >> 56) == 0) {
-        m += 8;
-        n <<= 8;
+    if ((n >> 56U) == 0) {
+        m += 8U;
+        n <<= 8U;
     }
-    if ((n >> 60) == 0) {
-        m += 4;
-        n <<= 4;
+    if ((n >> 60U) == 0) {
+        m += 4U;
+        n <<= 4U;
     }
-    if ((n >> 62) == 0) {
-        m += 2;
-        n <<= 2;
+    if ((n >> 62U) == 0) {
+        m += 2U;
+        n <<= 2U;
     }
-    m -= static_cast<std::uint32_t>(n >> 63);
-    CONFIG_ASSUME_STATEMENT(m <= 63);
+    m -= static_cast<uint32_t>(n >> 63U);
+    CONFIG_ASSUME_STATEMENT(m <= 63U);
     return m;
 }
 
@@ -885,37 +899,37 @@ concept unsigned_integral = ::math_functions::detail::helper_ns::unsigned_integr
     /**
      * See Hackers Delight Chapter 5
      */
-    if (unlikely(n == 0)) {
-        return 32;
+    if (unlikely(n == 0U)) {
+        return 32U;
     }
-    std::uint32_t m = 1;
-    if ((n & 0x0000FFFFu) == 0) {
-        m += 16;
-        n >>= 16;
+    uint32_t m = 1U;
+    if ((n & 0x0000FFFFU) == 0U) {
+        m += 16U;
+        n >>= 16U;
     }
-    if ((n & 0x000000FFu) == 0) {
-        m += 8;
-        n >>= 8;
+    if ((n & 0x000000FFU) == 0U) {
+        m += 8U;
+        n >>= 8U;
     }
-    if ((n & 0x0000000Fu) == 0) {
-        m += 4;
-        n >>= 4;
+    if ((n & 0x0000000FU) == 0U) {
+        m += 4U;
+        n >>= 4U;
     }
-    if ((n & 0x00000003u) == 0) {
-        m += 2;
-        n >>= 2;
+    if ((n & 0x00000003U) == 0U) {
+        m += 2U;
+        n >>= 2U;
     }
-    m -= (n & 1);
-    CONFIG_ASSUME_STATEMENT(m <= 31);
+    m -= (n & 1U);
+    CONFIG_ASSUME_STATEMENT(m <= 31U);
     return m;
 }
 
 [[nodiscard]] ATTRIBUTE_CONST constexpr uint32_t tz_count_64_software(uint64_t n) noexcept {
-    std::uint32_t m = 0;
-    for (n = ~n & (n - 1); n != 0; n >>= 1) {
+    uint32_t m = 0U;
+    for (n = ~n & (n - 1); n != 0U; n >>= 1U) {
         m++;
     }
-    CONFIG_ASSUME_STATEMENT(m <= 64);
+    CONFIG_ASSUME_STATEMENT(m <= 64U);
     return m;
 }
 
@@ -923,12 +937,12 @@ concept unsigned_integral = ::math_functions::detail::helper_ns::unsigned_integr
     /**
      * See Hackers Delight Chapter 5.
      */
-    n = (n & 0x55555555) + ((n >> 1) & 0x55555555);
-    n = (n & 0x33333333) + ((n >> 2) & 0x33333333);
-    n = (n & 0x0F0F0F0F) + ((n >> 4) & 0x0F0F0F0F);
-    n = (n & 0x00FF00FF) + ((n >> 8) & 0x00FF00FF);
-    n = (n & 0x0000FFFF) + ((n >> 16) & 0x0000FFFF);
-    CONFIG_ASSUME_STATEMENT(n <= 32);
+    n = (n & 0x55555555U) + ((n >> 1U) & 0x55555555U);
+    n = (n & 0x33333333U) + ((n >> 2U) & 0x33333333U);
+    n = (n & 0x0F0F0F0FU) + ((n >> 4U) & 0x0F0F0F0FU);
+    n = (n & 0x00FF00FFU) + ((n >> 8U) & 0x00FF00FFU);
+    n = (n & 0x0000FFFFU) + ((n >> 16U) & 0x0000FFFFU);
+    CONFIG_ASSUME_STATEMENT(n <= 32U);
     return n;
 }
 
@@ -936,13 +950,13 @@ concept unsigned_integral = ::math_functions::detail::helper_ns::unsigned_integr
     /**
      * See Hackers Delight Chapter 5.
      */
-    n = (n & 0x5555555555555555ull) + ((n >> 1) & 0x5555555555555555ull);
-    n = (n & 0x3333333333333333ull) + ((n >> 2) & 0x3333333333333333ull);
-    n = (n & 0x0F0F0F0F0F0F0F0Full) + ((n >> 4) & 0x0F0F0F0F0F0F0F0Full);
-    n = (n & 0x00FF00FF00FF00FFull) + ((n >> 8) & 0x00FF00FF00FF00FFull);
-    n = (n & 0x0000FFFF0000FFFFull) + ((n >> 16) & 0x0000FFFF0000FFFFull);
-    n = (n & 0x00000000FFFFFFFFull) + ((n >> 32) & 0x00000000FFFFFFFFull);
-    CONFIG_ASSUME_STATEMENT(n <= 64);
+    n = (n & 0x5555555555555555ULL) + ((n >> 1U) & 0x5555555555555555ULL);
+    n = (n & 0x3333333333333333ULL) + ((n >> 2U) & 0x3333333333333333ULL);
+    n = (n & 0x0F0F0F0F0F0F0F0FULL) + ((n >> 4U) & 0x0F0F0F0F0F0F0F0FULL);
+    n = (n & 0x00FF00FF00FF00FFULL) + ((n >> 8U) & 0x00FF00FF00FF00FFULL);
+    n = (n & 0x0000FFFF0000FFFFULL) + ((n >> 16U) & 0x0000FFFF0000FFFFULL);
+    n = (n & 0x00000000FFFFFFFFULL) + ((n >> 32U) & 0x00000000FFFFFFFFULL);
+    CONFIG_ASSUME_STATEMENT(n <= 64U);
     return n;
 }
 
@@ -952,29 +966,31 @@ concept unsigned_integral = ::math_functions::detail::helper_ns::unsigned_integr
     /**
      * See Hackers Delight Chapter 5.
      */
-    x = x - ((x >> 1) & 0x55555555);
-    x = (x & 0x33333333) + ((x >> 2) & 0x33333333);
+    x = x - ((x >> 1U) & 0x55555555U);
+    x = (x & 0x33333333U) + ((x >> 2U) & 0x33333333U);
     y = ~y;
-    y = y - ((y >> 1) & 0x55555555);
-    y = (y & 0x33333333) + ((y >> 2) & 0x33333333);
+    y = y - ((y >> 1U) & 0x55555555U);
+    y = (y & 0x33333333U) + ((y >> 2U) & 0x33333333U);
     x = x + y;
-    x = (x & 0x0F0F0F0F) + ((x >> 4) & 0x0F0F0F0F);
-    x = x + (x >> 8);
-    x = x + (x >> 16);
-    return static_cast<std::int32_t>(x & 0x0000007F) - 32;
+    x = (x & 0x0F0F0F0FU) + ((x >> 4U) & 0x0F0F0F0FU);
+    x = x + (x >> 8U);
+    x = x + (x >> 16U);
+    return static_cast<int32_t>(x & 0x0000007FU) - 32;
 }
 
 [[nodiscard]] ATTRIBUTE_CONST constexpr int32_t pop_cmp(uint32_t x, uint32_t y) noexcept {
     /**
      * See Hackers Delight Chapter 5.
      */
-    std::uint32_t n = x & ~y;  // Clear bits where
-    std::uint32_t m = y & ~x;  // both bits are 1
+    uint32_t n = x & ~y;  // Clear bits where
+    uint32_t m = y & ~x;  // both bits are 1
     while (true) {
-        if (n == 0)
-            return static_cast<std::int32_t>(m | -m);
-        if (m == 0)
+        if (n == 0) {
+            return static_cast<int32_t>(m | -m);
+        }
+        if (m == 0) {
             return 1;
+        }
         n &= n - 1;  // Clear one bit
         m &= m - 1;  // from each
     }
@@ -996,7 +1012,7 @@ template <typename T>
 
 #if defined(INTEGERS_128_BIT_HPP)
     if constexpr (std::is_same_v<T, uint128_t>) {
-        const std::uint64_t low = static_cast<std::uint64_t>(n);
+        const uint64_t low = static_cast<uint64_t>(n);
         if (low != 0) {
 #if CONFIG_HAS_AT_LEAST_CXX_20
             return std::countr_zero(low);
@@ -1007,23 +1023,18 @@ template <typename T>
 #endif
         }
 
-        const std::uint64_t high = static_cast<std::uint64_t>(n >> 64);
+        const uint64_t high = static_cast<uint64_t>(n >> 64U);
         CONFIG_ASSUME_STATEMENT(high != 0);
-#if CONFIG_HAS_AT_LEAST_CXX_20
-        int32_t high_trailing_zeros_count = std::countr_zero(high);
-#elif defined(__GNUG__)
-        int32_t high_trailing_zeros_count = __builtin_ctzll(high);
-#else
-        int32_t high_trailing_zeros_count =
-            static_cast<int32_t>(::math_functions::detail::tz_count_64_software(high));
-#endif
-        return high_trailing_zeros_count + 64;
+        return 64 + ::math_functions::countr_zero<uint64_t>(high);
     } else
 #endif
 
 #if CONFIG_HAS_AT_LEAST_CXX_20
+    {
         return std::countr_zero(n);
+    }
 #else
+    // NOLINTBEGIN(google-runtime-int)
     if constexpr (std::is_same_v<T, unsigned long long>) {
 #if defined(__GNUG__)
         return __builtin_ctzll(n);
@@ -1047,6 +1058,7 @@ template <typename T>
         return static_cast<int32_t>(::math_functions::detail::tz_count_32_software(n));
 #endif
     }
+    // NOLINTEND(google-runtime-int)
 #endif
 }
 
@@ -1066,7 +1078,7 @@ template <typename T>
 
 #if defined(INTEGERS_128_BIT_HPP)
     if constexpr (std::is_same_v<T, uint128_t>) {
-        const std::uint64_t high = static_cast<std::uint64_t>(n >> 64);
+        const uint64_t high = static_cast<uint64_t>(n >> 64U);
         if (high != 0) {
             // Avoid recursive call to countl_zero<uint64_t>
 #if CONFIG_HAS_AT_LEAST_CXX_20
@@ -1078,22 +1090,18 @@ template <typename T>
 #endif
         }
 
-        const std::uint64_t low = static_cast<std::uint64_t>(n);
+        const uint64_t low = static_cast<uint64_t>(n);
         CONFIG_ASSUME_STATEMENT(low != 0);
-        // Avoid recursive call to countl_zero<uint64_t>
-#if CONFIG_HAS_AT_LEAST_CXX_20
-        return 64 + std::countl_zero(low);
-#elif defined(__GNUG__)
-        return 64 + __builtin_clzll(low);
-#else
-        return 64 + static_cast<int32_t>(::math_functions::detail::lz_count_64_software(low));
-#endif
+        return 64U + ::math_functions::countl_zero<uint64_t>(low);
     } else
 #endif
 
 #if CONFIG_HAS_AT_LEAST_CXX_20
+    {
         return std::countl_zero(n);
+    }
 #else
+    // NOLINTBEGIN(google-runtime-int)
     if constexpr (std::is_same_v<T, unsigned long long>) {
 #if defined(__GNUG__)
         return __builtin_clzll(n);
@@ -1116,6 +1124,7 @@ template <typename T>
         return static_cast<int32_t>(::math_functions::detail::lz_count_32_software(n));
 #endif
     }
+    // NOLINTEND(google-runtime-int)
 #endif
 }
 
@@ -1130,22 +1139,19 @@ template <class T>
     if constexpr (std::is_same_v<T, uint128_t>) {
         // Reason: cppcheck can not deduce that n is uint128_t here
         // cppcheck-suppress [shiftTooManyBits]
-        const std::uint64_t high = static_cast<std::uint64_t>(n >> 64);
-        const std::uint64_t low  = static_cast<std::uint64_t>(n);
-#if CONFIG_HAS_AT_LEAST_CXX_20
-        return std::popcount(high) + std::popcount(low);
-#elif defined(__GNUG__)
-        return __builtin_popcountll(high) + __builtin_popcountll(low);
-#else
-        return static_cast<int32_t>(::math_functions::detail::pop_count_64_software(high) +
-                                    ::math_functions::detail::pop_count_64_software(low));
-#endif
+        const uint64_t high = static_cast<uint64_t>(n >> 64U);
+        const uint64_t low  = static_cast<uint64_t>(n);
+        return ::math_functions::popcount<uint64_t>(high) +
+               ::math_functions::popcount<uint64_t>(low);
     } else
 #endif
 
 #if CONFIG_HAS_AT_LEAST_CXX_20
+    {
         return std::popcount(n);
+    }
 #else
+    // NOLINTBEGIN(google-runtime-int)
     if constexpr (std::is_same_v<T, unsigned long long>) {
 #if defined(__GNUG__)
         return __builtin_popcountll(n);
@@ -1168,6 +1174,7 @@ template <class T>
         return static_cast<int32_t>(::math_functions::detail::pop_count_32_software(n));
 #endif
     }
+    // NOLINTEND(google-runtime-int)
 #endif
 }
 
@@ -1189,41 +1196,45 @@ template <class T>
     // https://graphics.stanford.edu/~seander/bithacks.html#RoundUpPowerOf2
 
     // t gets x's least significant 0 bits set to 1
-    const std::uint32_t t = x | (x - 1);
+    const uint32_t t = x | (x - 1);
     // Next set to 1 the most significant bit to change,
     // set to 0 the least significant ones, and add the necessary 1 bits.
-    return (t + 1) | static_cast<std::uint32_t>(std::uint64_t{(~t & -~t) - 1} >>
-                                                (::math_functions::countr_zero(x) + 1));
+    return (t + 1) |
+           static_cast<uint32_t>(uint64_t{(~t & -~t) - 1} >>
+                                 static_cast<uint32_t>(::math_functions::countr_zero(x) + 1));
 }
+
+// NOLINTBEGIN(google-runtime-int)
 
 bool is_power_of_two(bool) = delete;
 bool is_power_of_two(char) = delete;
 
 [[nodiscard]] ATTRIBUTE_CONST constexpr bool is_power_of_two(signed char n) noexcept {
     // Cast to unsigned to avoid potential overflow (ub for signed char)
-    uint32_t m = static_cast<unsigned char>(n);
+    const unsigned m = unsigned{static_cast<unsigned char>(n)};
     return (m & (m - 1)) == 0 && n > 0;
 }
 
 [[nodiscard]] ATTRIBUTE_CONST constexpr bool is_power_of_two(unsigned char n) noexcept {
-    return (n & (n - 1)) == 0 && n != 0;
+    const unsigned n_int = unsigned{n};
+    return (n_int & (n_int - 1)) == 0 && n_int != 0;
 }
 
 [[nodiscard]] ATTRIBUTE_CONST constexpr bool is_power_of_two(int n) noexcept {
     // Cast to unsigned to avoid potential overflow (ub for int)
-    unsigned m = static_cast<unsigned>(n);
+    const unsigned m = static_cast<unsigned>(n);
     return (m & (m - 1)) == 0 && n > 0;
 }
 
 [[nodiscard]] ATTRIBUTE_CONST constexpr bool is_power_of_two(long n) noexcept {
     // Cast to unsigned to avoid potential overflow (ub for long)
-    unsigned long m = static_cast<unsigned long>(n);
+    const unsigned long m = static_cast<unsigned long>(n);
     return (m & (m - 1)) == 0 && n > 0;
 }
 
 [[nodiscard]] ATTRIBUTE_CONST constexpr bool is_power_of_two(long long n) noexcept {
     // Cast to unsigned to avoid potential overflow (ub for long long)
-    unsigned long long m = static_cast<unsigned long long>(n);
+    const unsigned long long m = static_cast<unsigned long long>(n);
     return (m & (m - 1)) == 0 && n > 0;
 }
 
@@ -1239,11 +1250,13 @@ bool is_power_of_two(char) = delete;
     return (n & (n - 1)) == 0 && n != 0;
 }
 
+// NOLINTEND(google-runtime-int)
+
 #if defined(INTEGERS_128_BIT_HPP)
 
 [[nodiscard]] ATTRIBUTE_CONST I128_CONSTEXPR bool is_power_of_two(int128_t n) noexcept {
     // Cast to unsigned to avoid potential overflow (ub for int128_t)
-    uint128_t m = static_cast<uint128_t>(n);
+    const uint128_t m = static_cast<uint128_t>(n);
     return (m & (m - 1)) == 0 && n > 0;
 }
 
@@ -1260,12 +1273,13 @@ ATTRIBUTE_CONST constexpr auto nearest_greater_equal_power_of_two(const UIntType
         ::math_functions::detail::is_unsigned_v<UIntType> && sizeof(UIntType) >= sizeof(unsigned),
         "unsigned integral type (at least unsigned int) is expected");
 
-    using ShiftType       = std::int32_t;
+    using ShiftType       = int32_t;
     const ShiftType shift = ShiftType{sizeof(n) * CHAR_BIT} -
-                            ShiftType{::math_functions::countl_zero(n | 1)} -
+                            ShiftType{::math_functions::countl_zero(n | 1U)} -
                             ShiftType{(n & (n - 1)) == 0};
-    using RetType = typename std::conditional_t<(sizeof(UIntType) > sizeof(std::uint32_t)),
-                                                UIntType, std::uint64_t>;
+    using RetType =
+        typename std::conditional_t<(sizeof(UIntType) > sizeof(uint32_t)), UIntType, uint64_t>;
+    // NOLINTNEXTLINE(hicpp-signed-bitwise)
     return RetType{1} << shift;
 }
 
@@ -1276,11 +1290,12 @@ ATTRIBUTE_CONST constexpr auto nearest_greater_power_of_two(const UIntType n) no
         ::math_functions::detail::is_unsigned_v<UIntType> && sizeof(UIntType) >= sizeof(unsigned),
         "unsigned integral type (at least unsigned int) is expected");
 
-    using ShiftType = std::int32_t;
+    using ShiftType = int32_t;
     const ShiftType shift =
         ShiftType{sizeof(n) * CHAR_BIT} - ShiftType{::math_functions::countl_zero(n)};
-    using RetType = typename std::conditional_t<(sizeof(UIntType) > sizeof(std::uint32_t)),
-                                                UIntType, std::uint64_t>;
+    using RetType =
+        typename std::conditional_t<(sizeof(UIntType) > sizeof(uint32_t)), UIntType, uint64_t>;
+    // NOLINTNEXTLINE(hicpp-signed-bitwise)
     return RetType{1} << shift;
 }
 
@@ -1301,7 +1316,7 @@ template <class IntType>
 }
 
 /// @brief Return sum: sum of popcount(i & k) for all i from 0 to n inclusive
-///  Tex form: \sum_{i = 0}^{n} popcount(i bitand k)
+///  Using tex notation: \sum_{i = 0}^{n} popcount(i bitand k)
 /// @tparam IntType
 /// @param n
 /// @param k
@@ -1317,7 +1332,7 @@ template <class IntType>
         "unsigned integral type (at least unsigned int) is expected");
 
     IntType popcount_sum = 0;
-    for (std::uint32_t j = 0; j < sizeof(IntType) * CHAR_BIT; j++) {
+    for (uint32_t j = 0; j < sizeof(IntType) * CHAR_BIT; j++) {
         const bool k_has_jth_bit = (k & (IntType{1} << j)) != 0;
         if (!k_has_jth_bit) {
             continue;
@@ -1341,7 +1356,7 @@ template <class IntType>
 }
 
 /// @brief Return sum: sum of popcount(i) for all i from 0 to n inclusive
-///  Tex form: \sum_{i = 0}^{n} popcount(i)
+///  Using tex notation: \sum_{i = 0}^{n} popcount(i)
 /// @tparam IntType
 /// @param n
 /// @param k
@@ -1401,7 +1416,7 @@ template <typename T>
     static_assert(::math_functions::detail::is_integral_v<T>);
 
     if constexpr (::math_functions::detail::is_signed_v<T>) {
-        std::uint32_t is_negative = value < 0;
+        const uint32_t is_negative = uint32_t{value < 0};
         return is_negative +
                ::math_functions::detail::base_b_len_impl(::math_functions::uabs(value), base);
     } else {
@@ -1425,14 +1440,14 @@ ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_CONST constexpr uint32_t log2_floor(const UInt
 
 #if defined(INTEGERS_128_BIT_HPP)
     if constexpr (std::is_same_v<UIntType, uint128_t>) {
-        const auto hi = static_cast<std::uint64_t>(n >> 64);
-        return hi != 0 ? (127 - static_cast<std::uint32_t>(::math_functions::countl_zero(hi)))
-                       : (::math_functions::log2_floor(static_cast<std::uint64_t>(n)));
+        const auto hi = static_cast<uint64_t>(n >> 64U);
+        return hi != 0 ? (127 - static_cast<uint32_t>(::math_functions::countl_zero(hi)))
+                       : (::math_functions::log2_floor(static_cast<uint64_t>(n)));
     } else
 #endif
     {
-        return std::uint32_t{sizeof(n) * CHAR_BIT - 1} -
-               static_cast<std::uint32_t>(::math_functions::countl_zero(n));
+        return uint32_t{sizeof(n) * CHAR_BIT - 1} -
+               static_cast<uint32_t>(::math_functions::countl_zero(n));
     }
 }
 
@@ -1463,16 +1478,15 @@ ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_CONST constexpr uint32_t base_2_len(const UInt
 namespace detail {
 
 ATTRIBUTE_CONST constexpr uint32_t log10_floor_compile_time_impl(uint32_t n) noexcept {
-    constexpr uint8_t table1[33] = {
+    constexpr std::array<uint8_t, 33> table1 = {
         10, 9, 9, 8, 8, 8, 7, 7, 7, 6, 6, 6, 6, 5, 5, 5, 4,
         4,  4, 3, 3, 3, 3, 2, 2, 2, 1, 1, 1, 0, 0, 0, 0,
     };
-
-    constexpr uint32_t table2[11] = {
-        1, 10, 100, 1000, 10000, 100000, 1000000, 10000000, 100000000, 1000000000, 0,
+    constexpr std::array<uint32_t, 11> table2 = {
+        1U, 10U, 100U, 1000U, 10000U, 100000U, 1000000U, 10000000U, 100000000U, 1000000000U, 0U,
     };
-    uint32_t digits = table1[::math_functions::countl_zero(n)];
-    digits -= ((n - table2[digits]) >> 31);
+    uint32_t digits = table1[static_cast<uint32_t>(::math_functions::countl_zero(n))];
+    digits -= ((n - table2[digits]) >> 31U);
     return digits;
 }
 
@@ -1482,7 +1496,10 @@ ATTRIBUTE_CONST inline uint32_t log10_floor_runtime_impl(uint32_t n) noexcept {
 #elif defined(__cpp_constinit) && __cpp_constinit >= 201907L
     constinit
 #endif
+        // clang-format off
+        // NOLINTNEXTLINE(cppcoreguidelines-avoid-c-arrays, hicpp-avoid-c-arrays, modernize-avoid-c-arrays)
         static const uint8_t table1[33] = {
+            // clang-format on
             10, 9, 9, 8, 8, 8, 7, 7, 7, 6, 6, 6, 6, 5, 5, 5, 4,
             4,  4, 3, 3, 3, 3, 2, 2, 2, 1, 1, 1, 0, 0, 0, 0,
         };
@@ -1491,12 +1508,15 @@ ATTRIBUTE_CONST inline uint32_t log10_floor_runtime_impl(uint32_t n) noexcept {
 #elif defined(__cpp_constinit) && __cpp_constinit >= 201907L
     constinit
 #endif
+        // clang-format off
+        // NOLINTNEXTLINE(cppcoreguidelines-avoid-c-arrays, hicpp-avoid-c-arrays, modernize-avoid-c-arrays)
         static const uint32_t table2[11] = {
-            1, 10, 100, 1000, 10000, 100000, 1000000, 10000000, 100000000, 1000000000, 0,
+            // clang-format on
+            1U, 10U, 100U, 1000U, 10000U, 100000U, 1000000U, 10000000U, 100000000U, 1000000000U, 0U,
         };
 
     uint32_t digits = table1[::math_functions::countl_zero(n)];
-    digits -= ((n - table2[digits]) >> 31);
+    digits -= ((n - table2[digits]) >> 31U);
     return digits;
 }
 
@@ -1517,9 +1537,9 @@ ATTRIBUTE_CONST inline uint32_t log10_floor_runtime_impl(uint32_t n) noexcept {
         return ::math_functions::detail::log10_floor_compile_time_impl(n);
 #if CONFIG_HAS_AT_LEAST_CXX_20 || \
     (CONFIG_HAS_AT_LEAST_CXX_17 && (defined(__clang__) || CONFIG_GNUC_AT_LEAST(10, 0)))
-    } else {
-        return ::math_functions::detail::log10_floor_runtime_impl(n);
     }
+    return ::math_functions::detail::log10_floor_runtime_impl(n);
+
 #endif
 }
 
@@ -1527,30 +1547,30 @@ namespace detail {
 
 ATTRIBUTE_CONST constexpr uint32_t log10_floor_compile_time_impl(uint64_t n,
                                                                  int32_t approx_log10) noexcept {
-    constexpr uint64_t table2[20] = {
-        0ull,
-        9ull,
-        99ull,
-        999ull,
-        9999ull,
-        99999ull,
-        999999ull,
-        9999999ull,
-        99999999ull,
-        999999999ull,
-        9999999999ull,
-        99999999999ull,
-        999999999999ull,
-        9999999999999ull,
-        99999999999999ull,
-        999999999999999ull,
-        9999999999999999ull,
-        99999999999999999ull,
-        999999999999999999ull,
-        9999999999999999999ull,
+    constexpr std::array<uint64_t, 20> table2 = {
+        0ULL,
+        9ULL,
+        99ULL,
+        999ULL,
+        9999ULL,
+        99999ULL,
+        999999ULL,
+        9999999ULL,
+        99999999ULL,
+        999999999ULL,
+        9999999999ULL,
+        99999999999ULL,
+        999999999999ULL,
+        9999999999999ULL,
+        99999999999999ULL,
+        999999999999999ULL,
+        9999999999999999ULL,
+        99999999999999999ULL,
+        999999999999999999ULL,
+        9999999999999999999ULL,
     };
     const int32_t adjustment =
-        static_cast<int32_t>((table2[static_cast<uint32_t>(approx_log10 + 1)] - n) >> 63);
+        static_cast<int32_t>((table2[static_cast<uint32_t>(approx_log10 + 1)] - n) >> 63U);
     return static_cast<uint32_t>(approx_log10 + adjustment);
 }
 
@@ -1561,30 +1581,33 @@ ATTRIBUTE_CONST static inline uint32_t log10_floor_runtime_impl(uint64_t n,
 #elif defined(__cpp_constinit) && __cpp_constinit >= 201907L
     constinit
 #endif
+        // clang-format off
+        // NOLINTNEXTLINE(cppcoreguidelines-avoid-c-arrays, hicpp-avoid-c-arrays, modernize-avoid-c-arrays)
         static const uint64_t table2[20] = {
-            0ull,
-            9ull,
-            99ull,
-            999ull,
-            9999ull,
-            99999ull,
-            999999ull,
-            9999999ull,
-            99999999ull,
-            999999999ull,
-            9999999999ull,
-            99999999999ull,
-            999999999999ull,
-            9999999999999ull,
-            99999999999999ull,
-            999999999999999ull,
-            9999999999999999ull,
-            99999999999999999ull,
-            999999999999999999ull,
-            9999999999999999999ull,
+            // clang-format on
+            0ULL,
+            9ULL,
+            99ULL,
+            999ULL,
+            9999ULL,
+            99999ULL,
+            999999ULL,
+            9999999ULL,
+            99999999ULL,
+            999999999ULL,
+            9999999999ULL,
+            99999999999ULL,
+            999999999999ULL,
+            9999999999999ULL,
+            99999999999999ULL,
+            999999999999999ULL,
+            9999999999999999ULL,
+            99999999999999999ULL,
+            999999999999999999ULL,
+            9999999999999999999ULL,
         };
     const int32_t adjustment =
-        static_cast<int32_t>((table2[static_cast<uint32_t>(approx_log10 + 1)] - n) >> 63);
+        static_cast<int32_t>((table2[static_cast<uint32_t>(approx_log10 + 1)] - n) >> 63U);
     return static_cast<uint32_t>(approx_log10 + adjustment);
 }
 
@@ -1600,8 +1623,10 @@ ATTRIBUTE_CONST static inline uint32_t log10_floor_runtime_impl(uint64_t n,
      */
 
     static_assert(::math_functions::countl_zero(uint64_t{0}) == 64, "countl_zero detail error");
-    const int32_t approx_log10 = (19 * (63 - ::math_functions::countl_zero(n))) >> 6;
-    CONFIG_ASSUME_STATEMENT((-19 >> 6) <= approx_log10 && approx_log10 <= ((19 * 63) >> 6));
+    // NOLINTNEXTLINE(hicpp-signed-bitwise)
+    const int32_t approx_log10 = (19 * (63 - ::math_functions::countl_zero(n))) >> 6U;
+    // NOLINTNEXTLINE(hicpp-signed-bitwise)
+    CONFIG_ASSUME_STATEMENT((-19 >> 6U) <= approx_log10 && approx_log10 <= ((19 * 63) >> 6U));
 
 #if CONFIG_HAS_AT_LEAST_CXX_20 || \
     (CONFIG_HAS_AT_LEAST_CXX_17 && (defined(__clang__) || CONFIG_GNUC_AT_LEAST(10, 0)))
@@ -1610,26 +1635,26 @@ ATTRIBUTE_CONST static inline uint32_t log10_floor_runtime_impl(uint64_t n,
         return ::math_functions::detail::log10_floor_compile_time_impl(n, approx_log10);
 #if CONFIG_HAS_AT_LEAST_CXX_20 || \
     (CONFIG_HAS_AT_LEAST_CXX_17 && (defined(__clang__) || CONFIG_GNUC_AT_LEAST(10, 0)))
-    } else {
-        return ::math_functions::detail::log10_floor_runtime_impl(n, approx_log10);
     }
+
+    return ::math_functions::detail::log10_floor_runtime_impl(n, approx_log10);
 #endif
 }
 
 [[nodiscard]] ATTRIBUTE_CONST constexpr uint32_t base_10_len(uint32_t n) noexcept {
     // or `n` with 1 so that base_10_len(0) = 1
-    return ::math_functions::log10_floor(n | 1) + 1;
+    return ::math_functions::log10_floor(n | 1U) + 1;
 }
 
 [[nodiscard]] ATTRIBUTE_CONST constexpr uint32_t base_10_len(uint64_t n) noexcept {
     // or `n` with 1 so that base_10_len(0) = 1
-    return ::math_functions::log10_floor(n | 1) + 1;
+    return ::math_functions::log10_floor(n | 1U) + 1;
 }
 
 template <class T>
 struct ExtractPow2Result {
     T odd_part;
-    std::uint32_t power;
+    uint32_t power;
 };
 
 /// @brief Find q and r such n = q * (2 ^ r), q is odd if n != 0
@@ -1641,7 +1666,7 @@ template <typename T>
     requires ::math_functions::detail::unsigned_integral<T>
 #endif
 [[nodiscard]] ATTRIBUTE_CONST constexpr ExtractPow2Result<T> extract_pow2(T n) noexcept {
-    auto r = static_cast<std::uint32_t>(::math_functions::countr_zero(n));
+    auto r = static_cast<uint32_t>(::math_functions::countr_zero(n));
     CONFIG_ASSUME_STATEMENT(r <= sizeof(n) * CHAR_BIT);
     return {n != 0 ? (n >> r) : 0, r};
 }
@@ -1652,7 +1677,7 @@ template <typename T>
 /// @param z z
 /// @return median of x, y and z
 [[nodiscard]] ATTRIBUTE_CONST constexpr bool bool_median(bool x, bool y, bool z) noexcept {
-    return (x | y) & (y | z) & (x | z);
+    return (x || y) && (y || z) && (x || z);
 }
 
 #if CONFIG_HAS_CONCEPTS
@@ -1762,16 +1787,16 @@ namespace detail {
 ///         number of different prime divisors of @a `n`.
 /// @param[in] n
 /// @return
-[[nodiscard]] ATTRIBUTE_CONST constexpr std::uint32_t max_number_of_unique_prime_divisors(
-    std::uint32_t n) noexcept {
-    constexpr std::uint32_t kBoundary2 = 2 * 3;
-    constexpr std::uint32_t kBoundary3 = 2 * 3 * 5;
-    constexpr std::uint32_t kBoundary4 = 2 * 3 * 5 * 7;
-    constexpr std::uint32_t kBoundary5 = 2 * 3 * 5 * 7 * 11;
-    constexpr std::uint32_t kBoundary6 = 2 * 3 * 5 * 7 * 11 * 13;
-    constexpr std::uint32_t kBoundary7 = 2 * 3 * 5 * 7 * 11 * 13 * 17;
-    constexpr std::uint32_t kBoundary8 = 2 * 3 * 5 * 7 * 11 * 13 * 17 * 19;
-    constexpr std::uint32_t kBoundary9 = 2 * 3 * 5 * 7 * 11 * 13 * 17 * 19 * 23;
+[[nodiscard]] ATTRIBUTE_CONST constexpr uint32_t max_number_of_unique_prime_divisors(
+    uint32_t n) noexcept {
+    constexpr uint32_t kBoundary2 = 2 * 3;
+    constexpr uint32_t kBoundary3 = 2 * 3 * 5;
+    constexpr uint32_t kBoundary4 = 2 * 3 * 5 * 7;
+    constexpr uint32_t kBoundary5 = 2 * 3 * 5 * 7 * 11;
+    constexpr uint32_t kBoundary6 = 2 * 3 * 5 * 7 * 11 * 13;
+    constexpr uint32_t kBoundary7 = 2 * 3 * 5 * 7 * 11 * 13 * 17;
+    constexpr uint32_t kBoundary8 = 2 * 3 * 5 * 7 * 11 * 13 * 17 * 19;
+    constexpr uint32_t kBoundary9 = 2 * 3 * 5 * 7 * 11 * 13 * 17 * 19 * 23;
 
 #if defined(__GNUG__) || defined(__clang__)
 #if defined(__clang__)
@@ -1850,11 +1875,11 @@ struct [[nodiscard]] PrimeFactor final {
     using IntType = NumericType;
 
     ATTRIBUTE_ALWAYS_INLINE
-    constexpr PrimeFactor(IntType prime_factor, std::uint32_t prime_factor_power) noexcept
+    constexpr PrimeFactor(IntType prime_factor, uint32_t prime_factor_power) noexcept
         : factor(prime_factor), factor_power(prime_factor_power) {}
 
     IntType factor;
-    std::uint32_t factor_power;
+    uint32_t factor_power;
 };
 
 #if CONFIG_HAS_AT_LEAST_CXX_20 && !defined(_GLIBCXX_DEBUG) && !defined(_GLIBCXX_ASSERTIONS)
@@ -1898,7 +1923,7 @@ visit_prime_factors(NumericType n, Function visitor) noexcept(
     for (UnsignedNumericType d = 3; d * d <= n_abs; d += 2) {
         CONFIG_ASSUME_STATEMENT(d >= 3);
         if (n_abs % d == 0) {
-            std::uint32_t pow_of_d = 0;
+            uint32_t pow_of_d = 0;
             do {
                 pow_of_d++;
                 n_abs /= d;
@@ -1915,7 +1940,7 @@ visit_prime_factors(NumericType n, Function visitor) noexcept(
     }
 
     if (n_abs > 1) {
-        visitor(PrimeFactorType(n_abs, std::uint32_t{1}));
+        visitor(PrimeFactorType(n_abs, uint32_t{1}));
     }
 }
 
@@ -1929,7 +1954,7 @@ template <class NumericType>
     using UnsignedNumericType = typename ::math_functions::detail::make_unsigned_t<NumericType>;
 
     std::vector<typename ::math_functions::PrimeFactor<UnsignedNumericType>> prime_factors_vector;
-    constexpr bool kReservePlaceForFactors = std::is_same_v<UnsignedNumericType, std::uint32_t>;
+    constexpr bool kReservePlaceForFactors = std::is_same_v<UnsignedNumericType, uint32_t>;
     if constexpr (kReservePlaceForFactors) {
         prime_factors_vector.reserve(::math_functions::detail::max_number_of_unique_prime_divisors(
             ::math_functions::uabs(n)));
@@ -1963,18 +1988,17 @@ template <class NumericType>
 /// @brief https://cp-algorithms.com/algebra/prime-sieve-linear.html
 class [[nodiscard]] Factorizer final {
 public:
-    using PrimeFactors = std::vector<PrimeFactor<std::uint32_t>>;
+    using PrimeFactors = std::vector<PrimeFactor<uint32_t>>;
 
-    CONSTEXPR_VECTOR Factorizer(std::uint32_t n)
-        : primes(), least_prime_factor(std::size_t{n} + 1) {
-        for (uint32_t i = 2; i <= std::size_t{n}; i++) {
+    explicit CONSTEXPR_VECTOR Factorizer(uint32_t n) : primes(), least_prime_factor(size_t{n} + 1) {
+        for (uint32_t i = 2; i <= size_t{n}; i++) {
             if (least_prime_factor[i] == 0) {
                 least_prime_factor[i] = i;
                 primes.push_back(i);
             }
-            for (std::size_t prime_index = 0;; prime_index++) {
+            for (size_t prime_index = 0;; prime_index++) {
                 const auto p = primes[prime_index];
-                const auto x = std::size_t{p} * i;
+                const auto x = size_t{p} * i;
                 if (x > n) {
                     break;
                 }
@@ -1994,15 +2018,15 @@ public:
         ATTRIBUTE_LIFETIME_BOUND {
         return least_prime_factor;
     }
-    [[nodiscard]] CONSTEXPR_VECTOR bool is_prime(std::uint32_t n) const noexcept {
+    [[nodiscard]] CONSTEXPR_VECTOR bool is_prime(uint32_t n) const noexcept {
         return least_prime_factor[n] == n && n >= 2;
     }
 
-    [[nodiscard]] CONSTEXPR_VECTOR PrimeFactors prime_factors(std::uint32_t n) const {
+    [[nodiscard]] CONSTEXPR_VECTOR PrimeFactors prime_factors(uint32_t n) const {
         PrimeFactors pfs;
         if (n % 2 == 0 && n > 0) {
             const auto [n_div_pow_of_2, power_of_2] = ::math_functions::extract_pow2(n);
-            pfs.emplace_back(std::uint32_t{2}, power_of_2);
+            pfs.emplace_back(uint32_t{2}, power_of_2);
             n = n_div_pow_of_2;
         }
 
@@ -2010,7 +2034,7 @@ public:
             const auto lpf = least_prime_factor[n];
             if (pfs.empty() || pfs.back().factor != lpf) {
                 // assert(pfs.empty() || pfs.back().factor < lpf);
-                pfs.emplace_back(lpf, std::uint32_t{1});
+                pfs.emplace_back(lpf, uint32_t{1});
             } else {
                 pfs.back().factor_power++;
             }
@@ -2023,7 +2047,7 @@ public:
     }
 
     [[nodiscard]]
-    CONSTEXPR_VECTOR std::uint32_t number_of_unique_prime_factors(std::uint32_t n) const noexcept {
+    CONSTEXPR_VECTOR uint32_t number_of_unique_prime_factors(uint32_t n) const noexcept {
         return ::math_functions::Factorizer::number_of_unique_prime_factors_impl(
             least_prime_factor.data(), n);
     }
@@ -2031,10 +2055,10 @@ public:
 private:
     ATTRIBUTE_PURE
     ATTRIBUTE_SIZED_ACCESS(read_only, 1, 2)
-    static constexpr std::uint32_t number_of_unique_prime_factors_impl(
-        const uint32_t* least_prime_factor, std::uint32_t n) noexcept {
-        std::uint32_t unique_pfs_count = 0;
-        std::uint32_t last_pf          = 0;
+    static constexpr uint32_t number_of_unique_prime_factors_impl(
+        const uint32_t* least_prime_factor, uint32_t n) noexcept {
+        uint32_t unique_pfs_count = 0;
+        uint32_t last_pf          = 0;
         if (n % 2 == 0) {
             if (unlikely(n == 0)) {
                 return unique_pfs_count;
@@ -2045,7 +2069,7 @@ private:
         }
 
         while (n >= 3) {
-            const std::uint32_t least_pf = least_prime_factor[n];
+            const uint32_t least_pf = least_prime_factor[n];
             CONFIG_ASSUME_STATEMENT(least_pf >= 2);
             unique_pfs_count += least_pf != last_pf;
             n /= least_pf;
@@ -2055,27 +2079,27 @@ private:
         return unique_pfs_count;
     }
 
-    std::vector<std::uint32_t> primes;
-    std::vector<std::uint32_t> least_prime_factor;
+    std::vector<uint32_t> primes;
+    std::vector<uint32_t> least_prime_factor;
 };
 
 /// @brief Find all prime numbers in [2; n]
 /// @param n inclusive upper bound
 /// @return vector, such that vector[n] == true \iff n is prime
-[[nodiscard]] CONSTEXPR_VECTOR auto dynamic_primes_sieve(std::uint32_t n) {
-    std::vector<bool> primes(std::size_t{n} + 1, true);
+[[nodiscard]] CONSTEXPR_VECTOR auto dynamic_primes_sieve(uint32_t n) {
+    std::vector<bool> primes(size_t{n} + 1, true);
     primes[0] = false;
     if (likely(n > 0)) {
-        primes[1]                = false;
-        const std::uint32_t root = ::math_functions::isqrt(n);
-        if (const std::uint32_t i = 2; i <= root) {
-            for (std::size_t j = i * i; j <= n; j += i) {
+        primes[1]           = false;
+        const uint32_t root = ::math_functions::isqrt(n);
+        if (const uint32_t i = 2; i <= root) {
+            for (size_t j = size_t{i} * size_t{i}; j <= n; j += i) {
                 primes[j] = false;
             }
         }
-        for (std::uint32_t i = 3; i <= root; i += 2) {
+        for (uint32_t i = 3; i <= root; i += 2) {
             if (primes[i]) {
-                for (std::size_t j = i * i; j <= n; j += i) {
+                for (size_t j = size_t{i} * size_t{i}; j <= n; j += i) {
                     primes[j] = false;
                 }
             }
@@ -2105,24 +2129,27 @@ private:
 /// @brief Find all prime numbers in [2; N]
 /// @tparam N exclusive upper bound
 /// @return bitset, such that bitset[n] == true \iff n is prime
-template <std::uint32_t N>
+template <uint32_t N>
 [[nodiscard]] CONSTEXPR_FIXED_PRIMES_SIEVE inline const auto& fixed_primes_sieve() noexcept {
-    using PrimesSet                                         = std::bitset<std::size_t{N} + 1>;
+    using PrimesSet                                         = std::bitset<size_t{N} + 1>;
     static CONSTEXPR_PRIMES_SIEVE const PrimesSet primes_bs = []() CONSTEXPR_BITSET_OPS noexcept {
         PrimesSet primes{};
         primes.set();
         primes[0] = false;
         if constexpr (primes.size() > 1) {
-            primes[1]                    = false;
-            constexpr std::uint32_t root = ::math_functions::isqrt(N);
-            if constexpr (constexpr std::uint32_t i = 2; i <= root) {
-                for (std::size_t j = i * i; j <= N; j += i) {
+            primes[1]               = false;
+            constexpr uint32_t root = ::math_functions::isqrt(N);
+            if constexpr (constexpr uint32_t i = 2; i <= root) {
+                // NOLINTNEXTLINE(bugprone-implicit-widening-of-multiplication-result)
+                for (size_t j = i * i; j <= N; j += i) {
                     primes[j] = false;
                 }
             }
-            for (std::uint32_t i = 3; i <= root; i += 2) {
+            static_assert(root < std::numeric_limits<uint16_t>::max(), "isqrt impl error");
+            for (uint32_t i = 3; i <= root; i += 2) {
                 if (primes[i]) {
-                    for (std::size_t j = i * i; j <= N; j += i) {
+                    // NOLINTNEXTLINE(bugprone-implicit-widening-of-multiplication-result)
+                    for (size_t j = i * i; j <= N; j += i) {
                         primes[j] = false;
                     }
                 }
@@ -2140,8 +2167,8 @@ template <std::uint32_t N>
 
 template <class UIntType>
 struct [[nodiscard]] ExtEuclidAlgoRet {
-    std::int64_t u_value;
-    std::int64_t v_value;
+    int64_t u_value;
+    int64_t v_value;
     UIntType gcd_value;
 };
 
@@ -2162,29 +2189,29 @@ template <typename IntType>
                                                                        IntType b) noexcept {
     static_assert(::math_functions::detail::is_integral_v<IntType>, "Integral type expected");
 
-    std::int64_t u_previous = a != 0;
-    std::int64_t u_current  = 0;
-    std::int64_t v_previous = 0;
-    std::int64_t v_current  = 1;
+    int64_t u_previous = a != 0;
+    int64_t u_current  = 0;
+    int64_t v_previous = 0;
+    int64_t v_current  = 1;
 
-    using CompIntType = std::conditional_t<sizeof(IntType) >= sizeof(int), IntType, std::int64_t>;
+    using CompIntType = std::conditional_t<sizeof(IntType) >= sizeof(int), IntType, int64_t>;
 
     CompIntType r_previous = a;
     CompIntType r_current  = b;
     while (r_current != 0) {
-        const std::int64_t q_current = static_cast<std::int64_t>(r_previous / r_current);
-        const CompIntType r_next     = r_previous % r_current;
+        const int64_t q_current  = static_cast<int64_t>(r_previous / r_current);
+        const CompIntType r_next = r_previous % r_current;
 
         r_previous = r_current;
         r_current  = r_next;
 
-        const std::int64_t u_next = u_previous - u_current * q_current;
-        u_previous                = u_current;
-        u_current                 = u_next;
+        const int64_t u_next = u_previous - u_current * q_current;
+        u_previous           = u_current;
+        u_current            = u_next;
 
-        const std::int64_t v_next = v_previous - v_current * q_current;
-        v_previous                = v_current;
-        v_current                 = v_next;
+        const int64_t v_next = v_previous - v_current * q_current;
+        v_previous           = v_current;
+        v_current            = v_next;
     }
 
     if constexpr (::math_functions::detail::is_signed_v<CompIntType>) {
@@ -2203,21 +2230,21 @@ template <typename IntType>
     };
 }
 
-inline constexpr auto kNoCongruenceSolution = std::numeric_limits<std::uint32_t>::max();
+inline constexpr auto kNoCongruenceSolution = std::numeric_limits<uint32_t>::max();
 
 namespace detail {
 
 struct HelperRetType {
-    std::uint32_t x0 = kNoCongruenceSolution;  // first solution of congruence
-    std::uint32_t d  = 0;                      // gcd(a, m)
-    std::uint32_t m_ = 0;                      // m / d
+    uint32_t x0 = kNoCongruenceSolution;  // first solution of congruence
+    uint32_t d  = 0;                      // gcd(a, m)
+    uint32_t m_ = 0;                      // m / d
 };
 
 ATTRIBUTE_CONST
 ATTRIBUTE_ALWAYS_INLINE
-constexpr HelperRetType congruence_helper(const std::uint32_t a, const std::uint32_t c,
-                                          const std::uint32_t m) noexcept {
-    const std::uint32_t d = std::gcd(a, m);
+constexpr HelperRetType congruence_helper(const uint32_t a, const uint32_t c,
+                                          const uint32_t m) noexcept {
+    const uint32_t d = std::gcd(a, m);
     if (m == 0 || c % d != 0) {
         return {};
     }
@@ -2230,30 +2257,27 @@ constexpr HelperRetType congruence_helper(const std::uint32_t a, const std::uint
     /*
      * Solves a_ * x === c_ (mod m_) as gcd(a_, m_) == 1
      */
-    const std::uint32_t a_ = a / d;
-    const std::uint32_t c_ = c / d;
-    const std::uint32_t m_ = m / d;
+    const uint32_t a_ = a / d;
+    const uint32_t c_ = c / d;
+    const uint32_t m_ = m / d;
     // a_ * u_ + m_ * v_ == 1
-    const std::int64_t u_ =
-        ::math_functions::extended_euclid_algorithm<std::uint32_t>(a_, m_).u_value;
-    const auto unsigned_u_ = static_cast<std::uint64_t>(u_ >= 0 ? u_ : u_ + m_);
+    const int64_t u_       = ::math_functions::extended_euclid_algorithm<uint32_t>(a_, m_).u_value;
+    const auto unsigned_u_ = static_cast<uint64_t>(u_ >= 0 ? u_ : u_ + m_);
 
     // a_ * (u_ * c_) + m_ * (v_ * c_) == c_
     // a * (u_ * c_) + m * (v_ * c_) == c
     // x0 = u_ * c_
-    const auto x0 = static_cast<std::uint32_t>((unsigned_u_ * c_) % m_);
+    const auto x0 = static_cast<uint32_t>((unsigned_u_ * c_) % m_);
     CONFIG_ASSUME_STATEMENT(x0 != ::math_functions::kNoCongruenceSolution);
     return {x0, d, m_};
 }
 
 CONSTEXPR_VECTOR
-std::vector<std::uint32_t> solve_congruence_modulo_m_all_roots_impl(std::uint32_t a,
-                                                                    std::uint32_t c,
-                                                                    std::uint32_t m) {
+std::vector<uint32_t> solve_congruence_modulo_m_all_roots_impl(uint32_t a, uint32_t c, uint32_t m) {
     const auto [x0, d, m_] = ::math_functions::detail::congruence_helper(a, c, m);
-    std::vector<std::uint32_t> solutions(d);
+    std::vector<uint32_t> solutions(d);
     auto x = x0;
-    for (std::uint32_t& ith_solution : solutions) {
+    for (uint32_t& ith_solution : solutions) {
         ith_solution = x;
         x += m_;
     }
@@ -2261,30 +2285,29 @@ std::vector<std::uint32_t> solve_congruence_modulo_m_all_roots_impl(std::uint32_
     return solutions;
 }
 
-ATTRIBUTE_CONST constexpr std::uint32_t solve_congruence_modulo_m_impl(std::uint32_t a,
-                                                                       std::uint32_t c,
-                                                                       std::uint32_t m) noexcept {
+ATTRIBUTE_CONST constexpr uint32_t solve_congruence_modulo_m_impl(uint32_t a, uint32_t c,
+                                                                  uint32_t m) noexcept {
     return ::math_functions::detail::congruence_helper(a, c, m).x0;
 }
 
 template <class T>
-ATTRIBUTE_CONST ATTRIBUTE_ALWAYS_INLINE constexpr std::uint32_t congruence_arg(
-    T x, [[maybe_unused]] std::uint32_t m) noexcept {
+ATTRIBUTE_CONST ATTRIBUTE_ALWAYS_INLINE constexpr uint32_t congruence_arg(
+    T x, [[maybe_unused]] uint32_t m) noexcept {
     static_assert(::math_functions::detail::is_integral_v<T>,
                   "Expected integral type in the congruence");
     if constexpr (::math_functions::detail::is_unsigned_v<T>) {
-        if constexpr (sizeof(x) > sizeof(std::uint32_t)) {
-            return static_cast<std::uint32_t>(x % m);
+        if constexpr (sizeof(x) > sizeof(uint32_t)) {
+            return static_cast<uint32_t>(x % m);
         } else {
-            return static_cast<std::uint32_t>(x);
+            return static_cast<uint32_t>(x);
         }
     } else {
-        if constexpr (sizeof(x) > sizeof(std::uint32_t)) {
+        if constexpr (sizeof(x) > sizeof(uint32_t)) {
             const auto x_mod_m = x % m;
-            return static_cast<std::uint32_t>(x_mod_m >= 0 ? x_mod_m : x_mod_m + m);
+            return static_cast<uint32_t>(x_mod_m >= 0 ? x_mod_m : x_mod_m + m);
         } else {
-            const auto x_mod_m = static_cast<std::int64_t>(x) % m;
-            return static_cast<std::uint32_t>(x_mod_m >= 0 ? x_mod_m : x_mod_m + m);
+            const auto x_mod_m = static_cast<int64_t>(x) % m;
+            return static_cast<uint32_t>(x_mod_m >= 0 ? x_mod_m : x_mod_m + m);
         }
     }
 }
@@ -2306,8 +2329,8 @@ ATTRIBUTE_CONST ATTRIBUTE_ALWAYS_INLINE constexpr std::uint32_t congruence_arg(
 ///          x_{0} < m / gcd(a, m), x_{i + 1} = x_{i} + m / gcd(a, m).
 ///         Otherwise, return empty vector.
 template <class T1, class T2>
-[[nodiscard]] ATTRIBUTE_ALWAYS_INLINE CONSTEXPR_VECTOR std::vector<std::uint32_t>
-solve_congruence_modulo_m_all_roots(T1 a, T2 c, std::uint32_t m) {
+[[nodiscard]] ATTRIBUTE_ALWAYS_INLINE CONSTEXPR_VECTOR std::vector<uint32_t>
+solve_congruence_modulo_m_all_roots(T1 a, T2 c, uint32_t m) {
     return ::math_functions::detail::solve_congruence_modulo_m_all_roots_impl(
         ::math_functions::detail::congruence_arg(a, m),
         ::math_functions::detail::congruence_arg(c, m), m);
@@ -2326,8 +2349,8 @@ solve_congruence_modulo_m_all_roots(T1 a, T2 c, std::uint32_t m) {
 /// @return If roots exist, return root x such that 0 <= x < m / gcd(a, m).
 ///         Otherwise, return math_functions::kNoCongruenceSolution
 template <class T1, class T2>
-[[nodiscard]] ATTRIBUTE_CONST ATTRIBUTE_ALWAYS_INLINE constexpr std::uint32_t
-solve_congruence_modulo_m(T1 a, T2 c, std::uint32_t m) noexcept {
+[[nodiscard]] ATTRIBUTE_CONST ATTRIBUTE_ALWAYS_INLINE constexpr uint32_t solve_congruence_modulo_m(
+    T1 a, T2 c, uint32_t m) noexcept {
     return ::math_functions::detail::solve_congruence_modulo_m_impl(
         ::math_functions::detail::congruence_arg(a, m),
         ::math_functions::detail::congruence_arg(c, m), m);
@@ -2345,8 +2368,8 @@ solve_congruence_modulo_m(T1 a, T2 c, std::uint32_t m) noexcept {
 template <::math_functions::detail::integral IntType>
     requires(!std::is_same_v<IntType, bool>)
 [[nodiscard]]
-ATTRIBUTE_CONST constexpr std::uint32_t inv_mod_m(IntType a, std::uint32_t m) noexcept {
-    return ::math_functions::solve_congruence_modulo_m(a, std::uint32_t{1}, m);
+ATTRIBUTE_CONST constexpr uint32_t inv_mod_m(IntType a, uint32_t m) noexcept {
+    return ::math_functions::solve_congruence_modulo_m(a, uint32_t{1}, m);
 }
 
 #else
@@ -2362,9 +2385,9 @@ ATTRIBUTE_CONST constexpr std::uint32_t inv_mod_m(IntType a, std::uint32_t m) no
 /// @return
 template <class IntType>
 [[nodiscard]] ATTRIBUTE_CONST constexpr
-std::enable_if_t<::math_functions::detail::is_integral_v<IntType>, std::uint32_t>
-inv_mod_m(IntType a, std::uint32_t m) noexcept {
-    return ::math_functions::solve_congruence_modulo_m(a, std::uint32_t{1}, m);
+std::enable_if_t<::math_functions::detail::is_integral_v<IntType>, uint32_t>
+inv_mod_m(IntType a, uint32_t m) noexcept {
+    return ::math_functions::solve_congruence_modulo_m(a, uint32_t{1}, m);
 }
 
 // clang-format on
@@ -2372,8 +2395,8 @@ inv_mod_m(IntType a, std::uint32_t m) noexcept {
 #endif
 
 struct InverseResult {
-    std::vector<std::uint32_t> numbers_mod_m;
-    std::vector<std::uint32_t> inversed_numbers;
+    std::vector<uint32_t> numbers_mod_m;
+    std::vector<uint32_t> inversed_numbers;
 };
 
 namespace detail {
@@ -2381,14 +2404,14 @@ namespace detail {
 template <class Iter>
 CONSTEXPR_VECTOR typename ::math_functions::InverseResult inv_mod_m_impl(Iter nums_begin,
                                                                          Iter nums_end,
-                                                                         std::uint32_t m) {
-    const auto n = static_cast<std::size_t>(std::distance(nums_begin, nums_end));
+                                                                         uint32_t m) {
+    const auto n = static_cast<size_t>(std::distance(nums_begin, nums_end));
     auto res     = ::math_functions::InverseResult{
-        std::vector<std::uint32_t>(n),
-        std::vector<std::uint32_t>(n),
+        std::vector<uint32_t>(n),
+        std::vector<uint32_t>(n),
     };
 
-    std::uint32_t prod_mod_m = 1;
+    uint32_t prod_mod_m = 1;
     {
         auto nums_mod_m_iter     = res.numbers_mod_m.begin();
         auto inv_nums_mod_m_iter = res.inversed_numbers.begin();
@@ -2397,20 +2420,20 @@ CONSTEXPR_VECTOR typename ::math_functions::InverseResult inv_mod_m_impl(Iter nu
             const auto num_mod_m = ::math_functions::detail::congruence_arg(*iter, m);
             *nums_mod_m_iter     = num_mod_m;
             *inv_nums_mod_m_iter = prod_mod_m;
-            prod_mod_m = static_cast<std::uint32_t>((std::uint64_t{prod_mod_m} * num_mod_m) % m);
+            prod_mod_m           = static_cast<uint32_t>((uint64_t{prod_mod_m} * num_mod_m) % m);
         }
     }
 
-    const std::uint32_t inv_nums_prod_mod_m = ::math_functions::inv_mod_m(prod_mod_m, m);
+    const uint32_t inv_nums_prod_mod_m = ::math_functions::inv_mod_m(prod_mod_m, m);
 
     {
-        auto inv_nums_mod_m_iter  = res.inversed_numbers.rbegin();
-        std::uint32_t suffix_prod = 1;
+        auto inv_nums_mod_m_iter = res.inversed_numbers.rbegin();
+        uint32_t suffix_prod     = 1;
         for (auto iter = res.numbers_mod_m.rbegin(), nums_mod_m_rend = res.numbers_mod_m.rend();
              iter != nums_mod_m_rend; ++iter, ++inv_nums_mod_m_iter) {
-            const std::uint64_t t = (std::uint64_t{suffix_prod} * *inv_nums_mod_m_iter) % m;
-            *inv_nums_mod_m_iter  = static_cast<std::uint32_t>((t * inv_nums_prod_mod_m) % m);
-            suffix_prod = static_cast<std::uint32_t>((std::uint64_t{suffix_prod} * *iter) % m);
+            const uint64_t t     = (uint64_t{suffix_prod} * *inv_nums_mod_m_iter) % m;
+            *inv_nums_mod_m_iter = static_cast<uint32_t>((t * inv_nums_prod_mod_m) % m);
+            suffix_prod          = static_cast<uint32_t>((uint64_t{suffix_prod} * *iter) % m);
         }
     }
 
@@ -2428,7 +2451,7 @@ template <std::forward_iterator Iter>
              (!std::same_as<typename std::iter_value_t<Iter>, bool>)
 [[nodiscard]]
 CONSTEXPR_VECTOR
-typename ::math_functions::InverseResult inv_mod_m(Iter nums_iter_begin, Iter nums_iter_end, std::uint32_t m) {
+typename ::math_functions::InverseResult inv_mod_m(Iter nums_iter_begin, Iter nums_iter_end, uint32_t m) {
     return ::math_functions::detail::inv_mod_m_impl(nums_iter_begin, nums_iter_end, m);
 }
 
@@ -2441,7 +2464,7 @@ typename ::math_functions::InverseResult inv_mod_m(Iter nums_iter_begin, Iter nu
 template <std::ranges::forward_range Container>
 [[nodiscard]]
 CONSTEXPR_VECTOR
-typename ::math_functions::InverseResult inv_mod_m(const Container& nums, std::uint32_t m) {
+typename ::math_functions::InverseResult inv_mod_m(const Container& nums, uint32_t m) {
     return ::math_functions::inv_mod_m(std::begin(nums), std::end(nums), m);
 }
 
@@ -2455,7 +2478,7 @@ CONSTEXPR_VECTOR std::enable_if_t<
     ::math_functions::detail::is_integral_v<typename std::iterator_traits<Iter>::value_type> &&
         !std::is_same_v<typename std::iterator_traits<Iter>::value_type, bool>,
     typename ::math_functions::InverseResult> inv_mod_m(Iter nums_iter_begin, Iter nums_iter_end,
-                                                        std::uint32_t m) {
+                                                        uint32_t m) {
     return ::math_functions::detail::inv_mod_m_impl(nums_iter_begin, nums_iter_end, m);
 }
 
@@ -2467,7 +2490,7 @@ CONSTEXPR_VECTOR
                          math_functions::detail::is_integral_v<typename std::iterator_traits<
                              decltype(std::end(std::declval<Container&>()))>::value_type>,
                      typename ::math_functions::InverseResult> inv_mod_m(const Container& nums,
-                                                                         std::uint32_t m) {
+                                                                         uint32_t m) {
     return ::math_functions::inv_mod_m(std::begin(nums), std::end(nums), m);
 }
 
@@ -2482,18 +2505,19 @@ CONSTEXPR_VECTOR
 /// @param m
 /// @return
 [[nodiscard]]
-ATTRIBUTE_CONST constexpr std::uint32_t solve_binary_congruence_modulo_m(
-    const std::uint32_t k, const std::uint32_t c, const std::uint32_t m) noexcept {
+ATTRIBUTE_CONST constexpr uint32_t solve_binary_congruence_modulo_m(const uint32_t k,
+                                                                    const uint32_t c,
+                                                                    const uint32_t m) noexcept {
     if (m == 0) {
         return ::math_functions::kNoCongruenceSolution;
     }
 
     const auto [r, s] = ::math_functions::extract_pow2(m);
     CONFIG_ASSUME_STATEMENT(r >= 1);
-    const auto min_k_s = std::min(k, std::uint32_t{s});
+    const auto min_k_s = std::min(k, uint32_t{s});
     CONFIG_ASSUME_STATEMENT(min_k_s < 32);
     // gcd(2^k, m)
-    const auto gcd_2k_m = std::uint32_t{1} << min_k_s;
+    const auto gcd_2k_m = uint32_t{1} << min_k_s;
     if (c % gcd_2k_m != 0) {
         return ::math_functions::kNoCongruenceSolution;
     }
@@ -2515,17 +2539,16 @@ ATTRIBUTE_CONST constexpr std::uint32_t solve_binary_congruence_modulo_m(
     /**
      * Solve 2^{k-s} * x ≡ c / 2^{s} (mod r), where r = m_ = m / 2^{s}
      */
-    std::uint64_t rhs  = c_mod_m_;
+    uint64_t rhs       = c_mod_m_;
     auto lhs_bin_power = k - s;
 
     constexpr unsigned kThreshold = 60;
     if (lhs_bin_power > kThreshold) {
-        const std::int64_t u_ =
-            ::math_functions::extended_euclid_algorithm<std::uint32_t>(
-                ::math_functions::bin_pow_mod(uint32_t{2}, lhs_bin_power, m_), m_)
-                .u_value;
+        const int64_t u_ = ::math_functions::extended_euclid_algorithm<uint32_t>(
+                               ::math_functions::bin_pow_mod(uint32_t{2}, lhs_bin_power, m_), m_)
+                               .u_value;
         CONFIG_ASSUME_STATEMENT(u_ < m_);
-        const auto unsigned_u_ = static_cast<std::uint64_t>(u_ >= 0 ? u_ : u_ + m_);
+        const auto unsigned_u_ = static_cast<uint64_t>(u_ >= 0 ? u_ : u_ + m_);
         CONFIG_ASSUME_STATEMENT(unsigned_u_ < m_);
         rhs *= unsigned_u_;
     } else {
@@ -2554,9 +2577,9 @@ ATTRIBUTE_CONST constexpr std::uint32_t solve_binary_congruence_modulo_m(
 /// @brief Return max q, such that n! ≡ 0 mod(k^q), where k > 1 and n >= 0
 /// @param n
 /// @param k
-/// @return q if k > 1 and std::numeric_limits<std::uint32_t>::max() otherwise
-[[nodiscard]] ATTRIBUTE_CONST constexpr std::uint32_t solve_factorial_congruence(
-    std::uint32_t n, std::uint32_t k) noexcept {
+/// @return q if k > 1 and std::numeric_limits<uint32_t>::max() otherwise
+[[nodiscard]] ATTRIBUTE_CONST constexpr uint32_t solve_factorial_congruence(uint32_t n,
+                                                                            uint32_t k) noexcept {
     /*
      * let k  = p_1^a_1 * p_2^a_2 * ... * p_m^a_m
      * let n! = p_1^b_1 * p_2^b_2 * ...
@@ -2565,10 +2588,10 @@ ATTRIBUTE_CONST constexpr std::uint32_t solve_binary_congruence_modulo_m(
      * then q = min{ b_i / a_i | 1 <= i <= m }
      **/
 
-    auto ans = std::numeric_limits<std::uint32_t>::max();
+    auto ans = std::numeric_limits<uint32_t>::max();
     ::math_functions::visit_prime_factors(
-        k, [&ans, n](::math_functions::PrimeFactor<std::uint32_t> pf) constexpr noexcept {
-            std::uint64_t pow_of_p_i = pf.factor;
+        k, [&ans, n](::math_functions::PrimeFactor<uint32_t> pf) constexpr noexcept {
+            uint64_t pow_of_p_i = pf.factor;
             /**
              * max b_i can be reached if n = 4294967295 and p_i = 2, then:
              * b_i = ⌊4294967295 / 2⌋
@@ -2592,21 +2615,21 @@ ATTRIBUTE_CONST constexpr std::uint32_t solve_binary_congruence_modulo_m(
                 return false;
             }
 
-            std::uint32_t b_i = 0;
+            uint32_t b_i = 0;
             do {
-                b_i += n / static_cast<std::uint32_t>(pow_of_p_i);
+                b_i += n / static_cast<uint32_t>(pow_of_p_i);
                 pow_of_p_i *= pf.factor;
             } while (pow_of_p_i <= n);
 
-            std::uint32_t a_i = pf.factor_power;
-            ans               = std::min(ans, b_i / a_i);
+            const uint32_t a_i = pf.factor_power;
+            ans                = std::min(ans, b_i / a_i);
             return true;
         });
 
     return ans;
 }
 
-[[nodiscard]] ATTRIBUTE_CONST constexpr bool is_perfect_number(std::uint32_t n) noexcept {
+[[nodiscard]] ATTRIBUTE_CONST constexpr bool is_perfect_number(uint32_t n) noexcept {
     switch (n) {
         case 6:
         case 28:
@@ -2619,12 +2642,12 @@ ATTRIBUTE_CONST constexpr std::uint32_t solve_binary_congruence_modulo_m(
     }
 }
 
-[[nodiscard]] ATTRIBUTE_CONST constexpr bool is_perfect_number(const std::uint64_t n) noexcept {
+[[nodiscard]] ATTRIBUTE_CONST constexpr bool is_perfect_number(const uint64_t n) noexcept {
     // See https://en.wikipedia.org/wiki/List_of_Mersenne_primes_and_perfect_numbers
-#if MATH_FUNCTIONS_HPP_ENABLE_TARGET_OPTIONS
+#if defined(MATH_FUNCTIONS_HPP_ENABLE_TARGET_OPTIONS)
     const auto [q, pm1] = extract_pow2(n);
     const auto p        = pm1 + 1;
-    if (q != (std::uint64_t{1} << p) - 1) {
+    if (q != (uint64_t{1} << p) - 1) {
         return false;
     }
     switch (p) {
@@ -2641,9 +2664,9 @@ ATTRIBUTE_CONST constexpr std::uint32_t solve_binary_congruence_modulo_m(
                 case 496:
                 case 8128:
                 case 33550336:
-                case 8589869056ull:
-                case 137438691328ull:
-                case 2305843008139952128ull:
+                case 8589869056ULL:
+                case 137438691328ULL:
+                case 2305843008139952128ULL:
                     break;
                 default:
                     CONFIG_UNREACHABLE();
@@ -2657,9 +2680,9 @@ ATTRIBUTE_CONST constexpr std::uint32_t solve_binary_congruence_modulo_m(
                 case 496:
                 case 8128:
                 case 33550336:
-                case 8589869056ull:
-                case 137438691328ull:
-                case 2305843008139952128ull:
+                case 8589869056ULL:
+                case 137438691328ULL:
+                case 2305843008139952128ULL:
                     CONFIG_UNREACHABLE();
                     break;
                 default:
@@ -2674,9 +2697,9 @@ ATTRIBUTE_CONST constexpr std::uint32_t solve_binary_congruence_modulo_m(
         case 496:
         case 8128:
         case 33550336:
-        case 8589869056ull:
-        case 137438691328ull:
-        case 2305843008139952128ull:
+        case 8589869056ULL:
+        case 137438691328ULL:
+        case 2305843008139952128ULL:
             return true;
         default:
             return false;
@@ -2687,18 +2710,18 @@ ATTRIBUTE_CONST constexpr std::uint32_t solve_binary_congruence_modulo_m(
 #if defined(INTEGERS_128_BIT_HPP)
 
 [[nodiscard]] ATTRIBUTE_CONST I128_CONSTEXPR bool is_perfect_number(uint128_t n) noexcept {
-    return n > std::numeric_limits<std::uint64_t>::max()
-               ? n == (((uint128_t{1} << 61) - 1) << (61 - 1))
-               : ::math_functions::is_perfect_number(static_cast<std::uint64_t>(n));
+    return n > std::numeric_limits<uint64_t>::max()
+               ? n == (((uint128_t{1} << 61U) - 1) << (61U - 1U))
+               : ::math_functions::is_perfect_number(static_cast<uint64_t>(n));
 }
 
 #endif
 
 namespace detail {
 
-template <std::uint32_t M, class T>
+template <uint32_t M, class T>
 ATTRIBUTE_CONST ATTRIBUTE_ALWAYS_INLINE constexpr T unrolled_pow(
-    [[maybe_unused]] const std::uint32_t n) noexcept {
+    [[maybe_unused]] const uint32_t n) noexcept {
     if constexpr (M == 0) {
         return 1;
     } else if constexpr (M == 1) {
@@ -2715,7 +2738,7 @@ ATTRIBUTE_CONST ATTRIBUTE_ALWAYS_INLINE constexpr T unrolled_pow(
     }
 }
 
-template <std::uint32_t N, std::uint32_t K, class T>
+template <uint32_t N, uint32_t K, class T>
 ATTRIBUTE_CONST ATTRIBUTE_ALWAYS_INLINE constexpr T unrolled_cnk() noexcept {
     if constexpr (K > N) {
         return 0;
@@ -2739,11 +2762,11 @@ ATTRIBUTE_CONST ATTRIBUTE_ALWAYS_INLINE constexpr T unrolled_cnk() noexcept {
     }
 }
 
-template <std::uint32_t M, class T>
-ATTRIBUTE_CONST constexpr T powers_sum(const std::uint32_t n) noexcept;
+template <uint32_t M, class T>
+ATTRIBUTE_CONST constexpr T powers_sum(const uint32_t n) noexcept;
 
-template <std::uint32_t M, std::uint32_t I, class T>
-ATTRIBUTE_CONST ATTRIBUTE_ALWAYS_INLINE constexpr T helper(const std::uint32_t n) noexcept {
+template <uint32_t M, uint32_t I, class T>
+ATTRIBUTE_CONST ATTRIBUTE_ALWAYS_INLINE constexpr T helper(const uint32_t n) noexcept {
     static_assert(I <= M + 1);
     const auto res = ::math_functions::detail::unrolled_cnk<M + 1, I, T>() *
                      ::math_functions::detail::powers_sum<M + 1 - I, T>(n);
@@ -2754,34 +2777,34 @@ ATTRIBUTE_CONST ATTRIBUTE_ALWAYS_INLINE constexpr T helper(const std::uint32_t n
     }
 }
 
-template <std::uint32_t M, class T>
-ATTRIBUTE_CONST constexpr T powers_sum(const std::uint32_t n) noexcept {
-    static_assert(sizeof(T) >= sizeof(std::uint64_t));
+template <uint32_t M, class T>
+ATTRIBUTE_CONST constexpr T powers_sum(const uint32_t n) noexcept {
+    static_assert(sizeof(T) >= sizeof(uint64_t));
     static_assert(M + 1 > M);
 
     if constexpr (M == 0) {
         return n;
     } else if constexpr (M == 1) {
         // n * (n + 1) / 2
-        const auto n_u64 = static_cast<std::uint64_t>(n);
+        const auto n_u64 = static_cast<uint64_t>(n);
         return static_cast<T>((n * (n_u64 + 1)) / 2);
     } else if constexpr (M == 2) {
         // n * (n + 1) * (2 * n + 1) / 6
-        const auto n_u64 = static_cast<std::uint64_t>(n);
+        const auto n_u64 = static_cast<uint64_t>(n);
         const T tmp      = static_cast<T>((n * (n_u64 + 1)) / 2);
         const auto tmp2  = 2 * n_u64 + 1;
         return (tmp2 % 3 == 0) ? (tmp * (tmp2 / 3)) : ((tmp / 3) * tmp2);
     } else if constexpr (M == 3) {
         // n * n * (n + 1) * (n + 1) / 4
-        const auto tmp = static_cast<T>((n * (static_cast<std::uint64_t>(n) + 1)) / 2);
+        const auto tmp = static_cast<T>((n * (static_cast<uint64_t>(n) + 1)) / 2);
         return tmp * tmp;
     } else if constexpr (M == 4) {
         // n * (n + 1) * (6 * n^3 + 9 * n^2 + n - 1) / 30
-        const auto n_u64                     = static_cast<std::uint64_t>(n);
-        const std::uint64_t n_square_u64     = n_u64 * n;
-        const auto tmp                       = static_cast<T>((n_square_u64 + n) / 2);
-        const std::uint64_t two_n_plus_3_u64 = 2 * n_u64 + 3;
-        const std::uint32_t n_minus_1        = n - 1;
+        const auto n_u64                = static_cast<uint64_t>(n);
+        const uint64_t n_square_u64     = n_u64 * n;
+        const auto tmp                  = static_cast<T>((n_square_u64 + n) / 2);
+        const uint64_t two_n_plus_3_u64 = 2 * n_u64 + 3;
+        const uint32_t n_minus_1        = n - 1;
         switch (n % 5) {
             case 0:
             case 4: {
@@ -2789,20 +2812,20 @@ ATTRIBUTE_CONST constexpr T powers_sum(const std::uint32_t n) noexcept {
                 const auto tmp3 = static_cast<T>(n_square_u64) * two_n_plus_3_u64;
                 if (n_minus_1 % 3 == 0) {
                     return tmp2 * (tmp3 + (n_minus_1 / 3));
-                } else {
-                    CONFIG_ASSUME_STATEMENT(tmp2 % 3 == 0);
-                    return tmp2 * tmp3 + ((tmp2 / 3) * n_minus_1);
                 }
+
+                CONFIG_ASSUME_STATEMENT(tmp2 % 3 == 0);
+                return tmp2 * tmp3 + ((tmp2 / 3) * n_minus_1);
             }
             case 1: {
                 CONFIG_ASSUME_STATEMENT(two_n_plus_3_u64 % 5 == 0);
                 const auto lhs = static_cast<T>(n_square_u64) * (two_n_plus_3_u64 / 5);
-                const std::uint32_t n_minus_1_over_5 = n_minus_1 / 5;
+                const uint32_t n_minus_1_over_5 = n_minus_1 / 5;
                 if (n_minus_1_over_5 % 3 == 0) {
                     return tmp * (lhs + (n_minus_1_over_5 / 3));
-                } else {
-                    return tmp * lhs + ((tmp / 3) * n_minus_1_over_5);
                 }
+
+                return tmp * lhs + ((tmp / 3) * n_minus_1_over_5);
             }
             default:
                 break;
@@ -2811,9 +2834,9 @@ ATTRIBUTE_CONST constexpr T powers_sum(const std::uint32_t n) noexcept {
         const auto tmp2 = static_cast<T>(n_square_u64) * two_n_plus_3_u64;
         if (n_minus_1 % 3 == 0) {
             return tmp * ((tmp2 + (n_minus_1 / 3)) / 5);
-        } else {
-            return (tmp / 3) * ((3 * tmp2 + n_minus_1) / 5);
         }
+
+        return (tmp / 3) * ((3 * tmp2 + n_minus_1) / 5);
     } else {
         return (::math_functions::detail::unrolled_pow<M + 1, T>(n + 1) - 1 -
                 ::math_functions::detail::helper<M, 2, T>(n)) /
@@ -2827,10 +2850,10 @@ ATTRIBUTE_CONST constexpr T powers_sum(const std::uint32_t n) noexcept {
 /// @tparam M
 /// @param n
 /// @return
-template <std::uint32_t M>
-[[nodiscard]] ATTRIBUTE_CONST constexpr std::uint64_t powers_sum_u64(
-    const std::uint32_t n) noexcept {
-    return ::math_functions::detail::powers_sum<M, std::uint64_t>(n);
+template <uint32_t M>
+[[nodiscard]]
+ATTRIBUTE_CONST constexpr uint64_t powers_sum_u64(const uint32_t n) noexcept {
+    return ::math_functions::detail::powers_sum<M, uint64_t>(n);
 }
 
 #if defined(INTEGERS_128_BIT_HPP)
@@ -2839,8 +2862,8 @@ template <std::uint32_t M>
 /// @tparam M
 /// @param n
 /// @return
-template <std::uint32_t M>
-[[nodiscard]] ATTRIBUTE_CONST constexpr uint128_t powers_sum_u128(const std::uint32_t n) noexcept {
+template <uint32_t M>
+[[nodiscard]] ATTRIBUTE_CONST constexpr uint128_t powers_sum_u128(const uint32_t n) noexcept {
     return ::math_functions::detail::powers_sum<M, uint128_t>(n);
 }
 
@@ -2850,7 +2873,7 @@ template <class T>
 [[nodiscard]] CONSTEXPR_VECTOR std::vector<T> arange(T begin, T end, T step) {
     static_assert(::math_functions::detail::is_integral_v<T>);
 
-    const std::size_t size = [begin, end, step]() mutable constexpr noexcept -> std::size_t {
+    const size_t size = [begin, end, step]() mutable constexpr noexcept -> size_t {
         if (unlikely(step == 0)) {
             return 0;
         }
@@ -2869,14 +2892,14 @@ template <class T>
 
 #if defined(INTEGERS_128_BIT_HPP)
         if constexpr (std::is_same_v<T, int128_t> || std::is_same_v<T, uint128_t>) {
-            constexpr auto kUsizeMax = std::numeric_limits<std::size_t>::max();
-            return approx_size <= kUsizeMax ? static_cast<std::size_t>(approx_size) : kUsizeMax;
+            constexpr auto kUsizeMax = std::numeric_limits<size_t>::max();
+            return approx_size <= kUsizeMax ? static_cast<size_t>(approx_size) : kUsizeMax;
         } else
 #endif
             if constexpr (::math_functions::detail::is_signed_v<T>) {
-            return static_cast<std::size_t>(approx_size);
+            return static_cast<size_t>(approx_size);
         } else {
-            return std::size_t{approx_size};
+            return size_t{approx_size};
         }
     }();
 
@@ -2902,6 +2925,8 @@ template <class T>
 
 }  // namespace math_functions
 
+// NOLINTEND(cppcoreguidelines-avoid-magic-numbers)
+
 #if defined(INTEGERS_128_BIT_HPP)
 
 namespace std {
@@ -2921,17 +2946,17 @@ namespace std {
         return a;
     }
 
-    const uint32_t ra   = static_cast<std::uint32_t>(::math_functions::countr_zero(a));
-    const uint32_t rb   = static_cast<std::uint32_t>(::math_functions::countr_zero(b));
+    const uint32_t ra   = static_cast<uint32_t>(::math_functions::countr_zero(a));
+    const uint32_t rb   = static_cast<uint32_t>(::math_functions::countr_zero(b));
     const uint32_t mult = std::min(ra, rb);
     a >>= ra;
     b >>= rb;
     while (true) {
         if (a < b) {
             // std::swap is not constexpr in C++17
-            uint128_t tmp = a;
-            a             = b;
-            b             = tmp;
+            const uint128_t tmp = a;
+            a                   = b;
+            b                   = tmp;
         }
 
         a -= b;
@@ -2939,7 +2964,7 @@ namespace std {
             return b << mult;
         }
 
-        a >>= ::math_functions::countr_zero(a);
+        a >>= static_cast<uint32_t>(::math_functions::countr_zero(a));
     }
 }
 
@@ -2964,6 +2989,10 @@ namespace std {
     return std::gcd(a2, b2);
 }
 
+[[nodiscard]] ATTRIBUTE_CONST I128_CONSTEXPR uint128_t gcd(int128_t a, uint64_t b) noexcept {
+    return std::gcd(b, a);
+}
+
 // NOLINTEND(cert-dcl58-cpp)
 
 }  // namespace std
@@ -2972,17 +3001,16 @@ namespace std {
 
 #undef CONSTEXPR_VECTOR
 
-#if MATH_FUNCTIONS_HPP_ENABLE_TARGET_OPTIONS
+#if defined(MATH_FUNCTIONS_HPP_ENABLE_TARGET_OPTIONS)
 #if defined(__GNUG__)
 #if !defined(__clang__)
 #pragma GCC pop_options
 #else
 #pragma clang attribute pop
-#endif  // !__clang__
-#endif  // __GNUC__
-#endif  // MATH_FUNCTIONS_HPP_ENABLE_TARGET_OPTIONS
-
+#endif
+#endif
 #undef MATH_FUNCTIONS_HPP_ENABLE_TARGET_OPTIONS
+#endif
 
 #if defined(_MSC_VER)
 #pragma warning(pop)

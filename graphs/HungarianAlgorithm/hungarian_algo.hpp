@@ -140,7 +140,7 @@ private:
 
     constexpr bool next_iter() noexcept {
         fill_bipartite_graph();
-        if (bool found_perfect_matching = find_max_matching(); found_perfect_matching) {
+        if (const bool found_perfect_matching = find_max_matching(); found_perfect_matching) {
             return true;
         }
         apply_alpha_transformation();
@@ -148,10 +148,10 @@ private:
     }
 
     template <class Iterator>
-    constexpr T accumulate_over(Iterator matrix_iter_begin) const noexcept {
+    [[nodiscard]] constexpr T accumulate_over(Iterator matrix_iter_begin) const noexcept {
         T ans = 0;
         for (std::size_t i = 0; i < size_; ++matrix_iter_begin, ++i) {
-            std::size_t j = first_part_matches_[i];
+            const std::size_t j = first_part_matches_[i];
             assert(j != kNoMatch && second_part_matches_[j] == i);
             const auto& matrix_row = *matrix_iter_begin;
             ans += matrix_row[j];
@@ -180,7 +180,8 @@ private:
 
     [[nodiscard]]
     ATTRIBUTE_CONST static constexpr std::size_t align_size(std::size_t n) noexcept {
-        n = (n + 32) & ~std::size_t{31};
+        constexpr std::size_t kAlignmentBoundary = 32;
+        n = (n + kAlignmentBoundary) & ~(kAlignmentBoundary - 1);
         return n;
     }
 
@@ -223,13 +224,13 @@ private:
     }
 
     constexpr void fill_bipartite_graph() noexcept {
-        std::size_t matrix_size = size_ * size_;
+        const std::size_t matrix_size = size_ * size_;
         assert(std::bit_cast<std::uintptr_t>(bipartite_graph_matrix_[0]) ==
                std::bit_cast<std::uintptr_t>(bipartite_graph_matrix_ + size_));
         std::fill_n(bipartite_graph_matrix_[0], matrix_size, false);
         assert(std::bit_cast<std::uintptr_t>(neighbours_[0]) ==
                std::bit_cast<std::uintptr_t>(neighbours_ + size_));
-        std::fill_n(neighbours_[0], matrix_size, vertex_t(0));
+        std::fill_n(neighbours_[0], matrix_size, vertex_t{0});
 
         for (vertex_t i = 0; i < size_; i++) {
             bool* bipartite_graph_matrix_row = bipartite_graph_matrix_[i];
@@ -258,12 +259,11 @@ private:
                 continue;
             }
 
-            const std::size_t* i_neighbours = neighbours_[i];
-            std::size_t i_neighbours_count  = neighbours_count_[i];
-
+            const std::size_t* i_neighbours      = neighbours_[i];
+            const std::size_t i_neighbours_count = neighbours_count_[i];
             for (std::size_t neighbour_index = 0; neighbour_index < i_neighbours_count;
                  ++neighbour_index) {
-                std::size_t j = i_neighbours[neighbour_index];
+                const std::size_t j = i_neighbours[neighbour_index];
                 assert(bipartite_graph_matrix_[i][j]);
                 if (second_part_matches_[j] == kNoMatch) {
                     second_part_matches_[j] = i;
@@ -303,8 +303,8 @@ private:
 
         for (std::size_t neighbour_index = 0, total_neighbours = neighbours_count_[i];
              neighbour_index < total_neighbours; ++neighbour_index) {
-            std::size_t j = i_neighbours[neighbour_index];
-            std::size_t k = second_part_matches_[j];
+            const std::size_t j = i_neighbours[neighbour_index];
+            const std::size_t k = second_part_matches_[j];
 
             /*
              * Bipart. Graph
@@ -337,8 +337,8 @@ private:
              *
              */
             if (!second_part_visited_[j] && !first_part_visited_[k]) {
-                second_part_visited_[j] = true;
-                std::size_t end_vertex  = dfs_find_chain_and_update_matches(k);
+                second_part_visited_[j]      = true;
+                const std::size_t end_vertex = dfs_find_chain_and_update_matches(k);
                 if (end_vertex != kNoVertex) {
                     second_part_matches_[j] = i;
                     first_part_matches_[i]  = j;
@@ -356,8 +356,8 @@ private:
 
         for (std::size_t neighbour_index = 0, total_neighbours = neighbours_count_[i];
              neighbour_index < total_neighbours; ++neighbour_index) {
-            std::size_t j = i_neighbours[neighbour_index];
-            vertex_t k    = second_part_matches_[j];
+            const std::size_t j = i_neighbours[neighbour_index];
+            const vertex_t k    = second_part_matches_[j];
             if (k != kNoMatch && !first_part_visited_[k]) {
                 second_part_visited_[j] = true;
                 dfs_from_unmatched(k);
@@ -370,8 +370,8 @@ private:
         assert(min != std::numeric_limits<T>::max());
         for (std::size_t i = 0; i < size_; i++) {
             for (std::size_t j = 0; j < size_; j++) {
-                bool x_i = first_part_visited_[i];
-                bool y_j = second_part_visited_[j];
+                const bool x_i = first_part_visited_[i];
+                const bool y_j = second_part_visited_[j];
                 if (x_i != y_j) {
                     if (x_i) {
                         matrix_[i][j] -= min;
@@ -383,12 +383,12 @@ private:
         }
     }
 
-    constexpr T find_min_for_alpha_transformation() const noexcept {
+    [[nodiscard]] constexpr T find_min_for_alpha_transformation() const noexcept {
         T min = std::numeric_limits<T>::max();
         for (std::size_t i = 0; i < size_; i++) {
             for (std::size_t j = 0; j < size_; j++) {
-                bool x_i = first_part_visited_[i];
-                bool y_j = second_part_visited_[j];
+                const bool x_i = first_part_visited_[i];
+                const bool y_j = second_part_visited_[j];
                 if (x_i && !y_j) {
                     assert(matrix_[i][j] != 0);
                     min = std::min(min, matrix_[i][j]);

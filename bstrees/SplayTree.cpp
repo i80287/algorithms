@@ -1,7 +1,7 @@
 #include <cassert>
 #include <cstdint>
-#include <vector>
 #include <cstring>
+#include <vector>
 
 struct Node {
     int key;
@@ -35,7 +35,7 @@ public:
 
     void insert(int32_t);
 
-    Node *find(int32_t);
+    Node* find(int32_t);
 
     int splay(Node* node);
 
@@ -45,8 +45,9 @@ public:
 
 public:
     Node* root_ = nullptr;
+
 private:
-    Node* nodes_ = nullptr;
+    Node* nodes_            = nullptr;
     size_t allocator_index_ = 0;
 
     void LeftRotateImpl(Node* node) noexcept {
@@ -63,21 +64,19 @@ private:
         }
 
         Node* parent_parent_node = parent_node->parent;
-        node->parent = parent_parent_node;
+        node->parent             = parent_parent_node;
         if (parent_parent_node != nullptr) {
             if (parent_parent_node->left == parent_node) {
                 parent_parent_node->left = node;
-            }
-            else {
+            } else {
                 assert(parent_parent_node->right == parent_node);
                 parent_parent_node->right = node;
             }
-        }
-        else {
+        } else {
             assert(parent_node == root_);
         }
 
-        node->left = parent_node;
+        node->left          = parent_node;
         parent_node->parent = node;
 
         if (parent_node == root_) {
@@ -105,21 +104,19 @@ private:
         }
 
         Node* parent_parent_node = parent_node->parent;
-        node->parent = parent_parent_node;
+        node->parent             = parent_parent_node;
         if (parent_parent_node != nullptr) {
             if (parent_parent_node->left == parent_node) {
                 parent_parent_node->left = node;
-            }
-            else {
+            } else {
                 assert(parent_parent_node->right == parent_node);
                 parent_parent_node->right = node;
             }
-        }
-        else {
+        } else {
             assert(parent_node == root_);
         }
 
-        node->right = parent_node;
+        node->right         = parent_node;
         parent_node->parent = node;
 
         if (parent_node == root_) {
@@ -151,8 +148,7 @@ private:
             assert(parent_node == root_);
             if (parent_node->left == node) {
                 RightRotateImpl(node);
-            }
-            else {
+            } else {
                 assert(parent_node->right == node);
                 LeftRotateImpl(node);
             }
@@ -165,22 +161,19 @@ private:
                 RightRotateImpl(parent_node);
                 RightRotateImpl(node);
                 return 2;
-            }
-            else {
+            } else {
                 assert(parent_parent_node->right == parent_node);
                 RightRotateImpl(node);
                 LeftRotateImpl(node);
                 return 1;
             }
-        }
-        else {
+        } else {
             assert(parent_node->right == node);
             if (parent_parent_node->left == parent_node) {
                 LeftRotateImpl(node);
                 RightRotateImpl(node);
                 return 1;
-            }
-            else {
+            } else {
                 assert(parent_parent_node->right == parent_node);
                 LeftRotateImpl(parent_node);
                 LeftRotateImpl(node);
@@ -191,7 +184,7 @@ private:
 
     constexpr Node* AddNewNode(int key) noexcept {
         Node* new_node = &nodes_[allocator_index_++];
-        new_node->key = key;
+        new_node->key  = key;
         return new_node;
     }
 };
@@ -219,8 +212,7 @@ void SplayTree::insert(int32_t key) {
             return;
         }
 
-        Node* next_node =
-            node_key < key ? current_node->right : current_node->left;
+        Node* next_node = node_key < key ? current_node->right : current_node->left;
         if (next_node == nullptr) {
             break;
         }
@@ -228,12 +220,11 @@ void SplayTree::insert(int32_t key) {
         current_node = next_node;
     }
 
-    Node* new_node = AddNewNode(key);
+    Node* new_node   = AddNewNode(key);
     new_node->parent = current_node;
     if (current_node->key < key) {
         current_node->right = new_node;
-    }
-    else {
+    } else {
         current_node->left = new_node;
     }
 
@@ -254,13 +245,10 @@ Node* SplayTree::find(int32_t key) {
 
         if (node_key < key) {
             current_node = current_node->right;
-        }
-        else {
+        } else {
             current_node = current_node->left;
         }
     }
 
     return nullptr;
 }
-
-

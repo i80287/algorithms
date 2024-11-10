@@ -1,9 +1,18 @@
+#include <algorithm>
+#include <bitset>
 #include <cassert>
-#include <iostream>
+#include <cstddef>
+#include <cstdint>
 #include <random>
 
 #include "bitmatrix.hpp"
+#include "config_macros.hpp"
 #include "test_tools.hpp"
+
+// clang-format off
+// NOLINTBEGIN(cert-dcl03-c, misc-static-assert, hicpp-static-assert, cppcoreguidelines-avoid-magic-numbers)
+// NOLINTBEGIN(cppcoreguidelines-avoid-c-arrays, hicpp-avoid-c-arrays, modernize-avoid-c-arrays)
+// clang-format on
 
 namespace {
 
@@ -120,7 +129,7 @@ ATTRIBUTE_NODISCARD_WITH_MESSAGE("test returns true on success and false otherwi
 ATTRIBUTE_CONST
 CONSTEXPR_IF_AT_LEAST_CXX_20 bool test_transpose_32x32() noexcept {
     // clang-format off
-    uint32_t a[32] = {
+    CStyleMatrix32x32 a = {
         0b00011000000000000000000000000001U,
         0b00011000000000000000000000000010U,
         0b11111111000000000000000000001100U,
@@ -154,7 +163,7 @@ CONSTEXPR_IF_AT_LEAST_CXX_20 bool test_transpose_32x32() noexcept {
         0b00000000000000000000000000000000U,
         0b00000000000000000000000000000000U,
     };
-    constexpr uint32_t a_tr_1[32] = {
+    constexpr CStyleMatrix32x32 a_tr_1 = {
         0b00000000000000000000000000000001U,
         0b00000000000000000000000000000010U,
         0b00000000000000000000000000000100U,
@@ -188,7 +197,7 @@ CONSTEXPR_IF_AT_LEAST_CXX_20 bool test_transpose_32x32() noexcept {
         0b00000000000000000000000000111100U,
         0b00000000000000000000000000100100U,
     };
-    constexpr uint32_t a_tr_2[32] = {
+    constexpr CStyleMatrix32x32 a_tr_2 = {
         0b00100100000000000000000000000000U,
         0b00111100000000000000000000000000U,
         0b00111100000000000000000000000000U,
@@ -227,13 +236,13 @@ CONSTEXPR_IF_AT_LEAST_CXX_20 bool test_transpose_32x32() noexcept {
     static_assert(sizeof(a) == sizeof(a_tr_2));
 
     transpose32(a);
-    bool f1 = std::equal(&a[0], &a[32], &a_tr_1[0]);
+    const bool f1 = std::equal(&a[0], &a[32], &a_tr_1[0]);
 
     // return 'a' to initial state
     transpose32(a);
 
     transpose32<true>(a);
-    bool f2 = std::equal(&a[0], &a[32], &a_tr_2[0]);
+    const bool f2 = std::equal(&a[0], &a[32], &a_tr_2[0]);
 
     return f1 && f2;
 }
@@ -242,7 +251,7 @@ ATTRIBUTE_NODISCARD_WITH_MESSAGE("test returns true on success and false otherwi
 ATTRIBUTE_CONST
 CONSTEXPR_IF_AT_LEAST_CXX_20 bool test_transpose_64x64() noexcept {
     // clang-format off
-    uint64_t a[64] = {
+    CStyleMatrix64x64 a = {
         0b0000000000000000000000000000000000000000000000000000000000010101,
         0b0000000000000000000000000000000000000000000000000000000000001010,
         0b0000000000000000000000000000000000000000000000000000000000000101,
@@ -308,7 +317,7 @@ CONSTEXPR_IF_AT_LEAST_CXX_20 bool test_transpose_64x64() noexcept {
         0b0000000000000000000000000000000000000000000000000000000000000000,
         0b1111111111111111111111111111111111111111111111111111111111111111,
     };
-    constexpr uint64_t b1[64] = {
+    constexpr CStyleMatrix64x64 b1 = {
         0b1000000000000000000000000000000000000000000000000000000000110101,
         0b1000000000000000000000000000000000000000000000000000000000101010,
         0b1000000000000000000000000000000000000000000000000000000000100101,
@@ -374,7 +383,7 @@ CONSTEXPR_IF_AT_LEAST_CXX_20 bool test_transpose_64x64() noexcept {
         0b1000000000000000000000000000000000000000000000000000000000100000,
         0b1000000000000000000000000000000000000000000000000000000000100000,
     };
-    constexpr uint64_t b2[64] = {
+    constexpr CStyleMatrix64x64 b2 = {
         0b0000010000000000000000000000000000000000000000000000000000000001,
         0b0000010000000000000000000000000000000000000000000000000000000001,
         0b0000010000000000000000000000000000000000000000000000000000000001,
@@ -445,15 +454,15 @@ CONSTEXPR_IF_AT_LEAST_CXX_20 bool test_transpose_64x64() noexcept {
     static_assert(sizeof(a) == sizeof(b2));
 
     transpose64(a);
-    bool f1 = std::equal(&a[0], &a[64], &b1[0]);
+    const bool f1 = std::equal(&a[0], &a[64], &b1[0]);
 
     // return 'a' to initial state
     transpose64(a);
 
     transpose64<true>(a);
-    bool f2 = std::equal(&a[0], &a[64], &b2[0]);
+    const bool f2 = std::equal(&a[0], &a[64], &b2[0]);
 
-    auto random_gen = [random_state = uint64_t(872189)]() mutable constexpr noexcept {
+    auto random_gen = [random_state = uint64_t{872189}]() mutable constexpr noexcept {
         constexpr uint64_t A = std::minstd_rand0::multiplier;
         constexpr uint64_t C = std::minstd_rand0::increment;
         constexpr uint64_t M = std::minstd_rand0::modulus;
@@ -463,23 +472,23 @@ CONSTEXPR_IF_AT_LEAST_CXX_20 bool test_transpose_64x64() noexcept {
 
     if (!config::is_constant_evaluated()) {
         // This test has too many operations for the compile time check
-        uint64_t src[64] = {};
+        CStyleMatrix64x64 src{};
         static_assert(sizeof(a) == sizeof(src));
-        for (std::size_t iter = 1u << 20; iter > 0; iter--) {
+        for (std::size_t iter = 1U << 20U; iter > 0; iter--) {
             for (std::size_t i = 0; i < 32; i++) {
-                uint64_t w   = random_gen();
-                a[i * 2]     = uint32_t(w);
-                a[i * 2 + 1] = uint32_t(w >> 32);
+                const uint64_t w = random_gen();
+                a[i * 2]         = static_cast<uint32_t>(w);
+                a[i * 2 + 1]     = static_cast<uint32_t>(w >> 32U);
             }
             std::copy(&a[0], &a[64], &src[0]);
             transpose64(a);
             for (std::size_t i = 0; i < 64; i++) {
                 for (std::size_t j = i + 1; j < 64; j++) {
-                    auto aij = (src[i] & (1ull << j)) >> j;
-                    auto aji = (src[j] & (1ull << i)) >> i;
-                    src[i] &= ~(1ull << j);
+                    const uint64_t aij = (src[i] & (1ULL << j)) >> j;
+                    const uint64_t aji = (src[j] & (1ULL << i)) >> i;
+                    src[i] &= ~(1ULL << j);
                     src[i] |= aji << j;
-                    src[j] &= ~(1ull << i);
+                    src[j] &= ~(1ULL << i);
                     src[j] |= aij << i;
                 }
             }
@@ -492,8 +501,12 @@ CONSTEXPR_IF_AT_LEAST_CXX_20 bool test_transpose_64x64() noexcept {
     return f1 && f2;
 }
 
+// clang-format off
+// NOLINTEND(cppcoreguidelines-avoid-c-arrays, hicpp-avoid-c-arrays, modernize-avoid-c-arrays)
+// clang-format on
+
 template <std::size_t Size, class WordType>
-void test_for_size() {
+void test_for_size() noexcept {
     test_tools::log_tests_started();
 
     using matrix_t = square_bitmatrix<Size, WordType>;
@@ -582,7 +595,7 @@ void test_for_size() {
 }
 
 template <class WordType>
-void test_for_word_type() {
+void test_for_word_type() noexcept {
     test_for_size<1, WordType>();
     test_for_size<2, WordType>();
     test_for_size<7, WordType>();
@@ -605,9 +618,7 @@ void test_for_word_type() {
     test_for_size<257, WordType>();
 }
 
-}  // namespace
-
-int main() {
+void test_transpose_algorithms() noexcept {
 #if CONFIG_HAS_AT_LEAST_CXX_20
     static_assert(test_transpose_8x8());
     static_assert(test_transpose_32x32());
@@ -616,7 +627,9 @@ int main() {
     assert(test_transpose_8x8());
     assert(test_transpose_32x32());
     assert(test_transpose_64x64());
+}
 
+void test_bitmatrix_with_different_word_types() noexcept {
     test_for_word_type<std::uint8_t>();
     // std::bitset uses unsigned long which is std::uint32_t on Windows.
     if constexpr (sizeof(std::bitset<1>) == sizeof(std::bitset<32>)) {
@@ -625,4 +638,15 @@ int main() {
     if constexpr (sizeof(std::bitset<1>) == sizeof(std::bitset<64>)) {
         test_for_word_type<std::uint64_t>();
     }
+}
+
+}  // namespace
+
+// clang-format off
+// NOLINTEND(cert-dcl03-c, misc-static-assert, hicpp-static-assert, cppcoreguidelines-avoid-magic-numbers)
+// clang-format on
+
+int main() {
+    test_transpose_algorithms();
+    test_bitmatrix_with_different_word_types();
 }

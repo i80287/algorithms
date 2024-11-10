@@ -13,4 +13,4 @@ cmake -G Ninja \
         -D CMAKE_CXX_COMPILER=g++ \
         -S .. -B . &&
         cmake --build . --parallel "$(nproc)" &&
-        env CTEST_OUTPUT_ON_FAILURE=1 make test
+        env CTEST_OUTPUT_ON_FAILURE=1 ctest

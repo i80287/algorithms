@@ -2,6 +2,7 @@
 #include <array>
 #include <concepts>
 #include <cstdint>
+#include <exception>
 #include <limits>
 #include <numeric>
 #include <string>
@@ -12,27 +13,22 @@
 #include "../number_theory/config_macros.hpp"
 
 #if defined(__cpp_lib_span) && __cpp_lib_span >= 202002L && CONFIG_HAS_INCLUDE(<span>)
-#define STRING_MAP_HAS_SPAN 1
+#define STRING_MAP_HAS_SPAN
 #include <span>
-#else
-#define STRING_MAP_HAS_SPAN 0
 #endif
 
 #if defined(__cpp_lib_bit_cast) && __cpp_lib_bit_cast >= 201806L && CONFIG_HAS_INCLUDE(<bit>)
-#define STRING_MAP_HAS_BIT 1
+#define STRING_MAP_HAS_BIT
 #include <bit>
-#else
-#define STRING_MAP_HAS_BIT 0
 #endif
 
 #if defined(__cpp_constexpr) && __cpp_constexpr >= 201907L &&                                     \
     defined(__cpp_lib_constexpr_dynamic_alloc) && __cpp_lib_constexpr_dynamic_alloc >= 201907L && \
     (defined(_MSC_VER) ||                                                                         \
      (!defined(__GNUG__) || (CONFIG_GNUC_AT_LEAST(12, 1) && !defined(_GLIBCXX_DEBUG))))
-#define CUSTOM_CONSTEXPR_VEC_FOR_OLD_COMPILERS 0
 #include <vector>
 #else
-#define CUSTOM_CONSTEXPR_VEC_FOR_OLD_COMPILERS 1
+#define CUSTOM_CONSTEXPR_VEC_FOR_OLD_COMPILERS
 #endif
 
 #if defined(__cpp_consteval) && __cpp_consteval >= 201811L
@@ -45,23 +41,29 @@ namespace strmapdetail {
 
 inline constexpr std::size_t kMaxStringViewSize = 200;
 
+// NOLINTBEGIN(cppcoreguidelines-avoid-c-arrays, hicpp-avoid-c-arrays, modernize-avoid-c-arrays)
+
 template <std::size_t N = kMaxStringViewSize>
     requires(N > 0)
 struct [[nodiscard]] CompileTimeStringLiteral {
+    // NOLINTBEGIN(google-explicit-constructor,hicpp-explicit-conversions)
     /* implicit */ STRING_MAP_CONSTEVAL CompileTimeStringLiteral(std::string_view str) noexcept
         : length{str.size()} {
         const bool fits_in_buffer = str.size() < std::size(value);
         // HINT: Change kMaxStringViewSize if you are using very long strings
         //  in the StringMatch / StringMap.
-        [[maybe_unused]] const auto string_view_size_check = 0 / int{fits_in_buffer};
+        if (!fits_in_buffer) {
+            std::terminate();
+        }
         std::char_traits<char>::copy(value.data(), str.data(), str.size());
     }
     ATTRIBUTE_NONNULL_ALL_ARGS
     ATTRIBUTE_ACCESS(read_only, 1)
     /* implicit */ STRING_MAP_CONSTEVAL CompileTimeStringLiteral(const char (&str)[N]) noexcept
-        : length{std::char_traits<char>::length(str)} {
-        std::char_traits<char>::copy(value.data(), str, size());
+        : length{std::char_traits<char>::length(std::data(str))} {
+        std::char_traits<char>::copy(value.data(), std::data(str), size());
     }
+    // NOLINTEND(google-explicit-constructor,hicpp-explicit-conversions)
     [[nodiscard]] STRING_MAP_CONSTEVAL std::size_t size() const noexcept {
         return length;
     }
@@ -86,7 +88,7 @@ struct [[nodiscard]] CompileTimeStringLiteral {
             //  say str1 is not a constant expression
             return std::string_view(str1.value.data(), str1.length) == str2;
         } else if (std::is_constant_evaluated()) {
-#if STRING_MAP_HAS_BIT
+#ifdef STRING_MAP_HAS_BIT
             const auto uvalue = std::bit_cast<std::array<unsigned char, N>>(str1.value);
 #else
             std::array<unsigned char, N> uvalue{};
@@ -96,6 +98,7 @@ struct [[nodiscard]] CompileTimeStringLiteral {
 #endif
             return std::basic_string_view<unsigned char>(uvalue.data(), str1.size()) == str2;
         } else {
+            // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
             const std::string_view cstr2(reinterpret_cast<const char*>(str2.data()), str2.size());
             return std::string_view(str1.value.data(), str1.size()) == cstr2;
         }
@@ -110,8 +113,10 @@ struct [[nodiscard]] CompileTimeStringLiteral {
     }
 
     std::array<char, N> value{};
-    const std::size_t length{};
+    std::size_t length{};
 };
+
+// NOLINTEND(cppcoreguidelines-avoid-c-arrays, hicpp-avoid-c-arrays, modernize-avoid-c-arrays)
 
 namespace trie_tools {
 
@@ -169,7 +174,7 @@ struct [[nodiscard]] CountingNode final {
     std::array<std::uint32_t, AlphabetSize> edges{};
 };
 
-#if CUSTOM_CONSTEXPR_VEC_FOR_OLD_COMPILERS
+#ifdef CUSTOM_CONSTEXPR_VEC_FOR_OLD_COMPILERS
 
 template <std::size_t AlphabetSize>
 struct [[nodiscard]] CountingVector final {
@@ -183,16 +188,20 @@ struct [[nodiscard]] CountingVector final {
     struct CountingVectorAllocatorImpl final {
         [[nodiscard]] constexpr pointer allocate(size_type size) const {
             // Can't call ::operator new(...) in the constexpr context
+            // NOLINTNEXTLINE(cppcoreguidelines-owning-memory)
             return new value_type[size]();
         }
         constexpr void deallocate(pointer ptr, [[maybe_unused]] size_type size) const noexcept {
+            // NOLINTNEXTLINE(cppcoreguidelines-owning-memory)
             delete[] ptr;
         }
     };
     using allocator_type = CountingVectorAllocatorImpl;
 
+    static constexpr size_type kMinCapacity = 16;
+
     explicit constexpr CountingVector(size_type size)
-        : size_(size), capacity_(size_ > 16 ? size_ : 16) {
+        : size_(size), capacity_(std::max(size_, size_type{kMinCapacity})) {
         data_ = allocator_type{}.allocate(capacity_);
     }
     constexpr CountingVector(const CountingVector& other)
@@ -220,7 +229,8 @@ struct [[nodiscard]] CountingVector final {
           size_(std::exchange(other.size_, 0)),
           capacity_(std::exchange(other.capacity_, 0)) {}
     constexpr CountingVector& operator=(const CountingVector& other) ATTRIBUTE_LIFETIME_BOUND {
-        return *this = CountingVector(other);
+        // NOLINTNEXTLINE(cppcoreguidelines-c-copy-assignment-signature)
+        return *this = CountingVector(other);  // NOLINT(misc-unconventional-assign-operator)
     }
     constexpr CountingVector& operator=(CountingVector&& other) noexcept ATTRIBUTE_LIFETIME_BOUND {
         this->swap(other);
@@ -246,8 +256,8 @@ struct [[nodiscard]] CountingVector final {
         return data_[size_++];
     }
     constexpr void growth_storage() {
-        const auto new_capacity = capacity_ > 0 ? capacity_ * 2 : 16;
-        auto new_data           = allocator_type{}.allocate(new_capacity);
+        const size_type new_capacity = std::max(capacity_ * 2, kMinCapacity);
+        pointer new_data             = allocator_type{}.allocate(new_capacity);
 #if defined(__cpp_lib_constexpr_algorithms) && __cpp_lib_constexpr_algorithms >= 201806L
         std::move(data_, data_ + size_, new_data);
 #else
@@ -279,10 +289,10 @@ CountNodesSizeAndMaxHeightImpl(CountingVector<TrieParams.trie_alphabet_size>& no
     std::size_t current_node_index = 0;
     constexpr std::size_t len      = FirstString.size();
     for (std::size_t i = 0; i < len; i++) {
-        std::size_t index           = TrieParams.CharToNodeIndex(FirstString[i]);
+        const std::size_t index     = TrieParams.CharToNodeIndex(FirstString[i]);
         std::size_t next_node_index = nodes[current_node_index].edges[index];
         if (next_node_index == 0) {
-            std::size_t new_node_index = nodes.size();
+            const std::size_t new_node_index = nodes.size();
             nodes.emplace_back();
             nodes[current_node_index].edges[index] = static_cast<std::uint32_t>(new_node_index);
             next_node_index                        = new_node_index;
@@ -304,7 +314,7 @@ template <TrieParamsType TrieParams, strmapdetail::CompileTimeStringLiteral... S
 CountNodesSizeAndMaxHeight() {
     constexpr auto kAlphabetSize = TrieParams.trie_alphabet_size;
     CountingVector<kAlphabetSize> nodes(std::size_t{1});
-    std::size_t max_seen_height = 0;
+    const std::size_t max_seen_height = 0;
     return CountNodesSizeAndMaxHeightImpl<TrieParams, Strings...>(nodes, max_seen_height);
 }
 
@@ -333,11 +343,9 @@ inline constexpr TrieParamsType kTrieParams = TrieParams<Strings...>();
 namespace impl {
 
 #if defined(__GNUC__) && defined(__GNUC_MINOR__) && __GNUC__ == 13 && __GNUC_MINOR__ == 1
-#define GNU_NODES_FIELD_INIT_BUG 1
+#define GNU_NODES_FIELD_INIT_BUG
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Weffc++"
-#else
-#define GNU_NODES_FIELD_INIT_BUG 0
 #endif
 
 template <class T>
@@ -372,7 +380,7 @@ class [[nodiscard]] StringMapImplManyStrings final {
             if constexpr (InCompileTime || std::is_same_v<CharType, value_type>) {
                 pointer_ = str;
             } else {
-#if STRING_MAP_HAS_BIT
+#ifdef STRING_MAP_HAS_BIT
                 pointer_ = std::bit_cast<pointer>(str);
 #else
                 pointer_ = reinterpret_cast<pointer>(str);
@@ -409,13 +417,13 @@ class [[nodiscard]] StringMapImplManyStrings final {
         [[nodiscard]]
         ATTRIBUTE_PURE
         ATTRIBUTE_ALWAYS_INLINE
-        friend constexpr bool operator==(const InternalIterator& lhs, const CStringSentinel&) noexcept {
+        friend constexpr bool operator==(const InternalIterator& lhs, const CStringSentinel& /*unused*/) noexcept {
             return *lhs == '\0';
         }
         [[nodiscard]]
         ATTRIBUTE_PURE
         ATTRIBUTE_ALWAYS_INLINE
-        friend constexpr bool operator==(const CStringSentinel&, const InternalIterator& rhs) noexcept {
+        friend constexpr bool operator==(const CStringSentinel& /*unused*/, const InternalIterator& rhs) noexcept {
             return *rhs == '\0';
         }
 
@@ -508,7 +516,7 @@ public:
         }
     }
 
-#if STRING_MAP_HAS_SPAN
+#ifdef STRING_MAP_HAS_SPAN
     // clang-format off
     template <std::integral CharType, std::size_t SpanExtent>
     [[nodiscard]]
@@ -534,7 +542,7 @@ private:
 
     using NodesArray = std::array<TrieNodeImpl, kNodesSize>;
 
-#if GNU_NODES_FIELD_INIT_BUG
+#if defined(GNU_NODES_FIELD_INIT_BUG)
     // `internal compiler error: Segmentation fault` on gcc 13.1, see
     //  https://godbolt.org/z/PErqd9PEr
     NodesArray nodes_;
@@ -548,8 +556,8 @@ private:
         std::size_t current_node_index = 0;
         constexpr std::size_t len      = String.size();
         for (std::size_t i = 0; i < len; i++) {
-            std::size_t symbol_index    = TrieParams.CharToNodeIndex(String[i]);
-            std::size_t next_node_index = nodes_[current_node_index].edges[symbol_index];
+            const std::size_t symbol_index = TrieParams.CharToNodeIndex(String[i]);
+            std::size_t next_node_index    = nodes_[current_node_index].edges[symbol_index];
             if (next_node_index == 0) {
                 nodes_[current_node_index].edges[symbol_index] =
                     static_cast<NodeIndex>(first_free_node_index);
@@ -561,7 +569,9 @@ private:
 
         const bool already_added_string = nodes_[current_node_index].node_value != kDefaultValue;
         // HINT: Remove duplicate strings from the StringMatch / StringMap
-        [[maybe_unused]] const auto duplicate_strings_check = 0 / int{!already_added_string};
+        if (already_added_string) {
+            std::terminate();
+        }
 
         static_assert(CurrentPackIndex < MappedValues.size(), "impl error");
         nodes_[current_node_index].node_value = MappedValues[CurrentPackIndex];
@@ -572,18 +582,19 @@ private:
 
     // clang-format off
     template <class IteratorType, class SentinelIteratorType>
+    [[nodiscard]]
     ATTRIBUTE_PURE
     constexpr MappedType op_call_impl(IteratorType begin, SentinelIteratorType end) const noexcept(kNoexceptCall) {
         // clang-format on
 
         std::size_t current_node_index = kRootNodeIndex;
         for (std::size_t height = 0; begin != end; ++begin, ++height) {
-            std::size_t index = TrieParams.CharToNodeIndex(*begin);
+            const std::size_t index = TrieParams.CharToNodeIndex(*begin);
             if (index >= kTrieAlphabetSize) {
                 return kDefaultValue;
             }
 
-            std::size_t next_node_index = nodes_[current_node_index].edges[index];
+            const std::size_t next_node_index = nodes_[current_node_index].edges[index];
             if (next_node_index > 0) {
                 current_node_index = next_node_index;
             } else {
@@ -634,7 +645,9 @@ private:
         if constexpr (TMappedTypesInfo::kMaybeTriviallyOrdered) {
             if constexpr (std::is_floating_point_v<MappedType>) {
                 auto bad_float = [](MappedType x) constexpr noexcept -> bool {
-                    return x != x || x >= std::numeric_limits<MappedType>::infinity() ||
+                    // NOLINTNEXTLINE(misc-redundant-expression)
+                    const bool is_nan = x != x;
+                    return is_nan || x >= std::numeric_limits<MappedType>::infinity() ||
                            x <= -std::numeric_limits<MappedType>::infinity() ||
                            x == std::numeric_limits<MappedType>::quiet_NaN() ||
                            x == std::numeric_limits<MappedType>::signaling_NaN();
@@ -671,10 +684,10 @@ private:
     static constexpr TMappedTypesInfo kMappedTypesInfo = get_mapped_values_info();
 };
 
-#if GNU_NODES_FIELD_INIT_BUG
+#if defined(GNU_NODES_FIELD_INIT_BUG)
 #pragma GCC diagnostic pop
-#endif
 #undef GNU_NODES_FIELD_INIT_BUG
+#endif
 
 template <trie_tools::TrieParamsType TrieParams, std::array MappedValues, auto DefaultMapValue,
           CompileTimeStringLiteral... Strings>
@@ -743,7 +756,7 @@ public:
         return this->op_call_impl<CharType, 0, Strings...>(str, size);
     }
 
-#if STRING_MAP_HAS_SPAN
+#ifdef STRING_MAP_HAS_SPAN
     // clang-format off
     template <std::integral CharType, std::size_t SpanExtent>
     [[nodiscard]]
@@ -764,6 +777,7 @@ private:
     ATTRIBUTE_SIZED_ACCESS(read_only, 1, 2)
     static constexpr MappedType op_call_impl(const CharType* str, std::size_t size) noexcept(kNoexceptCall) {
         // clang-format on
+        // NOLINTBEGIN(llvm-else-after-return)
         if (CompString == std::basic_string_view<CharType>(str, size)) {
             static_assert(Index < std::size(MappedValues));
             return MappedValues[Index];
@@ -773,6 +787,7 @@ private:
         } else {
             return kDefaultValue;
         }
+        // NOLINTEND(llvm-else-after-return)
     }
 };
 
@@ -816,6 +831,12 @@ struct StringHelper;
 template <strmapdetail::CompileTimeStringLiteral... Strings, StringMapValues MappedValues,
           auto MappedDefaultValue>
 struct StringHelper<StringMapKeys<Strings...>, MappedValues, MappedDefaultValue> {
+private:
+    static constexpr std::size_t kMaxStringsForUnrolling = 4;
+    static constexpr std::size_t kMaxStringLengthForUnrolling =
+        sizeof(uint64_t) + sizeof(uint64_t) - 1;
+
+public:
     static_assert(sizeof...(Strings) == std::size(MappedValues.values),
                   "StringMap should has equal number of keys and values");
 
@@ -831,8 +852,9 @@ struct StringHelper<StringMapKeys<Strings...>, MappedValues, MappedDefaultValue>
     static_assert(strmapdetail::impl::MappableType<MappedType>);
 
     using type = typename std::conditional_t<
-        (sizeof...(Strings) <= 4 &&
-         strmapdetail::trie_tools::kTrieParams<Strings...>.max_tree_height <= 15),
+        (sizeof...(Strings) <= kMaxStringsForUnrolling &&
+         strmapdetail::trie_tools::kTrieParams<Strings...>.max_tree_height <=
+             kMaxStringLengthForUnrolling),
         typename strmapdetail::impl::StringMapImplFewStrings<
             strmapdetail::trie_tools::kTrieParams<Strings...>, MappedValues.values,
             MappedDefaultValue, Strings...>,
@@ -843,10 +865,16 @@ struct StringHelper<StringMapKeys<Strings...>, MappedValues, MappedDefaultValue>
 
 }  // namespace strmapdetail
 
+#ifdef CUSTOM_CONSTEXPR_VEC_FOR_OLD_COMPILERS
 #undef CUSTOM_CONSTEXPR_VEC_FOR_OLD_COMPILERS
+#endif
 #undef STRING_MAP_CONSTEVAL
+#ifdef STRING_MAP_HAS_BIT
 #undef STRING_MAP_HAS_BIT
+#endif
+#ifdef STRING_MAP_HAS_SPAN
 #undef STRING_MAP_HAS_SPAN
+#endif
 
 template <class Keys, StringMapValues Values, auto DefaultValue>
 using StringMap = typename strmapdetail::StringHelper<Keys, Values, DefaultValue>::type;

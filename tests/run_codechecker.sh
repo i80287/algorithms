@@ -22,13 +22,15 @@ for cc_and_cxx in clang,clang++ gcc,g++ i686-w64-mingw32-gcc-posix,i686-w64-ming
         -D CMAKE_EXPORT_COMPILE_COMMANDS=1 \
         -S .. \
         -B $cmake_build_dir
-    cmake --build ./$cmake_build_dir --parallel "$(nproc)"
-    CodeChecker analyze \
-        ./$cmake_build_dir/compile_commands.json \
-        --analyzer-config cppcheck:addons=../cppcheck/addons/misc.py \
-        --analyzer-config cppcheck:addons=../cppcheck/addons/y2038.py \
-        --analyzer-config clang-tidy:take-config-from-directory=true \
-        -o ./report_"$1"
-    CodeChecker parse --print-steps ./report_"$1" >./parsed_report_"$1"
+    if [ -e "./$cmake_build_dir/compile_commands.json" ]; then
+        cmake --build ./$cmake_build_dir --parallel "$(nproc)"
+        CodeChecker analyze \
+            ./$cmake_build_dir/compile_commands.json \
+            --analyzer-config cppcheck:addons=../cppcheck/addons/misc.py \
+            --analyzer-config cppcheck:addons=../cppcheck/addons/y2038.py \
+            --analyzer-config clang-tidy:take-config-from-directory=true \
+            -o ./report_"$1"
+        CodeChecker parse --print-steps ./report_"$1" >./parsed_report_"$1"
+    fi
 done
 IFS=$OLDIFS

@@ -25,14 +25,20 @@
 #include "math_functions.hpp"
 
 #if defined(ENABLE_LONGINT_DEBUG_ASSERTS) && ENABLE_LONGINT_DEBUG_ASSERTS
+// NOLINTNEXTLINE(cppcoreguidelines-macro-usage)
 #define LONGINT_DEBUG_ASSERT(expr) assert(expr)
 #else
 #define LONGINT_DEBUG_ASSERT(expr)
 #endif
 
+// clang-format on
+// NOLINTBEGIN(cppcoreguidelines-avoid-c-arrays, hicpp-avoid-c-arrays, modernize-avoid-c-arrays,
+// cppcoreguidelines-avoid-magic-numbers)
+// clang-format off
+
 #if defined(__GNUG__) || defined(__clang__)
 
-#define HAS_CUSTOM_LONGINT_ALLOCATOR 1
+#define HAS_CUSTOM_LONGINT_ALLOCATOR
 
 namespace longint_allocator {
 
@@ -277,8 +283,6 @@ ATTRIBUTE_RETURNS_NONNULL ATTRIBUTE_ALLOC_SIZE(1) INLINE_LONGINT_ALLOCATE
 
 }  // namespace longint_allocator
 
-#else
-#define HAS_CUSTOM_LONGINT_ALLOCATOR 0
 #endif
 
 namespace longint_detail {
@@ -550,7 +554,7 @@ struct longint {
     constexpr void change_sign() noexcept {
         size_ = -size_;
     }
-    constexpr void set_zero() noexcept {
+    ATTRIBUTE_REINITIALIZES constexpr void set_zero() noexcept {
         size_ = 0;
     }
 
@@ -1121,6 +1125,7 @@ struct longint {
     }
 
     void set_string(std::string_view s) {
+        // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
         this->set_str_impl(reinterpret_cast<const unsigned char*>(s.data()), s.size());
     }
 
@@ -1269,18 +1274,19 @@ struct longint {
         const std::size_t string_size =
             full_blocks * kStrConvBaseDigits + math_functions::base_10_len(last_a_i);
         ans.resize(ans.size() + string_size);
-        auto* ptr = reinterpret_cast<uint8_t*>(std::addressof(ans[ans.size() - 1]));
+        // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
+        auto* ptr = reinterpret_cast<unsigned char*>(std::addressof(ans[ans.size() - 1]));
         for (typename Decimal::dec_size_type i = 0; i < full_blocks; i++) {
             typename Decimal::dec_digit_t a_i = result.digits_[i];
             for (auto j = kStrConvBaseDigits; j > 0; j--) {
-                *ptr = static_cast<uint8_t>('0' + a_i % 10);
+                *ptr = static_cast<unsigned char>('0' + a_i % 10);
                 a_i /= 10;
                 ptr--;
             }
         }
 
         do {
-            *ptr = static_cast<uint8_t>('0' + last_a_i % 10);
+            *ptr = static_cast<unsigned char>('0' + last_a_i % 10);
             last_a_i /= 10;
             ptr--;
         } while (last_a_i);
@@ -1876,7 +1882,7 @@ struct longint {
     };
 
 private:
-#if HAS_CUSTOM_LONGINT_ALLOCATOR
+#if defined(HAS_CUSTOM_LONGINT_ALLOCATOR)
     static constexpr bool kUseCustomLongIntAllocator = false;
 #else
     static constexpr bool kUseCustomLongIntAllocator = false;
@@ -2486,8 +2492,8 @@ private:
                 break;
         }
 
-        Decimal low_dec  = convertBinBaseImpl(nums, size / 2);
-        Decimal high_dec = convertBinBaseImpl(nums + size / 2, size / 2);
+        const Decimal low_dec = convertBinBaseImpl(nums, size / 2);
+        Decimal high_dec      = convertBinBaseImpl(nums + size / 2, size / 2);
 
         const uint32_t idx = math_functions::log2_floor(size) - 1;
         LONGINT_DEBUG_ASSERT(idx < conv_bin_base_pows.size());
@@ -2593,6 +2599,7 @@ private:
         }
     }
     I128_CONSTEXPR void assign_u128_unchecked(uint128_t n) noexcept {
+        static_assert(kNumsBits == 32);
         size_    = n != 0;
         nums_[0] = static_cast<uint32_t>(n);
         n >>= 32;
@@ -2692,9 +2699,9 @@ private:
         const digit_t* end_iter = end();
         double_digit_t carry    = n;
         do {
-            double_digit_t res = double_digit_t{*it} + carry;
-            carry              = res >> kNumsBits;
-            *it                = static_cast<digit_t>(res);
+            const double_digit_t res = double_digit_t{*it} + carry;
+            carry                    = res >> kNumsBits;
+            *it                      = static_cast<digit_t>(res);
             if (carry == 0) {
                 return;
             }
@@ -2718,11 +2725,11 @@ private:
         static_assert(sizeof(digit_t) == sizeof(uint32_t));
         const size_type usize_value = usize();
         digit_t* nums_iter          = nums_;
-        digit_t low_num             = nums_iter[0];
+        const digit_t low_num       = nums_iter[0];
         if (usize_value != 1) {
-            digit_t res  = low_num - n;
-            bool carry   = res > low_num;
-            nums_iter[0] = res;
+            digit_t res      = low_num - n;
+            const bool carry = res > low_num;
+            nums_iter[0]     = res;
             if (carry) {
                 do {
                     ++nums_iter;
@@ -2743,7 +2750,7 @@ private:
     }
 
     ATTRIBUTE_ALWAYS_INLINE static digit_t* allocate(std::size_t nums) {
-#if HAS_CUSTOM_LONGINT_ALLOCATOR
+#if defined(HAS_CUSTOM_LONGINT_ALLOCATOR)
         if constexpr (kUseCustomLongIntAllocator) {
             return static_cast<digit_t*>(::longint_allocator::Allocate(nums * sizeof(digit_t)));
         } else
@@ -2753,7 +2760,7 @@ private:
         }
     }
     ATTRIBUTE_ALWAYS_INLINE static void deallocate(digit_t* nums) noexcept {
-#if HAS_CUSTOM_LONGINT_ALLOCATOR
+#if defined(HAS_CUSTOM_LONGINT_ALLOCATOR)
         if constexpr (kUseCustomLongIntAllocator) {
             ::longint_allocator::Deallocate(static_cast<void*>(nums));
         } else
@@ -2789,14 +2796,14 @@ private:
                                                                    const char* function_name,
                                                                    std::size_t new_size_value,
                                                                    std::size_t max_size_value) {
-        char message[1024]      = {};
+        std::array<char, 1024> message{};
         const int bytes_written = std::snprintf(
-            message, std::size(message), "%s:%u: size error at %s: %zu > %zu (max size)", file_name,
-            line, function_name, new_size_value, max_size_value);
+            std::data(message), std::size(message), "%s:%u: size error at %s: %zu > %zu (max size)",
+            file_name, line, function_name, new_size_value, max_size_value);
         if (unlikely(bytes_written < 0)) {
             constexpr const char kFallbackMessage[] = "size error at ";
             constexpr auto kPrefixSize              = std::size(kFallbackMessage) - 1;
-            std::char_traits<char>::copy(message, kFallbackMessage, kPrefixSize);
+            std::char_traits<char>::copy(std::data(message), kFallbackMessage, kPrefixSize);
             const auto fn_name_size = std::char_traits<char>::length(function_name);
             const auto fn_name_copy_size =
                 std::min(fn_name_size, std::size(message) - 1 - kPrefixSize);
@@ -2805,7 +2812,7 @@ private:
             message[kPrefixSize + fn_name_copy_size] = '\0';
         }
 
-        throw std::length_error(message);
+        throw std::length_error(std::data(message));
     }
 
     digit_t* nums_ = nullptr;
@@ -2902,7 +2909,7 @@ inline void longint::set_str_impl(const unsigned char* str, const std::size_t st
         }
 
         do {
-            static_assert(kStrConvBaseDigits == 9, "");
+            static_assert(kStrConvBaseDigits == 9, "impl error");
             uint32_t current = uint32_t{*str_iter} - '0';
             str_iter++;
             current = current * 10 + uint32_t{*str_iter} - '0';
@@ -2947,9 +2954,11 @@ inline void longint::set_str_impl(const unsigned char* str, const std::size_t st
 #pragma GCC diagnostic ignored "-Wcast-align"
 #endif
     assert((aligned_str_conv_digits_size * sizeof(digit_t)) % alignof(fft::complex) == 0);
+    // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
     assert(reinterpret_cast<std::uintptr_t>(mult_add_buffer) % alignof(fft::complex) == 0);
     auto* const fft_poly_buffer =
         reinterpret_cast<fft::complex*>(mult_add_buffer + aligned_str_conv_digits_size);
+    // NOLINTPREVLINE(cppcoreguidelines-pro-type-reinterpret-cast)
 #if defined(__GNUG__) && !defined(__clang__)
 #pragma GCC diagnostic pop
 #endif
@@ -2975,5 +2984,12 @@ inline void longint::set_str_impl(const unsigned char* str, const std::size_t st
     set_ssize_from_size_and_sign(usize_value, sgn);
 }
 
+// clang-format on
+// NOLINTEND(cppcoreguidelines-avoid-c-arrays, hicpp-avoid-c-arrays, modernize-avoid-c-arrays,
+// cppcoreguidelines-avoid-magic-numbers)
+// clang-format off
+
+#if defined(HAS_CUSTOM_LONGINT_ALLOCATOR)
 #undef HAS_CUSTOM_LONGINT_ALLOCATOR
+#endif
 #undef LONGINT_DEBUG_ASSERT

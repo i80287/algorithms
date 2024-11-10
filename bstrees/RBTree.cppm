@@ -4,8 +4,11 @@ module;
 #include <array>
 #include <cassert>
 #include <compare>
+#include <concepts>
+#include <cstddef>
 #include <cstdint>
 #include <cstdio>
+#include <functional>
 #include <initializer_list>
 #include <iterator>
 #include <limits>
@@ -13,7 +16,6 @@ module;
 #include <source_location>
 #include <stdexcept>
 #include <string>
-#include <tuple>
 #include <type_traits>
 #include <utility>
 
@@ -25,6 +27,7 @@ export module rbtree;
 #ifdef NDEBUG
 #error("Can't assert rbtree invariants in release mode")
 #endif
+// NOLINTNEXTLINE(cppcoreguidelines-macro-usage)
 #define RBTREE_ASSERT_INVARIANT(expr) assert(expr)
 #else
 #define RBTREE_ASSERT_INVARIANT(expr)
@@ -65,7 +68,7 @@ protected:
         color_  = std::exchange(other.color_, {});
         return *this;
     }
-    constexpr void swap(NodeBase &other) noexcept {
+    constexpr void Swap(NodeBase &other) noexcept {
         std::swap(left_, other.left_);
         std::swap(right_, other.right_);
         std::swap(parent_, other.parent_);
@@ -239,6 +242,12 @@ public:
     [[nodiscard]] constexpr KeyType &Key() noexcept ATTRIBUTE_LIFETIME_BOUND {
         return key_;
     }
+    constexpr void Swap(Node &other) noexcept(std::is_nothrow_swappable_v<KeyType>)
+        requires(std::is_swappable_v<KeyType>)
+    {
+        std::swap(key_, other.key_);
+        Base::Swap(other);
+    }
 
 private:
     KeyType key_{};
@@ -261,12 +270,12 @@ protected:
         SynchronizeInvariantsOnMove();
     }
     RBTreeContainerImpl &operator=(RBTreeContainerImpl &&other) noexcept ATTRIBUTE_LIFETIME_BOUND {
-        swap(other);
+        this->Swap(other);
         AssertTreeInvariants();
         return *this;
     }
-    constexpr void swap(RBTreeContainerImpl &other) noexcept {
-        fake_root_.swap(other.fake_root_);
+    constexpr void Swap(RBTreeContainerImpl &other) noexcept {
+        fake_root_.Swap(other.fake_root_);
         SynchronizeInvariantsOnMove();
         other.SynchronizeInvariantsOnMove();
     }
@@ -283,6 +292,7 @@ protected:
         SetSize(data.tree_size);
         SynchronizeInvariantsOnMove();
     }
+    constexpr ~RBTreeContainerImpl() = default;
 
     constexpr void SetBegin(NodeBase *new_begin) noexcept {
         AssertBeginInvariants();
@@ -434,6 +444,7 @@ private:
     constexpr void SetSize(std::size_t new_size) noexcept {
         static_assert(
             std::is_same_v<std::underlying_type_t<decltype(fake_root_.Color())>, std::size_t>);
+        // NOLINTNEXTLINE(clang-analyzer-optin.core.EnumCastOutOfRange)
         fake_root_.SetColor(static_cast<NodeColor>(new_size));
     }
     constexpr void IncrementSize() noexcept {
@@ -705,16 +716,17 @@ private:
         RBTREE_ASSERT_INVARIANT(new_inserted_node != nullptr);
         RBTREE_ASSERT_INVARIANT(new_inserted_node->Color() == NodeColor::kRed);
         RBTREE_ASSERT_INVARIANT(Size() >= 1);
-        NodeBase *current_node = new_inserted_node;
-        NodeBase *current_node_parent;
-        NodeBase *&root = GetRootMutableReferenceUnchecked();
+        NodeBase *CONFIG_CLANG_NONNULL_QUALIFIER current_node = new_inserted_node;
+        NodeBase *current_node_parent                         = nullptr;
+        NodeBase *&root                                       = GetRootMutableReferenceUnchecked();
         while ((current_node_parent = current_node->Parent()) != root &&
                current_node_parent->Color() == NodeColor::kRed) {
             RBTREE_ASSERT_INVARIANT(current_node_parent != GetPreRootNilUnchecked());
             RBTREE_ASSERT_INVARIANT(current_node_parent->OtherSibling(current_node) == nullptr ||
                                     current_node_parent->OtherSibling(current_node)->Color() ==
                                         NodeColor::kBlack);
-            NodeBase *current_node_parent_parent = current_node_parent->Parent();
+            NodeBase *CONFIG_CLANG_NONNULL_QUALIFIER current_node_parent_parent =
+                current_node_parent->Parent();
             RBTREE_ASSERT_INVARIANT(current_node_parent_parent != nullptr);
             RBTREE_ASSERT_INVARIANT(current_node_parent_parent->Color() == NodeColor::kBlack);
 
@@ -1119,17 +1131,8 @@ public:
     using iterator_category = std::bidirectional_iterator_tag;
 
     constexpr Iterator() noexcept = default;
-
-    constexpr Iterator(const Iterator &) noexcept = default;
-
-    constexpr Iterator(Iterator &&) noexcept = default;
-
-    constexpr Iterator &operator=(const Iterator &) noexcept = default;
-
-    constexpr Iterator &operator=(Iterator &&) noexcept = default;
-
-    /* implicit */
-    constexpr Iterator(OtherIterator other) noexcept
+    // NOLINTNEXTLINE(google-explicit-constructor, hicpp-explicit-conversions)
+    /* implicit */ constexpr Iterator(OtherIterator other) noexcept
         requires(IsConstIterator)
         : Iterator(other.node_) {}
 
@@ -1208,15 +1211,19 @@ protected:
     constexpr RBTreeContainer() = default;
     constexpr RBTreeContainer(const RBTreeContainer &other) : Base(CloneTree(other)) {}
     constexpr RBTreeContainer &operator=(const RBTreeContainer &other) ATTRIBUTE_LIFETIME_BOUND {
-        return *this = RBTreeContainer(other);
+        // NOLINTNEXTLINE(cppcoreguidelines-c-copy-assignment-signature)
+        return *this = RBTreeContainer(other);  // NOLINT(misc-unconventional-assign-operator)
     }
     constexpr RBTreeContainer(RBTreeContainer &&)            = default;
     constexpr RBTreeContainer &operator=(RBTreeContainer &&) = default;
     constexpr ~RBTreeContainer() noexcept(noexcept(DeleteTree(Root()))) {
         DeleteTree(Root());
     }
-    constexpr void swap(RBTreeContainer &other) noexcept {
-        Base::swap(other);
+    constexpr void Swap(RBTreeContainer &other) noexcept {
+        Base::Swap(other);
+    }
+    ATTRIBUTE_REINITIALIZES constexpr void clear() noexcept {
+        RBTreeContainer{}.Swap(*this);
     }
 
     // clang-format off
@@ -1289,15 +1296,12 @@ protected:
     [[nodiscard]] constexpr NodeType *Root() noexcept ATTRIBUTE_LIFETIME_BOUND {
         return static_cast<NodeType *>(Base::Root());
     }
-
     [[nodiscard]] constexpr const NodeType *Root() const noexcept ATTRIBUTE_LIFETIME_BOUND {
         return static_cast<const NodeType *>(Base::Root());
     }
-
     [[nodiscard]] constexpr const NodeType *PreRootNodePtr() const noexcept ATTRIBUTE_LIFETIME_BOUND {
         return static_cast<const NodeType *>(Base::PreRootNil());
     }
-
     [[nodiscard]] constexpr NodeType *PreRootNodePtr() noexcept ATTRIBUTE_LIFETIME_BOUND {
         return static_cast<NodeType *>(Base::PreRootNil());
     }
@@ -1501,7 +1505,8 @@ private:
     ATTRIBUTE_COLD
     static void ThrowLengthError(const char *CONFIG_CLANG_NONNULL_QUALIFIER function_name) {
         // clang-format on
-        char buffer[1024]{};
+        constexpr std::size_t kErrorReportBufferSize = 1024;
+        std::array<char, kErrorReportBufferSize> buffer{};
         FillLengthErrorReport(function_name, buffer);
         throw std::length_error(std::data(buffer));
     }
@@ -1512,7 +1517,7 @@ private:
     ATTRIBUTE_ACCESS(read_only, 1)
     ATTRIBUTE_ACCESS(write_only, 2)
     static void FillLengthErrorReport(const char *CONFIG_CLANG_NONNULL_QUALIFIER function_name,
-                                      char (&buffer)[N]) noexcept {
+                                      std::array<char, N>& buffer) noexcept {
         // clang-format on
         const int ret = std::snprintf(std::data(buffer), std::size(buffer),
                                       "Could not create node: size error at %s", function_name);
@@ -1576,11 +1581,11 @@ protected:
         } else {
             if (ComparatorType{}(lhs, rhs)) {
                 return std::weak_ordering::less;
-            } else if (ComparatorType{}(rhs, lhs)) {
-                return std::weak_ordering::greater;
-            } else {
-                return std::weak_ordering::equivalent;
             }
+            if (ComparatorType{}(rhs, lhs)) {
+                return std::weak_ordering::greater;
+            }
+            return std::weak_ordering::equivalent;
         }
     }
 };
@@ -1593,14 +1598,37 @@ concept StatelessComparator =
 static_assert(StatelessComparator<std::less<std::string>>);
 static_assert(StatelessComparator<std::greater<int>>);
 
+namespace rbtree {
+
 export template <class KeyType, StatelessComparator ComparatorType = std::less<>,
                  bool UseByValueWherePossible = kUseByValue<KeyType>>
+class RBTree;
+
+export enum class TestStatus : std::uint32_t {
+    kOk = 0,
+    kRootIsNotBlack,
+    kInvalidOrNotBlackParentOfRedNode,
+    kRedNodeHasExactlyOneNilChild,
+    kNodeHasInvalidColor,
+    kKeyOfLeftSonGEThanKeyOfNode,
+    kLeftSonOfRedNodeIsNotBlack,
+    kMaxKeyInLeftSubtreeGEThanKeyOfNode,
+    kKeyOfNodeGEThanKeyOfRightSon,
+    kRightSonOfRedNodeIsNotBlack,
+    kKeyOfNodeGEThanMinKeyInRightSubtree,
+    kBlackHeightOfLeftSubtreeGTThanBlackHeightOfRightSubtree,
+    kBlackHeightOfLeftSubtreeLSThanBlackHeightOfRightSubtree,
+};
+
+export template <class KeyType>
+[[nodiscard]]
+TestStatus IsRBTreeUnitTest(const RBTree<KeyType> &tree);
+
+template <class KeyType, StatelessComparator ComparatorType, bool UseByValueWherePossible>
 class RBTree
     : private RBTreeContainer<KeyType, RBTree<KeyType, ComparatorType, UseByValueWherePossible>>,
       private ComparatorHelper<KeyType, ComparatorType> {
-    using Base     = RBTreeContainer<KeyType, RBTree>;
-    using NodeType = typename Base::NodeType;
-    using Base::Root;
+    using Base            = RBTreeContainer<KeyType, RBTree>;
     using ReadOnlyKeyType = std::conditional_t<UseByValueWherePossible, KeyType, const KeyType &>;
     using ComparatorHelper<KeyType, ComparatorType>::kIsNoexceptThreeWayComparable;
     using ComparatorHelper<KeyType, ComparatorType>::CompareThreeWay;
@@ -1623,6 +1651,7 @@ public:
     using Base::begin;
     using Base::cbegin;
     using Base::cend;
+    using Base::clear;
     using Base::crbegin;
     using Base::crend;
     using Base::empty;
@@ -1643,9 +1672,8 @@ public:
     }
 
     constexpr void swap(RBTree &other) noexcept {
-        Base::swap(other);
+        Base::Swap(other);
     }
-
     friend constexpr void swap(RBTree &lhs, RBTree &rhs) noexcept {
         lhs.swap(rhs);
     }
@@ -1682,8 +1710,8 @@ public:
 
     [[nodiscard]] constexpr const_iterator lower_bound(ReadOnlyKeyType key) const
         noexcept(kIsNoexceptThreeWayComparable) ATTRIBUTE_LIFETIME_BOUND {
-        const NodeType *last_left_turn = nullptr;
-        for (auto *current_node = Root(); current_node != nullptr;) {
+        const node_type *last_left_turn = nullptr;
+        for (auto *current_node = this->Root(); current_node != nullptr;) {
             const auto compare_result = CompareThreeWay(key, current_node->Key());
             if (compare_result < 0) {
                 last_left_turn = current_node;
@@ -1700,7 +1728,7 @@ public:
 
     [[nodiscard]] constexpr const_iterator find(ReadOnlyKeyType key) const
         noexcept(kIsNoexceptThreeWayComparable) ATTRIBUTE_LIFETIME_BOUND {
-        for (auto *current_node = Root(); current_node != nullptr;) {
+        for (auto *current_node = this->Root(); current_node != nullptr;) {
             const auto compare_result = CompareThreeWay(key, current_node->Key());
             if (compare_result < 0) {
                 current_node = current_node->Left();
@@ -1714,129 +1742,11 @@ public:
         return end();
     }
 
-    // DELETEME:
-    static constexpr int32_t kInvalidBHeight = -1;
-
-    [[nodiscard]] bool is_rbtree() const {
-        if (Root() == nullptr) {
-            return true;
-        }
-        if (Root()->Color() != NodeColor::kBlack) {
-            fprintf(stderr, "Root is not black\n");
-            fflush(nullptr);
-            return false;
-        }
-
-        auto [h, min, max] = impl(Root());
-        if (h == kInvalidBHeight) {
-            RBTREE_ASSERT_INVARIANT(min == max && max == KeyType{});
-            return false;
-        }
-        RBTREE_ASSERT_INVARIANT(h > 0);
-
-        if (Root()->Left()) {
-            RBTREE_ASSERT_INVARIANT(min < Root()->Key());
-        } else {
-            RBTREE_ASSERT_INVARIANT(min == Root()->Key());
-        }
-        if (Root()->Right()) {
-            RBTREE_ASSERT_INVARIANT(Root()->Key() < max);
-        } else {
-            RBTREE_ASSERT_INVARIANT(Root()->Key() == max);
-        }
-        return true;
-    }
+    friend TestStatus IsRBTreeUnitTest<KeyType>(const RBTree &tree);
 
 private:
-    [[nodiscard]] std::tuple<std::int32_t, KeyType, KeyType> impl(const NodeType *node) const {
-        RBTREE_ASSERT_INVARIANT(node != nullptr);
-        std::int32_t height_l = 1;
-        std::int32_t height_r = 1;
-        KeyType min_l         = node->Key();
-        KeyType max_r         = node->Key();
-        auto *left_child      = node->Left();
-        auto *right_child     = node->Right();
-
-        switch (node->Color()) {
-            case NodeColor::kRed: {
-                if (auto *parent = node->Parent();
-                    parent == nullptr || parent->Color() != NodeColor::kBlack) {
-                    fprintf(stderr, "Red node doesn't have valid black parent\n");
-                    fflush(nullptr);
-                    return {kInvalidBHeight, {}, {}};
-                }
-                const bool only_one_nil = (left_child == nullptr && right_child != nullptr) ||
-                                          (left_child != nullptr && right_child == nullptr);
-                if (only_one_nil) {
-                    fprintf(stderr, "Red node has exactly one nil child\n");
-                    fflush(nullptr);
-                    return {kInvalidBHeight, {}, {}};
-                }
-            } break;
-            case NodeColor::kBlack:
-                break;
-            default:
-                fprintf(stderr, "Node has invalid color\n");
-                fflush(nullptr);
-                return {kInvalidBHeight, {}, {}};
-        }
-
-        if (left_child != nullptr) {
-            if (left_child->Key() >= node->Key()) {
-                fprintf(stderr, "Left key >= node key\n");
-                fflush(nullptr);
-                return {kInvalidBHeight, {}, {}};
-            }
-            if (node->Color() == NodeColor::kRed && left_child->Color() != NodeColor::kBlack) {
-                fprintf(stderr, "Red node doesn't have black left child\n");
-                fflush(nullptr);
-                return {kInvalidBHeight, {}, {}};
-            }
-
-            const auto [h, left_min, left_max] = impl(left_child);
-            RBTREE_ASSERT_INVARIANT(left_min <= left_max);
-            if (h == kInvalidBHeight || left_max >= node->Key()) {
-                fprintf(stderr, "Max key in left subtree >= node key\n");
-                fflush(nullptr);
-                return {kInvalidBHeight, {}, {}};
-            }
-
-            min_l    = std::min(min_l, left_min);
-            height_l = h;
-        }
-
-        if (right_child != nullptr) {
-            if (node->Key() >= right_child->Key()) {
-                fprintf(stderr, "Node key >= right key\n");
-                fflush(nullptr);
-                return {kInvalidBHeight, {}, {}};
-            }
-            if (node->Color() == NodeColor::kRed && right_child->Color() != NodeColor::kBlack) {
-                fprintf(stderr, "Red node doesn't have black right child\n");
-                fflush(nullptr);
-                return {kInvalidBHeight, {}, {}};
-            }
-
-            const auto [h, right_min, right_max] = impl(right_child);
-            RBTREE_ASSERT_INVARIANT(right_min <= right_max);
-            if (h == kInvalidBHeight || node->Key() >= right_min) {
-                fprintf(stderr, "Node key >= max key in right subtree\n");
-                fflush(nullptr);
-                return {kInvalidBHeight, {}, {}};
-            }
-
-            max_r    = std::max(max_r, right_max);
-            height_r = h;
-        }
-
-        RBTREE_ASSERT_INVARIANT(min_l <= max_r);
-        if (height_l != height_r) {
-            fprintf(stderr, "Left bh != right bh\n");
-            fflush(nullptr);
-            return {kInvalidBHeight, {}, {}};
-        }
-
-        return {height_l + (node->Color() == NodeColor::kBlack), min_l, max_r};
+    [[nodiscard]] constexpr const node_type *Root() const noexcept ATTRIBUTE_LIFETIME_BOUND {
+        return Base::Root();
     }
 
     // clang-format off
@@ -1844,8 +1754,8 @@ private:
     [[nodiscard]]
     constexpr std::conditional_t<OverwriteIfExists, iterator, InsertResult> insert_impl(U &&key) ATTRIBUTE_LIFETIME_BOUND {
         // clang-format on
-        auto *previous_node    = Base::PreRootNodePtr();
-        NodeType *current_node = Root();
+        auto *previous_node     = Base::PreRootNodePtr();
+        node_type *current_node = Base::Root();
 
         bool last_cmp_res_was_left = false;
         while (current_node != nullptr) {
@@ -1879,3 +1789,188 @@ private:
         Base::ExtractAndDestroyNode(iter);
     }
 };
+
+template <class KeyType>
+struct [[nodiscard]] TestImplResult {
+    TestStatus status{};
+    std::int32_t height{};
+    KeyType min_key{};
+    KeyType max_key{};
+};
+
+template <class KeyType>
+[[nodiscard]]
+TestImplResult<KeyType> IsRBTreeUnitTestImpl(const typename RBTree<KeyType>::node_type &node) {
+    std::int32_t height_l       = 0;
+    std::int32_t height_r       = 0;
+    KeyType min_l               = node.Key();
+    KeyType max_r               = node.Key();
+    const auto *left_child_ptr  = node.Left();
+    const auto *right_child_ptr = node.Right();
+
+    switch (node.Color()) {
+        case NodeColor::kRed: {
+            if (auto *parent = node.Parent();
+                parent == nullptr || parent->Color() != NodeColor::kBlack) {
+                return {
+                    .status  = TestStatus::kInvalidOrNotBlackParentOfRedNode,
+                    .height  = {},
+                    .min_key = {},
+                    .max_key = {},
+                };
+            }
+            const bool only_one_nil = (left_child_ptr == nullptr && right_child_ptr != nullptr) ||
+                                      (left_child_ptr != nullptr && right_child_ptr == nullptr);
+            if (only_one_nil) {
+                return {
+                    .status  = TestStatus::kRedNodeHasExactlyOneNilChild,
+                    .height  = {},
+                    .min_key = {},
+                    .max_key = {},
+                };
+            }
+        } break;
+        case NodeColor::kBlack:
+            break;
+        default:
+            return {
+                .status  = TestStatus::kNodeHasInvalidColor,
+                .height  = {},
+                .min_key = {},
+                .max_key = {},
+            };
+    }
+
+    if (left_child_ptr != nullptr) {
+        const auto &left_child = *left_child_ptr;
+        if (left_child.Key() >= node.Key()) {
+            return {
+                .status  = TestStatus::kKeyOfLeftSonGEThanKeyOfNode,
+                .height  = {},
+                .min_key = {},
+                .max_key = {},
+            };
+        }
+        if (node.Color() == NodeColor::kRed && left_child.Color() != NodeColor::kBlack) {
+            return {
+                .status  = TestStatus::kLeftSonOfRedNodeIsNotBlack,
+                .height  = {},
+                .min_key = {},
+                .max_key = {},
+            };
+        }
+
+        const TestImplResult<KeyType> left_subtree_info = IsRBTreeUnitTestImpl<KeyType>(left_child);
+        RBTREE_ASSERT_INVARIANT(left_subtree_info.min_key <= left_subtree_info.max_key);
+        if (left_subtree_info.status != TestStatus::kOk) {
+            return left_subtree_info;
+        }
+        if (left_subtree_info.max_key >= node.Key()) {
+            return {
+                .status  = TestStatus::kMaxKeyInLeftSubtreeGEThanKeyOfNode,
+                .height  = {},
+                .min_key = {},
+                .max_key = {},
+            };
+        }
+
+        min_l    = std::min(min_l, left_subtree_info.min_key);
+        height_l = left_subtree_info.height;
+    }
+
+    if (right_child_ptr != nullptr) {
+        const auto &right_child = *right_child_ptr;
+        if (node.Key() >= right_child.Key()) {
+            return {
+                .status  = TestStatus::kKeyOfNodeGEThanKeyOfRightSon,
+                .height  = {},
+                .min_key = {},
+                .max_key = {},
+            };
+        }
+        if (node.Color() == NodeColor::kRed && right_child.Color() != NodeColor::kBlack) {
+            return {
+                .status  = TestStatus::kRightSonOfRedNodeIsNotBlack,
+                .height  = {},
+                .min_key = {},
+                .max_key = {},
+            };
+        }
+
+        const TestImplResult<KeyType> right_subtree_info =
+            IsRBTreeUnitTestImpl<KeyType>(right_child);
+        RBTREE_ASSERT_INVARIANT(right_subtree_info.min_key <= right_subtree_info.max_key);
+        if (right_subtree_info.status != TestStatus::kOk) {
+            return right_subtree_info;
+        }
+        if (node.Key() >= right_subtree_info.min_key) {
+            return {
+                .status  = TestStatus::kKeyOfNodeGEThanMinKeyInRightSubtree,
+                .height  = {},
+                .min_key = {},
+                .max_key = {},
+            };
+        }
+
+        max_r    = std::max(max_r, right_subtree_info.max_key);
+        height_r = right_subtree_info.height;
+    }
+
+    RBTREE_ASSERT_INVARIANT(min_l <= max_r);
+    if (height_l < height_r) {
+        return {
+            .status  = TestStatus::kBlackHeightOfLeftSubtreeLSThanBlackHeightOfRightSubtree,
+            .height  = {},
+            .min_key = {},
+            .max_key = {},
+        };
+    }
+    if (height_l > height_r) {
+        return {
+            .status  = TestStatus::kBlackHeightOfLeftSubtreeGTThanBlackHeightOfRightSubtree,
+            .height  = {},
+            .min_key = {},
+            .max_key = {},
+        };
+    }
+
+    return {
+        .status  = TestStatus::kOk,
+        .height  = height_l + int32_t{node.Color() == NodeColor::kBlack},
+        .min_key = min_l,
+        .max_key = max_r,
+    };
+}
+
+template <class KeyType>
+TestStatus IsRBTreeUnitTest(const RBTree<KeyType> &tree) {
+    const typename RBTree<KeyType>::node_type *root_ptr = tree.Root();
+    if (root_ptr == nullptr) {
+        return TestStatus::kOk;
+    }
+    const typename RBTree<KeyType>::node_type &root = *root_ptr;
+    if (root.Color() != NodeColor::kBlack) {
+        return TestStatus::kRootIsNotBlack;
+    }
+
+    const auto [status, h, min, max] = IsRBTreeUnitTestImpl<KeyType>(root);
+    if (status == TestStatus::kOk) {
+        RBTREE_ASSERT_INVARIANT(h > 0);
+        if (root.Left()) {
+            RBTREE_ASSERT_INVARIANT(min < root.Key());
+        } else {
+            RBTREE_ASSERT_INVARIANT(min == root.Key());
+        }
+        if (root.Right()) {
+            RBTREE_ASSERT_INVARIANT(root.Key() < max);
+        } else {
+            RBTREE_ASSERT_INVARIANT(root.Key() == max);
+        }
+    } else {
+        RBTREE_ASSERT_INVARIANT(min == max && max == KeyType{});
+    }
+
+    return status;
+}
+
+}  // namespace rbtree

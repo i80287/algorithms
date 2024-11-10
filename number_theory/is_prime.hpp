@@ -1,5 +1,5 @@
 #ifndef IS_PRIME_BPSW_HPP
-#define IS_PRIME_BPSW_HPP 1
+#define IS_PRIME_BPSW_HPP
 
 #include <cstdint>
 #include <cstdlib>
@@ -14,6 +14,8 @@ namespace math_functions {
 
 using std::uint32_t;
 using std::uint64_t;
+
+// NOLINTBEGIN(cppcoreguidelines-avoid-magic-numbers)
 
 namespace detail {
 
@@ -71,7 +73,7 @@ ATTRIBUTE_CONST I128_CONSTEXPR bool is_strong_prp(uint64_t n, uint64_t a) noexce
     while (--r) {
         /* test = (test ^ 2) % n */
         CONFIG_ASSUME_STATEMENT(test < n);
-        test = uint64_t((uint128_t(test) * test) % n);
+        test = static_cast<uint64_t>((uint128_t{test} * test) % n);
         CONFIG_ASSUME_STATEMENT(test < n);
         if (test == n_minus_1) {
             return true;
@@ -91,7 +93,7 @@ ATTRIBUTE_CONST I128_CONSTEXPR bool is_strong_prp(uint64_t n, uint64_t a) noexce
 template <bool BasicChecks = true>
 ATTRIBUTE_CONST I128_CONSTEXPR bool is_strong_lucas_prp(uint64_t n, uint32_t p,
                                                         int32_t q) noexcept {
-    int64_t d = int64_t(uint64_t(p) * p) - int64_t(q) * 4;
+    const int64_t d = static_cast<int64_t>(uint64_t{p} * uint64_t{p}) - int64_t{q} * 4;
     if constexpr (BasicChecks) {
         /* Check if p*p - 4*q == 0. */
         if (unlikely(d == 0)) {
@@ -107,7 +109,9 @@ ATTRIBUTE_CONST I128_CONSTEXPR bool is_strong_lucas_prp(uint64_t n, uint32_t p,
             return n == 2;
         }
 
-        if (unlikely(std::gcd(n, 2 * q * static_cast<int128_t>(d)) != 1)) {
+        // NOLINTNEXTLINE(bugprone-implicit-widening-of-multiplication-result)
+        const int128_t rhs = int128_t{int64_t{2} * int64_t{q}} * int128_t{d};
+        if (unlikely(std::gcd(n, rhs) != 1)) {
             // is_strong_lucas_prp requires gcd(n, 2 * q * (p * p - 4 * q)) = 1
             return false;
         }
@@ -118,11 +122,14 @@ ATTRIBUTE_CONST I128_CONSTEXPR bool is_strong_lucas_prp(uint64_t n, uint32_t p,
     CONFIG_ASSUME_STATEMENT(n >= 3);
 
     /* nmj = n - (D/n), where (D/n) is the Jacobi symbol */
-    uint64_t nmj = n - uint64_t(int64_t(::math_functions::kronecker_symbol(d, n)));
+    const uint64_t nmj =
+        n - static_cast<uint64_t>(int64_t{::math_functions::kronecker_symbol(d, n)});
     CONFIG_ASSUME_STATEMENT(nmj >= 2);
 
     /* Find s and r satisfying: nmj = s * (2 ^ r), s odd */
-    const auto [s, r] = ::math_functions::extract_pow2(nmj);
+    const auto extraction_res = ::math_functions::extract_pow2(nmj);
+    const uint64_t s          = extraction_res.odd_part;
+    const uint32_t r          = extraction_res.power;
     CONFIG_ASSUME_STATEMENT(r >= 1);
     CONFIG_ASSUME_STATEMENT(s % 2 == 1);
     // Redundant but still
@@ -138,46 +145,50 @@ ATTRIBUTE_CONST I128_CONSTEXPR bool is_strong_lucas_prp(uint64_t n, uint32_t p,
     uint64_t ql = 1;
     uint64_t qh = 1;
     // q mod n
-    const uint64_t widen_q = (q >= 0 ? uint32_t(q) : (n - (uint64_t(-uint32_t(q)) % n))) % n;
+    const uint64_t widen_q =
+        (q >= 0 ? static_cast<uint32_t>(q)
+                : (n - (static_cast<uint64_t>(-static_cast<uint32_t>(q)) % n))) %
+        n;
     CONFIG_ASSUME_STATEMENT(widen_q < n);
     // n >= 3 => n - 1 >= 2 => n - 1 >= 1 => s >= 1
     for (uint32_t j = ::math_functions::log2_floor(s); j != 0; j--) {
         CONFIG_ASSUME_STATEMENT(ql < n);
         /* ql = ql*qh (mod n) */
-        ql = uint64_t((uint128_t(ql) * qh) % n);
+        ql = static_cast<uint64_t>((uint128_t{ql} * qh) % n);
         CONFIG_ASSUME_STATEMENT(ql < n);
-        if (s & (uint64_t(1) << j)) {
+        if (s & (uint64_t{1} << j)) {
             CONFIG_ASSUME_STATEMENT(qh < n);
             /* qh = ql*q */
-            qh = uint64_t((uint128_t(ql) * widen_q) % n);
+            qh = static_cast<uint64_t>((uint128_t{ql} * widen_q) % n);
             CONFIG_ASSUME_STATEMENT(qh < n);
 
             CONFIG_ASSUME_STATEMENT(uh < n);
             /* uh = uh*vh (mod n) */
-            uh = uint64_t((uint128_t(uh) * vh) % n);
+            uh = static_cast<uint64_t>((uint128_t{uh} * vh) % n);
             CONFIG_ASSUME_STATEMENT(uh < n);
 
             CONFIG_ASSUME_STATEMENT(vl < n);
             /* vl = vh*vl - p*ql (mod n) */
-            uint64_t vh_vl = uint64_t((uint128_t(vh) * vl) % n);
-            uint64_t p_ql  = uint64_t((p * uint128_t(ql)) % n);
+            const uint64_t vh_vl = static_cast<uint64_t>((uint128_t{vh} * vl) % n);
+            const uint64_t p_ql  = static_cast<uint64_t>((p * uint128_t{ql}) % n);
             CONFIG_ASSUME_STATEMENT(vh_vl < n);
             CONFIG_ASSUME_STATEMENT(p_ql < n);
-            uint64_t tmp_vl = vh_vl - p_ql;
-            vl              = vh_vl >= p_ql ? tmp_vl : tmp_vl + n;
+            const uint64_t tmp_vl = vh_vl - p_ql;
+            vl                    = vh_vl >= p_ql ? tmp_vl : tmp_vl + n;
             CONFIG_ASSUME_STATEMENT(vl < n);
 
             CONFIG_ASSUME_STATEMENT(vh < n);
             /* vh = vh*vh - 2*qh (mod n) */
-            uint64_t vh_vh = uint64_t((uint128_t(vh) * vh) % n);
+            const uint64_t vh_vh = static_cast<uint64_t>((uint128_t{vh} * vh) % n);
             CONFIG_ASSUME_STATEMENT(vh_vh < n);
-            uint128_t tmp_qh_2 = 2 * uint128_t(qh);
-            CONFIG_ASSUME_STATEMENT(tmp_qh_2 <= 2 * uint128_t(n - 1));
-            uint64_t qh_2 = tmp_qh_2 < n ? uint64_t(tmp_qh_2) : uint64_t(tmp_qh_2 - n);
+            const uint128_t tmp_qh_2 = 2 * uint128_t{qh};
+            CONFIG_ASSUME_STATEMENT(tmp_qh_2 <= 2 * uint128_t{n - 1});
+            const uint64_t qh_2 = tmp_qh_2 < n ? static_cast<uint64_t>(tmp_qh_2)
+                                               : static_cast<uint64_t>(tmp_qh_2 - n);
             CONFIG_ASSUME_STATEMENT(qh_2 < n);
-            CONFIG_ASSUME_STATEMENT(qh_2 == (uint128_t(qh) * 2) % n);
-            uint64_t tmp_vh = vh_vh - qh_2;
-            vh              = vh_vh >= qh_2 ? tmp_vh : tmp_vh + n;
+            CONFIG_ASSUME_STATEMENT(qh_2 == (uint128_t{qh} * 2) % n);
+            const uint64_t tmp_vh = vh_vh - qh_2;
+            vh                    = vh_vh >= qh_2 ? tmp_vh : tmp_vh + n;
             CONFIG_ASSUME_STATEMENT(vh < n);
         } else {
             /* qh = ql */
@@ -186,58 +197,59 @@ ATTRIBUTE_CONST I128_CONSTEXPR bool is_strong_lucas_prp(uint64_t n, uint32_t p,
             CONFIG_ASSUME_STATEMENT(uh < n);
             CONFIG_ASSUME_STATEMENT(vl < n);
             /* uh = uh*vl - ql (mod n) */
-            uint64_t uh_vl = uint64_t((uint128_t(uh) * vl) % n);
+            const uint64_t uh_vl = static_cast<uint64_t>((uint128_t{uh} * vl) % n);
             CONFIG_ASSUME_STATEMENT(uh_vl < n);
             CONFIG_ASSUME_STATEMENT(ql < n);
-            uint64_t tmp_uh = uh_vl - ql;
-            uh              = uh_vl >= ql ? tmp_uh : tmp_uh + n;
+            const uint64_t tmp_uh = uh_vl - ql;
+            uh                    = uh_vl >= ql ? tmp_uh : tmp_uh + n;
             CONFIG_ASSUME_STATEMENT(uh < n);
 
             CONFIG_ASSUME_STATEMENT(vh < n);
             CONFIG_ASSUME_STATEMENT(vl < n);
             /* vh = vh*vl - p*ql (mod n) */
-            uint64_t vh_vl = uint64_t((uint128_t(vh) * vl) % n);
-            uint64_t p_ql  = uint64_t((p * uint128_t(ql)) % n);
+            const uint64_t vh_vl = static_cast<uint64_t>((uint128_t{vh} * vl) % n);
+            const uint64_t p_ql  = static_cast<uint64_t>((p * uint128_t{ql}) % n);
             CONFIG_ASSUME_STATEMENT(vh_vl < n);
             CONFIG_ASSUME_STATEMENT(p_ql < n);
-            uint64_t tmp_vh = vh_vl - p_ql;
-            vh              = vh_vl >= p_ql ? tmp_vh : tmp_vh + n;
+            const uint64_t tmp_vh = vh_vl - p_ql;
+            vh                    = vh_vl >= p_ql ? tmp_vh : tmp_vh + n;
             CONFIG_ASSUME_STATEMENT(vh < n);
 
             CONFIG_ASSUME_STATEMENT(vl < n);
             /* vl = vl*vl - 2*ql (mod n) */
-            uint64_t vl_vl = uint64_t((uint128_t(vl) * vl) % n);
+            const uint64_t vl_vl = static_cast<uint64_t>((uint128_t{vl} * vl) % n);
             CONFIG_ASSUME_STATEMENT(vl_vl < n);
-            uint128_t tmp_ql_2 = 2 * uint128_t(ql);
-            CONFIG_ASSUME_STATEMENT(tmp_ql_2 <= 2 * uint128_t(n - 1));
-            uint64_t ql_2 = tmp_ql_2 < n ? uint64_t(tmp_ql_2) : uint64_t(tmp_ql_2 - n);
+            const uint128_t tmp_ql_2 = 2 * uint128_t{ql};
+            CONFIG_ASSUME_STATEMENT(tmp_ql_2 <= 2 * uint128_t{n - 1});
+            const uint64_t ql_2 = tmp_ql_2 < n ? static_cast<uint64_t>(tmp_ql_2)
+                                               : static_cast<uint64_t>(tmp_ql_2 - n);
             CONFIG_ASSUME_STATEMENT(ql_2 < n);
-            CONFIG_ASSUME_STATEMENT(ql_2 == (uint128_t(ql) * 2) % n);
-            uint64_t tmp_vl = vl_vl - ql_2;
-            vl              = vl_vl >= ql_2 ? tmp_vl : tmp_vl + n;
+            CONFIG_ASSUME_STATEMENT(ql_2 == (uint128_t{ql} * 2) % n);
+            const uint64_t tmp_vl = vl_vl - ql_2;
+            vl                    = vl_vl >= ql_2 ? tmp_vl : tmp_vl + n;
             CONFIG_ASSUME_STATEMENT(vl < n);
         }
     }
 
     CONFIG_ASSUME_STATEMENT(ql < n);
     /* ql = ql*qh */
-    ql = uint64_t((uint128_t(ql) * qh) % n);
+    ql = static_cast<uint64_t>((uint128_t{ql} * qh) % n);
     CONFIG_ASSUME_STATEMENT(ql < n);
 
     CONFIG_ASSUME_STATEMENT(qh < n);
     /* qh = ql*q */
-    qh = uint64_t((uint128_t(ql) * widen_q) % n);
+    qh = static_cast<uint64_t>((uint128_t{ql} * widen_q) % n);
     CONFIG_ASSUME_STATEMENT(qh < n);
 
     CONFIG_ASSUME_STATEMENT(uh < n);
     /* uh = uh*vl - ql (mod n) */
-    uint64_t uh_vl = uint64_t((uint128_t(uh) * vl) % n);
+    const uint64_t uh_vl = static_cast<uint64_t>((uint128_t{uh} * vl) % n);
     CONFIG_ASSUME_STATEMENT(uh_vl < n);
     CONFIG_ASSUME_STATEMENT(ql < n);
-    uint64_t tmp_uh = uh_vl - ql;
-    uh              = uh_vl >= ql ? tmp_uh : tmp_uh + n;
+    const uint64_t tmp_uh = uh_vl - ql;
+    uh                    = uh_vl >= ql ? tmp_uh : tmp_uh + n;
     CONFIG_ASSUME_STATEMENT(uh < n);
-    CONFIG_ASSUME_STATEMENT(uh == (uint128_t(n) + uh_vl - ql) % n);
+    CONFIG_ASSUME_STATEMENT(uh == (uint128_t{n} + uh_vl - ql) % n);
 
     /* uh contains LucasU_s */
     if (uh == 0) {
@@ -246,12 +258,12 @@ ATTRIBUTE_CONST I128_CONSTEXPR bool is_strong_lucas_prp(uint64_t n, uint32_t p,
 
     CONFIG_ASSUME_STATEMENT(vl < n);
     /* vl = vh*vl - p*ql (mod n) */
-    uint64_t vh_vl  = uint64_t((uint128_t(vh) * vl) % n);
-    uint64_t p_ql   = uint64_t((p * uint128_t(ql)) % n);
-    uint64_t tmp_vl = vh_vl - p_ql;
-    vl              = vh_vl >= p_ql ? tmp_vl : tmp_vl + n;
+    const uint64_t vh_vl = static_cast<uint64_t>((uint128_t{vh} * vl) % n);
+    const uint64_t p_ql  = static_cast<uint64_t>((p * uint128_t{ql}) % n);
+    uint64_t tmp_vl      = vh_vl - p_ql;
+    vl                   = vh_vl >= p_ql ? tmp_vl : tmp_vl + n;
     CONFIG_ASSUME_STATEMENT(vl < n);
-    CONFIG_ASSUME_STATEMENT(vl == (uint128_t(n) + vh_vl - p_ql) % n);
+    CONFIG_ASSUME_STATEMENT(vl == (uint128_t{n} + vh_vl - p_ql) % n);
 
     /* uh contains LucasU_s and vl contains LucasV_s */
     if (vl == 0) {
@@ -261,19 +273,20 @@ ATTRIBUTE_CONST I128_CONSTEXPR bool is_strong_lucas_prp(uint64_t n, uint32_t p,
 
     CONFIG_ASSUME_STATEMENT(ql < n);
     /* ql = ql*qh */
-    ql = uint64_t((uint128_t(ql) * qh) % n);
+    ql = static_cast<uint64_t>((uint128_t{ql} * qh) % n);
     CONFIG_ASSUME_STATEMENT(ql < n);
     /* r - 1 for mpz_extrastronglucas_prp */
     for (uint32_t j = 1; j < r; j++) {
         CONFIG_ASSUME_STATEMENT(vl < n);
         /* vl = vl*vl - 2*ql (mod n) */
-        uint64_t vl_vl = uint64_t((uint128_t(vl) * vl) % n);
+        const uint64_t vl_vl = static_cast<uint64_t>((uint128_t{vl} * vl) % n);
         CONFIG_ASSUME_STATEMENT(vl_vl < n);
-        uint128_t tmp_ql_2 = 2 * uint128_t(ql);
-        CONFIG_ASSUME_STATEMENT(tmp_ql_2 <= 2 * uint128_t(n - 1));
-        uint64_t ql_2 = tmp_ql_2 < n ? uint64_t(tmp_ql_2) : uint64_t(tmp_ql_2 - n);
+        const uint128_t tmp_ql_2 = 2 * uint128_t{ql};
+        CONFIG_ASSUME_STATEMENT(tmp_ql_2 <= 2 * uint128_t{n - 1});
+        const uint64_t ql_2 =
+            tmp_ql_2 < n ? static_cast<uint64_t>(tmp_ql_2) : static_cast<uint64_t>(tmp_ql_2 - n);
         CONFIG_ASSUME_STATEMENT(ql_2 < n);
-        CONFIG_ASSUME_STATEMENT(ql_2 == (uint128_t(ql) * 2) % n);
+        CONFIG_ASSUME_STATEMENT(ql_2 == (uint128_t{ql} * 2) % n);
         tmp_vl = vl_vl - ql_2;
         vl     = vl_vl >= ql_2 ? tmp_vl : tmp_vl + n;
         CONFIG_ASSUME_STATEMENT(vl < n);
@@ -285,7 +298,7 @@ ATTRIBUTE_CONST I128_CONSTEXPR bool is_strong_lucas_prp(uint64_t n, uint32_t p,
 
         CONFIG_ASSUME_STATEMENT(ql < n);
         /* ql = ql*ql (mod n) */
-        ql = uint64_t((uint128_t(ql) * ql) % n);
+        ql = static_cast<uint64_t>((uint128_t{ql} * ql) % n);
         CONFIG_ASSUME_STATEMENT(ql < n);
     }
 
@@ -319,7 +332,7 @@ ATTRIBUTE_CONST I128_CONSTEXPR bool is_strong_selfridge_prp(uint64_t n) noexcept
     for (int32_t d = 5;; d += (d > 0) ? kStep : -kStep, d = -d) {
         constexpr std::int32_t kMaxD = 999'997;
         // Calculate the Jacobi symbol (d/n)
-        const int32_t jacobi = ::math_functions::kronecker_symbol(int64_t(d), n);
+        const int32_t jacobi = ::math_functions::kronecker_symbol(int64_t{d}, n);
         switch (jacobi) {
             /**
              * if jacobi == 0, d is a factor of n, therefore n is composite
@@ -370,6 +383,7 @@ ATTRIBUTE_CONST I128_CONSTEXPR bool is_strong_selfridge_prp(uint64_t n) noexcept
     if (n % 5 == 0) {
         return n == 5;
     }
+    // NOLINTNEXTLINE(bugprone-implicit-widening-of-multiplication-result)
     if (unlikely(n < 7 * 7)) {
         return n != 1;
     }
@@ -378,6 +392,7 @@ ATTRIBUTE_CONST I128_CONSTEXPR bool is_strong_selfridge_prp(uint64_t n) noexcept
         (n % 43) == 0 || (n % 47) == 0) {
         return false;
     }
+    // NOLINTNEXTLINE(bugprone-implicit-widening-of-multiplication-result)
     if (unlikely(n < 53 * 53)) {
         return true;
     }
@@ -396,6 +411,7 @@ ATTRIBUTE_CONST I128_CONSTEXPR bool is_strong_selfridge_prp(uint64_t n) noexcept
     if (n % 5 == 0) {
         return n == 5;
     }
+    // NOLINTNEXTLINE(bugprone-implicit-widening-of-multiplication-result)
     if (unlikely(n < 7 * 7)) {
         return n != 1;
     }
@@ -421,6 +437,7 @@ ATTRIBUTE_CONST I128_CONSTEXPR bool is_strong_selfridge_prp(uint64_t n) noexcept
     if (n % 5 == 0) {
         return n == 5;
     }
+    // NOLINTNEXTLINE(bugprone-implicit-widening-of-multiplication-result)
     if (unlikely(n < 7 * 7)) {
         return n != 1;
     }
@@ -446,12 +463,13 @@ ATTRIBUTE_CONST I128_CONSTEXPR bool is_strong_selfridge_prp(uint64_t n) noexcept
     if (n % 5 == 0) {
         return n == 5;
     }
+    // NOLINTNEXTLINE(bugprone-implicit-widening-of-multiplication-result)
     if (unlikely(n < 7 * 7)) {
         return n != 1;
     }
     uint64_t i                   = 7;
-    constexpr uint64_t kMaxPrime = 18446744073709551557ull;
-    static_assert(kMaxPrime < kMaxPrime + 30, "");
+    constexpr uint64_t kMaxPrime = 18446744073709551557ULL;
+    static_assert(kMaxPrime < kMaxPrime + 30, "impl error");
     /**
      * There are no prime numbers on the segment
      * [18446744073709551558; 2^64 - 1]
@@ -476,7 +494,7 @@ ATTRIBUTE_CONST I128_CONSTEXPR bool is_strong_selfridge_prp(uint64_t n) noexcept
 /// @param m
 /// @return true if n is prime and false otherwise
 [[nodiscard]] ATTRIBUTE_CONST constexpr bool is_prime_u16(uint16_t m) noexcept {
-    uint32_t n = m;
+    const uint32_t n = m;
     if (n % 2 == 0) {
         return n == 2;
     }
@@ -486,6 +504,7 @@ ATTRIBUTE_CONST I128_CONSTEXPR bool is_strong_selfridge_prp(uint64_t n) noexcept
     if (n % 5 == 0) {
         return n == 5;
     }
+    // NOLINTNEXTLINE(bugprone-implicit-widening-of-multiplication-result)
     if (n < 7 * 7) {
         return n != 1;
     }
@@ -494,6 +513,7 @@ ATTRIBUTE_CONST I128_CONSTEXPR bool is_strong_selfridge_prp(uint64_t n) noexcept
         (n % 43) == 0 || (n % 47) == 0) {
         return false;
     }
+    // NOLINTNEXTLINE(bugprone-implicit-widening-of-multiplication-result)
     if (n < 53 * 53) {
         return true;
     }
@@ -591,6 +611,8 @@ ATTRIBUTE_CONST I128_CONSTEXPR bool is_strong_selfridge_prp(uint64_t n) noexcept
             return false;
     }
 }
+
+// NOLINTEND(cppcoreguidelines-avoid-magic-numbers)
 
 }  // namespace math_functions
 

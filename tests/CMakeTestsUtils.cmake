@@ -13,6 +13,7 @@ set(TEST_CXX_COMPILE_OPTIONS)
 set(TEST_COMPILE_DEFINITIONS)
 
 set(USE_CPPCHECK_DURING_BUILD False)
+set(USE_CLANG_TIDY_DURING_BUILD False)
 
 set(CXX_MODULES_SUPPORTED False)
 set(CMAKE_SUPPORTS_MODULES False)
@@ -43,64 +44,6 @@ if(USING_MINGW_GCC)
     endif()
 endif()
 
-
-if(CMAKE_SYSTEM_NAME MATCHES "Linux")
-    if(USE_CPPCHECK_DURING_BUILD)
-        find_program(CMAKE_CXX_CPPCHECK NAMES cppcheck)
-        if(CMAKE_CXX_CPPCHECK)
-            set(CPPCHECK_EXITCODE_ON_ERROR 0)
-            list(APPEND
-                CMAKE_CXX_CPPCHECK
-                "--force"
-                "--template=gcc"
-                "--inline-suppr"
-            )
-        else()
-            message(WARNING "Could not find cppcheck")
-        endif()
-    endif()
-
-    find_program(LSB_RELEASE_EXEC lsb_release)
-    if(NOT LSB_RELEASE_EXEC)
-        message(WARNING "Could not get linux distro info, pthread linking on ubuntu 20 with g++ might be broken")
-    else()
-        execute_process(COMMAND ${LSB_RELEASE_EXEC} -irs
-            OUTPUT_VARIABLE
-            LSB_DISTRIBUTOR_ID_AND_RELEASE_VERSION_SHORT
-            OUTPUT_STRIP_TRAILING_WHITESPACE
-        )
-
-        string(REPLACE "\n" " " LSB_DISTRIBUTOR_ID_AND_RELEASE_VERSION_SHORT "${LSB_DISTRIBUTOR_ID_AND_RELEASE_VERSION_SHORT}")
-        separate_arguments(LSB_DISTRIBUTOR_ID_AND_RELEASE_VERSION_SHORT)
-
-        list(GET LSB_DISTRIBUTOR_ID_AND_RELEASE_VERSION_SHORT 0 LSB_DISTRIBUTOR_ID_SHORT)
-        list(GET LSB_DISTRIBUTOR_ID_AND_RELEASE_VERSION_SHORT 1 LSB_RELEASE_VERSION_SHORT)
-
-        string(TOLOWER "${LSB_DISTRIBUTOR_ID_SHORT}" LSB_DISTRIBUTOR_ID_SHORT)
-        if(LSB_DISTRIBUTOR_ID_SHORT STREQUAL "ubuntu" AND LSB_RELEASE_VERSION_SHORT VERSION_LESS_EQUAL "20.04")
-            set(LINK_THREADS_LIBRARY_MANUALLY True)
-            set(THREADS_PREFER_PTHREAD_FLAG ON)
-            find_package(Threads REQUIRED)
-        endif()
-        if(USE_CPPCHECK_DURING_BUILD AND CMAKE_CXX_CPPCHECK)
-            if(LSB_DISTRIBUTOR_ID_SHORT STREQUAL "ubuntu" AND LSB_RELEASE_VERSION_SHORT VERSION_GREATER_EQUAL "24.04")
-                set(CPPCHECK_EXITCODE_ON_ERROR 1)
-                list(APPEND
-                    CMAKE_CXX_CPPCHECK
-                    "--check-level=exhaustive"
-                )
-            endif()
-        endif()
-    endif()
-
-    if(USE_CPPCHECK_DURING_BUILD AND CMAKE_CXX_CPPCHECK)
-        list(APPEND
-            CMAKE_CXX_CPPCHECK
-            "--error-exitcode=${CPPCHECK_EXITCODE_ON_ERROR}"
-        )
-    endif()
-endif()
-
 if(CMAKE_VERSION VERSION_GREATER_EQUAL "3.28")
     set(CMAKE_SUPPORTS_MODULES True)
 endif()
@@ -124,6 +67,16 @@ function(configure_gcc_or_clang_gcc_options)
         ${CMAKE_C_FLAGS_RELWITHDEBINFO})
     set(LOCAL_FN_CMAKE_CXX_FLAGS_RELWITHDEBINFO
         ${CMAKE_CXX_FLAGS_RELWITHDEBINFO})
+
+    cmake_host_system_information(RESULT phys_mem_in_mb QUERY TOTAL_PHYSICAL_MEMORY)
+    math(EXPR allocation_limit_in_bytes "(${phys_mem_in_mb} * 1024 * 1024) * 8 / 10")
+    set(frame_allocation_limit_in_bytes ${allocation_limit_in_bytes})
+    # clang 18.1.3 's default value for max stack frame size is 4294967295 (uint32_t max value)
+    # gcc 13.2.0 's default value for max object size is PTRDIFF_MAX (e.g. 9223372036854775807 on x86-64)
+    if(frame_allocation_limit_in_bytes GREATER 268435456) # 256 mb
+        set(frame_allocation_limit_in_bytes 268435456)
+    endif()
+    set(stack_allocation_limit_in_bytes ${frame_allocation_limit_in_bytes})
 
     # Flags for both C and C++
     set(LOCAL_FN_TEST_CXX_COMPILE_OPTIONS
@@ -154,13 +107,12 @@ function(configure_gcc_or_clang_gcc_options)
         -Wdouble-promotion
         -Wfloat-equal
         -Wunused-macros
+        -Wframe-larger-than=${frame_allocation_limit_in_bytes}
         -Werror
         -pedantic-errors
     )
-    if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-        cmake_host_system_information(RESULT phys_mem_in_mb QUERY TOTAL_PHYSICAL_MEMORY)
-        math(EXPR allocation_limit_in_bytes "(${phys_mem_in_mb} * 1024 * 1024) * 9 / 10")
 
+    if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
         set(LOCAL_FN_TEST_CXX_COMPILE_OPTIONS
             ${LOCAL_FN_TEST_CXX_COMPILE_OPTIONS}
             -Warray-bounds=2
@@ -178,8 +130,7 @@ function(configure_gcc_or_clang_gcc_options)
             -Wsuggest-attribute=malloc
             -Walloc-size-larger-than=${allocation_limit_in_bytes}
             -Wlarger-than=${allocation_limit_in_bytes}
-            -Wframe-larger-than=${allocation_limit_in_bytes}
-            -Wstack-usage=${allocation_limit_in_bytes}
+            -Wstack-usage=${stack_allocation_limit_in_bytes}
             -Wattribute-alias=2
             -Wstringop-overflow=4
             -Wduplicated-branches
@@ -379,7 +330,6 @@ function(configure_gcc_or_clang_gcc_options)
         set(LOCAL_FN_TEST_CXX_COMPILE_OPTIONS
             ${LOCAL_FN_TEST_CXX_COMPILE_OPTIONS}
             -Wregister
-            -fconcepts-diagnostics-depth=10
         )
         if(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 10.1.0)
             set(LOCAL_FN_TEST_CXX_COMPILE_OPTIONS
@@ -412,8 +362,7 @@ function(configure_gcc_or_clang_gcc_options)
         -U_GLIBCXX_USE_DEPRECATED)
     set(LOCAL_FN_TEST_COMPILE_DEFINITIONS
         ${LOCAL_FN_TEST_COMPILE_DEFINITIONS}
-        _GLIBCXX_SANITIZE_VECTOR
-        ENABLE_LONGINT_DEBUG_ASSERTS=1)
+        _GLIBCXX_SANITIZE_VECTOR)
     if(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 10.0)
         # In gcc with version < 10.0 these checks break `constexpr`-tivity of some std:: functions
         set(LOCAL_FN_TEST_COMPILE_DEFINITIONS
@@ -586,6 +535,94 @@ if(CMAKE_SUPPORTS_MODULES AND GENERATOR_SUPPORTS_MODULES AND COMPILER_SUPPORTS_M
     set(CXX_MODULES_SUPPORTED True)
 endif()
 
+if(CMAKE_SYSTEM_NAME MATCHES "Linux")
+    if(USE_CPPCHECK_DURING_BUILD)
+        find_program(CMAKE_CXX_CPPCHECK NAMES cppcheck)
+        if(CMAKE_CXX_CPPCHECK)
+            message(STATUS "Found cppcheck: ${CMAKE_CXX_CPPCHECK}")
+            set(CPPCHECK_EXITCODE_ON_ERROR 0)
+            list(APPEND
+                CMAKE_CXX_CPPCHECK
+                "--force"
+                "--template=gcc"
+                "--inline-suppr"
+            )
+        else()
+            message(WARNING "Could not find cppcheck")
+        endif()
+    endif()
+
+    if (NOT CMAKE_CXX_COMPILER_ID STREQUAL "Clang" AND NOT CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang")
+        if(USE_CLANG_TIDY_DURING_BUILD)
+            message(STATUS "Compiler is not clang, clang-tidy won't be used")
+            set(USE_CLANG_TIDY_DURING_BUILD False)
+        endif()
+    endif()
+
+    if(USE_CLANG_TIDY_DURING_BUILD)
+        find_program(CLANG_TIDY_COMMAND NAMES clang-tidy)
+
+        if(CLANG_TIDY_COMMAND)
+            message(STATUS "Found clang-tidy: ${CLANG_TIDY_COMMAND}")
+            set(CMAKE_CXX_CLANG_TIDY
+                ${CLANG_TIDY_COMMAND}
+                "-config-file=${CMAKE_SOURCE_DIR}/.clang-tidy"
+                --warnings-as-errors=*
+                --use-color
+                --header-filter=.*)
+            if(CXX_MODULES_SUPPORTED)
+                set(CMAKE_CXX_CLANG_TIDY
+                    ${CMAKE_CXX_CLANG_TIDY}
+                    --enable-module-headers-parsing)
+            endif()
+        else()
+            message(WARNING "Could not find clang-tidy")
+        endif()
+    endif()
+
+    find_program(LSB_RELEASE_EXEC lsb_release)
+    if(NOT LSB_RELEASE_EXEC)
+        message(WARNING "Could not get linux distro info, pthread linking on ubuntu 20 with g++ might be broken")
+    else()
+        execute_process(COMMAND ${LSB_RELEASE_EXEC} -irs
+            OUTPUT_VARIABLE
+            LSB_DISTRIBUTOR_ID_AND_RELEASE_VERSION_SHORT
+            OUTPUT_STRIP_TRAILING_WHITESPACE
+        )
+
+        string(REPLACE "\n" " " LSB_DISTRIBUTOR_ID_AND_RELEASE_VERSION_SHORT "${LSB_DISTRIBUTOR_ID_AND_RELEASE_VERSION_SHORT}")
+        separate_arguments(LSB_DISTRIBUTOR_ID_AND_RELEASE_VERSION_SHORT)
+
+        list(GET LSB_DISTRIBUTOR_ID_AND_RELEASE_VERSION_SHORT 0 LSB_DISTRIBUTOR_ID_SHORT)
+        list(GET LSB_DISTRIBUTOR_ID_AND_RELEASE_VERSION_SHORT 1 LSB_RELEASE_VERSION_SHORT)
+
+        string(TOLOWER "${LSB_DISTRIBUTOR_ID_SHORT}" LSB_DISTRIBUTOR_ID_SHORT)
+        if(LSB_DISTRIBUTOR_ID_SHORT STREQUAL "ubuntu" AND LSB_RELEASE_VERSION_SHORT VERSION_LESS_EQUAL "20.04")
+            set(LINK_THREADS_LIBRARY_MANUALLY True)
+            set(THREADS_PREFER_PTHREAD_FLAG ON)
+            find_package(Threads REQUIRED)
+        endif()
+        if(USE_CPPCHECK_DURING_BUILD AND CMAKE_CXX_CPPCHECK)
+            if(LSB_DISTRIBUTOR_ID_SHORT STREQUAL "ubuntu" AND LSB_RELEASE_VERSION_SHORT VERSION_GREATER_EQUAL "24.04")
+                if(NOT CXX_MODULES_SUPPORTED)
+                    set(CPPCHECK_EXITCODE_ON_ERROR 1)
+                endif()
+                list(APPEND
+                    CMAKE_CXX_CPPCHECK
+                    "--check-level=exhaustive"
+                )
+            endif()
+        endif()
+    endif()
+
+    if(USE_CPPCHECK_DURING_BUILD AND CMAKE_CXX_CPPCHECK)
+        list(APPEND
+            CMAKE_CXX_CPPCHECK
+            "--error-exitcode=${CPPCHECK_EXITCODE_ON_ERROR}"
+        )
+    endif()
+endif()
+
 message(STATUS "+-")
 message(STATUS "| TEST_COMPILE_DEFINITIONS = ${TEST_COMPILE_DEFINITIONS}")
 message(STATUS "| TEST_C_COMPILE_OPTIONS = ${TEST_C_COMPILE_OPTIONS}")
@@ -599,4 +636,6 @@ message(STATUS "| CXX_MODULES_SUPPORTED = ${CXX_MODULES_SUPPORTED}")
 message(STATUS "| CMAKE_SUPPORTS_MODULES = ${CMAKE_SUPPORTS_MODULES}")
 message(STATUS "| GENERATOR_SUPPORTS_MODULES = ${GENERATOR_SUPPORTS_MODULES}")
 message(STATUS "| COMPILER_SUPPORTS_MODULES = ${COMPILER_SUPPORTS_MODULES}")
+message(STATUS "| CMAKE_CXX_CLANG_TIDY = ${CMAKE_CXX_CLANG_TIDY}")
+message(STATUS "| CMAKE_CXX_CPPCHECK = ${CMAKE_CXX_CPPCHECK}")
 message(STATUS "+-")

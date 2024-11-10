@@ -1,5 +1,5 @@
 #ifndef KRONECKER_SYMBOL_HPP
-#define KRONECKER_SYMBOL_HPP 1
+#define KRONECKER_SYMBOL_HPP
 
 #include <cstdint>
 #include <cstdlib>
@@ -11,6 +11,8 @@
 namespace math_functions {
 
 namespace detail {
+
+// NOLINTBEGIN(cppcoreguidelines-avoid-magic-numbers)
 
 template <typename Uint>
 #if CONFIG_HAS_AT_LEAST_CXX_20
@@ -100,9 +102,9 @@ template <typename Sint>
     requires int128_traits::is_signed_v<Sint>
 #endif
 ATTRIBUTE_CONST constexpr std::int32_t kronecker_symbol_si(Sint a, Sint n) noexcept {
-    bool carry = n < 0 && a < 0;
-    using Uint = typename int128_traits::make_unsigned_t<Sint>;
-    Uint n_u   = ::math_functions::uabs(n);
+    const bool carry = n < 0 && a < 0;
+    using Uint       = typename int128_traits::make_unsigned_t<Sint>;
+    Uint n_u         = ::math_functions::uabs(n);
 
     std::int32_t t = 1;
     if (n_u % 2 == 0) {
@@ -263,6 +265,8 @@ ATTRIBUTE_CONST constexpr int32_t kronecker_symbol_si_ui(Sint a, Uint n) noexcep
     CONFIG_ASSUME_STATEMENT(t == -1 || t == 1);
     return (n == 1) ? t : 0;
 }
+
+// NOLINTEND(cppcoreguidelines-avoid-magic-numbers)
 
 }  // namespace detail
 
