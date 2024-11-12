@@ -3471,6 +3471,36 @@ void test_arange() {
     assert((arange(11, 11, 11).empty()));
 }
 
+void test_log2_arange() {
+    log_tests_started();
+
+    using std::vector;
+
+    assert(log2_arange(0) == vector<uint32_t>{static_cast<uint32_t>(-1)});
+    const uint32_t n             = 1'000'000;
+    const vector<uint32_t> range = log2_arange(n);
+    assert(range.size() == n + 1);
+    for (uint32_t i = 0; i <= n; i++) {
+        assert(range[i] == log2_floor(i));
+    }
+}
+
+void test_factorial_arange_mod_m() {
+    log_tests_started();
+
+    for (const uint32_t m : {2u, 4u, static_cast<uint32_t>(1e7) + 9}) {
+        for (const uint32_t n : {10u, 1000u, 100000u}) {
+            const std::vector<uint32_t> fact_range = factorial_arange_mod_m(n, m);
+            uint32_t factorial                     = 1;
+            assert(fact_range[0] == factorial);
+            for (uint32_t i = 1; size_t{i} <= size_t{n}; i++) {
+                factorial = static_cast<uint32_t>((uint64_t{factorial} * uint64_t{i}) % m);
+                assert(fact_range[i] == factorial);
+            }
+        }
+    }
+}
+
 void test_masked_popcount_sum() noexcept {
     log_tests_started();
 
@@ -3523,5 +3553,7 @@ int main() {
     test_solve_factorial_congruence();
     test_powers_sum();
     test_arange();
+    test_log2_arange();
+    test_factorial_arange_mod_m();
     test_masked_popcount_sum();
 }

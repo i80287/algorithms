@@ -201,7 +201,7 @@ ATTRIBUTE_CONST I128_CONSTEXPR uint64_t bin_pow_mod(uint64_t n, uint64_t p, uint
     return y;
 }
 
-[[nodiscard]] ATTRIBUTE_CONST constexpr uint32_t isqrt(uint64_t n) noexcept {
+[[nodiscard]] ATTRIBUTE_CONST constexpr uint32_t isqrt(const uint64_t n) noexcept {
     /**
      * In the runtime `sqrtl` is used (but not for the msvc prior to the c++20).
      */
@@ -236,7 +236,7 @@ ATTRIBUTE_CONST I128_CONSTEXPR uint64_t bin_pow_mod(uint64_t n, uint64_t p, uint
 
 #if defined(INTEGERS_128_BIT_HPP)
 
-[[nodiscard]] ATTRIBUTE_CONST I128_CONSTEXPR uint64_t isqrt(uint128_t n) noexcept {
+[[nodiscard]] ATTRIBUTE_CONST I128_CONSTEXPR uint64_t isqrt(const uint128_t n) noexcept {
     /**
      * See Hackers Delight Chapter 11.
      */
@@ -282,7 +282,7 @@ ATTRIBUTE_CONST I128_CONSTEXPR uint64_t bin_pow_mod(uint64_t n, uint64_t p, uint
      *  `uint32_t(std::cbrt(3375.0))` may be equal to 14
      */
 
-#if defined(__GNUG__) && !defined(__clang__)
+#if defined(__GNUG__) && !defined(__clang__) && CONFIG_HAS_AT_LEAST_CXX_17
     [[maybe_unused]] const auto n_original_value = n;
 #endif
 
@@ -341,7 +341,7 @@ ATTRIBUTE_CONST I128_CONSTEXPR uint64_t bin_pow_mod(uint64_t n, uint64_t p, uint
 /// @note ⌊n^0.25⌋ = ⌊⌊n^0.5⌋^0.5⌋ (see Hackers Delight Chapter 11, ex.1)
 /// @param[in] n
 /// @return ⌊n^0.25⌋
-[[nodiscard]] ATTRIBUTE_CONST constexpr uint32_t ifrrt(uint64_t n) noexcept {
+[[nodiscard]] ATTRIBUTE_CONST constexpr uint32_t ifrrt(const uint64_t n) noexcept {
     return ::math_functions::isqrt(::math_functions::isqrt(n));
 }
 
@@ -351,7 +351,7 @@ ATTRIBUTE_CONST I128_CONSTEXPR uint64_t bin_pow_mod(uint64_t n, uint64_t p, uint
 ///         It can be shown that ⌊n^0.25⌋ = ⌊⌊n^0.5⌋^0.5⌋
 /// @param[in] n
 /// @return
-[[nodiscard]] ATTRIBUTE_CONST I128_CONSTEXPR uint32_t ifrrt(uint128_t n) noexcept {
+[[nodiscard]] ATTRIBUTE_CONST I128_CONSTEXPR uint32_t ifrrt(const uint128_t n) noexcept {
     return ::math_functions::isqrt(::math_functions::isqrt(n));
 }
 
@@ -468,7 +468,7 @@ ATTRIBUTE_CONST I128_CONSTEXPR
 /// @brief This function reverses bits of the @a `b`
 /// @param[in] b
 /// @return 8-bit number whose bits are reversed bits of the @a `b`.
-[[nodiscard]] ATTRIBUTE_CONST constexpr uint8_t bit_reverse(uint8_t b) noexcept {
+[[nodiscard]] ATTRIBUTE_CONST constexpr uint8_t bit_reverse(const uint8_t b) noexcept {
     // See https://graphics.stanford.edu/~seander/bithacks.html#RoundUpPowerOf2
     return static_cast<uint8_t>(((b * 0x80200802ULL) & 0x0884422110ULL) * 0x0101010101ULL >> 32U);
 }
@@ -1413,7 +1413,9 @@ ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_CONST constexpr uint32_t base_b_len_impl(
 template <typename T>
 [[nodiscard]] ATTRIBUTE_CONST constexpr uint32_t base_b_len(T value,
                                                             const uint8_t base = 10) noexcept {
-    static_assert(::math_functions::detail::is_integral_v<T>);
+    static_assert(::math_functions::detail::is_integral_v<T> && !std::is_same_v<T, bool> &&
+                      !std::is_same_v<T, char>,
+                  "integral type (not bool or char) expected in the base_b_len");
 
     if constexpr (::math_functions::detail::is_signed_v<T>) {
         const uint32_t is_negative = uint32_t{value < 0};
@@ -1424,7 +1426,7 @@ template <typename T>
     }
 }
 
-/// @brief For n > 0 returns ⌈log_2(n)⌉. For n = 0 returns (uint32_t)-1
+/// @brief For n > 0 returns ⌊log_2(n)⌋. For n = 0 returns (uint32_t)-1
 /// @tparam UIntType unsigned integral type (at least unsigned int in size)
 /// @param[in] n
 /// @return
@@ -1461,7 +1463,7 @@ template <class UIntType>
 #endif
 [[nodiscard]]
 ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_CONST constexpr uint32_t log2_ceil(const UIntType n) noexcept {
-    return ::math_functions::log2_floor(n) + ((n & (n - 1)) != 0);
+    return ::math_functions::log2_floor(n) + uint32_t{(n & (n - 1)) != 0};
 }
 
 template <class UIntType>
@@ -1680,28 +1682,14 @@ template <typename T>
     return (x || y) && (y || z) && (x || z);
 }
 
-#if CONFIG_HAS_CONCEPTS
-
-template <::math_functions::detail::unsigned_integral T>
-[[nodiscard]] ATTRIBUTE_CONST constexpr T next_even(T n) noexcept {
-    return n + 2 - n % 2;
-}
-
-#else
-
-// clang-format off
-
 template <class T>
-[[nodiscard]]
-ATTRIBUTE_CONST
-constexpr
-std::enable_if_t<::math_functions::detail::is_unsigned_v<T>, T> next_even(T n) noexcept {
+#if CONFIG_HAS_CONCEPTS
+    requires ::math_functions::detail::unsigned_integral<T>
+#endif
+[[nodiscard]] ATTRIBUTE_CONST constexpr T next_even(T n) noexcept {
+    static_assert(::math_functions::detail::is_unsigned_v<T>, "unsigned integral type expected");
     return n + 2 - n % 2;
 }
-
-// clang-format on
-
-#endif
 
 template <class FloatType>
 struct SumSinCos {
@@ -2921,6 +2909,36 @@ template <class T>
 template <class T>
 [[nodiscard]] CONSTEXPR_VECTOR std::vector<T> arange(T n) {
     return ::math_functions::arange(T{0}, n);
+}
+
+/// @brief Return vector of elements {log2(0), log2(1), log2(2), log2(3), ..., log2(n)}
+/// @note  Here log2(0) := -1
+/// @param n
+/// @return
+[[nodiscard]] CONSTEXPR_VECTOR std::vector<uint32_t> log2_arange(const uint32_t n) {
+    std::vector<uint32_t> values(size_t{n} + 1);
+    values[0] = static_cast<uint32_t>(-1);
+    for (size_t i = 1; i <= n; i++) {
+        values[i] = values[i / 2] + 1;
+    }
+
+    return values;
+}
+
+/// @brief Return vector of elements {0! mod m, 1! mod m, 2! mod m, 3! mod m, ..., n! mod m}
+/// @param n
+/// @return
+[[nodiscard]]
+CONSTEXPR_VECTOR std::vector<uint32_t> factorial_arange_mod_m(const uint32_t n, const uint32_t m) {
+    std::vector<uint32_t> values(size_t{n} + 1);
+    uint32_t current_factorial = m != 1 ? 1u : 0u;
+    values[0]                  = current_factorial;
+    for (size_t i = 1; i <= n; i++) {
+        current_factorial = static_cast<uint32_t>((uint64_t{current_factorial} * uint64_t{i}) % m);
+        values[i]         = current_factorial;
+    }
+
+    return values;
 }
 
 }  // namespace math_functions
