@@ -34,9 +34,13 @@
 
 #include "config_macros.hpp"
 
-#if CONFIG_HAS_AT_LEAST_CXX_20
+#if CONFIG_HAS_AT_LEAST_CXX_20 && CONFIG_HAS_INCLUDE(<bit>)
 #include <bit>
+#define MATH_FUNCTIONS_HAS_BIT
+#endif
+#if CONFIG_HAS_AT_LEAST_CXX_20 && CONFIG_HAS_INCLUDE(<ranges>)
 #include <ranges>
+#define MATH_FUNCTIONS_HAS_RANGES
 #endif
 
 #if CONFIG_HAS_INCLUDE("integers_128_bit.hpp")
@@ -66,6 +70,7 @@ namespace math_functions {
 
 using std::int32_t;
 using std::int64_t;
+using std::ptrdiff_t;
 using std::size_t;
 using std::uint32_t;
 using std::uint64_t;
@@ -111,8 +116,7 @@ template <InplaceMultipliable T>
 #else
 template <class T>
 #endif
-[[nodiscard]] ATTRIBUTE_CONST constexpr T bin_pow(T n,
-                                                  std::ptrdiff_t p) noexcept(noexcept(n *= n) &&
+[[nodiscard]] ATTRIBUTE_CONST constexpr T bin_pow(T n, ptrdiff_t p) noexcept(noexcept(n *= n) &&
                                                                              noexcept(1 / n)) {
     const bool not_inverse = p >= 0;
     const size_t p_u       = p >= 0 ? static_cast<size_t>(p) : -static_cast<size_t>(p);
@@ -201,7 +205,7 @@ ATTRIBUTE_CONST I128_CONSTEXPR uint64_t bin_pow_mod(uint64_t n, uint64_t p, uint
     return y;
 }
 
-[[nodiscard]] ATTRIBUTE_CONST constexpr uint32_t isqrt(uint64_t n) noexcept {
+[[nodiscard]] ATTRIBUTE_CONST constexpr uint32_t isqrt(const uint64_t n) noexcept {
     /**
      * In the runtime `sqrtl` is used (but not for the msvc prior to the c++20).
      */
@@ -236,7 +240,7 @@ ATTRIBUTE_CONST I128_CONSTEXPR uint64_t bin_pow_mod(uint64_t n, uint64_t p, uint
 
 #if defined(INTEGERS_128_BIT_HPP)
 
-[[nodiscard]] ATTRIBUTE_CONST I128_CONSTEXPR uint64_t isqrt(uint128_t n) noexcept {
+[[nodiscard]] ATTRIBUTE_CONST I128_CONSTEXPR uint64_t isqrt(const uint128_t n) noexcept {
     /**
      * See Hackers Delight Chapter 11.
      */
@@ -282,7 +286,7 @@ ATTRIBUTE_CONST I128_CONSTEXPR uint64_t bin_pow_mod(uint64_t n, uint64_t p, uint
      *  `uint32_t(std::cbrt(3375.0))` may be equal to 14
      */
 
-#if defined(__GNUG__) && !defined(__clang__)
+#if defined(__GNUG__) && !defined(__clang__) && CONFIG_HAS_AT_LEAST_CXX_17
     [[maybe_unused]] const auto n_original_value = n;
 #endif
 
@@ -341,7 +345,7 @@ ATTRIBUTE_CONST I128_CONSTEXPR uint64_t bin_pow_mod(uint64_t n, uint64_t p, uint
 /// @note ⌊n^0.25⌋ = ⌊⌊n^0.5⌋^0.5⌋ (see Hackers Delight Chapter 11, ex.1)
 /// @param[in] n
 /// @return ⌊n^0.25⌋
-[[nodiscard]] ATTRIBUTE_CONST constexpr uint32_t ifrrt(uint64_t n) noexcept {
+[[nodiscard]] ATTRIBUTE_CONST constexpr uint32_t ifrrt(const uint64_t n) noexcept {
     return ::math_functions::isqrt(::math_functions::isqrt(n));
 }
 
@@ -351,7 +355,7 @@ ATTRIBUTE_CONST I128_CONSTEXPR uint64_t bin_pow_mod(uint64_t n, uint64_t p, uint
 ///         It can be shown that ⌊n^0.25⌋ = ⌊⌊n^0.5⌋^0.5⌋
 /// @param[in] n
 /// @return
-[[nodiscard]] ATTRIBUTE_CONST I128_CONSTEXPR uint32_t ifrrt(uint128_t n) noexcept {
+[[nodiscard]] ATTRIBUTE_CONST I128_CONSTEXPR uint32_t ifrrt(const uint128_t n) noexcept {
     return ::math_functions::isqrt(::math_functions::isqrt(n));
 }
 
@@ -468,7 +472,7 @@ ATTRIBUTE_CONST I128_CONSTEXPR
 /// @brief This function reverses bits of the @a `b`
 /// @param[in] b
 /// @return 8-bit number whose bits are reversed bits of the @a `b`.
-[[nodiscard]] ATTRIBUTE_CONST constexpr uint8_t bit_reverse(uint8_t b) noexcept {
+[[nodiscard]] ATTRIBUTE_CONST constexpr uint8_t bit_reverse(const uint8_t b) noexcept {
     // See https://graphics.stanford.edu/~seander/bithacks.html#RoundUpPowerOf2
     return static_cast<uint8_t>(((b * 0x80200802ULL) & 0x0884422110ULL) * 0x0101010101ULL >> 32U);
 }
@@ -1010,17 +1014,11 @@ template <typename T>
         return sizeof(n) * CHAR_BIT;
     }
 
-#if defined(INTEGERS_128_BIT_HPP)
+#ifdef INTEGERS_128_BIT_HPP
     if constexpr (std::is_same_v<T, uint128_t>) {
         const uint64_t low = static_cast<uint64_t>(n);
         if (low != 0) {
-#if CONFIG_HAS_AT_LEAST_CXX_20
-            return std::countr_zero(low);
-#elif defined(__GNUG__)
-            return __builtin_ctzll(low);
-#else
-            return static_cast<int32_t>(::math_functions::detail::tz_count_64_software(low));
-#endif
+            return ::math_functions::countr_zero<uint64_t>(low);
         }
 
         const uint64_t high = static_cast<uint64_t>(n >> 64U);
@@ -1029,7 +1027,7 @@ template <typename T>
     } else
 #endif
 
-#if CONFIG_HAS_AT_LEAST_CXX_20
+#ifdef MATH_FUNCTIONS_HAS_BIT
     {
         return std::countr_zero(n);
     }
@@ -1080,14 +1078,7 @@ template <typename T>
     if constexpr (std::is_same_v<T, uint128_t>) {
         const uint64_t high = static_cast<uint64_t>(n >> 64U);
         if (high != 0) {
-            // Avoid recursive call to countl_zero<uint64_t>
-#if CONFIG_HAS_AT_LEAST_CXX_20
-            return std::countl_zero(high);
-#elif defined(__GNUG__)
-            return __builtin_clzll(high);
-#else
-            return static_cast<int32_t>(::math_functions::detail::lz_count_64_software(high));
-#endif
+            return ::math_functions::countl_zero<uint64_t>(high);
         }
 
         const uint64_t low = static_cast<uint64_t>(n);
@@ -1096,7 +1087,7 @@ template <typename T>
     } else
 #endif
 
-#if CONFIG_HAS_AT_LEAST_CXX_20
+#ifdef MATH_FUNCTIONS_HAS_BIT
     {
         return std::countl_zero(n);
     }
@@ -1146,7 +1137,7 @@ template <class T>
     } else
 #endif
 
-#if CONFIG_HAS_AT_LEAST_CXX_20
+#ifdef MATH_FUNCTIONS_HAS_BIT
     {
         return std::popcount(n);
     }
@@ -1413,7 +1404,9 @@ ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_CONST constexpr uint32_t base_b_len_impl(
 template <typename T>
 [[nodiscard]] ATTRIBUTE_CONST constexpr uint32_t base_b_len(T value,
                                                             const uint8_t base = 10) noexcept {
-    static_assert(::math_functions::detail::is_integral_v<T>);
+    static_assert(::math_functions::detail::is_integral_v<T> && !std::is_same_v<T, bool> &&
+                      !std::is_same_v<T, char>,
+                  "integral type (not bool or char) expected in the base_b_len");
 
     if constexpr (::math_functions::detail::is_signed_v<T>) {
         const uint32_t is_negative = uint32_t{value < 0};
@@ -1424,7 +1417,7 @@ template <typename T>
     }
 }
 
-/// @brief For n > 0 returns ⌈log_2(n)⌉. For n = 0 returns (uint32_t)-1
+/// @brief For n > 0 returns ⌊log_2(n)⌋. For n = 0 returns (uint32_t)-1
 /// @tparam UIntType unsigned integral type (at least unsigned int in size)
 /// @param[in] n
 /// @return
@@ -1461,7 +1454,7 @@ template <class UIntType>
 #endif
 [[nodiscard]]
 ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_CONST constexpr uint32_t log2_ceil(const UIntType n) noexcept {
-    return ::math_functions::log2_floor(n) + ((n & (n - 1)) != 0);
+    return ::math_functions::log2_floor(n) + uint32_t{(n & (n - 1)) != 0};
 }
 
 template <class UIntType>
@@ -1680,28 +1673,14 @@ template <typename T>
     return (x || y) && (y || z) && (x || z);
 }
 
-#if CONFIG_HAS_CONCEPTS
-
-template <::math_functions::detail::unsigned_integral T>
-[[nodiscard]] ATTRIBUTE_CONST constexpr T next_even(T n) noexcept {
-    return n + 2 - n % 2;
-}
-
-#else
-
-// clang-format off
-
 template <class T>
-[[nodiscard]]
-ATTRIBUTE_CONST
-constexpr
-std::enable_if_t<::math_functions::detail::is_unsigned_v<T>, T> next_even(T n) noexcept {
+#if CONFIG_HAS_CONCEPTS
+    requires ::math_functions::detail::unsigned_integral<T>
+#endif
+[[nodiscard]] ATTRIBUTE_CONST constexpr T next_even(T n) noexcept {
+    static_assert(::math_functions::detail::is_unsigned_v<T>, "unsigned integral type expected");
     return n + 2 - n % 2;
 }
-
-// clang-format on
-
-#endif
 
 template <class FloatType>
 struct SumSinCos {
@@ -2401,10 +2380,14 @@ struct InverseResult {
 
 namespace detail {
 
+// clang-format off
+
 template <class Iter>
-CONSTEXPR_VECTOR typename ::math_functions::InverseResult inv_mod_m_impl(Iter nums_begin,
-                                                                         Iter nums_end,
-                                                                         uint32_t m) {
+ATTRIBUTE_NODISCARD
+CONSTEXPR_VECTOR
+typename ::math_functions::InverseResult inv_mod_m_impl(Iter nums_begin, Iter nums_end, uint32_t m) {
+    // clang-format on
+
     const auto n = static_cast<size_t>(std::distance(nums_begin, nums_end));
     auto res     = ::math_functions::InverseResult{
         std::vector<uint32_t>(n),
@@ -2442,17 +2425,16 @@ CONSTEXPR_VECTOR typename ::math_functions::InverseResult inv_mod_m_impl(Iter nu
 
 }  // namespace detail
 
-#if CONFIG_HAS_CONCEPTS
+#if CONFIG_HAS_CONCEPTS && defined(MATH_FUNCTIONS_HAS_RANGES)
 
 // clang-format off
 
-template <std::forward_iterator Iter>
-    requires ::math_functions::detail::integral<typename std::iter_value_t<Iter>> &&
-             (!std::same_as<typename std::iter_value_t<Iter>, bool>)
+template <std::forward_iterator Iterator>
+    requires ::math_functions::detail::integral<typename std::iter_value_t<Iterator>> &&
+             (!std::same_as<typename std::iter_value_t<Iterator>, bool>)
 [[nodiscard]]
-CONSTEXPR_VECTOR
-typename ::math_functions::InverseResult inv_mod_m(Iter nums_iter_begin, Iter nums_iter_end, uint32_t m) {
-    return ::math_functions::detail::inv_mod_m_impl(nums_iter_begin, nums_iter_end, m);
+CONSTEXPR_VECTOR typename ::math_functions::InverseResult inv_mod_m(Iterator nums_begin, Iterator nums_end, uint32_t m) {
+    return ::math_functions::detail::inv_mod_m_impl(nums_begin, nums_end, m);
 }
 
 /// @brief Inverse @a nums mod m
@@ -2461,10 +2443,10 @@ typename ::math_functions::InverseResult inv_mod_m(Iter nums_iter_begin, Iter nu
 /// @param nums 
 /// @param m 
 /// @return 
-template <std::ranges::forward_range Container>
+template <std::ranges::forward_range Range>
 [[nodiscard]]
-CONSTEXPR_VECTOR
-typename ::math_functions::InverseResult inv_mod_m(const Container& nums, uint32_t m) {
+// NOLINTNEXTLINE(cppcoreguidelines-missing-std-forward)
+CONSTEXPR_VECTOR typename ::math_functions::InverseResult inv_mod_m(Range&& nums, uint32_t m) {
     return ::math_functions::inv_mod_m(std::begin(nums), std::end(nums), m);
 }
 
@@ -2472,27 +2454,36 @@ typename ::math_functions::InverseResult inv_mod_m(const Container& nums, uint32
 
 #else
 
+// clang-format off
+
 template <class Iter>
-[[nodiscard]]
-CONSTEXPR_VECTOR std::enable_if_t<
-    ::math_functions::detail::is_integral_v<typename std::iterator_traits<Iter>::value_type> &&
-        !std::is_same_v<typename std::iterator_traits<Iter>::value_type, bool>,
-    typename ::math_functions::InverseResult> inv_mod_m(Iter nums_iter_begin, Iter nums_iter_end,
-                                                        uint32_t m) {
+ATTRIBUTE_NODISCARD
+CONSTEXPR_VECTOR
+typename std::enable_if_t<
+            ::math_functions::detail::is_integral_v<typename std::iterator_traits<Iter>::value_type> &&
+            !std::is_same_v<typename std::iterator_traits<Iter>::value_type, bool>,
+            typename ::math_functions::InverseResult>
+inv_mod_m(Iter nums_iter_begin, Iter nums_iter_end, uint32_t m) {
     return ::math_functions::detail::inv_mod_m_impl(nums_iter_begin, nums_iter_end, m);
 }
 
-template <class Container>
-[[nodiscard]]
+template <class Range>
+ATTRIBUTE_NODISCARD
 CONSTEXPR_VECTOR
-    std::enable_if_t<::math_functions::detail::is_integral_v<typename std::iterator_traits<
-                         decltype(std::begin(std::declval<Container&>()))>::value_type>&& ::
-                         math_functions::detail::is_integral_v<typename std::iterator_traits<
-                             decltype(std::end(std::declval<Container&>()))>::value_type>,
-                     typename ::math_functions::InverseResult> inv_mod_m(const Container& nums,
-                                                                         uint32_t m) {
+typename std::enable_if_t<
+            ::math_functions::detail::is_integral_v<
+                typename std::iterator_traits<decltype(std::begin(std::declval<Range&&>()))>::value_type
+            > &&
+            ::math_functions::detail::is_integral_v<
+                typename std::iterator_traits<decltype(std::end(std::declval<Range&&>()))>::value_type
+            >,
+            typename ::math_functions::InverseResult>
+// NOLINTNEXTLINE(cppcoreguidelines-missing-std-forward)
+inv_mod_m(Range&& nums, uint32_t m) {
     return ::math_functions::inv_mod_m(std::begin(nums), std::end(nums), m);
 }
+
+// clang-format on
 
 #endif
 
@@ -2923,22 +2914,144 @@ template <class T>
     return ::math_functions::arange(T{0}, n);
 }
 
-}  // namespace math_functions
+/// @brief Return vector of elements {log2(0), log2(1), log2(2), log2(3), ..., log2(n)}
+/// @note  Here log2(0) := -1
+/// @param n
+/// @return
+[[nodiscard]] CONSTEXPR_VECTOR std::vector<uint32_t> log2_arange(const uint32_t n) {
+    std::vector<uint32_t> values(size_t{n} + 1);
+    values[0] = static_cast<uint32_t>(-1);
+    for (size_t i = 1; i <= n; i++) {
+        values[i] = values[i / 2] + 1;
+    }
+
+    return values;
+}
+
+/// @brief Return vector of elements {0! mod m, 1! mod m, 2! mod m, 3! mod m, ..., n! mod m}
+/// @param n
+/// @return
+[[nodiscard]]
+CONSTEXPR_VECTOR std::vector<uint32_t> factorial_arange_mod_m(const uint32_t n, const uint32_t m) {
+    std::vector<uint32_t> values(size_t{n} + 1);
+    uint32_t current_factorial = m != 1 ? 1U : 0U;
+    values[0]                  = current_factorial;
+    for (size_t i = 1; i <= n; i++) {
+        current_factorial = static_cast<uint32_t>((uint64_t{current_factorial} * uint64_t{i}) % m);
+        values[i]         = current_factorial;
+    }
+
+    return values;
+}
+
+namespace detail {
+
+// clang-format off
+
+template <class Iterator>
+ATTRIBUTE_NODISCARD
+ATTRIBUTE_ALWAYS_INLINE
+ATTRIBUTE_SIZED_ACCESS(read_only, 3, 4)
+constexpr Iterator find_wmedian_iter(uint64_t weighted_sum,
+                           Iterator iter,
+                           const uint64_t* const prefsums,
+                           const size_t prefsums_size) noexcept {
+    // clang-format on
+
+    uint64_t min_weighted_sum      = weighted_sum;
+    Iterator min_weighted_sum_iter = iter;
+    ++iter;
+    const size_t n             = prefsums_size - 1;
+    const uint64_t max_prefsum = prefsums[n];
+    for (size_t j = 1; j < n; ++iter, ++j) {
+        weighted_sum = weighted_sum + prefsums[j] - (max_prefsum - prefsums[j]);
+        if (weighted_sum < min_weighted_sum) {
+            min_weighted_sum      = weighted_sum;
+            min_weighted_sum_iter = iter;
+        }
+    }
+
+    return min_weighted_sum_iter;
+}
+
+// clang-format off
+
+template <class Iterator>
+ATTRIBUTE_NODISCARD
+CONSTEXPR_VECTOR Iterator wmedian_impl(const Iterator begin, const Iterator end) {
+    // clang-format on
+
+    const ptrdiff_t n_signed = std::distance(begin, end);
+    if (unlikely(n_signed <= 0)) {
+        return end;
+    }
+
+    const size_t n = static_cast<size_t>(n_signed);
+    std::vector<uint64_t> prefsums(n + 1);
+    size_t i              = 0;
+    uint64_t weighted_sum = 0;
+    for (Iterator iter = begin; iter != end; ++iter, ++i) {
+        const uint32_t val = *iter;
+        prefsums[i + 1]    = prefsums[i] + uint64_t{val};
+        weighted_sum += uint64_t{i} * uint64_t{val};
+    }
+
+    return ::math_functions::detail::find_wmedian_iter(weighted_sum, begin,
+                                                       std::as_const(prefsums).data(), n + 1);
+}
+
+}  // namespace detail
+
+#if CONFIG_HAS_CONCEPTS && defined(MATH_FUNCTIONS_HAS_RANGES)
+
+template <std::forward_iterator Iterator>
+    requires std::is_same_v<typename std::iter_value_t<Iterator>, uint32_t>
+[[nodiscard]] CONSTEXPR_VECTOR Iterator weighted_median(Iterator begin, Iterator end) {
+    return ::math_functions::detail::wmedian_impl(begin, end);
+}
+
+// clang-format off
+
+template <std::ranges::forward_range Range>
+[[nodiscard]]
+// NOLINTNEXTLINE(cppcoreguidelines-missing-std-forward)
+CONSTEXPR_VECTOR typename std::ranges::borrowed_iterator_t<Range> weighted_median(Range&& range ATTRIBUTE_LIFETIME_BOUND) {
+    return ::math_functions::weighted_median(std::begin(range), std::end(range));
+}
+
+// clang-format on
+
+#else
+
+// clang-format off
+
+template <class Iterator>
+ATTRIBUTE_NODISCARD
+CONSTEXPR_VECTOR typename std::enable_if_t<std::is_same_v<typename std::iterator_traits<Iterator>::value_type, uint32_t>,
+                          Iterator>
+weighted_median(Iterator begin, Iterator end) {
+    return ::math_functions::detail::wmedian_impl(begin, end);
+}
+
+// clang-format on
+
+template <class Range>
+// NOLINTNEXTLINE(cppcoreguidelines-missing-std-forward)
+ATTRIBUTE_NODISCARD CONSTEXPR_VECTOR auto weighted_median(Range&& range ATTRIBUTE_LIFETIME_BOUND) {
+    return ::math_functions::weighted_median(std::begin(range), std::end(range));
+}
+
+#endif
 
 // NOLINTEND(cppcoreguidelines-avoid-magic-numbers)
 
-#if defined(INTEGERS_128_BIT_HPP)
+#ifdef INTEGERS_128_BIT_HPP
 
-namespace std {
+namespace detail {
 
-// NOLINTBEGIN(cert-dcl58-cpp)
-
-/// @brief Computes greaters common divisor of @a `a` and @a `b`
-///         using Stein's algorithm (binary gcd). Here gcd(0, 0) = 0.
-/// @param[in] a
-/// @param[in] b
-/// @return gcd(a, b)
-[[nodiscard]] ATTRIBUTE_CONST I128_CONSTEXPR uint128_t gcd(uint128_t a, uint128_t b) noexcept {
+ATTRIBUTE_NODISCARD
+ATTRIBUTE_CONST
+I128_CONSTEXPR uint128_t gcd(uint128_t a, uint128_t b) noexcept {
     if (unlikely(a == 0)) {
         return b;
     }
@@ -2968,38 +3081,130 @@ namespace std {
     }
 }
 
-[[nodiscard]] ATTRIBUTE_CONST I128_CONSTEXPR uint128_t gcd(uint64_t a, int128_t b) noexcept {
-    const uint128_t b0 = ::math_functions::uabs(b);
-    if (unlikely(b0 == 0)) {
+ATTRIBUTE_NODISCARD
+ATTRIBUTE_ALWAYS_INLINE
+ATTRIBUTE_CONST
+I128_CONSTEXPR uint128_t gcd(uint128_t a, int128_t b) noexcept {
+    return ::math_functions::detail::gcd(a, ::math_functions::uabs(b));
+}
+
+ATTRIBUTE_NODISCARD
+ATTRIBUTE_ALWAYS_INLINE
+ATTRIBUTE_CONST
+I128_CONSTEXPR uint128_t gcd(int128_t a, uint128_t b) noexcept {
+    return ::math_functions::detail::gcd(::math_functions::uabs(a), b);
+}
+
+ATTRIBUTE_NODISCARD
+ATTRIBUTE_ALWAYS_INLINE
+ATTRIBUTE_CONST
+I128_CONSTEXPR int128_t gcd(int128_t a, int128_t b) noexcept {
+    const int128_t value =
+        static_cast<int128_t>(::math_functions::detail::gcd(::math_functions::uabs(a), b));
+    CONFIG_ASSUME_STATEMENT(value >= 0);
+    return value;
+}
+
+ATTRIBUTE_NODISCARD
+ATTRIBUTE_ALWAYS_INLINE
+ATTRIBUTE_CONST
+I128_CONSTEXPR uint128_t gcd(uint128_t a, uint64_t b) noexcept {
+    if ((config::is_constant_evaluated() || config::is_gcc_constant_p(a <= b)) && a <= b) {
+        return std::gcd(static_cast<uint64_t>(a), b);
+    }
+
+    if (unlikely(b == 0)) {
         return a;
     }
-
-    // gcd(a, b) = gcd(a, b0) = gcd(b0, a % b0) = gcd(a1, b1)
-    const uint128_t a1 = b0;
-    // b1 = a % b0
-    const uint64_t b1 = a < b0 ? a : a % static_cast<uint64_t>(b0);  // a < 2^64 => b1 < 2^64
-    if (b1 == 0) {
-        return a1;
-    }
-    // gcd(a1, b1) = gcd(b1, a1 % b1) = gcd(a2, b2)
-    const uint64_t a2 = b1;  // b1 < 2^64 => a2 < 2^64
-    // b2 = a1 % b1
-    // a1 = b0, b1 = a % b0 => b1 < a1
-    const uint64_t b2 = static_cast<uint64_t>(a1 % b1);  // b1 < 2^64 => b2 = a1 % b1 < 2^64
-    return std::gcd(a2, b2);
+    // gcd(a, b) = gcd(b, a % b) = gcd(a % b, b)
+    return std::gcd(static_cast<uint64_t>(a % b), b);
 }
 
-[[nodiscard]] ATTRIBUTE_CONST I128_CONSTEXPR uint128_t gcd(int128_t a, uint64_t b) noexcept {
-    return std::gcd(b, a);
+ATTRIBUTE_NODISCARD
+ATTRIBUTE_ALWAYS_INLINE
+ATTRIBUTE_CONST
+I128_CONSTEXPR uint128_t gcd(uint64_t a, uint128_t b) noexcept {
+    return ::math_functions::detail::gcd(b, a);
 }
 
-// NOLINTEND(cert-dcl58-cpp)
+ATTRIBUTE_NODISCARD
+ATTRIBUTE_ALWAYS_INLINE
+ATTRIBUTE_CONST
+I128_CONSTEXPR uint128_t gcd(uint128_t a, int64_t b) noexcept {
+    return ::math_functions::detail::gcd(a, ::math_functions::uabs(b));
+}
 
-}  // namespace std
+ATTRIBUTE_NODISCARD
+ATTRIBUTE_ALWAYS_INLINE
+ATTRIBUTE_CONST
+I128_CONSTEXPR uint128_t gcd(int64_t a, uint128_t b) noexcept {
+    return ::math_functions::detail::gcd(b, a);
+}
+
+ATTRIBUTE_NODISCARD
+ATTRIBUTE_ALWAYS_INLINE
+ATTRIBUTE_CONST
+I128_CONSTEXPR int128_t gcd(uint64_t a, int128_t b) noexcept {
+    const int128_t value =
+        static_cast<int128_t>(::math_functions::detail::gcd(a, ::math_functions::uabs(b)));
+    CONFIG_ASSUME_STATEMENT(value >= 0);
+    return value;
+}
+
+ATTRIBUTE_NODISCARD
+ATTRIBUTE_ALWAYS_INLINE
+ATTRIBUTE_CONST
+I128_CONSTEXPR int128_t gcd(int128_t a, uint64_t b) noexcept {
+    return ::math_functions::detail::gcd(b, a);
+}
+
+ATTRIBUTE_NODISCARD
+ATTRIBUTE_ALWAYS_INLINE
+ATTRIBUTE_CONST
+I128_CONSTEXPR int128_t gcd(int128_t a, int64_t b) noexcept {
+    return ::math_functions::detail::gcd(a, ::math_functions::uabs(b));
+}
+
+ATTRIBUTE_NODISCARD
+ATTRIBUTE_ALWAYS_INLINE
+ATTRIBUTE_CONST
+I128_CONSTEXPR int128_t gcd(int64_t a, int128_t b) noexcept {
+    return ::math_functions::detail::gcd(b, a);
+}
+
+}  // namespace detail
 
 #endif  // INTEGERS_128_BIT_HPP
 
+/// @brief Computes greaters common divisor of @a `a` and @a `b`
+///         using Stein's algorithm (binary gcd). Here gcd(0, 0) = 0.
+/// @param[in] a
+/// @param[in] b
+/// @return gcd(a, b)
+template <class M, class N>
+[[nodiscard]]
+ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_CONST constexpr std::common_type_t<M, N> gcd(M m, N n) noexcept {
+    static_assert(
+        ::math_functions::detail::is_integral_v<M> && ::math_functions::detail::is_integral_v<N>,
+        "math_functions::gcd arguments must be integers");
+
+#if defined(INTEGERS_128_BIT_HPP)
+    if constexpr (sizeof(M) <= sizeof(uint64_t) && sizeof(N) <= sizeof(uint64_t)) {
+#endif
+        return std::gcd(m, n);
+#if defined(INTEGERS_128_BIT_HPP)
+    } else {
+        return ::math_functions::detail::gcd(m, n);
+    }
+#endif
+}
+
+}  // namespace math_functions
+
 #undef CONSTEXPR_VECTOR
+#ifdef MATH_FUNCTIONS_HAS_BIT
+#undef MATH_FUNCTIONS_HAS_BIT
+#endif
 
 #if defined(MATH_FUNCTIONS_HPP_ENABLE_TARGET_OPTIONS)
 #if defined(__GNUG__)

@@ -71,7 +71,7 @@ ATTRIBUTE_CONST constexpr fibs_pair fibonacci_nums(std::uint32_t n) noexcept {
 /// @param n
 /// @return F_n
 [[nodiscard]]
-ATTRIBUTE_CONST constexpr std::uint64_t fibonacci_num(std::uint32_t n) noexcept {
+ATTRIBUTE_CONST constexpr std::uint64_t nth_fibonacci_num(std::uint32_t n) noexcept {
     return fibonacci_nums(n).fib_n;
 }
 
@@ -153,7 +153,7 @@ ATTRIBUTE_CONST I128_CONSTEXPR fibs_pair_u128 fibonacci_nums_u128(std::uint32_t 
 /// @param n
 /// @return F_n
 [[nodiscard]]
-ATTRIBUTE_CONST I128_CONSTEXPR uint128_t fibonacci_num_u128(std::uint32_t n) noexcept {
+ATTRIBUTE_CONST I128_CONSTEXPR uint128_t nth_fibonacci_num_u128(std::uint32_t n) noexcept {
     return fibonacci_nums_u128(n).fib_n;
 }
 

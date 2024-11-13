@@ -91,9 +91,10 @@ ATTRIBUTE_CONST I128_CONSTEXPR bool is_strong_prp(uint64_t n, uint64_t a) noexce
  * the Jacobi symbol]
  **********************************************************************************************/
 template <bool BasicChecks = true>
-ATTRIBUTE_CONST I128_CONSTEXPR bool is_strong_lucas_prp(uint64_t n, uint32_t p,
+ATTRIBUTE_CONST I128_CONSTEXPR bool is_strong_lucas_prp(uint64_t n, uint16_t p,
                                                         int32_t q) noexcept {
-    const int64_t d = static_cast<int64_t>(uint64_t{p} * uint64_t{p}) - int64_t{q} * 4;
+    const uint32_t p2 = uint32_t{p} * uint32_t{p};
+    const int64_t d   = int64_t{p2} - int64_t{q} * 4;
     if constexpr (BasicChecks) {
         /* Check if p*p - 4*q == 0. */
         if (unlikely(d == 0)) {
@@ -111,7 +112,7 @@ ATTRIBUTE_CONST I128_CONSTEXPR bool is_strong_lucas_prp(uint64_t n, uint32_t p,
 
         // NOLINTNEXTLINE(bugprone-implicit-widening-of-multiplication-result)
         const int128_t rhs = int128_t{int64_t{2} * int64_t{q}} * int128_t{d};
-        if (unlikely(std::gcd(n, rhs) != 1)) {
+        if (unlikely(math_functions::gcd(n, rhs) != 1)) {
             // is_strong_lucas_prp requires gcd(n, 2 * q * (p * p - 4 * q)) = 1
             return false;
         }
@@ -139,16 +140,15 @@ ATTRIBUTE_CONST I128_CONSTEXPR bool is_strong_lucas_prp(uint64_t n, uint32_t p,
      * make sure U_s == 0 mod n or V_((2^t)*s) == 0 mod n,
      * for some t, 0 <= t < r
      */
-    uint64_t uh = 1;  // Initial value for U_1
-    uint64_t vl = 2;  // Initial value for V_0
-    uint64_t vh = p;  // Initial value for V_1
+    uint64_t uh = 1;            // Initial value for U_1
+    uint64_t vl = 2;            // Initial value for V_0
+    uint64_t vh = uint64_t{p};  // Initial value for V_1
     uint64_t ql = 1;
     uint64_t qh = 1;
     // q mod n
-    const uint64_t widen_q =
-        (q >= 0 ? static_cast<uint32_t>(q)
-                : (n - (static_cast<uint64_t>(-static_cast<uint32_t>(q)) % n))) %
-        n;
+    const uint64_t widen_q = (q >= 0 ? static_cast<uint32_t>(q)
+                                     : (n - static_cast<uint64_t>(-static_cast<uint32_t>(q)) % n)) %
+                             n;
     CONFIG_ASSUME_STATEMENT(widen_q < n);
     // n >= 3 => n - 1 >= 2 => n - 1 >= 1 => s >= 1
     for (uint32_t j = ::math_functions::log2_floor(s); j != 0; j--) {
@@ -290,7 +290,7 @@ ATTRIBUTE_CONST I128_CONSTEXPR bool is_strong_lucas_prp(uint64_t n, uint32_t p,
         tmp_vl = vl_vl - ql_2;
         vl     = vl_vl >= ql_2 ? tmp_vl : tmp_vl + n;
         CONFIG_ASSUME_STATEMENT(vl < n);
-        CONFIG_ASSUME_STATEMENT(vl == (uint128_t(n) + vl_vl - ql_2) % n);
+        CONFIG_ASSUME_STATEMENT(vl == (uint128_t{n} + vl_vl - ql_2) % n);
 
         if (vl == 0) {
             return true;
@@ -355,6 +355,7 @@ ATTRIBUTE_CONST I128_CONSTEXPR bool is_strong_selfridge_prp(uint64_t n) noexcept
                 break;
             case -1: {
                 CONFIG_ASSUME_STATEMENT(d <= kMaxD + kStep * 2);
+                CONFIG_ASSUME_STATEMENT(-kMaxD - kStep <= d);
                 CONFIG_ASSUME_STATEMENT((1 - d) % 4 == 0);
                 const std::int32_t q = (1 - d) / 4;
                 CONFIG_ASSUME_STATEMENT(1 - 4 * q == d);
@@ -586,8 +587,8 @@ ATTRIBUTE_CONST I128_CONSTEXPR bool is_strong_selfridge_prp(uint64_t n) noexcept
 }
 
 [[nodiscard]] ATTRIBUTE_CONST I128_CONSTEXPR bool is_mersenne_prime(const uint128_t n) noexcept {
-    const auto np1 = n + 1;
-    if (!is_power_of_two(np1)) {
+    const uint128_t np1 = n + 1;
+    if (!::math_functions::is_power_of_two(np1)) {
         return false;
     }
     const auto [q, p] = ::math_functions::extract_pow2(np1);
