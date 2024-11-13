@@ -13,8 +13,8 @@
 #include "math_functions.hpp"
 #include "test_tools.hpp"
 
-using math_functions::fibonacci_num;
 using math_functions::kronecker_symbol;
+using math_functions::nth_fibonacci_num;
 
 #if CONFIG_HAS_INCLUDE(<gmpxx.h>)
 #include <gmp.h>
@@ -286,10 +286,10 @@ void CheckJacobiBasic() noexcept {
         }
 
         if (p <= math_functions::kMaxFibNonOverflowU64) {
-            if constexpr (fibonacci_num(1) == 1 && fibonacci_num(2) == 1) {
-                assert(fibonacci_num(p) % p == j_5_p_mod_p);
+            if constexpr (nth_fibonacci_num(1) == 1 && nth_fibonacci_num(2) == 1) {
+                assert(nth_fibonacci_num(p) % p == j_5_p_mod_p);
             } else {
-                assert(fibonacci_num(p - 1) % p == j_5_p_mod_p);
+                assert(nth_fibonacci_num(p - 1) % p == j_5_p_mod_p);
             }
         }
 

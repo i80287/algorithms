@@ -93,7 +93,8 @@ ATTRIBUTE_CONST I128_CONSTEXPR bool is_strong_prp(uint64_t n, uint64_t a) noexce
 template <bool BasicChecks = true>
 ATTRIBUTE_CONST I128_CONSTEXPR bool is_strong_lucas_prp(uint64_t n, uint16_t p,
                                                         int32_t q) noexcept {
-    const int64_t d = int64_t{uint32_t{p} * uint32_t{p}} - int64_t{q} * 4;
+    const uint32_t p2 = uint32_t{p} * uint32_t{p};
+    const int64_t d   = int64_t{p2} - int64_t{q} * 4;
     if constexpr (BasicChecks) {
         /* Check if p*p - 4*q == 0. */
         if (unlikely(d == 0)) {

@@ -34,9 +34,13 @@
 
 #include "config_macros.hpp"
 
-#if CONFIG_HAS_AT_LEAST_CXX_20
+#if CONFIG_HAS_AT_LEAST_CXX_20 && CONFIG_HAS_INCLUDE(<bit>)
 #include <bit>
+#define MATH_FUNCTIONS_HAS_BIT
+#endif
+#if CONFIG_HAS_AT_LEAST_CXX_20 && CONFIG_HAS_INCLUDE(<ranges>)
 #include <ranges>
+#define MATH_FUNCTIONS_HAS_RANGES
 #endif
 
 #if CONFIG_HAS_INCLUDE("integers_128_bit.hpp")
@@ -66,6 +70,7 @@ namespace math_functions {
 
 using std::int32_t;
 using std::int64_t;
+using std::ptrdiff_t;
 using std::size_t;
 using std::uint32_t;
 using std::uint64_t;
@@ -111,8 +116,7 @@ template <InplaceMultipliable T>
 #else
 template <class T>
 #endif
-[[nodiscard]] ATTRIBUTE_CONST constexpr T bin_pow(T n,
-                                                  std::ptrdiff_t p) noexcept(noexcept(n *= n) &&
+[[nodiscard]] ATTRIBUTE_CONST constexpr T bin_pow(T n, ptrdiff_t p) noexcept(noexcept(n *= n) &&
                                                                              noexcept(1 / n)) {
     const bool not_inverse = p >= 0;
     const size_t p_u       = p >= 0 ? static_cast<size_t>(p) : -static_cast<size_t>(p);
@@ -1010,17 +1014,11 @@ template <typename T>
         return sizeof(n) * CHAR_BIT;
     }
 
-#if defined(INTEGERS_128_BIT_HPP)
+#ifdef INTEGERS_128_BIT_HPP
     if constexpr (std::is_same_v<T, uint128_t>) {
         const uint64_t low = static_cast<uint64_t>(n);
         if (low != 0) {
-#if CONFIG_HAS_AT_LEAST_CXX_20
-            return std::countr_zero(low);
-#elif defined(__GNUG__)
-            return __builtin_ctzll(low);
-#else
-            return static_cast<int32_t>(::math_functions::detail::tz_count_64_software(low));
-#endif
+            return ::math_functions::countr_zero<uint64_t>(low);
         }
 
         const uint64_t high = static_cast<uint64_t>(n >> 64U);
@@ -1029,7 +1027,7 @@ template <typename T>
     } else
 #endif
 
-#if CONFIG_HAS_AT_LEAST_CXX_20
+#ifdef MATH_FUNCTIONS_HAS_BIT
     {
         return std::countr_zero(n);
     }
@@ -1080,14 +1078,7 @@ template <typename T>
     if constexpr (std::is_same_v<T, uint128_t>) {
         const uint64_t high = static_cast<uint64_t>(n >> 64U);
         if (high != 0) {
-            // Avoid recursive call to countl_zero<uint64_t>
-#if CONFIG_HAS_AT_LEAST_CXX_20
-            return std::countl_zero(high);
-#elif defined(__GNUG__)
-            return __builtin_clzll(high);
-#else
-            return static_cast<int32_t>(::math_functions::detail::lz_count_64_software(high));
-#endif
+            return ::math_functions::countl_zero<uint64_t>(high);
         }
 
         const uint64_t low = static_cast<uint64_t>(n);
@@ -1096,7 +1087,7 @@ template <typename T>
     } else
 #endif
 
-#if CONFIG_HAS_AT_LEAST_CXX_20
+#ifdef MATH_FUNCTIONS_HAS_BIT
     {
         return std::countl_zero(n);
     }
@@ -1146,7 +1137,7 @@ template <class T>
     } else
 #endif
 
-#if CONFIG_HAS_AT_LEAST_CXX_20
+#ifdef MATH_FUNCTIONS_HAS_BIT
     {
         return std::popcount(n);
     }
@@ -2389,10 +2380,14 @@ struct InverseResult {
 
 namespace detail {
 
+// clang-format off
+
 template <class Iter>
-CONSTEXPR_VECTOR typename ::math_functions::InverseResult inv_mod_m_impl(Iter nums_begin,
-                                                                         Iter nums_end,
-                                                                         uint32_t m) {
+ATTRIBUTE_NODISCARD
+CONSTEXPR_VECTOR
+typename ::math_functions::InverseResult inv_mod_m_impl(Iter nums_begin, Iter nums_end, uint32_t m) {
+    // clang-format on
+
     const auto n = static_cast<size_t>(std::distance(nums_begin, nums_end));
     auto res     = ::math_functions::InverseResult{
         std::vector<uint32_t>(n),
@@ -2430,17 +2425,16 @@ CONSTEXPR_VECTOR typename ::math_functions::InverseResult inv_mod_m_impl(Iter nu
 
 }  // namespace detail
 
-#if CONFIG_HAS_CONCEPTS
+#if CONFIG_HAS_CONCEPTS && defined(MATH_FUNCTIONS_HAS_RANGES)
 
 // clang-format off
 
-template <std::forward_iterator Iter>
-    requires ::math_functions::detail::integral<typename std::iter_value_t<Iter>> &&
-             (!std::same_as<typename std::iter_value_t<Iter>, bool>)
+template <std::forward_iterator Iterator>
+    requires ::math_functions::detail::integral<typename std::iter_value_t<Iterator>> &&
+             (!std::same_as<typename std::iter_value_t<Iterator>, bool>)
 [[nodiscard]]
-CONSTEXPR_VECTOR
-typename ::math_functions::InverseResult inv_mod_m(Iter nums_iter_begin, Iter nums_iter_end, uint32_t m) {
-    return ::math_functions::detail::inv_mod_m_impl(nums_iter_begin, nums_iter_end, m);
+CONSTEXPR_VECTOR typename ::math_functions::InverseResult inv_mod_m(Iterator nums_begin, Iterator nums_end, uint32_t m) {
+    return ::math_functions::detail::inv_mod_m_impl(nums_begin, nums_end, m);
 }
 
 /// @brief Inverse @a nums mod m
@@ -2449,10 +2443,10 @@ typename ::math_functions::InverseResult inv_mod_m(Iter nums_iter_begin, Iter nu
 /// @param nums 
 /// @param m 
 /// @return 
-template <std::ranges::forward_range Container>
+template <std::ranges::forward_range Range>
 [[nodiscard]]
-CONSTEXPR_VECTOR
-typename ::math_functions::InverseResult inv_mod_m(const Container& nums, uint32_t m) {
+// NOLINTNEXTLINE(cppcoreguidelines-missing-std-forward)
+CONSTEXPR_VECTOR typename ::math_functions::InverseResult inv_mod_m(Range&& nums, uint32_t m) {
     return ::math_functions::inv_mod_m(std::begin(nums), std::end(nums), m);
 }
 
@@ -2460,27 +2454,36 @@ typename ::math_functions::InverseResult inv_mod_m(const Container& nums, uint32
 
 #else
 
+// clang-format off
+
 template <class Iter>
-[[nodiscard]]
-CONSTEXPR_VECTOR std::enable_if_t<
-    ::math_functions::detail::is_integral_v<typename std::iterator_traits<Iter>::value_type> &&
-        !std::is_same_v<typename std::iterator_traits<Iter>::value_type, bool>,
-    typename ::math_functions::InverseResult> inv_mod_m(Iter nums_iter_begin, Iter nums_iter_end,
-                                                        uint32_t m) {
+ATTRIBUTE_NODISCARD
+CONSTEXPR_VECTOR
+typename std::enable_if_t<
+            ::math_functions::detail::is_integral_v<typename std::iterator_traits<Iter>::value_type> &&
+            !std::is_same_v<typename std::iterator_traits<Iter>::value_type, bool>,
+            typename ::math_functions::InverseResult>
+inv_mod_m(Iter nums_iter_begin, Iter nums_iter_end, uint32_t m) {
     return ::math_functions::detail::inv_mod_m_impl(nums_iter_begin, nums_iter_end, m);
 }
 
-template <class Container>
-[[nodiscard]]
+template <class Range>
+ATTRIBUTE_NODISCARD
 CONSTEXPR_VECTOR
-    std::enable_if_t<::math_functions::detail::is_integral_v<typename std::iterator_traits<
-                         decltype(std::begin(std::declval<Container&>()))>::value_type>&& ::
-                         math_functions::detail::is_integral_v<typename std::iterator_traits<
-                             decltype(std::end(std::declval<Container&>()))>::value_type>,
-                     typename ::math_functions::InverseResult> inv_mod_m(const Container& nums,
-                                                                         uint32_t m) {
+typename std::enable_if_t<
+            ::math_functions::detail::is_integral_v<
+                typename std::iterator_traits<decltype(std::begin(std::declval<Range&&>()))>::value_type
+            > &&
+            ::math_functions::detail::is_integral_v<
+                typename std::iterator_traits<decltype(std::end(std::declval<Range&&>()))>::value_type
+            >,
+            typename ::math_functions::InverseResult>
+// NOLINTNEXTLINE(cppcoreguidelines-missing-std-forward)
+inv_mod_m(Range&& nums, uint32_t m) {
     return ::math_functions::inv_mod_m(std::begin(nums), std::end(nums), m);
 }
+
+// clang-format on
 
 #endif
 
@@ -2931,7 +2934,7 @@ template <class T>
 [[nodiscard]]
 CONSTEXPR_VECTOR std::vector<uint32_t> factorial_arange_mod_m(const uint32_t n, const uint32_t m) {
     std::vector<uint32_t> values(size_t{n} + 1);
-    uint32_t current_factorial = m != 1 ? 1u : 0u;
+    uint32_t current_factorial = m != 1 ? 1U : 0U;
     values[0]                  = current_factorial;
     for (size_t i = 1; i <= n; i++) {
         current_factorial = static_cast<uint32_t>((uint64_t{current_factorial} * uint64_t{i}) % m);
@@ -2940,6 +2943,105 @@ CONSTEXPR_VECTOR std::vector<uint32_t> factorial_arange_mod_m(const uint32_t n, 
 
     return values;
 }
+
+namespace detail {
+
+// clang-format off
+
+template <class Iterator>
+ATTRIBUTE_NODISCARD
+ATTRIBUTE_ALWAYS_INLINE
+ATTRIBUTE_SIZED_ACCESS(read_only, 3, 4)
+constexpr Iterator find_wmedian_iter(uint64_t weighted_sum,
+                           Iterator iter,
+                           const uint64_t* const prefsums,
+                           const size_t prefsums_size) noexcept {
+    // clang-format on
+
+    uint64_t min_weighted_sum      = weighted_sum;
+    Iterator min_weighted_sum_iter = iter;
+    ++iter;
+    const size_t n             = prefsums_size - 1;
+    const uint64_t max_prefsum = prefsums[n];
+    for (size_t j = 1; j < n; ++iter, ++j) {
+        weighted_sum = weighted_sum + prefsums[j] - (max_prefsum - prefsums[j]);
+        if (weighted_sum < min_weighted_sum) {
+            min_weighted_sum      = weighted_sum;
+            min_weighted_sum_iter = iter;
+        }
+    }
+
+    return min_weighted_sum_iter;
+}
+
+// clang-format off
+
+template <class Iterator>
+ATTRIBUTE_NODISCARD
+CONSTEXPR_VECTOR Iterator wmedian_impl(const Iterator begin, const Iterator end) {
+    // clang-format on
+
+    const ptrdiff_t n_signed = std::distance(begin, end);
+    if (unlikely(n_signed <= 0)) {
+        return end;
+    }
+
+    const size_t n = static_cast<size_t>(n_signed);
+    std::vector<uint64_t> prefsums(n + 1);
+    size_t i              = 0;
+    uint64_t weighted_sum = 0;
+    for (Iterator iter = begin; iter != end; ++iter, ++i) {
+        const uint32_t val = *iter;
+        prefsums[i + 1]    = prefsums[i] + uint64_t{val};
+        weighted_sum += uint64_t{i} * uint64_t{val};
+    }
+
+    return ::math_functions::detail::find_wmedian_iter(weighted_sum, begin,
+                                                       std::as_const(prefsums).data(), n + 1);
+}
+
+}  // namespace detail
+
+#if CONFIG_HAS_CONCEPTS && defined(MATH_FUNCTIONS_HAS_RANGES)
+
+template <std::forward_iterator Iterator>
+    requires std::is_same_v<typename std::iter_value_t<Iterator>, uint32_t>
+[[nodiscard]] CONSTEXPR_VECTOR Iterator weighted_median(Iterator begin, Iterator end) {
+    return ::math_functions::detail::wmedian_impl(begin, end);
+}
+
+// clang-format off
+
+template <std::ranges::forward_range Range>
+[[nodiscard]]
+// NOLINTNEXTLINE(cppcoreguidelines-missing-std-forward)
+CONSTEXPR_VECTOR typename std::ranges::borrowed_iterator_t<Range> weighted_median(Range&& range ATTRIBUTE_LIFETIME_BOUND) {
+    return ::math_functions::weighted_median(std::begin(range), std::end(range));
+}
+
+// clang-format on
+
+#else
+
+// clang-format off
+
+template <class Iterator>
+ATTRIBUTE_NODISCARD
+CONSTEXPR_VECTOR typename std::enable_if_t<std::is_same_v<typename std::iterator_traits<Iterator>::value_type, uint32_t>,
+                          Iterator>
+weighted_median(Iterator begin, Iterator end) {
+    return ::math_functions::detail::wmedian_impl(begin, end);
+}
+
+// clang-format on
+
+template <class Range>
+// NOLINTNEXTLINE(cppcoreguidelines-missing-std-forward)
+ATTRIBUTE_NODISCARD CONSTEXPR_VECTOR auto weighted_median(Range&& range ATTRIBUTE_LIFETIME_BOUND) {
+    return ::math_functions::weighted_median(std::begin(range), std::end(range));
+}
+
+#endif
 
 }  // namespace math_functions
 
@@ -3018,6 +3120,9 @@ namespace std {
 #endif  // INTEGERS_128_BIT_HPP
 
 #undef CONSTEXPR_VECTOR
+#ifdef MATH_FUNCTIONS_HAS_BIT
+#undef MATH_FUNCTIONS_HAS_BIT
+#endif
 
 #if defined(MATH_FUNCTIONS_HPP_ENABLE_TARGET_OPTIONS)
 #if defined(__GNUG__)
