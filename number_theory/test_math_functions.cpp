@@ -47,7 +47,6 @@
 using namespace math_functions;
 // NOLINTNEXTLINE(google-build-using-namespace)
 using namespace test_tools;
-using std::gcd;
 using std::size_t;
 using std::uint32_t;
 using std::uint64_t;
@@ -1869,51 +1868,87 @@ void test_general_asserts() noexcept {
     I128_ASSERT_THAT(base_b_len(-int128_t{101}) == 4);
     I128_ASSERT_THAT(base_b_len(static_cast<int128_t>(uint128_t{1} << 127U)) == 40);
 
-    I128_ASSERT_THAT(gcd(uint128_t{1}, uint128_t{1}) == 1);
-    I128_ASSERT_THAT(gcd(uint128_t{3}, uint128_t{7}) == 1);
-    I128_ASSERT_THAT(gcd(uint128_t{0}, uint128_t{112378432}) == 112378432);
-    I128_ASSERT_THAT(gcd(uint128_t{112378432}, uint128_t{0}) == 112378432);
-    I128_ASSERT_THAT(gcd(uint128_t{429384832}, uint128_t{324884}) == 4);
-    I128_ASSERT_THAT(gcd(uint128_t{18446744073709551521ULL}, uint128_t{18446744073709551533ULL}) ==
-                     1);
-    I128_ASSERT_THAT(gcd(uint128_t{18446744073709551521ULL} * 18446744073709551521ULL,
-                         uint128_t{18446744073709551521ULL}) == 18446744073709551521ULL);
-    I128_ASSERT_THAT(gcd(uint128_t{23999993441ULL} * 23999993377ULL,
-                         uint128_t{23999992931ULL} * 23999539633ULL) == 1);
-    I128_ASSERT_THAT(gcd(uint128_t{2146514599U} * 2146514603U * 2146514611U,
-                         uint128_t{2146514611U} * 2146514621U * 2146514647U) == 2146514611ULL);
-    I128_ASSERT_THAT(gcd(uint128_t{2146514599U} * 2146514603U * 2146514611U * 2,
-                         uint128_t{2146514599U} * 2146514603U * 2146514611U * 3) ==
-                     uint128_t{2146514599U} * 2146514603U * 2146514611U);
-    I128_ASSERT_THAT(gcd(uint128_t{100000000000000003ULL} * 1000000000000000003ULL,
-                         uint128_t{1000000000000000003ULL} * 1000000000000000009ULL) ==
-                     1000000000000000003ULL);
-    I128_ASSERT_THAT(gcd(uint128_t{3} * 2 * 5 * 7 * 11 * 13 * 17 * 19,
-                         uint128_t{18446744073709551557ULL} * 3) == 3);
-    I128_ASSERT_THAT(gcd(uint128_t{1000000000000000009ULL},
-                         uint128_t{1000000000000000009ULL} * 1000000000000000009ULL) ==
-                     1000000000000000009ULL);
+    I128_ASSERT_THAT(math_functions::gcd(uint128_t{1}, uint128_t{1}) == 1);
+    I128_ASSERT_THAT(math_functions::gcd(uint128_t{3}, uint128_t{7}) == 1);
+    I128_ASSERT_THAT(math_functions::gcd(uint128_t{0}, uint128_t{112378432}) == 112378432);
+    I128_ASSERT_THAT(math_functions::gcd(uint128_t{112378432}, uint128_t{0}) == 112378432);
+    I128_ASSERT_THAT(math_functions::gcd(uint128_t{429384832}, uint128_t{324884}) == 4);
+    I128_ASSERT_THAT(math_functions::gcd(uint128_t{18446744073709551521ULL},
+                                         uint128_t{18446744073709551533ULL}) == 1);
     I128_ASSERT_THAT(
-        gcd(uint128_t{0}, uint128_t{1000000000000000009ULL} * 1000000000000000009ULL) ==
-        uint128_t{1000000000000000009ULL} * 1000000000000000009ULL);
-    I128_ASSERT_THAT(gcd(uint128_t{18446744073709551557ULL}, uint128_t{0}) ==
+        math_functions::gcd(uint128_t{18446744073709551521ULL} * 18446744073709551521ULL,
+                            uint128_t{18446744073709551521ULL}) == 18446744073709551521ULL);
+    I128_ASSERT_THAT(math_functions::gcd(uint128_t{23999993441ULL} * 23999993377ULL,
+                                         uint128_t{23999992931ULL} * 23999539633ULL) == 1);
+    I128_ASSERT_THAT(math_functions::gcd(uint128_t{2146514599U} * 2146514603U * 2146514611U,
+                                         uint128_t{2146514611U} * 2146514621U * 2146514647U) ==
+                     2146514611ULL);
+    I128_ASSERT_THAT(math_functions::gcd(uint128_t{2146514599U} * 2146514603U * 2146514611U * 2,
+                                         uint128_t{2146514599U} * 2146514603U * 2146514611U * 3) ==
+                     uint128_t{2146514599U} * 2146514603U * 2146514611U);
+    I128_ASSERT_THAT(math_functions::gcd(uint128_t{100000000000000003ULL} * 1000000000000000003ULL,
+                                         uint128_t{1000000000000000003ULL} *
+                                             1000000000000000009ULL) == 1000000000000000003ULL);
+    I128_ASSERT_THAT(math_functions::gcd(uint128_t{3} * 2 * 5 * 7 * 11 * 13 * 17 * 19,
+                                         uint128_t{18446744073709551557ULL} * 3) == 3);
+    I128_ASSERT_THAT(math_functions::gcd(uint128_t{1000000000000000009ULL},
+                                         uint128_t{1000000000000000009ULL} *
+                                             1000000000000000009ULL) == 1000000000000000009ULL);
+    I128_ASSERT_THAT(math_functions::gcd(uint128_t{0}, uint128_t{1000000000000000009ULL} *
+                                                           1000000000000000009ULL) ==
+                     uint128_t{1000000000000000009ULL} * 1000000000000000009ULL);
+    I128_ASSERT_THAT(math_functions::gcd(uint128_t{18446744073709551557ULL}, uint128_t{0}) ==
                      18446744073709551557ULL);
 
-    I128_ASSERT_THAT(gcd(uint64_t{2}, int128_t{4}) == 2);
-    I128_ASSERT_THAT(gcd(uint64_t{2}, int128_t{-4}) == 2);
-    I128_ASSERT_THAT(gcd(uint64_t{3}, int128_t{7}) == 1);
-    I128_ASSERT_THAT(gcd(uint64_t{3}, int128_t{-7}) == 1);
-    I128_ASSERT_THAT(gcd(uint64_t{3}, int128_t{18446744073709551557ULL} * 3) == 3);
-    I128_ASSERT_THAT(gcd(uint64_t{3}, int128_t{18446744073709551557ULL} * (-3)) == 3);
-    I128_ASSERT_THAT(gcd(uint64_t{3} * 2 * 5 * 7 * 11 * 13 * 17 * 19,
-                         int128_t{18446744073709551557ULL} * 3) == 3);
-    I128_ASSERT_THAT(gcd(uint64_t{1000000000000000009ULL},
-                         int128_t{1000000000000000009LL} * 1000000000000000009LL) ==
+    I128_ASSERT_THAT(math_functions::gcd(uint64_t{2}, int128_t{4}) == 2);
+    I128_ASSERT_THAT(math_functions::gcd(uint64_t{2}, int128_t{-4}) == 2);
+    I128_ASSERT_THAT(math_functions::gcd(uint64_t{3}, int128_t{7}) == 1);
+    I128_ASSERT_THAT(math_functions::gcd(uint64_t{3}, int128_t{-7}) == 1);
+    I128_ASSERT_THAT(math_functions::gcd(uint64_t{3}, int128_t{18446744073709551557ULL} * 3) == 3);
+    I128_ASSERT_THAT(math_functions::gcd(uint64_t{3}, int128_t{18446744073709551557ULL} * (-3)) ==
+                     3);
+    I128_ASSERT_THAT(math_functions::gcd(uint64_t{3} * 2 * 5 * 7 * 11 * 13 * 17 * 19,
+                                         int128_t{18446744073709551557ULL} * 3) == 3);
+    I128_ASSERT_THAT(math_functions::gcd(uint64_t{1000000000000000009ULL},
+                                         int128_t{1000000000000000009LL} * 1000000000000000009LL) ==
                      1000000000000000009ULL);
-    I128_ASSERT_THAT(gcd(uint64_t{0}, int128_t{1000000000000000009LL} * 1000000000000000009LL) ==
-                     uint128_t{1000000000000000009LL} * 1000000000000000009ULL);
-    I128_ASSERT_THAT(gcd(uint64_t{18446744073709551557ULL}, int128_t{0}) ==
+    I128_ASSERT_THAT(
+        math_functions::gcd(uint64_t{0}, int128_t{1000000000000000009LL} * 1000000000000000009LL) ==
+        uint128_t{1000000000000000009LL} * 1000000000000000009ULL);
+    I128_ASSERT_THAT(math_functions::gcd(uint64_t{18446744073709551557ULL}, int128_t{0}) ==
                      18446744073709551557ULL);
+
+    // clang-format off
+
+    I128_ASSERT_THAT(math_functions::gcd(int128_t{18446744073709551557ULL}, int128_t{18446744073709551521ULL}) == int128_t{1});
+    I128_ASSERT_THAT(math_functions::gcd(int128_t{18446744073709551533ULL}, int128_t{18446744073709551557ULL}) == int128_t{1});
+    I128_ASSERT_THAT(math_functions::gcd(int128_t{18446744073709551521ULL}, int128_t{18446744073709551533ULL}) == int128_t{1});
+    I128_ASSERT_THAT(math_functions::gcd(int128_t{18446744073709551557ULL}, int128_t{18446744073709551557ULL}) == int128_t{18446744073709551557ULL});
+    I128_ASSERT_THAT(math_functions::gcd(int128_t{18446744073709551533ULL}, int128_t{18446744073709551533ULL}) == int128_t{18446744073709551533ULL});
+    I128_ASSERT_THAT(math_functions::gcd(int128_t{18446744073709551521ULL}, int128_t{18446744073709551521ULL}) == int128_t{18446744073709551521ULL});
+
+    I128_ASSERT_THAT(math_functions::gcd(uint128_t{18446744073709551557ULL}, int128_t{18446744073709551521ULL}) == uint128_t{1});
+    I128_ASSERT_THAT(math_functions::gcd(uint128_t{18446744073709551533ULL}, int128_t{18446744073709551557ULL}) == uint128_t{1});
+    I128_ASSERT_THAT(math_functions::gcd(uint128_t{18446744073709551521ULL}, int128_t{18446744073709551533ULL}) == uint128_t{1});
+    I128_ASSERT_THAT(math_functions::gcd(uint128_t{18446744073709551557ULL}, int128_t{18446744073709551557ULL}) == uint128_t{18446744073709551557ULL});
+    I128_ASSERT_THAT(math_functions::gcd(uint128_t{18446744073709551533ULL}, int128_t{18446744073709551533ULL}) == uint128_t{18446744073709551533ULL});
+    I128_ASSERT_THAT(math_functions::gcd(uint128_t{18446744073709551521ULL}, int128_t{18446744073709551521ULL}) == uint128_t{18446744073709551521ULL});
+
+    I128_ASSERT_THAT(math_functions::gcd(int128_t{18446744073709551557ULL}, uint128_t{18446744073709551521ULL}) == uint128_t{1});
+    I128_ASSERT_THAT(math_functions::gcd(int128_t{18446744073709551533ULL}, uint128_t{18446744073709551557ULL}) == uint128_t{1});
+    I128_ASSERT_THAT(math_functions::gcd(int128_t{18446744073709551521ULL}, uint128_t{18446744073709551533ULL}) == uint128_t{1});
+    I128_ASSERT_THAT(math_functions::gcd(int128_t{18446744073709551557ULL}, uint128_t{18446744073709551557ULL}) == uint128_t{18446744073709551557ULL});
+    I128_ASSERT_THAT(math_functions::gcd(int128_t{18446744073709551533ULL}, uint128_t{18446744073709551533ULL}) == uint128_t{18446744073709551533ULL});
+    I128_ASSERT_THAT(math_functions::gcd(int128_t{18446744073709551521ULL}, uint128_t{18446744073709551521ULL}) == uint128_t{18446744073709551521ULL});
+
+    I128_ASSERT_THAT(math_functions::gcd(uint128_t{18446744073709551557ULL}, uint128_t{18446744073709551521ULL}) == uint128_t{1});
+    I128_ASSERT_THAT(math_functions::gcd(uint128_t{18446744073709551533ULL}, uint128_t{18446744073709551557ULL}) == uint128_t{1});
+    I128_ASSERT_THAT(math_functions::gcd(uint128_t{18446744073709551521ULL}, uint128_t{18446744073709551533ULL}) == uint128_t{1});
+    I128_ASSERT_THAT(math_functions::gcd(uint128_t{18446744073709551557ULL}, uint128_t{18446744073709551557ULL}) == uint128_t{18446744073709551557ULL});
+    I128_ASSERT_THAT(math_functions::gcd(uint128_t{18446744073709551533ULL}, uint128_t{18446744073709551533ULL}) == uint128_t{18446744073709551533ULL});
+    I128_ASSERT_THAT(math_functions::gcd(uint128_t{18446744073709551521ULL}, uint128_t{18446744073709551521ULL}) == uint128_t{18446744073709551521ULL});
+
+    // clang-format on
 
     ASSERT_THAT(math_functions::popcount(0U) == 0);
     ASSERT_THAT(math_functions::popcount(1U << 1U) == 1);

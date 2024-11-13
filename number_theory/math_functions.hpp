@@ -3043,22 +3043,15 @@ ATTRIBUTE_NODISCARD CONSTEXPR_VECTOR auto weighted_median(Range&& range ATTRIBUT
 
 #endif
 
-}  // namespace math_functions
-
 // NOLINTEND(cppcoreguidelines-avoid-magic-numbers)
 
-#if defined(INTEGERS_128_BIT_HPP)
+#ifdef INTEGERS_128_BIT_HPP
 
-namespace std {
+namespace detail {
 
-// NOLINTBEGIN(cert-dcl58-cpp)
-
-/// @brief Computes greaters common divisor of @a `a` and @a `b`
-///         using Stein's algorithm (binary gcd). Here gcd(0, 0) = 0.
-/// @param[in] a
-/// @param[in] b
-/// @return gcd(a, b)
-[[nodiscard]] ATTRIBUTE_CONST I128_CONSTEXPR uint128_t gcd(uint128_t a, uint128_t b) noexcept {
+ATTRIBUTE_NODISCARD
+ATTRIBUTE_CONST
+I128_CONSTEXPR uint128_t gcd(uint128_t a, uint128_t b) noexcept {
     if (unlikely(a == 0)) {
         return b;
     }
@@ -3088,36 +3081,125 @@ namespace std {
     }
 }
 
-[[nodiscard]] ATTRIBUTE_CONST I128_CONSTEXPR uint128_t gcd(uint64_t a, int128_t b) noexcept {
-    const uint128_t b0 = ::math_functions::uabs(b);
-    if (unlikely(b0 == 0)) {
+ATTRIBUTE_NODISCARD
+ATTRIBUTE_ALWAYS_INLINE
+ATTRIBUTE_CONST
+I128_CONSTEXPR uint128_t gcd(uint128_t a, int128_t b) noexcept {
+    return ::math_functions::detail::gcd(a, ::math_functions::uabs(b));
+}
+
+ATTRIBUTE_NODISCARD
+ATTRIBUTE_ALWAYS_INLINE
+ATTRIBUTE_CONST
+I128_CONSTEXPR uint128_t gcd(int128_t a, uint128_t b) noexcept {
+    return ::math_functions::detail::gcd(::math_functions::uabs(a), b);
+}
+
+ATTRIBUTE_NODISCARD
+ATTRIBUTE_ALWAYS_INLINE
+ATTRIBUTE_CONST
+I128_CONSTEXPR int128_t gcd(int128_t a, int128_t b) noexcept {
+    const int128_t value =
+        static_cast<int128_t>(::math_functions::detail::gcd(::math_functions::uabs(a), b));
+    CONFIG_ASSUME_STATEMENT(value >= 0);
+    return value;
+}
+
+ATTRIBUTE_NODISCARD
+ATTRIBUTE_ALWAYS_INLINE
+ATTRIBUTE_CONST
+I128_CONSTEXPR uint128_t gcd(uint128_t a, uint64_t b) noexcept {
+    if ((config::is_constant_evaluated() || config::is_gcc_constant_p(a <= b)) && a <= b) {
+        return std::gcd(static_cast<uint64_t>(a), b);
+    }
+
+    if (unlikely(b == 0)) {
         return a;
     }
-
-    // gcd(a, b) = gcd(a, b0) = gcd(b0, a % b0) = gcd(a1, b1)
-    const uint128_t a1 = b0;
-    // b1 = a % b0
-    const uint64_t b1 = a < b0 ? a : a % static_cast<uint64_t>(b0);  // a < 2^64 => b1 < 2^64
-    if (b1 == 0) {
-        return a1;
-    }
-    // gcd(a1, b1) = gcd(b1, a1 % b1) = gcd(a2, b2)
-    const uint64_t a2 = b1;  // b1 < 2^64 => a2 < 2^64
-    // b2 = a1 % b1
-    // a1 = b0, b1 = a % b0 => b1 < a1
-    const uint64_t b2 = static_cast<uint64_t>(a1 % b1);  // b1 < 2^64 => b2 = a1 % b1 < 2^64
-    return std::gcd(a2, b2);
+    // gcd(a, b) = gcd(b, a % b) = gcd(a % b, b)
+    return std::gcd(static_cast<uint64_t>(a % b), b);
 }
 
-[[nodiscard]] ATTRIBUTE_CONST I128_CONSTEXPR uint128_t gcd(int128_t a, uint64_t b) noexcept {
-    return std::gcd(b, a);
+ATTRIBUTE_NODISCARD
+ATTRIBUTE_ALWAYS_INLINE
+ATTRIBUTE_CONST
+I128_CONSTEXPR uint128_t gcd(uint64_t a, uint128_t b) noexcept {
+    return ::math_functions::detail::gcd(b, a);
 }
 
-// NOLINTEND(cert-dcl58-cpp)
+ATTRIBUTE_NODISCARD
+ATTRIBUTE_ALWAYS_INLINE
+ATTRIBUTE_CONST
+I128_CONSTEXPR uint128_t gcd(uint128_t a, int64_t b) noexcept {
+    return ::math_functions::detail::gcd(a, ::math_functions::uabs(b));
+}
 
-}  // namespace std
+ATTRIBUTE_NODISCARD
+ATTRIBUTE_ALWAYS_INLINE
+ATTRIBUTE_CONST
+I128_CONSTEXPR uint128_t gcd(int64_t a, uint128_t b) noexcept {
+    return ::math_functions::detail::gcd(b, a);
+}
+
+ATTRIBUTE_NODISCARD
+ATTRIBUTE_ALWAYS_INLINE
+ATTRIBUTE_CONST
+I128_CONSTEXPR int128_t gcd(uint64_t a, int128_t b) noexcept {
+    const int128_t value =
+        static_cast<int128_t>(::math_functions::detail::gcd(a, ::math_functions::uabs(b)));
+    CONFIG_ASSUME_STATEMENT(value >= 0);
+    return value;
+}
+
+ATTRIBUTE_NODISCARD
+ATTRIBUTE_ALWAYS_INLINE
+ATTRIBUTE_CONST
+I128_CONSTEXPR int128_t gcd(int128_t a, uint64_t b) noexcept {
+    return ::math_functions::detail::gcd(b, a);
+}
+
+ATTRIBUTE_NODISCARD
+ATTRIBUTE_ALWAYS_INLINE
+ATTRIBUTE_CONST
+I128_CONSTEXPR int128_t gcd(int128_t a, int64_t b) noexcept {
+    return ::math_functions::detail::gcd(a, ::math_functions::uabs(b));
+}
+
+ATTRIBUTE_NODISCARD
+ATTRIBUTE_ALWAYS_INLINE
+ATTRIBUTE_CONST
+I128_CONSTEXPR int128_t gcd(int64_t a, int128_t b) noexcept {
+    return ::math_functions::detail::gcd(b, a);
+}
+
+}  // namespace detail
 
 #endif  // INTEGERS_128_BIT_HPP
+
+/// @brief Computes greaters common divisor of @a `a` and @a `b`
+///         using Stein's algorithm (binary gcd). Here gcd(0, 0) = 0.
+/// @param[in] a
+/// @param[in] b
+/// @return gcd(a, b)
+template <class M, class N>
+[[nodiscard]]
+ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_CONST constexpr std::common_type_t<M, N> gcd(M m, N n) noexcept {
+    static_assert(
+        ::math_functions::detail::is_integral_v<M> && ::math_functions::detail::is_integral_v<N>,
+        "math_functions::gcd arguments must be integers");
+
+#if defined(INTEGERS_128_BIT_HPP)
+    if constexpr (sizeof(M) <= sizeof(uint64_t) && sizeof(N) <= sizeof(uint64_t)) {
+#endif
+        return std::gcd(m, n);
+#if defined(INTEGERS_128_BIT_HPP)
+    } else {
+        return ::math_functions::detail::gcd(m, n);
+    }
+#endif
+}
+
+}  // namespace math_functions
 
 #undef CONSTEXPR_VECTOR
 #ifdef MATH_FUNCTIONS_HAS_BIT

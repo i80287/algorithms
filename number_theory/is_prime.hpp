@@ -112,7 +112,7 @@ ATTRIBUTE_CONST I128_CONSTEXPR bool is_strong_lucas_prp(uint64_t n, uint16_t p,
 
         // NOLINTNEXTLINE(bugprone-implicit-widening-of-multiplication-result)
         const int128_t rhs = int128_t{int64_t{2} * int64_t{q}} * int128_t{d};
-        if (unlikely(std::gcd(n, rhs) != 1)) {
+        if (unlikely(math_functions::gcd(n, rhs) != 1)) {
             // is_strong_lucas_prp requires gcd(n, 2 * q * (p * p - 4 * q)) = 1
             return false;
         }
