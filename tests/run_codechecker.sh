@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 
 build_dir=cmake-build-codechecker
-cmake_build_dir=cmake-build-dir
 
 mkdir -p "$build_dir"
 cp ./.clang-tidy ./$build_dir
@@ -9,11 +8,15 @@ cd ./$build_dir || exit 1
 
 OLDIFS=$IFS
 IFS=','
-for cc_and_cxx in clang,clang++ gcc,g++ i686-w64-mingw32-gcc-posix,i686-w64-mingw32-g++-posix x86_64-w64-mingw32-gcc-posix,x86_64-w64-mingw32-g++-posix; do
+for cc_and_cxx in clang,clang++ gcc-13,g++-13 gcc-14,g++-14 i686-w64-mingw32-gcc-posix,i686-w64-mingw32-g++-posix x86_64-w64-mingw32-gcc-posix,x86_64-w64-mingw32-g++-posix; do
+    set -- $cc_and_cxx
+    c_compiler=$1
+    cxx_compiler=$2
+    echo "cc = $c_compiler, c++ = $cxx_compiler"
+
+    cmake_build_dir="cmake-build-dir-$c_compiler"
     if [ -d "$cmake_build_dir" ]; then rm -r "$cmake_build_dir"; fi
     mkdir -p "$cmake_build_dir"
-    set -- $cc_and_cxx
-    echo "cc = $1, c++ = $2"
 
     cmake -G Ninja \
         -D CMAKE_BUILD_TYPE=RelWithDebInfo \
@@ -21,21 +24,24 @@ for cc_and_cxx in clang,clang++ gcc,g++ i686-w64-mingw32-gcc-posix,i686-w64-ming
         -D CMAKE_CXX_COMPILER="$2" \
         -D CMAKE_EXPORT_COMPILE_COMMANDS=1 \
         -S .. \
-        -B $cmake_build_dir
-    if [ -e "./$cmake_build_dir/compile_commands.json" ]; then
+        -B "$cmake_build_dir"
+    exported_compile_commands="./$cmake_build_dir/compile_commands.json"
+    if [ -e "$exported_compile_commands" ]; then
         if [[ "$OSTYPE" == "darwin"* ]]; then
             cpu_count=$(sysctl -n hw.logicalcpu)
         else
             cpu_count=$(nproc)
         fi
-        cmake --build ./$cmake_build_dir --parallel "$cpu_count"
+        cmake --build "$cmake_build_dir" --parallel "$cpu_count"
+        report_file="./report_$c_compiler"
+        parsed_report_file="./parsed_report_$c_compiler"
         CodeChecker analyze \
-            ./$cmake_build_dir/compile_commands.json \
+            "$exported_compile_commands" \
             --analyzer-config cppcheck:addons=../cppcheck/addons/misc.py \
             --analyzer-config cppcheck:addons=../cppcheck/addons/y2038.py \
             --analyzer-config clang-tidy:take-config-from-directory=true \
-            -o ./report_"$1"
-        CodeChecker parse --print-steps ./report_"$1" >./parsed_report_"$1"
+            -o "$report_file"
+        CodeChecker parse --print-steps "$report_file" >"$parsed_report_file"
     fi
 done
 IFS=$OLDIFS

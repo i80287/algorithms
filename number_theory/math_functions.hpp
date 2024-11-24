@@ -42,6 +42,10 @@
 #include <ranges>
 #define MATH_FUNCTIONS_HAS_RANGES
 #endif
+#if CONFIG_HAS_AT_LEAST_CXX_20 && CONFIG_HAS_INCLUDE(<numbers>)
+#include <numbers>
+#define MATH_FUNCTIONS_HAS_NUMBERS
+#endif
 
 #if CONFIG_HAS_INCLUDE("integers_128_bit.hpp")
 #include "integers_128_bit.hpp"
@@ -757,37 +761,6 @@ unsigned char uabs(char n) = delete;
 
 namespace detail {
 
-#if defined(INTEGERS_128_BIT_HPP)
-namespace helper_ns = int128_traits;
-#else
-namespace helper_ns = std;
-#endif
-
-template <class T>
-inline constexpr bool is_integral_v = ::math_functions::detail::helper_ns::is_integral_v<T>;
-
-template <class T>
-inline constexpr bool is_unsigned_v = ::math_functions::detail::helper_ns::is_unsigned_v<T>;
-
-template <class T>
-inline constexpr bool is_signed_v = ::math_functions::detail::helper_ns::is_signed_v<T>;
-
-template <class T>
-using make_unsigned_t = typename ::math_functions::detail::helper_ns::make_unsigned_t<T>;
-
-#if CONFIG_HAS_CONCEPTS
-
-template <class T>
-concept integral = ::math_functions::detail::helper_ns::integral<T>;
-
-template <class T>
-concept signed_integral = ::math_functions::detail::helper_ns::signed_integral<T>;
-
-template <class T>
-concept unsigned_integral = ::math_functions::detail::helper_ns::unsigned_integral<T>;
-
-#endif
-
 [[nodiscard]] ATTRIBUTE_CONST inline uint32_t log2_floor_software(uint64_t n) {
     static const std::array<uint64_t, 6> t = {
         0xFFFFFFFF00000000ULL, 0x00000000FFFF0000ULL, 0x000000000000FF00ULL,
@@ -816,7 +789,7 @@ concept unsigned_integral = ::math_functions::detail::helper_ns::unsigned_integr
  *  Note that by convention, input value 0 returns 0 since log(0) is
  * undefined.
  */
-[[nodiscard]] ATTRIBUTE_CONST inline uint32_t de_bruijn_log2(uint32_t value) {
+ATTRIBUTE_NODISCARD ATTRIBUTE_CONST inline uint32_t de_bruijn_log2(uint32_t value) {
     // See
     // https://graphics.stanford.edu/~seander/bithacks.html#RoundUpPowerOf2
 
@@ -837,7 +810,7 @@ concept unsigned_integral = ::math_functions::detail::helper_ns::unsigned_integr
     return MultiplyDeBruijnBitPosition[((value * 0x07C4ACDDU) >> 27U)];
 }
 
-[[nodiscard]] ATTRIBUTE_CONST constexpr uint32_t lz_count_32_software(uint32_t n) noexcept {
+ATTRIBUTE_NODISCARD ATTRIBUTE_CONST constexpr uint32_t lz_count_32_software(uint32_t n) noexcept {
     /**
      * See Hackers Delight Chapter 5
      */
@@ -866,7 +839,7 @@ concept unsigned_integral = ::math_functions::detail::helper_ns::unsigned_integr
     return m;
 }
 
-[[nodiscard]] ATTRIBUTE_CONST constexpr uint32_t lz_count_64_software(uint64_t n) noexcept {
+ATTRIBUTE_NODISCARD ATTRIBUTE_CONST constexpr uint32_t lz_count_64_software(uint64_t n) noexcept {
     /**
      * See Hackers Delight Chapter 5
      */
@@ -899,7 +872,7 @@ concept unsigned_integral = ::math_functions::detail::helper_ns::unsigned_integr
     return m;
 }
 
-[[nodiscard]] ATTRIBUTE_CONST constexpr uint32_t tz_count_32_software(uint32_t n) noexcept {
+ATTRIBUTE_NODISCARD ATTRIBUTE_CONST constexpr uint32_t tz_count_32_software(uint32_t n) noexcept {
     /**
      * See Hackers Delight Chapter 5
      */
@@ -928,7 +901,7 @@ concept unsigned_integral = ::math_functions::detail::helper_ns::unsigned_integr
     return m;
 }
 
-[[nodiscard]] ATTRIBUTE_CONST constexpr uint32_t tz_count_64_software(uint64_t n) noexcept {
+ATTRIBUTE_NODISCARD ATTRIBUTE_CONST constexpr uint32_t tz_count_64_software(uint64_t n) noexcept {
     uint32_t m = 0U;
     for (n = ~n & (n - 1); n != 0U; n >>= 1U) {
         m++;
@@ -937,7 +910,7 @@ concept unsigned_integral = ::math_functions::detail::helper_ns::unsigned_integr
     return m;
 }
 
-[[nodiscard]] ATTRIBUTE_CONST constexpr uint32_t pop_count_32_software(uint32_t n) noexcept {
+ATTRIBUTE_NODISCARD ATTRIBUTE_CONST constexpr uint32_t pop_count_32_software(uint32_t n) noexcept {
     /**
      * See Hackers Delight Chapter 5.
      */
@@ -950,7 +923,7 @@ concept unsigned_integral = ::math_functions::detail::helper_ns::unsigned_integr
     return n;
 }
 
-[[nodiscard]] ATTRIBUTE_CONST constexpr uint64_t pop_count_64_software(uint64_t n) noexcept {
+ATTRIBUTE_NODISCARD ATTRIBUTE_CONST constexpr uint64_t pop_count_64_software(uint64_t n) noexcept {
     /**
      * See Hackers Delight Chapter 5.
      */
@@ -964,7 +937,41 @@ concept unsigned_integral = ::math_functions::detail::helper_ns::unsigned_integr
     return n;
 }
 
+#if defined(INTEGERS_128_BIT_HPP)
+namespace helper_ns = int128_traits;
+#else
+namespace helper_ns = std;
+#endif
+
 }  // namespace detail
+
+template <class T>
+inline constexpr bool is_integral_v = ::math_functions::detail::helper_ns::is_integral_v<T>;
+
+template <class T>
+inline constexpr bool is_unsigned_v = ::math_functions::detail::helper_ns::is_unsigned_v<T>;
+
+template <class T>
+inline constexpr bool is_signed_v = ::math_functions::detail::helper_ns::is_signed_v<T>;
+
+template <class T>
+using make_unsigned_t = typename ::math_functions::detail::helper_ns::make_unsigned_t<T>;
+
+template <class T>
+using make_signed_t = typename ::math_functions::detail::helper_ns::make_signed_t<T>;
+
+#if CONFIG_HAS_CONCEPTS
+
+template <class T>
+concept integral = ::math_functions::detail::helper_ns::integral<T>;
+
+template <class T>
+concept signed_integral = ::math_functions::detail::helper_ns::signed_integral<T>;
+
+template <class T>
+concept unsigned_integral = ::math_functions::detail::helper_ns::unsigned_integral<T>;
+
+#endif
 
 [[nodiscard]] ATTRIBUTE_CONST constexpr int32_t pop_diff(uint32_t x, uint32_t y) noexcept {
     /**
@@ -1005,10 +1012,10 @@ concept unsigned_integral = ::math_functions::detail::helper_ns::unsigned_integr
 /// @return trailing zeros count (sizeof(n) * 8 for n = 0)
 template <typename T>
 #if CONFIG_HAS_CONCEPTS
-    requires ::math_functions::detail::unsigned_integral<T>
+    requires ::math_functions::unsigned_integral<T>
 #endif
 [[nodiscard]] ATTRIBUTE_CONST constexpr int32_t countr_zero(T n) noexcept {
-    static_assert(::math_functions::detail::is_unsigned_v<T>, "Unsigned integral type expected");
+    static_assert(::math_functions::is_unsigned_v<T>, "Unsigned integral type expected");
 
     if (unlikely(n == 0)) {
         return sizeof(n) * CHAR_BIT;
@@ -1065,10 +1072,10 @@ template <typename T>
 /// @return leading zeros count (sizeof(n) * 8 for n = 0)
 template <typename T>
 #if CONFIG_HAS_CONCEPTS
-    requires ::math_functions::detail::unsigned_integral<T>
+    requires ::math_functions::unsigned_integral<T>
 #endif
 [[nodiscard]] ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_CONST constexpr int32_t countl_zero(T n) noexcept {
-    static_assert(::math_functions::detail::is_unsigned_v<T>, "Unsigned integral type expected");
+    static_assert(::math_functions::is_unsigned_v<T>, "Unsigned integral type expected");
 
     if (unlikely(n == 0)) {
         return sizeof(n) * CHAR_BIT;
@@ -1121,10 +1128,10 @@ template <typename T>
 
 template <class T>
 #if CONFIG_HAS_CONCEPTS
-    requires ::math_functions::detail::unsigned_integral<T>
+    requires ::math_functions::unsigned_integral<T>
 #endif
 [[nodiscard]] ATTRIBUTE_CONST constexpr int32_t popcount(T n) noexcept {
-    static_assert(::math_functions::detail::is_unsigned_v<T>, "Unsigned integral type expected");
+    static_assert(::math_functions::is_unsigned_v<T>, "Unsigned integral type expected");
 
 #if defined(INTEGERS_128_BIT_HPP)
     if constexpr (std::is_same_v<T, uint128_t>) {
@@ -1260,9 +1267,8 @@ bool is_power_of_two(char) = delete;
 template <class UIntType>
 [[nodiscard]]
 ATTRIBUTE_CONST constexpr auto nearest_greater_equal_power_of_two(const UIntType n) noexcept {
-    static_assert(
-        ::math_functions::detail::is_unsigned_v<UIntType> && sizeof(UIntType) >= sizeof(unsigned),
-        "unsigned integral type (at least unsigned int) is expected");
+    static_assert(::math_functions::is_unsigned_v<UIntType> && sizeof(UIntType) >= sizeof(unsigned),
+                  "unsigned integral type (at least unsigned int) is expected");
 
     using ShiftType       = int32_t;
     const ShiftType shift = ShiftType{sizeof(n) * CHAR_BIT} -
@@ -1277,9 +1283,8 @@ ATTRIBUTE_CONST constexpr auto nearest_greater_equal_power_of_two(const UIntType
 template <class UIntType>
 [[nodiscard]]
 ATTRIBUTE_CONST constexpr auto nearest_greater_power_of_two(const UIntType n) noexcept {
-    static_assert(
-        ::math_functions::detail::is_unsigned_v<UIntType> && sizeof(UIntType) >= sizeof(unsigned),
-        "unsigned integral type (at least unsigned int) is expected");
+    static_assert(::math_functions::is_unsigned_v<UIntType> && sizeof(UIntType) >= sizeof(unsigned),
+                  "unsigned integral type (at least unsigned int) is expected");
 
     using ShiftType = int32_t;
     const ShiftType shift =
@@ -1298,9 +1303,9 @@ ATTRIBUTE_CONST constexpr auto nearest_greater_power_of_two(const UIntType n) no
 /// @return
 template <class IntType>
 [[nodiscard]] ATTRIBUTE_CONST constexpr IntType least_bit_set(IntType n) noexcept {
-    static_assert(::math_functions::detail::is_integral_v<IntType>, "integral type expected");
+    static_assert(::math_functions::is_integral_v<IntType>, "integral type expected");
 
-    using UIntType              = ::math_functions::detail::make_unsigned_t<IntType>;
+    using UIntType              = ::math_functions::make_unsigned_t<IntType>;
     using UIntTypeAtLeastUInt32 = std::common_type_t<UIntType, uint32_t>;
     auto unsigned_n             = static_cast<UIntTypeAtLeastUInt32>(static_cast<UIntType>(n));
     return static_cast<IntType>(unsigned_n & -unsigned_n);
@@ -1314,13 +1319,11 @@ template <class IntType>
 /// @return
 template <class IntType>
 #if CONFIG_HAS_CONCEPTS
-    requires ::math_functions::detail::is_unsigned_v<IntType> &&
-             (sizeof(IntType) >= sizeof(unsigned))
+    requires ::math_functions::unsigned_integral<IntType> && (sizeof(IntType) >= sizeof(unsigned))
 #endif
 [[nodiscard]] ATTRIBUTE_CONST constexpr IntType masked_popcount_sum(IntType n, IntType k) noexcept {
-    static_assert(
-        ::math_functions::detail::is_unsigned_v<IntType> && sizeof(IntType) >= sizeof(unsigned),
-        "unsigned integral type (at least unsigned int) is expected");
+    static_assert(::math_functions::is_unsigned_v<IntType> && sizeof(IntType) >= sizeof(unsigned),
+                  "unsigned integral type (at least unsigned int) is expected");
 
     IntType popcount_sum = 0;
     for (uint32_t j = 0; j < sizeof(IntType) * CHAR_BIT; j++) {
@@ -1404,11 +1407,11 @@ ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_CONST constexpr uint32_t base_b_len_impl(
 template <typename T>
 [[nodiscard]] ATTRIBUTE_CONST constexpr uint32_t base_b_len(T value,
                                                             const uint8_t base = 10) noexcept {
-    static_assert(::math_functions::detail::is_integral_v<T> && !std::is_same_v<T, bool> &&
-                      !std::is_same_v<T, char>,
-                  "integral type (not bool or char) expected in the base_b_len");
+    static_assert(
+        ::math_functions::is_integral_v<T> && !std::is_same_v<T, bool> && !std::is_same_v<T, char>,
+        "integral type (not bool or char) is expected in the base_b_len");
 
-    if constexpr (::math_functions::detail::is_signed_v<T>) {
+    if constexpr (::math_functions::is_signed_v<T>) {
         const uint32_t is_negative = uint32_t{value < 0};
         return is_negative +
                ::math_functions::detail::base_b_len_impl(::math_functions::uabs(value), base);
@@ -1423,13 +1426,12 @@ template <typename T>
 /// @return
 template <class UIntType>
 #if CONFIG_HAS_CONCEPTS
-    requires ::math_functions::detail::unsigned_integral<UIntType>
+    requires ::math_functions::unsigned_integral<UIntType>
 #endif
 [[nodiscard]]
 ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_CONST constexpr uint32_t log2_floor(const UIntType n) noexcept {
-    static_assert(
-        ::math_functions::detail::is_unsigned_v<UIntType> && sizeof(UIntType) >= sizeof(unsigned),
-        "unsigned integral type (at least unsigned int) is expected");
+    static_assert(::math_functions::is_unsigned_v<UIntType> && sizeof(UIntType) >= sizeof(unsigned),
+                  "unsigned integral type (at least unsigned int) is expected");
 
 #if defined(INTEGERS_128_BIT_HPP)
     if constexpr (std::is_same_v<UIntType, uint128_t>) {
@@ -1450,7 +1452,7 @@ ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_CONST constexpr uint32_t log2_floor(const UInt
 /// @return
 template <class UIntType>
 #if CONFIG_HAS_CONCEPTS
-    requires ::math_functions::detail::unsigned_integral<UIntType>
+    requires ::math_functions::unsigned_integral<UIntType>
 #endif
 [[nodiscard]]
 ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_CONST constexpr uint32_t log2_ceil(const UIntType n) noexcept {
@@ -1459,7 +1461,7 @@ ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_CONST constexpr uint32_t log2_ceil(const UIntT
 
 template <class UIntType>
 #if CONFIG_HAS_CONCEPTS
-    requires ::math_functions::detail::unsigned_integral<UIntType>
+    requires ::math_functions::unsigned_integral<UIntType>
 #endif
 [[nodiscard]]
 ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_CONST constexpr uint32_t base_2_len(const UIntType n) noexcept {
@@ -1654,11 +1656,12 @@ struct ExtractPow2Result {
 /// @note  For n = 0 answer is { q = 0, r = sizeof(n) * CHAR_BIT }
 /// @param[in] n
 /// @return Pair of q and r
-template <typename T>
+template <class UIntType>
 #if CONFIG_HAS_CONCEPTS
-    requires ::math_functions::detail::unsigned_integral<T>
+    requires ::math_functions::unsigned_integral<UIntType>
 #endif
-[[nodiscard]] ATTRIBUTE_CONST constexpr ExtractPow2Result<T> extract_pow2(T n) noexcept {
+[[nodiscard]]
+ATTRIBUTE_CONST constexpr ExtractPow2Result<UIntType> extract_pow2(UIntType n) noexcept {
     auto r = static_cast<uint32_t>(::math_functions::countr_zero(n));
     CONFIG_ASSUME_STATEMENT(r <= sizeof(n) * CHAR_BIT);
     return {n != 0 ? (n >> r) : 0, r};
@@ -1675,10 +1678,10 @@ template <typename T>
 
 template <class T>
 #if CONFIG_HAS_CONCEPTS
-    requires ::math_functions::detail::unsigned_integral<T>
+    requires ::math_functions::unsigned_integral<T>
 #endif
 [[nodiscard]] ATTRIBUTE_CONST constexpr T next_even(T n) noexcept {
-    static_assert(::math_functions::detail::is_unsigned_v<T>, "unsigned integral type expected");
+    static_assert(::math_functions::is_unsigned_v<T>, "unsigned integral type expected");
     return n + 2 - n % 2;
 }
 
@@ -1720,9 +1723,10 @@ template <class FloatType>
 #if CONFIG_HAS_CONCEPTS
     requires std::floating_point<FloatType>
 #endif
-[[nodiscard]] ATTRIBUTE_CONST SumSinCos<FloatType> sum_of_sines_and_cosines(FloatType alpha,
-                                                                            FloatType beta,
-                                                                            uint32_t n) noexcept {
+[[nodiscard]]
+ATTRIBUTE_CONST SumSinCos<FloatType> sum_of_sines_and_cosines(const FloatType alpha,
+                                                              const FloatType beta,
+                                                              const uint32_t n) noexcept {
     static_assert(std::is_floating_point_v<FloatType>, "Invalid type in sum_of_sines_and_cosines");
 
     const FloatType nf       = static_cast<FloatType>(n);
@@ -1869,18 +1873,17 @@ struct [[nodiscard]] PrimeFactor final {
 
 template <class NumericType, class Function>
 #if CONFIG_HAS_CONCEPTS
-    requires(sizeof(NumericType) >= sizeof(int)) &&
-            ::math_functions::detail::integral<NumericType> &&
-            std::is_invocable_v<
-                Function, typename ::math_functions::PrimeFactor<
-                              typename ::math_functions::detail::make_unsigned_t<NumericType>>>
+    requires(sizeof(NumericType) >= sizeof(int)) && ::math_functions::integral<NumericType> &&
+            std::is_invocable_v<Function,
+                                typename ::math_functions::PrimeFactor<
+                                    typename ::math_functions::make_unsigned_t<NumericType>>>
 #endif
 [[nodiscard]] ATTRIBUTE_ALWAYS_INLINE constexpr auto
 visit_prime_factors(NumericType n, Function visitor) noexcept(
-    std::is_nothrow_invocable_v<
-        Function, typename ::math_functions::PrimeFactor<
-                      typename ::math_functions::detail::make_unsigned_t<NumericType>>>) {
-    using UnsignedNumericType = typename ::math_functions::detail::make_unsigned_t<NumericType>;
+    std::is_nothrow_invocable_v<Function,
+                                typename ::math_functions::PrimeFactor<
+                                    typename ::math_functions::make_unsigned_t<NumericType>>>) {
+    using UnsignedNumericType = typename ::math_functions::make_unsigned_t<NumericType>;
     using PrimeFactorType     = typename ::math_functions::PrimeFactor<UnsignedNumericType>;
     UnsignedNumericType n_abs = ::math_functions::uabs(n);
 
@@ -1930,7 +1933,7 @@ visit_prime_factors(NumericType n, Function visitor) noexcept(
 ///          sorted by prime_div.
 template <class NumericType>
 [[nodiscard]] CONSTEXPR_VECTOR auto prime_factors_as_vector(NumericType n) {
-    using UnsignedNumericType = typename ::math_functions::detail::make_unsigned_t<NumericType>;
+    using UnsignedNumericType = typename ::math_functions::make_unsigned_t<NumericType>;
 
     std::vector<typename ::math_functions::PrimeFactor<UnsignedNumericType>> prime_factors_vector;
     constexpr bool kReservePlaceForFactors = std::is_same_v<UnsignedNumericType, uint32_t>;
@@ -1951,7 +1954,7 @@ template <class NumericType>
 
 template <class NumericType>
 [[nodiscard]] inline auto prime_factors_as_map(NumericType n) {
-    using UnsignedNumericType = typename ::math_functions::detail::make_unsigned_t<NumericType>;
+    using UnsignedNumericType = typename ::math_functions::make_unsigned_t<NumericType>;
 
     std::map<UnsignedNumericType, uint32_t> prime_factors_map;
 
@@ -2166,7 +2169,7 @@ struct [[nodiscard]] ExtEuclidAlgoRet {
 template <typename IntType>
 [[nodiscard]] ATTRIBUTE_CONST constexpr auto extended_euclid_algorithm(IntType a,
                                                                        IntType b) noexcept {
-    static_assert(::math_functions::detail::is_integral_v<IntType>, "Integral type expected");
+    static_assert(::math_functions::is_integral_v<IntType>, "Integral type expected");
 
     int64_t u_previous = a != 0;
     int64_t u_current  = 0;
@@ -2193,7 +2196,7 @@ template <typename IntType>
         v_current            = v_next;
     }
 
-    if constexpr (::math_functions::detail::is_signed_v<CompIntType>) {
+    if constexpr (::math_functions::is_signed_v<CompIntType>) {
         if (r_previous < 0) {
             u_previous = -u_previous;
             v_previous = -v_previous;
@@ -2201,7 +2204,7 @@ template <typename IntType>
         }
     }
 
-    using RetUIntType = typename ::math_functions::detail::make_unsigned_t<CompIntType>;
+    using RetUIntType = typename ::math_functions::make_unsigned_t<CompIntType>;
     return ExtEuclidAlgoRet<RetUIntType>{
         u_previous,
         v_previous,
@@ -2272,9 +2275,8 @@ ATTRIBUTE_CONST constexpr uint32_t solve_congruence_modulo_m_impl(uint32_t a, ui
 template <class T>
 ATTRIBUTE_CONST ATTRIBUTE_ALWAYS_INLINE constexpr uint32_t congruence_arg(
     T x, [[maybe_unused]] uint32_t m) noexcept {
-    static_assert(::math_functions::detail::is_integral_v<T>,
-                  "Expected integral type in the congruence");
-    if constexpr (::math_functions::detail::is_unsigned_v<T>) {
+    static_assert(::math_functions::is_integral_v<T>, "Expected integral type in the congruence");
+    if constexpr (::math_functions::is_unsigned_v<T>) {
         if constexpr (sizeof(x) > sizeof(uint32_t)) {
             return static_cast<uint32_t>(x % m);
         } else {
@@ -2344,7 +2346,7 @@ template <class T1, class T2>
 /// @param a
 /// @param m
 /// @return
-template <::math_functions::detail::integral IntType>
+template <::math_functions::integral IntType>
     requires(!std::is_same_v<IntType, bool>)
 [[nodiscard]]
 ATTRIBUTE_CONST constexpr uint32_t inv_mod_m(IntType a, uint32_t m) noexcept {
@@ -2353,8 +2355,6 @@ ATTRIBUTE_CONST constexpr uint32_t inv_mod_m(IntType a, uint32_t m) noexcept {
 
 #else
 
-// clang-format off
-
 /// @brief Solves modulus congruence a * x ≡ 1 (mod m) (e.g. a^{-1} mod m)
 /// @note a^{-1} mod m exists <=> gcd(a, m) == 1.
 ///       Works in O(log(min(a, m))
@@ -2362,14 +2362,11 @@ ATTRIBUTE_CONST constexpr uint32_t inv_mod_m(IntType a, uint32_t m) noexcept {
 /// @param a
 /// @param m
 /// @return
-template <class IntType>
-[[nodiscard]] ATTRIBUTE_CONST constexpr
-std::enable_if_t<::math_functions::detail::is_integral_v<IntType>, uint32_t>
-inv_mod_m(IntType a, uint32_t m) noexcept {
+template <class IntType, std::enable_if_t<::math_functions::is_integral_v<IntType>, int> = 0>
+[[nodiscard]]
+ATTRIBUTE_CONST constexpr uint32_t inv_mod_m(IntType a, uint32_t m) noexcept {
     return ::math_functions::solve_congruence_modulo_m(a, uint32_t{1}, m);
 }
-
-// clang-format on
 
 #endif
 
@@ -2385,7 +2382,7 @@ namespace detail {
 template <class Iter>
 ATTRIBUTE_NODISCARD
 CONSTEXPR_VECTOR
-typename ::math_functions::InverseResult inv_mod_m_impl(Iter nums_begin, Iter nums_end, uint32_t m) {
+typename ::math_functions::InverseResult inv_range_mod_m_impl(Iter nums_begin, Iter nums_end, uint32_t m) {
     // clang-format on
 
     const auto n = static_cast<size_t>(std::distance(nums_begin, nums_end));
@@ -2427,60 +2424,58 @@ typename ::math_functions::InverseResult inv_mod_m_impl(Iter nums_begin, Iter nu
 
 #if CONFIG_HAS_CONCEPTS && defined(MATH_FUNCTIONS_HAS_RANGES)
 
-// clang-format off
+template <class Iterator>
+concept integral_forward_iterator =
+    std::forward_iterator<Iterator> &&
+    ::math_functions::integral<typename std::iter_value_t<Iterator>> &&
+    (!std::same_as<typename std::iter_value_t<Iterator>, bool>);
 
-template <std::forward_iterator Iterator>
-    requires ::math_functions::detail::integral<typename std::iter_value_t<Iterator>> &&
-             (!std::same_as<typename std::iter_value_t<Iterator>, bool>)
+template <::math_functions::integral_forward_iterator Iterator>
 [[nodiscard]]
-CONSTEXPR_VECTOR typename ::math_functions::InverseResult inv_mod_m(Iterator nums_begin, Iterator nums_end, uint32_t m) {
-    return ::math_functions::detail::inv_mod_m_impl(nums_begin, nums_end, m);
+CONSTEXPR_VECTOR ::math_functions::InverseResult inv_range_mod_m(Iterator nums_begin,
+                                                                 Iterator nums_end, uint32_t m) {
+    return ::math_functions::detail::inv_range_mod_m_impl(nums_begin, nums_end, m);
 }
 
 /// @brief Inverse @a nums mod m
 /// @note Works in O(nums.size())
-/// @tparam T 
-/// @param nums 
-/// @param m 
-/// @return 
+/// @tparam T
+/// @param nums
+/// @param m
+/// @return
 template <std::ranges::forward_range Range>
 [[nodiscard]]
 // NOLINTNEXTLINE(cppcoreguidelines-missing-std-forward)
-CONSTEXPR_VECTOR typename ::math_functions::InverseResult inv_mod_m(Range&& nums, uint32_t m) {
-    return ::math_functions::inv_mod_m(std::begin(nums), std::end(nums), m);
+CONSTEXPR_VECTOR ::math_functions::InverseResult inv_range_mod_m(Range&& nums, uint32_t m) {
+    return ::math_functions::inv_range_mod_m(std::begin(nums), std::end(nums), m);
 }
-
-// clang-format on
 
 #else
 
 // clang-format off
 
-template <class Iter>
+template <class Iter,
+          std::enable_if_t<
+              ::math_functions::is_integral_v<typename std::iterator_traits<Iter>::value_type> &&
+                  !std::is_same_v<typename std::iterator_traits<Iter>::value_type, bool>,
+              int> = 0>
 ATTRIBUTE_NODISCARD
-CONSTEXPR_VECTOR
-typename std::enable_if_t<
-            ::math_functions::detail::is_integral_v<typename std::iterator_traits<Iter>::value_type> &&
-            !std::is_same_v<typename std::iterator_traits<Iter>::value_type, bool>,
-            typename ::math_functions::InverseResult>
-inv_mod_m(Iter nums_iter_begin, Iter nums_iter_end, uint32_t m) {
-    return ::math_functions::detail::inv_mod_m_impl(nums_iter_begin, nums_iter_end, m);
+CONSTEXPR_VECTOR ::math_functions::InverseResult inv_range_mod_m(Iter nums_iter_begin,
+                                                                 Iter nums_iter_end,
+                                                                 uint32_t m) {
+    return ::math_functions::detail::inv_range_mod_m_impl(nums_iter_begin, nums_iter_end, m);
 }
 
-template <class Range>
+template <class Range,
+          std::enable_if_t<::math_functions::is_integral_v<typename std::iterator_traits<
+                               decltype(std::begin(std::declval<Range&&>()))>::value_type>&& ::
+                               math_functions::is_integral_v<typename std::iterator_traits<
+                                   decltype(std::end(std::declval<Range&&>()))>::value_type>,
+                           int> = 0>
 ATTRIBUTE_NODISCARD
-CONSTEXPR_VECTOR
-typename std::enable_if_t<
-            ::math_functions::detail::is_integral_v<
-                typename std::iterator_traits<decltype(std::begin(std::declval<Range&&>()))>::value_type
-            > &&
-            ::math_functions::detail::is_integral_v<
-                typename std::iterator_traits<decltype(std::end(std::declval<Range&&>()))>::value_type
-            >,
-            typename ::math_functions::InverseResult>
 // NOLINTNEXTLINE(cppcoreguidelines-missing-std-forward)
-inv_mod_m(Range&& nums, uint32_t m) {
-    return ::math_functions::inv_mod_m(std::begin(nums), std::end(nums), m);
+CONSTEXPR_VECTOR ::math_functions::InverseResult inv_range_mod_m(Range&& nums, uint32_t m) {
+    return ::math_functions::inv_range_mod_m(std::begin(nums), std::end(nums), m);
 }
 
 // clang-format on
@@ -2835,6 +2830,13 @@ ATTRIBUTE_CONST constexpr T powers_sum(const uint32_t n) noexcept {
     }
 }
 
+#ifdef MATH_FUNCTIONS_HAS_NUMBERS
+inline constexpr double kE = std::numbers::e_v<double>;
+#else
+// M_E constant might not be defined
+constexpr double kE = static_cast<double>(2.71828182845904523536L);
+#endif
+
 }  // namespace detail
 
 /// @brief Return 1^M + 2^M + ... + n^M
@@ -2860,40 +2862,51 @@ template <uint32_t M>
 
 #endif
 
+namespace detail {
+
 template <class T>
-[[nodiscard]] CONSTEXPR_VECTOR std::vector<T> arange(T begin, T end, T step) {
-    static_assert(::math_functions::detail::is_integral_v<T>);
+ATTRIBUTE_NODISCARD ATTRIBUTE_CONST constexpr size_t arange_size(T begin, T end, T step) noexcept {
+    if (unlikely(step == 0)) {
+        return 0;
+    }
 
-    const size_t size = [begin, end, step]() mutable constexpr noexcept -> size_t {
-        if (unlikely(step == 0)) {
-            return 0;
+    if constexpr (::math_functions::is_signed_v<T>) {
+        if (step < 0) {
+            step = -step;
+            std::swap(begin, end);
         }
+    }
 
-        if constexpr (::math_functions::detail::is_signed_v<T>) {
-            if (step < 0) {
-                step = -step;
-                std::swap(begin, end);
-            }
-        }
-
-        T approx_size = (end - begin + step - 1) / step;
-        if constexpr (::math_functions::detail::is_signed_v<T>) {
-            approx_size = std::max(approx_size, T{0});
-        }
+    T approx_size = (end - begin + step - 1) / step;
+    if constexpr (::math_functions::is_signed_v<T>) {
+        approx_size = std::max(approx_size, T{0});
+    }
 
 #if defined(INTEGERS_128_BIT_HPP)
-        if constexpr (std::is_same_v<T, int128_t> || std::is_same_v<T, uint128_t>) {
-            constexpr auto kUsizeMax = std::numeric_limits<size_t>::max();
-            return approx_size <= kUsizeMax ? static_cast<size_t>(approx_size) : kUsizeMax;
-        } else
+    if constexpr (std::is_same_v<T, int128_t> || std::is_same_v<T, uint128_t>) {
+        constexpr auto kUsizeMax = std::numeric_limits<size_t>::max();
+        return approx_size <= kUsizeMax ? static_cast<size_t>(approx_size) : kUsizeMax;
+    } else
 #endif
-            if constexpr (::math_functions::detail::is_signed_v<T>) {
-            return static_cast<size_t>(approx_size);
-        } else {
-            return size_t{approx_size};
-        }
-    }();
+        if constexpr (::math_functions::is_signed_v<T>) {
+        return static_cast<size_t>(approx_size);
+    } else {
+        return size_t{approx_size};
+    }
+}
 
+}  // namespace detail
+
+template <class T>
+#if CONFIG_HAS_CONCEPTS
+    requires ::math_functions::integral<T>
+#endif
+[[nodiscard]] CONSTEXPR_VECTOR std::vector<T> arange(T begin, T end, T step) {
+    static_assert(
+        ::math_functions::is_integral_v<T> && !std::is_same_v<T, bool> && !std::is_same_v<T, char>,
+        "integral type (not bool or char) is expected in the arange");
+
+    const size_t size = ::math_functions::detail::arange_size(begin, end, step);
     std::vector<T> rng(size);
     T i = begin;
     for (T& elem : rng) {
@@ -2918,11 +2931,52 @@ template <class T>
 /// @note  Here log2(0) := -1
 /// @param n
 /// @return
-[[nodiscard]] CONSTEXPR_VECTOR std::vector<uint32_t> log2_arange(const uint32_t n) {
-    std::vector<uint32_t> values(size_t{n} + 1);
+[[nodiscard]] CONSTEXPR_VECTOR std::vector<uint32_t> log2_arange(const size_t n) {
+    std::vector<uint32_t> values(n != std::numeric_limits<size_t>::max() ? n + 1 : n);
     values[0] = static_cast<uint32_t>(-1);
     for (size_t i = 1; i <= n; i++) {
         values[i] = values[i / 2] + 1;
+    }
+
+    return values;
+}
+
+/// @brief Return vector of elements {p^0, p^1, p^2, p^3, ..., p^n}
+/// @param n
+/// @return
+[[nodiscard]]
+CONSTEXPR_VECTOR std::vector<double> pow_arange(const size_t n, const double p) {
+    std::vector<double> values(n != std::numeric_limits<size_t>::max() ? n + 1 : n);
+    double current_pow = 1.0;
+    values[0]          = current_pow;
+    for (size_t i = 1; i <= n; i++) {
+        current_pow *= p;
+        values[i] = current_pow;
+    }
+
+    return values;
+}
+
+/// @brief Return vector of elements {e^0, e^1, e^2, e^3, ..., e^n}
+/// @param n
+/// @return
+[[nodiscard]]
+CONSTEXPR_VECTOR std::vector<double> exp_arange(const size_t n) {
+    return ::math_functions::pow_arange(n, ::math_functions::detail::kE);
+}
+
+/// @brief Return vector of elements {p^0 mod m, p^1 mod m, p^2 mod m, p^3 mod m, ..., p^n mod m}
+/// @param n
+/// @return
+[[nodiscard]]
+CONSTEXPR_VECTOR std::vector<uint32_t> pow_mod_m_arange(const size_t n, const uint32_t p,
+                                                        const uint32_t m) {
+    std::vector<uint32_t> values(n != std::numeric_limits<size_t>::max() ? n + 1 : n);
+    uint32_t current_pow = m != 1 ? 1u : 0u;
+    values[0]            = current_pow;
+    for (size_t i = 1; i <= n; i++) {
+        current_pow = static_cast<uint32_t>((uint64_t{current_pow} * uint64_t{p}) % m);
+        values[i]   = current_pow;
     }
 
     return values;
@@ -2932,8 +2986,8 @@ template <class T>
 /// @param n
 /// @return
 [[nodiscard]]
-CONSTEXPR_VECTOR std::vector<uint32_t> factorial_arange_mod_m(const uint32_t n, const uint32_t m) {
-    std::vector<uint32_t> values(size_t{n} + 1);
+CONSTEXPR_VECTOR std::vector<uint32_t> factorial_mod_m_arange(const size_t n, const uint32_t m) {
+    std::vector<uint32_t> values(n != std::numeric_limits<size_t>::max() ? n + 1 : n);
     uint32_t current_factorial = m != 1 ? 1U : 0U;
     values[0]                  = current_factorial;
     for (size_t i = 1; i <= n; i++) {
@@ -3004,8 +3058,8 @@ CONSTEXPR_VECTOR Iterator wmedian_impl(const Iterator begin, const Iterator end)
 
 #if CONFIG_HAS_CONCEPTS && defined(MATH_FUNCTIONS_HAS_RANGES)
 
-template <std::forward_iterator Iterator>
-    requires std::is_same_v<typename std::iter_value_t<Iterator>, uint32_t>
+template <::math_functions::integral_forward_iterator Iterator>
+    requires std::same_as<typename std::iter_value_t<Iterator>, uint32_t>
 [[nodiscard]] CONSTEXPR_VECTOR Iterator weighted_median(Iterator begin, Iterator end) {
     return ::math_functions::detail::wmedian_impl(begin, end);
 }
@@ -3025,14 +3079,11 @@ CONSTEXPR_VECTOR typename std::ranges::borrowed_iterator_t<Range> weighted_media
 
 // clang-format off
 
-template <class Iterator>
-ATTRIBUTE_NODISCARD
-CONSTEXPR_VECTOR typename std::enable_if_t<std::is_same_v<typename std::iterator_traits<Iterator>::value_type, uint32_t>,
-                          Iterator>
-weighted_median(Iterator begin, Iterator end) {
+template <class Iterator,
+          std::enable_if_t<std::is_same_v<typename std::iterator_traits<Iterator>::value_type, uint32_t>, int> = 0>
+ATTRIBUTE_NODISCARD CONSTEXPR_VECTOR Iterator weighted_median(Iterator begin, Iterator end) {
     return ::math_functions::detail::wmedian_impl(begin, end);
 }
-
 // clang-format on
 
 template <class Range>
@@ -3109,7 +3160,10 @@ ATTRIBUTE_NODISCARD
 ATTRIBUTE_ALWAYS_INLINE
 ATTRIBUTE_CONST
 I128_CONSTEXPR uint128_t gcd(uint128_t a, uint64_t b) noexcept {
-    if ((config::is_constant_evaluated() || config::is_gcc_constant_p(a <= b)) && a <= b) {
+    if ((config::is_constant_evaluated() && a <= std::numeric_limits<uint64_t>::max()) ||
+        (config::is_gcc_constant_p(a <= std::numeric_limits<uint64_t>::max()) &&
+         a <= std::numeric_limits<uint64_t>::max()) ||
+        (config::is_gcc_constant_p(a <= b) && a <= b)) {
         return std::gcd(static_cast<uint64_t>(a), b);
     }
 
@@ -3184,9 +3238,8 @@ I128_CONSTEXPR int128_t gcd(int64_t a, int128_t b) noexcept {
 template <class M, class N>
 [[nodiscard]]
 ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_CONST constexpr std::common_type_t<M, N> gcd(M m, N n) noexcept {
-    static_assert(
-        ::math_functions::detail::is_integral_v<M> && ::math_functions::detail::is_integral_v<N>,
-        "math_functions::gcd arguments must be integers");
+    static_assert(::math_functions::is_integral_v<M> && ::math_functions::is_integral_v<N>,
+                  "math_functions::gcd arguments must be integers");
 
 #if defined(INTEGERS_128_BIT_HPP)
     if constexpr (sizeof(M) <= sizeof(uint64_t) && sizeof(N) <= sizeof(uint64_t)) {
@@ -3202,11 +3255,18 @@ ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_CONST constexpr std::common_type_t<M, N> gcd(M
 }  // namespace math_functions
 
 #undef CONSTEXPR_VECTOR
+
+#ifdef MATH_FUNCTIONS_HAS_NUMBERS
+#undef MATH_FUNCTIONS_HAS_NUMBERS
+#endif
+#ifdef MATH_FUNCTIONS_HAS_RANGES
+#undef MATH_FUNCTIONS_HAS_RANGES
+#endif
 #ifdef MATH_FUNCTIONS_HAS_BIT
 #undef MATH_FUNCTIONS_HAS_BIT
 #endif
 
-#if defined(MATH_FUNCTIONS_HPP_ENABLE_TARGET_OPTIONS)
+#ifdef MATH_FUNCTIONS_HPP_ENABLE_TARGET_OPTIONS
 #if defined(__GNUG__)
 #if !defined(__clang__)
 #pragma GCC pop_options
