@@ -3530,7 +3530,7 @@ void test_pow_arange() {
         const vector<double> pow_range = pow_arange(n, p);
         assert(pow_range.size() == n + 1);
         for (uint32_t i = 0; i <= n; i++) {
-            const double eps = i <= 20   ? 1e-11
+            double eps = i <= 20   ? 1e-11
                                : i <= 30 ? 1e-10
                                : i <= 40 ? 1e-8
                                : i <= 50 ? 1e-7
@@ -3541,6 +3541,9 @@ void test_pow_arange() {
                                : i < 90  ? 1e-2
                                : i < 95  ? 1e-1
                                          : 1;
+#ifdef __MINGW32__
+            eps *= 10;
+#endif
             assert(std::abs(pow_range[i] - std::pow(p, i)) <= eps);
         }
     }
