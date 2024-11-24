@@ -744,7 +744,7 @@ void test_inv_mod_m() {
             const auto rnd_num = rnd_gen();
             return rnd_num % m != 0 ? rnd_num : rnd_num + 1;
         });
-        const auto [nums_mod_m, inv_nums] = math_functions::inv_mod_m(nums, m);
+        const auto [nums_mod_m, inv_nums] = math_functions::inv_range_mod_m(nums, m);
         assert(nums_mod_m.size() == n);
         assert(inv_nums.size() == n);
         for (std::size_t i = 0; i < n; i++) {
@@ -754,12 +754,12 @@ void test_inv_mod_m() {
         }
 
         {
-            auto [c1, c2] = math_functions::inv_mod_m(make_unique_vector(nums), m);
-            auto [c3, c4] = math_functions::inv_mod_m(make_rbtree_set(nums), m);
+            auto [c1, c2] = math_functions::inv_range_mod_m(make_unique_vector(nums), m);
+            auto [c3, c4] = math_functions::inv_range_mod_m(make_rbtree_set(nums), m);
             assert(c1 == c3);
             assert(c2 == c4);
 
-            auto [c5, c6] = math_functions::inv_mod_m(make_hash_set(nums), m);
+            auto [c5, c6] = math_functions::inv_range_mod_m(make_hash_set(nums), m);
             std::sort(c1.begin(), c1.end());
             std::sort(c5.begin(), c5.end());
             assert(c1 == c5);
@@ -767,7 +767,7 @@ void test_inv_mod_m() {
             std::sort(c6.begin(), c6.end());
             assert(c2 == c6);
 
-            auto [c7, c8] = math_functions::inv_mod_m(make_unique_list(nums), m);
+            auto [c7, c8] = math_functions::inv_range_mod_m(make_unique_list(nums), m);
             std::sort(c7.begin(), c7.end());
             assert(c1 == c7);
             std::sort(c8.begin(), c8.end());
@@ -3520,20 +3520,74 @@ void test_log2_arange() {
     }
 }
 
-void test_factorial_arange_mod_m() {
+void test_pow_arange() {
+    log_tests_started();
+
+    using std::vector;
+
+    for (const uint32_t n : {0U, 1U, 10U, 100U}) {
+        const double p                 = 1.42;
+        const vector<double> pow_range = pow_arange(n, p);
+        assert(pow_range.size() == n + 1);
+        for (uint32_t i = 0; i <= n; i++) {
+            const double eps = i <= 20   ? 1e-11
+                               : i <= 30 ? 1e-10
+                               : i <= 40 ? 1e-8
+                               : i <= 50 ? 1e-7
+                               : i <= 60 ? 1e-6
+                               : i <= 50 ? 1e-5
+                               : i <= 70 ? 1e-4
+                               : i <= 80 ? 1e-3
+                               : i < 90  ? 1e-2
+                               : i < 95  ? 1e-1
+                                         : 1;
+            assert(std::abs(pow_range[i] - std::pow(p, i)) <= eps);
+        }
+    }
+}
+
+void test_pow_mod_m_arange() {
+    log_tests_started();
+
+    using std::vector;
+
+    for (const uint32_t m : {2U, 4U, static_cast<uint32_t>(1e7) + 9}) {
+        for (const uint32_t n : {0U, 1U, 10U, 100U, 1000U}) {
+            const uint32_t p                 = 31;
+            const vector<uint32_t> pow_range = pow_mod_m_arange(n, p, m);
+            assert(pow_range.size() == n + 1);
+            for (uint32_t i = 0; i <= n; i++) {
+                assert(pow_range[i] == bin_pow_mod(p, i, m));
+            }
+        }
+    }
+}
+
+void test_factorial_mod_m_arange() {
     log_tests_started();
 
     for (const uint32_t m : {2U, 4U, static_cast<uint32_t>(1e7) + 9}) {
-        for (const uint32_t n : {10U, 1000U, 100000U}) {
-            const std::vector<uint32_t> fact_range = factorial_arange_mod_m(n, m);
-            uint32_t factorial                     = 1;
+        for (const uint32_t n : {0U, 10U, 1000U, 100000U}) {
+            const std::vector<uint32_t> fact_range = factorial_mod_m_arange(n, m);
+            assert(fact_range.size() == n + 1);
+            uint32_t factorial = 1;
             assert(fact_range[0] == factorial);
-            for (uint32_t i = 1; size_t{i} <= size_t{n}; i++) {
+            for (uint32_t i = 1; i <= n; i++) {
                 factorial = static_cast<uint32_t>((uint64_t{factorial} * uint64_t{i}) % m);
                 assert(fact_range[i] == factorial);
             }
         }
     }
+}
+
+void test_arange_functions() {
+    log_tests_started();
+
+    test_arange();
+    test_log2_arange();
+    test_factorial_mod_m_arange();
+    test_pow_arange();
+    test_pow_mod_m_arange();
 }
 
 void test_masked_popcount_sum() noexcept {
@@ -3794,9 +3848,7 @@ int main() {
     test_solve_binary_congruence_modulo_m();
     test_solve_factorial_congruence();
     test_powers_sum();
-    test_arange();
-    test_log2_arange();
-    test_factorial_arange_mod_m();
+    test_arange_functions();
     test_masked_popcount_sum();
     test_weighted_median();
 }
