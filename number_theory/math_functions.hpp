@@ -1871,6 +1871,8 @@ struct [[nodiscard]] PrimeFactor final {
 #define CONSTEXPR_VECTOR inline
 #endif
 
+// clang-format off
+
 template <class NumericType, class Function>
 #if CONFIG_HAS_CONCEPTS
     requires(sizeof(NumericType) >= sizeof(int)) && ::math_functions::integral<NumericType> &&
@@ -1878,11 +1880,13 @@ template <class NumericType, class Function>
                                 typename ::math_functions::PrimeFactor<
                                     typename ::math_functions::make_unsigned_t<NumericType>>>
 #endif
-[[nodiscard]] ATTRIBUTE_ALWAYS_INLINE constexpr auto
-visit_prime_factors(NumericType n, Function visitor) noexcept(
+ATTRIBUTE_ALWAYS_INLINE
+constexpr void visit_prime_factors(NumericType n, Function visitor) noexcept(
     std::is_nothrow_invocable_v<Function,
                                 typename ::math_functions::PrimeFactor<
                                     typename ::math_functions::make_unsigned_t<NumericType>>>) {
+    // clang-format on
+
     using UnsignedNumericType = typename ::math_functions::make_unsigned_t<NumericType>;
     using PrimeFactorType     = typename ::math_functions::PrimeFactor<UnsignedNumericType>;
     UnsignedNumericType n_abs = ::math_functions::uabs(n);
@@ -1972,21 +1976,22 @@ class [[nodiscard]] Factorizer final {
 public:
     using PrimeFactors = std::vector<PrimeFactor<uint32_t>>;
 
-    explicit CONSTEXPR_VECTOR Factorizer(uint32_t n) : primes(), least_prime_factor(size_t{n} + 1) {
+    explicit CONSTEXPR_VECTOR Factorizer(uint32_t n)
+        : primes_{}, least_prime_factor_(size_t{n} + 1) {
         for (uint32_t i = 2; i <= size_t{n}; i++) {
-            if (least_prime_factor[i] == 0) {
-                least_prime_factor[i] = i;
-                primes.push_back(i);
+            if (least_prime_factor_[i] == 0) {
+                least_prime_factor_[i] = i;
+                primes_.push_back(i);
             }
             for (size_t prime_index = 0;; prime_index++) {
-                const auto p = primes[prime_index];
-                const auto x = size_t{p} * i;
+                const auto p   = primes_.at(prime_index);
+                const size_t x = size_t{p} * i;
                 if (x > n) {
                     break;
                 }
-                least_prime_factor[x] = p;
-                // assert(p <= least_prime_factor[i]);
-                if (p == least_prime_factor[i]) {
+                least_prime_factor_[x] = p;
+                // assert(p <= least_prime_factor_[i]);
+                if (p == least_prime_factor_[i]) {
                     break;
                 }
             }
@@ -1994,14 +1999,17 @@ public:
     }
 
     [[nodiscard]] constexpr const auto& sorted_primes() const noexcept ATTRIBUTE_LIFETIME_BOUND {
-        return primes;
+        return primes_;
     }
     [[nodiscard]] constexpr const auto& least_prime_factors() const noexcept
         ATTRIBUTE_LIFETIME_BOUND {
-        return least_prime_factor;
+        return least_prime_factor_;
     }
     [[nodiscard]] CONSTEXPR_VECTOR bool is_prime(uint32_t n) const noexcept {
-        return least_prime_factor[n] == n && n >= 2;
+        return least_prime_factor_[n] == n && n >= 2;
+    }
+    [[nodiscard]] CONSTEXPR_VECTOR size_t max_checkable_number() const noexcept {
+        return least_prime_factor_.size() - 1;
     }
 
     [[nodiscard]] CONSTEXPR_VECTOR PrimeFactors prime_factors(uint32_t n) const {
@@ -2013,7 +2021,7 @@ public:
         }
 
         while (n >= 3) {
-            const auto lpf = least_prime_factor[n];
+            const auto lpf = least_prime_factor_[n];
             if (pfs.empty() || pfs.back().factor != lpf) {
                 // assert(pfs.empty() || pfs.back().factor < lpf);
                 pfs.emplace_back(lpf, uint32_t{1});
@@ -2031,14 +2039,15 @@ public:
     [[nodiscard]]
     CONSTEXPR_VECTOR uint32_t number_of_unique_prime_factors(uint32_t n) const noexcept {
         return ::math_functions::Factorizer::number_of_unique_prime_factors_impl(
-            least_prime_factor.data(), n);
+            least_prime_factor_.data(), n);
     }
 
 private:
+    ATTRIBUTE_NODISCARD
     ATTRIBUTE_PURE
-    ATTRIBUTE_SIZED_ACCESS(read_only, 1, 2)
+    ATTRIBUTE_ACCESS(read_only, 1)
     static constexpr uint32_t number_of_unique_prime_factors_impl(
-        const uint32_t* least_prime_factor, uint32_t n) noexcept {
+        const uint32_t* RESTRICT_QUALIFIER least_prime_factor, uint32_t n) noexcept {
         uint32_t unique_pfs_count = 0;
         uint32_t last_pf          = 0;
         if (n % 2 == 0) {
@@ -2061,8 +2070,8 @@ private:
         return unique_pfs_count;
     }
 
-    std::vector<uint32_t> primes;
-    std::vector<uint32_t> least_prime_factor;
+    std::vector<uint32_t> primes_;
+    std::vector<uint32_t> least_prime_factor_;
 };
 
 /// @brief Find all prime numbers in [2; n]
@@ -2932,7 +2941,7 @@ template <class T>
 /// @param n
 /// @return
 [[nodiscard]] CONSTEXPR_VECTOR std::vector<uint32_t> log2_arange(const size_t n) {
-    std::vector<uint32_t> values(n != std::numeric_limits<size_t>::max() ? n + 1 : n);
+    std::vector<uint32_t> values(n + 1 != 0 ? n + 1 : n);
     values[0] = static_cast<uint32_t>(-1);
     for (size_t i = 1; i <= n; i++) {
         values[i] = values[i / 2] + 1;
@@ -2944,11 +2953,14 @@ template <class T>
 /// @brief Return vector of elements {p^0, p^1, p^2, p^3, ..., p^n}
 /// @param n
 /// @return
+template <class T>
 [[nodiscard]]
-CONSTEXPR_VECTOR std::vector<double> pow_arange(const size_t n, const double p) {
-    std::vector<double> values(n != std::numeric_limits<size_t>::max() ? n + 1 : n);
-    double current_pow = 1.0;
-    values[0]          = current_pow;
+CONSTEXPR_VECTOR std::vector<T> pow_arange(const size_t n, const T p) {
+    static_assert(std::is_floating_point_v<T>, "floating point type is expected");
+
+    std::vector<T> values(n + 1 != 0 ? n + 1 : n);
+    T current_pow = T{1};
+    values[0]     = current_pow;
     for (size_t i = 1; i <= n; i++) {
         current_pow *= p;
         values[i] = current_pow;
@@ -2960,9 +2972,10 @@ CONSTEXPR_VECTOR std::vector<double> pow_arange(const size_t n, const double p) 
 /// @brief Return vector of elements {e^0, e^1, e^2, e^3, ..., e^n}
 /// @param n
 /// @return
+template <class T>
 [[nodiscard]]
-CONSTEXPR_VECTOR std::vector<double> exp_arange(const size_t n) {
-    return ::math_functions::pow_arange(n, ::math_functions::detail::kE);
+CONSTEXPR_VECTOR std::vector<T> exp_arange(const size_t n) {
+    return ::math_functions::pow_arange<T>(n, ::math_functions::detail::kE);
 }
 
 /// @brief Return vector of elements {p^0 mod m, p^1 mod m, p^2 mod m, p^3 mod m, ..., p^n mod m}
@@ -2971,7 +2984,7 @@ CONSTEXPR_VECTOR std::vector<double> exp_arange(const size_t n) {
 [[nodiscard]]
 CONSTEXPR_VECTOR std::vector<uint32_t> pow_mod_m_arange(const size_t n, const uint32_t p,
                                                         const uint32_t m) {
-    std::vector<uint32_t> values(n != std::numeric_limits<size_t>::max() ? n + 1 : n);
+    std::vector<uint32_t> values(n + 1 != 0 ? n + 1 : n);
     uint32_t current_pow = m != 1 ? 1u : 0u;
     values[0]            = current_pow;
     for (size_t i = 1; i <= n; i++) {
@@ -2987,7 +3000,7 @@ CONSTEXPR_VECTOR std::vector<uint32_t> pow_mod_m_arange(const size_t n, const ui
 /// @return
 [[nodiscard]]
 CONSTEXPR_VECTOR std::vector<uint32_t> factorial_mod_m_arange(const size_t n, const uint32_t m) {
-    std::vector<uint32_t> values(n != std::numeric_limits<size_t>::max() ? n + 1 : n);
+    std::vector<uint32_t> values(n + 1 != 0 ? n + 1 : n);
     uint32_t current_factorial = m != 1 ? 1U : 0U;
     values[0]                  = current_factorial;
     for (size_t i = 1; i <= n; i++) {
@@ -3008,7 +3021,7 @@ ATTRIBUTE_ALWAYS_INLINE
 ATTRIBUTE_SIZED_ACCESS(read_only, 3, 4)
 constexpr Iterator find_wmedian_iter(uint64_t weighted_sum,
                            Iterator iter,
-                           const uint64_t* const prefsums,
+                           const uint64_t* const RESTRICT_QUALIFIER prefsums,
                            const size_t prefsums_size) noexcept {
     // clang-format on
 

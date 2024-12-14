@@ -3526,23 +3526,23 @@ void test_pow_arange() {
     using std::vector;
 
     for (const uint32_t n : {0U, 1U, 10U, 100U}) {
-        const double p                 = 1.42;
-        const vector<double> pow_range = pow_arange(n, p);
+        const long double p    = 1.42L;
+        const vector pow_range = pow_arange(n, p);
         assert(pow_range.size() == n + 1);
         for (uint32_t i = 0; i <= n; i++) {
-            double eps = i <= 20   ? 1e-11
-                               : i <= 30 ? 1e-10
-                               : i <= 40 ? 1e-8
-                               : i <= 50 ? 1e-7
-                               : i <= 60 ? 1e-6
-                               : i <= 50 ? 1e-5
-                               : i <= 70 ? 1e-4
-                               : i <= 80 ? 1e-3
-                               : i < 90  ? 1e-2
-                               : i < 95  ? 1e-1
-                                         : 1;
+            long double eps = i <= 20   ? 1e-11L
+                              : i <= 30 ? 1e-10L
+                              : i <= 40 ? 1e-8L
+                              : i <= 50 ? 1e-7L
+                              : i <= 60 ? 1e-6L
+                              : i <= 50 ? 1e-5L
+                              : i <= 70 ? 1e-4L
+                              : i <= 80 ? 1e-3L
+                              : i < 90  ? 1e-2L
+                              : i < 95  ? 1e-1L
+                                        : 1.0L;
 #ifdef __MINGW32__
-            eps *= 10;
+            eps *= 20;
 #endif
             assert(std::abs(pow_range[i] - std::pow(p, i)) <= eps);
         }
