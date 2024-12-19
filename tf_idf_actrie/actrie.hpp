@@ -19,19 +19,23 @@ using Symbol = unsigned char;
 inline constexpr Symbol kDefaultAlphabetStart = 'A';
 inline constexpr Symbol kDefaultAlphabetEnd   = 'z';
 
-template <Symbol AlphabetStart = kDefaultAlphabetStart, Symbol AlphabetEnd = kDefaultAlphabetEnd,
+template <Symbol AlphabetStart   = kDefaultAlphabetStart,
+          Symbol AlphabetEnd     = kDefaultAlphabetEnd,
           bool IsCaseInsensetive = false>
 class ACTrie;
 
-template <Symbol AlphabetStart = kDefaultAlphabetStart, Symbol AlphabetEnd = kDefaultAlphabetEnd,
+template <Symbol AlphabetStart   = kDefaultAlphabetStart,
+          Symbol AlphabetEnd     = kDefaultAlphabetEnd,
           bool IsCaseInsensetive = false>
 class ReplacingACTrie;
 
-template <Symbol AlphabetStart = kDefaultAlphabetStart, Symbol AlphabetEnd = kDefaultAlphabetEnd,
+template <Symbol AlphabetStart   = kDefaultAlphabetStart,
+          Symbol AlphabetEnd     = kDefaultAlphabetEnd,
           bool IsCaseInsensetive = false>
 class ACTrieBuilder;
 
-template <Symbol AlphabetStart = kDefaultAlphabetStart, Symbol AlphabetEnd = kDefaultAlphabetEnd,
+template <Symbol AlphabetStart   = kDefaultAlphabetStart,
+          Symbol AlphabetEnd     = kDefaultAlphabetEnd,
           bool IsCaseInsensetive = false>
 class ReplacingACTrieBuilder;
 
@@ -91,7 +95,8 @@ public:
         return ContainsPatternImpl(pattern.begin(), pattern.end(), nodes_);
     }
     template <typename FindCallback>
-        requires requires(FindCallback func, std::string_view found_word,
+        requires requires(FindCallback func,
+                          std::string_view found_word,
                           size_type start_index_in_original_text) {
             func(found_word, start_index_in_original_text);
         }
@@ -144,13 +149,20 @@ public:
             }
         }
     }
-    template <bool IsExactWordsMatching = true, bool CountEmptyLines = true,
-              Symbol LinesDelimeter = '\n', typename QueryWordCallback, typename NewLineCallback>
-        requires requires(QueryWordCallback func, size_type line_number,
+    template <bool IsExactWordsMatching = true,
+              bool CountEmptyLines      = true,
+              Symbol LinesDelimeter     = '\n',
+              typename QueryWordCallback,
+              typename NewLineCallback>
+        requires requires(QueryWordCallback func,
+                          size_type line_number,
                           StoredPatternIndex query_word_index) {
             func(line_number, query_word_index);
-        } && requires(NewLineCallback func, size_type line_number, size_type words_on_current_line,
-                      size_type line_start_index, size_type line_end_index) {
+        } && requires(NewLineCallback func,
+                      size_type line_number,
+                      size_type words_on_current_line,
+                      size_type line_start_index,
+                      size_type line_end_index) {
             func(line_number, words_on_current_line, line_start_index, line_end_index);
         }
     [[nodiscard]]
@@ -523,8 +535,10 @@ private:
     using ReplacementsVector = std::vector<std::string>;
 
     static constexpr void ReplaceOccuranceWithResize(
-        std::string& text, std::string::iterator occurance_last_position_iter,
-        StoredPatternIndex pattern_index, const std::vector<StoredPatternSize>& patterns_lengths,
+        std::string& text,
+        std::string::iterator occurance_last_position_iter,
+        StoredPatternIndex pattern_index,
+        const std::vector<StoredPatternSize>& patterns_lengths,
         const ReplacementsVector& words_replacements) {
         const size_type r_index_including =
             static_cast<size_type>(occurance_last_position_iter - text.begin());
@@ -645,7 +659,8 @@ private:
 
     template <class PatternIterator>
     static constexpr bool AddPatternImpl(PatternIterator pattern_iter_begin,
-                                         PatternIterator pattern_iter_end, std::vector<Node>& nodes,
+                                         PatternIterator pattern_iter_end,
+                                         std::vector<Node>& nodes,
                                          std::vector<StoredPatternSize>& words_lengths) {
         const auto pattern_size = static_cast<size_type>(pattern_iter_end - pattern_iter_begin);
         size_type current_node_index = kRootNodeIndex;

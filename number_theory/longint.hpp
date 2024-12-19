@@ -1892,8 +1892,10 @@ private:
         ATTRIBUTE_SIZED_ACCESS(read_only, 1, 2)
         ATTRIBUTE_SIZED_ACCESS(read_only, 3, 4)
         ATTRIBUTE_ACCESS(read_write, 5)
-        static constexpr void multiply_and_store_to(const digit_t m_ptr[], const size_type m,
-                                                    const digit_t k_ptr[], const size_type k,
+        static constexpr void multiply_and_store_to(const digit_t m_ptr[],
+                                                    const size_type m,
+                                                    const digit_t k_ptr[],
+                                                    const size_type k,
                                                     digit_t* const ans) noexcept {
             LONGINT_DEBUG_ASSERT(m <= k);
             CONFIG_ASSUME_STATEMENT(m <= k);
@@ -1978,9 +1980,12 @@ private:
         ATTRIBUTE_SIZED_ACCESS(read_only, 1, 2)
         ATTRIBUTE_SIZED_ACCESS(read_only, 3, 4)
         ATTRIBUTE_SIZED_ACCESS(write_only, 5, 6)
-        static void convert_longint_nums_to_fft_poly(const digit_t m_ptr[], const size_type m,
-                                                     const digit_t k_ptr[], const size_type k,
-                                                     fft::complex* p, const poly_size_type n,
+        static void convert_longint_nums_to_fft_poly(const digit_t m_ptr[],
+                                                     const size_type m,
+                                                     const digit_t k_ptr[],
+                                                     const size_type k,
+                                                     fft::complex* p,
+                                                     const poly_size_type n,
                                                      bool need_high_precision) noexcept {
             LONGINT_DEBUG_ASSERT(0 < m);
             CONFIG_ASSUME_STATEMENT(0 < m);
@@ -2075,7 +2080,8 @@ private:
         ATTRIBUTE_SIZED_ACCESS(read_only, 1, 2)
         ATTRIBUTE_SIZED_ACCESS(write_only, 3, 4)
         static void convert_longint_nums_to_fft_poly(const digit_t nums_ptr[],
-                                                     const size_type nums_size, fft::complex* p,
+                                                     const size_type nums_size,
+                                                     fft::complex* p,
                                                      const poly_size_type n,
                                                      bool need_high_precision) noexcept {
             LONGINT_DEBUG_ASSERT(0 < nums_size);
@@ -2318,7 +2324,9 @@ private:
     ATTRIBUTE_SIZED_ACCESS(read_only, 2, 3)
     ATTRIBUTE_NONNULL_ALL_ARGS
     ATTRIBUTE_ALWAYS_INLINE
-    static constexpr void divmod_normalize_vn(digit_t vn[], const digit_t v[], size_type n,
+    static constexpr void divmod_normalize_vn(digit_t vn[],
+                                              const digit_t v[],
+                                              size_type n,
                                               std::uint32_t s) noexcept {
         LONGINT_DEBUG_ASSERT(n > 1);
         CONFIG_ASSUME_STATEMENT(n > 1);
@@ -2334,7 +2342,9 @@ private:
     ATTRIBUTE_SIZED_ACCESS(read_only, 2, 3)
     ATTRIBUTE_NONNULL_ALL_ARGS
     ATTRIBUTE_ALWAYS_INLINE
-    static constexpr void divmod_normalize_un(digit_t un[], const digit_t u[], size_type m,
+    static constexpr void divmod_normalize_un(digit_t un[],
+                                              const digit_t u[],
+                                              size_type m,
                                               ATTRIBUTE_MAYBE_UNUSED size_type m_plus_one,
                                               std::uint32_t s) noexcept {
         LONGINT_DEBUG_ASSERT(m > 1);
@@ -2354,7 +2364,8 @@ private:
     ATTRIBUTE_SIZED_ACCESS(read_only, 2, 4)
     ATTRIBUTE_NONNULL_ALL_ARGS
     ATTRIBUTE_ALWAYS_INLINE
-    static constexpr void divmod_unnormalize_remainder(digit_t rem[], const digit_t un[],
+    static constexpr void divmod_unnormalize_remainder(digit_t rem[],
+                                                       const digit_t un[],
                                                        size_type n,
                                                        ATTRIBUTE_MAYBE_UNUSED size_type n_plus_one,
                                                        std::uint32_t s) noexcept {
@@ -2415,8 +2426,10 @@ private:
     ATTRIBUTE_SIZED_ACCESS(read_write, 1, 2)
     ATTRIBUTE_SIZED_ACCESS(read_write, 4, 2)
     ATTRIBUTE_ACCESS(read_write, 5)
-    static void convertDecBaseMultAdd(digit_t conv_digits[], const size_type conv_len,
-                                      const longint& conv_base_pow, digit_t mult_add_buffer[],
+    static void convertDecBaseMultAdd(digit_t conv_digits[],
+                                      const size_type conv_len,
+                                      const longint& conv_base_pow,
+                                      digit_t mult_add_buffer[],
                                       fft::complex fft_poly_buffer[]) {
         LONGINT_DEBUG_ASSERT(0 < conv_base_pow.size_);
         CONFIG_ASSUME_STATEMENT(0 < conv_base_pow.size_);
@@ -2431,8 +2444,10 @@ private:
     ATTRIBUTE_SIZED_ACCESS(read_only, 3, 4)
     ATTRIBUTE_SIZED_ACCESS(read_write, 5, 2)
     ATTRIBUTE_ACCESS(read_write, 6)
-    static void convertDecBaseMultAddImpl(digit_t conv_digits[], const size_type conv_len,
-                                          const digit_t m_ptr[], const size_type m_size,
+    static void convertDecBaseMultAddImpl(digit_t conv_digits[],
+                                          const size_type conv_len,
+                                          const digit_t m_ptr[],
+                                          const size_type m_size,
                                           digit_t mult_add_buffer[],
                                           fft::complex fft_poly_buffer[]) {
         const size_type half_conv_len = conv_len / 2;
@@ -2622,7 +2637,8 @@ private:
     ATTRIBUTE_SIZED_ACCESS(read_write, 1, 2)
     ATTRIBUTE_SIZED_ACCESS(read_only, 3, 4)
     ATTRIBUTE_NONNULL_ALL_ARGS
-    static constexpr void longint_add_with_free_space(digit_t lhs[], const size_type lhs_size,
+    static constexpr void longint_add_with_free_space(digit_t lhs[],
+                                                      const size_type lhs_size,
                                                       const digit_t rhs[],
                                                       const size_type rhs_size) noexcept {
         LONGINT_DEBUG_ASSERT(lhs_size > rhs_size);
@@ -2647,7 +2663,8 @@ private:
     ATTRIBUTE_SIZED_ACCESS(read_write, 1, 2)
     ATTRIBUTE_SIZED_ACCESS(read_only, 3, 4)
     ATTRIBUTE_NONNULL_ALL_ARGS
-    static constexpr bool longint_subtract_with_free_space(digit_t lhs[], const size_type lhs_size,
+    static constexpr bool longint_subtract_with_free_space(digit_t lhs[],
+                                                           const size_type lhs_size,
                                                            const digit_t rhs[],
                                                            const size_type rhs_size) noexcept {
         LONGINT_DEBUG_ASSERT(lhs_size >= rhs_size);
@@ -2665,7 +2682,8 @@ private:
     ATTRIBUTE_SIZED_ACCESS(read_write, 1, 2)
     ATTRIBUTE_SIZED_ACCESS(read_only, 3, 4)
     ATTRIBUTE_NONNULL_ALL_ARGS
-    static constexpr bool longint_subtract_with_carry(digit_t lhs[], const size_type lhs_size,
+    static constexpr bool longint_subtract_with_carry(digit_t lhs[],
+                                                      const size_type lhs_size,
                                                       const digit_t rhs[],
                                                       const size_type rhs_size) noexcept {
         LONGINT_DEBUG_ASSERT(lhs_size >= rhs_size);

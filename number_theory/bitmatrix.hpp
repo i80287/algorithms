@@ -290,7 +290,8 @@ private:
 public:
     template <std::size_t N>
     using word_type = std::conditional_t<
-        (N > 32) && kCanUseUInt64, std::uint64_t,
+        (N > 32) && kCanUseUInt64,
+        std::uint64_t,
         std::conditional_t<(N > 8) && kCanUseUInt32, std::uint32_t, std::uint8_t>>;
 };
 

@@ -163,13 +163,13 @@ public:
         return data_ + i * cols();
     }
     [[nodiscard]]
-    ATTRIBUTE_ALWAYS_INLINE const_pointer
-    operator[](size_type i) const noexcept ATTRIBUTE_LIFETIME_BOUND {
+    ATTRIBUTE_ALWAYS_INLINE const_pointer operator[](size_type i) const noexcept
+        ATTRIBUTE_LIFETIME_BOUND {
         return data_ + i * cols();
     }
     [[nodiscard]]
-    ATTRIBUTE_ALWAYS_INLINE reference operator()(size_type i,
-                                                 size_type j) noexcept ATTRIBUTE_LIFETIME_BOUND {
+    ATTRIBUTE_ALWAYS_INLINE reference operator()(size_type i, size_type j) noexcept
+        ATTRIBUTE_LIFETIME_BOUND {
         return data_[i * cols() + j];
     }
     [[nodiscard]]

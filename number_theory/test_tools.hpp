@@ -36,8 +36,10 @@
 namespace test_tools {
 namespace test_tools_detail {
 
-[[noreturn]] ATTRIBUTE_COLD inline void throw_impl(const char* message, const char* file_name,
-                                                   std::uint32_t line, const char* function_name) {
+[[noreturn]] ATTRIBUTE_COLD inline void throw_impl(const char* message,
+                                                   const char* file_name,
+                                                   std::uint32_t line,
+                                                   const char* function_name) {
     constexpr std::size_t kMaxErrorMessageSize = 1024 * sizeof(char);
     std::array<char, kMaxErrorMessageSize> buffer{};
     const int bytes_written =
@@ -60,17 +62,22 @@ namespace test_tools_detail {
     throw std::runtime_error(buffer.data());
 }
 
-inline void log_location_impl(const char* file_name, std::uint32_t line,
+inline void log_location_impl(const char* file_name,
+                              std::uint32_t line,
                               const char* function_name) noexcept {
     printf("%s:%u: %s\n", file_name, line, function_name);
 }
 
-inline void log_message_impl(const char* file_name, std::uint32_t line, const char* function_name,
+inline void log_message_impl(const char* file_name,
+                             std::uint32_t line,
+                             const char* function_name,
                              const char* message) noexcept {
     printf("%s:%u: %s:\n    %s\n", file_name, line, function_name, message);
 }
 
-inline void log_message_impl(const char* file_name, std::uint32_t line, const char* function_name,
+inline void log_message_impl(const char* file_name,
+                             std::uint32_t line,
+                             const char* function_name,
                              std::string_view message) noexcept {
     const auto message_size = static_cast<int>(message.size());
     printf("%s:%u: %s:\n    %.*s\n", file_name, line, function_name, message_size, message.data());
@@ -80,7 +87,8 @@ inline void log_message_impl(const char* file_name, std::uint32_t line, const ch
 
 #if defined(TEST_TOOLS_HAS_SOURCE_LOCATION)
 
-inline void throw_if_not(bool expr, const char* message_format,
+inline void throw_if_not(bool expr,
+                         const char* message_format,
                          const std::source_location src = std::source_location::current()) {
     if (unlikely(!expr)) {
         ::test_tools::test_tools_detail::throw_impl(message_format, src.file_name(), src.line(),
@@ -120,8 +128,11 @@ ATTRIBUTE_ALWAYS_INLINE inline void log_message(
 
 namespace test_tools_detail {
 
-inline void throw_if_not_impl(bool expr, const char* message_format, const char* file_name,
-                              std::uint32_t line, const char* function_name) {
+inline void throw_if_not_impl(bool expr,
+                              const char* message_format,
+                              const char* file_name,
+                              std::uint32_t line,
+                              const char* function_name) {
     if (unlikely(!expr)) {
         ::test_tools::test_tools_detail::throw_impl(message_format, file_name, line, function_name);
     }

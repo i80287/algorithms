@@ -6,6 +6,7 @@
 #include <concepts>
 #include <cstddef>
 #include <cstdint>
+#include <iterator>
 #include <limits>
 #include <new>
 #include <type_traits>
@@ -16,18 +17,15 @@ namespace hungarian_algo {
 
 namespace detail {
 
-template <class TMatrixRow>
-using MatrixRowValueType =
-    typename std::iterator_traits<typename std::ranges::iterator_t<TMatrixRow>>::value_type;
+template <class MatrixRow>
+using MatrixRowValueType = std::iter_value_t<typename std::ranges::iterator_t<MatrixRow>>;
 
 template <class MatrixIterator>
-using MatrixValueType =
-    MatrixRowValueType<typename std::iterator_traits<MatrixIterator>::value_type>;
+using MatrixValueType = MatrixRowValueType<typename std::iter_value_t<MatrixIterator>>;
 
 template <class Iterator>
-concept MatrixRowIterator =
-    std::random_access_iterator<Iterator> &&
-    std::is_arithmetic_v<typename std::iterator_traits<Iterator>::value_type>;
+concept MatrixRowIterator = std::random_access_iterator<Iterator> &&
+                            std::is_arithmetic_v<typename std::iter_value_t<Iterator>>;
 
 template <class Container>
 concept MatrixRow = std::ranges::random_access_range<Container> &&
@@ -43,12 +41,12 @@ class MinAssignmentGraph final {
 
 public:
     template <std::ranges::range Matrix>
-    static T min_assignment(Matrix matrix) {
+    [[nodiscard]] static T min_assignment(const Matrix& matrix) {
         return min_assignment(std::begin(matrix), std::end(matrix));
     }
 
     template <MatrixIterator Iterator>
-    static T min_assignment(Iterator matrix_iter_begin, Iterator matrix_iter_end) {
+    [[nodiscard]] static T min_assignment(Iterator matrix_iter_begin, Iterator matrix_iter_end) {
         auto g = MinAssignmentGraph<T>::from_matrix(matrix_iter_begin, matrix_iter_end);
         bool found_perfect_matching{};
         do {
@@ -67,8 +65,8 @@ public:
 
 private:
     template <class Iterator>
-    static MinAssignmentGraph from_matrix(Iterator original_matrix_iter_begin,
-                                          Iterator original_matrix_iter_end) {
+    [[nodiscard]] static MinAssignmentGraph from_matrix(Iterator original_matrix_iter_begin,
+                                                        Iterator original_matrix_iter_end) {
         const auto n = static_cast<std::size_t>(
             std::distance(original_matrix_iter_begin, original_matrix_iter_end));
 
@@ -138,7 +136,7 @@ private:
                                   bipartite_graph_matrix, matrix, n);
     }
 
-    constexpr bool next_iter() noexcept {
+    [[nodiscard]] constexpr bool next_iter() noexcept {
         fill_bipartite_graph();
         if (const bool found_perfect_matching = find_max_matching(); found_perfect_matching) {
             return true;
@@ -167,7 +165,8 @@ private:
                                  std::size_t** RESTRICT_QUALIFIER neighbours,
                                  std::size_t* RESTRICT_QUALIFIER neighbours_count,
                                  bool** RESTRICT_QUALIFIER bipartite_graph_matrix,
-                                 T** RESTRICT_QUALIFIER matrix, std::size_t size) noexcept
+                                 T** RESTRICT_QUALIFIER matrix,
+                                 std::size_t size) noexcept
         : first_part_matches_(first_part_matches),
           second_part_matches_(second_part_matches),
           first_part_visited_(first_part_visited),
@@ -178,8 +177,7 @@ private:
           matrix_(matrix),
           size_(size) {}
 
-    [[nodiscard]]
-    ATTRIBUTE_CONST static constexpr std::size_t align_size(std::size_t n) noexcept {
+    [[nodiscard]] ATTRIBUTE_CONST static constexpr std::size_t align_size(std::size_t n) noexcept {
         constexpr std::size_t kAlignmentBoundary = 32;
         n = (n + kAlignmentBoundary) & ~(kAlignmentBoundary - 1);
         return n;
@@ -191,7 +189,8 @@ private:
     /// @param matrix_copy
     template <class Iterator>
     ATTRIBUTE_ACCESS(read_write, 3)
-    static void copy_matrix_with_subtraction(Iterator original_matrix_iter_begin, std::size_t n,
+    static void copy_matrix_with_subtraction(Iterator original_matrix_iter_begin,
+                                             std::size_t n,
                                              T** RESTRICT_QUALIFIER matrix_copy) noexcept {
         for (std::size_t i = 0; i < n; ++original_matrix_iter_begin, ++i) {
             const auto& original_matrix_row = *original_matrix_iter_begin;
@@ -274,12 +273,12 @@ private:
         }
     }
 
-    constexpr bool find_max_matching() noexcept {
+    [[nodiscard]] constexpr bool find_max_matching() noexcept {
         for (vertex_t i = 0; i < size_; ++i) {
             if (first_part_matches_[i] == kNoMatch) {
                 std::fill_n(first_part_visited_, size_, false);
                 std::fill_n(second_part_visited_, size_, false);
-                dfs_find_chain_and_update_matches(i);
+                static_cast<void>(dfs_find_chain_and_update_matches(i));
             }
         }
 
@@ -296,7 +295,7 @@ private:
         return graph_satisfied;
     }
 
-    constexpr std::size_t dfs_find_chain_and_update_matches(std::size_t i) noexcept {
+    [[nodiscard]] constexpr std::size_t dfs_find_chain_and_update_matches(std::size_t i) noexcept {
         assert(!first_part_visited_[i]);
         first_part_visited_[i]          = true;
         const std::size_t* i_neighbours = neighbours_[i];
@@ -416,14 +415,14 @@ private:
 }  // namespace detail
 
 template <hungarian_algo::detail::MatrixIterator Iterator>
-auto min_assignment(Iterator matrix_iter_begin, Iterator matrix_iter_end) {
+[[nodiscard]] auto min_assignment(Iterator matrix_iter_begin, Iterator matrix_iter_end) {
     using T = typename hungarian_algo::detail::MatrixValueType<Iterator>;
     return hungarian_algo::detail::MinAssignmentGraph<T>::min_assignment(matrix_iter_begin,
                                                                          matrix_iter_end);
 }
 
 template <std::ranges::random_access_range TMatrix>
-auto min_assignment(const TMatrix& matrix) {
+[[nodiscard]] auto min_assignment(const TMatrix& matrix) {
     return hungarian_algo::min_assignment(std::begin(matrix), std::end(matrix));
 }
 

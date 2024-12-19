@@ -133,7 +133,8 @@ template <class T>
 /// @param[in] p
 /// @param[in] mod
 /// @return (n ^ p) % mod
-[[nodiscard]] ATTRIBUTE_CONST constexpr uint32_t bin_pow_mod(uint32_t n, uint64_t p,
+[[nodiscard]] ATTRIBUTE_CONST constexpr uint32_t bin_pow_mod(uint32_t n,
+                                                             uint64_t p,
                                                              uint32_t mod) noexcept {
     uint64_t res     = mod != 1;
     uint64_t widen_n = n;
@@ -2233,7 +2234,8 @@ struct HelperRetType {
 
 ATTRIBUTE_CONST
 ATTRIBUTE_ALWAYS_INLINE
-constexpr HelperRetType congruence_helper(const uint32_t a, const uint32_t c,
+constexpr HelperRetType congruence_helper(const uint32_t a,
+                                          const uint32_t c,
                                           const uint32_t m) noexcept {
     const uint32_t d = std::gcd(a, m);
     if (m == 0 || c % d != 0) {
@@ -2276,7 +2278,8 @@ std::vector<uint32_t> solve_congruence_modulo_m_all_roots_impl(uint32_t a, uint3
     return solutions;
 }
 
-ATTRIBUTE_CONST constexpr uint32_t solve_congruence_modulo_m_impl(uint32_t a, uint32_t c,
+ATTRIBUTE_CONST constexpr uint32_t solve_congruence_modulo_m_impl(uint32_t a,
+                                                                  uint32_t c,
                                                                   uint32_t m) noexcept {
     return ::math_functions::detail::congruence_helper(a, c, m).x0;
 }
@@ -2442,7 +2445,8 @@ concept integral_forward_iterator =
 template <::math_functions::integral_forward_iterator Iterator>
 [[nodiscard]]
 CONSTEXPR_VECTOR ::math_functions::InverseResult inv_range_mod_m(Iterator nums_begin,
-                                                                 Iterator nums_end, uint32_t m) {
+                                                                 Iterator nums_end,
+                                                                 uint32_t m) {
     return ::math_functions::detail::inv_range_mod_m_impl(nums_begin, nums_end, m);
 }
 
@@ -2982,7 +2986,8 @@ CONSTEXPR_VECTOR std::vector<T> exp_arange(const size_t n) {
 /// @param n
 /// @return
 [[nodiscard]]
-CONSTEXPR_VECTOR std::vector<uint32_t> pow_mod_m_arange(const size_t n, const uint32_t p,
+CONSTEXPR_VECTOR std::vector<uint32_t> pow_mod_m_arange(const size_t n,
+                                                        const uint32_t p,
                                                         const uint32_t m) {
     std::vector<uint32_t> values(n + 1 != 0 ? n + 1 : n);
     uint32_t current_pow = m != 1 ? 1u : 0u;

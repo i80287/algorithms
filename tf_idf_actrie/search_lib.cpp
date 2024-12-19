@@ -155,9 +155,11 @@ std::vector<string_view> Search(string_view text, string_view query, size_t max_
     return result_lines;
 }
 
-template std::vector<string_view> Search<true>(string_view text, string_view query,
+template std::vector<string_view> Search<true>(string_view text,
+                                               string_view query,
                                                size_t max_result_size);
-template std::vector<string_view> Search<false>(string_view text, string_view query,
+template std::vector<string_view> Search<false>(string_view text,
+                                                string_view query,
                                                 size_t max_result_size);
 
 }  // namespace search_lib

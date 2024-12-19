@@ -281,7 +281,8 @@ template <std::size_t AlphabetSize>
 using CountingVector = std::vector<CountingNode<AlphabetSize>>;
 #endif
 
-template <trie_tools::TrieParamsType TrieParams, strmapdetail::CompileTimeStringLiteral FirstString,
+template <trie_tools::TrieParamsType TrieParams,
+          strmapdetail::CompileTimeStringLiteral FirstString,
           strmapdetail::CompileTimeStringLiteral... Strings>
 [[nodiscard]] STRING_MAP_CONSTEVAL std::pair<std::size_t, std::size_t>
 CountNodesSizeAndMaxHeightImpl(CountingVector<TrieParams.trie_alphabet_size>& nodes,
@@ -352,7 +353,8 @@ template <class T>
 concept MappableType = std::same_as<T, typename std::remove_cvref_t<T>> &&
                        std::copy_constructible<T> && std::is_copy_assignable_v<T>;
 
-template <trie_tools::TrieParamsType TrieParams, std::array MappedValues,
+template <trie_tools::TrieParamsType TrieParams,
+          std::array MappedValues,
           typename decltype(MappedValues)::value_type DefaultMapValue,
           CompileTimeStringLiteral... Strings>
 class [[nodiscard]] StringMapImplManyStrings final {
@@ -366,10 +368,10 @@ class [[nodiscard]] StringMapImplManyStrings final {
     struct [[nodiscard]] InternalIterator final {
         using iterator_category = std::random_access_iterator_tag;
         using difference_type   = std::ptrdiff_t;
-        using value_type = std::conditional_t<InCompileTime && !ForceUnsignedChar, const char,
-                                              const unsigned char>;
-        using pointer    = value_type*;
-        using reference  = value_type&;
+        using value_type        = std::
+            conditional_t<InCompileTime && !ForceUnsignedChar, const char, const unsigned char>;
+        using pointer   = value_type*;
+        using reference = value_type&;
 
         // clang-format off
 
@@ -550,7 +552,8 @@ private:
     NodesArray nodes_{};
 #endif
 
-    template <std::size_t CurrentPackIndex, strmapdetail::CompileTimeStringLiteral String,
+    template <std::size_t CurrentPackIndex,
+              strmapdetail::CompileTimeStringLiteral String,
               strmapdetail::CompileTimeStringLiteral... AddStrings>
     STRING_MAP_CONSTEVAL void add_pattern(std::size_t first_free_node_index) {
         std::size_t current_node_index = 0;
@@ -689,7 +692,9 @@ private:
 #undef GNU_NODES_FIELD_INIT_BUG
 #endif
 
-template <trie_tools::TrieParamsType TrieParams, std::array MappedValues, auto DefaultMapValue,
+template <trie_tools::TrieParamsType TrieParams,
+          std::array MappedValues,
+          auto DefaultMapValue,
           CompileTimeStringLiteral... Strings>
 class [[nodiscard]] StringMapImplFewStrings final {
     static_assert(0 < TrieParams.min_char && TrieParams.min_char <= TrieParams.max_char &&
@@ -828,7 +833,8 @@ template <std::size_t N>
 template <class Keys, StringMapValues MappedValues, auto MappedDefaultValue>
 struct StringHelper;
 
-template <strmapdetail::CompileTimeStringLiteral... Strings, StringMapValues MappedValues,
+template <strmapdetail::CompileTimeStringLiteral... Strings,
+          StringMapValues MappedValues,
           auto MappedDefaultValue>
 struct StringHelper<StringMapKeys<Strings...>, MappedValues, MappedDefaultValue> {
 private:
@@ -856,11 +862,15 @@ public:
          strmapdetail::trie_tools::kTrieParams<Strings...>.max_tree_height <=
              kMaxStringLengthForUnrolling),
         typename strmapdetail::impl::StringMapImplFewStrings<
-            strmapdetail::trie_tools::kTrieParams<Strings...>, MappedValues.values,
-            MappedDefaultValue, Strings...>,
+            strmapdetail::trie_tools::kTrieParams<Strings...>,
+            MappedValues.values,
+            MappedDefaultValue,
+            Strings...>,
         typename strmapdetail::impl::StringMapImplManyStrings<
-            strmapdetail::trie_tools::kTrieParams<Strings...>, MappedValues.values,
-            MappedDefaultValue, Strings...>>;
+            strmapdetail::trie_tools::kTrieParams<Strings...>,
+            MappedValues.values,
+            MappedDefaultValue,
+            Strings...>>;
 };
 
 }  // namespace strmapdetail
@@ -880,6 +890,6 @@ template <class Keys, StringMapValues Values, auto DefaultValue>
 using StringMap = typename strmapdetail::StringHelper<Keys, Values, DefaultValue>::type;
 
 template <strmapdetail::CompileTimeStringLiteral... Strings>
-using StringMatch =
-    StringMap<StringMapKeys<Strings...>, strmapdetail::make_index_array<sizeof...(Strings)>(),
-              sizeof...(Strings)>;
+using StringMatch = StringMap<StringMapKeys<Strings...>,
+                              strmapdetail::make_index_array<sizeof...(Strings)>(),
+                              sizeof...(Strings)>;

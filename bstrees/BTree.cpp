@@ -115,8 +115,12 @@ private:
             child_indexes_[pos + 1] = child_index;
         }
 
-        int32_t split_into(Node* new_brother, size_t new_brother_index, size_t pos, int32_t key,
-                           uint32_t child_index, size_t keys_capacity) noexcept {
+        int32_t split_into(Node* new_brother,
+                           size_t new_brother_index,
+                           size_t pos,
+                           int32_t key,
+                           uint32_t child_index,
+                           size_t keys_capacity) noexcept {
             size_t middle_key_index = keys_size_ / 2;
             assert(middle_key_index + 1 < keys_capacity);
 
