@@ -12,7 +12,7 @@ cmake -G Ninja \
     -D CMAKE_C_COMPILER=x86_64-w64-mingw32-gcc-posix \
     -D CMAKE_CXX_COMPILER=x86_64-w64-mingw32-g++-posix \
     -S .. -B . &&
-    cmake --build . --parallel "$(nproc)"
+    cmake --build . --parallel
 
 shopt -s nullglob
 for test_executable in *.exe; do

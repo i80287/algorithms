@@ -27,12 +27,12 @@ for cc_and_cxx in clang,clang++ gcc-13,g++-13 gcc-14,g++-14 i686-w64-mingw32-gcc
         -B "$cmake_build_dir"
     exported_compile_commands="./$cmake_build_dir/compile_commands.json"
     if [ -e "$exported_compile_commands" ]; then
-        if [[ "$OSTYPE" == "darwin"* ]]; then
-            cpu_count=$(sysctl -n hw.logicalcpu)
-        else
-            cpu_count=$(nproc)
-        fi
-        cmake --build "$cmake_build_dir" --parallel "$cpu_count"
+        # if [[ "$OSTYPE" == "darwin"* ]]; then
+        #     cpu_count=$(sysctl -n hw.logicalcpu)
+        # else
+        #     cpu_count=$(nproc)
+        # fi
+        cmake --build "$cmake_build_dir" --parallel
         report_file="./report_$c_compiler"
         parsed_report_file="./parsed_report_$c_compiler"
         CodeChecker analyze \

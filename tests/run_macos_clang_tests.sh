@@ -12,5 +12,5 @@ cmake -G Ninja \
         -D CMAKE_C_COMPILER=clang \
         -D CMAKE_CXX_COMPILER=clang++ \
         -S .. -B . &&
-        cmake --build . --parallel "$(sysctl -n hw.logicalcpu)" &&
+        cmake --build . --parallel &&
         env CTEST_OUTPUT_ON_FAILURE=1 ctest
