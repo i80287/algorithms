@@ -3,14 +3,13 @@
 #include <iostream>
 #include <numeric>
 #include <random>
-#include <source_location>
 #include <string_view>
 #include <utility>
 
 #include "../misc/get_typename.hpp"
 #include "dsu.hpp"
 
-template <size_t DSUSize>
+template <std::size_t DSUSize>
 struct slowdsu {
     using color_t = std::size_t;
     std::array<color_t, DSUSize> colors{};
