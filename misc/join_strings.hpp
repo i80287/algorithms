@@ -2,6 +2,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <limits>
 #include <string>
 #include <string_view>
 #include <type_traits>
@@ -19,17 +20,61 @@ inline constexpr bool is_char_v = std::is_same_v<T, char> || std::is_same_v<T, w
 #endif
                                   std::is_same_v<T, char16_t> || std::is_same_v<T, char32_t>;
 
+template <bool UseChar, class T>
+[[nodiscard]]
+ATTRIBUTE_ALWAYS_INLINE inline auto NumberToString(const T arg) {
+    static_assert(std::is_arithmetic_v<T>);
+
+    if constexpr (std::is_integral_v<T>) {
+        if (config::is_constant_evaluated() || config::is_gcc_constant_p(arg)) {
+            if (arg == 0) {
+                if constexpr (UseChar) {
+                    return std::string{"0"};
+                } else {
+                    return std::wstring{L"0"};
+                }
+            } else if constexpr (sizeof(T) > sizeof(int)) {
+                if constexpr (std::is_unsigned_v<T>) {
+                    if (arg <= std::numeric_limits<unsigned>::max()) {
+                        const unsigned comp_arg = static_cast<unsigned>(arg);
+                        if constexpr (UseChar) {
+                            return std::to_string(comp_arg);
+                        } else {
+                            return std::to_wstring(comp_arg);
+                        }
+                    }
+                } else {
+                    if (arg >= std::numeric_limits<int>::min() &&
+                        arg <= std::numeric_limits<int>::max()) {
+                        const int comp_arg = static_cast<int>(arg);
+                        if constexpr (UseChar) {
+                            return std::to_string(comp_arg);
+                        } else {
+                            return std::to_wstring(comp_arg);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    if constexpr (UseChar) {
+        return std::to_string(arg);
+    } else {
+        return std::to_wstring(arg);
+    }
+}
+
 template <class CharType, class T, std::enable_if_t<is_char_v<CharType>, int> = 0>
 [[nodiscard]]
 ATTRIBUTE_ALWAYS_INLINE inline std::basic_string<CharType> ToStringOneArg(const T &arg) {
     if constexpr (std::is_arithmetic_v<T>) {
         if constexpr (std::is_same_v<T, CharType>) {
             return std::basic_string<CharType>(std::size_t{1}, arg);
-        } else if constexpr (std::is_same_v<CharType, wchar_t>) {
-            return std::to_wstring(arg);
         } else {
-            auto str = std::to_string(arg);
-            if constexpr (std::is_same_v<CharType, char>) {
+            static_assert(!is_char_v<T>, "implementation error");
+            const auto str = NumberToString<std::is_same_v<CharType, char>>(arg);
+            if constexpr (std::is_same_v<CharType, char> || std::is_same_v<CharType, wchar_t>) {
                 return str;
             } else {
                 return std::basic_string<CharType>(str.begin(), str.end());
