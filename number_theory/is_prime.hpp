@@ -5,7 +5,7 @@
 #include <cstdlib>
 #include <numeric>
 
-#include "config_macros.hpp"
+#include "../misc/config_macros.hpp"
 #include "integers_128_bit.hpp"
 #include "kronecker_symbol.hpp"
 #include "math_functions.hpp"

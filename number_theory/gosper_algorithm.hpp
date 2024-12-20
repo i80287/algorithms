@@ -6,7 +6,7 @@
 #include <type_traits>
 #include <utility>
 
-#include "config_macros.hpp"
+#include "../misc/config_macros.hpp"
 #include "math_functions.hpp"
 
 namespace math_functions {

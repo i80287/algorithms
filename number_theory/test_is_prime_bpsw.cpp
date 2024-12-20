@@ -12,10 +12,10 @@
 #include <stdexcept>
 #include <string>
 
-#include "config_macros.hpp"
+#include "../misc/config_macros.hpp"
+#include "../misc/test_tools.hpp"
 #include "integers_128_bit.hpp"
 #include "is_prime.hpp"
-#include "test_tools.hpp"
 
 #if CONFIG_HAS_INCLUDE(<gmp.h>)
 #include <gmp.h>

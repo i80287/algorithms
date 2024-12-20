@@ -32,7 +32,7 @@
 #include <utility>
 #include <vector>
 
-#include "config_macros.hpp"
+#include "../misc/config_macros.hpp"
 
 #if CONFIG_HAS_AT_LEAST_CXX_20 && CONFIG_HAS_INCLUDE(<bit>)
 #include <bit>
@@ -125,7 +125,7 @@ template <class T>
     const bool not_inverse = p >= 0;
     const size_t p_u       = p >= 0 ? static_cast<size_t>(p) : -static_cast<size_t>(p);
     const T res            = ::math_functions::bin_pow(std::move(n), p_u);
-    return not_inverse ? res : 1 / res;
+    return not_inverse ? res : T(1) / res;
 }
 
 /// @brief Calculate (n ^ p) % mod
@@ -238,8 +238,8 @@ ATTRIBUTE_CONST I128_CONSTEXPR uint64_t bin_pow_mod(uint64_t n, uint64_t p, uint
         return static_cast<uint32_t>(l - 1);
 #if defined(__GNUG__) || defined(__clang__) || CONFIG_HAS_AT_LEAST_CXX_20
     }
-    return static_cast<uint32_t>(std::sqrt(static_cast<long double>(n)));
 
+    return static_cast<uint32_t>(std::sqrt(static_cast<long double>(n)));
 #endif
 }
 
@@ -292,7 +292,7 @@ ATTRIBUTE_CONST I128_CONSTEXPR uint64_t bin_pow_mod(uint64_t n, uint64_t p, uint
      */
 
 #if defined(__GNUG__) && !defined(__clang__) && CONFIG_HAS_AT_LEAST_CXX_17
-    [[maybe_unused]] const auto n_original_value = n;
+    ATTRIBUTE_MAYBE_UNUSED const auto n_original_value = n;
 #endif
 
     uint32_t y = 0;
@@ -1771,8 +1771,8 @@ namespace detail {
 ///         number of different prime divisors of @a `n`.
 /// @param[in] n
 /// @return
-[[nodiscard]] ATTRIBUTE_CONST constexpr uint32_t max_number_of_unique_prime_divisors(
-    uint32_t n) noexcept {
+ATTRIBUTE_NODISCARD
+ATTRIBUTE_CONST constexpr uint32_t max_number_of_unique_prime_divisors(uint32_t n) noexcept {
     constexpr uint32_t kBoundary2 = 2 * 3;
     constexpr uint32_t kBoundary3 = 2 * 3 * 5;
     constexpr uint32_t kBoundary4 = 2 * 3 * 5 * 7;
@@ -2123,7 +2123,8 @@ private:
 /// @return bitset, such that bitset[n] == true \iff n is prime
 template <uint32_t N>
 [[nodiscard]] CONSTEXPR_FIXED_PRIMES_SIEVE inline const auto& fixed_primes_sieve() noexcept {
-    using PrimesSet                                         = std::bitset<size_t{N} + 1>;
+    using PrimesSet = std::bitset<size_t{N} + 1>;
+
     static CONSTEXPR_PRIMES_SIEVE const PrimesSet primes_bs = []() CONSTEXPR_BITSET_OPS noexcept {
         PrimesSet primes{};
         primes.set();
@@ -2399,8 +2400,14 @@ typename ::math_functions::InverseResult inv_range_mod_m_impl(Iter nums_begin, I
 
     const auto n = static_cast<size_t>(std::distance(nums_begin, nums_end));
     auto res     = ::math_functions::InverseResult{
-        std::vector<uint32_t>(n),
-        std::vector<uint32_t>(n),
+#if CONFIG_HAS_AT_LEAST_CXX_20
+        .numbers_mod_m =
+#endif
+            std::vector<uint32_t>(n),
+#if CONFIG_HAS_AT_LEAST_CXX_20
+        .inversed_numbers =
+#endif
+            std::vector<uint32_t>(n),
     };
 
     uint32_t prod_mod_m = 1;

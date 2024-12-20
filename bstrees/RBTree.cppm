@@ -19,7 +19,7 @@ module;
 #include <type_traits>
 #include <utility>
 
-#include "../number_theory/config_macros.hpp"
+#include "../misc/config_macros.hpp"
 
 export module rbtree;
 

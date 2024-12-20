@@ -17,7 +17,7 @@
 #include <type_traits>
 #include <vector>
 
-#include "config_macros.hpp"
+#include "../misc/config_macros.hpp"
 #include "fft.hpp"
 #if CONFIG_HAS_INCLUDE("integers_128_bit.hpp")
 #include "integers_128_bit.hpp"
@@ -133,7 +133,7 @@ private:
         init_small_pages();
         init_middle_pages();
 #ifdef DEBUG_LI_ALLOC_PRINTING
-        printf("[INIT] Inited pages in %s\n", FUNCTION_MACRO);
+        printf("[INIT] Inited pages in %s\n", CONFIG_CURRENT_FUNCTION_NAME);
 #endif
     }
 
@@ -152,7 +152,7 @@ private:
             "[MALLOC]:\n"
             "    total bytes allocated: %zd\n"
             "    malloc calls - free calls: %d\n",
-            FUNCTION_MACRO, total_small_pages_used, max_small_pages_used, current_small_pages_used,
+            CONFIG_CURRENT_FUNCTION_NAME, total_small_pages_used, max_small_pages_used, current_small_pages_used,
             total_middle_pages_used, max_middle_pages_used, current_middle_pages_used,
             bytes_allocated, malloc_free_count);
     }
@@ -1655,7 +1655,7 @@ struct longint {
             DecFFT& operator=(const DecFFT&) = delete;
             DecFFT& operator=(DecFFT&&)      = delete;
             ~DecFFT() {
-                ::operator delete(static_cast<void*>(poly_));
+                deallocate_polynomials(poly_);
             }
 
             void multiply_and_store_to_impl(Decimal& product_result) const {
@@ -1680,7 +1680,7 @@ struct longint {
             ATTRIBUTE_ALWAYS_INLINE
             static dec_size_type check_size_for_fft(const dec_size_type value) {
                 if (unlikely(value > kMaxDecFFTSize)) {
-                    throw_size_error(__FILE__, __LINE__, FUNCTION_MACRO, value, kMaxDecFFTSize);
+                    throw_size_error(__FILE__, __LINE__, CONFIG_CURRENT_FUNCTION_NAME, value, kMaxDecFFTSize);
                 }
 
                 return value;
@@ -1710,6 +1710,10 @@ struct longint {
                 // Allocate n for the first polynomial
                 //  and n for the second one
                 return static_cast<fft::complex*>(::operator new(size_value * 2 * sizeof(fft::complex)));
+            }
+            ATTRIBUTE_ALWAYS_INLINE
+            static void deallocate_polynomials(fft::complex* poly) noexcept {
+                ::operator delete(static_cast<void*>(poly));
             }
             ATTRIBUTE_SIZED_ACCESS(read_only, 1, 2)
             ATTRIBUTE_SIZED_ACCESS(read_only, 3, 4)
@@ -2799,7 +2803,7 @@ private:
     }
     ATTRIBUTE_ALWAYS_INLINE static size_type check_size(const std::size_t value) {
         if (unlikely(value > max_size())) {
-            throw_size_error(__FILE__, __LINE__, FUNCTION_MACRO, value, max_size());
+            throw_size_error(__FILE__, __LINE__, CONFIG_CURRENT_FUNCTION_NAME, value, max_size());
         }
         const size_type checked_value = static_cast<size_type>(value);
         if (checked_value > max_size()) {

@@ -1,8 +1,8 @@
 #include <cassert>
 #include <cstdint>
 
+#include "../misc/test_tools.hpp"
 #include "fibonacci_num.hpp"
-#include "test_tools.hpp"
 
 // NOLINTBEGIN(cert-dcl03-c, misc-static-assert, hicpp-static-assert,
 // cppcoreguidelines-avoid-magic-numbers)

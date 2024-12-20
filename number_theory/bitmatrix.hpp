@@ -15,7 +15,7 @@
 #include <type_traits>
 #include <utility>
 
-#include "config_macros.hpp"
+#include "../misc/config_macros.hpp"
 
 #if CONFIG_HAS_AT_LEAST_CXX_20 && CONFIG_HAS_INCLUDE(<concepts>)
 #include <concepts>

@@ -7,11 +7,11 @@
 #include <limits>
 #include <numeric>
 
-#include "config_macros.hpp"
+#include "../misc/config_macros.hpp"
+#include "../misc/test_tools.hpp"
 #include "fibonacci_num.hpp"
 #include "kronecker_symbol.hpp"
 #include "math_functions.hpp"
-#include "test_tools.hpp"
 
 using math_functions::kronecker_symbol;
 using math_functions::nth_fibonacci_num;

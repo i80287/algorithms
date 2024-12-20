@@ -23,12 +23,13 @@
 #include <utility>
 #include <vector>
 
-#include "config_macros.hpp"
 #include "math_functions.hpp"
 #if CONFIG_HAS_INCLUDE("integers_128_bit.hpp")
 #include "integers_128_bit.hpp"
 #endif
-#include "test_tools.hpp"
+
+#include "../misc/config_macros.hpp"
+#include "../misc/test_tools.hpp"
 
 #if CONFIG_HAS_AT_LEAST_CXX_20
 #include <bit>

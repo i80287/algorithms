@@ -10,7 +10,7 @@
 #include <numbers>
 #endif
 
-#include "config_macros.hpp"
+#include "../misc/config_macros.hpp"
 
 namespace fft {
 
