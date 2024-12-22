@@ -220,7 +220,7 @@ private:
 /// @brief See also class dsu_t and
 /// https://youtu.be/MmemGjxsZTc?si=NHMBw-KJmxeXvkNA
 class weighted_dsu_t final : public dsu_impl::dsu_base<dsu_impl::wdsu_node_t> {
-    using base = dsu_base<node_t>;
+    using base = dsu_impl::dsu_base<node_t>;
 
 public:
     weighted_dsu_t() = delete;
