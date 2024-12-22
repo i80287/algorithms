@@ -206,6 +206,30 @@ if (GENERATOR_SUPPORTS_MODULES AND COMPILER_SUPPORTS_MODULES)
     add_test(NAME rbtree_tests COMMAND $<TARGET_FILE:rbtree_tests>)
 endif()
 
+list(APPEND TestFilenames "test_dsu.cpp")
+list(APPEND TestDirectories "DisjointSetUnion")
+list(APPEND TestLangVersions "17 20 23 26")
+list(APPEND TestDependencies "")
+list(APPEND TestOptionalDependencies "")
+list(APPEND TestIsCProject False)
+list(APPEND TestCompileOnly False)
+
+list(APPEND TestFilenames "test_get_typename.cpp")
+list(APPEND TestDirectories "misc")
+list(APPEND TestLangVersions "17 20 23 26")
+list(APPEND TestDependencies "")
+list(APPEND TestOptionalDependencies "")
+list(APPEND TestIsCProject False)
+list(APPEND TestCompileOnly False)
+
+list(APPEND TestFilenames "test_join_strings.cpp")
+list(APPEND TestDirectories "misc")
+list(APPEND TestLangVersions "17 20 23 26")
+list(APPEND TestDependencies "")
+list(APPEND TestOptionalDependencies "")
+list(APPEND TestIsCProject False)
+list(APPEND TestCompileOnly False)
+
 list(POP_FRONT TestFilenames) # pop dummy
 list(POP_FRONT TestDirectories) # pop dummy
 list(POP_FRONT TestLangVersions) # pop dummy

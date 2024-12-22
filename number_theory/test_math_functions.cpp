@@ -23,12 +23,13 @@
 #include <utility>
 #include <vector>
 
-#include "config_macros.hpp"
 #include "math_functions.hpp"
 #if CONFIG_HAS_INCLUDE("integers_128_bit.hpp")
 #include "integers_128_bit.hpp"
 #endif
-#include "test_tools.hpp"
+
+#include "../misc/config_macros.hpp"
+#include "../misc/test_tools.hpp"
 
 #if CONFIG_HAS_AT_LEAST_CXX_20
 #include <bit>
@@ -232,8 +233,10 @@ SumSinCos<FloatType> call_sum_of_sines_and_cosines(mpfr_t alpha, mpfr_t beta, ui
 }
 
 template <class FloatType>
-std::pair<bool, bool> check_sums_correctness(mpfr_t c_sines_sum, FloatType sines_sum,
-                                             mpfr_t c_cosines_sum, FloatType cosines_sum,
+std::pair<bool, bool> check_sums_correctness(mpfr_t c_sines_sum,
+                                             FloatType sines_sum,
+                                             mpfr_t c_cosines_sum,
+                                             FloatType cosines_sum,
                                              FloatType eps) noexcept {
     auto cmp_lambda = [](mpfr_t c_sum, FloatType sum, FloatType lambda_eps) noexcept {
         if constexpr (std::is_same_v<FloatType, float> || std::is_same_v<FloatType, double>) {
@@ -426,7 +429,8 @@ void test_factorizer() {
 // NOLINTBEGIN(performance-avoid-endl)
 
 template <class IntType>
-[[nodiscard]] bool test_extended_euclid_algorithm_a_b(std::size_t thread_id, IntType a,
+[[nodiscard]] bool test_extended_euclid_algorithm_a_b(std::size_t thread_id,
+                                                      IntType a,
                                                       IntType b) noexcept {
     const auto [u, v, a_b_gcd] = math_functions::extended_euclid_algorithm(a, b);
     using HighIntType = std::conditional_t<sizeof(IntType) == sizeof(uint32_t), int64_t, int128_t>;

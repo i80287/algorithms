@@ -15,7 +15,7 @@
 #include <type_traits>
 #include <utility>
 
-#include "config_macros.hpp"
+#include "../misc/config_macros.hpp"
 
 #if CONFIG_HAS_AT_LEAST_CXX_20 && CONFIG_HAS_INCLUDE(<concepts>)
 #include <concepts>
@@ -290,7 +290,8 @@ private:
 public:
     template <std::size_t N>
     using word_type = std::conditional_t<
-        (N > 32) && kCanUseUInt64, std::uint64_t,
+        (N > 32) && kCanUseUInt64,
+        std::uint64_t,
         std::conditional_t<(N > 8) && kCanUseUInt32, std::uint32_t, std::uint8_t>>;
 };
 

@@ -14,7 +14,7 @@ EXTERN_WITH_C_LINKAGE_BEGIN
 #include <x86intrin.h>
 EXTERN_WITH_C_LINKAGE_END
 
-#include "../number_theory/config_macros.hpp"
+#include "../misc/config_macros.hpp"
 
 EXTERN_WITH_C_LINKAGE_BEGIN
 
@@ -25,7 +25,8 @@ EXTERN_WITH_C_LINKAGE_BEGIN
 
 ATTRIBUTE_TARGET("popcnt,avx,avx2")
 MEMCOUNT_ATTRIBUTES
-static inline size_t memcount_avx(const uint8_t* const src, const uint8_t chr,
+static inline size_t memcount_avx(const uint8_t* const src,
+                                  const uint8_t chr,
                                   size_t size) CONFIG_NOEXCEPT_FUNCTION {
 #if defined(__cplusplus)
 #if defined(__clang__)
@@ -81,7 +82,8 @@ static inline size_t memcount_avx(const uint8_t* const src, const uint8_t chr,
 }
 
 MEMCOUNT_ATTRIBUTES
-static inline size_t memcount_default(const uint8_t* const src, const uint8_t chr,
+static inline size_t memcount_default(const uint8_t* const src,
+                                      const uint8_t chr,
                                       size_t size) CONFIG_NOEXCEPT_FUNCTION {
     size_t cnt       = 0;
     const uint32_t c = chr;
@@ -149,7 +151,8 @@ __attribute__((constructor)) static inline void memcount_initializer(void)
 
 MEMCOUNT_ATTRIBUTES
 ATTRIBUTE_ALWAYS_INLINE
-static inline size_t memcount(const uint8_t* const src, const uint8_t chr,
+static inline size_t memcount(const uint8_t* const src,
+                              const uint8_t chr,
                               size_t size) CONFIG_NOEXCEPT_FUNCTION {
     return memcount_default(src, chr, size);
 }

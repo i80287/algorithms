@@ -6,10 +6,10 @@
 #include <cstdio>
 #include <cwchar>
 
-#include "config_macros.hpp"
+#include "../misc/config_macros.hpp"
+#include "../misc/test_tools.hpp"
 #include "gosper_algorithm.hpp"
 #include "math_functions.hpp"
-#include "test_tools.hpp"
 
 // NOLINTBEGIN(cert-dcl03-c, misc-static-assert, hicpp-static-assert,
 // cppcoreguidelines-avoid-magic-numbers)

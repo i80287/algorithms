@@ -19,7 +19,7 @@ module;
 #include <type_traits>
 #include <utility>
 
-#include "../number_theory/config_macros.hpp"
+#include "../misc/config_macros.hpp"
 
 export module rbtree;
 
@@ -355,7 +355,8 @@ protected:
     RBTREE_ATTRIBUTE_NONNULL_ALL_ARGS
     ATTRIBUTE_ACCESS(read_write, 2)
     ATTRIBUTE_ACCESS(read_write, 4)
-    void InsertNode(NodeBase *const CONFIG_CLANG_NONNULL_QUALIFIER node_parent, const bool is_left,
+    void InsertNode(NodeBase *const CONFIG_CLANG_NONNULL_QUALIFIER node_parent,
+                    const bool is_left,
                     NodeBase *const CONFIG_CLANG_NONNULL_QUALIFIER node) noexcept {
         RBTREE_ASSERT_INVARIANT(node != nullptr);
         node->SetParent(node_parent);
@@ -1601,8 +1602,9 @@ static_assert(StatelessComparator<std::greater<int>>);
 
 namespace rbtree {
 
-export template <class KeyType, StatelessComparator ComparatorType = std::less<>,
-                 bool UseByValueWherePossible = kUseByValue<KeyType>>
+export template <class KeyType,
+                 StatelessComparator ComparatorType = std::less<>,
+                 bool UseByValueWherePossible       = kUseByValue<KeyType>>
 class RBTree;
 
 export enum class TestStatus : std::uint32_t {

@@ -1,3 +1,5 @@
+#pragma once
+
 #ifndef CONFIG_MACROS_HPP
 #define CONFIG_MACROS_HPP
 
@@ -112,7 +114,7 @@
 #endif
 
 // https://en.cppreference.com/w/cpp/feature_test
-#if defined(__cpp_concepts) && __cpp_concepts >= 201907L
+#if CONFIG_HAS_AT_LEAST_CXX_20 && defined(__cpp_concepts) && __cpp_concepts >= 201907L
 #define CONFIG_HAS_CONCEPTS 1
 #else
 #define CONFIG_HAS_CONCEPTS 0
@@ -131,11 +133,11 @@
 #endif
 
 #if defined(__GNUC__) || defined(__clang__)
-#define FUNCTION_MACRO __PRETTY_FUNCTION__
+#define CONFIG_CURRENT_FUNCTION_NAME __PRETTY_FUNCTION__
 #elif defined(_MSC_VER)
-#define FUNCTION_MACRO __FUNCSIG__
+#define CONFIG_CURRENT_FUNCTION_NAME __FUNCSIG__
 #else
-#define FUNCTION_MACRO __func__
+#define CONFIG_CURRENT_FUNCTION_NAME __func__
 #endif
 
 #if CONFIG_HAS_INCLUDE(<utility>)

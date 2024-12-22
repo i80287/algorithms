@@ -8,7 +8,7 @@
 #include <sys/types.h>
 #include <time.h>
 
-#include "config_macros.hpp"
+#include "../misc/config_macros.hpp"
 #include "memset_int.h"
 
 const size_t kTests      = 32;

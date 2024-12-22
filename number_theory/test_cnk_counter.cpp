@@ -8,9 +8,9 @@
 #include <unordered_map>
 #include <utility>
 
+#include "../misc/config_macros.hpp"
+#include "../misc/test_tools.hpp"
 #include "CNKCounter.hpp"
-#include "config_macros.hpp"
-#include "test_tools.hpp"
 
 // NOLINTBEGIN(cppcoreguidelines-avoid-magic-numbers)
 

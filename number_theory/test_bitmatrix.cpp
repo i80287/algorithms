@@ -5,9 +5,9 @@
 #include <cstdint>
 #include <random>
 
+#include "../misc/config_macros.hpp"
+#include "../misc/test_tools.hpp"
 #include "bitmatrix.hpp"
-#include "config_macros.hpp"
-#include "test_tools.hpp"
 
 // clang-format off
 // NOLINTBEGIN(cert-dcl03-c, misc-static-assert, hicpp-static-assert, cppcoreguidelines-avoid-magic-numbers)

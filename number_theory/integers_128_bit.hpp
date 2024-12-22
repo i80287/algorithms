@@ -12,7 +12,7 @@
  *
  */
 
-#include "config_macros.hpp"
+#include "../misc/config_macros.hpp"
 
 #if (defined(__clang__) || defined(__GNUC__)) && defined(__SIZEOF_INT128__)
 

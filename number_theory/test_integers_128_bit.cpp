@@ -4,9 +4,9 @@
 #include <string>
 #include <type_traits>
 
-#include "config_macros.hpp"
+#include "../misc/config_macros.hpp"
+#include "../misc/test_tools.hpp"
 #include "integers_128_bit.hpp"
-#include "test_tools.hpp"
 
 namespace {
 

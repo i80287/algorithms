@@ -5,7 +5,7 @@
 #include <cstdlib>
 #include <numeric>
 
-#include "config_macros.hpp"
+#include "../misc/config_macros.hpp"
 #include "integers_128_bit.hpp"
 #include "kronecker_symbol.hpp"
 #include "math_functions.hpp"
@@ -91,7 +91,8 @@ ATTRIBUTE_CONST I128_CONSTEXPR bool is_strong_prp(uint64_t n, uint64_t a) noexce
  * the Jacobi symbol]
  **********************************************************************************************/
 template <bool BasicChecks = true>
-ATTRIBUTE_CONST I128_CONSTEXPR bool is_strong_lucas_prp(uint64_t n, uint16_t p,
+ATTRIBUTE_CONST I128_CONSTEXPR bool is_strong_lucas_prp(uint64_t n,
+                                                        uint16_t p,
                                                         int32_t q) noexcept {
     const uint32_t p2 = uint32_t{p} * uint32_t{p};
     const int64_t d   = int64_t{p2} - int64_t{q} * 4;

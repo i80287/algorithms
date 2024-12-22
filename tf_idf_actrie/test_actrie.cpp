@@ -21,7 +21,8 @@ using std::size_t;
 
 template <size_t PatternsSize>
 [[nodiscard]] bool test_actrie(
-    const std::string_view (&patterns)[PatternsSize], std::string_view text,
+    const std::string_view (&patterns)[PatternsSize],
+    std::string_view text,
     const std::vector<std::pair<std::string_view, size_t>>& expected_occurances) {
     actrie::ACTrieBuilder builder;
     for (std::string_view pattern : patterns) {
@@ -114,8 +115,10 @@ namespace replacing_actrie_tests {
 
 template <bool IsCaseInsensetive = true, size_t PatternsSize>
 [[nodiscard]] bool test_replacing_actrie(
-    const std::string_view (&patterns_with_replacements)[PatternsSize][2], std::string& input_text,
-    const std::string_view expected, const bool replace_all_occurances) {
+    const std::string_view (&patterns_with_replacements)[PatternsSize][2],
+    std::string& input_text,
+    const std::string_view expected,
+    const bool replace_all_occurances) {
     using BuilderType = actrie::ReplacingACTrieBuilder<
         /* AlphabetStart = */ '-',
         /* AlphabetEnd = */ '}',

@@ -5,8 +5,8 @@
 #include <stdexcept>
 #include <vector>
 
+#include "../misc/test_tools.hpp"
 #include "is_prime.hpp"
-#include "test_tools.hpp"
 
 using namespace test_tools;
 

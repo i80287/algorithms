@@ -21,6 +21,6 @@ for cc_and_cxx in clang,clang++ \
         -D CMAKE_CXX_COMPILER="$2" \
         -S . \
         -B $cmake_build_dir
-    cmake --build ./$cmake_build_dir --parallel "$(nproc)"
+    cmake --build ./$cmake_build_dir --parallel
 done
 IFS=$OLDIFS

@@ -14,7 +14,7 @@ EXTERN_WITH_C_LINKAGE_BEGIN
 #include <x86intrin.h>
 EXTERN_WITH_C_LINKAGE_END
 
-#include "../number_theory/config_macros.hpp"
+#include "../misc/config_macros.hpp"
 
 EXTERN_WITH_C_LINKAGE_BEGIN
 
@@ -32,7 +32,8 @@ EXTERN_WITH_C_LINKAGE_BEGIN
 
 MEMSET_INT_FUNC_ATTRIBUTES
 ATTRIBUTE_TARGET("avx")
-static inline void memset_int_avx(int32_t* dst, int32_t value,
+static inline void memset_int_avx(int32_t* dst,
+                                  int32_t value,
                                   size_t size) CONFIG_NOEXCEPT_FUNCTION {
     uint32_t* aligned_4_address = (uint32_t*)dst;
     __m256i* aligned_32_address = (__m256i*)(((uintptr_t)aligned_4_address + 31) & ~(uintptr_t)31);
@@ -81,7 +82,8 @@ static inline void memset_int_avx(int32_t* dst, int32_t value,
 }
 
 MEMSET_INT_FUNC_ATTRIBUTES
-static inline void memset_int_default(int32_t* dst, int32_t value,
+static inline void memset_int_default(int32_t* dst,
+                                      int32_t value,
                                       size_t size) CONFIG_NOEXCEPT_FUNCTION {
     while (size >= 4) {
         dst[0] = value;

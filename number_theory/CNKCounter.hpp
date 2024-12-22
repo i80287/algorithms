@@ -9,7 +9,7 @@
 #include <type_traits>
 #include <utility>
 
-#include "config_macros.hpp"
+#include "../misc/config_macros.hpp"
 
 #if CONFIG_HAS_AT_LEAST_CXX_20
 #define CXX20_CONSTEXPR constexpr
@@ -163,13 +163,13 @@ public:
         return data_ + i * cols();
     }
     [[nodiscard]]
-    ATTRIBUTE_ALWAYS_INLINE const_pointer
-    operator[](size_type i) const noexcept ATTRIBUTE_LIFETIME_BOUND {
+    ATTRIBUTE_ALWAYS_INLINE const_pointer operator[](size_type i) const noexcept
+        ATTRIBUTE_LIFETIME_BOUND {
         return data_ + i * cols();
     }
     [[nodiscard]]
-    ATTRIBUTE_ALWAYS_INLINE reference operator()(size_type i,
-                                                 size_type j) noexcept ATTRIBUTE_LIFETIME_BOUND {
+    ATTRIBUTE_ALWAYS_INLINE reference operator()(size_type i, size_type j) noexcept
+        ATTRIBUTE_LIFETIME_BOUND {
         return data_[i * cols() + j];
     }
     [[nodiscard]]

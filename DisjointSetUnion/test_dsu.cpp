@@ -3,13 +3,13 @@
 #include <iostream>
 #include <numeric>
 #include <random>
-#include <source_location>
 #include <string_view>
 #include <utility>
 
+#include "../misc/get_typename.hpp"
 #include "dsu.hpp"
 
-template <size_t DSUSize>
+template <std::size_t DSUSize>
 struct slowdsu {
     using color_t = std::size_t;
     std::array<color_t, DSUSize> colors{};
@@ -51,43 +51,12 @@ struct slowdsu {
     }
 };
 
-template <typename T>
-consteval std::string_view get_type_name() {
-    const std::string_view func_name = std::source_location::current().function_name();
-    const char* p1 = std::char_traits<char>::find(func_name.data(), func_name.size(), '[');
-    if (p1 == nullptr) {
-        return "";
-    }
-
-    const char* p2 = nullptr;
-    for (bool state = false;; p1++) {
-        switch (*p1) {
-            case '=':
-                state = true;
-                break;
-            case ' ':
-                if (state) {
-                    p2    = p1 + 1;
-                    state = false;
-                }
-                break;
-            case ';':
-            case ']':
-            case '\0':
-                if (p2 == nullptr) {
-                    return "";
-                }
-                const size_t len = static_cast<size_t>(p1 - p2);
-                return std::string_view(p2, len);
-        }
-    }
-}
-
 template <class DsuType>
 static void test_manual() {
     constexpr size_t N         = 40;
     constexpr bool is_weighted = std::is_same_v<DsuType, weighted_dsu_t>;
-    DsuType tree(N);
+
+    DsuType tree = DsuType::with_nodes_count(N);
 
     for (size_t i = 1; i < N; i++) {
         assert(!tree.equal(i - 1, i));
@@ -107,15 +76,15 @@ static void test_manual() {
     }
 
     if constexpr (is_weighted) {
-        tree.addWeightInSet(0, 10);
-        tree.addWeightInSet(2, 10);
+        tree.add_weight_in_set(0, 10);
+        tree.add_weight_in_set(2, 10);
         for (size_t i = 0; i <= 3; i++) {
-            assert(tree.getWeightInSet(i) == 20);
+            assert(tree.get_weight_is_set(i) == 20);
         }
 
-        tree.setWeightInSet(0, 10);
+        tree.set_weight_in_set(0, 10);
         for (size_t i = 0; i <= 3; i++) {
-            assert(tree.getWeightInSet(i) == 10);
+            assert(tree.get_weight_is_set(i) == 10);
         }
     }
 
@@ -133,7 +102,7 @@ static void test_manual() {
      */
     tree.unite(34, 35);
     if constexpr (is_weighted) {
-        tree.addWeightInSet(34, 2);
+        tree.add_weight_in_set(34, 2);
     }
     assert(tree.equal(34, 35));
     assert(!tree.equal(35, 36));
@@ -141,16 +110,16 @@ static void test_manual() {
     assert(!tree.equal(37, 38));
     assert(!tree.equal(38, 39));
     if constexpr (is_weighted) {
-        assert(tree.getWeightInSet(34) == 2);
-        assert(tree.getWeightInSet(35) == 2);
-        assert(tree.getWeightInSet(36) == 0);
-        assert(tree.getWeightInSet(37) == 0);
-        assert(tree.getWeightInSet(38) == 0);
-        assert(tree.getWeightInSet(39) == 0);
+        assert(tree.get_weight_is_set(34) == 2);
+        assert(tree.get_weight_is_set(35) == 2);
+        assert(tree.get_weight_is_set(36) == 0);
+        assert(tree.get_weight_is_set(37) == 0);
+        assert(tree.get_weight_is_set(38) == 0);
+        assert(tree.get_weight_is_set(39) == 0);
     }
     tree.unite(36, 37);
     if constexpr (is_weighted) {
-        tree.addWeightInSet(37, 3);
+        tree.add_weight_in_set(37, 3);
     }
     assert(tree.equal(34, 35));
     assert(!tree.equal(35, 36));
@@ -158,16 +127,16 @@ static void test_manual() {
     assert(!tree.equal(37, 38));
     assert(!tree.equal(38, 39));
     if constexpr (is_weighted) {
-        assert(tree.getWeightInSet(34) == 2);
-        assert(tree.getWeightInSet(35) == 2);
-        assert(tree.getWeightInSet(36) == 3);
-        assert(tree.getWeightInSet(37) == 3);
-        assert(tree.getWeightInSet(38) == 0);
-        assert(tree.getWeightInSet(39) == 0);
+        assert(tree.get_weight_is_set(34) == 2);
+        assert(tree.get_weight_is_set(35) == 2);
+        assert(tree.get_weight_is_set(36) == 3);
+        assert(tree.get_weight_is_set(37) == 3);
+        assert(tree.get_weight_is_set(38) == 0);
+        assert(tree.get_weight_is_set(39) == 0);
     }
     tree.unite(38, 39);
     if constexpr (is_weighted) {
-        tree.addWeightInSet(38, 4);
+        tree.add_weight_in_set(38, 4);
     }
     assert(tree.equal(34, 35));
     assert(!tree.equal(35, 36));
@@ -175,12 +144,12 @@ static void test_manual() {
     assert(!tree.equal(37, 38));
     assert(tree.equal(38, 39));
     if constexpr (is_weighted) {
-        assert(tree.getWeightInSet(34) == 2);
-        assert(tree.getWeightInSet(35) == 2);
-        assert(tree.getWeightInSet(36) == 3);
-        assert(tree.getWeightInSet(37) == 3);
-        assert(tree.getWeightInSet(38) == 4);
-        assert(tree.getWeightInSet(39) == 4);
+        assert(tree.get_weight_is_set(34) == 2);
+        assert(tree.get_weight_is_set(35) == 2);
+        assert(tree.get_weight_is_set(36) == 3);
+        assert(tree.get_weight_is_set(37) == 3);
+        assert(tree.get_weight_is_set(38) == 4);
+        assert(tree.get_weight_is_set(39) == 4);
     }
     tree.unite(35, 37);
     assert(tree.equal(34, 35));
@@ -189,12 +158,12 @@ static void test_manual() {
     assert(!tree.equal(37, 38));
     assert(tree.equal(38, 39));
     if constexpr (is_weighted) {
-        assert(tree.getWeightInSet(34) == 5);
-        assert(tree.getWeightInSet(35) == 5);
-        assert(tree.getWeightInSet(36) == 5);
-        assert(tree.getWeightInSet(37) == 5);
-        assert(tree.getWeightInSet(38) == 4);
-        assert(tree.getWeightInSet(39) == 4);
+        assert(tree.get_weight_is_set(34) == 5);
+        assert(tree.get_weight_is_set(35) == 5);
+        assert(tree.get_weight_is_set(36) == 5);
+        assert(tree.get_weight_is_set(37) == 5);
+        assert(tree.get_weight_is_set(38) == 4);
+        assert(tree.get_weight_is_set(39) == 4);
     }
     tree.unite(37, 38);
     assert(tree.equal(34, 35));
@@ -203,12 +172,12 @@ static void test_manual() {
     assert(tree.equal(37, 38));
     assert(tree.equal(38, 39));
     if constexpr (is_weighted) {
-        assert(tree.getWeightInSet(34) == 9);
-        assert(tree.getWeightInSet(35) == 9);
-        assert(tree.getWeightInSet(36) == 9);
-        assert(tree.getWeightInSet(37) == 9);
-        assert(tree.getWeightInSet(38) == 9);
-        assert(tree.getWeightInSet(39) == 9);
+        assert(tree.get_weight_is_set(34) == 9);
+        assert(tree.get_weight_is_set(35) == 9);
+        assert(tree.get_weight_is_set(36) == 9);
+        assert(tree.get_weight_is_set(37) == 9);
+        assert(tree.get_weight_is_set(38) == 9);
+        assert(tree.get_weight_is_set(39) == 9);
     }
     for (size_t i = 34; i <= 39; i++) {
         for (size_t j = 34; j <= 39; j++) {
@@ -226,16 +195,16 @@ static void test_manual() {
         }
 
         if constexpr (is_weighted) {
-            assert(tree.getWeightInSet(i) == 10 + 9);
+            assert(tree.get_weight_is_set(i) == 10 + 9);
         }
     }
 
     if constexpr (is_weighted) {
         std::vector<int64_t> vec{1, 2, 4, 8, 16, 32, 64};
-        size_t n = vec.size();
-        DsuType wdsu{vec};
+        size_t n     = vec.size();
+        DsuType wdsu = DsuType::from_weights_vec(vec);
         for (size_t i = 0; i < n; i++) {
-            assert(wdsu.getWeightInSet(i) == vec[i]);
+            assert(wdsu.get_weight_is_set(i) == vec[i]);
         }
 
         wdsu.unite(0, 1);
@@ -243,7 +212,7 @@ static void test_manual() {
         wdsu.unite(0, 2);
         int64_t sum = vec[0] + vec[1] + vec[2] + vec[3];
         for (size_t i = 0; i <= 3; i++) {
-            assert(wdsu.getWeightInSet(i) == sum);
+            assert(wdsu.get_weight_is_set(i) == sum);
         }
 
         for (size_t i = 1; i < n; i++) {
@@ -255,14 +224,15 @@ static void test_manual() {
         }
 
         for (size_t i = 0; i < n; i++) {
-            assert(wdsu.getWeightInSet(i) == sum);
+            assert(wdsu.get_weight_is_set(i) == sum);
         }
     }
 }
 
 template <class DsuType>
 static void test_value_semantic() {
-    DsuType d1(4);
+    DsuType d1 = DsuType::with_nodes_count(4);
+
     d1.unite(0, 1);
     d1.unite(2, 3);
     auto d2 = d1;
@@ -294,8 +264,10 @@ static void test_value_semantic() {
 
     constexpr std::size_t size_d4 = 9;
     constexpr std::size_t size_d5 = 10;
-    DsuType d4(size_d4);
-    DsuType d5(size_d5);
+
+    DsuType d4 = DsuType::with_nodes_count(size_d4);
+    DsuType d5 = DsuType::with_nodes_count(size_d5);
+
     assert(d4.size() == size_d4);
     assert(d4.sets_size() == size_d4);
     assert(d5.size() == size_d5);
@@ -340,7 +312,7 @@ static void test_value_semantic() {
 template <class DsuType>
 static void test_random_with_check() {
     constexpr size_t N = 3000;
-    DsuType dsu(N);
+    DsuType dsu        = DsuType::with_nodes_count(N);
     assert(dsu.size() == N);
     slowdsu<N> checker;
     std::mt19937 rnd;
@@ -378,7 +350,7 @@ static void test_random_with_check() {
 
 template <class DsuType>
 static void test_dsu() {
-    constexpr std::string_view tname = get_type_name<DsuType>();
+    constexpr std::string_view tname = misc::get_typename<DsuType>();
     printf("Started testing type \"%.*s\"\n", int(tname.size()), tname.data());
     test_manual<DsuType>();
     test_value_semantic<DsuType>();
