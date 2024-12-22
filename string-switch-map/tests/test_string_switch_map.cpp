@@ -9,7 +9,7 @@
 #include <string_view>
 #include <type_traits>
 
-#include "../../misc/config_macros.hpp"
+#include "../../misc/do_not_optimize_away.h"
 #include "../StringMap.hpp"
 
 // clang-format off
