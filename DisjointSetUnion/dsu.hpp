@@ -13,8 +13,7 @@
 #include <concepts>
 #endif
 
-#if (CONFIG_HAS_AT_LEAST_CXX_20 && !defined(_GLIBCXX_DEBUG) && !defined(_GLIBCXX_ASSERTIONS)) || \
-    CONFIG_HAS_AT_LEAST_CXX_23
+#if CONFIG_HAS_AT_LEAST_CXX_20 && !defined(_GLIBCXX_DEBUG) && !defined(_GLIBCXX_ASSERTIONS)
 #define CONSTEXPR_VECTOR constexpr
 #else
 #define CONSTEXPR_VECTOR inline
