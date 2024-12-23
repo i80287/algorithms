@@ -5,14 +5,15 @@
 #include <stdexcept>
 #include <vector>
 
+#include "../misc/do_not_optimize_away.h"
 #include "../misc/test_tools.hpp"
 #include "is_prime.hpp"
-
-using namespace test_tools;
 
 namespace {
 
 std::vector<uint64_t> read_primes() {
+    using test_tools::FilePtr;
+
     std::vector<uint64_t> nums;
     nums.reserve(1065000zu);
     for (FilePtr fin("u64-primes.txt", "r");;) {
