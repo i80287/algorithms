@@ -20,7 +20,7 @@ inline constexpr bool is_char_v = std::is_same_v<T, char> || std::is_same_v<T, w
 #endif
                                   std::is_same_v<T, char16_t> || std::is_same_v<T, char32_t>;
 
-template <bool UseChar, class T>
+template <bool UseWChar, class T>
 [[nodiscard]]
 ATTRIBUTE_ALWAYS_INLINE inline auto NumberToString(const T arg) {
     static_assert(std::is_arithmetic_v<T>);
@@ -28,29 +28,29 @@ ATTRIBUTE_ALWAYS_INLINE inline auto NumberToString(const T arg) {
     if constexpr (std::is_integral_v<T>) {
         if (config::is_constant_evaluated() || config::is_gcc_constant_p(arg)) {
             if (arg == 0) {
-                if constexpr (UseChar) {
-                    return std::string{"0"};
-                } else {
+                if constexpr (UseWChar) {
                     return std::wstring{L"0"};
+                } else {
+                    return std::string{"0"};
                 }
             } else if constexpr (sizeof(T) > sizeof(int)) {
                 if constexpr (std::is_unsigned_v<T>) {
                     if (arg <= std::numeric_limits<unsigned>::max()) {
                         const unsigned comp_arg = static_cast<unsigned>(arg);
-                        if constexpr (UseChar) {
-                            return std::to_string(comp_arg);
-                        } else {
+                        if constexpr (UseWChar) {
                             return std::to_wstring(comp_arg);
+                        } else {
+                            return std::to_string(comp_arg);
                         }
                     }
                 } else {
                     if (arg >= std::numeric_limits<int>::min() &&
                         arg <= std::numeric_limits<int>::max()) {
                         const int comp_arg = static_cast<int>(arg);
-                        if constexpr (UseChar) {
-                            return std::to_string(comp_arg);
-                        } else {
+                        if constexpr (UseWChar) {
                             return std::to_wstring(comp_arg);
+                        } else {
+                            return std::to_string(comp_arg);
                         }
                     }
                 }
@@ -58,30 +58,28 @@ ATTRIBUTE_ALWAYS_INLINE inline auto NumberToString(const T arg) {
         }
     }
 
-    if constexpr (UseChar) {
-        return std::to_string(arg);
-    } else {
+    if constexpr (UseWChar) {
         return std::to_wstring(arg);
+    } else {
+        return std::to_string(arg);
     }
 }
 
 template <class CharType, class T, std::enable_if_t<is_char_v<CharType>, int> = 0>
 [[nodiscard]]
 ATTRIBUTE_ALWAYS_INLINE inline std::basic_string<CharType> ToStringOneArg(const T &arg) {
-    if constexpr (std::is_arithmetic_v<T>) {
-        if constexpr (std::is_same_v<T, CharType>) {
-            return std::basic_string<CharType>(std::size_t{1}, arg);
-        } else {
-            static_assert(!is_char_v<T>, "implementation error");
-            const auto str = NumberToString<std::is_same_v<CharType, char>>(arg);
-            if constexpr (std::is_same_v<CharType, char> || std::is_same_v<CharType, wchar_t>) {
-                return str;
-            } else {
-                return std::basic_string<CharType>(str.begin(), str.end());
-            }
-        }
-    } else {
+    if constexpr (!std::is_arithmetic_v<T>) {
         return std::basic_string<CharType>{std::basic_string_view<CharType>{arg}};
+    } else if constexpr (std::is_same_v<T, CharType>) {
+        return std::basic_string<CharType>(std::size_t{1}, arg);
+    } else {
+        static_assert(!is_char_v<T>, "implementation error");
+        const auto str = NumberToString<std::is_same_v<CharType, wchar_t>>(arg);
+        if constexpr (std::is_same_v<CharType, char> || std::is_same_v<CharType, wchar_t>) {
+            return str;
+        } else {
+            return std::basic_string<CharType>(str.begin(), str.end());
+        }
     }
 }
 
@@ -169,10 +167,14 @@ template <class CharType, class... Args>
 [[nodiscard]]
 ATTRIBUTE_ALWAYS_INLINE inline std::enable_if_t<is_char_v<CharType>, std::basic_string<CharType>>
 JoinStringsImpl(const Args &...args) {
-    std::size_t size = CalculateStringArgsSize<CharType>(args...);
-    std::basic_string<CharType> result(size, CharType{});
-    join_strings_detail::WriteStringToBuffer<CharType>(result.data(), result.size(), args...);
-    return result;
+    if constexpr (sizeof...(args) >= 2) {
+        std::size_t size = CalculateStringArgsSize<CharType>(args...);
+        std::basic_string<CharType> result(size, CharType{});
+        join_strings_detail::WriteStringToBuffer<CharType>(result.data(), result.size(), args...);
+        return result;
+    } else {
+        return join_strings_detail::ToStringOneArg<CharType>(args...);
+    }
 }
 
 // clang-format off
@@ -325,27 +327,39 @@ using determine_char_t = typename determine_char_type<Args...>::type;
 
 // clang-format off
 
+/// @brief Join arguments @a args... (converting to string if necessary)
+/// @tparam ...Args Types of the arguments to join, e.g. char types, pointers to them,
+///         basic_string, basic_string_view, integral/floating point values
+/// @tparam HintCharType hint char type (default: `char`).
+///         Can be passed if, for instance, JoinStrings(1, 2, 3.0)
+///         should be std::wstring: JoinStrings<wchar_t>(1, 2, 3.0)
+/// @param ...args arguments to join
+/// @return joined args as a string of type std::basic_string<CharType>
+///         where CharType is deducted by the @a Args... or HintCharType
+///         if @a Args... is pack of numeric types
 template <class HintCharType = char, class... Args>
 [[nodiscard]]
 ATTRIBUTE_ALWAYS_INLINE
 inline auto JoinStrings(const Args&... args) {
+    static_assert(sizeof...(args) >= 1, "Empty input is explicitly prohibited");
+
     using DeducedCharType = join_strings_detail::determine_char_t<Args...>;
 
     static_assert(join_strings_detail::is_char_v<HintCharType>, "Hint type should be char, wchar_t, char8_t, char16_t or char32_t");
     using CharType = std::conditional_t<join_strings_detail::is_char_v<DeducedCharType>, DeducedCharType, HintCharType>;
 
+    constexpr bool kAllCharTypesAreSame = std::conjunction_v<join_strings_detail::same_char_types<Args, CharType>...>;
     static_assert(
-        std::conjunction_v<join_strings_detail::same_char_types<Args, CharType>...>,
+        kAllCharTypesAreSame,
         "Hint:\n"
         "    Some non integral/float arguments have different char types\n"
-        "    For example, both std::string and std::wstring might have been passed to the JoinStrings\n"
-    );
+        "    For example, both std::string and std::wstring might have been passed to the JoinStrings\n");
 
-    static_assert(sizeof...(args) >= 1, "Empty input is explicitly prohibited");
-    if constexpr (sizeof...(args) >= 2) {
+    if constexpr (kAllCharTypesAreSame) {
         return join_strings_detail::JoinStringsConvArgsToStrViewImpl<CharType, 0>(args...);
     } else {
-        return join_strings_detail::ToStringOneArg<CharType>(args...);
+        // Do not make more unreadable CEs when kAllCharTypesAreSame == false, static assertion has already failed
+        return std::basic_string<CharType>{};
     }
 }
 
