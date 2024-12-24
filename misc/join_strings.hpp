@@ -88,18 +88,18 @@ ATTRIBUTE_ALWAYS_INLINE inline std::basic_string<CharType> ToStringOneArg(const 
 template <class CharType, class... Args>
 [[nodiscard]]
 ATTRIBUTE_ALWAYS_INLINE
-constexpr std::enable_if_t<is_char_v<CharType>, std::size_t>  CalculateStringArgsSize(CharType /*c*/, const Args&... args) noexcept;
+constexpr std::enable_if_t<is_char_v<CharType>, std::size_t> CalculateStringArgsSize(CharType /*c*/, Args... args) noexcept;
 
 template <class CharType, class... Args>
 [[nodiscard]]
 ATTRIBUTE_ALWAYS_INLINE
-constexpr std::enable_if_t<is_char_v<CharType>, std::size_t> CalculateStringArgsSize(std::basic_string_view<CharType> s, const Args&... args) noexcept;
+constexpr std::enable_if_t<is_char_v<CharType>, std::size_t> CalculateStringArgsSize(std::basic_string_view<CharType> s, Args... args) noexcept;
 
 // clang-format on
 
 template <class CharType, class... Args>
 constexpr std::enable_if_t<is_char_v<CharType>, std::size_t> CalculateStringArgsSize(
-    CharType /*c*/, const Args &...args) noexcept {
+    CharType /*c*/, Args... args) noexcept {
     size_t size = 1;
     if constexpr (sizeof...(args) > 0) {
         size += join_strings_detail::CalculateStringArgsSize<CharType>(args...);
@@ -109,7 +109,7 @@ constexpr std::enable_if_t<is_char_v<CharType>, std::size_t> CalculateStringArgs
 
 template <class CharType, class... Args>
 constexpr std::enable_if_t<is_char_v<CharType>, std::size_t> CalculateStringArgsSize(
-    std::basic_string_view<CharType> s, const Args &...args) noexcept {
+    std::basic_string_view<CharType> s, Args... args) noexcept {
     size_t size = s.size();
     if constexpr (sizeof...(args) > 0) {
         size += join_strings_detail::CalculateStringArgsSize<CharType>(args...);
@@ -123,19 +123,20 @@ template <class CharType, class... Args>
 ATTRIBUTE_NONNULL_ALL_ARGS
 ATTRIBUTE_ACCESS(write_only, 1)
 ATTRIBUTE_ALWAYS_INLINE
-constexpr std::enable_if_t<is_char_v<CharType>, void> WriteStringsInplace(CharType* result, CharType c, const Args&... args) noexcept;
+constexpr std::enable_if_t<is_char_v<CharType>, void> WriteStringsInplace(CharType* result, CharType c, Args... args) noexcept;
 
 template <class CharType, class... Args>
 ATTRIBUTE_NONNULL_ALL_ARGS
 ATTRIBUTE_ACCESS(write_only, 1)
 ATTRIBUTE_ALWAYS_INLINE
-constexpr std::enable_if_t<is_char_v<CharType>, void> WriteStringsInplace(CharType* result, std::basic_string_view<CharType> s, const Args&... args) noexcept;
+constexpr std::enable_if_t<is_char_v<CharType>, void> WriteStringsInplace(CharType* result, std::basic_string_view<CharType> s, Args... args) noexcept;
 
 // clang-format on
 
 template <class CharType, class... Args>
-constexpr std::enable_if_t<is_char_v<CharType>, void> WriteStringsInplace(
-    CharType *result, CharType c, const Args &...args) noexcept {
+constexpr std::enable_if_t<is_char_v<CharType>, void> WriteStringsInplace(CharType *result,
+                                                                          CharType c,
+                                                                          Args... args) noexcept {
     *result = c;
     if constexpr (sizeof...(args) > 0) {
         join_strings_detail::WriteStringsInplace<CharType>(result + 1, args...);
@@ -144,7 +145,7 @@ constexpr std::enable_if_t<is_char_v<CharType>, void> WriteStringsInplace(
 
 template <class CharType, class... Args>
 constexpr std::enable_if_t<is_char_v<CharType>, void> WriteStringsInplace(
-    CharType *result, std::basic_string_view<CharType> s, const Args &...args) noexcept {
+    CharType *result, std::basic_string_view<CharType> s, Args... args) noexcept {
     std::char_traits<CharType>::copy(result, s.data(), s.size());
     if constexpr (sizeof...(args) > 0) {
         join_strings_detail::WriteStringsInplace<CharType>(result + s.size(), args...);
@@ -157,18 +158,17 @@ template <class CharType, class... Args>
 ATTRIBUTE_NONNULL_ALL_ARGS
 ATTRIBUTE_SIZED_ACCESS(write_only, 1, 2)
 ATTRIBUTE_ALWAYS_INLINE
-constexpr std::enable_if_t<is_char_v<CharType>, void> WriteStringToBuffer(CharType* buffer, size_t /*buffer_size*/, const Args&... args) noexcept {
+constexpr std::enable_if_t<is_char_v<CharType>, void> WriteStringToBuffer(CharType* buffer, size_t /*buffer_size*/, Args... args) noexcept {
     join_strings_detail::WriteStringsInplace<CharType>(buffer, args...);
 }
 
 // clang-format on
 
 template <class CharType, class... Args>
-[[nodiscard]]
-ATTRIBUTE_ALWAYS_INLINE inline std::enable_if_t<is_char_v<CharType>, std::basic_string<CharType>>
-JoinStringsImpl(const Args &...args) {
+[[nodiscard]] inline std::enable_if_t<is_char_v<CharType>, std::basic_string<CharType>>
+JoinStringsImpl(Args... args) {
     if constexpr (sizeof...(args) >= 2) {
-        std::size_t size = CalculateStringArgsSize<CharType>(args...);
+        const std::size_t size = CalculateStringArgsSize<CharType>(args...);
         std::basic_string<CharType> result(size, CharType{});
         join_strings_detail::WriteStringToBuffer<CharType>(result.data(), result.size(), args...);
         return result;
@@ -182,24 +182,26 @@ JoinStringsImpl(const Args &...args) {
 template <class CharType, size_t I, class... Args>
 [[nodiscard]]
 ATTRIBUTE_ALWAYS_INLINE
-inline std::enable_if_t<is_char_v<CharType>, std::basic_string<CharType>> JoinStringsConvArgsToStrViewImpl(std::basic_string_view<CharType> str, const Args&... args);
+inline
+std::enable_if_t<is_char_v<CharType>, std::basic_string<CharType>> JoinStringsConvArgsToStrViewImpl(std::basic_string_view<CharType> str, const Args&... args);
 
 template <class CharType, size_t I, class... Args>
 [[nodiscard]]
 ATTRIBUTE_ACCESS(read_only, 1)
 ATTRIBUTE_ALWAYS_INLINE
-inline std::enable_if_t<is_char_v<CharType>, std::basic_string<CharType>> JoinStringsConvArgsToStrViewImpl(const CharType* str, const Args&... args);
+inline
+std::enable_if_t<is_char_v<CharType>, std::basic_string<CharType>> JoinStringsConvArgsToStrViewImpl(const CharType* str, const Args&... args);
 
 template <class CharType, size_t I, class T, class... Args>
 [[nodiscard]]
 ATTRIBUTE_ALWAYS_INLINE
-inline std::enable_if_t<is_char_v<CharType> && std::is_arithmetic_v<T>, std::basic_string<CharType>> JoinStringsConvArgsToStrViewImpl(T num, const Args&... args);
+inline
+std::enable_if_t<is_char_v<CharType> && std::is_arithmetic_v<T>, std::basic_string<CharType>> JoinStringsConvArgsToStrViewImpl(T num, const Args&... args);
 
 // clang-format on
 
 template <class CharType, size_t I, class... Args>
-[[nodiscard]]
-ATTRIBUTE_ALWAYS_INLINE inline std::enable_if_t<is_char_v<CharType>, std::basic_string<CharType>>
+inline std::enable_if_t<is_char_v<CharType>, std::basic_string<CharType>>
 JoinStringsConvArgsToStrViewImpl(std::basic_string_view<CharType> str, const Args &...args) {
     if constexpr (I == 1 + sizeof...(args)) {
         return join_strings_detail::JoinStringsImpl<CharType>(str, args...);
@@ -207,9 +209,9 @@ JoinStringsConvArgsToStrViewImpl(std::basic_string_view<CharType> str, const Arg
         return join_strings_detail::JoinStringsConvArgsToStrViewImpl<CharType, I + 1>(args..., str);
     }
 }
+
 template <class CharType, size_t I, class... Args>
-[[nodiscard]]
-ATTRIBUTE_ALWAYS_INLINE inline std::enable_if_t<is_char_v<CharType>, std::basic_string<CharType>>
+inline std::enable_if_t<is_char_v<CharType>, std::basic_string<CharType>>
 JoinStringsConvArgsToStrViewImpl(const CharType *str, const Args &...args) {
     static_assert(I < 1 + sizeof...(args));
     return join_strings_detail::JoinStringsConvArgsToStrViewImpl<CharType, I + 1>(
@@ -217,9 +219,7 @@ JoinStringsConvArgsToStrViewImpl(const CharType *str, const Args &...args) {
 }
 
 template <class CharType, size_t I, class T, class... Args>
-[[nodiscard]]
-ATTRIBUTE_ALWAYS_INLINE inline std::enable_if_t<is_char_v<CharType> && std::is_arithmetic_v<T>,
-                                                std::basic_string<CharType>>
+inline std::enable_if_t<is_char_v<CharType> && std::is_arithmetic_v<T>, std::basic_string<CharType>>
 JoinStringsConvArgsToStrViewImpl(T num, const Args &...args) {
     if constexpr (std::is_same_v<T, CharType>) {
         if constexpr (I == 1 + sizeof...(args)) {
@@ -338,9 +338,7 @@ using determine_char_t = typename determine_char_type<Args...>::type;
 ///         where CharType is deducted by the @a Args... or HintCharType
 ///         if @a Args... is pack of numeric types
 template <class HintCharType = char, class... Args>
-[[nodiscard]]
-ATTRIBUTE_ALWAYS_INLINE
-inline auto JoinStrings(const Args&... args) {
+[[nodiscard]] ATTRIBUTE_ALWAYS_INLINE inline auto JoinStrings(const Args&... args) {
     static_assert(sizeof...(args) >= 1, "Empty input is explicitly prohibited");
 
     using DeducedCharType = join_strings_detail::determine_char_t<Args...>;

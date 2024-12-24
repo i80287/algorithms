@@ -4,7 +4,7 @@
 
 #include "join_strings.hpp"
 
-#define MAKE_JOIN_STRINGS_TEST_BLOCK(CHAR_TYPE)                                                    \
+#define MAKE_JOIN_STRINGS_TESTS_SUITE(CHAR_TYPE)                                                   \
     do {                                                                                           \
         assert(misc::JoinStrings(STR_LITERAL("")) == STR_LITERAL(""));                             \
         assert(misc::JoinStrings(STR_LITERAL("ab"), STR_LITERAL("cde")) == STR_LITERAL("abcde"));  \
@@ -70,26 +70,26 @@
 
 int main() {
 #define STR_LITERAL(expr) expr
-    MAKE_JOIN_STRINGS_TEST_BLOCK(char);
+    MAKE_JOIN_STRINGS_TESTS_SUITE(char);
 #undef STR_LITERAL
 
 #define STR_LITERAL(expr) L##expr
-    MAKE_JOIN_STRINGS_TEST_BLOCK(wchar_t);
+    MAKE_JOIN_STRINGS_TESTS_SUITE(wchar_t);
 #undef STR_LITERAL
 
 #if CONFIG_HAS_AT_LEAST_CXX_20 && defined(__cpp_char8_t) && __cpp_char8_t >= 201811L
 
 #define STR_LITERAL(expr) u8##expr
-    MAKE_JOIN_STRINGS_TEST_BLOCK(char8_t);
+    MAKE_JOIN_STRINGS_TESTS_SUITE(char8_t);
 #undef STR_LITERAL
 
 #endif
 
 #define STR_LITERAL(expr) u##expr
-    MAKE_JOIN_STRINGS_TEST_BLOCK(char16_t);
+    MAKE_JOIN_STRINGS_TESTS_SUITE(char16_t);
 #undef STR_LITERAL
 
 #define STR_LITERAL(expr) U##expr
-    MAKE_JOIN_STRINGS_TEST_BLOCK(char32_t);
+    MAKE_JOIN_STRINGS_TESTS_SUITE(char32_t);
 #undef STR_LITERAL
 }
