@@ -13,6 +13,7 @@ module;
 #include <iterator>
 #include <limits>
 #include <memory>
+#include <ranges>
 #include <source_location>
 #include <stdexcept>
 #include <string>
@@ -22,6 +23,44 @@ module;
 #include "../misc/config_macros.hpp"
 
 export module rbtree;
+
+namespace rbtree {
+
+template <class KeyType>
+concept RBTreeKeyTypeConstraints =
+    sizeof(KeyType) >= 1                                       // Type can't be incomplete
+    && !std::is_array_v<KeyType>                               // Type can't be an array
+    && std::is_same_v<KeyType, std::remove_cvref_t<KeyType>>;  // Type can't be const nor reference
+
+template <class ComparatorType, class Type>
+concept ComparatorForType =
+    !std::is_reference_v<ComparatorType> && std::destructible<ComparatorType> &&
+    std::predicate<ComparatorType, const Type &, const Type &>;
+
+export template <RBTreeKeyTypeConstraints KeyType, class ComparatorType = std::less<>>
+    requires ComparatorForType<ComparatorType, KeyType>
+class RBTree;
+
+export enum class TestStatus : std::uint8_t {
+    kOk = 1,
+    kRootIsNotBlack,
+    kInvalidOrNotBlackParentOfRedNode,
+    kRedNodeHasExactlyOneNilChild,
+    kNodeHasInvalidColor,
+    kKeyOfLeftSonGEThanKeyOfNode,
+    kLeftSonOfRedNodeIsNotBlack,
+    kMaxKeyInLeftSubtreeGEThanKeyOfNode,
+    kKeyOfNodeGEThanKeyOfRightSon,
+    kRightSonOfRedNodeIsNotBlack,
+    kKeyOfNodeGEThanMinKeyInRightSubtree,
+    kBlackHeightOfLeftSubtreeGTThanBlackHeightOfRightSubtree,
+    kBlackHeightOfLeftSubtreeLSThanBlackHeightOfRightSubtree,
+};
+
+export template <class KeyType, class ComparatorType>
+[[nodiscard]] TestStatus RBTreeInvariantsUnitTest(const RBTree<KeyType, ComparatorType> &tree);
+
+}  // namespace rbtree
 
 #ifdef RBTREE_DEBUG
 #ifdef NDEBUG
@@ -54,18 +93,19 @@ public:
     NodeBase &operator=(const NodeBase &) = delete;
 
 protected:
-    constexpr NodeBase() noexcept = default;
-    constexpr ~NodeBase()         = default;
+    constexpr NodeBase() noexcept
+        : left_{nullptr}, right_{nullptr}, parent_{nullptr}, color_{NodeColor::kRed} {}
+    constexpr ~NodeBase() = default;
     constexpr NodeBase(NodeBase &&other) noexcept
-        : left_(std::exchange(other.left_, {})),
-          right_(std::exchange(other.right_, {})),
-          parent_(std::exchange(other.parent_, {})),
-          color_(std::exchange(other.color_, {})) {}
+        : left_(std::exchange(other.left_, nullptr)),
+          right_(std::exchange(other.right_, nullptr)),
+          parent_(std::exchange(other.parent_, nullptr)),
+          color_(std::exchange(other.color_, NodeColor{})) {}
     constexpr NodeBase &operator=(NodeBase &&other) noexcept ATTRIBUTE_LIFETIME_BOUND {
-        left_   = std::exchange(other.left_, {});
-        right_  = std::exchange(other.right_, {});
-        parent_ = std::exchange(other.parent_, {});
-        color_  = std::exchange(other.color_, {});
+        left_   = std::exchange(other.left_, nullptr);
+        right_  = std::exchange(other.right_, nullptr);
+        parent_ = std::exchange(other.parent_, nullptr);
+        color_  = std::exchange(other.color_, NodeColor{});
         return *this;
     }
     constexpr void Swap(NodeBase &other) noexcept {
@@ -198,10 +238,10 @@ private:
         return (node == left_) ^ (node == right_);
     }
 
-    NodeBase *left_   = nullptr;
-    NodeBase *right_  = nullptr;
-    NodeBase *parent_ = nullptr;
-    NodeColor color_  = NodeColor::kRed;
+    NodeBase *left_;
+    NodeBase *right_;
+    NodeBase *parent_;
+    NodeColor color_;
 };
 
 template <typename T>
@@ -210,7 +250,8 @@ class Node final : public NodeBase {
     using KeyType = T;
 
 public:
-    template <std::constructible_from<KeyType> U>
+    template <class U>
+        requires std::constructible_from<KeyType, U &&>
     explicit constexpr Node(U &&key) noexcept(std::is_nothrow_constructible_v<KeyType, U &&>)
         : key_(std::forward<U>(key)) {}
 
@@ -232,7 +273,8 @@ public:
     [[nodiscard]] constexpr Node *Parent() noexcept {
         return static_cast<Node *>(Base::Parent());
     }
-    template <std::constructible_from<KeyType> U>
+    template <class U>
+    // requires
     constexpr void SetKey(U &&key) noexcept(std::is_nothrow_assignable_v<KeyType, U &&>) {
         key_ = std::forward<U>(key);
     }
@@ -245,12 +287,13 @@ public:
     constexpr void Swap(Node &other) noexcept(std::is_nothrow_swappable_v<KeyType>)
         requires(std::is_swappable_v<KeyType>)
     {
-        std::swap(key_, other.key_);
+        using std::swap;
+        swap(key_, other.key_);
         Base::Swap(other);
     }
 
 private:
-    KeyType key_{};
+    KeyType key_;
 };
 
 class RBTreeContainerImpl {
@@ -1182,11 +1225,6 @@ private:
 
 template <class KeyType, class DerivedRBTree>
 class RBTreeContainer : private RBTreeContainerImpl {
-    static_assert(sizeof(KeyType) >= 1, "Type can't be incomplete");
-    static_assert(!std::is_array_v<KeyType>, "Type can't be array");
-    static_assert(std::is_same_v<KeyType, std::remove_cvref_t<KeyType>>,
-                  "Type can't be const nor reference");
-
     using Base = RBTreeContainerImpl;
 
 protected:
@@ -1287,11 +1325,11 @@ protected:
         return static_cast<NodeType *>(Base::Last())->Key();
     }
 
-    [[nodiscard]] ATTRIBUTE_CONST static consteval size_type max_size() noexcept {
-        constexpr auto kMaxSSize = static_cast<size_type>(std::numeric_limits<difference_type>::max()) / sizeof(NodeType);
-        constexpr auto kMaxUSize = std::numeric_limits<size_type>::max() / sizeof(NodeType);
-        constexpr auto kMaxAllocSize = allocator_traits::max_size(GetAllocator());
-        constexpr auto kMaxSize = std::min({kMaxUSize, kMaxSSize, kMaxAllocSize});
+    [[nodiscard]] ATTRIBUTE_CONST static constexpr size_type max_size() noexcept {
+        constexpr size_type kMaxSSize = static_cast<size_type>(std::numeric_limits<difference_type>::max()) / sizeof(NodeType);
+        constexpr size_type kMaxUSize = std::numeric_limits<size_type>::max() / sizeof(NodeType);
+        constexpr size_type kMaxAllocSize = allocator_traits::max_size(GetAllocator());
+        constexpr size_type kMaxSize = std::min({kMaxUSize, kMaxSSize, kMaxAllocSize});
         return kMaxSize;
     }
 
@@ -1370,22 +1408,21 @@ private:
 
         public:
             ATTRIBUTE_ALWAYS_INLINE
-            constexpr NodeStorageProxy() : node_storage_(AllocateStorage()) {}
+            constexpr NodeStorageProxy() : node_storage_{AllocateStorage()} {}
             NodeStorageProxy(const NodeStorageProxy &)                     = delete;
             NodeStorageProxy &operator=(const NodeStorageProxy &)          = delete;
             NodeStorageProxy(NodeStorageProxy &&other) noexcept            = delete;
             NodeStorageProxy &operator=(NodeStorageProxy &&other) noexcept = delete;
             ATTRIBUTE_ALWAYS_INLINE constexpr ~NodeStorageProxy() {
-                if (node_storage_) {
+                if (node_storage_ != nullptr) [[unlikely]] {
                     allocator_type alloc = GetAllocator();
-                    allocator_traits::destroy(alloc, node_storage_);
                     allocator_traits::deallocate(alloc, node_storage_, 1);
                 }
             }
             // clang-format off
             [[nodiscard]]
             ATTRIBUTE_ALWAYS_INLINE
-            constexpr pointer ConstructNodeAndReleaseStorage(Args... args) noexcept {
+            constexpr pointer ConstructNodeAndReleaseStorage(Args... args) {
                 // clang-format on
                 allocator_type alloc = GetAllocator();
                 RBTREE_ASSERT_INVARIANT(node_storage_ != nullptr);
@@ -1394,7 +1431,7 @@ private:
             }
 
         private:
-            pointer node_storage_{};
+            pointer node_storage_;
         };
 
         return NodeStorageProxy{}.ConstructNodeAndReleaseStorage(std::forward<Args>(args)...);
@@ -1474,26 +1511,31 @@ private:
         root->SetParent(nullptr);
         Node<KeyType> *local_root = root;
         do {
-            Node<KeyType> *const left  = local_root->Left();
-            Node<KeyType> *const right = local_root->Right();
-            Node<KeyType> *next_node{};
-            if (left != nullptr && right != nullptr) {
-                RBTREE_ASSERT_INVARIANT(left->Parent() == local_root);
-                RBTREE_ASSERT_INVARIANT(right->Parent() == local_root);
-                right->SetParent(local_root->Parent());
-                left->SetParent(right);
-                next_node = left;
-            } else if (left != nullptr) {
-                RBTREE_ASSERT_INVARIANT(left->Parent() == local_root);
-                left->SetParent(local_root->Parent());
-                next_node = left;
-            } else if (right != nullptr) {
-                RBTREE_ASSERT_INVARIANT(right->Parent() == local_root);
-                right->SetParent(local_root->Parent());
-                next_node = right;
-            } else {
-                next_node = local_root->Parent();
-            }
+            Node<KeyType> *const next_node = [left  = local_root->Left(),
+                                              right = local_root->Right(),
+                                              local_root]() noexcept -> Node<KeyType> * {
+                if (left != nullptr && right != nullptr) {
+                    RBTREE_ASSERT_INVARIANT(left->Parent() == local_root);
+                    RBTREE_ASSERT_INVARIANT(right->Parent() == local_root);
+                    right->SetParent(local_root->Parent());
+                    left->SetParent(right);
+                    return left;
+                }
+
+                if (left != nullptr) {
+                    RBTREE_ASSERT_INVARIANT(left->Parent() == local_root);
+                    left->SetParent(local_root->Parent());
+                    return left;
+                }
+
+                if (right != nullptr) {
+                    RBTREE_ASSERT_INVARIANT(right->Parent() == local_root);
+                    right->SetParent(local_root->Parent());
+                    return right;
+                }
+
+                return local_root->Parent();
+            }();
 
             DestroyNode(local_root);
             local_root = next_node;
@@ -1540,7 +1582,7 @@ private:
 #endif
 
 template <class T>
-inline constexpr bool kUseByValue =
+[[maybe_unused]] inline constexpr bool kUseByValue =
     std::is_trivial_v<T> ||
     (std::is_standard_layout_v<T> && !std::is_polymorphic_v<T> && !std::is_array_v<T> &&
      std::is_nothrow_default_constructible_v<T> && sizeof(T) <= 32 &&
@@ -1550,41 +1592,150 @@ inline constexpr bool kUseByValue =
      std::is_nothrow_move_assignable_v<T> && std::is_trivially_move_assignable_v<T> &&
      std::is_nothrow_destructible_v<T> && std::is_trivially_destructible_v<T>);
 
-template <class KeyType, class ComparatorType>
-class ComparatorHelper {
+export template <class Comparator>
+concept StatelessComparator =
+    std::is_trivially_default_constructible_v<Comparator> &&
+    std::is_nothrow_default_constructible_v<Comparator> &&
+    std::is_trivially_destructible_v<Comparator> && std::is_nothrow_destructible_v<Comparator> &&
+    sizeof(Comparator) <= sizeof(char);
+
+static_assert(StatelessComparator<std::less<>>);
+static_assert(StatelessComparator<std::less<std::string>>);
+static_assert(StatelessComparator<std::greater<int>>);
+static_assert(StatelessComparator<std::greater<long *>>);
+
+template <class ComparatorType>
+class StatelessComparatorStorage {
+protected:
+    static constexpr bool kNoexceptDefaultConstructable = true;
+    static constexpr bool kNoexceptConstructable        = true;
+
+    [[nodiscard]] constexpr ComparatorType GetComparator() const noexcept
+        requires StatelessComparator<ComparatorType>
+    {
+        return ComparatorType{};
+    }
+};
+
+template <class ComparatorType>
+class ComparatorStorage {
+protected:
+    static constexpr bool kNoexceptDefaultConstructable =
+        std::is_nothrow_default_constructible_v<ComparatorType>;
+
+    static constexpr bool kNoexceptConstructable =
+        std::is_nothrow_move_constructible_v<ComparatorType>;
+
+    constexpr ComparatorStorage() noexcept(kNoexceptDefaultConstructable) = default;
+    explicit constexpr ComparatorStorage(ComparatorType comp) noexcept(kNoexceptConstructable)
+        : comp_{std::move(comp)} {}
+
+    [[nodiscard]] constexpr const ComparatorType &GetComparator() const noexcept
+        ATTRIBUTE_LIFETIME_BOUND {
+        return comp_;
+    }
+
 private:
-    static constexpr bool kUseStdThreeWayComparison =
-        std::is_same_v<ComparatorType, std::less<>> ||
-        std::is_same_v<ComparatorType, std::greater<>> ||
+    ComparatorType comp_;
+};
+
+template <class KeyType, class ComparatorType>
+    requires rbtree::ComparatorForType<ComparatorType, KeyType>
+class NonReflexiveComparatorHelper
+    : private std::conditional_t<StatelessComparator<ComparatorType>,
+                                 StatelessComparatorStorage<ComparatorType>,
+                                 ComparatorStorage<ComparatorType>> {
+    static constexpr bool kStatelessComparatorStorage = StatelessComparator<ComparatorType>;
+
+    using Base = std::conditional_t<kStatelessComparatorStorage,
+                                    StatelessComparatorStorage<ComparatorType>,
+                                    ComparatorStorage<ComparatorType>>;
+
+    static constexpr bool kStdLess = std::is_same_v<ComparatorType, std::less<>> ||
+                                     std::is_same_v<ComparatorType, std::less<KeyType>>;
+    static constexpr bool kStdGreater = std::is_same_v<ComparatorType, std::greater<>> ||
+                                        std::is_same_v<ComparatorType, std::greater<KeyType>>;
+
+    static constexpr bool kReflexiveComparator =
         std::is_same_v<ComparatorType, std::less_equal<>> ||
         std::is_same_v<ComparatorType, std::greater_equal<>> ||
-        std::is_same_v<ComparatorType, std::less<KeyType>> ||
-        std::is_same_v<ComparatorType, std::greater<KeyType>> ||
         std::is_same_v<ComparatorType, std::less_equal<KeyType>> ||
         std::is_same_v<ComparatorType, std::greater_equal<KeyType>>;
 
+    static_assert(!kReflexiveComparator, "Comparator should not establish reflexive relation");
+
+    template <class LhsKeyType, class RhsKeyType>
     static constexpr bool IsNoexceptThreeWayComparable() noexcept {
-        if constexpr (kUseStdThreeWayComparison) {
-            return noexcept(std::compare_weak_order_fallback(std::declval<const KeyType &>(),
-                                                             std::declval<const KeyType &>()));
+        if constexpr (kStdLess || kStdGreater) {
+            return noexcept(std::compare_weak_order_fallback(std::declval<const LhsKeyType &>(),
+                                                             std::declval<const RhsKeyType &>())) &&
+                   noexcept(std::compare_weak_order_fallback(std::declval<const RhsKeyType &>(),
+                                                             std::declval<const LhsKeyType &>()));
         } else {
-            return noexcept(
-                ComparatorType{}(std::declval<const KeyType &>(), std::declval<const KeyType &>()));
+            return noexcept(std::declval<const ComparatorType &>()(
+                       std::declval<const LhsKeyType &>(), std::declval<const RhsKeyType &>())) &&
+                   noexcept(std::declval<const ComparatorType &>()(
+                       std::declval<const RhsKeyType &>(), std::declval<const LhsKeyType &>()));
         }
     }
 
 protected:
-    static constexpr bool kIsNoexceptThreeWayComparable = IsNoexceptThreeWayComparable();
+    constexpr NonReflexiveComparatorHelper() noexcept(Base::kNoexceptDefaultConstructable) =
+        default;
 
-    [[nodiscard]] static constexpr std::weak_ordering CompareThreeWay(
-        const KeyType &lhs, const KeyType &rhs) noexcept(kIsNoexceptThreeWayComparable) {
-        if constexpr (kUseStdThreeWayComparison) {
+    explicit constexpr NonReflexiveComparatorHelper(ComparatorType /*cmp*/) noexcept
+        requires(kStatelessComparatorStorage)
+    {}
+
+    explicit constexpr NonReflexiveComparatorHelper(ComparatorType cmp) noexcept(
+        Base::kNoexceptConstructable)
+        requires(!kStatelessComparatorStorage)
+        : Base(std::move(cmp)) {}
+
+    template <class LhsKeyType, class RhsKeyType>
+    static constexpr bool kAreNoexceptThreeWayComparable =
+        IsNoexceptThreeWayComparable<LhsKeyType, RhsKeyType>();
+
+    template <class OtherKeyType>
+    static constexpr bool kIsComparableWithKey =
+        !std::is_reference_v<OtherKeyType> && requires(const KeyType key,
+                                                       const KeyType &key_reference,
+                                                       OtherKeyType other_key,
+                                                       const OtherKeyType &other_key_reference,
+                                                       const ComparatorType &comparator) {
+            { comparator(key, other_key) } -> std::same_as<bool>;
+            { comparator(other_key, key) } -> std::same_as<bool>;
+            { comparator(key_reference, other_key) } -> std::same_as<bool>;
+            { comparator(other_key, key_reference) } -> std::same_as<bool>;
+            { comparator(key, other_key_reference) } -> std::same_as<bool>;
+            { comparator(other_key_reference, key) } -> std::same_as<bool>;
+            { comparator(key_reference, other_key_reference) } -> std::same_as<bool>;
+            { comparator(other_key_reference, key_reference) } -> std::same_as<bool>;
+        };
+
+    static_assert(kIsComparableWithKey<KeyType>,
+                  "Key type should be comparable with itself by the given const comparator");
+
+    template <class OtherKeyType>
+    static constexpr bool kIsNoexceptThreeWayComparableWith =
+        kIsComparableWithKey<OtherKeyType> &&
+        kAreNoexceptThreeWayComparable<const OtherKeyType &, const KeyType &>;
+
+    template <class LhsKeyType, class RhsKeyType>
+        requires(kIsComparableWithKey<LhsKeyType> && kIsComparableWithKey<RhsKeyType>)
+    [[nodiscard]] constexpr std::weak_ordering CompareThreeWay(const LhsKeyType &lhs,
+                                                               const RhsKeyType &rhs) const
+        noexcept(kAreNoexceptThreeWayComparable<LhsKeyType, RhsKeyType>) {
+        if constexpr (kStdLess) {
             return std::compare_weak_order_fallback(lhs, rhs);
+        } else if constexpr (kStdGreater) {
+            return std::compare_weak_order_fallback(rhs, lhs);
         } else {
-            if (ComparatorType{}(lhs, rhs)) {
+            const ComparatorType &cmp = Base::GetComparator();
+            if (cmp(lhs, rhs)) {
                 return std::weak_ordering::less;
             }
-            if (ComparatorType{}(rhs, lhs)) {
+            if (cmp(rhs, lhs)) {
                 return std::weak_ordering::greater;
             }
             return std::weak_ordering::equivalent;
@@ -1592,49 +1743,19 @@ protected:
     }
 };
 
-template <class Comparator>
-concept StatelessComparator =
-    std::is_trivially_default_constructible_v<Comparator> &&
-    std::is_nothrow_default_constructible_v<Comparator> && sizeof(Comparator) <= sizeof(char);
-
-static_assert(StatelessComparator<std::less<std::string>>);
-static_assert(StatelessComparator<std::greater<int>>);
-
 namespace rbtree {
 
-export template <class KeyType,
-                 StatelessComparator ComparatorType = std::less<>,
-                 bool UseByValueWherePossible       = kUseByValue<KeyType>>
-class RBTree;
+template <RBTreeKeyTypeConstraints KeyType, class ComparatorType>
+    requires ComparatorForType<ComparatorType, KeyType>
+class RBTree : private RBTreeContainer<KeyType, RBTree<KeyType, ComparatorType>>,
+               private NonReflexiveComparatorHelper<KeyType, ComparatorType> {
+    using Base = RBTreeContainer<KeyType, RBTree>;
 
-export enum class TestStatus : std::uint32_t {
-    kOk = 0,
-    kRootIsNotBlack,
-    kInvalidOrNotBlackParentOfRedNode,
-    kRedNodeHasExactlyOneNilChild,
-    kNodeHasInvalidColor,
-    kKeyOfLeftSonGEThanKeyOfNode,
-    kLeftSonOfRedNodeIsNotBlack,
-    kMaxKeyInLeftSubtreeGEThanKeyOfNode,
-    kKeyOfNodeGEThanKeyOfRightSon,
-    kRightSonOfRedNodeIsNotBlack,
-    kKeyOfNodeGEThanMinKeyInRightSubtree,
-    kBlackHeightOfLeftSubtreeGTThanBlackHeightOfRightSubtree,
-    kBlackHeightOfLeftSubtreeLSThanBlackHeightOfRightSubtree,
-};
-
-export template <class KeyType>
-[[nodiscard]]
-TestStatus IsRBTreeUnitTest(const RBTree<KeyType> &tree);
-
-template <class KeyType, StatelessComparator ComparatorType, bool UseByValueWherePossible>
-class RBTree
-    : private RBTreeContainer<KeyType, RBTree<KeyType, ComparatorType, UseByValueWherePossible>>,
-      private ComparatorHelper<KeyType, ComparatorType> {
-    using Base            = RBTreeContainer<KeyType, RBTree>;
-    using ReadOnlyKeyType = std::conditional_t<UseByValueWherePossible, KeyType, const KeyType &>;
-    using ComparatorHelper<KeyType, ComparatorType>::kIsNoexceptThreeWayComparable;
-    using ComparatorHelper<KeyType, ComparatorType>::CompareThreeWay;
+    using ComparatorBase = NonReflexiveComparatorHelper<KeyType, ComparatorType>;
+    using ComparatorBase::CompareThreeWay;
+    using ComparatorBase::kAreNoexceptThreeWayComparable;
+    using ComparatorBase::kIsComparableWithKey;
+    using ComparatorBase::kIsNoexceptThreeWayComparableWith;
 
 public:
     using size_type              = typename Base::size_type;
@@ -1665,12 +1786,55 @@ public:
     using Base::size;
 
     constexpr RBTree() noexcept = default;
+
+    explicit constexpr RBTree(ComparatorType cmp) noexcept : ComparatorBase(std::move(cmp)) {}
+
     constexpr RBTree(std::initializer_list<KeyType> list) : RBTree(list.begin(), list.end()) {}
+
     template <std::input_iterator Iter, std::sentinel_for<Iter> SentinelIter>
     constexpr RBTree(Iter begin_iter, SentinelIter end_iter) {
+        this->insert_range(begin_iter, end_iter);
+    }
+
+    template <std::input_iterator Iter, std::sentinel_for<Iter> SentinelIter>
+    constexpr RBTree(Iter begin_iter, SentinelIter end_iter, ComparatorType cmp)
+        : ComparatorBase(std::move(cmp)) {
+        this->insert_range(begin_iter, end_iter);
+    }
+
+    template <std::ranges::input_range Range>
+    constexpr void insert_range(const Range &range) {
+        this->insert_range(std::begin(range), std::end(range));
+    }
+
+    template <std::ranges::input_range Range>
+    constexpr void insert_range(Range &&range) {
+        this->insert_range(std::make_move_iterator(std::begin(range)),
+                           std::make_move_iterator(std::end(range)));
+    }
+
+    template <std::input_iterator Iter, std::sentinel_for<Iter> SentinelIter>
+    constexpr void insert_range(Iter begin_iter, const SentinelIter end_iter) {
         for (; begin_iter != end_iter; ++begin_iter) {
-            insert(*begin_iter);  // TODO: insert_hint
+            this->insert(*begin_iter);  // TODO: insert_hint
         }
+    }
+
+    template <std::input_iterator Iter, std::sentinel_for<Iter> SentinelIter>
+    constexpr void assign_range(Iter begin_iter, SentinelIter end_iter) {
+        this->clear();
+        this->insert_range(begin_iter, end_iter);
+    }
+
+    template <std::ranges::input_range Range>
+    constexpr void assign_range(const Range &range) {
+        this->assign_range(std::begin(range), std::end(range));
+    }
+
+    template <std::ranges::input_range Range>
+    constexpr void assign_range(Range &&range) {
+        this->assign_range(std::make_move_iterator(std::begin(range)),
+                           std::make_move_iterator(std::end(range)));
     }
 
     constexpr void swap(RBTree &other) noexcept {
@@ -1685,23 +1849,26 @@ public:
         bool inserted;
     };
 
-    template <class U>
+    template <class U = KeyType>
     constexpr InsertResult insert(U &&key) ATTRIBUTE_LIFETIME_BOUND {
         return insert_impl</*OverwriteIfExists = */ false>(std::forward<U>(key));
     }
 
-    template <class U>
+    template <class U = KeyType>
     constexpr iterator insert_or_overwrite(U &&key) ATTRIBUTE_LIFETIME_BOUND {
         return insert_impl</*OverwriteIfExists = */ true>(std::forward<U>(key));
     }
 
-    constexpr size_type erase(ReadOnlyKeyType key) noexcept(kIsNoexceptThreeWayComparable &&
-                                                            Base::kIsNodeNoexceptDestructible) {
-        const_iterator iter = find(key);
+    template <class EraseKeyType = KeyType>
+        requires(ComparatorBase::template kIsComparableWithKey<EraseKeyType>)
+    constexpr size_type erase(const EraseKeyType &key) noexcept(
+        ComparatorBase::template kIsNoexceptThreeWayComparableWith<EraseKeyType> &&
+        Base::kIsNodeNoexceptDestructible) {
+        const_iterator iter = this->find(key);
         if (iter == end()) [[unlikely]] {
             return 0;
         }
-        erase(iter);
+        this->erase(std::move(iter));
         return 1;
     }
 
@@ -1710,8 +1877,11 @@ public:
         erase_impl(iter);
     }
 
-    [[nodiscard]] constexpr const_iterator lower_bound(ReadOnlyKeyType key) const
-        noexcept(kIsNoexceptThreeWayComparable) ATTRIBUTE_LIFETIME_BOUND {
+    template <class LowerBoundKeyType = KeyType>
+        requires(ComparatorBase::template kIsComparableWithKey<LowerBoundKeyType>)
+    [[nodiscard]] constexpr const_iterator lower_bound(const LowerBoundKeyType &key) const
+        noexcept(ComparatorBase::template kIsNoexceptThreeWayComparableWith<LowerBoundKeyType>)
+            ATTRIBUTE_LIFETIME_BOUND {
         const node_type *last_left_turn = nullptr;
         for (auto *current_node = this->Root(); current_node != nullptr;) {
             const auto compare_result = CompareThreeWay(key, current_node->Key());
@@ -1728,8 +1898,11 @@ public:
         return last_left_turn != nullptr ? const_iterator(last_left_turn) : end();
     }
 
-    [[nodiscard]] constexpr const_iterator find(ReadOnlyKeyType key) const
-        noexcept(kIsNoexceptThreeWayComparable) ATTRIBUTE_LIFETIME_BOUND {
+    template <class FindKeyType = KeyType>
+        requires(ComparatorBase::template kIsComparableWithKey<FindKeyType>)
+    [[nodiscard]] constexpr const_iterator find(const FindKeyType &key) const
+        noexcept(ComparatorBase::template kIsNoexceptThreeWayComparableWith<FindKeyType>)
+            ATTRIBUTE_LIFETIME_BOUND {
         for (auto *current_node = this->Root(); current_node != nullptr;) {
             const auto compare_result = CompareThreeWay(key, current_node->Key());
             if (compare_result < 0) {
@@ -1744,7 +1917,7 @@ public:
         return end();
     }
 
-    friend TestStatus IsRBTreeUnitTest<KeyType>(const RBTree &tree);
+    friend TestStatus rbtree::RBTreeInvariantsUnitTest<KeyType, ComparatorType>(const RBTree &tree);
 
 private:
     [[nodiscard]] constexpr const node_type *Root() const noexcept ATTRIBUTE_LIFETIME_BOUND {
@@ -1801,8 +1974,8 @@ struct [[nodiscard]] TestImplResult {
 };
 
 template <class KeyType>
-[[nodiscard]]
-TestImplResult<KeyType> IsRBTreeUnitTestImpl(const typename RBTree<KeyType>::node_type &node) {
+[[nodiscard]] TestImplResult<KeyType> CheckRBTreeNodeInvariants(
+    const typename RBTree<KeyType>::node_type &node) {
     std::int32_t height_l       = 0;
     std::int32_t height_r       = 0;
     KeyType min_l               = node.Key();
@@ -1862,7 +2035,8 @@ TestImplResult<KeyType> IsRBTreeUnitTestImpl(const typename RBTree<KeyType>::nod
             };
         }
 
-        const TestImplResult<KeyType> left_subtree_info = IsRBTreeUnitTestImpl<KeyType>(left_child);
+        const TestImplResult<KeyType> left_subtree_info =
+            CheckRBTreeNodeInvariants<KeyType>(left_child);
         RBTREE_ASSERT_INVARIANT(left_subtree_info.min_key <= left_subtree_info.max_key);
         if (left_subtree_info.status != TestStatus::kOk) {
             return left_subtree_info;
@@ -1900,7 +2074,7 @@ TestImplResult<KeyType> IsRBTreeUnitTestImpl(const typename RBTree<KeyType>::nod
         }
 
         const TestImplResult<KeyType> right_subtree_info =
-            IsRBTreeUnitTestImpl<KeyType>(right_child);
+            CheckRBTreeNodeInvariants<KeyType>(right_child);
         RBTREE_ASSERT_INVARIANT(right_subtree_info.min_key <= right_subtree_info.max_key);
         if (right_subtree_info.status != TestStatus::kOk) {
             return right_subtree_info;
@@ -1944,8 +2118,8 @@ TestImplResult<KeyType> IsRBTreeUnitTestImpl(const typename RBTree<KeyType>::nod
     };
 }
 
-template <class KeyType>
-TestStatus IsRBTreeUnitTest(const RBTree<KeyType> &tree) {
+template <class KeyType, class ComparatorType>
+TestStatus RBTreeInvariantsUnitTest(const RBTree<KeyType, ComparatorType> &tree) {
     const typename RBTree<KeyType>::node_type *root_ptr = tree.Root();
     if (root_ptr == nullptr) {
         return TestStatus::kOk;
@@ -1955,7 +2129,7 @@ TestStatus IsRBTreeUnitTest(const RBTree<KeyType> &tree) {
         return TestStatus::kRootIsNotBlack;
     }
 
-    const auto [status, h, min, max] = IsRBTreeUnitTestImpl<KeyType>(root);
+    const auto [status, h, min, max] = CheckRBTreeNodeInvariants<KeyType>(root);
     if (status == TestStatus::kOk) {
         RBTREE_ASSERT_INVARIANT(h > 0);
         if (root.Left()) {

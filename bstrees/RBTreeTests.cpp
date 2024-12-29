@@ -1,7 +1,9 @@
 #include <algorithm>
 #include <array>
 #include <cassert>
+#include <concepts>
 #include <cstddef>
+#include <cstdint>
 #include <iterator>
 #include <ranges>
 #include <set>
@@ -15,18 +17,18 @@ namespace {
 
 using rbtree::RBTree;
 
-template <std::size_t N, std::size_t M>
-constexpr bool non_intersecting_sets(const std::array<int, N> &s1,
-                                     const std::array<int, M> &s2) noexcept {
-    std::array<int, N> s1_arr(s1);
-    std::array<int, M> s2_arr(s2);
+template <std::integral T, std::size_t N, std::size_t M>
+constexpr bool non_intersecting_sets(const std::array<T, N> &s1,
+                                     const std::array<T, M> &s2) noexcept {
+    std::array<T, N> s1_arr(s1);
+    std::array<T, M> s2_arr(s2);
     std::ranges::sort(s1_arr);
     std::ranges::sort(s2_arr);
 
     class Iter {
     public:
         using difference_type [[maybe_unused]] = std::ptrdiff_t;
-        using value_type                       = int;
+        using value_type                       = T;
         using reference                        = value_type &;
         using pointer                          = value_type *;
 
@@ -87,6 +89,8 @@ void test_on_range(const Range1 &nums, const Range2 &not_in_nums) {
 
     auto compare = [&nums, &not_in_nums](const RBTree<T> &t, const std::set<T> &checker) {
         assert(t.size() == checker.size());
+        assert(t.size() <= t.max_size());
+        assert(t.size() <= RBTree<T>::max_size());
 
         assert(std::ranges::equal(t, checker));
         assert(std::equal(t.begin(), t.end(), checker.begin()));
@@ -171,19 +175,19 @@ void test_on_range(const Range1 &nums, const Range2 &not_in_nums) {
     assert(t.find({}) == t.end());
     assert(t.lower_bound({}) == t.end());
     for (const T &num : nums) {
-        assert(rbtree::IsRBTreeUnitTest(t) == rbtree::TestStatus::kOk);
+        assert(rbtree::RBTreeInvariantsUnitTest(t) == rbtree::TestStatus::kOk);
         t.insert(num);
         assert(t.size() <= t.max_size());
-        assert(rbtree::IsRBTreeUnitTest(t) == rbtree::TestStatus::kOk);
+        assert(rbtree::RBTreeInvariantsUnitTest(t) == rbtree::TestStatus::kOk);
         checker.insert(num);
         test_tree(t, checker);
     }
 
     for (const T &elem : nums) {
-        assert(rbtree::IsRBTreeUnitTest(t) == rbtree::TestStatus::kOk);
+        assert(rbtree::RBTreeInvariantsUnitTest(t) == rbtree::TestStatus::kOk);
         assert(t.erase(elem) == checker.erase(elem));
         assert(t.size() <= t.max_size());
-        assert(rbtree::IsRBTreeUnitTest(t) == rbtree::TestStatus::kOk);
+        assert(rbtree::RBTreeInvariantsUnitTest(t) == rbtree::TestStatus::kOk);
         test_tree(t, checker);
     }
 }
@@ -198,9 +202,7 @@ void test_on_sub_ranges(const Range1 &range, const Range2 &not_in_range) {
     }
 }
 
-}  // namespace
-
-int main() {
+void test_rbtree_on_ranges() {
     constexpr std::array nums = {
         1,       2,         -3,     4,      0,        -4,       35,         -45,
         20,      23,        22,     21,     -15,      -28,      56,         57,
@@ -267,4 +269,98 @@ int main() {
     std::array<std::string, std::size(string_views)> not_in_strings{};
     std::ranges::copy(not_in_string_views, not_in_strings.begin());
     test_on_sub_ranges(strings, not_in_strings);
+}
+
+template <class TypeWithDefaultCtorAndWithoutOperatorLess>
+void test_with_comparator_impl1() {
+    using T = TypeWithDefaultCtorAndWithoutOperatorLess;
+    static_assert(requires { T{}; });
+    static_assert(std::is_default_constructible_v<TypeWithDefaultCtorAndWithoutOperatorLess>);
+    static_assert(!requires { RBTree<T>{{T{}, T{}, T{}}}; });
+}
+
+void test_with_comparator() {
+    struct S1 {
+    private:
+        int x_{};
+    };
+    test_with_comparator_impl1<S1>();
+
+    class T {
+    public:
+        T(const uint32_t x, const uint32_t y) : x_{x}, y_{y} {}
+
+        [[nodiscard]] uint32_t x() const {
+            return x_;
+        }
+        [[nodiscard]] uint32_t y() const {
+            return y_;
+        }
+
+    private:
+        uint32_t x_;
+        uint32_t y_;
+    };
+    class Cmp {
+    public:
+        bool operator()(const T &lhs, const T &rhs) const {
+            return lhs.x() + lhs.y() + u < rhs.x() + rhs.y() + u;
+        }
+
+    private:
+        uint8_t u{10};
+    };
+    class NonCopyableCmp : public Cmp {
+    public:
+        NonCopyableCmp()                                              = default;
+        NonCopyableCmp(const NonCopyableCmp &)                        = delete;
+        NonCopyableCmp &operator=(const NonCopyableCmp &)             = delete;
+        NonCopyableCmp(NonCopyableCmp &&)                             = default;
+        [[maybe_unused]] NonCopyableCmp &operator=(NonCopyableCmp &&) = default;
+    };
+
+    using Set     = RBTree<T, NonCopyableCmp>;
+    using StdSet  = std::set<T, Cmp>;
+    auto cmp_sets = [](const Set &lhs, const StdSet &rhs) {
+        assert(lhs.size() == rhs.size());
+        for (auto rhs_iter = rhs.begin(); const T &lhs_t : lhs) {
+            assert(lhs_t.x() == rhs_iter->x());
+            assert(lhs_t.y() == rhs_iter->y());
+            assert(rhs_iter != rhs.end());
+            ++rhs_iter;
+        }
+    };
+    Set t1{NonCopyableCmp{}};
+    auto cmp = Cmp{};
+    StdSet std_t{cmp};
+    std::array r1{T{1, 1}, T{2, 123}, T{4382, 32489}, T{2, 3}, T{23, 32738}, T{32873, 2339}};
+    std_t.insert(r1.begin(), r1.end());
+    t1.insert_range(std::move(r1));
+    cmp_sets(t1, std_t);
+
+    Set t = std::move(t1);
+
+    std::array r2{T{34, 3289}, T{48, 438}, T{3492, 328}, T{328, 328}, T{432873, 43289}};
+    std_t.insert(r2.begin(), r2.end());
+    t.insert_range(std::move(r2));
+    cmp_sets(t, std_t);
+
+    while (!std_t.empty()) {
+        assert(!t.empty());
+        assert(t.begin() != t.end());
+        std_t.erase(std_t.begin());
+        t.erase(t.begin());
+        cmp_sets(t, std_t);
+    }
+
+    assert(t.empty());
+    assert(t.begin() == t.end());
+    assert(t.size() == 0);
+}
+
+}  // namespace
+
+int main() {
+    test_rbtree_on_ranges();
+    test_with_comparator();
 }
