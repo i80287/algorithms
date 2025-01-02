@@ -560,8 +560,8 @@ private:
     constexpr ReplacingACTrie(std::vector<Node>&& nodes,
                               std::vector<StoredPatternSize>&& words_lengths,
                               ReplacementsVector&& words_replacements) noexcept
-        : Base(std::move(nodes), std::move(words_lengths)),
-          words_replacements_(std::move(words_replacements)) {}
+        : Base(std::move(nodes), std::move(words_lengths))
+        , words_replacements_(std::move(words_replacements)) {}
 
     ReplacementsVector words_replacements_;
 };

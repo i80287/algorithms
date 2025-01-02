@@ -225,9 +225,9 @@ struct [[nodiscard]] CountingVector final {
         lhs.swap(rhs);
     }
     constexpr CountingVector(CountingVector&& other) noexcept
-        : data_(std::exchange(other.data_, nullptr)),
-          size_(std::exchange(other.size_, 0)),
-          capacity_(std::exchange(other.capacity_, 0)) {}
+        : data_(std::exchange(other.data_, nullptr))
+        , size_(std::exchange(other.size_, 0))
+        , capacity_(std::exchange(other.capacity_, 0)) {}
     constexpr CountingVector& operator=(const CountingVector& other) ATTRIBUTE_LIFETIME_BOUND {
         // NOLINTNEXTLINE(cppcoreguidelines-c-copy-assignment-signature)
         return *this = CountingVector(other);  // NOLINT(misc-unconventional-assign-operator)

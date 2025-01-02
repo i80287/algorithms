@@ -10,9 +10,17 @@ SortIncludes: CaseInsensitive
 ColumnLimit: 100
 BraceWrapping:
     BeforeElse: true
+BreakConstructorInitializers: BeforeComma
+BreakInheritanceList: BeforeComma
 AlignConsecutiveAssignments: true
 InsertNewlineAtEOF: true
 AllowShortFunctionsOnASingleLine: Empty
+BreakAfterAttributes: Leave
+AttributeMacros: [
+    CONFIG_CLANG_NONNULL_QUALIFIER,
+    CONFIG_CLANG_NULLABLE_QUALIFIER,
+    RESTRICT_QUALIFIER,
+]
 StatementAttributeLikeMacros: [
     ATTRIBUTE_CONST,
     ATTRIBUTE_MAYBE_UNUSED,
@@ -35,5 +43,8 @@ StatementAttributeLikeMacros: [
     ATTRIBUTE_NORETURN,
     ATTRIBUTE_NOTHROW,
     ATTRIBUTE_FALLTHROUGH,
+]
+StatementMacros: [
+    CONFIG_ASSUME_STATEMENT,
 ]
 BinPackParameters: false

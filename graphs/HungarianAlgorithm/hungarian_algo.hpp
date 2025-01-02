@@ -167,15 +167,15 @@ private:
                                  bool** RESTRICT_QUALIFIER bipartite_graph_matrix,
                                  T** RESTRICT_QUALIFIER matrix,
                                  std::size_t size) noexcept
-        : first_part_matches_(first_part_matches),
-          second_part_matches_(second_part_matches),
-          first_part_visited_(first_part_visited),
-          second_part_visited_(second_part_visited),
-          neighbours_(neighbours),
-          neighbours_count_(neighbours_count),
-          bipartite_graph_matrix_(bipartite_graph_matrix),
-          matrix_(matrix),
-          size_(size) {}
+        : first_part_matches_(first_part_matches)
+        , second_part_matches_(second_part_matches)
+        , first_part_visited_(first_part_visited)
+        , second_part_visited_(second_part_visited)
+        , neighbours_(neighbours)
+        , neighbours_count_(neighbours_count)
+        , bipartite_graph_matrix_(bipartite_graph_matrix)
+        , matrix_(matrix)
+        , size_(size) {}
 
     [[nodiscard]] ATTRIBUTE_CONST static constexpr std::size_t align_size(std::size_t n) noexcept {
         constexpr std::size_t kAlignmentBoundary = 32;
