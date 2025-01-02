@@ -97,10 +97,10 @@ protected:
         : left_{nullptr}, right_{nullptr}, parent_{nullptr}, color_{NodeColor::kRed} {}
     constexpr ~NodeBase() = default;
     constexpr NodeBase(NodeBase &&other) noexcept
-        : left_(std::exchange(other.left_, nullptr)),
-          right_(std::exchange(other.right_, nullptr)),
-          parent_(std::exchange(other.parent_, nullptr)),
-          color_(std::exchange(other.color_, NodeColor{})) {}
+        : left_{std::exchange(other.left_, nullptr)},
+          right_{std::exchange(other.right_, nullptr)},
+          parent_{std::exchange(other.parent_, nullptr)},
+          color_{std::exchange(other.color_, NodeColor{})} {}
     constexpr NodeBase &operator=(NodeBase &&other) noexcept ATTRIBUTE_LIFETIME_BOUND {
         left_   = std::exchange(other.left_, nullptr);
         right_  = std::exchange(other.right_, nullptr);
@@ -187,14 +187,14 @@ public:
 
 private:
     // clang-format off
-        template <class NodeType>
-        [[nodiscard]]
-        RBTREE_ATTRIBUTE_NONNULL_ALL_ARGS
-        ATTRIBUTE_RETURNS_NONNULL
-        ATTRIBUTE_PURE
-        ATTRIBUTE_ACCESS(read_only, 1)
-        ATTRIBUTE_ALWAYS_INLINE
-        static constexpr NodeType *LeftMostNodeOf(NodeType * CONFIG_CLANG_NONNULL_QUALIFIER node ATTRIBUTE_LIFETIME_BOUND) noexcept {
+    template <class NodeType>
+    [[nodiscard]]
+    RBTREE_ATTRIBUTE_NONNULL_ALL_ARGS
+    ATTRIBUTE_RETURNS_NONNULL
+    ATTRIBUTE_PURE
+    ATTRIBUTE_ACCESS(read_only, 1)
+    ATTRIBUTE_ALWAYS_INLINE
+    static constexpr NodeType *LeftMostNodeOf(NodeType * CONFIG_CLANG_NONNULL_QUALIFIER node ATTRIBUTE_LIFETIME_BOUND) noexcept {
         // clang-format on
         while (node->Left() != nullptr) {
             node = node->Left();
@@ -273,10 +273,12 @@ public:
     [[nodiscard]] constexpr Node *Parent() noexcept {
         return static_cast<Node *>(Base::Parent());
     }
-    template <class U>
-    // requires
-    constexpr void SetKey(U &&key) noexcept(std::is_nothrow_assignable_v<KeyType, U &&>) {
-        key_ = std::forward<U>(key);
+    template <class AssignedKeyType>
+    constexpr void SetKey(AssignedKeyType &&new_key) noexcept(
+        std::is_nothrow_assignable_v<KeyType, AssignedKeyType &&>)
+        requires(std::is_assignable_v<KeyType, AssignedKeyType &&>)
+    {
+        key_ = std::forward<AssignedKeyType>(new_key);
     }
     [[nodiscard]] constexpr const KeyType &Key() const noexcept ATTRIBUTE_LIFETIME_BOUND {
         return key_;
@@ -285,10 +287,9 @@ public:
         return key_;
     }
     constexpr void Swap(Node &other) noexcept(std::is_nothrow_swappable_v<KeyType>)
-        requires(std::is_swappable_v<KeyType>)
+        requires std::swappable<KeyType>
     {
-        using std::swap;
-        swap(key_, other.key_);
+        std::ranges::swap(key_, other.key_);
         Base::Swap(other);
     }
 
@@ -1148,19 +1149,18 @@ template <class NodeType>
 
 // clang-format on
 
-template <class KeyType, class DerivedRBTree>
+template <class KeyType>
 class RBTreeContainer;
 
-template <class KeyType, bool IsConstIterator, class RBTreeFriend>
+template <class KeyType, bool IsConstIterator>
 class Iterator final {
     using IterNodeBaseType = std::conditional_t<IsConstIterator, const NodeBase, NodeBase>;
     using IterNodeType  = std::conditional_t<IsConstIterator, const Node<KeyType>, Node<KeyType>>;
     using IterKeyType   = std::conditional_t<IsConstIterator, const KeyType, KeyType>;
-    using OtherIterator = Iterator<KeyType, !IsConstIterator, RBTreeFriend>;
+    using OtherIterator = Iterator<KeyType, !IsConstIterator>;
 
-    friend class RBTreeContainer<KeyType, RBTreeFriend>;
+    friend class RBTreeContainer<KeyType>;
     friend OtherIterator;
-    friend RBTreeFriend;
 
     RBTREE_ATTRIBUTE_NONNULL_ALL_ARGS
     explicit constexpr Iterator(
@@ -1202,7 +1202,7 @@ public:
     }
 
     [[nodiscard]] constexpr Iterator operator++(int) & noexcept {
-        Iterator copy(*this);
+        const Iterator copy(*this);
         ++*this;
         return copy;
     }
@@ -1214,7 +1214,7 @@ public:
     }
 
     [[nodiscard]] constexpr Iterator operator--(int) & noexcept {
-        Iterator copy(*this);
+        const Iterator copy(*this);
         --*this;
         return copy;
     }
@@ -1223,14 +1223,14 @@ private:
     IterNodeType *node_{};
 };
 
-template <class KeyType, class DerivedRBTree>
+template <class KeyType>
 class RBTreeContainer : private RBTreeContainerImpl {
     using Base = RBTreeContainerImpl;
 
 protected:
     using size_type              = std::size_t;
     using difference_type        = std::ptrdiff_t;
-    using const_iterator         = Iterator<KeyType, /*IsConstIterator = */ true, DerivedRBTree>;
+    using const_iterator         = Iterator<KeyType, /*IsConstIterator = */ true>;
     using iterator               = const_iterator;
     using value_type             = KeyType;
     using key_type               = KeyType;
@@ -1280,10 +1280,10 @@ protected:
         return const_iterator{static_cast<const NodeType *>(Base::Begin())};
     }
     [[nodiscard]] constexpr const_iterator end() const noexcept ATTRIBUTE_LIFETIME_BOUND {
-        return iterator{static_cast<const NodeType *>(Base::End())};
+        return const_iterator{static_cast<const NodeType *>(Base::End())};
     }
     [[nodiscard]] constexpr iterator begin() noexcept ATTRIBUTE_LIFETIME_BOUND {
-        return iterator(static_cast<NodeType *>(Base::Begin()));
+        return iterator{static_cast<NodeType *>(Base::Begin())};
     }
     [[nodiscard]] constexpr iterator end() noexcept ATTRIBUTE_LIFETIME_BOUND {
         return iterator{static_cast<NodeType *>(Base::End())};
@@ -1345,6 +1345,18 @@ protected:
     [[nodiscard]] constexpr NodeType *PreRootNodePtr() noexcept ATTRIBUTE_LIFETIME_BOUND {
         return static_cast<NodeType *>(Base::PreRootNil());
     }
+    [[nodiscard]]
+    ATTRIBUTE_ALWAYS_INLINE
+    ATTRIBUTE_PURE
+    static constexpr const_iterator NodePtrToIterator(NodeType* node_ptr ATTRIBUTE_LIFETIME_BOUND) noexcept {
+        return iterator{node_ptr};
+    }
+    [[nodiscard]]
+    ATTRIBUTE_ALWAYS_INLINE
+    ATTRIBUTE_PURE
+    static constexpr const_iterator NodePtrToConstIterator(const NodeType* node_ptr ATTRIBUTE_LIFETIME_BOUND) noexcept {
+        return const_iterator{node_ptr};
+    }
 
     template <class... Args>
     [[nodiscard]]
@@ -1359,7 +1371,7 @@ protected:
     }
 
     constexpr void ExtractAndDestroyNode(const_iterator iter) noexcept(kIsNodeNoexceptDestructible) {
-        auto *const node = const_cast<NodeType *>(iter.node_);
+        NodeType *const node = const_cast<NodeType *>(iter.node_);
         RBTREE_ASSERT_INVARIANT(node != nullptr);
         Base::ExtractNode(node);
         DestroyNode(node);
@@ -1747,11 +1759,11 @@ namespace rbtree {
 
 template <RBTreeKeyTypeConstraints KeyType, class ComparatorType>
     requires ComparatorForType<ComparatorType, KeyType>
-class RBTree : private RBTreeContainer<KeyType, RBTree<KeyType, ComparatorType>>,
+class RBTree : private RBTreeContainer<KeyType>,
                private NonReflexiveComparatorHelper<KeyType, ComparatorType> {
-    using Base = RBTreeContainer<KeyType, RBTree>;
-
+    using Base           = RBTreeContainer<KeyType>;
     using ComparatorBase = NonReflexiveComparatorHelper<KeyType, ComparatorType>;
+
     using ComparatorBase::CompareThreeWay;
     using ComparatorBase::kAreNoexceptThreeWayComparable;
     using ComparatorBase::kIsComparableWithKey;
@@ -1891,11 +1903,11 @@ public:
             } else if (compare_result > 0) {
                 current_node = current_node->Right();
             } else {
-                return const_iterator(current_node);
+                return Base::NodePtrToConstIterator(current_node);
             }
         }
 
-        return last_left_turn != nullptr ? const_iterator(last_left_turn) : end();
+        return last_left_turn != nullptr ? Base::NodePtrToConstIterator(last_left_turn) : end();
     }
 
     template <class FindKeyType = KeyType>
@@ -1910,14 +1922,15 @@ public:
             } else if (compare_result > 0) {
                 current_node = current_node->Right();
             } else {
-                return const_iterator(current_node);
+                return Base::NodePtrToConstIterator(current_node);
             }
         }
 
         return end();
     }
 
-    friend TestStatus rbtree::RBTreeInvariantsUnitTest<KeyType, ComparatorType>(const RBTree &tree);
+    friend TestStatus rbtree::RBTreeInvariantsUnitTest<KeyType, ComparatorType>(
+        const RBTree<KeyType, ComparatorType> &tree);
 
 private:
     [[nodiscard]] constexpr const node_type *Root() const noexcept ATTRIBUTE_LIFETIME_BOUND {
@@ -1944,19 +1957,26 @@ private:
             } else {
                 if constexpr (OverwriteIfExists) {
                     current_node->SetKey(std::forward<U>(key));
-                    return iterator{current_node};
+                    return Base::NodePtrToIterator(current_node);
                 } else {
-                    return InsertResult{.iter = iterator(current_node), .inserted = false};
+                    return InsertResult{
+                        .iter     = Base::NodePtrToIterator(current_node),
+                        .inserted = false,
+                    };
                 }
             }
         }
 
         const bool insert_left = last_cmp_res_was_left;
-        auto *const new_node   = Base::InsertNode(previous_node, insert_left, std::forward<U>(key));
+        node_type *const new_node =
+            Base::InsertNode(previous_node, insert_left, std::forward<U>(key));
         if constexpr (OverwriteIfExists) {
-            return iterator{new_node};
+            return Base::NodePtrToIterator(new_node);
         } else {
-            return InsertResult{.iter = iterator(new_node), .inserted = true};
+            return InsertResult{
+                .iter     = Base::NodePtrToIterator(new_node),
+                .inserted = true,
+            };
         }
     }
 
