@@ -55,7 +55,8 @@ protected:
     static constexpr Symbol kIsCaseInsensetive = IsCaseInsensetive;
 
     static_assert('\0' < kAlphabetStart && kAlphabetStart < kAlphabetEnd &&
-                  kAlphabetEnd < std::numeric_limits<char>::max());
+                      kAlphabetEnd < std::numeric_limits<char>::max(),
+                  "Invalid alphabet boundaries");
     static constexpr Symbol kAlphabetLength = kAlphabetEnd - kAlphabetStart + 1;
 
     static constexpr StoredNodeIndex kNullNodeIndex        = 0;
@@ -172,14 +173,15 @@ public:
         static_assert(!(kAlphabetStart <= LinesDelimeter && LinesDelimeter <= kAlphabetEnd) &&
                           SymbolToIndex(LinesDelimeter) >= kAlphabetLength,
                       "Lines delimeter can\'t be in the alphabet");
-        if constexpr (std::is_pointer_v<decltype(find_callback)>) {
+
+        if constexpr (std::is_convertible_v<decltype(find_callback), bool>) {
             if (!std::is_constant_evaluated()) {
-                assert(find_callback != nullptr);
+                assert(find_callback);
             }
         }
-        if constexpr (std::is_pointer_v<decltype(line_callback)>) {
+        if constexpr (std::is_convertible_v<decltype(line_callback), bool>) {
             if (!std::is_constant_evaluated()) {
-                assert(line_callback != nullptr);
+                assert(line_callback);
             }
         }
 
@@ -217,7 +219,7 @@ public:
             }
             const Node& node = nodes_[current_node_index];
             if (node.IsTerminal()) {
-                auto pattern_index = node.pattern_index;
+                const StoredPatternIndex pattern_index = node.pattern_index;
                 if (!std::is_constant_evaluated()) {
                     assert(pattern_index < patterns_lengths_.size());
                 }
@@ -244,7 +246,7 @@ public:
                     assert(terminal_node_index != kNullNodeIndex &&
                            nodes_[terminal_node_index].IsTerminal());
                 }
-                const size_type pattern_index = nodes_[terminal_node_index].pattern_index;
+                const StoredPatternIndex pattern_index = nodes_[terminal_node_index].pattern_index;
                 if (!std::is_constant_evaluated()) {
                     assert(pattern_index < patterns_lengths_.size());
                 }
@@ -310,7 +312,7 @@ protected:
         std::uint32_t symbol_as_int = SymbolToUInt(symbol);
         if constexpr (kIsCaseInsensetive) {
             // We don't use std::tolower because we know that all
-            //  chars are < 128. On the other side, std::tolower makes
+            //  chars are < 128. What's more important, std::tolower makes
             //  text finding runs almost 1.5x times slower because of
             //  the locale handling.
             symbol_as_int = ToLowerImpl(symbol_as_int);
@@ -560,8 +562,8 @@ private:
     constexpr ReplacingACTrie(std::vector<Node>&& nodes,
                               std::vector<StoredPatternSize>&& words_lengths,
                               ReplacementsVector&& words_replacements) noexcept
-        : Base(std::move(nodes), std::move(words_lengths)),
-          words_replacements_(std::move(words_replacements)) {}
+        : Base(std::move(nodes), std::move(words_lengths))
+        , words_replacements_(std::move(words_replacements)) {}
 
     ReplacementsVector words_replacements_;
 };
@@ -592,7 +594,7 @@ public:
     constexpr ACTrieBuilder() : nodes_(), patterns_lengths_() {
         constexpr size_type kDefaultNodesSize =
             std::max({kNullNodeIndex, kFakePrerootNodeIndex, kRootNodeIndex}) + 1;
-        constexpr size_type kDefaultNodesCapacity = std::max(kDefaultNodesSize, size_type(32));
+        constexpr size_type kDefaultNodesCapacity = std::max(kDefaultNodesSize, size_type{32});
 
         nodes_.reserve(kDefaultNodesCapacity);
         nodes_.resize(kDefaultNodesSize);

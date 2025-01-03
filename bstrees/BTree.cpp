@@ -32,10 +32,10 @@ private:
         Node& operator=(const Node&) = delete;
 
         constexpr Node(Node&& other) noexcept
-            : keys_(other.keys_),
-              child_indexes_(other.child_indexes_),
-              keys_size_(other.keys_size_),
-              next_in_row_index_(other.next_in_row_index_) {
+            : keys_(other.keys_)
+            , child_indexes_(other.child_indexes_)
+            , keys_size_(other.keys_size_)
+            , next_in_row_index_(other.next_in_row_index_) {
             other.keys_              = nullptr;
             other.child_indexes_     = nullptr;
             other.keys_size_         = 0;

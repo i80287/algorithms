@@ -24,7 +24,7 @@ using ACTrieBuilder = actrie::ACTrieBuilder<'a', 'z', /*IsCaseInsensetive = */ t
 using ACTrie        = typename ACTrieBuilder::ACTrieType;
 
 template <char QueryWordsDelimiter = ' '>
-ACTrie ParseQuery(string_view query) {
+ACTrie ParseQuery(const string_view query) {
     const size_t query_words_count = std::accumulate(
         query.begin(), query.end(), query.empty() ? size_t{0} : size_t{1},
         [](size_t current_count, char c) constexpr noexcept -> size_t {
@@ -34,7 +34,7 @@ ACTrie ParseQuery(string_view query) {
     auto act_builder = ACTrieBuilder::WithCapacity(query_words_count);
 
     size_t prev_delim_index = static_cast<size_t>(-1);
-    for (size_t i = 0, query_size = query.size(); i < query_size; i++) {
+    for (size_t i = 0; i < query.size(); i++) {
         if (query[i] == QueryWordsDelimiter) {
             const string_view slice(query.data() + (prev_delim_index + 1),
                                     i - (prev_delim_index + 1));
@@ -58,7 +58,9 @@ ACTrie ParseQuery(string_view query) {
 }  // namespace
 
 template <bool IsExactWordsMatching>
-std::vector<string_view> Search(string_view text, string_view query, size_t max_result_size) {
+std::vector<string_view> Search(const string_view text,
+                                const string_view query,
+                                const size_t max_result_size) {
     const ACTrie act               = ParseQuery(query);
     const size_t query_words_count = act.PatternsSize();
 

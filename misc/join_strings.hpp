@@ -238,9 +238,8 @@ JoinStringsConvArgsToStrViewImpl(T num, const Args &...args) {
 struct dummy_base {};
 
 template <class T, class CharType>
-struct same_char_types : std::conditional_t<std::is_integral_v<T> || std::is_floating_point_v<T>,
-                                            std::true_type,
-                                            std::false_type> {};
+struct same_char_types
+    : std::conditional_t<std::is_arithmetic_v<T>, std::true_type, std::false_type> {};
 
 template <class CharType>
 struct same_char_types<std::basic_string<CharType>, CharType> : std::true_type {};

@@ -1,7 +1,6 @@
 #pragma once
 
 #include <algorithm>
-#include <cstddef>
 #include <cstdint>
 #include <iterator>
 #include <limits>
@@ -35,20 +34,20 @@ public:
 
     explicit CXX20_CONSTEXPR SquareMatrix(side_type side_size)
         : data_(allocate_square_matrix(side_size)), side_size_(side_size) {
-        std::fill(begin(), end(), value_type{0});
+        static_assert(std::is_nothrow_default_constructible_v<value_type>, "impl error");
+        std::fill_n(data(), size(), value_type{0});
     }
-    CXX20_CONSTEXPR SquareMatrix(const SquareMatrix& other) : SquareMatrix(other.side_size_) {
-        static_assert(std::is_nothrow_default_constructible_v<value_type> &&
-                          std::is_nothrow_copy_assignable_v<value_type>,
-                      "impl error");
-        std::copy(other.begin(), other.end(), begin());
+    CXX20_CONSTEXPR SquareMatrix(const SquareMatrix& other)
+        : data_(allocate_square_matrix(other.side_size_)), side_size_(other.side_size_) {
+        static_assert(std::is_nothrow_copy_assignable_v<value_type>, "impl error");
+        std::copy_n(other.data(), other.size(), data());
     }
     CXX20_CONSTEXPR SquareMatrix& operator=(const SquareMatrix& other) {
         return *this = SquareMatrix(other);
     }
     CXX20_CONSTEXPR SquareMatrix(SquareMatrix&& other) noexcept
-        : data_(std::exchange(other.data_, nullptr)),
-          side_size_(std::exchange(other.side_size_, side_type{})) {}
+        : data_(std::exchange(other.data_, nullptr))
+        , side_size_(std::exchange(other.side_size_, side_type{})) {}
     CXX20_CONSTEXPR SquareMatrix& operator=(SquareMatrix&& other) noexcept {
         this->swap(other);
         return *this;
@@ -66,23 +65,23 @@ public:
     }
 
     [[nodiscard]]
-    ATTRIBUTE_ALWAYS_INLINE constexpr size_type flat_size() const noexcept {
+    ATTRIBUTE_PURE constexpr size_type flat_size() const noexcept {
         return side_size() * side_size();
     }
     [[nodiscard]]
-    ATTRIBUTE_ALWAYS_INLINE constexpr size_type size() const noexcept {
+    ATTRIBUTE_PURE constexpr size_type size() const noexcept {
         return flat_size();
     }
     [[nodiscard]]
-    ATTRIBUTE_ALWAYS_INLINE constexpr size_type side_size() const noexcept {
+    ATTRIBUTE_PURE constexpr size_type side_size() const noexcept {
         return side_size_;
     }
     [[nodiscard]]
-    ATTRIBUTE_ALWAYS_INLINE constexpr size_type rows() const noexcept {
+    ATTRIBUTE_PURE constexpr size_type rows() const noexcept {
         return side_size();
     }
     [[nodiscard]]
-    ATTRIBUTE_ALWAYS_INLINE constexpr size_type cols() const noexcept {
+    ATTRIBUTE_PURE constexpr size_type cols() const noexcept {
         return side_size();
     }
     struct Shape {
@@ -90,107 +89,107 @@ public:
         size_type cols;
     };
     [[nodiscard]]
-    ATTRIBUTE_ALWAYS_INLINE constexpr Shape shape() const noexcept {
+    ATTRIBUTE_PURE constexpr Shape shape() const noexcept {
         return {rows(), cols()};
     }
 
     [[nodiscard]]
-    ATTRIBUTE_ALWAYS_INLINE constexpr pointer data() noexcept ATTRIBUTE_LIFETIME_BOUND {
+    ATTRIBUTE_PURE constexpr pointer data() noexcept ATTRIBUTE_LIFETIME_BOUND {
         return data_;
     }
     [[nodiscard]]
-    ATTRIBUTE_ALWAYS_INLINE constexpr const_pointer data() const noexcept ATTRIBUTE_LIFETIME_BOUND {
+    ATTRIBUTE_PURE constexpr const_pointer data() const noexcept ATTRIBUTE_LIFETIME_BOUND {
         return data_;
     }
     [[nodiscard]]
-    ATTRIBUTE_ALWAYS_INLINE constexpr iterator begin() noexcept ATTRIBUTE_LIFETIME_BOUND {
+    ATTRIBUTE_PURE constexpr iterator begin() noexcept ATTRIBUTE_LIFETIME_BOUND {
         return data();
     }
     [[nodiscard]]
-    ATTRIBUTE_ALWAYS_INLINE constexpr iterator end() noexcept ATTRIBUTE_LIFETIME_BOUND {
+    ATTRIBUTE_PURE constexpr iterator end() noexcept ATTRIBUTE_LIFETIME_BOUND {
         return data() + size();
     }
     [[nodiscard]]
-    ATTRIBUTE_ALWAYS_INLINE constexpr const_iterator begin() const noexcept
-        ATTRIBUTE_LIFETIME_BOUND {
+    ATTRIBUTE_PURE constexpr const_iterator begin() const noexcept ATTRIBUTE_LIFETIME_BOUND {
         return data();
     }
     [[nodiscard]]
-    ATTRIBUTE_ALWAYS_INLINE constexpr const_iterator end() const noexcept ATTRIBUTE_LIFETIME_BOUND {
+    ATTRIBUTE_PURE constexpr const_iterator end() const noexcept ATTRIBUTE_LIFETIME_BOUND {
         return data() + size();
     }
     [[nodiscard]]
-    ATTRIBUTE_ALWAYS_INLINE constexpr const_iterator cbegin() const noexcept
-        ATTRIBUTE_LIFETIME_BOUND {
+    ATTRIBUTE_PURE constexpr const_iterator cbegin() const noexcept ATTRIBUTE_LIFETIME_BOUND {
         return begin();
     }
     [[nodiscard]]
-    ATTRIBUTE_ALWAYS_INLINE constexpr const_iterator cend() const noexcept
-        ATTRIBUTE_LIFETIME_BOUND {
+    ATTRIBUTE_PURE constexpr const_iterator cend() const noexcept ATTRIBUTE_LIFETIME_BOUND {
         return end();
     }
     [[nodiscard]]
-    ATTRIBUTE_ALWAYS_INLINE constexpr reverse_iterator rbegin() noexcept ATTRIBUTE_LIFETIME_BOUND {
+    ATTRIBUTE_PURE constexpr reverse_iterator rbegin() noexcept ATTRIBUTE_LIFETIME_BOUND {
         return reverse_iterator{end()};
     }
     [[nodiscard]]
-    ATTRIBUTE_ALWAYS_INLINE constexpr reverse_iterator rend() noexcept ATTRIBUTE_LIFETIME_BOUND {
+    ATTRIBUTE_PURE constexpr reverse_iterator rend() noexcept ATTRIBUTE_LIFETIME_BOUND {
         return reverse_iterator{begin()};
     }
     [[nodiscard]]
-    ATTRIBUTE_ALWAYS_INLINE constexpr const_reverse_iterator rbegin() const noexcept
+    ATTRIBUTE_PURE constexpr const_reverse_iterator rbegin() const noexcept
         ATTRIBUTE_LIFETIME_BOUND {
         return const_reverse_iterator{end()};
     }
     [[nodiscard]]
-    ATTRIBUTE_ALWAYS_INLINE constexpr const_reverse_iterator rend() const noexcept
-        ATTRIBUTE_LIFETIME_BOUND {
+    ATTRIBUTE_PURE constexpr const_reverse_iterator rend() const noexcept ATTRIBUTE_LIFETIME_BOUND {
         return const_reverse_iterator{begin()};
     }
     [[nodiscard]]
-    ATTRIBUTE_ALWAYS_INLINE constexpr const_reverse_iterator crbegin() const noexcept
+    ATTRIBUTE_PURE constexpr const_reverse_iterator crbegin() const noexcept
         ATTRIBUTE_LIFETIME_BOUND {
         return rbegin();
     }
     [[nodiscard]]
-    ATTRIBUTE_ALWAYS_INLINE constexpr const_reverse_iterator crend() const noexcept
+    ATTRIBUTE_PURE constexpr const_reverse_iterator crend() const noexcept
         ATTRIBUTE_LIFETIME_BOUND {
         return rend();
     }
 
     [[nodiscard]]
-    ATTRIBUTE_ALWAYS_INLINE pointer operator[](size_type i) noexcept ATTRIBUTE_LIFETIME_BOUND {
+    ATTRIBUTE_PURE pointer operator[](size_type i) noexcept ATTRIBUTE_LIFETIME_BOUND {
         return data_ + i * cols();
     }
     [[nodiscard]]
-    ATTRIBUTE_ALWAYS_INLINE const_pointer operator[](size_type i) const noexcept
-        ATTRIBUTE_LIFETIME_BOUND {
+    ATTRIBUTE_PURE const_pointer operator[](size_type i) const noexcept ATTRIBUTE_LIFETIME_BOUND {
         return data_ + i * cols();
     }
     [[nodiscard]]
-    ATTRIBUTE_ALWAYS_INLINE reference operator()(size_type i, size_type j) noexcept
+    ATTRIBUTE_PURE reference operator()(size_type i, size_type j) noexcept
         ATTRIBUTE_LIFETIME_BOUND {
         return data_[i * cols() + j];
     }
     [[nodiscard]]
-    ATTRIBUTE_ALWAYS_INLINE value_type operator()(size_type i, size_type j) const noexcept {
+    ATTRIBUTE_PURE value_type operator()(size_type i, size_type j) const noexcept {
         return data_[i * cols() + j];
     }
 
 private:
+    [[nodiscard]]
     static CXX20_CONSTEXPR allocator_type get_allocator() noexcept {
         static_assert(
             sizeof(allocator_type) <= 1 && std::is_nothrow_default_constructible_v<allocator_type>,
             "impl error: stateless allocator is expected");
         return allocator_type{};
     }
+    [[nodiscard]]
     static CXX20_CONSTEXPR pointer allocate_square_matrix(side_type side_size) {
         allocator_type allocator = get_allocator();
         return allocator_traits::allocate(allocator, size_type{side_size} * size_type{side_size});
     }
-    static CXX20_CONSTEXPR void deallocate_square_matrix(pointer data_, size_type size) noexcept {
+    static CXX20_CONSTEXPR void deallocate_square_matrix(pointer data, size_type size) noexcept {
+        static_assert(std::is_nothrow_destructible_v<value_type>, "impl error");
+
+        std::destroy_n(data, size);
         allocator_type allocator = get_allocator();
-        allocator_traits::deallocate(allocator, data_, size);
+        allocator_traits::deallocate(allocator, data, size);
     }
 
     pointer data_;

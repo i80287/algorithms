@@ -97,10 +97,10 @@ protected:
         : left_{nullptr}, right_{nullptr}, parent_{nullptr}, color_{NodeColor::kRed} {}
     constexpr ~NodeBase() = default;
     constexpr NodeBase(NodeBase &&other) noexcept
-        : left_{std::exchange(other.left_, nullptr)},
-          right_{std::exchange(other.right_, nullptr)},
-          parent_{std::exchange(other.parent_, nullptr)},
-          color_{std::exchange(other.color_, NodeColor{})} {}
+        : left_{std::exchange(other.left_, nullptr)}
+        , right_{std::exchange(other.right_, nullptr)}
+        , parent_{std::exchange(other.parent_, nullptr)}
+        , color_{std::exchange(other.color_, NodeColor{})} {}
     constexpr NodeBase &operator=(NodeBase &&other) noexcept ATTRIBUTE_LIFETIME_BOUND {
         left_   = std::exchange(other.left_, nullptr);
         right_  = std::exchange(other.right_, nullptr);
@@ -902,8 +902,8 @@ private:
     RBTREE_ATTRIBUTE_NONNULL(3)
     ATTRIBUTE_ACCESS(read_write, 2)
     constexpr void RebalanceAfterExtraction(NodeBase *const CONFIG_CLANG_NULLABLE_QUALIFIER node,
-                                            NodeBase *const CONFIG_CLANG_NONNULL_QUALIFIER
-                                                node_parent) noexcept {
+                                            NodeBase *const
+                                            CONFIG_CLANG_NONNULL_QUALIFIER node_parent) noexcept {
         RBTREE_ASSERT_INVARIANT(node != GetPreRootNilUnchecked());
         NodeBase *current_node        = node;
         NodeBase *current_node_parent = node_parent;
@@ -1481,8 +1481,8 @@ private:
     }
     RBTREE_ATTRIBUTE_NONNULL_ALL_ARGS
     ATTRIBUTE_ACCESS(read_only, 1)
-    static constexpr ClonedTreeData CloneTreeImpl(
-        const NodeType *const CONFIG_CLANG_NONNULL_QUALIFIER other_root) {
+    static constexpr ClonedTreeData CloneTreeImpl(const NodeType *const
+                                                  CONFIG_CLANG_NONNULL_QUALIFIER other_root) {
         RBTREE_ASSERT_INVARIANT(other_root != nullptr);
         struct TemporaryTreeDeleter {
             void operator()(NodeType *node) const noexcept {
@@ -1759,8 +1759,9 @@ namespace rbtree {
 
 template <RBTreeKeyTypeConstraints KeyType, class ComparatorType>
     requires ComparatorForType<ComparatorType, KeyType>
-class RBTree : private RBTreeContainer<KeyType>,
-               private NonReflexiveComparatorHelper<KeyType, ComparatorType> {
+class RBTree
+    : private RBTreeContainer<KeyType>
+    , private NonReflexiveComparatorHelper<KeyType, ComparatorType> {
     using Base           = RBTreeContainer<KeyType>;
     using ComparatorBase = NonReflexiveComparatorHelper<KeyType, ComparatorType>;
 
