@@ -19,11 +19,12 @@ namespace actrie_tests {
 
 using std::size_t;
 
+using OccurancesContainer = std::vector<std::pair<std::string_view, size_t>>;
+
 template <size_t PatternsSize>
-[[nodiscard]] bool test_actrie(
-    const std::string_view (&patterns)[PatternsSize],
-    std::string_view text,
-    const std::vector<std::pair<std::string_view, size_t>>& expected_occurances) {
+[[nodiscard]] bool test_actrie(const std::string_view (&patterns)[PatternsSize],
+                               std::string_view text,
+                               const OccurancesContainer& expected_occurances) {
     actrie::ACTrieBuilder builder;
     for (std::string_view pattern : patterns) {
         if (!builder.AddPattern(pattern)) {
@@ -47,12 +48,9 @@ template <size_t PatternsSize>
     if (t.PatternsSize() != PatternsSize) {
         return false;
     }
-    std::vector<std::pair<std::string_view, size_t>> found_occurances;
-    found_occurances.reserve(expected_occurances.size());
-    t.FindAllSubstringsInText(text, [&found_occurances](std::string_view found_word,
-                                                        size_t start_index_in_original_text) {
-        found_occurances.emplace_back(found_word, start_index_in_original_text);
-    });
+
+    const OccurancesContainer found_occurances =
+        t.CollectAllSubstringsFromText<OccurancesContainer>(text);
     return found_occurances == expected_occurances;
 }
 
@@ -60,8 +58,8 @@ void test0() {
     constexpr std::string_view patterns[] = {
         "a", "ab", "ba", "aa", "bb", "fasb",
     };
-    constexpr std::string_view text                                      = "ababcdacafaasbfasbabcc";
-    std::vector<std::pair<std::string_view, size_t>> expected_occurances = {
+    constexpr std::string_view text               = "ababcdacafaasbfasbabcc";
+    const OccurancesContainer expected_occurances = {
         {"a", 0},  {"ab", 0},    {"ba", 1},  {"a", 2},   {"ab", 2},
         {"a", 6},  {"a", 8},     {"a", 10},  {"aa", 10}, {"a", 11},
         {"a", 15}, {"fasb", 14}, {"ba", 17}, {"a", 18},  {"ab", 18},
@@ -78,7 +76,7 @@ void test1() {
     };
     constexpr std::string_view text =
         "ABCDEFGHABCDEFGADCVABCDEBACBCBABDBEBCBABABBCDEBCBABDEBCABDBCBACABCDBEBACBCDEWBCBABCDE";
-    std::vector<std::pair<std::string_view, size_t>> expected_occurances = {
+    const OccurancesContainer expected_occurances = {
         {"ABC", 0},  {"CDE", 2},  {"CDEF", 2}, {"ABC", 8},  {"CDE", 10}, {"CDEF", 10}, {"ABC", 19},
         {"CDE", 21}, {"CDE", 43}, {"ABC", 63}, {"CDE", 73}, {"ABC", 80}, {"CDE", 82},
     };
@@ -94,7 +92,7 @@ void test2() {
         "ababcbbacbcabaabaacbacbbacbbabcbabcbcabaabaabcabaabacabaabacbabbbacbabacbabbacbcabacabcbcb"
         "acabaababcbabbacacbbcbcababbcbcbacabcabacbcababacababcbabccaababacabcbabcbacbabcabcbbababa"
         "caababababcbbcbcbcbcbcbababcbabcabccbbcbcbcabaabacabbacbabca";
-    std::vector<std::pair<std::string_view, size_t>> expected_occurances = {
+    const OccurancesContainer expected_occurances = {
         {"aba", 0},      {"aba", 11},     {"cabaaba", 10},  {"aba", 14},     {"aba", 37},
         {"cabaaba", 36}, {"aba", 40},     {"aba", 46},      {"cabaaba", 45}, {"aba", 49},
         {"baca", 50},    {"abacaba", 49}, {"aba", 53},      {"cabaaba", 52}, {"aba", 56},
@@ -148,7 +146,7 @@ template <bool IsCaseInsensetive = true, size_t PatternsSize>
     }
 
     if (replace_all_occurances) {
-        t.ReplaceAtMostKOccurances(input_text);
+        t.ReplaceAllOccurances(input_text);
     } else {
         t.ReplaceFirstOccurance(input_text);
     }
