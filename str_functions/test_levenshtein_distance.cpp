@@ -8,6 +8,8 @@
 #include "levenshtein_distance.hpp"
 
 constexpr bool verify() {
+    using str_tools::levenshtein_distance;
+
     struct TestCase {
         std::string_view s1;
         std::string_view s2;
