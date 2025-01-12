@@ -28,6 +28,20 @@ inline constexpr bool is_char_v = std::is_same_v<T, char> || std::is_same_v<T, w
 #endif
                                   std::is_same_v<T, char16_t> || std::is_same_v<T, char32_t>;
 
+namespace type_traits_detail {
+
+template <class T>
+struct is_pointer_to_char : std::false_type {};
+
+template <class T>
+struct is_pointer_to_char<T *>
+    : std::conditional_t<is_char_v<std::remove_cv_t<T>>, std::true_type, std::false_type> {};
+
+}  // namespace type_traits_detail
+
+template <class T>
+inline constexpr bool is_pointer_to_char_v = type_traits_detail::is_pointer_to_char<T>::value;
+
 template <bool UseWChar, class T>
 [[nodiscard]]
 ATTRIBUTE_ALWAYS_INLINE inline auto ArithmeticToStringImpl(const T arg) {
@@ -302,18 +316,12 @@ ATTRIBUTE_ALWAYS_INLINE
 inline
 std::enable_if_t<is_char_v<CharType>, std::basic_string<CharType>> JoinStringsConvArgsToStrViewImpl(std::basic_string_view<CharType> str, const Args&... args);
 
-template <class CharType, size_t I, class... Args>
-[[nodiscard]]
-ATTRIBUTE_ACCESS(read_only, 1)
-ATTRIBUTE_ALWAYS_INLINE
-inline
-std::enable_if_t<is_char_v<CharType>, std::basic_string<CharType>> JoinStringsConvArgsToStrViewImpl(const CharType* str, const Args&... args);
-
 template <class CharType, size_t I, class T, class... Args>
 [[nodiscard]]
 ATTRIBUTE_ALWAYS_INLINE
 inline
-std::enable_if_t<is_char_v<CharType> && std::is_scalar_v<T>, std::basic_string<CharType>> JoinStringsConvArgsToStrViewImpl(T num, const Args&... args);
+std::enable_if_t<is_char_v<CharType> && std::is_scalar_v<T> && !is_pointer_to_char_v<T>, std::basic_string<CharType>>
+JoinStringsConvArgsToStrViewImpl(T num, const Args&... args);
 
 // clang-format on
 
@@ -327,16 +335,9 @@ JoinStringsConvArgsToStrViewImpl(std::basic_string_view<CharType> str, const Arg
     }
 }
 
-template <class CharType, size_t I, class... Args>
-inline std::enable_if_t<is_char_v<CharType>, std::basic_string<CharType>>
-JoinStringsConvArgsToStrViewImpl(const CharType *str, const Args &...args) {
-    static_assert(I < 1 + sizeof...(args));
-    return join_strings_detail::JoinStringsConvArgsToStrViewImpl<CharType, I + 1>(
-        args..., str ? std::basic_string_view<CharType>{str} : std::basic_string_view<CharType>{});
-}
-
 template <class CharType, size_t I, class T, class... Args>
-inline std::enable_if_t<is_char_v<CharType> && std::is_scalar_v<T>, std::basic_string<CharType>>
+inline std::enable_if_t<is_char_v<CharType> && std::is_scalar_v<T> && !is_pointer_to_char_v<T>,
+                        std::basic_string<CharType>>
 JoinStringsConvArgsToStrViewImpl(T num, const Args &...args) {
     if constexpr (std::is_same_v<T, CharType>) {
         if constexpr (I == 1 + sizeof...(args)) {
