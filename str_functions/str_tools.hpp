@@ -16,12 +16,6 @@
 #define CONSTEXPR_CXX_20 inline
 #endif
 
-#if CONFIG_HAS_AT_LEAST_CXX_20 && !defined(_GLIBCXX_DEBUG)
-#define CONSTEXPR_VECTOR_CXX_20 constexpr
-#else
-#define CONSTEXPR_VECTOR_CXX_20 inline
-#endif
-
 namespace str_tools {
 
 namespace detail {
@@ -75,8 +69,7 @@ ATTRIBUTE_PURE constexpr size_t unique_chars_count_impl(const char* str_ptr,
 
 ATTRIBUTE_NODISCARD
 ATTRIBUTE_SIZED_ACCESS(read_only, 1, 2)
-CONSTEXPR_CXX_20 std::string sorted_unique_chars_of_impl(const char* str_ptr,
-                                                         const size_t str_size) {
+inline std::string sorted_unique_chars_of_impl(const char* str_ptr, const size_t str_size) {
     constexpr size_t kMapSize = size_t{std::numeric_limits<uint8_t>::max()} + 1;
     using MapType             = std::array<bool, kMapSize>;
 
@@ -121,11 +114,10 @@ ATTRIBUTE_PURE
 }
 
 ATTRIBUTE_ALWAYS_INLINE
-[[nodiscard]] CONSTEXPR_CXX_20 std::string sorted_unique_chars_of(const std::string_view str) {
+[[nodiscard]] inline std::string sorted_unique_chars_of(const std::string_view str) {
     return str_tools::detail::sorted_unique_chars_of_impl(str.data(), str.size());
 }
 
 }  // namespace str_tools
 
-#undef CONSTEXPR_VECTOR_CXX_20
 #undef CONSTEXPR_CXX_20
