@@ -527,19 +527,19 @@ public:
 
     [[nodiscard]]
     ATTRIBUTE_ALWAYS_INLINE
-    ATTRIBUTE_CONST
+    ATTRIBUTE_PURE
     constexpr size_type size() const noexcept {
         return N;
     }
     [[nodiscard]]
     ATTRIBUTE_ALWAYS_INLINE
-    ATTRIBUTE_CONST
+    ATTRIBUTE_PURE
     constexpr size_type rows() const noexcept {
         return N;
     }
     [[nodiscard]]
     ATTRIBUTE_ALWAYS_INLINE
-    ATTRIBUTE_CONST
+    ATTRIBUTE_PURE
     constexpr size_type columns() const noexcept {
         return N;
     }
@@ -549,7 +549,7 @@ public:
     };
     [[nodiscard]]
     ATTRIBUTE_ALWAYS_INLINE
-    ATTRIBUTE_CONST
+    ATTRIBUTE_PURE
     constexpr matrix_shape shape() const noexcept {
 #if CONFIG_HAS_AT_LEAST_CXX_20
         return {
