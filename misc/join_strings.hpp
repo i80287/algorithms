@@ -5,9 +5,17 @@
 #include <limits>
 #include <string>
 #include <string_view>
+#include <system_error>
 #include <type_traits>
 
 #include "config_macros.hpp"
+
+#if CONFIG_HAS_AT_LEAST_CXX_20 && CONFIG_HAS_CONCEPTS && CONFIG_HAS_INCLUDE(<concepts>)
+
+#include <concepts>
+#define JOIN_STRINGS_SUPPORTS_CUSTOM_ENUM_TO_STRING
+
+#endif
 
 namespace misc {
 
@@ -20,10 +28,24 @@ inline constexpr bool is_char_v = std::is_same_v<T, char> || std::is_same_v<T, w
 #endif
                                   std::is_same_v<T, char16_t> || std::is_same_v<T, char32_t>;
 
+namespace type_traits_detail {
+
+template <class T>
+struct is_pointer_to_char : std::false_type {};
+
+template <class T>
+struct is_pointer_to_char<T *>
+    : std::conditional_t<is_char_v<std::remove_cv_t<T>>, std::true_type, std::false_type> {};
+
+}  // namespace type_traits_detail
+
+template <class T>
+inline constexpr bool is_pointer_to_char_v = type_traits_detail::is_pointer_to_char<T>::value;
+
 template <bool UseWChar, class T>
 [[nodiscard]]
-ATTRIBUTE_ALWAYS_INLINE inline auto NumberToString(const T arg) {
-    static_assert(std::is_arithmetic_v<T>);
+ATTRIBUTE_ALWAYS_INLINE inline auto ArithmeticToStringImpl(const T arg) {
+    static_assert(std::is_arithmetic_v<T>, "implementation error");
 
     if constexpr (std::is_integral_v<T>) {
         if (config::is_constant_evaluated() || config::is_gcc_constant_p(arg)) {
@@ -58,28 +80,137 @@ ATTRIBUTE_ALWAYS_INLINE inline auto NumberToString(const T arg) {
         }
     }
 
+    constexpr bool kShortIntegralType = std::is_integral_v<T> && sizeof(T) < sizeof(int);
+
+    const auto ext_arg =
+        kShortIntegralType
+            ? static_cast<std::conditional_t<std::is_unsigned_v<T>, unsigned, int>>(arg)
+            : arg;
+
     if constexpr (UseWChar) {
-        return std::to_wstring(arg);
+        return std::to_wstring(ext_arg);
     } else {
-        return std::to_string(arg);
+        return std::to_string(ext_arg);
     }
 }
 
-template <class CharType, class T, std::enable_if_t<is_char_v<CharType>, int> = 0>
+template <class CharType, class T>
 [[nodiscard]]
-ATTRIBUTE_ALWAYS_INLINE inline std::basic_string<CharType> ToStringOneArg(const T &arg) {
-    if constexpr (!std::is_arithmetic_v<T>) {
-        return std::basic_string<CharType>{std::basic_string_view<CharType>{arg}};
-    } else if constexpr (std::is_same_v<T, CharType>) {
-        return std::basic_string<CharType>(std::size_t{1}, arg);
+ATTRIBUTE_ALWAYS_INLINE inline std::basic_string<CharType> ArithmeticToString(const T arg) {
+    static_assert(is_char_v<CharType>, "implementation error");
+    static_assert(!is_char_v<T>, "implementation error");
+    static_assert(std::is_arithmetic_v<T>, "implementation error");
+
+    const auto str = ArithmeticToStringImpl<std::is_same_v<CharType, wchar_t>>(arg);
+    if constexpr (std::is_same_v<CharType, char> || std::is_same_v<CharType, wchar_t>) {
+        return str;
     } else {
-        static_assert(!is_char_v<T>, "implementation error");
-        const auto str = NumberToString<std::is_same_v<CharType, wchar_t>>(arg);
-        if constexpr (std::is_same_v<CharType, char> || std::is_same_v<CharType, wchar_t>) {
+        return std::basic_string<CharType>(str.begin(), str.end());
+    }
+}
+
+template <class CharType, class T>
+[[nodiscard]]
+ATTRIBUTE_ALWAYS_INLINE inline std::basic_string<CharType> EnumToString(const T arg) {
+    static_assert(std::is_enum_v<T>, "implementation error");
+
+    if constexpr (std::is_error_code_enum_v<T>) {
+        const std::string str = std::make_error_code(arg).message();
+        if constexpr (std::is_same_v<CharType, char>) {
             return str;
         } else {
             return std::basic_string<CharType>(str.begin(), str.end());
         }
+    } else if constexpr (std::is_error_condition_enum_v<T>) {
+        const std::string str = std::make_error_condition(arg).message();
+        if constexpr (std::is_same_v<CharType, char>) {
+            return str;
+        } else {
+            return std::basic_string<CharType>(str.begin(), str.end());
+        }
+    } else
+#ifdef JOIN_STRINGS_SUPPORTS_CUSTOM_ENUM_TO_STRING
+        if constexpr (requires(const T &enum_value) {
+                          {
+                              to_basic_string<CharType>(enum_value)
+                          } -> std::same_as<std::basic_string<CharType>>;
+                      }) {
+        return to_basic_string<CharType>(arg);
+    } else if constexpr (requires(const T &enum_value) {
+                             { to_wstring(enum_value) } -> std::same_as<std::wstring>;
+                         } && std::is_same_v<CharType, wchar_t>) {
+    } else if constexpr (requires(const T &enum_value) {
+                             { to_string(enum_value) } -> std::same_as<std::string>;
+                         }) {
+        const std::string str = to_string(arg);
+        if constexpr (std::is_same_v<CharType, char>) {
+            return str;
+        } else {
+            return std::basic_string<CharType>(str.begin(), str.end());
+        }
+    } else
+#endif
+    {
+        return ArithmeticToString<CharType>(static_cast<std::underlying_type_t<T>>(arg));
+    }
+}
+
+template <class CharType, class T>
+[[nodiscard]]
+ATTRIBUTE_ALWAYS_INLINE inline std::basic_string<CharType> PointerTypeToString(const T arg) {
+    static_assert(is_char_v<CharType>, "implementation error");
+    static_assert(std::is_pointer_v<T> || std::is_member_pointer_v<T> || std::is_null_pointer_v<T>,
+                  "implementation error");
+
+    const std::uintptr_t ptr_num = reinterpret_cast<std::uintptr_t>(arg);
+    if (std::is_null_pointer_v<T> || ptr_num == 0) {
+        if constexpr (std::is_same_v<CharType, char>) {
+            return "null";
+        } else if constexpr (std::is_same_v<CharType, wchar_t>) {
+            return L"null";
+#if CONFIG_HAS_AT_LEAST_CXX_20 && defined(__cpp_char8_t) && __cpp_char8_t >= 201811L
+        } else if constexpr (std::is_same_v<CharType, char8_t>) {
+            return u8"null";
+#endif
+        } else if constexpr (std::is_same_v<CharType, char16_t>) {
+            return u"null";
+        } else if constexpr (std::is_same_v<CharType, char32_t>) {
+            return U"null";
+        } else {
+            static_assert([]() constexpr { return false; }(), "implementation error");
+            return {};
+        }
+    } else {
+        return ArithmeticToString<CharType>(ptr_num);
+    }
+}
+
+template <class CharType, class T>
+[[nodiscard]]
+ATTRIBUTE_ALWAYS_INLINE inline std::basic_string<CharType> ToStringScalarArg(const T arg) {
+    static_assert(is_char_v<CharType>, "implementation error");
+    static_assert(std::is_scalar_v<T>, "implementation error");
+
+    if constexpr (std::is_enum_v<T>) {
+        return EnumToString<CharType>(arg);
+    } else if constexpr (std::is_same_v<T, CharType>) {
+        return std::basic_string<CharType>(std::size_t{1}, arg);
+    } else if constexpr (std::is_arithmetic_v<T>) {
+        return ArithmeticToString<CharType>(arg);
+    } else {
+        return PointerTypeToString<CharType>(arg);
+    }
+}
+
+template <class CharType, class T>
+[[nodiscard]]
+ATTRIBUTE_ALWAYS_INLINE inline std::basic_string<CharType> ToStringOneArg(const T &arg) {
+    static_assert(is_char_v<CharType>, "implementation error");
+
+    if constexpr (std::is_scalar_v<T>) {
+        return ToStringScalarArg<CharType>(arg);
+    } else {
+        return std::basic_string<CharType>{arg};
     }
 }
 
@@ -185,18 +316,12 @@ ATTRIBUTE_ALWAYS_INLINE
 inline
 std::enable_if_t<is_char_v<CharType>, std::basic_string<CharType>> JoinStringsConvArgsToStrViewImpl(std::basic_string_view<CharType> str, const Args&... args);
 
-template <class CharType, size_t I, class... Args>
-[[nodiscard]]
-ATTRIBUTE_ACCESS(read_only, 1)
-ATTRIBUTE_ALWAYS_INLINE
-inline
-std::enable_if_t<is_char_v<CharType>, std::basic_string<CharType>> JoinStringsConvArgsToStrViewImpl(const CharType* str, const Args&... args);
-
 template <class CharType, size_t I, class T, class... Args>
 [[nodiscard]]
 ATTRIBUTE_ALWAYS_INLINE
 inline
-std::enable_if_t<is_char_v<CharType> && std::is_arithmetic_v<T>, std::basic_string<CharType>> JoinStringsConvArgsToStrViewImpl(T num, const Args&... args);
+std::enable_if_t<is_char_v<CharType> && std::is_scalar_v<T> && !is_pointer_to_char_v<T>, std::basic_string<CharType>>
+JoinStringsConvArgsToStrViewImpl(T num, const Args&... args);
 
 // clang-format on
 
@@ -210,16 +335,9 @@ JoinStringsConvArgsToStrViewImpl(std::basic_string_view<CharType> str, const Arg
     }
 }
 
-template <class CharType, size_t I, class... Args>
-inline std::enable_if_t<is_char_v<CharType>, std::basic_string<CharType>>
-JoinStringsConvArgsToStrViewImpl(const CharType *str, const Args &...args) {
-    static_assert(I < 1 + sizeof...(args));
-    return join_strings_detail::JoinStringsConvArgsToStrViewImpl<CharType, I + 1>(
-        args..., str ? std::basic_string_view<CharType>{str} : std::basic_string_view<CharType>{});
-}
-
 template <class CharType, size_t I, class T, class... Args>
-inline std::enable_if_t<is_char_v<CharType> && std::is_arithmetic_v<T>, std::basic_string<CharType>>
+inline std::enable_if_t<is_char_v<CharType> && std::is_scalar_v<T> && !is_pointer_to_char_v<T>,
+                        std::basic_string<CharType>>
 JoinStringsConvArgsToStrViewImpl(T num, const Args &...args) {
     if constexpr (std::is_same_v<T, CharType>) {
         if constexpr (I == 1 + sizeof...(args)) {
@@ -237,9 +355,14 @@ JoinStringsConvArgsToStrViewImpl(T num, const Args &...args) {
 
 struct dummy_base {};
 
+template <class T>
+struct dummy_base_with_type {
+    using type = T;
+};
+
 template <class T, class CharType>
 struct same_char_types
-    : std::conditional_t<std::is_arithmetic_v<T>, std::true_type, std::false_type> {};
+    : std::conditional_t<std::is_scalar_v<T>, std::true_type, std::false_type> {};
 
 template <class CharType>
 struct same_char_types<std::basic_string<CharType>, CharType> : std::true_type {};
@@ -263,7 +386,7 @@ template <class CharType>
 struct same_char_types<CharType, CharType> : std::true_type {};
 
 template <class... Types>
-struct determine_char_type final {
+struct determine_char_type {
     using type = void;
 };
 
@@ -278,7 +401,7 @@ struct char_selector final {
 };
 
 template <class FirstType, class... Types>
-struct determine_char_type<FirstType, Types...> final {
+struct determine_char_type<FirstType, Types...> {
     using selector = std::
         conditional_t<is_char_v<FirstType>, char_selector<FirstType>, recursion_selector<Types...>>;
 
@@ -286,37 +409,47 @@ struct determine_char_type<FirstType, Types...> final {
 };
 
 template <class CharType, class... Types>
-struct determine_char_type<std::basic_string_view<CharType>, Types...> final {
+struct determine_char_type<std::basic_string_view<CharType>, Types...> {
     using type = CharType;
 };
 
 template <class CharType, class... Types>
-struct determine_char_type<std::basic_string<CharType>, Types...> final {
+struct determine_char_type<std::basic_string<CharType>, Types...> {
     using type = CharType;
 };
 
 template <class CharType, std::size_t N, class... Types>
-struct determine_char_type<const CharType[N], Types...> final
+struct determine_char_type<const CharType[N], Types...>
     : std::enable_if_t<is_char_v<CharType>, dummy_base> {
     using type = CharType;
 };
 
 template <class CharType, std::size_t N, class... Types>
-struct determine_char_type<CharType[N], Types...> final
+struct determine_char_type<CharType[N], Types...>
     : std::enable_if_t<is_char_v<CharType>, dummy_base> {
     using type = CharType;
 };
 
 template <class CharType, class... Types>
-struct determine_char_type<const CharType *, Types...> final
-    : std::enable_if_t<is_char_v<CharType>, dummy_base> {
-    using type = CharType;
+struct determine_char_type<const CharType *, Types...>
+    : std::conditional_t<is_char_v<CharType>,
+                         dummy_base_with_type<CharType>,
+                         determine_char_type<Types...>> {
+    using Base = std::conditional_t<is_char_v<CharType>,
+                                    dummy_base_with_type<CharType>,
+                                    determine_char_type<Types...>>;
+    using type = typename Base::type;
 };
 
 template <class CharType, class... Types>
-struct determine_char_type<CharType *, Types...> final
-    : std::enable_if_t<is_char_v<CharType>, dummy_base> {
-    using type = CharType;
+struct determine_char_type<CharType *, Types...>
+    : std::conditional_t<is_char_v<CharType>,
+                         dummy_base_with_type<CharType>,
+                         determine_char_type<Types...>> {
+    using Base = std::conditional_t<is_char_v<CharType>,
+                                    dummy_base_with_type<CharType>,
+                                    determine_char_type<Types...>>;
+    using type = typename Base::type;
 };
 
 template <class... Args>
