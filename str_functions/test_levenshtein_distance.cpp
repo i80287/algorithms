@@ -1,44 +1,19 @@
-#include <cstddef>
-#include <cstdint>
-#include <string_view>
-#include <vector>
-
-using std::size_t;
-using std::uint32_t;
-
-template <size_t ReplacementCost = 1, size_t DeletionCost = 1, size_t InsertionCost = 1>
-constexpr size_t ldist(std::string_view s1, std::string_view s2) {
-    if (s1.size() < s2.size()) {
-        s1.swap(s2);
-    }
-    std::vector<size_t> dp1(s2.size() + 1);
-    std::vector<size_t> dp2(s2.size() + 1);
-    for (size_t j = 0; j <= s2.size(); j++) {
-        dp1[j] = j;
-    }
-
-    for (size_t i = 1; i <= s1.size(); i++) {
-        dp2[0] = i;
-        for (size_t j = 1; j <= s2.size(); j++) {
-            dp2[j] = std::min(dp1[j - 1] + size_t(s1[i - 1] != s2[j - 1]) * ReplacementCost,
-                              std::min(dp1[j] + DeletionCost, dp2[j - 1] + InsertionCost));
-        }
-        dp1.swap(dp2);
-    }
-
-    return dp1[s2.size()];
-}
-
 #include <algorithm>
 #include <array>
+#include <cassert>
+#include <cstdint>
 #include <ranges>
 
-consteval bool verify() {
+#include "../misc/config_macros.hpp"
+#include "levenshtein_distance.hpp"
+
+constexpr bool verify() {
     struct TestCase {
         std::string_view s1;
         std::string_view s2;
         uint32_t test_answer;
     };
+
     // clang-format off
     constexpr TestCase tests[] = {
         {"head", "participant", 10},
@@ -74,37 +49,41 @@ consteval bool verify() {
             return kMaxSizeFn(t1) < kMaxSizeFn(t2);
         }));
     constexpr size_t kBufferSize = kMaxSize + 1;
-    std::array<char, kBufferSize> buffer1;
-    std::array<char, kBufferSize> buffer2;
+    std::array<char, kBufferSize> buffer1{};
+    std::array<char, kBufferSize> buffer2{};
 
-    for (auto [s1, s2, ans] : tests) {
-        if (ldist(s1, s2) != ans) {
+    for (const auto [s1, s2, ans] : tests) {
+        if (levenshtein_distance(s1, s2) != ans) {
             return false;
         }
-        if (ldist(s2, s1) != ans) {
+        if (levenshtein_distance(s2, s1) != ans) {
             return false;
         }
 
+        assert(s1.size() <= buffer2.size());
         std::ranges::copy(s1, buffer1.begin());
-        buffer1[s1.size()] = '\0';
         std::reverse(buffer1.begin(), buffer1.begin() + s1.size());
-        s1 = std::string_view(buffer1.data(), s1.size());
+        const std::string_view s1_rev_view(buffer1.data(), s1.size());
 
+        assert(s2.size() <= buffer2.size());
         std::ranges::copy(s2, buffer2.begin());
-        buffer2[s2.size()] = '\0';
         std::reverse(buffer2.begin(), buffer2.begin() + s2.size());
-        s2 = std::string_view(buffer2.data(), s2.size());
+        const std::string_view s2_rev_view(buffer2.data(), s2.size());
 
-        if (ldist(s1, s2) != ans) {
+        if (levenshtein_distance(s1_rev_view, s2_rev_view) != ans) {
             return false;
         }
-        if (ldist(s2, s1) != ans) {
+        if (levenshtein_distance(s2_rev_view, s1_rev_view) != ans) {
             return false;
         }
     }
+
     return true;
 }
 
 int main() {
+#if CONFIG_HAS_AT_LEAST_CXX_20 && !defined(_GLIBCXX_DEBUG)
     static_assert(verify(), "");
+#endif
+    assert(verify());
 }

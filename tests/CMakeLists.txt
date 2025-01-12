@@ -230,6 +230,22 @@ list(APPEND TestOptionalDependencies "")
 list(APPEND TestIsCProject False)
 list(APPEND TestCompileOnly False)
 
+list(APPEND TestFilenames "test_str_tools.cpp")
+list(APPEND TestDirectories "str_functions")
+list(APPEND TestLangVersions "17 20 23 26")
+list(APPEND TestDependencies "")
+list(APPEND TestOptionalDependencies "")
+list(APPEND TestIsCProject False)
+list(APPEND TestCompileOnly False)
+
+list(APPEND TestFilenames "test_levenshtein_distance.cpp")
+list(APPEND TestDirectories "str_functions")
+list(APPEND TestLangVersions "20 23 26")
+list(APPEND TestDependencies "")
+list(APPEND TestOptionalDependencies "")
+list(APPEND TestIsCProject False)
+list(APPEND TestCompileOnly False)
+
 list(POP_FRONT TestFilenames) # pop dummy
 list(POP_FRONT TestDirectories) # pop dummy
 list(POP_FRONT TestLangVersions) # pop dummy
