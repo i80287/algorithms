@@ -54,7 +54,8 @@ ATTRIBUTE_NODISCARD
 ATTRIBUTE_SIZED_ACCESS(read_only, 1, 2)
 ATTRIBUTE_PURE constexpr size_t unique_chars_count_impl(const char* str_ptr,
                                                         const size_t str_size) noexcept {
-    using MapType = std::array<bool, size_t{std::numeric_limits<uint8_t>::max()} + 1>;
+    constexpr size_t kMapSize = size_t{std::numeric_limits<uint8_t>::max()} + 1;
+    using MapType             = std::array<bool, kMapSize>;
 
     MapType has_char{};
     for (size_t i = 0; i < str_size; i++) {
@@ -67,7 +68,8 @@ ATTRIBUTE_PURE constexpr size_t unique_chars_count_impl(const char* str_ptr,
     }
 
     CONFIG_ASSUME_STATEMENT(count <= str_size);
-    CONFIG_ASSUME_STATEMENT(count <= has_char.size());
+    CONFIG_ASSUME_STATEMENT(count <= kMapSize);
+
     return count;
 }
 
@@ -75,7 +77,8 @@ ATTRIBUTE_NODISCARD
 ATTRIBUTE_SIZED_ACCESS(read_only, 1, 2)
 CONSTEXPR_CXX_20 std::string sorted_unique_chars_of_impl(const char* str_ptr,
                                                          const size_t str_size) {
-    using MapType = std::array<bool, size_t{std::numeric_limits<uint8_t>::max()} + 1>;
+    constexpr size_t kMapSize = size_t{std::numeric_limits<uint8_t>::max()} + 1;
+    using MapType             = std::array<bool, kMapSize>;
 
     MapType has_char{};
     for (size_t i = 0; i < str_size; i++) {
@@ -88,7 +91,7 @@ CONSTEXPR_CXX_20 std::string sorted_unique_chars_of_impl(const char* str_ptr,
     }
 
     CONFIG_ASSUME_STATEMENT(count <= str_size);
-    CONFIG_ASSUME_STATEMENT(count <= has_char.size());
+    CONFIG_ASSUME_STATEMENT(count <= kMapSize);
 
     std::string str(count, '\0');
     for (size_t chr = 0, i = 0; chr < has_char.size(); chr++) {
