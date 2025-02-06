@@ -459,16 +459,16 @@ using determine_char_t = typename determine_char_type<Args...>::type;
 
 // clang-format off
 
-/// @brief Join arguments @a args... (converting to string if necessary)
-/// @tparam ...Args Types of the arguments to join, e.g. char types, pointers to them,
-///         basic_string, basic_string_view, integral/floating point values
+/// @brief Join arguments @a args (converting to string if necessary)
 /// @tparam HintCharType hint char type (default: `char`).
 ///         Can be passed if, for instance, JoinStrings(1, 2, 3.0)
 ///         should be std::wstring: JoinStrings<wchar_t>(1, 2, 3.0)
-/// @param ...args arguments to join
+/// @tparam Args Types of the arguments to join, e.g. char types, pointers to them,
+///         basic_string, basic_string_view, integral/floating point values
+/// @param args arguments to join
 /// @return joined args as a string of type std::basic_string<CharType>
 ///         where CharType is deducted by the @a Args... or HintCharType
-///         if @a Args... is pack of numeric types
+///         if @a Args is pack of numeric types
 template <class HintCharType = char, class... Args>
 [[nodiscard]] ATTRIBUTE_ALWAYS_INLINE inline auto JoinStrings(const Args&... args) {
     static_assert(sizeof...(args) >= 1, "Empty input is explicitly prohibited");
