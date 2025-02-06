@@ -122,7 +122,7 @@ enum class SomeEnum2 : std::int64_t {
 };
 
 template <class CharType = char>
-[[nodiscard, maybe_unused]] std::basic_string<CharType> to_basic_string(const SomeEnum1 e) {
+[[nodiscard]] std::basic_string<CharType> to_basic_string(const SomeEnum1 e) {
     switch (e) {
         case SomeEnum1::kSomeValue1: {
             if constexpr (std::is_same_v<CharType, char>) {
@@ -178,7 +178,7 @@ template <class CharType = char>
     }
 }
 
-[[nodiscard, maybe_unused]] std::string to_string(const SomeEnum2 e) {
+[[nodiscard]] std::string to_string(const SomeEnum2 e) {
     switch (e) {
         case SomeEnum2::kSomeValue1: {
             return "kSomeValue1";

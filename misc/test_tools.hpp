@@ -29,10 +29,10 @@ namespace test_tools {
 
 namespace test_tools_detail {
 
-[[noreturn]] ATTRIBUTE_COLD inline void throw_impl(const char* message,
-                                                   const char* file_name,
-                                                   std::uint32_t line,
-                                                   const char* function_name) {
+[[noreturn]] ATTRIBUTE_COLD inline void throw_impl(const char* const message,
+                                                   const char* const file_name,
+                                                   const std::uint32_t line,
+                                                   const char* const function_name) {
     constexpr std::size_t kMaxErrorMessageSize = 1024 * sizeof(char);
     std::array<char, kMaxErrorMessageSize> buffer{};
     const int bytes_written =
@@ -55,23 +55,23 @@ namespace test_tools_detail {
     throw std::runtime_error(buffer.data());
 }
 
-inline void log_location_impl(const char* file_name,
-                              std::uint32_t line,
-                              const char* function_name) noexcept {
+inline void log_location_impl(const char* const file_name,
+                              const std::uint32_t line,
+                              const char* const function_name) noexcept {
     std::printf("%s:%u: %s\n", file_name, line, function_name);
 }
 
-inline void log_message_impl(const char* file_name,
-                             std::uint32_t line,
-                             const char* function_name,
-                             const char* message) noexcept {
+inline void log_message_impl(const char* const file_name,
+                             const std::uint32_t line,
+                             const char* const function_name,
+                             const char* const message) noexcept {
     std::printf("%s:%u: %s:\n    %s\n", file_name, line, function_name, message);
 }
 
-inline void log_message_impl(const char* file_name,
-                             std::uint32_t line,
-                             const char* function_name,
-                             std::string_view message) noexcept {
+inline void log_message_impl(const char* const file_name,
+                             const std::uint32_t line,
+                             const char* const function_name,
+                             const std::string_view message) noexcept {
     const auto message_size = static_cast<int>(message.size());
     std::printf("%s:%u: %s:\n    %.*s\n", file_name, line, function_name, message_size,
                 message.data());
@@ -113,7 +113,8 @@ ATTRIBUTE_ALWAYS_INLINE inline void log_message(
 
 namespace test_tools_detail {
 
-ATTRIBUTE_ALWAYS_INLINE inline void log_tests_started_impl(const char* function_name) noexcept {
+ATTRIBUTE_ALWAYS_INLINE
+inline void log_tests_started_impl(const char* const function_name) noexcept {
     printf("Started tests in %s\n", function_name);
 }
 
@@ -138,7 +139,7 @@ struct FilePtr final {
         return file;
     }
 
-    FilePtr(const char* fname, const char* mode) : file(DoFOpenOrThrow(fname, mode)) {}
+    FilePtr(const char* const fname, const char* const mode) : file(DoFOpenOrThrow(fname, mode)) {}
     FilePtr(const FilePtr&)            = delete;
     FilePtr(FilePtr&&)                 = delete;
     FilePtr& operator=(const FilePtr&) = delete;
@@ -153,16 +154,17 @@ private:
     ATTRIBUTE_NODISCARD_WITH_MESSAGE("impl error")
     ATTRIBUTE_RETURNS_NONNULL
     ATTRIBUTE_ALWAYS_INLINE
-    static FileHandle DoFOpenOrThrow(const char* fname, const char* mode) {
+    static FileHandle DoFOpenOrThrow(const char* const fname, const char* const mode) {
         // NOLINTNEXTLINE(misc-misplaced-const, cppcoreguidelines-owning-memory)
         FileHandle const file_handle = std::fopen(fname, mode);
         if (unlikely(file_handle == nullptr)) {
-            ThrowOnFOpenFail(fname, mode);
+            FilePtr::ThrowOnFOpenFail(fname, mode);
         }
 
         return file_handle;
     }
-    [[noreturn]] ATTRIBUTE_COLD static void ThrowOnFOpenFail(const char* fname, const char* mode) {
+    [[noreturn]] ATTRIBUTE_COLD static void ThrowOnFOpenFail(const char* const fname,
+                                                             const char* const mode) {
         constexpr std::size_t kMaxErrorMessageSize = 1024 * sizeof(char);
         const auto errno_value                     = errno;
         std::array<char, kMaxErrorMessageSize> buffer{};
@@ -171,15 +173,15 @@ private:
             "FilePtr::FilePtr(const char* fname, const char* mode): "
             "std::fopen(\"%s\", \"%s\") failed: %s",
             fname, mode, std::strerror(errno_value));  // NOLINT(concurrency-mt-unsafe)
-        if (unlikely(bytes_written < 0)) {
+        if (unlikely(bytes_written <= 0)) {
 #if defined(__cpp_lib_to_array) && __cpp_lib_to_array >= 201907L
             constexpr std::array msg = std::to_array(
-                "FilePtr::FilePtr(const char* fname,const char* mode): std::snprintf failed after "
+                "FilePtr::FilePtr(const char* fname, const char* mode): std::snprintf failed after "
                 "std::fopen failed");
 #else
             // NOLINTNEXTLINE(cppcoreguidelines-avoid-c-arrays,hicpp-avoid-c-arrays,modernize-avoid-c-arrays)
             constexpr char msg[] =
-                "FilePtr::FilePtr(const char* fname,const char* mode): std::snprintf failed after "
+                "FilePtr::FilePtr(const char* fname, const char* mode): std::snprintf failed after "
                 "std::fopen failed";
 #endif
             static_assert(std::size(msg) < kMaxErrorMessageSize, "impl error");
