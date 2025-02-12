@@ -16,7 +16,6 @@ module;
 #include <ranges>
 #include <source_location>
 #include <stdexcept>
-#include <string>
 #include <type_traits>
 #include <utility>
 
@@ -311,16 +310,16 @@ public:
 protected:
     constexpr RBTreeContainerImpl(RBTreeContainerImpl &&other) noexcept
         : fake_root_(std::move(other.fake_root_)) {
-        SynchronizeInvariantsOnMove();
+        this->SynchronizeInvariantsOnMove();
     }
     RBTreeContainerImpl &operator=(RBTreeContainerImpl &&other) noexcept ATTRIBUTE_LIFETIME_BOUND {
         this->Swap(other);
-        AssertTreeInvariants();
+        this->AssertTreeInvariants();
         return *this;
     }
     constexpr void Swap(RBTreeContainerImpl &other) noexcept {
         fake_root_.Swap(other.fake_root_);
-        SynchronizeInvariantsOnMove();
+        this->SynchronizeInvariantsOnMove();
         other.SynchronizeInvariantsOnMove();
     }
     struct CompleteTreeRawData {
@@ -330,66 +329,66 @@ protected:
         std::size_t tree_size;
     };
     explicit constexpr RBTreeContainerImpl(const CompleteTreeRawData data) noexcept : fake_root_{} {
-        SetRootUnchecked(data.root_node);
-        SetBeginUnchecked(data.leftmost_node);
-        SetLastUnchecked(data.rightmost_node);
-        SetSize(data.tree_size);
-        SynchronizeInvariantsOnMove();
+        this->SetRootUnchecked(data.root_node);
+        this->SetBeginUnchecked(data.leftmost_node);
+        this->SetLastUnchecked(data.rightmost_node);
+        this->SetSize(data.tree_size);
+        this->SynchronizeInvariantsOnMove();
     }
     constexpr ~RBTreeContainerImpl() = default;
 
     constexpr void SetBegin(NodeBase *new_begin) noexcept {
-        AssertBeginInvariants();
-        SetBeginUnchecked(new_begin);
+        this->AssertBeginInvariants();
+        this->SetBeginUnchecked(new_begin);
     }
     [[nodiscard]] constexpr NodeBase *Begin() noexcept ATTRIBUTE_LIFETIME_BOUND {
-        AssertBeginInvariants();
-        return GetBeginUnchecked();
+        this->AssertBeginInvariants();
+        return this->GetBeginUnchecked();
     }
     [[nodiscard]] constexpr const NodeBase *Begin() const noexcept ATTRIBUTE_LIFETIME_BOUND {
-        AssertBeginInvariants();
-        return GetBeginUnchecked();
+        this->AssertBeginInvariants();
+        return this->GetBeginUnchecked();
     }
     [[nodiscard]] constexpr NodeBase *PreRootNil() noexcept ATTRIBUTE_LIFETIME_BOUND {
-        AssertPreRootInvariants();
-        return GetPreRootNilUnchecked();
+        this->AssertPreRootInvariants();
+        return this->GetPreRootNilUnchecked();
     }
     [[nodiscard]] constexpr const NodeBase *PreRootNil() const noexcept ATTRIBUTE_LIFETIME_BOUND {
-        AssertPreRootInvariants();
-        return GetPreRootNilUnchecked();
+        this->AssertPreRootInvariants();
+        return this->GetPreRootNilUnchecked();
     }
 
     [[nodiscard]] constexpr NodeBase *Root() noexcept ATTRIBUTE_LIFETIME_BOUND {
-        AssertRootInvariants();
-        return GetRootUnchecked();
+        this->AssertRootInvariants();
+        return this->GetRootUnchecked();
     }
 
     [[nodiscard]] constexpr const NodeBase *Root() const noexcept ATTRIBUTE_LIFETIME_BOUND {
-        AssertRootInvariants();
-        return GetRootUnchecked();
+        this->AssertRootInvariants();
+        return this->GetRootUnchecked();
     }
 
     [[nodiscard]] constexpr NodeBase *End() noexcept ATTRIBUTE_LIFETIME_BOUND {
-        AssertEndInvariants();
-        return GetEndUnchecked();
+        this->AssertEndInvariants();
+        return this->GetEndUnchecked();
     }
 
     [[nodiscard]] constexpr const NodeBase *End() const noexcept ATTRIBUTE_LIFETIME_BOUND {
-        AssertEndInvariants();
-        return GetEndUnchecked();
+        this->AssertEndInvariants();
+        return this->GetEndUnchecked();
     }
 
     constexpr void SetLast(NodeBase *new_last) noexcept {
-        AssertLastInvariants();
-        SetLastUnchecked(new_last);
+        this->AssertLastInvariants();
+        this->SetLastUnchecked(new_last);
     }
     [[nodiscard]] constexpr const NodeBase *Last() const noexcept ATTRIBUTE_LIFETIME_BOUND {
-        AssertLastInvariants();
-        return GetLastUnchecked();
+        this->AssertLastInvariants();
+        return this->GetLastUnchecked();
     }
     [[nodiscard]] constexpr NodeBase *Last() noexcept ATTRIBUTE_LIFETIME_BOUND {
-        AssertLastInvariants();
-        return GetLastUnchecked();
+        this->AssertLastInvariants();
+        return this->GetLastUnchecked();
     }
 
     [[nodiscard]] ATTRIBUTE_PURE constexpr std::size_t Size() const noexcept {
@@ -411,12 +410,12 @@ protected:
         RBTREE_ASSERT_INVARIANT(Size() >= 1 || node_parent == PreRootNil());
         RBTREE_ASSERT_INVARIANT(Size() >= 1 || !is_left);
         if (is_left) {
-            MakeLeftOnInsertion(node_parent, node);
+            this->MakeLeftOnInsertion(node_parent, node);
         } else {
-            MakeRightOnInsertion(node_parent, node);
+            this->MakeRightOnInsertion(node_parent, node);
         }
-        IncrementSize();
-        RebalanceAfterInsertion(node);
+        this->IncrementSize();
+        this->RebalanceAfterInsertion(node);
     }
 
     RBTREE_ATTRIBUTE_NONNULL_ALL_ARGS
@@ -440,14 +439,14 @@ protected:
             RBTREE_ASSERT_INVARIANT(propagated_node == nullptr ||
                                     propagated_node->Color() == NodeColor::kRed);
             if (node_left_child == nullptr && node == GetBeginUnchecked()) {
-                SetBeginUnchecked(node_right_child != nullptr ? node_right_child->LeftMostNode()
-                                                              : node_parent);
+                this->SetBeginUnchecked(
+                    node_right_child != nullptr ? node_right_child->LeftMostNode() : node_parent);
             }
             if (node_right_child == nullptr && node == GetLastUnchecked()) {
-                SetLastUnchecked(node_left_child != nullptr ? node_left_child->RightMostNode()
-                                                            : node_parent);
+                this->SetLastUnchecked(node_left_child != nullptr ? node_left_child->RightMostNode()
+                                                                  : node_parent);
             }
-            Transplant(node, propagated_node);
+            this->Transplant(node, propagated_node);
         } else {
             RBTREE_ASSERT_INVARIANT(node != Begin());
             RBTREE_ASSERT_INVARIANT(node != Last());
@@ -464,23 +463,23 @@ protected:
                                     propagated_node->Color() == NodeColor::kRed);
             if (node_successor != node_right_child) {
                 propagated_node_parent = node_successor->Parent();
-                Transplant(node_successor, propagated_node);
+                this->Transplant(node_successor, propagated_node);
                 node_successor->SetRight(node_right_child);
                 node_right_child->SetParent(node_successor);
                 node_right_child->SetParent(node_successor);
             } else {
                 propagated_node_parent = node_successor;
             }
-            Transplant(node, node_successor);
+            this->Transplant(node, node_successor);
             node_successor->SetLeft(node_left_child);
             node_left_child->SetParent(node_successor);
             node_successor->SetColor(node->Color());
         }
 
-        DecrementSize();
+        this->DecrementSize();
         if (color != NodeColor::kRed) {
             RBTREE_ASSERT_INVARIANT(color == NodeColor::kBlack);
-            RebalanceAfterExtraction(propagated_node, propagated_node_parent);
+            this->RebalanceAfterExtraction(propagated_node, propagated_node_parent);
         }
         RBTREE_ASSERT_INVARIANT(Size() == 0 || Root() != nullptr);
     }
@@ -493,40 +492,40 @@ private:
         fake_root_.SetColor(static_cast<NodeColor>(new_size));
     }
     constexpr void IncrementSize() noexcept {
-        SetSize(static_cast<std::size_t>(fake_root_.Color()) + 1);
+        this->SetSize(static_cast<std::size_t>(fake_root_.Color()) + 1);
     }
 
     constexpr void DecrementSize() noexcept {
         RBTREE_ASSERT_INVARIANT(Size() > 0);
-        SetSize(static_cast<std::size_t>(fake_root_.Color()) - 1);
+        this->SetSize(static_cast<std::size_t>(fake_root_.Color()) - 1);
     }
 
     constexpr void SynchronizeInvariantsOnMove() noexcept {
-        if (auto *root = GetRootUnchecked(); root != nullptr) {
-            root->SetParent(GetPreRootNilUnchecked());
-            RBTREE_ASSERT_INVARIANT(Size() >= 1);
+        if (auto *root = this->GetRootUnchecked(); root != nullptr) {
+            root->SetParent(this->GetPreRootNilUnchecked());
+            RBTREE_ASSERT_INVARIANT(this->Size() >= 1);
         } else {
-            SetBeginUnchecked(GetEndUnchecked());
-            RBTREE_ASSERT_INVARIANT(Size() == 0);
+            this->SetBeginUnchecked(this->GetEndUnchecked());
+            RBTREE_ASSERT_INVARIANT(this->Size() == 0);
         }
 
-        AssertTreeInvariants();
+        this->AssertTreeInvariants();
     }
 
     constexpr void AssertTreeInvariants() const noexcept {
-        AssertRootInvariants();
-        AssertBeginInvariants();
-        AssertEndInvariants();
-        AssertPreRootInvariants();
+        this->AssertRootInvariants();
+        this->AssertBeginInvariants();
+        this->AssertEndInvariants();
+        this->AssertPreRootInvariants();
     }
 
     constexpr void AssertRootInvariants() const noexcept {
-        RBTREE_ASSERT_INVARIANT(GetRootUnchecked() == nullptr ||
-                                GetRootUnchecked()->Color() == NodeColor::kBlack);
-        RBTREE_ASSERT_INVARIANT(GetRootUnchecked() == nullptr ||
-                                GetRootUnchecked()->Parent() == PreRootNil());
-        RBTREE_ASSERT_INVARIANT((GetRootUnchecked() == nullptr && Size() == 0) ^
-                                (GetRootUnchecked() != nullptr && Size() >= 1));
+        RBTREE_ASSERT_INVARIANT(this->GetRootUnchecked() == nullptr ||
+                                this->GetRootUnchecked()->Color() == NodeColor::kBlack);
+        RBTREE_ASSERT_INVARIANT(this->GetRootUnchecked() == nullptr ||
+                                this->GetRootUnchecked()->Parent() == this->PreRootNil());
+        RBTREE_ASSERT_INVARIANT((this->GetRootUnchecked() == nullptr && this->Size() == 0) ^
+                                (this->GetRootUnchecked() != nullptr && this->Size() >= 1));
     }
     [[nodiscard]] constexpr NodeBase *GetRootUnchecked() noexcept ATTRIBUTE_LIFETIME_BOUND {
         return fake_root_.Parent();
@@ -544,10 +543,11 @@ private:
     }
 
     constexpr void AssertPreRootInvariants() const noexcept {
-        RBTREE_ASSERT_INVARIANT(GetRootUnchecked() == nullptr ||
-                                GetRootUnchecked()->Parent() == GetPreRootNilUnchecked());
-        RBTREE_ASSERT_INVARIANT((GetRootUnchecked() == nullptr && Size() == 0) ^
-                                (GetRootUnchecked() != nullptr && Size() >= 1));
+        RBTREE_ASSERT_INVARIANT(this->GetRootUnchecked() == nullptr ||
+                                this->GetRootUnchecked()->Parent() ==
+                                    this->GetPreRootNilUnchecked());
+        RBTREE_ASSERT_INVARIANT((this->GetRootUnchecked() == nullptr && this->Size() == 0) ^
+                                (this->GetRootUnchecked() != nullptr && this->Size() >= 1));
     }
     [[nodiscard]] constexpr NodeBase *GetPreRootNilUnchecked() noexcept ATTRIBUTE_LIFETIME_BOUND {
         return std::addressof(fake_root_);
@@ -559,15 +559,16 @@ private:
     }
 
     constexpr void AssertBeginInvariants() const noexcept {
-        RBTREE_ASSERT_INVARIANT(GetBeginUnchecked() != nullptr);
+        RBTREE_ASSERT_INVARIANT(this->GetBeginUnchecked() != nullptr);
 #ifdef RBTREE_DEBUG
         const auto invariants_if_not_empty =
-            Size() >= 1 && GetBeginUnchecked() != GetEndUnchecked();
-        const auto invariants_if_empty = Size() == 0 && GetBeginUnchecked() == GetEndUnchecked();
+            this->Size() >= 1 && this->GetBeginUnchecked() != this->GetEndUnchecked();
+        const auto invariants_if_empty =
+            this->Size() == 0 && this->GetBeginUnchecked() == this->GetEndUnchecked();
 #endif
         RBTREE_ASSERT_INVARIANT(invariants_if_not_empty ^ invariants_if_empty);
-        RBTREE_ASSERT_INVARIANT(GetBeginUnchecked() == GetEndUnchecked() ||
-                                GetBeginUnchecked()->Left() == nullptr);
+        RBTREE_ASSERT_INVARIANT(this->GetBeginUnchecked() == this->GetEndUnchecked() ||
+                                this->GetBeginUnchecked()->Left() == nullptr);
     }
     [[nodiscard]] constexpr NodeBase *GetBeginUnchecked() noexcept ATTRIBUTE_LIFETIME_BOUND {
         return fake_root_.Right();
@@ -581,25 +582,27 @@ private:
     }
 
     constexpr void AssertEndInvariants() const noexcept {
-        RBTREE_ASSERT_INVARIANT((Size() == 0 && GetBeginUnchecked() == GetEndUnchecked()) ^
-                                (Size() >= 1 && GetBeginUnchecked() != GetEndUnchecked()));
+        RBTREE_ASSERT_INVARIANT(
+            (this->Size() == 0 && this->GetBeginUnchecked() == this->GetEndUnchecked()) ^
+            (this->Size() >= 1 && this->GetBeginUnchecked() != this->GetEndUnchecked()));
     }
     [[nodiscard]] constexpr NodeBase *GetEndUnchecked() noexcept ATTRIBUTE_LIFETIME_BOUND {
-        return GetPreRootNilUnchecked();
+        return this->GetPreRootNilUnchecked();
     }
 
     [[nodiscard]] constexpr const NodeBase *GetEndUnchecked() const noexcept
         ATTRIBUTE_LIFETIME_BOUND {
-        return GetPreRootNilUnchecked();
+        return this->GetPreRootNilUnchecked();
     }
 
     constexpr void AssertLastInvariants() const noexcept {
-        RBTREE_ASSERT_INVARIANT(Size() >= 1);
-        RBTREE_ASSERT_INVARIANT((Size() >= 2) ^ (GetBeginUnchecked() == GetLastUnchecked() &&
-                                                 GetLastUnchecked() == GetRootUnchecked()));
-        RBTREE_ASSERT_INVARIANT(GetLastUnchecked() != nullptr);
-        RBTREE_ASSERT_INVARIANT(GetLastUnchecked() != GetPreRootNilUnchecked());
-        RBTREE_ASSERT_INVARIANT(GetLastUnchecked()->Right() == nullptr);
+        RBTREE_ASSERT_INVARIANT(this->Size() >= 1);
+        RBTREE_ASSERT_INVARIANT((this->Size() >= 2) ^
+                                (this->GetBeginUnchecked() == this->GetLastUnchecked() &&
+                                 this->GetLastUnchecked() == this->GetRootUnchecked()));
+        RBTREE_ASSERT_INVARIANT(this->GetLastUnchecked() != nullptr);
+        RBTREE_ASSERT_INVARIANT(this->GetLastUnchecked() != this->GetPreRootNilUnchecked());
+        RBTREE_ASSERT_INVARIANT(this->GetLastUnchecked()->Right() == nullptr);
     }
     [[nodiscard]] constexpr NodeBase *GetLastUnchecked() noexcept ATTRIBUTE_LIFETIME_BOUND {
         return fake_root_.Left();
@@ -724,11 +727,11 @@ private:
         RBTREE_ASSERT_INVARIANT(node->Left() == nullptr);
         RBTREE_ASSERT_INVARIANT(node->Right() == nullptr);
         if (node_parent == Begin()) {
-            SetBegin(node);
+            this->SetBegin(node);
         }
         node_parent->SetLeft(node);
-        RBTREE_ASSERT_INVARIANT(GetBeginUnchecked() != nullptr);
-        RBTREE_ASSERT_INVARIANT(GetLastUnchecked() != nullptr);
+        RBTREE_ASSERT_INVARIANT(this->GetBeginUnchecked() != nullptr);
+        RBTREE_ASSERT_INVARIANT(this->GetLastUnchecked() != nullptr);
     }
 
     RBTREE_ATTRIBUTE_NONNULL_ALL_ARGS
@@ -742,16 +745,18 @@ private:
         RBTREE_ASSERT_INVARIANT(node->Parent() == node_parent);
         RBTREE_ASSERT_INVARIANT(node->Left() == nullptr);
         RBTREE_ASSERT_INVARIANT(node->Right() == nullptr);
-        if (node_parent == PreRootNil()) [[unlikely]] {
-            SetRootUnchecked(node) ;
+        const bool is_node_root = node_parent == PreRootNil();
+        if (is_node_root) [[unlikely]] {
+            this->SetRootUnchecked(node);
             // SetBeginUnchecked(node); will be set during `node_parent->SetRight(node)`
-            SetLastUnchecked(node)  ;
+            this->SetLastUnchecked(node);
         } else if (node_parent == Last()) {
-            SetLast(node);
+            this->SetLast(node);
         }
         node_parent->SetRight(node);
-        RBTREE_ASSERT_INVARIANT(GetBeginUnchecked() != nullptr);
-        RBTREE_ASSERT_INVARIANT(GetLastUnchecked() != nullptr);
+        RBTREE_ASSERT_INVARIANT(this->GetBeginUnchecked() != nullptr);
+        RBTREE_ASSERT_INVARIANT(this->GetLastUnchecked() != nullptr);
+        RBTREE_ASSERT_INVARIANT(!is_node_root || this->GetBeginUnchecked() == node);
     }
 
     // clang-format on
@@ -762,13 +767,13 @@ private:
         NodeBase *const CONFIG_CLANG_NONNULL_QUALIFIER new_inserted_node) noexcept {
         RBTREE_ASSERT_INVARIANT(new_inserted_node != nullptr);
         RBTREE_ASSERT_INVARIANT(new_inserted_node->Color() == NodeColor::kRed);
-        RBTREE_ASSERT_INVARIANT(Size() >= 1);
+        RBTREE_ASSERT_INVARIANT(this->Size() >= 1);
         NodeBase *CONFIG_CLANG_NONNULL_QUALIFIER current_node = new_inserted_node;
         NodeBase *current_node_parent                         = nullptr;
-        NodeBase *&root                                       = GetRootMutableReferenceUnchecked();
+        NodeBase *&root = this->GetRootMutableReferenceUnchecked();
         while ((current_node_parent = current_node->Parent()) != root &&
                current_node_parent->Color() == NodeColor::kRed) {
-            RBTREE_ASSERT_INVARIANT(current_node_parent != GetPreRootNilUnchecked());
+            RBTREE_ASSERT_INVARIANT(current_node_parent != this->GetPreRootNilUnchecked());
             RBTREE_ASSERT_INVARIANT(current_node_parent->OtherSibling(current_node) == nullptr ||
                                     current_node_parent->OtherSibling(current_node)->Color() ==
                                         NodeColor::kBlack);
@@ -798,18 +803,19 @@ private:
                  *  (_, B) (current_node, R) [order can be reversed]  (_, B)     (_, B)
                  */
                 // clang-format on
-                RBTREE_ASSERT_INVARIANT(current_node_parent_sibling != GetPreRootNilUnchecked());
+                RBTREE_ASSERT_INVARIANT(current_node_parent_sibling !=
+                                        this->GetPreRootNilUnchecked());
                 RBTREE_ASSERT_INVARIANT(current_node_parent_sibling != root);
                 RBTREE_ASSERT_INVARIANT(current_node_parent_sibling->Left() == nullptr ||
                                         current_node_parent_sibling->Left()->Color() ==
                                             NodeColor::kBlack);
                 RBTREE_ASSERT_INVARIANT(current_node_parent_sibling->Left() !=
-                                        GetPreRootNilUnchecked());
+                                        this->GetPreRootNilUnchecked());
                 RBTREE_ASSERT_INVARIANT(current_node_parent_sibling->Right() == nullptr ||
                                         current_node_parent_sibling->Right()->Color() ==
                                             NodeColor::kBlack);
                 RBTREE_ASSERT_INVARIANT(current_node_parent_sibling->Right() !=
-                                        GetPreRootNilUnchecked());
+                                        this->GetPreRootNilUnchecked());
                 RBTREE_ASSERT_INVARIANT((current_node_parent_sibling->Left() == nullptr &&
                                          current_node_parent_sibling->Right() == nullptr) ^
                                         (current_node_parent_sibling->Left() != nullptr &&
@@ -848,21 +854,21 @@ private:
              */
             if (current_node_parent == current_node_parent_parent->Left()) {
                 if (current_node == current_node_parent->Right()) {
-                    LeftRotate(current_node, root);
+                    this->LeftRotate(current_node, root);
                     current_node_parent = current_node;
                 } else {
                     RBTREE_ASSERT_INVARIANT(current_node == current_node_parent->Left());
                 }
-                RightRotate(current_node_parent, root);
+                this->RightRotate(current_node_parent, root);
             } else {
                 RBTREE_ASSERT_INVARIANT(current_node_parent == current_node_parent_parent->Right());
                 if (current_node == current_node_parent->Left()) {
-                    RightRotate(current_node, root);
+                    this->RightRotate(current_node, root);
                     current_node_parent = current_node;
                 } else {
                     RBTREE_ASSERT_INVARIANT(current_node == current_node_parent->Right());
                 }
-                LeftRotate(current_node_parent, root);
+                this->LeftRotate(current_node_parent, root);
             }
             current_node_parent_parent->SetColor(NodeColor::kRed);
             current_node_parent->SetColor(NodeColor::kBlack);
@@ -880,14 +886,14 @@ private:
     constexpr void Transplant(NodeBase *const CONFIG_CLANG_NONNULL_QUALIFIER which_node,
                               NodeBase *const with_node) noexcept {
         RBTREE_ASSERT_INVARIANT(which_node != nullptr);
-        RBTREE_ASSERT_INVARIANT(which_node != PreRootNil());
-        RBTREE_ASSERT_INVARIANT(with_node != PreRootNil());
-        RBTREE_ASSERT_INVARIANT(with_node != Root());
+        RBTREE_ASSERT_INVARIANT(which_node != this->PreRootNil());
+        RBTREE_ASSERT_INVARIANT(with_node != this->PreRootNil());
+        RBTREE_ASSERT_INVARIANT(with_node != this->Root());
         NodeBase *const which_node_parent = which_node->Parent();
         RBTREE_ASSERT_INVARIANT(which_node_parent != nullptr);
         RBTREE_ASSERT_INVARIANT(with_node == nullptr || with_node->Parent() != which_node_parent);
-        if (which_node_parent == PreRootNil()) [[unlikely]] {
-            SetRootUnchecked(with_node);
+        if (which_node_parent == this->PreRootNil()) [[unlikely]] {
+            this->SetRootUnchecked(with_node);
         } else if (which_node == which_node_parent->Left()) {
             which_node_parent->SetLeft(with_node);
         } else {
@@ -904,27 +910,27 @@ private:
     constexpr void RebalanceAfterExtraction(NodeBase *const CONFIG_CLANG_NULLABLE_QUALIFIER node,
                                             NodeBase *const
                                             CONFIG_CLANG_NONNULL_QUALIFIER node_parent) noexcept {
-        RBTREE_ASSERT_INVARIANT(node != GetPreRootNilUnchecked());
+        RBTREE_ASSERT_INVARIANT(node != this->GetPreRootNilUnchecked());
         NodeBase *current_node        = node;
         NodeBase *current_node_parent = node_parent;
-        NodeBase *&root               = GetRootMutableReferenceUnchecked();
-        RBTREE_ASSERT_INVARIANT(root != GetPreRootNilUnchecked());
+        NodeBase *&root               = this->GetRootMutableReferenceUnchecked();
+        RBTREE_ASSERT_INVARIANT(root != this->GetPreRootNilUnchecked());
         while (current_node != root &&
                (current_node == nullptr || current_node->Color() == NodeColor::kBlack)) {
             RBTREE_ASSERT_INVARIANT(root != nullptr);
             RBTREE_ASSERT_INVARIANT(current_node_parent != nullptr);
-            RBTREE_ASSERT_INVARIANT(current_node_parent != PreRootNil());
+            RBTREE_ASSERT_INVARIANT(current_node_parent != this->PreRootNil());
             if (current_node == current_node_parent->Left()) {
                 NodeBase *current_node_sibling = current_node_parent->Right();
                 RBTREE_ASSERT_INVARIANT(current_node_sibling != nullptr);
                 if (current_node_sibling->Color() == NodeColor::kRed) {
-                    RBTREE_ASSERT_INVARIANT(current_node_sibling != PreRootNil());
+                    RBTREE_ASSERT_INVARIANT(current_node_sibling != this->PreRootNil());
                     RBTREE_ASSERT_INVARIANT(current_node_sibling != root);
-                    RBTREE_ASSERT_INVARIANT(current_node_sibling->Left() != PreRootNil());
+                    RBTREE_ASSERT_INVARIANT(current_node_sibling->Left() != this->PreRootNil());
                     RBTREE_ASSERT_INVARIANT(current_node_sibling->Left() != nullptr);
                     RBTREE_ASSERT_INVARIANT(current_node_sibling->Left()->Color() ==
                                             NodeColor::kBlack);
-                    RBTREE_ASSERT_INVARIANT(current_node_sibling->Right() != PreRootNil());
+                    RBTREE_ASSERT_INVARIANT(current_node_sibling->Right() != this->PreRootNil());
                     RBTREE_ASSERT_INVARIANT(current_node_sibling->Right() != nullptr);
                     RBTREE_ASSERT_INVARIANT(current_node_sibling->Right()->Color() ==
                                             NodeColor::kBlack);
@@ -937,7 +943,7 @@ private:
                     RBTREE_ASSERT_INVARIANT(current_node_sibling_original_left_child->Color() ==
                                             NodeColor::kBlack);
 #endif
-                    LeftRotate(current_node_sibling, root);
+                    this->LeftRotate(current_node_sibling, root);
                     RBTREE_ASSERT_INVARIANT(current_node_parent->Right() != current_node_sibling);
                     RBTREE_ASSERT_INVARIANT(current_node_parent->Right() ==
                                             current_node_sibling_original_left_child);
@@ -963,7 +969,7 @@ private:
                         RBTREE_ASSERT_INVARIANT(w_left->Color() == NodeColor::kRed);
                         w_left->SetColor(NodeColor::kBlack);
                         w->SetColor(NodeColor::kRed);
-                        RightRotate(w_left, root);
+                        this->RightRotate(w_left, root);
                         RBTREE_ASSERT_INVARIANT(current_node == nullptr ||
                                                 current_node_parent ==
                                                     current_node->Parent());  // ????
@@ -983,7 +989,7 @@ private:
                     if (w_right != nullptr) {
                         w_right->SetColor(NodeColor::kBlack);
                     }
-                    LeftRotate(w, root);
+                    this->LeftRotate(w, root);
                     // useless write, just in order to follow the Cormen's book
                     current_node = root;
                     break;
@@ -994,13 +1000,13 @@ private:
                 NodeBase *current_node_sibling = current_node_parent->Left();
                 RBTREE_ASSERT_INVARIANT(current_node_sibling != nullptr);
                 if (current_node_sibling->Color() == NodeColor::kRed) {
-                    RBTREE_ASSERT_INVARIANT(current_node_sibling != PreRootNil());
+                    RBTREE_ASSERT_INVARIANT(current_node_sibling != this->PreRootNil());
                     RBTREE_ASSERT_INVARIANT(current_node_sibling != root);
-                    RBTREE_ASSERT_INVARIANT(current_node_sibling->Left() != PreRootNil());
+                    RBTREE_ASSERT_INVARIANT(current_node_sibling->Left() != this->PreRootNil());
                     RBTREE_ASSERT_INVARIANT(current_node_sibling->Left() != nullptr);
                     RBTREE_ASSERT_INVARIANT(current_node_sibling->Left()->Color() ==
                                             NodeColor::kBlack);
-                    RBTREE_ASSERT_INVARIANT(current_node_sibling->Right() != PreRootNil());
+                    RBTREE_ASSERT_INVARIANT(current_node_sibling->Right() != this->PreRootNil());
                     RBTREE_ASSERT_INVARIANT(current_node_sibling->Right() != nullptr);
                     RBTREE_ASSERT_INVARIANT(current_node_sibling->Right()->Color() ==
                                             NodeColor::kBlack);
@@ -1013,7 +1019,7 @@ private:
                     RBTREE_ASSERT_INVARIANT(current_node_sibling_original_right_child->Color() ==
                                             NodeColor::kBlack);
 #endif
-                    RightRotate(current_node_sibling, root);
+                    this->RightRotate(current_node_sibling, root);
                     RBTREE_ASSERT_INVARIANT(current_node_parent->Left() != current_node_sibling);
                     RBTREE_ASSERT_INVARIANT(current_node_parent->Left() ==
                                             current_node_sibling_original_right_child);
@@ -1039,7 +1045,7 @@ private:
                         RBTREE_ASSERT_INVARIANT(w_right->Color() == NodeColor::kRed);
                         w_right->SetColor(NodeColor::kBlack);
                         w->SetColor(NodeColor::kRed);
-                        LeftRotate(w_right, root);
+                        this->LeftRotate(w_right, root);
                         RBTREE_ASSERT_INVARIANT(current_node == nullptr ||
                                                 current_node_parent == current_node->Parent());
                         RBTREE_ASSERT_INVARIANT(current_node_parent->Left() == w_right);
@@ -1058,7 +1064,7 @@ private:
                     if (w_left != nullptr) {
                         w_left->SetColor(NodeColor::kBlack);
                     }
-                    RightRotate(w, root);
+                    this->RightRotate(w, root);
                     // useless write, just in order to follow the Cormen's book
                     current_node = root;
                     break;
@@ -1069,7 +1075,7 @@ private:
         if (current_node != nullptr) {
             current_node->SetColor(NodeColor::kBlack);
         }
-        RBTREE_ASSERT_INVARIANT(Size() == 0 || Root() != nullptr);
+        RBTREE_ASSERT_INVARIANT(this->Size() == 0 || this->Root() != nullptr);
     }
 
     NodeBase fake_root_;
@@ -1097,6 +1103,7 @@ template <class NodeType>
 RBTREE_ATTRIBUTE_NONNULL_ALL_ARGS
 ATTRIBUTE_ACCESS(read_only, 1)
 ATTRIBUTE_PURE
+ATTRIBUTE_RETURNS_NONNULL
 constexpr NodeType *Increment(NodeType *CONFIG_CLANG_NONNULL_QUALIFIER node) noexcept {
     if (auto *right_child = node->Right(); right_child != nullptr) {
         return right_child->LeftMostNode();
@@ -1116,6 +1123,8 @@ constexpr NodeType *Increment(NodeType *CONFIG_CLANG_NONNULL_QUALIFIER node) noe
             IsFakeNodeOrRoot(parent));
     }
 
+    RBTREE_ASSERT_INVARIANT(node != nullptr);
+    RBTREE_ASSERT_INVARIANT(parent != nullptr);
     RBTREE_ASSERT_INVARIANT(node == parent->Left() ||
                             (IsFakeNodeOrRoot(parent) && parent->Parent() == node) ||
                             (IsFakeNodeOrRoot(node) && node->Right() == parent));
@@ -1123,8 +1132,12 @@ constexpr NodeType *Increment(NodeType *CONFIG_CLANG_NONNULL_QUALIFIER node) noe
 }
 
 template <class NodeType>
-[[nodiscard]] RBTREE_ATTRIBUTE_NONNULL_ALL_ARGS ATTRIBUTE_ACCESS(read_only, 1) ATTRIBUTE_PURE
-    constexpr NodeType *Decrement(NodeType *CONFIG_CLANG_NONNULL_QUALIFIER node) noexcept {
+[[nodiscard]]
+RBTREE_ATTRIBUTE_NONNULL_ALL_ARGS
+ATTRIBUTE_ACCESS(read_only, 1)
+ATTRIBUTE_PURE
+ATTRIBUTE_RETURNS_NONNULL
+constexpr NodeType *Decrement(NodeType *CONFIG_CLANG_NONNULL_QUALIFIER node) noexcept {
     RBTREE_ASSERT_INVARIANT(node != nullptr);
     if (auto *left_child = node->Left(); left_child != nullptr) {
         return left_child->RightMostNode();
@@ -1143,6 +1156,8 @@ template <class NodeType>
                                 parent->Color() == NodeColor::kBlack);
     }
 
+    RBTREE_ASSERT_INVARIANT(node != nullptr);
+    RBTREE_ASSERT_INVARIANT(parent != nullptr);
     RBTREE_ASSERT_INVARIANT(node == parent->Right());
     return parent;
 }
@@ -1185,11 +1200,13 @@ public:
     explicit Iterator(std::nullptr_t) = delete;
 
     [[nodiscard]] constexpr reference operator*() const noexcept {
+        RBTREE_ASSERT_INVARIANT(node_ != nullptr);
         return node_->Key();
     }
 
     [[nodiscard]] ATTRIBUTE_RETURNS_NONNULL constexpr pointer operator->() const noexcept
         ATTRIBUTE_LIFETIME_BOUND {
+        RBTREE_ASSERT_INVARIANT(node_ != nullptr);
         return std::addressof(node_->Key());
     }
 
@@ -1222,6 +1239,37 @@ public:
 private:
     IterNodeType *node_{};
 };
+
+// clang-format off
+template <std::size_t N>
+RBTREE_ATTRIBUTE_NONNULL_ALL_ARGS
+ATTRIBUTE_ACCESS(read_only, 1)
+ATTRIBUTE_ACCESS(write_only, 2)
+void FillLengthErrorReport(const char *CONFIG_CLANG_NONNULL_QUALIFIER function_name,
+                           std::array<char, N>& buffer) noexcept {
+    // clang-format on
+    const int written_bytes_count = std::snprintf(
+        buffer.data(), buffer.size(), "Could not create node: size error at %s", function_name);
+    if (written_bytes_count <= 0) [[unlikely]] {
+        constexpr std::array kFallbackReport = std::to_array(
+            "Could not create error report on node creation error because of the size error");
+        static_assert(std::size(kFallbackReport) < N);
+        std::ranges::copy(kFallbackReport, buffer.begin());
+    }
+}
+
+// clang-format off
+[[noreturn]]
+RBTREE_ATTRIBUTE_NONNULL_ALL_ARGS
+ATTRIBUTE_ACCESS(read_only, 1)
+ATTRIBUTE_COLD
+void ThrowLengthError(const char *CONFIG_CLANG_NONNULL_QUALIFIER function_name) {
+    // clang-format on
+    constexpr std::size_t kErrorReportBufferSize = 1024;
+    std::array<char, kErrorReportBufferSize> buffer{};
+    FillLengthErrorReport(function_name, buffer);
+    throw std::length_error{buffer.data()};
+}
 
 template <class KeyType>
 class RBTreeContainer : private RBTreeContainerImpl {
@@ -1257,7 +1305,7 @@ protected:
     constexpr RBTreeContainer(RBTreeContainer &&)            = default;
     constexpr RBTreeContainer &operator=(RBTreeContainer &&) = default;
     constexpr ~RBTreeContainer() noexcept(noexcept(DeleteTree(Root()))) {
-        DeleteTree(Root());
+        RBTreeContainer::DeleteTree(Root());
     }
     constexpr void Swap(RBTreeContainer &other) noexcept {
         Base::Swap(other);
@@ -1289,34 +1337,34 @@ protected:
         return iterator{static_cast<NodeType *>(Base::End())};
     }
     [[nodiscard]] constexpr const_iterator cbegin() const noexcept ATTRIBUTE_LIFETIME_BOUND {
-        return begin();
+        return this->begin();
     }
     [[nodiscard]] constexpr const_iterator cend() const noexcept ATTRIBUTE_LIFETIME_BOUND {
-        return end();
+        return this->end();
     }
     [[nodiscard]] constexpr const_reverse_iterator rbegin() const noexcept ATTRIBUTE_LIFETIME_BOUND {
-        return const_reverse_iterator{end()};
+        return const_reverse_iterator{this->end()};
     }
     [[nodiscard]] constexpr const_reverse_iterator rend() const noexcept ATTRIBUTE_LIFETIME_BOUND {
-        return const_reverse_iterator{begin()};
+        return const_reverse_iterator{this->begin()};
     }
     [[nodiscard]] constexpr reverse_iterator rbegin() noexcept ATTRIBUTE_LIFETIME_BOUND {
-        return reverse_iterator{end()};
+        return reverse_iterator{this->end()};
     }
     [[nodiscard]] constexpr reverse_iterator rend() noexcept ATTRIBUTE_LIFETIME_BOUND {
-        return reverse_iterator{begin()};
+        return reverse_iterator{this->begin()};
     }
     [[nodiscard]] constexpr const_reverse_iterator crbegin() const noexcept ATTRIBUTE_LIFETIME_BOUND {
-        return rbegin();
+        return this->rbegin();
     }
     [[nodiscard]] constexpr const_reverse_iterator crend() const noexcept ATTRIBUTE_LIFETIME_BOUND {
-        return rend();
+        return this->rend();
     }
     [[nodiscard]] constexpr const_reference front() const noexcept ATTRIBUTE_LIFETIME_BOUND {
-        return *begin();
+        return *this->begin();
     }
     [[nodiscard]] constexpr reference front() noexcept ATTRIBUTE_LIFETIME_BOUND {
-        return *begin();
+        return *this->begin();
     }
     [[nodiscard]] constexpr const_reference back() const noexcept ATTRIBUTE_LIFETIME_BOUND {
         return static_cast<const NodeType *>(Base::Last())->Key();
@@ -1348,7 +1396,7 @@ protected:
     [[nodiscard]]
     ATTRIBUTE_ALWAYS_INLINE
     ATTRIBUTE_PURE
-    static constexpr const_iterator NodePtrToIterator(NodeType* node_ptr ATTRIBUTE_LIFETIME_BOUND) noexcept {
+    static constexpr iterator NodePtrToIterator(NodeType* node_ptr ATTRIBUTE_LIFETIME_BOUND) noexcept {
         return iterator{node_ptr};
     }
     [[nodiscard]]
@@ -1362,10 +1410,11 @@ protected:
     [[nodiscard]]
     RBTREE_ATTRIBUTE_NONNULL(2)
     ATTRIBUTE_ACCESS(read_write, 2)
+    ATTRIBUTE_RETURNS_NONNULL
     constexpr NodeType *InsertNode(NodeType *const CONFIG_CLANG_NONNULL_QUALIFIER node_parent,
                                    const bool insert_left,
                                    Args &&...args) ATTRIBUTE_LIFETIME_BOUND {
-        auto *const new_node = CreateNode(std::forward<Args>(args)...);
+        NodeType *const new_node = this->CreateNode(std::forward<Args>(args)...);
         Base::InsertNode(node_parent, insert_left, new_node);
         return new_node;
     }
@@ -1380,15 +1429,19 @@ protected:
     // clang-format on
 
 private:
-    template <class... Args>
-    [[nodiscard]] ATTRIBUTE_ALWAYS_INLINE constexpr NodeType *CreateNode(Args &&...args) {
-        return CheckSizeAndCreateNode(this->size(), std::forward<Args>(args)...);
-    }
-
     // clang-format off
     template <class... Args>
     [[nodiscard]]
     ATTRIBUTE_ALWAYS_INLINE
+    ATTRIBUTE_RETURNS_NONNULL
+    constexpr NodeType *CreateNode(Args &&...args) {
+        return RBTreeContainer::CheckSizeAndCreateNode(this->size(), std::forward<Args>(args)...);
+    }
+
+    template <class... Args>
+    [[nodiscard]]
+    ATTRIBUTE_ALWAYS_INLINE
+    ATTRIBUTE_RETURNS_NONNULL
     static constexpr NodeType *CheckSizeAndCreateNode(const size_type tree_size, Args &&...args)
         requires(std::constructible_from<NodeType, Args...>) {
         // clang-format on
@@ -1397,12 +1450,17 @@ private:
             ThrowLengthError(std::source_location::current().function_name());
         }
 
-        return CreateNodeUnchecked(std::forward<Args>(args)...);
+        return RBTreeContainer::CreateNodeUnchecked(std::forward<Args>(args)...);
     }
 
+    // clang-format off
     template <class... Args>
-    [[nodiscard]] ATTRIBUTE_ALWAYS_INLINE static constexpr NodeType *CreateNodeUnchecked(
-        Args &&...args) {
+    [[nodiscard]]
+    ATTRIBUTE_ALWAYS_INLINE
+    ATTRIBUTE_RETURNS_NONNULL
+    static constexpr NodeType *CreateNodeUnchecked(Args &&...args) {
+        // clang-format on
+
         class NodeStorageProxy final {
         public:
             using pointer = NodeType *;
@@ -1434,7 +1492,8 @@ private:
             // clang-format off
             [[nodiscard]]
             ATTRIBUTE_ALWAYS_INLINE
-            constexpr pointer ConstructNodeAndReleaseStorage(Args... args) {
+            ATTRIBUTE_RETURNS_NONNULL
+            constexpr pointer ConstructNodeAndReleaseStorage(Args &&... args) {
                 // clang-format on
                 allocator_type alloc = GetAllocator();
                 RBTREE_ASSERT_INVARIANT(node_storage_ != nullptr);
@@ -1464,9 +1523,9 @@ private:
     }
 
     struct ClonedTreeData {
-        NodeType *root_node{};
-        NodeType *left_most_node{};
-        NodeType *right_most_node{};
+        NodeType *root_node;
+        NodeType *left_most_node;
+        NodeType *right_most_node;
     };
     static constexpr CompleteTreeRawData CloneTree(const RBTreeContainer &other) {
         const NodeType *const other_root = other.Root();
@@ -1484,13 +1543,14 @@ private:
     static constexpr ClonedTreeData CloneTreeImpl(const NodeType *const
                                                   CONFIG_CLANG_NONNULL_QUALIFIER other_root) {
         RBTREE_ASSERT_INVARIANT(other_root != nullptr);
-        struct TemporaryTreeDeleter {
-            void operator()(NodeType *node) const noexcept {
-                DeleteTree(node);
+        struct TemporaryTreeDeleter final {
+            void operator()(NodeType *const node) const
+                noexcept(noexcept(RBTreeContainer::DeleteTree(node))) {
+                RBTreeContainer::DeleteTree(node);
             }
         };
         using TemporaryTreeHolder = std::unique_ptr<NodeType, TemporaryTreeDeleter>;
-        TemporaryTreeHolder new_root(CreateNodeUnchecked(other_root->Key()));
+        TemporaryTreeHolder new_root(RBTreeContainer::CreateNodeUnchecked(other_root->Key()));
         new_root->SetColor(other_root->Color());
         NodeType *left_most_node  = new_root.get();
         NodeType *right_most_node = new_root.get();
@@ -1549,41 +1609,9 @@ private:
                 return local_root->Parent();
             }();
 
-            DestroyNode(local_root);
+            RBTreeContainer::DestroyNode(local_root);
             local_root = next_node;
         } while (local_root != nullptr);
-    }
-
-    // clang-format off
-    [[noreturn]]
-    RBTREE_ATTRIBUTE_NONNULL_ALL_ARGS
-    ATTRIBUTE_ACCESS(read_only, 1)
-    ATTRIBUTE_COLD
-    static void ThrowLengthError(const char *CONFIG_CLANG_NONNULL_QUALIFIER function_name) {
-        // clang-format on
-        constexpr std::size_t kErrorReportBufferSize = 1024;
-        std::array<char, kErrorReportBufferSize> buffer{};
-        FillLengthErrorReport(function_name, buffer);
-        throw std::length_error(std::data(buffer));
-    }
-
-    // clang-format off
-    template <std::size_t N>
-    RBTREE_ATTRIBUTE_NONNULL_ALL_ARGS
-    ATTRIBUTE_ACCESS(read_only, 1)
-    ATTRIBUTE_ACCESS(write_only, 2)
-    static void FillLengthErrorReport(const char *CONFIG_CLANG_NONNULL_QUALIFIER function_name,
-                                      std::array<char, N>& buffer) noexcept {
-        // clang-format on
-        const int ret = std::snprintf(std::data(buffer), std::size(buffer),
-                                      "Could not create node: size error at %s", function_name);
-        if (ret <= 0) [[unlikely]] {
-            constexpr std::array kFallbackReport = std::to_array(
-                "Could not create error report on node creation error because of the "
-                "size error");
-            static_assert(std::size(kFallbackReport) < N);
-            std::ranges::copy(kFallbackReport, std::begin(buffer));
-        }
     }
 };
 
@@ -1609,18 +1637,18 @@ concept StatelessComparator =
     std::is_trivially_default_constructible_v<Comparator> &&
     std::is_nothrow_default_constructible_v<Comparator> &&
     std::is_trivially_destructible_v<Comparator> && std::is_nothrow_destructible_v<Comparator> &&
-    sizeof(Comparator) <= sizeof(char);
+    sizeof(Comparator) <= sizeof(std::less<>);
 
 static_assert(StatelessComparator<std::less<>>);
-static_assert(StatelessComparator<std::less<std::string>>);
+static_assert(StatelessComparator<std::less<std::pair<double, float>>>);
 static_assert(StatelessComparator<std::greater<int>>);
 static_assert(StatelessComparator<std::greater<long *>>);
 
 template <class ComparatorType>
 class StatelessComparatorStorage {
 protected:
-    static constexpr bool kNoexceptDefaultConstructable = true;
-    static constexpr bool kNoexceptConstructable        = true;
+    static constexpr bool kNoexceptDefaultConstructable        = true;
+    static constexpr bool kNoexceptConstructableFromComparator = true;
 
     [[nodiscard]] constexpr ComparatorType GetComparator() const noexcept
         requires StatelessComparator<ComparatorType>
@@ -1635,11 +1663,12 @@ protected:
     static constexpr bool kNoexceptDefaultConstructable =
         std::is_nothrow_default_constructible_v<ComparatorType>;
 
-    static constexpr bool kNoexceptConstructable =
+    static constexpr bool kNoexceptConstructableFromComparator =
         std::is_nothrow_move_constructible_v<ComparatorType>;
 
     constexpr ComparatorStorage() noexcept(kNoexceptDefaultConstructable) = default;
-    explicit constexpr ComparatorStorage(ComparatorType comp) noexcept(kNoexceptConstructable)
+    explicit constexpr ComparatorStorage(ComparatorType comp) noexcept(
+        kNoexceptConstructableFromComparator)
         : comp_{std::move(comp)} {}
 
     [[nodiscard]] constexpr const ComparatorType &GetComparator() const noexcept
@@ -1674,7 +1703,9 @@ class NonReflexiveComparatorHelper
         std::is_same_v<ComparatorType, std::less_equal<KeyType>> ||
         std::is_same_v<ComparatorType, std::greater_equal<KeyType>>;
 
-    static_assert(!kReflexiveComparator, "Comparator should not establish reflexive relation");
+    static_assert(
+        !kReflexiveComparator,
+        "Comparator should not establish reflexive relation (i.e. <= and >= can't be used)");
 
     template <class LhsKeyType, class RhsKeyType>
     static constexpr bool IsNoexceptThreeWayComparable() noexcept {
@@ -1700,7 +1731,7 @@ protected:
     {}
 
     explicit constexpr NonReflexiveComparatorHelper(ComparatorType cmp) noexcept(
-        Base::kNoexceptConstructable)
+        Base::kNoexceptConstructableFromComparator)
         requires(!kStatelessComparatorStorage)
         : Base(std::move(cmp)) {}
 
@@ -1806,13 +1837,13 @@ public:
 
     template <std::input_iterator Iter, std::sentinel_for<Iter> SentinelIter>
     constexpr RBTree(Iter begin_iter, SentinelIter end_iter) {
-        this->insert_range(begin_iter, end_iter);
+        this->insert_range(std::move(begin_iter), std::move(end_iter));
     }
 
     template <std::input_iterator Iter, std::sentinel_for<Iter> SentinelIter>
     constexpr RBTree(Iter begin_iter, SentinelIter end_iter, ComparatorType cmp)
         : ComparatorBase(std::move(cmp)) {
-        this->insert_range(begin_iter, end_iter);
+        this->insert_range(std::move(begin_iter), std::move(end_iter));
     }
 
     template <std::ranges::input_range Range>
@@ -1836,7 +1867,7 @@ public:
     template <std::input_iterator Iter, std::sentinel_for<Iter> SentinelIter>
     constexpr void assign_range(Iter begin_iter, SentinelIter end_iter) {
         this->clear();
-        this->insert_range(begin_iter, end_iter);
+        this->insert_range(std::move(begin_iter), std::move(end_iter));
     }
 
     template <std::ranges::input_range Range>
@@ -1845,6 +1876,7 @@ public:
     }
 
     template <std::ranges::input_range Range>
+        requires(!std::is_reference_v<Range>)
     constexpr void assign_range(Range &&range) {
         this->assign_range(std::make_move_iterator(std::begin(range)),
                            std::make_move_iterator(std::end(range)));
@@ -1864,12 +1896,12 @@ public:
 
     template <class U = KeyType>
     constexpr InsertResult insert(U &&key) ATTRIBUTE_LIFETIME_BOUND {
-        return insert_impl</*OverwriteIfExists = */ false>(std::forward<U>(key));
+        return this->insert_impl</*OverwriteIfExists = */ false>(std::forward<U>(key));
     }
 
     template <class U = KeyType>
     constexpr iterator insert_or_overwrite(U &&key) ATTRIBUTE_LIFETIME_BOUND {
-        return insert_impl</*OverwriteIfExists = */ true>(std::forward<U>(key));
+        return this->insert_impl</*OverwriteIfExists = */ true>(std::forward<U>(key));
     }
 
     template <class EraseKeyType = KeyType>
@@ -1878,7 +1910,7 @@ public:
         ComparatorBase::template kIsNoexceptThreeWayComparableWith<EraseKeyType> &&
         Base::kIsNodeNoexceptDestructible) {
         const_iterator iter = this->find(key);
-        if (iter == end()) [[unlikely]] {
+        if (iter == this->end()) [[unlikely]] {
             return 0;
         }
         this->erase(std::move(iter));
@@ -1887,7 +1919,7 @@ public:
 
     constexpr void erase(const_iterator iter) noexcept(Base::kIsNodeNoexceptDestructible) {
         RBTREE_ASSERT_INVARIANT(iter != end());
-        erase_impl(iter);
+        this->erase_impl(iter);
     }
 
     template <class LowerBoundKeyType = KeyType>
@@ -1908,7 +1940,8 @@ public:
             }
         }
 
-        return last_left_turn != nullptr ? Base::NodePtrToConstIterator(last_left_turn) : end();
+        return last_left_turn != nullptr ? Base::NodePtrToConstIterator(last_left_turn)
+                                         : this->end();
     }
 
     template <class FindKeyType = KeyType>
@@ -1927,7 +1960,14 @@ public:
             }
         }
 
-        return end();
+        return this->end();
+    }
+
+    template <class FindKeyType = KeyType>
+        requires(ComparatorBase::template kIsComparableWithKey<FindKeyType>)
+    [[nodiscard]] constexpr bool contains(const FindKeyType &key) const
+        noexcept(ComparatorBase::template kIsNoexceptThreeWayComparableWith<FindKeyType>) {
+        return this->find(key) != this->end();
     }
 
     friend TestStatus rbtree::RBTreeInvariantsUnitTest<KeyType, ComparatorType>(
@@ -1948,7 +1988,7 @@ private:
 
         bool last_cmp_res_was_left = false;
         while (current_node != nullptr) {
-            const auto compare_result = CompareThreeWay(key, current_node->Key());
+            const auto compare_result = this->CompareThreeWay(key, current_node->Key());
             previous_node             = current_node;
             last_cmp_res_was_left     = compare_result < 0;
             if (compare_result < 0) {
@@ -1997,12 +2037,14 @@ struct [[nodiscard]] TestImplResult {
 template <class KeyType>
 [[nodiscard]] TestImplResult<KeyType> CheckRBTreeNodeInvariants(
     const typename RBTree<KeyType>::node_type &node) {
-    std::int32_t height_l       = 0;
-    std::int32_t height_r       = 0;
-    KeyType min_l               = node.Key();
-    KeyType max_r               = node.Key();
-    const auto *left_child_ptr  = node.Left();
-    const auto *right_child_ptr = node.Right();
+    std::int32_t height_l = 0;
+    std::int32_t height_r = 0;
+
+    KeyType min_l = node.Key();
+    KeyType max_r = node.Key();
+
+    const auto *const left_child_ptr  = node.Left();
+    const auto *const right_child_ptr = node.Right();
 
     switch (node.Color()) {
         case NodeColor::kRed: {
@@ -2025,16 +2067,20 @@ template <class KeyType>
                     .max_key = {},
                 };
             }
-        } break;
-        case NodeColor::kBlack:
+
             break;
-        default:
+        }
+        case NodeColor::kBlack: {
+            break;
+        }
+        default: {
             return {
                 .status  = TestStatus::kNodeHasInvalidColor,
                 .height  = {},
                 .min_key = {},
                 .max_key = {},
             };
+        }
     }
 
     if (left_child_ptr != nullptr) {
