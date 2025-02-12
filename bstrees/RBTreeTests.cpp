@@ -73,18 +73,23 @@ constexpr bool non_intersecting_sets(const std::array<T, N> &s1,
     return !observer.WasDeReferenced();
 }
 
-template <std::ranges::forward_range Range1, std::ranges::forward_range Range2>
+template <std::ranges::bidirectional_range Range1, std::ranges::bidirectional_range Range2>
     requires(std::is_same_v<std::ranges::range_value_t<Range1>, std::ranges::range_value_t<Range2>>)
 void test_on_range(const Range1 &nums, const Range2 &not_in_nums) {
     using T = std::ranges::range_value_t<Range1>;
+
     static_assert(std::bidirectional_iterator<typename RBTree<T>::iterator>);
     static_assert(std::ranges::bidirectional_range<RBTree<T>>);
     static_assert(!std::is_polymorphic_v<RBTree<T>>);
+    static_assert(std::is_nothrow_default_constructible_v<RBTree<T>>);
+    static_assert(std::is_copy_constructible_v<RBTree<T>>);
+    static_assert(std::is_copy_assignable_v<RBTree<T>>);
+    static_assert(!std::is_nothrow_copy_constructible_v<RBTree<T>>);
+    static_assert(!std::is_nothrow_copy_assignable_v<RBTree<T>>);
     static_assert(std::is_nothrow_move_constructible_v<RBTree<T>>);
     static_assert(std::is_nothrow_move_assignable_v<RBTree<T>>);
     static_assert(std::is_swappable_v<RBTree<T>>);
     static_assert(std::is_nothrow_swappable_v<RBTree<T>>);
-    static_assert(std::is_nothrow_default_constructible_v<RBTree<T>>);
     static_assert(std::is_standard_layout_v<RBTree<T>>);
 
     auto compare = [&nums, &not_in_nums](const RBTree<T> &t, const std::set<T> &checker) {
@@ -118,25 +123,28 @@ void test_on_range(const Range1 &nums, const Range2 &not_in_nums) {
         auto check = [&t, &checker](const auto &sub_range) {
             for (const T &lb_num : sub_range) {
                 {
-                    auto p                = t.lower_bound(lb_num);
-                    auto correct_ans_iter = checker.lower_bound(lb_num);
+                    const auto p                = t.lower_bound(lb_num);
+                    const auto correct_ans_iter = checker.lower_bound(lb_num);
                     assert(t.size() == checker.size());
                     if (correct_ans_iter == checker.end()) {
                         assert(p == t.end());
+                        assert(!t.contains(lb_num));
                     } else {
                         assert(p != t.end());
                         assert(*p == *correct_ans_iter);
                     }
                 }
                 {
-                    auto p                = t.find(lb_num);
-                    auto correct_ans_iter = checker.find(lb_num);
+                    const auto p                = t.find(lb_num);
+                    const auto correct_ans_iter = checker.find(lb_num);
                     assert(t.size() == checker.size());
                     if (correct_ans_iter == checker.end()) {
                         assert(p == t.end());
+                        assert(!t.contains(lb_num));
                     } else {
                         assert(p != t.end());
                         assert(*p == *correct_ans_iter);
+                        assert(t.contains(lb_num));
                     }
                 }
             }
@@ -192,7 +200,7 @@ void test_on_range(const Range1 &nums, const Range2 &not_in_nums) {
     }
 }
 
-template <std::ranges::forward_range Range1, std::ranges::forward_range Range2>
+template <std::ranges::random_access_range Range1, std::ranges::random_access_range Range2>
 void test_on_sub_ranges(const Range1 &range, const Range2 &not_in_range) {
     for (std::size_t drop_size = 0; drop_size < std::size(range); drop_size++) {
         for (std::size_t take_size = 0; take_size <= std::size(range) - drop_size; take_size++) {
