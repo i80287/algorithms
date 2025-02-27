@@ -398,22 +398,37 @@ template <class CharType>
 class IsWhiteSpaceTestSuite final {
 public:
     static void run() {
+        assert(misc::IsWhiteSpace(STR_LITERAL(CharType, ' ')));
+        assert(misc::IsWhiteSpace(STR_LITERAL(CharType, '\t')));
+        assert(misc::IsWhiteSpace(STR_LITERAL(CharType, '\v')));
+        assert(misc::IsWhiteSpace(STR_LITERAL(CharType, '\f')));
+        assert(misc::IsWhiteSpace(STR_LITERAL(CharType, '\r')));
+        assert(misc::IsWhiteSpace(STR_LITERAL(CharType, '\n')));
+
+        assert(!misc::IsWhiteSpace(STR_LITERAL(CharType, 'a')));
+        assert(!misc::IsWhiteSpace(STR_LITERAL(CharType, 'z')));
+        assert(!misc::IsWhiteSpace(STR_LITERAL(CharType, '0')));
+        assert(!misc::IsWhiteSpace(STR_LITERAL(CharType, '9')));
+
         assert(misc::IsWhiteSpace(STR_LITERAL(CharType, "")));
         assert(misc::IsWhiteSpace(STR_LITERAL(CharType, "        ")));
-        assert(misc::IsWhiteSpace(STR_LITERAL(CharType, " \t\v\r\n")));
-        assert(!misc::IsWhiteSpace(STR_LITERAL(CharType, " \t\v\r\nq")));
-        assert(!misc::IsWhiteSpace(STR_LITERAL(CharType, " \t\vq\r\n")));
-        assert(!misc::IsWhiteSpace(STR_LITERAL(CharType, "q \t\v\r\n")));
+        assert(misc::IsWhiteSpace(STR_LITERAL(CharType, " \t\v\f\r\n")));
+        assert(!misc::IsWhiteSpace(STR_LITERAL(CharType, " \t\v\f\r\nq")));
+        assert(!misc::IsWhiteSpace(STR_LITERAL(CharType, " \t\v\fq\r\n")));
+        assert(!misc::IsWhiteSpace(STR_LITERAL(CharType, "q \t\v\f\r\n")));
 
-        assert(misc::IsWhiteSpace(std::basic_string<CharType>{STR_LITERAL(CharType, " \t\v\r\n")}));
+        assert(
+            misc::IsWhiteSpace(std::basic_string<CharType>{STR_LITERAL(CharType, " \t\v\f\r\n")}));
         assert(misc::IsWhiteSpace(
-            std::basic_string_view<CharType>{STR_LITERAL(CharType, " \t\v\r\n")}));
+            std::basic_string_view<CharType>{STR_LITERAL(CharType, " \t\v\f\r\n")}));
     }
 };
 
 void test_is_white_space() {
     IsWhiteSpaceTestSuite<char>::run();
     IsWhiteSpaceTestSuite<wchar_t>::run();
+    IsWhiteSpaceTestSuite<char16_t>::run();
+    IsWhiteSpaceTestSuite<char32_t>::run();
 }
 
 template <class CharType>

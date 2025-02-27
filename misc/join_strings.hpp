@@ -802,18 +802,50 @@ template <std::ranges::forward_range Container>
 
 #endif
 
-namespace detail {
-
 template <class CharType>
-[[nodiscard]] bool IsWhiteSpace(const CharType c) noexcept {
+[[nodiscard]] inline bool IsWhiteSpace(const CharType c) noexcept {
     if constexpr (std::is_same_v<CharType, char>) {
         return static_cast<bool>(std::isspace(static_cast<unsigned char>(c)));
-    } else {
-        static_assert(std::is_same_v<CharType, wchar_t>,
-                      "char types other than char and wchar_t are not supported");
+    } else if constexpr (std::is_same_v<CharType, wchar_t>) {
         return static_cast<bool>(std::iswspace(static_cast<wint_t>(c)));
+    } else {
+        static_assert(
+            std::is_same_v<CharType, char16_t> || std::is_same_v<CharType, char32_t>,
+            "char types other than char, wchar_t, char16_t and char32_t are not supported");
+        switch (static_cast<char32_t>(c)) {
+            case U'\u0009':
+            case U'\u000A':
+            case U'\u000B':
+            case U'\u000C':
+            case U'\u000D':
+            case U'\u0020':
+            case U'\u0085':
+            case U'\u00A0':
+            case U'\u1680':
+            case U'\u2000':
+            case U'\u2001':
+            case U'\u2002':
+            case U'\u2003':
+            case U'\u2004':
+            case U'\u2005':
+            case U'\u2006':
+            case U'\u2007':
+            case U'\u2008':
+            case U'\u2009':
+            case U'\u200A':
+            case U'\u2028':
+            case U'\u2029':
+            case U'\u202F':
+            case U'\u205F':
+            case U'\u3000':
+                return true;
+            default:
+                return false;
+        }
     }
 }
+
+namespace detail {
 
 template <class CharType>
 [[nodiscard]] CharType ToLower(const CharType c) noexcept {
@@ -841,10 +873,10 @@ template <class CharType>
 [[nodiscard]]
 std::basic_string_view<CharType> TrimSpaces(
     std::basic_string_view<CharType> str ATTRIBUTE_LIFETIME_BOUND) noexcept {
-    while (!str.empty() && detail::IsWhiteSpace(str.front())) {
+    while (!str.empty() && misc::IsWhiteSpace(str.front())) {
         str.remove_prefix(1);
     }
-    while (!str.empty() && detail::IsWhiteSpace(str.back())) {
+    while (!str.empty() && misc::IsWhiteSpace(str.back())) {
         str.remove_suffix(1);
     }
 
@@ -897,7 +929,7 @@ std::basic_string_view<CharType> Trim(const CharType *str ATTRIBUTE_LIFETIME_BOU
 template <class CharType>
 [[nodiscard]] bool IsWhiteSpace(const std::basic_string_view<CharType> str) noexcept {
     for (const CharType c : str) {
-        if (!detail::IsWhiteSpace(c)) {
+        if (!misc::IsWhiteSpace(c)) {
             return false;
         }
     }
