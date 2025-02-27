@@ -5,11 +5,7 @@
 #include <string_view>
 #include <vector>
 
-#if defined(__clang__) && defined(__cplusplus) && __cplusplus >= 201703L
-#define ATTRIBUTE_LIFETIME_BOUND [[clang::lifetimebound]]
-#else
-#define ATTRIBUTE_LIFETIME_BOUND
-#endif
+#include "../misc/config_macros.hpp"
 
 namespace search_lib {
 
