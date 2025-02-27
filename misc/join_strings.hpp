@@ -164,6 +164,27 @@ ATTRIBUTE_ALWAYS_INLINE inline std::basic_string<CharType> EnumToString(const T 
     }
 }
 
+template <class CharType>
+[[nodiscard]]
+ATTRIBUTE_ALWAYS_INLINE inline std::basic_string<CharType> NullPtrToString() {
+    if constexpr (std::is_same_v<CharType, char>) {
+        return "null";
+    } else if constexpr (std::is_same_v<CharType, wchar_t>) {
+        return L"null";
+#if CONFIG_HAS_AT_LEAST_CXX_20 && defined(__cpp_char8_t) && __cpp_char8_t >= 201811L
+    } else if constexpr (std::is_same_v<CharType, char8_t>) {
+        return u8"null";
+#endif
+    } else if constexpr (std::is_same_v<CharType, char16_t>) {
+        return u"null";
+    } else if constexpr (std::is_same_v<CharType, char32_t>) {
+        return U"null";
+    } else {
+        static_assert([]() constexpr { return false; }(), "implementation error");
+        return {};
+    }
+}
+
 template <class CharType, class T>
 [[nodiscard]]
 ATTRIBUTE_ALWAYS_INLINE inline std::basic_string<CharType> PointerTypeToString(const T arg) {
@@ -172,23 +193,10 @@ ATTRIBUTE_ALWAYS_INLINE inline std::basic_string<CharType> PointerTypeToString(c
                   "implementation error");
 
     const std::uintptr_t ptr_num = reinterpret_cast<std::uintptr_t>(arg);
-    if (std::is_null_pointer_v<T> || ptr_num == 0) {
-        if constexpr (std::is_same_v<CharType, char>) {
-            return "null";
-        } else if constexpr (std::is_same_v<CharType, wchar_t>) {
-            return L"null";
-#if CONFIG_HAS_AT_LEAST_CXX_20 && defined(__cpp_char8_t) && __cpp_char8_t >= 201811L
-        } else if constexpr (std::is_same_v<CharType, char8_t>) {
-            return u8"null";
-#endif
-        } else if constexpr (std::is_same_v<CharType, char16_t>) {
-            return u"null";
-        } else if constexpr (std::is_same_v<CharType, char32_t>) {
-            return U"null";
-        } else {
-            static_assert([]() constexpr { return false; }(), "implementation error");
-            return {};
-        }
+    if constexpr (std::is_null_pointer_v<T>) {
+        return NullPtrToString<CharType>();
+    } else if (ptr_num == 0) {
+        return NullPtrToString<CharType>();
     } else {
         return ArithmeticToString<CharType>(ptr_num);
     }
@@ -610,7 +618,7 @@ template <std::ranges::forward_range Container>
     const size_t strings_total_size = join_strings_detail::StringsTotalSizeImpl(strings);
     const bool total_size_overflow  = strings_total_size == kSizeOnOverflow;
 
-    if (total_size_overflow) [[unlikely]] {
+    if (unlikely(total_size_overflow)) {
         ThrowOnStringsTotalSizeOverflow();
     }
 
@@ -626,7 +634,7 @@ template <std::ranges::forward_range Container>
     const bool total_size_overflow =
         strings_total_size > total_size_with_seps || seps_total_size > total_size_with_seps;
 
-    if (strings_size_overflow || total_size_overflow) [[unlikely]] {
+    if (unlikely(strings_size_overflow || total_size_overflow)) {
         ThrowOnStringsTotalSizeOverflow();
     }
 
@@ -655,7 +663,7 @@ template <join_strings_detail::Char T, std::ranges::forward_range Container>
     const bool total_size_overflow =
         strings_total_size > total_size_with_seps || seps_total_size > total_size_with_seps;
 
-    if (strings_size_overflow || seps_size_overflow || total_size_overflow) [[unlikely]] {
+    if (unlikely(strings_size_overflow || seps_size_overflow || total_size_overflow)) {
         ThrowOnStringsTotalSizeOverflow();
     }
 
@@ -706,7 +714,7 @@ template <join_strings_detail::Char T, std::ranges::forward_range Container>
 
     auto iter           = std::begin(strings);
     const auto end_iter = std::end(strings);
-    if (iter == end_iter) [[unlikely]] {
+    if (unlikely(iter == end_iter)) {
         return result;
     }
 
