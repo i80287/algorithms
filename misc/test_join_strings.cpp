@@ -46,6 +46,10 @@
 
 #endif
 
+namespace {
+
+namespace join_strings_test {
+
 template <class CharType>
 class JoinStringsTestSuite final {
 public:
@@ -138,10 +142,6 @@ private:
     }
 };
 
-namespace {
-
-namespace join_strings_test {
-
 void test_basic_joins() {
     JoinStringsTestSuite<char>::run();
     JoinStringsTestSuite<wchar_t>::run();
@@ -181,55 +181,13 @@ template <class CharType = char>
 [[nodiscard]] std::basic_string<CharType> to_basic_string(const SomeEnum1 e) {
     switch (e) {
         case SomeEnum1::kSomeValue1: {
-            if constexpr (std::is_same_v<CharType, char>) {
-                return "kSomeValue1";
-            } else if constexpr (std::is_same_v<CharType, wchar_t>) {
-                return L"kSomeValue1";
-#if CONFIG_HAS_AT_LEAST_CXX_20 && defined(__cpp_char8_t) && __cpp_char8_t >= 201811L
-            } else if constexpr (std::is_same_v<CharType, char8_t>) {
-                return u8"kSomeValue1";
-#endif
-            } else if constexpr (std::is_same_v<CharType, char16_t>) {
-                return u"kSomeValue1";
-            } else if constexpr (std::is_same_v<CharType, char32_t>) {
-                return U"kSomeValue1";
-            } else {
-                static_assert([]() constexpr { return false; }(), "implementation error");
-            }
+            return STR_LITERAL(CharType, "kSomeValue1");
         }
         case SomeEnum1::kSomeValue2: {
-            if constexpr (std::is_same_v<CharType, char>) {
-                return "kSomeValue2";
-            } else if constexpr (std::is_same_v<CharType, wchar_t>) {
-                return L"kSomeValue2";
-#if CONFIG_HAS_AT_LEAST_CXX_20 && defined(__cpp_char8_t) && __cpp_char8_t >= 201811L
-            } else if constexpr (std::is_same_v<CharType, char8_t>) {
-                return u8"kSomeValue2";
-#endif
-            } else if constexpr (std::is_same_v<CharType, char16_t>) {
-                return u"kSomeValue2";
-            } else if constexpr (std::is_same_v<CharType, char32_t>) {
-                return U"kSomeValue2";
-            } else {
-                static_assert([]() constexpr { return false; }(), "implementation error");
-            }
+            return STR_LITERAL(CharType, "kSomeValue2");
         }
         default: {
-            if constexpr (std::is_same_v<CharType, char>) {
-                return "Unknown SomeEnum1 value";
-            } else if constexpr (std::is_same_v<CharType, wchar_t>) {
-                return L"Unknown SomeEnum1 value";
-#if CONFIG_HAS_AT_LEAST_CXX_20 && defined(__cpp_char8_t) && __cpp_char8_t >= 201811L
-            } else if constexpr (std::is_same_v<CharType, char8_t>) {
-                return u8"Unknown SomeEnum1 value";
-#endif
-            } else if constexpr (std::is_same_v<CharType, char16_t>) {
-                return u"Unknown SomeEnum1 value";
-            } else if constexpr (std::is_same_v<CharType, char32_t>) {
-                return U"Unknown SomeEnum1 value";
-            } else {
-                static_assert([]() constexpr { return false; }(), "implementation error");
-            }
+            return STR_LITERAL(CharType, "Unknown SomeEnum1 value");
         }
     }
 }
@@ -341,8 +299,6 @@ void test_join_strings() {
 
 #ifdef JOIN_STRINGS_SUPPORTS_JOIN_STRINGS_COLLECTION
 
-namespace join_strings_collection_test {
-
 template <class CharType>
 class JoinStringsCollectionTestSuit final {
 public:
@@ -426,7 +382,7 @@ private:
     }
 };
 
-void test() {
+void test_join_strings_collection() {
     JoinStringsCollectionTestSuit<char>::run();
     JoinStringsCollectionTestSuit<wchar_t>::run();
 #if CONFIG_HAS_AT_LEAST_CXX_20 && defined(__cpp_char8_t) && __cpp_char8_t >= 201811L
@@ -436,13 +392,107 @@ void test() {
     JoinStringsCollectionTestSuit<char32_t>::run();
 }
 
-}  // namespace join_strings_collection_test
+#endif
 
-void test_join_strings_collection() {
-    join_strings_collection_test::test();
+template <class CharType>
+class IsWhiteSpaceTestSuite final {
+public:
+    static void run() {
+        assert(misc::IsWhiteSpace(STR_LITERAL(CharType, "")));
+        assert(misc::IsWhiteSpace(STR_LITERAL(CharType, "        ")));
+        assert(misc::IsWhiteSpace(STR_LITERAL(CharType, " \t\v\r\n")));
+        assert(!misc::IsWhiteSpace(STR_LITERAL(CharType, " \t\v\r\nq")));
+        assert(!misc::IsWhiteSpace(STR_LITERAL(CharType, " \t\vq\r\n")));
+        assert(!misc::IsWhiteSpace(STR_LITERAL(CharType, "q \t\v\r\n")));
+
+        assert(misc::IsWhiteSpace(std::basic_string<CharType>{STR_LITERAL(CharType, " \t\v\r\n")}));
+        assert(misc::IsWhiteSpace(
+            std::basic_string_view<CharType>{STR_LITERAL(CharType, " \t\v\r\n")}));
+    }
+};
+
+void test_is_white_space() {
+    IsWhiteSpaceTestSuite<char>::run();
+    IsWhiteSpaceTestSuite<wchar_t>::run();
 }
 
-#endif
+template <class CharType>
+class TrimTestSuite final {
+public:
+    static void run() {
+        assert(misc::Trim(STR_LITERAL(CharType, "")) == STR_LITERAL(CharType, ""));
+
+        assert(misc::Trim(STR_LITERAL(CharType, " \t\v\r\n")) == STR_LITERAL(CharType, ""));
+        assert(misc::Trim(std::basic_string<CharType>{STR_LITERAL(CharType, " \t\v\r\n")}) ==
+               STR_LITERAL(CharType, ""));
+        assert(misc::Trim(std::basic_string_view<CharType>{STR_LITERAL(CharType, " \t\v\r\n")}) ==
+               STR_LITERAL(CharType, ""));
+
+        assert(misc::Trim(STR_LITERAL(CharType, "abc")) == STR_LITERAL(CharType, "abc"));
+        assert(misc::Trim(STR_LITERAL(CharType, "abc \t\v\r\n")) == STR_LITERAL(CharType, "abc"));
+        assert(misc::Trim(STR_LITERAL(CharType, " \t\v\r\nabc")) == STR_LITERAL(CharType, "abc"));
+        assert(misc::Trim(STR_LITERAL(CharType, " \t\v\r\nabc \t\v\r\n")) ==
+               STR_LITERAL(CharType, "abc"));
+
+        assert(misc::Trim(STR_LITERAL(CharType, "yyyyyyyabcyyyyyy"), STR_LITERAL(CharType, 'y')) ==
+               STR_LITERAL(CharType, "abc"));
+    }
+};
+
+void test_trim_strings() {
+    TrimTestSuite<char>::run();
+    TrimTestSuite<wchar_t>::run();
+}
+
+template <class CharType>
+class ToLowerTestSuite final {
+public:
+    static void run() {
+        assert(misc::ToLower(STR_LITERAL(CharType, "")) == STR_LITERAL(CharType, ""));
+        assert(misc::ToLower(STR_LITERAL(CharType, "abcdef")) == STR_LITERAL(CharType, "abcdef"));
+        assert(misc::ToLower(STR_LITERAL(CharType, "Abcdef")) == STR_LITERAL(CharType, "abcdef"));
+        assert(misc::ToLower(STR_LITERAL(CharType, "abcdeF")) == STR_LITERAL(CharType, "abcdef"));
+        assert(misc::ToLower(STR_LITERAL(CharType, " ABCDEF012345689 ")) ==
+               STR_LITERAL(CharType, " abcdef012345689 "));
+        assert(misc::ToLower(STR_LITERAL(CharType, " AbCdEf012345689 ")) ==
+               STR_LITERAL(CharType, " abcdef012345689 "));
+
+        assert(misc::ToLower(std::basic_string<CharType>{STR_LITERAL(CharType, "AbCdEf")}) ==
+               STR_LITERAL(CharType, "abcdef"));
+        assert(misc::ToLower(std::basic_string_view<CharType>{STR_LITERAL(CharType, "AbCdEf")}) ==
+               STR_LITERAL(CharType, "abcdef"));
+    }
+};
+
+void test_to_lower() {
+    ToLowerTestSuite<char>::run();
+    ToLowerTestSuite<wchar_t>::run();
+}
+
+template <class CharType>
+class ToUpperTestSuite final {
+public:
+    static void run() {
+        assert(misc::ToUpper(STR_LITERAL(CharType, "")) == STR_LITERAL(CharType, ""));
+        assert(misc::ToUpper(STR_LITERAL(CharType, "abcdef")) == STR_LITERAL(CharType, "ABCDEF"));
+        assert(misc::ToUpper(STR_LITERAL(CharType, "Abcdef")) == STR_LITERAL(CharType, "ABCDEF"));
+        assert(misc::ToUpper(STR_LITERAL(CharType, "abcdeF")) == STR_LITERAL(CharType, "ABCDEF"));
+        assert(misc::ToUpper(STR_LITERAL(CharType, " ABCDEF012345689 ")) ==
+               STR_LITERAL(CharType, " ABCDEF012345689 "));
+        assert(misc::ToUpper(STR_LITERAL(CharType, " AbCdEf012345689 ")) ==
+               STR_LITERAL(CharType, " ABCDEF012345689 "));
+
+        assert(misc::ToUpper(std::basic_string<CharType>{STR_LITERAL(CharType, "AbCdEf")}) ==
+               STR_LITERAL(CharType, "ABCDEF"));
+        assert(misc::ToUpper(std::basic_string_view<CharType>{STR_LITERAL(CharType, "AbCdEf")}) ==
+               STR_LITERAL(CharType, "ABCDEF"));
+    }
+};
+
+void test_to_upper() {
+    ToUpperTestSuite<char>::run();
+    ToUpperTestSuite<wchar_t>::run();
+}
 
 }  // namespace
 
@@ -451,4 +501,8 @@ int main() {
 #ifdef JOIN_STRINGS_SUPPORTS_JOIN_STRINGS_COLLECTION
     test_join_strings_collection();
 #endif
+    test_is_white_space();
+    test_trim_strings();
+    test_to_lower();
+    test_to_upper();
 }

@@ -1,7 +1,10 @@
 #pragma once
 
+#include <cctype>
 #include <cstddef>
 #include <cstdint>
+#include <cwchar>
+#include <cwctype>
 #include <limits>
 #include <stdexcept>
 #include <string>
@@ -798,6 +801,181 @@ template <std::ranges::forward_range Container>
 }
 
 #endif
+
+namespace detail {
+
+template <class CharType>
+[[nodiscard]] bool IsWhiteSpace(const CharType c) noexcept {
+    if constexpr (std::is_same_v<CharType, char>) {
+        return static_cast<bool>(std::isspace(static_cast<unsigned char>(c)));
+    } else {
+        static_assert(std::is_same_v<CharType, wchar_t>,
+                      "char types other than char and wchar_t are not supported");
+        return static_cast<bool>(std::iswspace(static_cast<wint_t>(c)));
+    }
+}
+
+template <class CharType>
+[[nodiscard]] CharType ToLower(const CharType c) noexcept {
+    if constexpr (std::is_same_v<CharType, char>) {
+        return static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
+    } else {
+        static_assert(std::is_same_v<CharType, wchar_t>,
+                      "char types other than char and wchar_t are not supported");
+        return static_cast<CharType>(std::towlower(static_cast<wint_t>(c)));
+    }
+}
+
+template <class CharType>
+[[nodiscard]] CharType ToUpper(const CharType c) noexcept {
+    if constexpr (std::is_same_v<CharType, char>) {
+        return static_cast<char>(std::toupper(static_cast<unsigned char>(c)));
+    } else {
+        static_assert(std::is_same_v<CharType, wchar_t>,
+                      "char types other than char and wchar_t are not supported");
+        return static_cast<CharType>(std::towupper(static_cast<wint_t>(c)));
+    }
+}
+
+template <class CharType>
+[[nodiscard]]
+std::basic_string_view<CharType> TrimSpaces(
+    std::basic_string_view<CharType> str ATTRIBUTE_LIFETIME_BOUND) noexcept {
+    while (!str.empty() && detail::IsWhiteSpace(str.front())) {
+        str.remove_prefix(1);
+    }
+    while (!str.empty() && detail::IsWhiteSpace(str.back())) {
+        str.remove_suffix(1);
+    }
+
+    return str;
+}
+
+template <class CharType>
+[[nodiscard]]
+std::basic_string_view<CharType> TrimChar(
+    std::basic_string_view<CharType> str ATTRIBUTE_LIFETIME_BOUND,
+    const CharType trim_char) noexcept {
+    while (!str.empty() && str.front() == trim_char) {
+        str.remove_prefix(1);
+    }
+    while (!str.empty() && str.back() == trim_char) {
+        str.remove_suffix(1);
+    }
+
+    return str;
+}
+
+}  // namespace detail
+
+template <class CharType>
+[[nodiscard]]
+std::basic_string_view<CharType> Trim(std::basic_string_view<CharType> str ATTRIBUTE_LIFETIME_BOUND,
+                                      const CharType trim_char = CharType{}) noexcept {
+    if (trim_char == CharType{}) {
+        return detail::TrimSpaces(str);
+    } else {
+        return detail::TrimChar(str, trim_char);
+    }
+}
+
+template <class CharType>
+[[nodiscard]]
+std::basic_string_view<CharType> Trim(
+    const std::basic_string<CharType> &str ATTRIBUTE_LIFETIME_BOUND,
+    const CharType trim_char = CharType{}) noexcept {
+    return misc::Trim(std::basic_string_view<CharType>{str}, trim_char);
+}
+
+template <class CharType>
+[[nodiscard]]
+std::basic_string_view<CharType> Trim(const CharType *str ATTRIBUTE_LIFETIME_BOUND,
+                                      const CharType trim_char = CharType{}) noexcept {
+    return misc::Trim(std::basic_string_view<CharType>{str}, trim_char);
+}
+
+template <class CharType>
+[[nodiscard]] bool IsWhiteSpace(const std::basic_string_view<CharType> str) noexcept {
+    for (const CharType c : str) {
+        if (!detail::IsWhiteSpace(c)) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+template <class CharType>
+[[nodiscard]] bool IsWhiteSpace(const std::basic_string<CharType> &str) noexcept {
+    return misc::IsWhiteSpace(std::basic_string_view<CharType>{str});
+}
+
+template <class CharType>
+[[nodiscard]] bool IsWhiteSpace(const CharType *const str) noexcept {
+    return misc::IsWhiteSpace(std::basic_string_view<CharType>{str});
+}
+
+template <class CharType>
+ATTRIBUTE_SIZED_ACCESS(read_write, 1, 2)
+void ToLowerInplace(CharType *const str, const size_t n) noexcept {
+    for (size_t i = 0; i < n; i++) {
+        str[i] = detail::ToLower(str[i]);
+    }
+}
+
+template <class CharType>
+void ToLowerInplace(std::basic_string<CharType> &str) noexcept {
+    misc::ToLowerInplace(str.data(), str.size());
+}
+
+template <class CharType>
+[[nodiscard]]
+std::basic_string<CharType> ToLower(const std::basic_string_view<CharType> str) {
+    std::basic_string<CharType> ret{str};
+    misc::ToLowerInplace(ret);
+    return ret;
+}
+
+template <class CharType>
+[[nodiscard]] std::basic_string<CharType> ToLower(const std::basic_string<CharType> &str) {
+    return misc::ToLower(std::basic_string_view<CharType>{str});
+}
+
+template <class CharType>
+[[nodiscard]] std::basic_string<CharType> ToLower(const CharType *const str) {
+    return misc::ToLower(std::basic_string_view<CharType>{str});
+}
+
+template <class CharType>
+ATTRIBUTE_SIZED_ACCESS(read_write, 1, 2)
+void ToUpperInplace(CharType *const str, const size_t n) noexcept {
+    for (size_t i = 0; i < n; i++) {
+        str[i] = detail::ToUpper(str[i]);
+    }
+}
+
+template <class CharType>
+void ToUpperInplace(std::basic_string<CharType> &str) noexcept {
+    misc::ToUpperInplace(str.data(), str.size());
+}
+
+template <class CharType>
+[[nodiscard]]
+std::basic_string<CharType> ToUpper(const std::basic_string_view<CharType> str) {
+    std::basic_string<CharType> ret{str};
+    misc::ToUpperInplace(ret);
+    return ret;
+}
+
+template <class CharType>
+[[nodiscard]] std::basic_string<CharType> ToUpper(const std::basic_string<CharType> &str) {
+    return misc::ToUpper(std::basic_string_view<CharType>{str});
+}
+
+template <class CharType>
+[[nodiscard]] std::basic_string<CharType> ToUpper(const CharType *const str) {
+    return misc::ToUpper(std::basic_string_view<CharType>{str});
+}
 
 }  // namespace misc
 
