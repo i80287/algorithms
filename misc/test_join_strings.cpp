@@ -76,6 +76,8 @@
 
 namespace {
 
+namespace join_strings_test {
+
 void test_basic_joins() {
 #define STR_LITERAL(expr) expr
     MAKE_JOIN_STRINGS_TESTS_SUITE(char);
@@ -106,6 +108,7 @@ enum class E1 : std::uint8_t {
     kValue1 = 2,
     kValue2 = 4,
 };
+
 enum struct Condition : bool {
     kNo  = false,
     kYes = true,
@@ -280,66 +283,150 @@ void test_pointers() {
     // clang-format on
 }
 
+}  // namespace join_strings_test
+
+void test_join_strings() {
+    join_strings_test::test_basic_joins();
+    join_strings_test::test_enums();
+    join_strings_test::test_pointers();
+}
+
+#ifdef JOIN_STRINGS_SUPPORTS_JOIN_STRINGS_COLLECTION
+
+namespace join_strings_collection_test {
+
+#define STR_LITERAL(CHAR_TYPE, LITERAL)                             \
+    []<class = CHAR_TYPE>() constexpr noexcept -> decltype(auto) {  \
+        if constexpr (std::is_same_v<CHAR_TYPE, char>) {            \
+            return LITERAL;                                         \
+        } else if constexpr (std::is_same_v<CHAR_TYPE, wchar_t>) {  \
+            return L##LITERAL;                                      \
+        } else if constexpr (std::is_same_v<CHAR_TYPE, char8_t>) {  \
+            return u8##LITERAL;                                     \
+        } else if constexpr (std::is_same_v<CHAR_TYPE, char16_t>) { \
+            return u##LITERAL;                                      \
+        } else {                                                    \
+            static_assert(std::is_same_v<CHAR_TYPE, char32_t>);     \
+            return U##LITERAL;                                      \
+        }                                                           \
+    }()
+
+#define GENERATE_JOIN_STRINGS_COLLECTION_TEST_SUIT(CHAR_TYPE)                                       \
+                                                                                                    \
+    constexpr CHAR_TYPE kCharSep##CHAR_TYPE                          = STR_LITERAL(CHAR_TYPE, '~'); \
+    constexpr std::basic_string_view<CHAR_TYPE> kEmptySep##CHAR_TYPE = STR_LITERAL(CHAR_TYPE, "");  \
+    static_assert((kEmptySep##CHAR_TYPE).empty());                                                  \
+    constexpr const CHAR_TYPE* kNonEmptySep##CHAR_TYPE = STR_LITERAL(CHAR_TYPE, " sep ");           \
+    static_assert(!std::basic_string_view{kNonEmptySep##CHAR_TYPE}.empty());                        \
+                                                                                                    \
+    void test_empty_collection_##CHAR_TYPE() {                                                      \
+        const std::vector<std::basic_string_view<CHAR_TYPE>> empty_vec{};                           \
+        assert(misc::JoinStringsCollection(kCharSep##CHAR_TYPE, empty_vec).empty());                \
+        assert(misc::JoinStringsCollection(kEmptySep##CHAR_TYPE, empty_vec).empty());               \
+        assert(misc::JoinStringsCollection(empty_vec).empty());                                     \
+        assert(misc::JoinStringsCollection(kNonEmptySep##CHAR_TYPE, empty_vec).empty());            \
+    }                                                                                               \
+                                                                                                    \
+    void test_1_element_vec_##CHAR_TYPE() {                                                         \
+        const std::vector<std::basic_string_view<CHAR_TYPE>> vec_1_elem{                            \
+            STR_LITERAL(CHAR_TYPE, "abcdefghijklmnopqrstuvwxyz"),                                   \
+        };                                                                                          \
+        assert(misc::JoinStringsCollection(kCharSep##CHAR_TYPE, vec_1_elem) ==                      \
+               vec_1_elem.front());                                                                 \
+        assert(misc::JoinStringsCollection(kEmptySep##CHAR_TYPE, vec_1_elem) ==                     \
+               vec_1_elem.front());                                                                 \
+        assert(misc::JoinStringsCollection(vec_1_elem) == vec_1_elem.front());                      \
+        assert(misc::JoinStringsCollection(kNonEmptySep##CHAR_TYPE, vec_1_elem) ==                  \
+               vec_1_elem.front());                                                                 \
+    }                                                                                               \
+                                                                                                    \
+    void test_1_element_set_##CHAR_TYPE() {                                                         \
+        const std::set<std::basic_string<CHAR_TYPE>> set_1_elem{                                    \
+            STR_LITERAL(CHAR_TYPE, "abcdefghijklmnopqrstuvwxyz"),                                   \
+        };                                                                                          \
+        assert(misc::JoinStringsCollection(kCharSep##CHAR_TYPE, set_1_elem) ==                      \
+               *set_1_elem.begin());                                                                \
+        assert(misc::JoinStringsCollection(kEmptySep##CHAR_TYPE, set_1_elem) ==                     \
+               *set_1_elem.begin());                                                                \
+        assert(misc::JoinStringsCollection(set_1_elem) == *set_1_elem.begin());                     \
+        assert(misc::JoinStringsCollection(std::basic_string<CHAR_TYPE>{kNonEmptySep##CHAR_TYPE},   \
+                                           set_1_elem) == *set_1_elem.begin());                     \
+    }                                                                                               \
+                                                                                                    \
+    void test_3_elements_arr_##CHAR_TYPE() {                                                        \
+        const std::array<std::basic_string<CHAR_TYPE>, 3> arr_3_elems{                              \
+            STR_LITERAL(CHAR_TYPE, "abc"),                                                          \
+            STR_LITERAL(CHAR_TYPE, "def"),                                                          \
+            STR_LITERAL(CHAR_TYPE, "ghi"),                                                          \
+        };                                                                                          \
+        assert(misc::JoinStringsCollection(kCharSep##CHAR_TYPE, arr_3_elems) ==                     \
+               std::basic_string<CHAR_TYPE>{arr_3_elems[0]} + kCharSep##CHAR_TYPE +                 \
+                   std::basic_string<CHAR_TYPE>{arr_3_elems[1]} + kCharSep##CHAR_TYPE +             \
+                   std::basic_string<CHAR_TYPE>{arr_3_elems[2]});                                   \
+        assert(misc::JoinStringsCollection(                                                         \
+                   std::basic_string_view<CHAR_TYPE>{kEmptySep##CHAR_TYPE}, arr_3_elems) ==         \
+               std::basic_string<CHAR_TYPE>{arr_3_elems[0]} +                                       \
+                   std::basic_string<CHAR_TYPE>{kEmptySep##CHAR_TYPE} +                             \
+                   std::basic_string<CHAR_TYPE>{arr_3_elems[1]} +                                   \
+                   std::basic_string<CHAR_TYPE>{kEmptySep##CHAR_TYPE} +                             \
+                   std::basic_string<CHAR_TYPE>{arr_3_elems[2]});                                   \
+        assert(misc::JoinStringsCollection(arr_3_elems) ==                                          \
+               std::basic_string<CHAR_TYPE>{arr_3_elems[0]} +                                       \
+                   std::basic_string<CHAR_TYPE>{arr_3_elems[1]} +                                   \
+                   std::basic_string<CHAR_TYPE>{arr_3_elems[2]});                                   \
+        assert(misc::JoinStringsCollection(kNonEmptySep##CHAR_TYPE, arr_3_elems) ==                 \
+               std::basic_string<CHAR_TYPE>{arr_3_elems[0]} +                                       \
+                   std::basic_string<CHAR_TYPE>{kNonEmptySep##CHAR_TYPE} +                          \
+                   std::basic_string<CHAR_TYPE>{arr_3_elems[1]} +                                   \
+                   std::basic_string<CHAR_TYPE>{kNonEmptySep##CHAR_TYPE} +                          \
+                   std::basic_string<CHAR_TYPE>{arr_3_elems[2]});                                   \
+    }                                                                                               \
+                                                                                                    \
+    void test_list_of_empty_strings_##CHAR_TYPE() {                                                 \
+        const std::list<std::basic_string_view<CHAR_TYPE>> list_with_empty_strings{                 \
+            kEmptySep##CHAR_TYPE, kEmptySep##CHAR_TYPE, kEmptySep##CHAR_TYPE,                       \
+            kEmptySep##CHAR_TYPE, kEmptySep##CHAR_TYPE,                                             \
+        };                                                                                          \
+        assert(                                                                                     \
+            misc::JoinStringsCollection(kEmptySep##CHAR_TYPE, list_with_empty_strings).empty());    \
+    }
+
+#define CALL_JOIN_STRINGS_COLLECTION_TEST_SUIT(CHAR_TYPE) \
+    do {                                                  \
+        test_empty_collection_##CHAR_TYPE();              \
+        test_1_element_vec_##CHAR_TYPE();                 \
+        test_1_element_set_##CHAR_TYPE();                 \
+        test_3_elements_arr_##CHAR_TYPE();                \
+        test_list_of_empty_strings_##CHAR_TYPE();         \
+    } while (false)
+
+GENERATE_JOIN_STRINGS_COLLECTION_TEST_SUIT(char)
+GENERATE_JOIN_STRINGS_COLLECTION_TEST_SUIT(wchar_t)
+GENERATE_JOIN_STRINGS_COLLECTION_TEST_SUIT(char8_t)
+GENERATE_JOIN_STRINGS_COLLECTION_TEST_SUIT(char16_t)
+GENERATE_JOIN_STRINGS_COLLECTION_TEST_SUIT(char32_t)
+
+void test() {
+    CALL_JOIN_STRINGS_COLLECTION_TEST_SUIT(char);
+    CALL_JOIN_STRINGS_COLLECTION_TEST_SUIT(wchar_t);
+    CALL_JOIN_STRINGS_COLLECTION_TEST_SUIT(char8_t);
+    CALL_JOIN_STRINGS_COLLECTION_TEST_SUIT(char16_t);
+    CALL_JOIN_STRINGS_COLLECTION_TEST_SUIT(char32_t);
+}
+
+}  // namespace join_strings_collection_test
+
+#endif
+
 void test_join_strings_collection() {
 #ifdef JOIN_STRINGS_SUPPORTS_JOIN_STRINGS_COLLECTION
-    constexpr char kCharSep          = '~';
-    constexpr const char kEmptySep[] = "";
-    static_assert(std::basic_string_view{kEmptySep}.empty());
-    constexpr const char* kNonEmptySep = " sep ";
-    static_assert(!std::basic_string_view{kNonEmptySep}.empty());
-
-    {
-        const std::vector<std::string_view> empty_vec{};
-        assert(misc::JoinStringsCollection(kCharSep, empty_vec).empty());
-        assert(misc::JoinStringsCollection(kEmptySep, empty_vec).empty());
-        assert(misc::JoinStringsCollection(empty_vec).empty());
-        assert(misc::JoinStringsCollection(kNonEmptySep, empty_vec).empty());
-    }
-    {
-        const std::vector<std::string_view> vec_1_elem{"abcdefghijklmnopqrstuvwxyz"};
-        assert(misc::JoinStringsCollection(kCharSep, vec_1_elem) == vec_1_elem.front());
-        assert(misc::JoinStringsCollection(kEmptySep, vec_1_elem) == vec_1_elem.front());
-        assert(misc::JoinStringsCollection(vec_1_elem) == vec_1_elem.front());
-        assert(misc::JoinStringsCollection(kNonEmptySep, vec_1_elem) == vec_1_elem.front());
-    }
-    {
-        const std::set<std::string> set_1_elem{"abcdefghijklmnopqrstuvwxyz"};
-        assert(misc::JoinStringsCollection(kCharSep, set_1_elem) == *set_1_elem.begin());
-        assert(misc::JoinStringsCollection(kEmptySep, set_1_elem) == *set_1_elem.begin());
-        assert(misc::JoinStringsCollection(set_1_elem) == *set_1_elem.begin());
-        assert(misc::JoinStringsCollection(std::string{kNonEmptySep}, set_1_elem) ==
-               *set_1_elem.begin());
-    }
-    {
-        const std::array<std::string, 3> arr_3_elems{"abc", "def", "ghi"};
-        assert(misc::JoinStringsCollection(kCharSep, arr_3_elems) ==
-               std::string{arr_3_elems[0]} + kCharSep + std::string{arr_3_elems[1]} + kCharSep +
-                   std::string{arr_3_elems[2]});
-        assert(misc::JoinStringsCollection(std::string_view{kEmptySep}, arr_3_elems) ==
-               std::string{arr_3_elems[0]} + kEmptySep + std::string{arr_3_elems[1]} + kEmptySep +
-                   std::string{arr_3_elems[2]});
-        assert(misc::JoinStringsCollection(arr_3_elems) == std::string{arr_3_elems[0]} +
-                                                               std::string{arr_3_elems[1]} +
-                                                               std::string{arr_3_elems[2]});
-        assert(misc::JoinStringsCollection(kNonEmptySep, arr_3_elems) ==
-               std::string{arr_3_elems[0]} + kNonEmptySep + std::string{arr_3_elems[1]} +
-                   kNonEmptySep + std::string{arr_3_elems[2]});
-    }
-    {
-        const std::list<std::string_view> list_with_empty_strings{
-            kEmptySep, kEmptySep, kEmptySep, kEmptySep, kEmptySep,
-        };
-        assert(misc::JoinStringsCollection(kEmptySep, list_with_empty_strings).empty());
-    }
+    join_strings_collection_test::test();
 #endif
 }
 
 }  // namespace
 
 int main() {
-    test_basic_joins();
-    test_enums();
-    test_pointers();
-
+    test_join_strings();
     test_join_strings_collection();
 }

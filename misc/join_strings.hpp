@@ -538,6 +538,12 @@ struct is_c_str<const T *> : std::true_type {};
 template <Char T>
 struct is_c_str<T *> : std::true_type {};
 
+template <Char T>
+struct is_c_str<const T[]> : std::true_type {};
+
+template <Char T>
+struct is_c_str<T[]> : std::true_type {};
+
 template <class T>
 inline constexpr bool is_c_str_v = is_c_str<T>::value;
 
