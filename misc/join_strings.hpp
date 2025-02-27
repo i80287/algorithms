@@ -3,6 +3,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <limits>
+#include <stdexcept>
 #include <string>
 #include <string_view>
 #include <system_error>
@@ -14,6 +15,14 @@
 
 #include <concepts>
 #define JOIN_STRINGS_SUPPORTS_CUSTOM_ENUM_TO_STRING
+
+#endif
+
+#if CONFIG_HAS_AT_LEAST_CXX_20 && defined(__cpp_lib_ranges) && __cpp_lib_ranges >= 201911L && \
+    CONFIG_HAS_INCLUDE(<ranges>)
+
+#include <ranges>
+#define JOIN_STRINGS_SUPPORTS_JOIN_STRINGS_COLLECTION
 
 #endif
 
@@ -155,6 +164,27 @@ ATTRIBUTE_ALWAYS_INLINE inline std::basic_string<CharType> EnumToString(const T 
     }
 }
 
+template <class CharType>
+[[nodiscard]]
+ATTRIBUTE_ALWAYS_INLINE inline std::basic_string<CharType> NullPtrToString() {
+    if constexpr (std::is_same_v<CharType, char>) {
+        return "null";
+    } else if constexpr (std::is_same_v<CharType, wchar_t>) {
+        return L"null";
+#if CONFIG_HAS_AT_LEAST_CXX_20 && defined(__cpp_char8_t) && __cpp_char8_t >= 201811L
+    } else if constexpr (std::is_same_v<CharType, char8_t>) {
+        return u8"null";
+#endif
+    } else if constexpr (std::is_same_v<CharType, char16_t>) {
+        return u"null";
+    } else if constexpr (std::is_same_v<CharType, char32_t>) {
+        return U"null";
+    } else {
+        static_assert([]() constexpr { return false; }(), "implementation error");
+        return {};
+    }
+}
+
 template <class CharType, class T>
 [[nodiscard]]
 ATTRIBUTE_ALWAYS_INLINE inline std::basic_string<CharType> PointerTypeToString(const T arg) {
@@ -163,23 +193,10 @@ ATTRIBUTE_ALWAYS_INLINE inline std::basic_string<CharType> PointerTypeToString(c
                   "implementation error");
 
     const std::uintptr_t ptr_num = reinterpret_cast<std::uintptr_t>(arg);
-    if (std::is_null_pointer_v<T> || ptr_num == 0) {
-        if constexpr (std::is_same_v<CharType, char>) {
-            return "null";
-        } else if constexpr (std::is_same_v<CharType, wchar_t>) {
-            return L"null";
-#if CONFIG_HAS_AT_LEAST_CXX_20 && defined(__cpp_char8_t) && __cpp_char8_t >= 201811L
-        } else if constexpr (std::is_same_v<CharType, char8_t>) {
-            return u8"null";
-#endif
-        } else if constexpr (std::is_same_v<CharType, char16_t>) {
-            return u"null";
-        } else if constexpr (std::is_same_v<CharType, char32_t>) {
-            return U"null";
-        } else {
-            static_assert([]() constexpr { return false; }(), "implementation error");
-            return {};
-        }
+    if constexpr (std::is_null_pointer_v<T>) {
+        return NullPtrToString<CharType>();
+    } else if (ptr_num == 0) {
+        return NullPtrToString<CharType>();
     } else {
         return ArithmeticToString<CharType>(ptr_num);
     }
@@ -495,4 +512,293 @@ template <class HintCharType = char, class... Args>
 
 // clang-format on
 
+#ifdef JOIN_STRINGS_SUPPORTS_JOIN_STRINGS_COLLECTION
+
+namespace join_strings_detail {
+
+template <class T>
+concept Char = join_strings_detail::is_char_v<T>;
+
+template <class T>
+struct is_basic_string : std::false_type {};
+
+template <class CharType>
+struct is_basic_string<std::basic_string<CharType>> : std::true_type {};
+
+template <class T>
+inline constexpr bool is_basic_string_v = is_basic_string<T>::value;
+
+template <class T>
+struct is_basic_string_view : std::false_type {};
+
+template <class CharType>
+struct is_basic_string_view<std::basic_string_view<CharType>> : std::true_type {};
+
+template <class T>
+inline constexpr bool is_basic_string_view_v = is_basic_string_view<T>::value;
+
+template <class T>
+struct is_c_str : std::false_type {};
+
+template <Char T>
+struct is_c_str<const T *> : std::true_type {};
+
+template <Char T>
+struct is_c_str<T *> : std::true_type {};
+
+template <Char T>
+struct is_c_str<const T[]> : std::true_type {};
+
+template <Char T>
+struct is_c_str<T[]> : std::true_type {};
+
+template <class T>
+inline constexpr bool is_c_str_v = is_c_str<T>::value;
+
+template <class T>
+struct is_c_str_arr : std::false_type {};
+
+template <Char T, size_t N>
+struct is_c_str_arr<const T[N]> : std::true_type {};
+
+template <Char T, size_t N>
+struct is_c_str_arr<T[N]> : std::true_type {};
+
+template <class T>
+inline constexpr bool is_c_str_arr_v = is_c_str_arr<T>::value;
+
+template <class T>
+concept CharOrStringLike = Char<T> || is_basic_string_v<T> || is_basic_string_view_v<T> ||
+                           is_c_str_v<T> || is_c_str_arr_v<T>;
+
+template <class StringType,
+          bool has_value_type = is_basic_string_v<StringType> || is_basic_string_view_v<StringType>,
+          bool is_c_str       = is_c_str_v<StringType> || is_c_str_arr_v<StringType>>
+struct string_char_selector {
+    using type = void;
+};
+
+template <class StringType>
+struct string_char_selector<StringType, true, false> {
+    using type = typename StringType::value_type;
+};
+
+template <class StringType>
+struct string_char_selector<StringType, false, true> {
+    using type = typename std::iter_value_t<StringType>;
+};
+
+template <class StringType>
+using string_char_t = typename string_char_selector<StringType>::type;
+
+[[noreturn]] ATTRIBUTE_COLD inline void ThrowOnStringsTotalSizeOverflow() {
+    constexpr const char kMessage[] =
+        "JoinStringsCollection(): total strings length exceded max size_t value";
+    throw std::length_error{kMessage};
+}
+
+inline constexpr size_t kSizeOnOverflow = std::numeric_limits<size_t>::max();
+
+template <std::ranges::forward_range Container>
+[[nodiscard]] size_t StringsTotalSizeImpl(const Container &strings) noexcept {
+    size_t total_size = 0;
+    bool overflow     = false;
+    for (const auto &elem : strings) {
+        const size_t elem_size = elem.size();
+        const size_t new_size  = total_size + elem_size;
+        overflow |= total_size > new_size || elem_size > new_size;
+        total_size = new_size;
+    }
+
+    return overflow ? kSizeOnOverflow : total_size;
+}
+
+template <std::ranges::forward_range Container>
+[[nodiscard]] size_t StringsTotalSize(const Container &strings) {
+    const size_t strings_total_size = join_strings_detail::StringsTotalSizeImpl(strings);
+    const bool total_size_overflow  = strings_total_size == kSizeOnOverflow;
+
+    if (unlikely(total_size_overflow)) {
+        ThrowOnStringsTotalSizeOverflow();
+    }
+
+    return strings_total_size;
+}
+
+template <std::ranges::forward_range Container>
+[[nodiscard]] size_t StringsTotalSizeWithCharSep(const Container &strings) {
+    const size_t strings_total_size   = join_strings_detail::StringsTotalSizeImpl(strings);
+    const size_t seps_total_size      = strings.size();
+    const bool strings_size_overflow  = strings_total_size == kSizeOnOverflow;
+    const size_t total_size_with_seps = strings_total_size + seps_total_size;
+    const bool total_size_overflow =
+        strings_total_size > total_size_with_seps || seps_total_size > total_size_with_seps;
+
+    if (unlikely(strings_size_overflow || total_size_overflow)) {
+        ThrowOnStringsTotalSizeOverflow();
+    }
+
+    return total_size_with_seps;
+}
+
+// clang-format off
+template <join_strings_detail::Char T, std::ranges::forward_range Container>
+[[nodiscard]] size_t StringsTotalSizeWithAtLeast2SvSep(
+    const std::basic_string_view<T> sep,
+    const Container &strings
+) {
+    // clang-format on
+
+    const size_t strings_total_size = join_strings_detail::StringsTotalSizeImpl(strings);
+    const size_t container_size     = strings.size();
+    const size_t sep_size           = sep.size();
+    CONFIG_ASSUME_STATEMENT(sep_size >= 2);
+    const size_t seps_total_size =
+        container_size == 0 ? size_t{0} : sep_size * (container_size - 1);
+    const size_t total_size_with_seps = strings_total_size + seps_total_size;
+
+    const bool strings_size_overflow = strings_total_size == kSizeOnOverflow;
+    const bool seps_size_overflow =
+        container_size >= 2 && (sep_size > seps_total_size || container_size - 1 > seps_total_size);
+    const bool total_size_overflow =
+        strings_total_size > total_size_with_seps || seps_total_size > total_size_with_seps;
+
+    if (unlikely(strings_size_overflow || seps_size_overflow || total_size_overflow)) {
+        ThrowOnStringsTotalSizeOverflow();
+    }
+
+    return total_size_with_seps;
+}
+
+template <join_strings_detail::Char T, std::ranges::forward_range Container>
+[[nodiscard]] std::basic_string<T> JoinStringsCollectionWithEmptySep(const Container &strings) {
+    const size_t total_size = join_strings_detail::StringsTotalSize(strings);
+    std::basic_string<T> result(total_size, '\0');
+    T *write_ptr = result.data();
+    for (const auto &elem : strings) {
+        std::char_traits<T>::copy(write_ptr, elem.data(), elem.size());
+        write_ptr += elem.size();
+    }
+
+    return result;
+}
+
+template <join_strings_detail::Char T, std::ranges::forward_range Container>
+[[nodiscard]] std::basic_string<T> JoinStringsCollectionByChar(const T sep,
+                                                               const Container &strings) {
+    const size_t total_size = join_strings_detail::StringsTotalSizeWithCharSep(strings);
+    std::basic_string<T> result(total_size, '\0');
+    T *write_ptr = result.data();
+    for (const auto &elem : strings) {
+        std::char_traits<T>::copy(write_ptr, elem.data(), elem.size());
+        write_ptr += elem.size();
+        *write_ptr = sep;
+        ++write_ptr;
+    }
+    if (!result.empty()) {
+        result.pop_back();
+    }
+
+    return result;
+}
+
+// clang-format off
+template <join_strings_detail::Char T, std::ranges::forward_range Container>
+[[nodiscard]] std::basic_string<T> JoinStringsCollectionBySvAtLeast2(
+    const std::basic_string_view<T> sep,
+    const Container &strings
+) {
+    // clang-format on
+    const size_t total_size = join_strings_detail::StringsTotalSizeWithAtLeast2SvSep(sep, strings);
+    std::basic_string<T> result(total_size, '\0');
+
+    auto iter           = std::begin(strings);
+    const auto end_iter = std::end(strings);
+    if (unlikely(iter == end_iter)) {
+        return result;
+    }
+
+    T *write_ptr = result.data();
+    {
+        const auto &elem = *iter;
+        std::char_traits<T>::copy(write_ptr, elem.data(), elem.size());
+        write_ptr += elem.size();
+    }
+
+    for (++iter; iter != end_iter; ++iter) {
+        const size_t sep_size = sep.size();
+        CONFIG_ASSUME_STATEMENT(sep_size >= 2);
+        std::char_traits<T>::copy(write_ptr, sep.data(), sep_size);
+        write_ptr += sep_size;
+        const auto &elem = *iter;
+        std::char_traits<T>::copy(write_ptr, elem.data(), elem.size());
+        write_ptr += elem.size();
+    }
+
+    return result;
+}
+
+template <join_strings_detail::Char T, std::ranges::forward_range Container>
+[[nodiscard]] std::basic_string<T> JoinStringsCollectionBySv(const std::basic_string_view<T> sep,
+                                                             const Container &strings) {
+    switch (sep.size()) {
+        case 0: {
+            return join_strings_detail::JoinStringsCollectionWithEmptySep<T, Container>(strings);
+        }
+        case 1: {
+            return join_strings_detail::JoinStringsCollectionByChar<T, Container>(sep.front(),
+                                                                                  strings);
+        }
+        default: {
+            return join_strings_detail::JoinStringsCollectionBySvAtLeast2<T>(sep, strings);
+        }
+    }
+}
+
+}  // namespace join_strings_detail
+
+template <join_strings_detail::CharOrStringLike Sep, std::ranges::forward_range Container>
+[[nodiscard]] auto JoinStringsCollection(const Sep &sep, const Container &strings) {
+    using StringType = std::ranges::range_value_t<Container>;
+
+    static_assert(join_strings_detail::is_basic_string_v<StringType> ||
+                      join_strings_detail::is_basic_string_view_v<StringType>,
+                  "strings should be container of std::basic_string or std::basic_string_view");
+
+    using CharType = typename StringType::value_type;
+    static_assert(join_strings_detail::is_char_v<CharType>, "char type is expected");
+
+    if constexpr (join_strings_detail::is_char_v<Sep>) {
+        static_assert(std::is_same_v<Sep, CharType>,
+                      "char type of the separator and char type of the strings should be the same");
+        return join_strings_detail::JoinStringsCollectionByChar<CharType, Container>(sep, strings);
+    } else {
+        using SepCharType = typename join_strings_detail::string_char_t<Sep>;
+
+        static_assert(std::is_same_v<SepCharType, CharType>,
+                      "char type of the separator and char type of the strings should be the same");
+
+        return join_strings_detail::JoinStringsCollectionBySv<CharType, Container>(
+            std::basic_string_view<CharType>{sep}, strings);
+    }
+}
+
+template <std::ranges::forward_range Container>
+[[nodiscard]] auto JoinStringsCollection(const Container &strings) {
+    using StringType = std::ranges::range_value_t<Container>;
+
+    static_assert(join_strings_detail::is_basic_string_v<StringType> ||
+                      join_strings_detail::is_basic_string_view_v<StringType>,
+                  "strings should be container of std::basic_string or std::basic_string_view");
+
+    using CharType = typename StringType::value_type;
+    static_assert(join_strings_detail::is_char_v<CharType>, "char type is expected");
+
+    return join_strings_detail::JoinStringsCollectionWithEmptySep<CharType, Container>(strings);
+}
+
+#endif
+
 }  // namespace misc
+
+#undef JOIN_STRINGS_HAS_CONCEPTS
