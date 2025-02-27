@@ -37,4 +37,23 @@
         typedef typename std::underlying_type<enum_type>::type enum_int_type__;        \
         return static_cast<enum_type>(static_cast<enum_int_type__>(lhs) ^              \
                                       static_cast<enum_int_type__>(rhs));              \
+    }                                                                                  \
+    ATTRIBUTE_ALWAYS_INLINE                                                            \
+    ATTRIBUTE_NODISCARD                                                                \
+    constexpr enum_type& operator|=(enum_type& lhs ATTRIBUTE_LIFETIME_BOUND,           \
+                                    const enum_type rhs) noexcept {                    \
+        return lhs = lhs | rhs;                                                        \
+    }                                                                                  \
+    ATTRIBUTE_ALWAYS_INLINE                                                            \
+    ATTRIBUTE_NODISCARD                                                                \
+    constexpr enum_type& operator&=(enum_type& lhs ATTRIBUTE_LIFETIME_BOUND,           \
+                                    const enum_type rhs) noexcept {                    \
+        return lhs = lhs & rhs;                                                        \
+    }                                                                                  \
+                                                                                       \
+    ATTRIBUTE_ALWAYS_INLINE                                                            \
+    ATTRIBUTE_NODISCARD                                                                \
+    constexpr enum_type& operator^=(enum_type& lhs ATTRIBUTE_LIFETIME_BOUND,           \
+                                    const enum_type rhs) noexcept {                    \
+        return lhs = lhs ^ rhs;                                                        \
     }
