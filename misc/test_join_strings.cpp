@@ -2,6 +2,7 @@
 #include "join_strings.hpp"
 // clang-format on
 
+#include <array>
 #include <cassert>
 #include <cstdint>
 #include <list>
