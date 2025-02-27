@@ -359,7 +359,7 @@ private:
     static constexpr std::basic_string_view<CharType> kEmptySep = STR_LITERAL(CharType, "");
     static_assert(kEmptySep.empty());
     static constexpr const CharType* kNonEmptySep = STR_LITERAL(CharType, " sep ");
-    static_assert(!std::basic_string_view{kNonEmptySep}.empty());
+    static_assert(!std::basic_string_view<CharType>{kNonEmptySep}.empty(), "");
 
     static void test_empty_collection() {
         const std::vector<std::basic_string_view<CharType>> empty_vec{};
