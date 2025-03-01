@@ -11,6 +11,8 @@
 #include <string_view>
 #include <vector>
 
+#include "test_tools.hpp"
+
 #if CONFIG_HAS_AT_LEAST_CXX_20 && defined(__cpp_char8_t) && __cpp_char8_t >= 201811L
 
 #define STR_LITERAL(CharType, LITERAL)                             \
@@ -61,10 +63,14 @@ public:
 
 private:
     static void test_empty() {
+        test_tools::log_tests_started();
+
         assert(misc::JoinStrings(STR_LITERAL(CharType, "")) == STR_LITERAL(CharType, ""));
     }
 
     static void test_misc() {
+        test_tools::log_tests_started();
+
         const std::basic_string s1      = STR_LITERAL(CharType, "ab");
         const std::basic_string_view s2 = STR_LITERAL(CharType, "cde");
         const auto s3                   = STR_LITERAL(CharType, "fghi");
@@ -134,11 +140,15 @@ private:
     }
 
     static void test_without_chars() {
+        test_tools::log_tests_started();
+
         assert(misc::JoinStrings<CharType>(1) == STR_LITERAL(CharType, "1"));
         assert(misc::JoinStrings<CharType>(1, 2) == STR_LITERAL(CharType, "12"));
         assert(misc::JoinStrings<CharType>(1, 2, 3) == STR_LITERAL(CharType, "123"));
         assert(misc::JoinStrings<CharType>(1, 2, 3, 4) == STR_LITERAL(CharType, "1234"));
         assert(misc::JoinStrings<CharType>(1, 2, 3, 4, 5) == STR_LITERAL(CharType, "12345"));
+        assert(misc::JoinStrings<CharType>(1, static_cast<const void*>(nullptr), 2, 3, nullptr, 4,
+                                           5) == STR_LITERAL(CharType, "1null23null45"));
     }
 };
 
@@ -318,6 +328,8 @@ private:
     static_assert(!std::basic_string_view<CharType>{kNonEmptySep}.empty(), "");
 
     static void test_empty_collection() {
+        test_tools::log_tests_started();
+
         const std::vector<std::basic_string_view<CharType>> empty_vec{};
         assert(misc::JoinStringsCollection(kCharSep, empty_vec).empty());
         assert(misc::JoinStringsCollection(kEmptySep, empty_vec).empty());
@@ -326,6 +338,8 @@ private:
     }
 
     static void test_1_element_vec() {
+        test_tools::log_tests_started();
+
         const std::vector<std::basic_string_view<CharType>> vec_1_elem{
             STR_LITERAL(CharType, "abcdefghijklmnopqrstuvwxyz"),
         };
@@ -336,6 +350,8 @@ private:
     }
 
     static void test_1_element_set() {
+        test_tools::log_tests_started();
+
         const std::set<std::basic_string<CharType>> set_1_elem{
             STR_LITERAL(CharType, "abcdefghijklmnopqrstuvwxyz"),
         };
@@ -347,6 +363,8 @@ private:
     }
 
     static void test_3_elements_arr() {
+        test_tools::log_tests_started();
+
         const std::array<std::basic_string<CharType>, 3> arr_3_elems{
             STR_LITERAL(CharType, "abc"),
             STR_LITERAL(CharType, "def"),
@@ -375,6 +393,8 @@ private:
     }
 
     static void test_list_of_empty_strings() {
+        test_tools::log_tests_started();
+
         const std::list<std::basic_string_view<CharType>> list_with_empty_strings{
             kEmptySep, kEmptySep, kEmptySep, kEmptySep, kEmptySep,
         };
@@ -398,28 +418,45 @@ template <class CharType>
 class IsWhiteSpaceTestSuite final {
 public:
     static void run() {
-        assert(misc::IsWhiteSpace(STR_LITERAL(CharType, ' ')));
-        assert(misc::IsWhiteSpace(STR_LITERAL(CharType, '\t')));
-        assert(misc::IsWhiteSpace(STR_LITERAL(CharType, '\v')));
-        assert(misc::IsWhiteSpace(STR_LITERAL(CharType, '\f')));
-        assert(misc::IsWhiteSpace(STR_LITERAL(CharType, '\r')));
-        assert(misc::IsWhiteSpace(STR_LITERAL(CharType, '\n')));
+        test_whitespace_chars();
+        test_non_whitespace_chars();
+        test_whitespace_strings();
+    }
 
-        assert(!misc::IsWhiteSpace(STR_LITERAL(CharType, 'a')));
-        assert(!misc::IsWhiteSpace(STR_LITERAL(CharType, 'z')));
-        assert(!misc::IsWhiteSpace(STR_LITERAL(CharType, '0')));
-        assert(!misc::IsWhiteSpace(STR_LITERAL(CharType, '9')));
+private:
+    static void test_whitespace_chars() {
+        test_tools::log_tests_started();
 
-        assert(misc::IsWhiteSpace(STR_LITERAL(CharType, "")));
-        assert(misc::IsWhiteSpace(STR_LITERAL(CharType, "        ")));
-        assert(misc::IsWhiteSpace(STR_LITERAL(CharType, " \t\v\f\r\n")));
-        assert(!misc::IsWhiteSpace(STR_LITERAL(CharType, " \t\v\f\r\nq")));
-        assert(!misc::IsWhiteSpace(STR_LITERAL(CharType, " \t\v\fq\r\n")));
-        assert(!misc::IsWhiteSpace(STR_LITERAL(CharType, "q \t\v\f\r\n")));
+        assert(misc::IsWhitespace(STR_LITERAL(CharType, ' ')));
+        assert(misc::IsWhitespace(STR_LITERAL(CharType, '\t')));
+        assert(misc::IsWhitespace(STR_LITERAL(CharType, '\v')));
+        assert(misc::IsWhitespace(STR_LITERAL(CharType, '\f')));
+        assert(misc::IsWhitespace(STR_LITERAL(CharType, '\r')));
+        assert(misc::IsWhitespace(STR_LITERAL(CharType, '\n')));
+    }
+
+    static void test_non_whitespace_chars() {
+        test_tools::log_tests_started();
+
+        assert(!misc::IsWhitespace(STR_LITERAL(CharType, 'a')));
+        assert(!misc::IsWhitespace(STR_LITERAL(CharType, 'z')));
+        assert(!misc::IsWhitespace(STR_LITERAL(CharType, '0')));
+        assert(!misc::IsWhitespace(STR_LITERAL(CharType, '9')));
+    }
+
+    static void test_whitespace_strings() {
+        test_tools::log_tests_started();
+
+        assert(misc::IsWhitespace(STR_LITERAL(CharType, "")));
+        assert(misc::IsWhitespace(STR_LITERAL(CharType, "        ")));
+        assert(misc::IsWhitespace(STR_LITERAL(CharType, " \t\v\f\r\n")));
+        assert(!misc::IsWhitespace(STR_LITERAL(CharType, " \t\v\f\r\nq")));
+        assert(!misc::IsWhitespace(STR_LITERAL(CharType, " \t\v\fq\r\n")));
+        assert(!misc::IsWhitespace(STR_LITERAL(CharType, "q \t\v\f\r\n")));
 
         assert(
-            misc::IsWhiteSpace(std::basic_string<CharType>{STR_LITERAL(CharType, " \t\v\f\r\n")}));
-        assert(misc::IsWhiteSpace(
+            misc::IsWhitespace(std::basic_string<CharType>{STR_LITERAL(CharType, " \t\v\f\r\n")}));
+        assert(misc::IsWhitespace(
             std::basic_string_view<CharType>{STR_LITERAL(CharType, " \t\v\f\r\n")}));
     }
 };
@@ -435,7 +472,26 @@ template <class CharType>
 class TrimTestSuite final {
 public:
     static void run() {
+        test_trim_empty();
+        test_trim_spaces();
+        test_trim_alphas();
+        test_trim_digits();
+        test_trim_alpha_digits();
+        test_trim_hex_digits();
+        test_trim_chars();
+    }
+
+private:
+    static void test_trim_empty() {
+        test_tools::log_tests_started();
         assert(misc::Trim(STR_LITERAL(CharType, "")) == STR_LITERAL(CharType, ""));
+    }
+
+    static void test_trim_spaces() {
+        test_tools::log_tests_started();
+
+        assert(misc::Trim(STR_LITERAL(CharType, ""), misc::whitespace_tag{}) ==
+               STR_LITERAL(CharType, ""));
 
         assert(misc::Trim(STR_LITERAL(CharType, " \t\v\r\n")) == STR_LITERAL(CharType, ""));
         assert(misc::Trim(std::basic_string<CharType>{STR_LITERAL(CharType, " \t\v\r\n")}) ==
@@ -449,8 +505,129 @@ public:
         assert(misc::Trim(STR_LITERAL(CharType, " \t\v\r\nabc \t\v\r\n")) ==
                STR_LITERAL(CharType, "abc"));
 
-        assert(misc::Trim(STR_LITERAL(CharType, "yyyyyyyabcyyyyyy"), STR_LITERAL(CharType, 'y')) ==
+        assert(misc::Trim(STR_LITERAL(CharType, " \t\v\r\nabc \t\v\r\n"), misc::whitespace_tag{}) ==
                STR_LITERAL(CharType, "abc"));
+        assert(misc::Trim(STR_LITERAL(CharType, " \t\v\r\nabc \t\v\r\n"), misc::whitespace_tag{}) ==
+               STR_LITERAL(CharType, "abc"));
+        assert(misc::Trim(STR_LITERAL(CharType, " \t\v\r\nabc \t\v\r\n"), misc::whitespace_tag{}) ==
+               STR_LITERAL(CharType, "abc"));
+    }
+
+    static void test_trim_alphas() {
+        test_tools::log_tests_started();
+
+        test_trim_with_tag<misc::alpha_tag>(STR_LITERAL(CharType, ""), STR_LITERAL(CharType, ""));
+
+        test_trim_with_tag<misc::alpha_tag>(STR_LITERAL(CharType, "17fe28D*lD$@^&hajDAw23"),
+                                            STR_LITERAL(CharType, "17fe28D*lD$@^&hajDAw23"));
+
+        test_trim_with_tag<misc::alpha_tag>(
+            STR_LITERAL(CharType, "abcddaDWADWh17fe28D*lD$@^&hajDAw23ASdhjad"),
+            STR_LITERAL(CharType, "17fe28D*lD$@^&hajDAw23"));
+        test_trim_with_tag<misc::alpha_tag>(STR_LITERAL(CharType, "17fe28D*lD$@^&hajDAw23ASdhjad"),
+                                            STR_LITERAL(CharType, "17fe28D*lD$@^&hajDAw23"));
+        test_trim_with_tag<misc::alpha_tag>(
+            STR_LITERAL(CharType, "abcddaDWADWh17fe28D*lD$@^&hajDAw23"),
+            STR_LITERAL(CharType, "17fe28D*lD$@^&hajDAw23"));
+    }
+
+    static void test_trim_digits() {
+        test_tools::log_tests_started();
+
+        test_trim_with_tag<misc::digit_tag>(STR_LITERAL(CharType, ""), STR_LITERAL(CharType, ""));
+
+        test_trim_with_tag<misc::digit_tag>(STR_LITERAL(CharType, "AhdjwAW273*38@*34@dajwkDW$"),
+                                            STR_LITERAL(CharType, "AhdjwAW273*38@*34@dajwkDW$"));
+
+        test_trim_with_tag<misc::digit_tag>(
+            STR_LITERAL(CharType, "382734AhdjwAW273*38@*34@dajwkDW$2389"),
+            STR_LITERAL(CharType, "AhdjwAW273*38@*34@dajwkDW$"));
+        test_trim_with_tag<misc::digit_tag>(STR_LITERAL(CharType, "AhdjwAW273*38@*34@dajwkDW$2389"),
+                                            STR_LITERAL(CharType, "AhdjwAW273*38@*34@dajwkDW$"));
+        test_trim_with_tag<misc::digit_tag>(
+            STR_LITERAL(CharType, "382734AhdjwAW273*38@*34@dajwkDW$"),
+            STR_LITERAL(CharType, "AhdjwAW273*38@*34@dajwkDW$"));
+    }
+
+    static void test_trim_alpha_digits() {
+        test_tools::log_tests_started();
+
+        test_trim_with_tag<misc::alpha_digit_tag>(STR_LITERAL(CharType, ""),
+                                                  STR_LITERAL(CharType, ""));
+
+        test_trim_with_tag<misc::alpha_digit_tag>(STR_LITERAL(CharType, "@^&#@#&$#&)($"),
+                                                  STR_LITERAL(CharType, "@^&#@#&$#&)($"));
+
+        test_trim_with_tag<misc::alpha_digit_tag>(
+            STR_LITERAL(CharType, "ADhjawhdjawh27837adsjKA@^&#@#&$#&)($sjkdakdj28938192"),
+            STR_LITERAL(CharType, "@^&#@#&$#&)($"));
+        test_trim_with_tag<misc::alpha_digit_tag>(
+            STR_LITERAL(CharType, "@^&#@#&$#&)($sjkdakdj28938192"),
+            STR_LITERAL(CharType, "@^&#@#&$#&)($"));
+        test_trim_with_tag<misc::alpha_digit_tag>(
+            STR_LITERAL(CharType, "ADhjawhdjawh27837adsjKA@^&#@#&$#&)($"),
+            STR_LITERAL(CharType, "@^&#@#&$#&)($"));
+    }
+
+    static void test_trim_hex_digits() {
+        test_tools::log_tests_started();
+
+        test_trim_with_tag<misc::hex_digit_tag>(STR_LITERAL(CharType, ""),
+                                                STR_LITERAL(CharType, ""));
+
+        test_trim_with_tag<misc::hex_digit_tag>(
+            STR_LITERAL(CharType, "GHhugeGJk@^&#@#&$#&)($zjGhjGEOpQ"),
+            STR_LITERAL(CharType, "GHhugeGJk@^&#@#&$#&)($zjGhjGEOpQ"));
+
+        test_trim_with_tag<misc::hex_digit_tag>(
+            STR_LITERAL(CharType, "2189389AcbDefGHhugeGJk@^&#@#&$#&)($zjGhjGEOpQ49832849DfaB49349"),
+            STR_LITERAL(CharType, "GHhugeGJk@^&#@#&$#&)($zjGhjGEOpQ"));
+        test_trim_with_tag<misc::hex_digit_tag>(
+            STR_LITERAL(CharType, "GHhugeGJk@^&#@#&$#&)($zjGhjGEOpQ49832849DfaB49349"),
+            STR_LITERAL(CharType, "GHhugeGJk@^&#@#&$#&)($zjGhjGEOpQ"));
+        test_trim_with_tag<misc::hex_digit_tag>(
+            STR_LITERAL(CharType, "2189389AcbDefGHhugeGJk@^&#@#&$#&)($zjGhjGEOpQ"),
+            STR_LITERAL(CharType, "GHhugeGJk@^&#@#&$#&)($zjGhjGEOpQ"));
+    }
+
+    static void test_trim_chars() {
+        test_tools::log_tests_started();
+
+        test_trim_chars_impl(STR_LITERAL(CharType, "yyyyyyyabcyyyyyy"), STR_LITERAL(CharType, "y"),
+                             STR_LITERAL(CharType, "abc"));
+        test_trim_chars_impl(STR_LITERAL(CharType, "xyxyxyabcdxydxyxy"),
+                             STR_LITERAL(CharType, "yx"), STR_LITERAL(CharType, "abcdxyd"));
+    }
+
+    template <size_t N, size_t M, size_t K>
+    static void test_trim_chars_impl(const CharType (&str)[N],
+                                     const CharType (&trim_chars)[M],
+                                     const CharType (&res_str)[K]) {
+        assert(misc::Trim(str, trim_chars) == res_str);
+        assert(misc::Trim(std::basic_string<CharType>{str}, trim_chars) == res_str);
+        assert(misc::Trim(std::basic_string_view<CharType>{str}, trim_chars) == res_str);
+
+        assert(misc::Trim(str, std::basic_string<CharType>{trim_chars}) == res_str);
+        assert(misc::Trim(std::basic_string<CharType>{str},
+                          std::basic_string<CharType>{trim_chars}) == res_str);
+        assert(misc::Trim(std::basic_string_view<CharType>{str},
+                          std::basic_string<CharType>{trim_chars}) == res_str);
+
+        assert(misc::Trim(str, std::basic_string_view<CharType>{trim_chars}) == res_str);
+        assert(misc::Trim(std::basic_string<CharType>{str},
+                          std::basic_string_view<CharType>{trim_chars}) == res_str);
+        assert(misc::Trim(std::basic_string_view<CharType>{str},
+                          std::basic_string_view<CharType>{trim_chars}) == res_str);
+    }
+
+    template <class TagType, size_t N, size_t K>
+    static void test_trim_with_tag(const CharType (&str)[N], const CharType (&res_str)[K]) {
+        static_assert(std::is_base_of_v<misc::trim_tag, TagType>, "");
+
+        constexpr TagType tag{};
+        assert(misc::Trim(str, tag) == res_str);
+        assert(misc::Trim(std::basic_string<CharType>{str}, tag) == res_str);
+        assert(misc::Trim(std::basic_string_view<CharType>{str}, tag) == res_str);
     }
 };
 
@@ -463,7 +640,20 @@ template <class CharType>
 class ToLowerTestSuite final {
 public:
     static void run() {
+        test_empty();
+        test_non_empty_strings();
+    }
+
+private:
+    static void test_empty() {
+        test_tools::log_tests_started();
+
         assert(misc::ToLower(STR_LITERAL(CharType, "")) == STR_LITERAL(CharType, ""));
+    }
+
+    static void test_non_empty_strings() {
+        test_tools::log_tests_started();
+
         assert(misc::ToLower(STR_LITERAL(CharType, "abcdef")) == STR_LITERAL(CharType, "abcdef"));
         assert(misc::ToLower(STR_LITERAL(CharType, "Abcdef")) == STR_LITERAL(CharType, "abcdef"));
         assert(misc::ToLower(STR_LITERAL(CharType, "abcdeF")) == STR_LITERAL(CharType, "abcdef"));
@@ -488,7 +678,20 @@ template <class CharType>
 class ToUpperTestSuite final {
 public:
     static void run() {
+        test_empty();
+        test_non_empty_strings();
+    }
+
+private:
+    static void test_empty() {
+        test_tools::log_tests_started();
+
         assert(misc::ToUpper(STR_LITERAL(CharType, "")) == STR_LITERAL(CharType, ""));
+    }
+
+    static void test_non_empty_strings() {
+        test_tools::log_tests_started();
+
         assert(misc::ToUpper(STR_LITERAL(CharType, "abcdef")) == STR_LITERAL(CharType, "ABCDEF"));
         assert(misc::ToUpper(STR_LITERAL(CharType, "Abcdef")) == STR_LITERAL(CharType, "ABCDEF"));
         assert(misc::ToUpper(STR_LITERAL(CharType, "abcdeF")) == STR_LITERAL(CharType, "ABCDEF"));
