@@ -511,7 +511,31 @@ void test_for_size() noexcept {
 
     using matrix_t = square_bitmatrix<Size, WordType>;
 
-    auto test_identity_matrix = [](const matrix_t& n) {
+    const auto test_noexcept_invariants = []() noexcept {
+        constexpr size_t i = 0;
+        constexpr size_t j = 0;
+        constexpr std::pair<size_t, size_t> ij{i, j};
+        constexpr matrix_t const_matrix{};
+        matrix_t mutable_matrix{};
+
+        static_assert(!noexcept(const_matrix.get_checked(i, j)));
+        static_assert(!noexcept(const_matrix.get_checked(ij)));
+        static_assert(noexcept(const_matrix.get_unchecked(i, j)));
+        static_assert(noexcept(const_matrix.get_unchecked(ij)));
+
+        static_assert(!noexcept(mutable_matrix.get_checked(i, j)));
+        static_assert(!noexcept(mutable_matrix.get_checked(ij)));
+        static_assert(noexcept(mutable_matrix.get_unchecked(i, j)));
+        static_assert(noexcept(mutable_matrix.get_unchecked(ij)));
+
+        static_assert(!noexcept(mutable_matrix.set_checked(i, j)));
+        static_assert(!noexcept(mutable_matrix.set_checked(ij)));
+        static_assert(noexcept(mutable_matrix.set_unchecked(i, j)));
+        static_assert(noexcept(mutable_matrix.set_unchecked(ij)));
+    };
+    test_noexcept_invariants();
+
+    const auto test_identity_matrix = [](const matrix_t& n) noexcept {
         assert((n == matrix_t::identity()));
         assert(n.any());
         assert(!n.none());
@@ -523,22 +547,28 @@ void test_for_size() noexcept {
         }
         {
             assert(n.count() == Size);
-            n.for_each_set_bit([](auto i, auto j) { assert(i == j); });
-            auto counter = 0;
-            n.for_each_set_bit([&counter](auto, auto) { counter++; });
+            n.for_each_set_bit([](auto i, auto j) noexcept { assert(i == j); });
+            size_t counter = 0;
+            n.for_each_set_bit([&counter](auto, auto) noexcept { counter++; });
             assert(counter == Size);
+            for (size_t row_index = 0; row_index < Size; row_index++) {
+                n.for_each_set_bit_in_row(row_index,
+                                          [row_index](const size_t column_index) noexcept {
+                                              assert(row_index == column_index);
+                                          });
+            }
         }
     };
-    auto test_zero_matrix = [](const matrix_t& n) {
+    const auto test_zero_matrix = [](const matrix_t& n) noexcept {
         assert((n == matrix_t::allzeros()));
         assert(!n.any());
         assert(n.none());
         assert(!n.all());
         assert(n.count() == 0);
         assert(n.size() == n.rows() && n.size() == n.columns());
-        n.for_each_set_bit([](auto, auto) { assert(false); });
+        n.for_each_set_bit([](auto, auto) noexcept { assert(false); });
     };
-    auto test_ones_matrix = [](const matrix_t& n) {
+    const auto test_ones_matrix = [](const matrix_t& n) noexcept {
         assert((n == matrix_t::allones()));
         assert(n.any());
         assert(!n.none());
@@ -546,7 +576,7 @@ void test_for_size() noexcept {
         assert(n.count() == n.rows() * n.columns());
         assert(n.size() == n.rows() && n.size() == n.columns());
         std::uint32_t counter = 0;
-        n.for_each_set_bit([&counter](auto, auto) { counter++; });
+        n.for_each_set_bit([&counter](auto, auto) noexcept { counter++; });
         assert(counter == n.rows() * n.columns());
         auto m = n;
         m *= m;
@@ -572,17 +602,21 @@ void test_for_size() noexcept {
     test_zero_matrix(identity);
 
     auto zero_matrix = matrix_t::allzeros();
-    test_zero_matrix(identity);
+    test_zero_matrix(zero_matrix);
     zero_matrix *= zero_matrix;
-    test_zero_matrix(identity);
+    test_zero_matrix(zero_matrix);
     zero_matrix *= matrix_t::allzeros();
-    test_zero_matrix(identity);
-    // zero_matrix = zero_matrix * zero_matrix;
-    // test_zero_matrix(identity);
-    identity.transpose();
-    test_zero_matrix(identity);
-    identity.reset();
-    test_zero_matrix(identity);
+    test_zero_matrix(zero_matrix);
+    zero_matrix = zero_matrix * zero_matrix;
+    test_zero_matrix(zero_matrix);
+    zero_matrix.transpose();
+    test_zero_matrix(zero_matrix);
+    zero_matrix.reset();
+    test_zero_matrix(zero_matrix);
+    zero_matrix ^= matrix_t::identity();
+    test_identity_matrix(zero_matrix);
+    zero_matrix ^= matrix_t::identity();
+    test_zero_matrix(zero_matrix);
 
     auto ones_matrix = matrix_t::allones();
     test_ones_matrix(ones_matrix);

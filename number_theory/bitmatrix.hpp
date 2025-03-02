@@ -330,17 +330,17 @@ private:
     static_assert(sizeof(std::bitset<N>) == sizeof(std::bitset<kBits>),
                   "Invalid word_type passed to the square_bitmatrix");
 
-    template <class Function>
-    static constexpr bool is_noexcept_index_fn() noexcept {
-        return noexcept(std::declval<Function>()(size_type{}));
+    template <class F>
+    [[nodiscard]] static constexpr bool is_noexcept_index_fn() noexcept {
+        return std::is_nothrow_invocable_v<F, size_type>;
     }
-    template <class Function>
-    static constexpr bool is_noexcept_coords_fn() noexcept {
-        return noexcept(std::declval<Function>()(size_type{}, size_type{}));
+    template <class F>
+    [[nodiscard]] static constexpr bool is_noexcept_coords_fn() noexcept {
+        return std::is_nothrow_invocable_v<F, size_type, size_type>;
     }
-    template <class Function>
-    static constexpr bool is_noexcept_bit_reference_fn() noexcept {
-        return noexcept(std::declval<Function>()(std::declval<bit_reference>()));
+    template <class F>
+    [[nodiscard]] static constexpr bool is_noexcept_bit_reference_fn() noexcept {
+        return std::is_nothrow_invocable_v<F, bit_reference>;
     }
 
 public:
@@ -572,63 +572,73 @@ public:
 
     [[nodiscard]]
     ATTRIBUTE_ALWAYS_INLINE
-    constexpr reference operator[](size_type index) noexcept ATTRIBUTE_LIFETIME_BOUND {
+    constexpr reference operator[](const size_type index) noexcept ATTRIBUTE_LIFETIME_BOUND {
         return data_[index];
     }
     [[nodiscard]]
     ATTRIBUTE_ALWAYS_INLINE
-    constexpr const_reference operator[](size_type index) const noexcept ATTRIBUTE_LIFETIME_BOUND {
+    constexpr const_reference operator[](const size_type index) const noexcept ATTRIBUTE_LIFETIME_BOUND {
         return data_[index];
     }
     [[nodiscard]]
     ATTRIBUTE_ALWAYS_INLINE
     CONSTEXPR_BITSET_OPS
-    bit_reference operator[](std::pair<size_type, size_type> indexes) noexcept ATTRIBUTE_LIFETIME_BOUND {
+    bit_reference operator[](const std::pair<size_type, size_type>& indexes) noexcept ATTRIBUTE_LIFETIME_BOUND {
         return data_[indexes.first][indexes.second];
     }
     [[nodiscard]]
     ATTRIBUTE_ALWAYS_INLINE
-    constexpr bool operator[](std::pair<size_type, size_type> indexes) const noexcept {
+    constexpr bool operator[](const std::pair<size_type, size_type>& indexes) const noexcept {
         return data_[indexes.first][indexes.second];
     }
     [[nodiscard]]
     ATTRIBUTE_ALWAYS_INLINE
-    constexpr bool get_unchecked(std::size_t i, std::size_t j) const noexcept {
+    constexpr reference at(const size_type index) ATTRIBUTE_LIFETIME_BOUND {
+        return data_.at(index);
+    }
+    [[nodiscard]]
+    ATTRIBUTE_ALWAYS_INLINE
+    constexpr const_reference at(const size_type index) const ATTRIBUTE_LIFETIME_BOUND {
+        return data_.at(index);
+    }
+    [[nodiscard]]
+    ATTRIBUTE_ALWAYS_INLINE
+    constexpr bool get_unchecked(const size_type i, const size_type j) const noexcept {
         return data_[i][j];
     }
     [[nodiscard]]
     ATTRIBUTE_ALWAYS_INLINE
-    constexpr bool get_unchecked(std::pair<size_type, size_type> indexes) const noexcept {
+    constexpr bool get_unchecked(const std::pair<size_type, size_type>& indexes) const noexcept {
         return get_unchecked(indexes.first, indexes.second);
     }
     [[nodiscard]]
     ATTRIBUTE_ALWAYS_INLINE
-    constexpr bool get_checked(std::size_t i, std::size_t j) const {
-        return data_[i].test(j);
+    constexpr bool get_checked(const size_type i, const size_type j) const {
+        return data_.at(i).test(j);
     }
     [[nodiscard]]
     ATTRIBUTE_ALWAYS_INLINE
-    constexpr bool get_checked(std::pair<size_type, size_type> indexes) const {
+    constexpr bool get_checked(const std::pair<size_type, size_type>& indexes) const {
         return get_checked(indexes.first, indexes.second);
     }
     ATTRIBUTE_ALWAYS_INLINE
     CONSTEXPR_BITSET_OPS
-    void set_unchecked(std::size_t i, std::size_t j, bool value = true) noexcept {
+    void set_unchecked(const size_type i, const size_type j, const bool value = true) noexcept {
         data_[i][j] = value;
     }
     ATTRIBUTE_ALWAYS_INLINE
     CONSTEXPR_BITSET_OPS
-    void set_unchecked(std::pair<size_type, size_type> indexes, bool value = true) noexcept {
+    void set_unchecked(const std::pair<size_type, size_type>& indexes, const bool value = true) noexcept {
         set_unchecked(indexes.first, indexes.second, value);
     }
     ATTRIBUTE_ALWAYS_INLINE
     CONSTEXPR_BITSET_OPS
-    void set_checked(std::size_t i, std::size_t j, bool value = true) noexcept {
-        data_[i].set(j, value);
+    void set_checked(const size_type i, const size_type j, const bool value = true) {
+        data_.at(i).set(j, value);
     }
     ATTRIBUTE_ALWAYS_INLINE
     CONSTEXPR_BITSET_OPS
-    void set_checked(std::pair<size_type, size_type> indexes, bool value = true) noexcept {
+    void set_checked(const std::pair<size_type, size_type>& indexes, const bool value = true) {
         set_checked(indexes.first, indexes.second, value);
     }
 
@@ -709,12 +719,12 @@ public:
         return copy;
     }
     CONSTEXPR_BITSET_OPS
-    square_bitmatrix& flip_row(size_type row_index) noexcept ATTRIBUTE_LIFETIME_BOUND {
+    square_bitmatrix& flip_row(const size_type row_index) noexcept ATTRIBUTE_LIFETIME_BOUND {
         do_flip_row_inplace(row_index);
         return *this;
     }
     CONSTEXPR_BITSET_OPS
-    square_bitmatrix& flip_column(size_type column_index) noexcept ATTRIBUTE_LIFETIME_BOUND {
+    square_bitmatrix& flip_column(const size_type column_index) noexcept ATTRIBUTE_LIFETIME_BOUND {
         do_flip_column_inplace(column_index);
         return *this;
     }
@@ -736,8 +746,8 @@ public:
     CONSTEXPR_BITSET_OPS
     size_type count() const noexcept {
         return std::accumulate(
-            begin(), end(), size_type(0),
-            [](size_type set_bits_count, const row_type& row)
+            begin(), end(), size_type{0},
+            [](const size_type set_bits_count, const row_type& row)
                 CONSTEXPR_BITSET_OPS noexcept { return set_bits_count + row.count(); });
     }
     [[nodiscard]]
@@ -782,16 +792,24 @@ public:
 
     template <class Function>
 #if CONFIG_HAS_AT_LEAST_CXX_20
-        requires requires(Function fn, std::size_t i, std::size_t j) {
+        requires requires(Function fn, const size_type i, const size_type j) {
             { fn(i, j) };
         }
 #endif
     constexpr void for_each_set_bit(Function fn) const noexcept(is_noexcept_coords_fn<Function>()) {
+        static_assert(std::is_invocable_v<Function, size_type, size_type>, "Function should accept 2 indices");
+
         const_iterator iter     = begin();
         const_iterator iter_end = end();
         for (size_type i{}; iter != iter_end; ++iter, ++i) {
-            for_each_row_set_bit(*iter, [&](size_type j) { fn(i, j); });
+            for_each_row_set_bit_impl(*iter, [&](const size_type j) { fn(i, j); });
         }
+    }
+    template <class Function>
+    constexpr void for_each_set_bit_in_row(const size_type row_index, Function fn) const {
+        static_assert(std::is_invocable_v<Function, size_type>, "Function should accept column index");
+
+        for_each_row_set_bit_impl(this->at(row_index), std::move(fn));
     }
     friend std::ostream& operator<<(std::ostream& out ATTRIBUTE_LIFETIME_BOUND, const square_bitmatrix& matrix) {
         std::ostringstream str;
@@ -807,7 +825,7 @@ private:
 #if CONFIG_HAS_INCLUDE(<concepts>)
         requires(const row_type row) {
             { row._Find_first() } -> std::convertible_to<size_type>;
-            { row._Find_next(size_type()) } -> std::convertible_to<size_type>;
+            { row._Find_next(size_type{}) } -> std::convertible_to<size_type>;
         };
 #else
         requires(const row_type row, size_type i, size_type j) {
@@ -821,7 +839,7 @@ private:
 
     template <class Function>
     ATTRIBUTE_ALWAYS_INLINE
-    static constexpr void for_each_row_set_bit(const row_type& row, Function fn) noexcept(is_noexcept_index_fn<Function>()) {
+    static constexpr void for_each_row_set_bit_impl(const row_type& row, Function fn) noexcept(is_noexcept_index_fn<Function>()) {
         if constexpr (kUseSGIExtension) {
             for (size_type j = row._Find_first(); j < N; j = row._Find_next(j)) {
                 fn(j);
@@ -868,7 +886,7 @@ private:
             begin(), end(),
             [other_begin = other_begin](row_type& row_reference) CONSTEXPR_BITSET_OPS noexcept {
                 row_type row_mult{};
-                for_each_row_set_bit(row_reference, [&](size_type j) CONSTEXPR_BITSET_OPS noexcept {
+                for_each_row_set_bit_impl(row_reference, [&](size_type j) CONSTEXPR_BITSET_OPS noexcept {
                     row_mult ^= other_begin[j];
                 });
                 row_reference = row_mult;
