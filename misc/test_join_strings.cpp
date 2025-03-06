@@ -5,6 +5,7 @@
 #include <array>
 #include <cassert>
 #include <cstdint>
+#include <iostream>
 #include <list>
 #include <set>
 #include <string>
@@ -59,6 +60,7 @@ public:
         test_empty();
         test_misc();
         test_without_chars();
+        test_with_filesystem_path();
     }
 
 private:
@@ -149,6 +151,26 @@ private:
         assert(misc::JoinStrings<CharType>(1, 2, 3, 4, 5) == STR_LITERAL(CharType, "12345"));
         assert(misc::JoinStrings<CharType>(1, static_cast<const void*>(nullptr), 2, 3, nullptr, 4,
                                            5) == STR_LITERAL(CharType, "1null23null45"));
+    }
+
+    static void test_with_filesystem_path() {
+#ifdef JOIN_STRINGS_SUPPORTS_FILESYSTEM_PATH
+
+        assert(misc::JoinStrings(STR_LITERAL(CharType, "path "), std::filesystem::path{"/dev/null"},
+                                 STR_LITERAL(CharType, " may exist")) ==
+               STR_LITERAL(CharType, "path /dev/null may exist"));
+
+        constexpr const auto kOSSpecificRet =
+#ifdef _WIN32
+            STR_LITERAL(CharType, "path C:\\Windows may exist");
+#else
+            STR_LITERAL(CharType, "path C:/Windows may exist");
+#endif
+        assert(misc::JoinStrings(STR_LITERAL(CharType, "path "),
+                                 std::filesystem::path{"C:/Windows"},
+                                 STR_LITERAL(CharType, " may exist")) == kOSSpecificRet);
+
+#endif
     }
 };
 

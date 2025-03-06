@@ -32,6 +32,14 @@
 
 #endif
 
+#if CONFIG_HAS_AT_LEAST_CXX_17 && defined(__cpp_lib_filesystem) && \
+    __cpp_lib_filesystem >= 201703L && CONFIG_HAS_INCLUDE(<filesystem>)
+
+#include <filesystem>
+#define JOIN_STRINGS_SUPPORTS_FILESYSTEM_PATH
+
+#endif
+
 namespace misc {
 
 namespace join_strings_detail {
@@ -52,6 +60,18 @@ struct is_pointer_to_char<T *>
 
 template <class T>
 inline constexpr bool is_pointer_to_char_v = is_pointer_to_char<T>::value;
+
+#ifdef JOIN_STRINGS_SUPPORTS_FILESYSTEM_PATH
+
+template <class T>
+inline constexpr bool is_filesystem_path_v = std::is_same_v<T, std::filesystem::path>;
+
+#else
+
+template <class>
+constexpr bool is_filesystem_path_v = false;
+
+#endif
 
 template <bool UseWChar, class T>
 [[nodiscard]]
@@ -221,6 +241,26 @@ ATTRIBUTE_ALWAYS_INLINE inline std::basic_string<CharType> ToStringScalarArg(con
     }
 }
 
+#ifdef JOIN_STRINGS_SUPPORTS_FILESYSTEM_PATH
+
+// clang-format off
+template <class CharType>
+[[nodiscard]]
+ATTRIBUTE_ALWAYS_INLINE
+inline std::basic_string<CharType> FilesystemPathToString(const std::filesystem::path &path) {
+    // clang-format on
+
+    static_assert(is_char_v<CharType>, "implementation error");
+    return path.template string<CharType>();
+}
+
+#else
+
+template <class CharType, class T>
+std::basic_string<CharType> FilesystemPathToString(const T &) = delete;
+
+#endif
+
 template <class CharType, class T>
 [[nodiscard]]
 ATTRIBUTE_ALWAYS_INLINE inline std::basic_string<CharType> ToStringOneArg(const T &arg) {
@@ -228,6 +268,8 @@ ATTRIBUTE_ALWAYS_INLINE inline std::basic_string<CharType> ToStringOneArg(const 
 
     if constexpr (std::is_scalar_v<T>) {
         return ToStringScalarArg<CharType>(arg);
+    } else if constexpr (is_filesystem_path_v<T>) {
+        return FilesystemPathToString<CharType>(arg);
     } else {
         return std::basic_string<CharType>{arg};
     }
@@ -339,7 +381,7 @@ template <class CharType, size_t I, class T, class... Args>
 [[nodiscard]]
 ATTRIBUTE_ALWAYS_INLINE
 inline
-std::enable_if_t<is_char_v<CharType> && std::is_scalar_v<T> && !is_pointer_to_char_v<T>, std::basic_string<CharType>>
+std::enable_if_t<is_char_v<CharType> && (std::is_scalar_v<T> || is_filesystem_path_v<T>) && !is_pointer_to_char_v<T>, std::basic_string<CharType>>
 JoinStringsConvArgsToStrViewImpl(T num, const Args&... args);
 
 // clang-format on
@@ -355,7 +397,8 @@ JoinStringsConvArgsToStrViewImpl(std::basic_string_view<CharType> str, const Arg
 }
 
 template <class CharType, size_t I, class T, class... Args>
-inline std::enable_if_t<is_char_v<CharType> && std::is_scalar_v<T> && !is_pointer_to_char_v<T>,
+inline std::enable_if_t<is_char_v<CharType> && (std::is_scalar_v<T> || is_filesystem_path_v<T>) &&
+                            !is_pointer_to_char_v<T>,
                         std::basic_string<CharType>>
 JoinStringsConvArgsToStrViewImpl(T num, const Args &...args) {
     if constexpr (std::is_same_v<T, CharType>) {
@@ -381,7 +424,9 @@ struct dummy_base_with_type {
 
 template <class T, class CharType>
 struct same_char_types
-    : std::conditional_t<std::is_scalar_v<T>, std::true_type, std::false_type> {};
+    : std::conditional_t<std::is_scalar_v<T> || is_filesystem_path_v<T>,
+                         std::true_type,
+                         std::false_type> {};
 
 template <class CharType>
 struct same_char_types<std::basic_string<CharType>, CharType> : std::true_type {};
