@@ -135,7 +135,8 @@ struct FilePtr final {
     FileHandle const file;  // NOLINT(misc-misplaced-const)
 
     // NOLINTNEXTLINE(google-explicit-constructor, hicpp-explicit-conversions)
-    [[nodiscard]] /* implicit */ constexpr operator FileHandle() noexcept {
+    [[nodiscard]]
+    ATTRIBUTE_RETURNS_NONNULL /* implicit */ constexpr operator FileHandle() const noexcept {
         return file;
     }
 
