@@ -86,41 +86,41 @@ private:
         assert(misc::join_strings(STR_LITERAL(CharType, "ab"), STR_LITERAL(CharType, "cde")) ==
                STR_LITERAL(CharType, "abcde"));
         assert(misc::join_strings(STR_LITERAL(CharType, "ab"), STR_LITERAL(CharType, "cde"),
-                                 STR_LITERAL(CharType, "fghi")) ==
+                                  STR_LITERAL(CharType, "fghi")) ==
                STR_LITERAL(CharType, "abcdefghi"));
         assert(misc::join_strings(STR_LITERAL(CharType, "ab"), STR_LITERAL(CharType, "cde"),
-                                 STR_LITERAL(CharType, "fghi"), STR_LITERAL(CharType, "jklmn")) ==
+                                  STR_LITERAL(CharType, "fghi"), STR_LITERAL(CharType, "jklmn")) ==
                STR_LITERAL(CharType, "abcdefghijklmn"));
         assert(misc::join_strings(STR_LITERAL(CharType, "ab"), 1, STR_LITERAL(CharType, "cde"), 2,
-                                 STR_LITERAL(CharType, "fghi"), 3,
-                                 STR_LITERAL(CharType, "jklmn")) ==
+                                  STR_LITERAL(CharType, "fghi"), 3,
+                                  STR_LITERAL(CharType, "jklmn")) ==
                STR_LITERAL(CharType, "ab1cde2fghi3jklmn"));
 
-        assert(misc::join_strings(s1, 1, STR_LITERAL(CharType, ""), s2, 2, STR_LITERAL(CharType, ""),
-                                 s3, STR_LITERAL(CharType, ""), 3,
-                                 s4) == STR_LITERAL(CharType, "ab1cde2fghi3jklmn"));
-        assert(misc::join_strings(s2, 1, STR_LITERAL(CharType, ""), s3, 2, STR_LITERAL(CharType, ""),
-                                 s4, STR_LITERAL(CharType, ""), 3,
-                                 s1) == STR_LITERAL(CharType, "cde1fghi2jklmn3ab"));
-        assert(misc::join_strings(s3, 1, STR_LITERAL(CharType, ""), s4, 2, STR_LITERAL(CharType, ""),
-                                 s1, STR_LITERAL(CharType, ""), 3,
-                                 s2) == STR_LITERAL(CharType, "fghi1jklmn2ab3cde"));
-        assert(misc::join_strings(s4, 1, STR_LITERAL(CharType, ""), s1, 2, STR_LITERAL(CharType, ""),
-                                 s2, STR_LITERAL(CharType, ""), 3,
-                                 s3) == STR_LITERAL(CharType, "jklmn1ab2cde3fghi"));
+        assert(misc::join_strings(s1, 1, STR_LITERAL(CharType, ""), s2, 2,
+                                  STR_LITERAL(CharType, ""), s3, STR_LITERAL(CharType, ""), 3,
+                                  s4) == STR_LITERAL(CharType, "ab1cde2fghi3jklmn"));
+        assert(misc::join_strings(s2, 1, STR_LITERAL(CharType, ""), s3, 2,
+                                  STR_LITERAL(CharType, ""), s4, STR_LITERAL(CharType, ""), 3,
+                                  s1) == STR_LITERAL(CharType, "cde1fghi2jklmn3ab"));
+        assert(misc::join_strings(s3, 1, STR_LITERAL(CharType, ""), s4, 2,
+                                  STR_LITERAL(CharType, ""), s1, STR_LITERAL(CharType, ""), 3,
+                                  s2) == STR_LITERAL(CharType, "fghi1jklmn2ab3cde"));
+        assert(misc::join_strings(s4, 1, STR_LITERAL(CharType, ""), s1, 2,
+                                  STR_LITERAL(CharType, ""), s2, STR_LITERAL(CharType, ""), 3,
+                                  s3) == STR_LITERAL(CharType, "jklmn1ab2cde3fghi"));
 
-        assert(misc::join_strings(0, s1, STR_LITERAL(CharType, ""), 1, s2, STR_LITERAL(CharType, ""),
-                                 2, STR_LITERAL(CharType, ""), s3, 3,
-                                 s4) == STR_LITERAL(CharType, "0ab1cde2fghi3jklmn"));
-        assert(misc::join_strings(0, s2, STR_LITERAL(CharType, ""), 1, s3, STR_LITERAL(CharType, ""),
-                                 2, STR_LITERAL(CharType, ""), s4, 3,
-                                 s1) == STR_LITERAL(CharType, "0cde1fghi2jklmn3ab"));
-        assert(misc::join_strings(0, s3, STR_LITERAL(CharType, ""), 1, s4, STR_LITERAL(CharType, ""),
-                                 2, STR_LITERAL(CharType, ""), s1, 3,
-                                 s2) == STR_LITERAL(CharType, "0fghi1jklmn2ab3cde"));
-        assert(misc::join_strings(0, s4, STR_LITERAL(CharType, ""), 1, s1, STR_LITERAL(CharType, ""),
-                                 2, STR_LITERAL(CharType, ""), s2, 3,
-                                 s3) == STR_LITERAL(CharType, "0jklmn1ab2cde3fghi"));
+        assert(misc::join_strings(0, s1, STR_LITERAL(CharType, ""), 1, s2,
+                                  STR_LITERAL(CharType, ""), 2, STR_LITERAL(CharType, ""), s3, 3,
+                                  s4) == STR_LITERAL(CharType, "0ab1cde2fghi3jklmn"));
+        assert(misc::join_strings(0, s2, STR_LITERAL(CharType, ""), 1, s3,
+                                  STR_LITERAL(CharType, ""), 2, STR_LITERAL(CharType, ""), s4, 3,
+                                  s1) == STR_LITERAL(CharType, "0cde1fghi2jklmn3ab"));
+        assert(misc::join_strings(0, s3, STR_LITERAL(CharType, ""), 1, s4,
+                                  STR_LITERAL(CharType, ""), 2, STR_LITERAL(CharType, ""), s1, 3,
+                                  s2) == STR_LITERAL(CharType, "0fghi1jklmn2ab3cde"));
+        assert(misc::join_strings(0, s4, STR_LITERAL(CharType, ""), 1, s1,
+                                  STR_LITERAL(CharType, ""), 2, STR_LITERAL(CharType, ""), s2, 3,
+                                  s3) == STR_LITERAL(CharType, "0jklmn1ab2cde3fghi"));
 
         assert(misc::join_strings(s1, 1, s2, 2, s3, 3, s4) ==
                STR_LITERAL(CharType, "ab1cde2fghi3jklmn"));
@@ -150,19 +150,20 @@ private:
         assert(misc::join_strings<CharType>(1, 2, 3, 4) == STR_LITERAL(CharType, "1234"));
         assert(misc::join_strings<CharType>(1, 2, 3, 4, 5) == STR_LITERAL(CharType, "12345"));
         assert(misc::join_strings<CharType>(1, static_cast<const void*>(nullptr), 2, 3, nullptr, 4,
-                                           5) == STR_LITERAL(CharType, "1null23null45"));
+                                            5) == STR_LITERAL(CharType, "1null23null45"));
     }
 
     static void test_with_filesystem_path() {
 #ifdef JOIN_STRINGS_SUPPORTS_FILESYSTEM_PATH
 
-        assert(misc::join_strings(STR_LITERAL(CharType, "path "), std::filesystem::path{"/dev/null"},
-                                 STR_LITERAL(CharType, " may exist")) ==
+        assert(misc::join_strings(STR_LITERAL(CharType, "path "),
+                                  std::filesystem::path{"/dev/null"},
+                                  STR_LITERAL(CharType, " may exist")) ==
                STR_LITERAL(CharType, "path /dev/null may exist"));
 
         assert(misc::join_strings(STR_LITERAL(CharType, "path "),
-                                 std::filesystem::path{"C:/Windows"},
-                                 STR_LITERAL(CharType, " may exist")) ==
+                                  std::filesystem::path{"C:/Windows"},
+                                  STR_LITERAL(CharType, " may exist")) ==
                STR_LITERAL(CharType, "path C:/Windows may exist"));
 
 #endif
@@ -375,8 +376,8 @@ private:
         assert(misc::join_strings_collection(kCharSep, set_1_elem) == *set_1_elem.begin());
         assert(misc::join_strings_collection(kEmptySep, set_1_elem) == *set_1_elem.begin());
         assert(misc::join_strings_collection(set_1_elem) == *set_1_elem.begin());
-        assert(misc::join_strings_collection(std::basic_string<CharType>{kNonEmptySep}, set_1_elem) ==
-               *set_1_elem.begin());
+        assert(misc::join_strings_collection(std::basic_string<CharType>{kNonEmptySep},
+                                             set_1_elem) == *set_1_elem.begin());
     }
 
     static void test_3_elements_arr() {
@@ -391,12 +392,13 @@ private:
                std::basic_string<CharType>{arr_3_elems[0]} + kCharSep +
                    std::basic_string<CharType>{arr_3_elems[1]} + kCharSep +
                    std::basic_string<CharType>{arr_3_elems[2]});
-        assert(
-            misc::join_strings_collection(std::basic_string_view<CharType>{kEmptySep}, arr_3_elems) ==
-            std::basic_string<CharType>{arr_3_elems[0]} + std::basic_string<CharType>{kEmptySep} +
-                std::basic_string<CharType>{arr_3_elems[1]} +
-                std::basic_string<CharType>{kEmptySep} +
-                std::basic_string<CharType>{arr_3_elems[2]});
+        assert(misc::join_strings_collection(std::basic_string_view<CharType>{kEmptySep},
+                                             arr_3_elems) ==
+               std::basic_string<CharType>{arr_3_elems[0]} +
+                   std::basic_string<CharType>{kEmptySep} +
+                   std::basic_string<CharType>{arr_3_elems[1]} +
+                   std::basic_string<CharType>{kEmptySep} +
+                   std::basic_string<CharType>{arr_3_elems[2]});
         assert(misc::join_strings_collection(arr_3_elems) ==
                std::basic_string<CharType>{arr_3_elems[0]} +
                    std::basic_string<CharType>{arr_3_elems[1]} +
