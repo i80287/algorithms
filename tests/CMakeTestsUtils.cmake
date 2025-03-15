@@ -24,6 +24,12 @@ set(COMPILER_SUPPORTS_MODULES False)
 set(COMPILER_SUPPORTED_C_VERSIONS "99")
 set(COMPILER_SUPPORTED_CXX_VERSIONS "11;14;17")
 
+if (NOT DEFINED UTILS_FLAGS_FORCE_DISABLE_RUNTIME_CHECKS OR NOT UTILS_FLAGS_FORCE_DISABLE_RUNTIME_CHECKS)
+    set(ENABLE_RUNTIME_CHECKS_FLAG__ ON)
+else()
+    set(ENABLE_RUNTIME_CHECKS_FLAG__ OFF)
+endif()
+
 string(TOLOWER ${CMAKE_CXX_COMPILER} STRING_LOWER_CMAKE_CXX_COMPILER)
 if(MINGW OR MSYS)
     set(USING_MINGW_GCC True)
@@ -360,18 +366,27 @@ function(configure_gcc_or_clang_gcc_options)
     set(LOCAL_FN_TEST_CXX_COMPILE_OPTIONS
         ${LOCAL_FN_TEST_CXX_COMPILE_OPTIONS}
         -U_GLIBCXX_USE_DEPRECATED)
-    set(LOCAL_FN_TEST_COMPILE_DEFINITIONS
-        ${LOCAL_FN_TEST_COMPILE_DEFINITIONS}
-        _GLIBCXX_SANITIZE_VECTOR)
-    if(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 10.0)
-        # In gcc with version < 10.0 these checks break `constexpr`-tivity of some std:: functions
+    if (ENABLE_RUNTIME_CHECKS_FLAG__)
         set(LOCAL_FN_TEST_COMPILE_DEFINITIONS
             ${LOCAL_FN_TEST_COMPILE_DEFINITIONS}
-            _GLIBCXX_DEBUG
-            _GLIBCXX_DEBUG_PEDANTIC
-            _GLIBCXX_CONCEPT_CHECKS)
+            _GLIBCXX_SANITIZE_VECTOR
+        )
+        if(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 10.0)
+            # In gcc with version < 10.0 these checks break `constexpr`-tivity of some std:: functions
+            set(LOCAL_FN_TEST_COMPILE_DEFINITIONS
+                ${LOCAL_FN_TEST_COMPILE_DEFINITIONS}
+                _GLIBCXX_DEBUG
+                _GLIBCXX_DEBUG_PEDANTIC
+                _GLIBCXX_CONCEPT_CHECKS
+            )
+        endif()
+
+        if(NOT USING_MINGW_GCC)
+            set (LOCAL_FN_CMAKE_C_FLAGS_RELWITHDEBINFO "${LOCAL_FN_CMAKE_C_FLAGS_RELWITHDEBINFO} -fsanitize=address,undefined" PARENT_SCOPE)
+            set (LOCAL_FN_CMAKE_CXX_FLAGS_RELWITHDEBINFO "${LOCAL_FN_CMAKE_CXX_FLAGS_RELWITHDEBINFO} -fsanitize=address,undefined" PARENT_SCOPE)
+        endif()
     endif()
-            
+
     # Remove -DNDEBUG from the RelWithDebInfo mode flags
     string(REGEX REPLACE "-D\\s?NDEBUG(=\\d)?" "" LOCAL_FN_CMAKE_C_FLAGS_RELWITHDEBINFO "${LOCAL_FN_CMAKE_C_FLAGS_RELWITHDEBINFO}")
     string(REGEX REPLACE "-D\\s?NDEBUG(=\\d)?" "" LOCAL_FN_CMAKE_CXX_FLAGS_RELWITHDEBINFO "${LOCAL_FN_CMAKE_CXX_FLAGS_RELWITHDEBINFO}")
@@ -385,10 +400,6 @@ function(configure_gcc_or_clang_gcc_options)
     set(TEST_COMPILE_DEFINITIONS
         ${LOCAL_FN_TEST_COMPILE_DEFINITIONS}
         PARENT_SCOPE)
-    if(NOT USING_MINGW_GCC)
-        set (LOCAL_FN_CMAKE_C_FLAGS_RELWITHDEBINFO "${LOCAL_FN_CMAKE_C_FLAGS_RELWITHDEBINFO} -fsanitize=address,undefined" PARENT_SCOPE)
-        set (LOCAL_FN_CMAKE_CXX_FLAGS_RELWITHDEBINFO "${LOCAL_FN_CMAKE_CXX_FLAGS_RELWITHDEBINFO} -fsanitize=address,undefined" PARENT_SCOPE)
-    endif()
     set(CMAKE_C_FLAGS_RELWITHDEBINFO
         ${LOCAL_FN_CMAKE_C_FLAGS_RELWITHDEBINFO}
         PARENT_SCOPE)
@@ -411,15 +422,26 @@ function(configure_msvc_or_clang_msvc_options)
         _CRT_SECURE_NO_WARNINGS=1)
 
     if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
-        set(LOCAL_FN_TEST_CXX_COMPILE_OPTIONS
-            ${LOCAL_FN_TEST_CXX_COMPILE_OPTIONS}
-            -UNDEBUG)
+        if(ENABLE_RUNTIME_CHECKS_FLAG__)
+            set(LOCAL_FN_TEST_CXX_COMPILE_OPTIONS
+                ${LOCAL_FN_TEST_CXX_COMPILE_OPTIONS}
+                -UNDEBUG
+            )
+        endif()
+
         set(LOCAL_FN_TEST_CXX_COMPILE_OPTIONS
             ${LOCAL_FN_TEST_CXX_COMPILE_OPTIONS}
             "/W4" # Enable -Wall and -Wextra
         )
         set(LINK_COMPILER_RT_BUILTINS_MANUALLY True PARENT_SCOPE)
     else()
+        if(ENABLE_RUNTIME_CHECKS_FLAG__)
+            set(LOCAL_FN_TEST_CXX_COMPILE_OPTIONS
+                ${LOCAL_FN_TEST_CXX_COMPILE_OPTIONS}
+                "/UNDEBUG"
+            )
+        endif()
+
         if(MSVC_VERSION GREATER_EQUAL 1914)
             set(LOCAL_FN_TEST_CXX_COMPILE_OPTIONS
                 ${LOCAL_FN_TEST_CXX_COMPILE_OPTIONS}
@@ -428,9 +450,8 @@ function(configure_msvc_or_clang_msvc_options)
         set(LOCAL_FN_TEST_CXX_COMPILE_OPTIONS
             ${LOCAL_FN_TEST_CXX_COMPILE_OPTIONS}
             "/W4"
-            "/UNDEBUG"
             "/wd4146" # Disable C4146: unary minus operator applied to unsigned type, result still unsigned
-            )
+        )
     endif()
 
     set(LOCAL_FN_TEST_C_COMPILE_OPTIONS
@@ -639,4 +660,5 @@ message(STATUS "| GENERATOR_SUPPORTS_MODULES = ${GENERATOR_SUPPORTS_MODULES}")
 message(STATUS "| COMPILER_SUPPORTS_MODULES = ${COMPILER_SUPPORTS_MODULES}")
 message(STATUS "| CMAKE_CXX_CLANG_TIDY = ${CMAKE_CXX_CLANG_TIDY}")
 message(STATUS "| CMAKE_CXX_CPPCHECK = ${CMAKE_CXX_CPPCHECK}")
+message(STATUS "| ENABLE_RUNTIME_CHECKS_FLAG = ${ENABLE_RUNTIME_CHECKS_FLAG__}")
 message(STATUS "+-")

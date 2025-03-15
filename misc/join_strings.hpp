@@ -32,7 +32,17 @@
 
 #endif
 
+#if CONFIG_HAS_AT_LEAST_CXX_17 && defined(__cpp_lib_filesystem) && \
+    __cpp_lib_filesystem >= 201703L && CONFIG_HAS_INCLUDE(<filesystem>)
+
+#include <filesystem>
+#define JOIN_STRINGS_SUPPORTS_FILESYSTEM_PATH
+
+#endif
+
 namespace misc {
+
+using std::size_t;
 
 namespace join_strings_detail {
 
@@ -52,6 +62,18 @@ struct is_pointer_to_char<T *>
 
 template <class T>
 inline constexpr bool is_pointer_to_char_v = is_pointer_to_char<T>::value;
+
+#ifdef JOIN_STRINGS_SUPPORTS_FILESYSTEM_PATH
+
+template <class T>
+inline constexpr bool is_filesystem_path_v = std::is_same_v<T, std::filesystem::path>;
+
+#else
+
+template <class>
+constexpr bool is_filesystem_path_v = false;
+
+#endif
 
 template <bool UseWChar, class T>
 [[nodiscard]]
@@ -221,6 +243,26 @@ ATTRIBUTE_ALWAYS_INLINE inline std::basic_string<CharType> ToStringScalarArg(con
     }
 }
 
+#ifdef JOIN_STRINGS_SUPPORTS_FILESYSTEM_PATH
+
+// clang-format off
+template <class CharType>
+[[nodiscard]]
+ATTRIBUTE_ALWAYS_INLINE
+inline std::basic_string<CharType> FilesystemPathToString(const std::filesystem::path &path) {
+    // clang-format on
+
+    static_assert(is_char_v<CharType>, "implementation error");
+    return path.template generic_string<CharType>();
+}
+
+#else
+
+template <class CharType, class T>
+std::basic_string<CharType> FilesystemPathToString(const T &) = delete;
+
+#endif
+
 template <class CharType, class T>
 [[nodiscard]]
 ATTRIBUTE_ALWAYS_INLINE inline std::basic_string<CharType> ToStringOneArg(const T &arg) {
@@ -228,6 +270,8 @@ ATTRIBUTE_ALWAYS_INLINE inline std::basic_string<CharType> ToStringOneArg(const 
 
     if constexpr (std::is_scalar_v<T>) {
         return ToStringScalarArg<CharType>(arg);
+    } else if constexpr (is_filesystem_path_v<T>) {
+        return FilesystemPathToString<CharType>(arg);
     } else {
         return std::basic_string<CharType>{arg};
     }
@@ -339,7 +383,7 @@ template <class CharType, size_t I, class T, class... Args>
 [[nodiscard]]
 ATTRIBUTE_ALWAYS_INLINE
 inline
-std::enable_if_t<is_char_v<CharType> && std::is_scalar_v<T> && !is_pointer_to_char_v<T>, std::basic_string<CharType>>
+std::enable_if_t<is_char_v<CharType> && (std::is_scalar_v<T> || is_filesystem_path_v<T>) && !is_pointer_to_char_v<T>, std::basic_string<CharType>>
 JoinStringsConvArgsToStrViewImpl(T num, const Args&... args);
 
 // clang-format on
@@ -355,7 +399,8 @@ JoinStringsConvArgsToStrViewImpl(std::basic_string_view<CharType> str, const Arg
 }
 
 template <class CharType, size_t I, class T, class... Args>
-inline std::enable_if_t<is_char_v<CharType> && std::is_scalar_v<T> && !is_pointer_to_char_v<T>,
+inline std::enable_if_t<is_char_v<CharType> && (std::is_scalar_v<T> || is_filesystem_path_v<T>) &&
+                            !is_pointer_to_char_v<T>,
                         std::basic_string<CharType>>
 JoinStringsConvArgsToStrViewImpl(T num, const Args &...args) {
     if constexpr (std::is_same_v<T, CharType>) {
@@ -381,7 +426,9 @@ struct dummy_base_with_type {
 
 template <class T, class CharType>
 struct same_char_types
-    : std::conditional_t<std::is_scalar_v<T>, std::true_type, std::false_type> {};
+    : std::conditional_t<std::is_scalar_v<T> || is_filesystem_path_v<T>,
+                         std::true_type,
+                         std::false_type> {};
 
 template <class CharType>
 struct same_char_types<std::basic_string<CharType>, CharType> : std::true_type {};
@@ -480,8 +527,8 @@ using determine_char_t = typename determine_char_type<Args...>::type;
 
 /// @brief Join arguments @a args (converting to string if necessary)
 /// @tparam HintCharType hint char type (default: `char`).
-///         Can be passed if, for instance, JoinStrings(1, 2, 3.0)
-///         should be std::wstring: JoinStrings<wchar_t>(1, 2, 3.0)
+///         Can be passed if, for instance, join_strings(1, 2, 3.0)
+///         should be std::wstring: join_strings<wchar_t>(1, 2, 3.0)
 /// @tparam Args Types of the arguments to join, e.g. char types, pointers to them,
 ///         basic_string, basic_string_view, integral/floating point values
 /// @param args arguments to join
@@ -489,7 +536,7 @@ using determine_char_t = typename determine_char_type<Args...>::type;
 ///         where CharType is deducted by the @a Args... or HintCharType
 ///         if @a Args is pack of numeric types
 template <class HintCharType = char, class... Args>
-[[nodiscard]] ATTRIBUTE_ALWAYS_INLINE inline auto JoinStrings(const Args&... args) {
+[[nodiscard]] ATTRIBUTE_ALWAYS_INLINE inline auto join_strings(const Args&... args) {
     static_assert(sizeof...(args) >= 1, "Empty input is explicitly prohibited");
 
     using DeducedCharType = join_strings_detail::determine_char_t<Args...>;
@@ -502,7 +549,7 @@ template <class HintCharType = char, class... Args>
         kAllCharTypesAreSame,
         "Hint:\n"
         "    Some non integral/float arguments have different char types\n"
-        "    For example, both std::string and std::wstring might have been passed to the JoinStrings\n");
+        "    For example, both std::string and std::wstring might have been passed to the join_strings\n");
 
     if constexpr (kAllCharTypesAreSame) {
         return join_strings_detail::JoinStringsConvArgsToStrViewImpl<CharType, 0>(args...);
@@ -595,7 +642,7 @@ using string_char_t = typename string_char_selector<StringType>::type;
 
 [[noreturn]] ATTRIBUTE_COLD inline void ThrowOnStringsTotalSizeOverflow() {
     constexpr const char kMessage[] =
-        "JoinStringsCollection(): total strings length exceded max size_t value";
+        "join_strings_collection(): total strings length exceded max size_t value";
     throw std::length_error{kMessage};
 }
 
@@ -760,7 +807,7 @@ template <join_strings_detail::Char T, std::ranges::forward_range Container>
 }  // namespace join_strings_detail
 
 template <join_strings_detail::CharOrStringLike Sep, std::ranges::forward_range Container>
-[[nodiscard]] auto JoinStringsCollection(const Sep &sep, const Container &strings) {
+[[nodiscard]] auto join_strings_collection(const Sep &sep, const Container &strings) {
     using StringType = std::ranges::range_value_t<Container>;
 
     static_assert(join_strings_detail::is_basic_string_v<StringType> ||
@@ -786,7 +833,7 @@ template <join_strings_detail::CharOrStringLike Sep, std::ranges::forward_range 
 }
 
 template <std::ranges::forward_range Container>
-[[nodiscard]] auto JoinStringsCollection(const Container &strings) {
+[[nodiscard]] auto join_strings_collection(const Container &strings) {
     using StringType = std::ranges::range_value_t<Container>;
 
     static_assert(join_strings_detail::is_basic_string_v<StringType> ||
@@ -841,7 +888,7 @@ namespace detail {
 }  // namespace detail
 
 template <class CharType>
-[[nodiscard]] inline bool IsWhitespace(const CharType c) noexcept {
+[[nodiscard]] inline bool is_whitespace(const CharType c) noexcept {
     if constexpr (std::is_same_v<CharType, char>) {
         return static_cast<bool>(std::isspace(static_cast<unsigned char>(c)));
     } else if constexpr (std::is_same_v<CharType, wchar_t>) {
@@ -855,7 +902,7 @@ template <class CharType>
 }
 
 template <class CharType>
-[[nodiscard]] inline bool IsAlpha(const CharType c) noexcept {
+[[nodiscard]] inline bool is_alpha(const CharType c) noexcept {
     if constexpr (std::is_same_v<CharType, char>) {
         return static_cast<bool>(std::isalpha(static_cast<unsigned char>(c)));
     } else {
@@ -866,7 +913,7 @@ template <class CharType>
 }
 
 template <class CharType>
-[[nodiscard]] inline bool IsAlphaDigit(const CharType c) noexcept {
+[[nodiscard]] inline bool is_alpha_digit(const CharType c) noexcept {
     if constexpr (std::is_same_v<CharType, char>) {
         return static_cast<bool>(std::isalnum(static_cast<unsigned char>(c)));
     } else {
@@ -877,7 +924,7 @@ template <class CharType>
 }
 
 template <class CharType>
-[[nodiscard]] inline bool IsDigit(const CharType c) noexcept {
+[[nodiscard]] inline bool is_digit(const CharType c) noexcept {
     if constexpr (std::is_same_v<CharType, char>) {
         return static_cast<bool>(std::isdigit(static_cast<unsigned char>(c)));
     } else {
@@ -888,7 +935,7 @@ template <class CharType>
 }
 
 template <class CharType>
-[[nodiscard]] inline bool IsHexDigit(const CharType c) noexcept {
+[[nodiscard]] inline bool is_hex_digit(const CharType c) noexcept {
     if constexpr (std::is_same_v<CharType, char>) {
         return static_cast<bool>(std::isxdigit(static_cast<unsigned char>(c)));
     } else {
@@ -901,7 +948,7 @@ template <class CharType>
 namespace detail {
 
 template <class CharType>
-[[nodiscard]] CharType ToLower(const CharType c) noexcept {
+[[nodiscard]] CharType to_lower(const CharType c) noexcept {
     if constexpr (std::is_same_v<CharType, char>) {
         return static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
     } else {
@@ -912,7 +959,7 @@ template <class CharType>
 }
 
 template <class CharType>
-[[nodiscard]] CharType ToUpper(const CharType c) noexcept {
+[[nodiscard]] CharType to_upper(const CharType c) noexcept {
     if constexpr (std::is_same_v<CharType, char>) {
         return static_cast<char>(std::toupper(static_cast<unsigned char>(c)));
     } else {
@@ -926,7 +973,7 @@ template <class CharType>
 template <class CharType, class Predicate>
 [[nodiscard]]
 ATTRIBUTE_ALWAYS_INLINE
-inline std::basic_string_view<CharType> TrimIf(std::basic_string_view<CharType> str ATTRIBUTE_LIFETIME_BOUND, Predicate pred) noexcept(std::is_nothrow_invocable_v<Predicate, CharType>) {
+inline std::basic_string_view<CharType> trim_if(std::basic_string_view<CharType> str ATTRIBUTE_LIFETIME_BOUND, Predicate pred) noexcept(std::is_nothrow_invocable_v<Predicate, CharType>) {
     // clang-format on
     static_assert(std::is_invocable_r_v<bool, Predicate, CharType>,
                   "predicate should accept CharType and return bool");
@@ -947,7 +994,7 @@ template <class CharType>
 constexpr std::basic_string_view<CharType> TrimChar(std::basic_string_view<CharType> str ATTRIBUTE_LIFETIME_BOUND,
                                                     const CharType trim_char) noexcept {
     // clang-format on
-    return detail::TrimIf(
+    return detail::trim_if(
         str, [trim_char](const CharType c) constexpr noexcept -> bool { return c == trim_char; });
 }
 
@@ -973,7 +1020,7 @@ std::basic_string_view<CharType> TrimCharsImpl(std::basic_string_view<CharType> 
         }
     }
 
-    return detail::TrimIf(
+    return detail::trim_if(
         str, [&trim_chars_map = std::as_const(trim_chars_map)](const CharType c) noexcept -> bool {
             const auto key = static_cast<UType>(c);
             if constexpr (kUseArrayMap) {
@@ -1069,27 +1116,27 @@ struct hex_digit_tag final : trim_tag {};
 
 template <class StrType, class TrimStrType = whitespace_tag>
 [[nodiscard]]
-ATTRIBUTE_ALWAYS_INLINE inline auto Trim(const StrType &str ATTRIBUTE_LIFETIME_BOUND,
+ATTRIBUTE_ALWAYS_INLINE inline auto trim(const StrType &str ATTRIBUTE_LIFETIME_BOUND,
                                          const TrimStrType &trim_chars = {}) noexcept {
     if constexpr (std::is_base_of_v<trim_tag, TrimStrType>) {
         using CharType = join_strings_detail::determine_char_t<StrType>;
         static_assert(join_strings_detail::is_char_v<CharType>,
-                      "string is expected in the Trim with tag");
+                      "string is expected in the trim with tag");
 
         const std::basic_string_view<CharType> str_sv{str};
 
         if constexpr (std::is_same_v<TrimStrType, whitespace_tag>) {
-            return detail::TrimIf(str_sv, [](const CharType c) constexpr noexcept {
-                return misc::IsWhitespace<CharType>(c);
+            return detail::trim_if(str_sv, [](const CharType c) constexpr noexcept {
+                return misc::is_whitespace<CharType>(c);
             });
         } else if constexpr (std::is_same_v<TrimStrType, alpha_tag>) {
-            return detail::TrimIf(str_sv, misc::IsAlpha<CharType>);
+            return detail::trim_if(str_sv, misc::is_alpha<CharType>);
         } else if constexpr (std::is_same_v<TrimStrType, digit_tag>) {
-            return detail::TrimIf(str_sv, misc::IsDigit<CharType>);
+            return detail::trim_if(str_sv, misc::is_digit<CharType>);
         } else if constexpr (std::is_same_v<TrimStrType, alpha_digit_tag>) {
-            return detail::TrimIf(str_sv, misc::IsAlphaDigit<CharType>);
+            return detail::trim_if(str_sv, misc::is_alpha_digit<CharType>);
         } else if constexpr (std::is_same_v<TrimStrType, hex_digit_tag>) {
-            return detail::TrimIf(str_sv, misc::IsHexDigit<CharType>);
+            return detail::trim_if(str_sv, misc::is_hex_digit<CharType>);
         } else {
             static_assert([]() constexpr { return false; }, "implementation error");
             return str;
@@ -1097,7 +1144,7 @@ ATTRIBUTE_ALWAYS_INLINE inline auto Trim(const StrType &str ATTRIBUTE_LIFETIME_B
     } else {
         using CharType = join_strings_detail::determine_char_t<StrType, TrimStrType>;
         static_assert(join_strings_detail::is_char_v<CharType>,
-                      "strings with the same char type are expected in the Trim");
+                      "strings with the same char type are expected in the trim");
 
         return detail::TrimChars(std::basic_string_view<CharType>{str},
                                  std::basic_string_view<CharType>{trim_chars});
@@ -1105,9 +1152,9 @@ ATTRIBUTE_ALWAYS_INLINE inline auto Trim(const StrType &str ATTRIBUTE_LIFETIME_B
 }
 
 template <class CharType>
-[[nodiscard]] inline bool IsWhitespace(const std::basic_string_view<CharType> str) noexcept {
+[[nodiscard]] inline bool is_whitespace(const std::basic_string_view<CharType> str) noexcept {
     for (const CharType c : str) {
-        if (!misc::IsWhitespace(c)) {
+        if (!misc::is_whitespace(c)) {
             return false;
         }
     }
@@ -1116,75 +1163,77 @@ template <class CharType>
 }
 
 template <class CharType>
-[[nodiscard]] inline bool IsWhitespace(const std::basic_string<CharType> &str) noexcept {
-    return misc::IsWhitespace(std::basic_string_view<CharType>{str});
-}
-
-template <class CharType>
-[[nodiscard]] inline bool IsWhitespace(const CharType *const str) noexcept {
-    return misc::IsWhitespace(std::basic_string_view<CharType>{str});
-}
-
-template <class CharType>
-ATTRIBUTE_SIZED_ACCESS(read_write, 1, 2)
-inline void ToLowerInplace(CharType *const str, const size_t n) noexcept {
-    for (size_t i = 0; i < n; i++) {
-        str[i] = detail::ToLower(str[i]);
-    }
-}
-
-template <class CharType>
-inline void ToLowerInplace(std::basic_string<CharType> &str) noexcept {
-    misc::ToLowerInplace(str.data(), str.size());
+[[nodiscard]] inline bool is_whitespace(const std::basic_string<CharType> &str) noexcept {
+    return misc::is_whitespace(std::basic_string_view<CharType>{str});
 }
 
 template <class CharType>
 [[nodiscard]]
-inline std::basic_string<CharType> ToLower(const std::basic_string_view<CharType> str) {
-    std::basic_string<CharType> ret{str};
-    misc::ToLowerInplace(ret);
-    return ret;
-}
-
-template <class CharType>
-[[nodiscard]] inline std::basic_string<CharType> ToLower(const std::basic_string<CharType> &str) {
-    return misc::ToLower(std::basic_string_view<CharType>{str});
-}
-
-template <class CharType>
-[[nodiscard]] inline std::basic_string<CharType> ToLower(const CharType *const str) {
-    return misc::ToLower(std::basic_string_view<CharType>{str});
+ATTRIBUTE_NONNULL_ALL_ARGS inline bool is_whitespace(const CharType *const str) noexcept {
+    return misc::is_whitespace(std::basic_string_view<CharType>{str});
 }
 
 template <class CharType>
 ATTRIBUTE_SIZED_ACCESS(read_write, 1, 2)
-inline void ToUpperInplace(CharType *const str, const size_t n) noexcept {
+inline void to_lower_inplace(CharType *const str, const size_t n) noexcept {
     for (size_t i = 0; i < n; i++) {
-        str[i] = detail::ToUpper(str[i]);
+        str[i] = detail::to_lower(str[i]);
     }
 }
 
 template <class CharType>
-inline void ToUpperInplace(std::basic_string<CharType> &str) noexcept {
-    misc::ToUpperInplace(str.data(), str.size());
+inline void to_lower_inplace(std::basic_string<CharType> &str) noexcept {
+    misc::to_lower_inplace(str.data(), str.size());
 }
 
 template <class CharType>
 [[nodiscard]]
-inline std::basic_string<CharType> ToUpper(const std::basic_string_view<CharType> str) {
+inline std::basic_string<CharType> to_lower(const std::basic_string_view<CharType> str) {
     std::basic_string<CharType> ret{str};
-    misc::ToUpperInplace(ret);
+    misc::to_lower_inplace(ret);
     return ret;
 }
 
 template <class CharType>
-[[nodiscard]] inline std::basic_string<CharType> ToUpper(const std::basic_string<CharType> &str) {
-    return misc::ToUpper(std::basic_string_view<CharType>{str});
+[[nodiscard]] inline std::basic_string<CharType> to_lower(const std::basic_string<CharType> &str) {
+    return misc::to_lower(std::basic_string_view<CharType>{str});
 }
 
 template <class CharType>
-[[nodiscard]] inline std::basic_string<CharType> ToUpper(const CharType *const str) {
-    return misc::ToUpper(std::basic_string_view<CharType>{str});
+[[nodiscard]] inline std::basic_string<CharType> to_lower(const CharType *const str) {
+    return misc::to_lower(std::basic_string_view<CharType>{str});
+}
+
+template <class CharType>
+ATTRIBUTE_SIZED_ACCESS(read_write, 1, 2)
+inline void to_upper_inplace(CharType *const str, const size_t n) noexcept {
+    for (size_t i = 0; i < n; i++) {
+        str[i] = detail::to_upper(str[i]);
+    }
+}
+
+template <class CharType>
+inline void to_upper_inplace(std::basic_string<CharType> &str) noexcept {
+    misc::to_upper_inplace(str.data(), str.size());
+}
+
+template <class CharType>
+[[nodiscard]]
+inline std::basic_string<CharType> to_upper(const std::basic_string_view<CharType> str) {
+    std::basic_string<CharType> ret{str};
+    misc::to_upper_inplace(ret);
+    return ret;
+}
+
+template <class CharType>
+[[nodiscard]] inline std::basic_string<CharType> to_upper(const std::basic_string<CharType> &str) {
+    return misc::to_upper(std::basic_string_view<CharType>{str});
+}
+
+template <class CharType>
+[[nodiscard]]
+ATTRIBUTE_NONNULL_ALL_ARGS inline std::basic_string<CharType> to_upper(const CharType *const str) {
+    return misc::to_upper(std::basic_string_view<CharType>{str});
 }
 
 }  // namespace misc

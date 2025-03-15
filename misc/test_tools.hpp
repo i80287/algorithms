@@ -29,11 +29,13 @@ namespace test_tools {
 
 namespace test_tools_detail {
 
-[[noreturn]] ATTRIBUTE_COLD inline void throw_impl(const char* const message,
-                                                   const char* const file_name,
-                                                   const std::uint32_t line,
-                                                   const char* const function_name) {
-    constexpr std::size_t kMaxErrorMessageSize = 1024 * sizeof(char);
+[[noreturn]]
+ATTRIBUTE_COLD ATTRIBUTE_NONNULL_ALL_ARGS inline void throw_impl(const char* const message,
+                                                                 const char* const file_name,
+                                                                 const std::uint32_t line,
+                                                                 const char* const function_name) {
+    static constexpr std::size_t kMaxErrorMessageSize = 1024 * sizeof(char);
+
     std::array<char, kMaxErrorMessageSize> buffer{};
     const int bytes_written =
         std::snprintf(buffer.data(), buffer.size(), "Check failed at %s:%u %s\nError message: %s\n",
@@ -55,12 +57,14 @@ namespace test_tools_detail {
     throw std::runtime_error(buffer.data());
 }
 
+ATTRIBUTE_NONNULL_ALL_ARGS
 inline void log_location_impl(const char* const file_name,
                               const std::uint32_t line,
                               const char* const function_name) noexcept {
     std::printf("%s:%u: %s\n", file_name, line, function_name);
 }
 
+ATTRIBUTE_NONNULL_ALL_ARGS
 inline void log_message_impl(const char* const file_name,
                              const std::uint32_t line,
                              const char* const function_name,
@@ -68,6 +72,7 @@ inline void log_message_impl(const char* const file_name,
     std::printf("%s:%u: %s:\n    %s\n", file_name, line, function_name, message);
 }
 
+ATTRIBUTE_NONNULL_ALL_ARGS
 inline void log_message_impl(const char* const file_name,
                              const std::uint32_t line,
                              const char* const function_name,
@@ -132,18 +137,24 @@ inline void log_tests_started_impl(const char* const function_name) noexcept {
 
 struct FilePtr final {
     using FileHandle = std::FILE*;
+
     FileHandle const file;  // NOLINT(misc-misplaced-const)
 
     // NOLINTNEXTLINE(google-explicit-constructor, hicpp-explicit-conversions)
-    [[nodiscard]] /* implicit */ constexpr operator FileHandle() noexcept {
+    [[nodiscard]]
+    ATTRIBUTE_RETURNS_NONNULL /* implicit */ constexpr operator FileHandle() const noexcept {
         return file;
     }
 
-    FilePtr(const char* const fname, const char* const mode) : file(DoFOpenOrThrow(fname, mode)) {}
+    ATTRIBUTE_NONNULL_ALL_ARGS
+    FilePtr(const char* RESTRICT_QUALIFIER const fname, const char* RESTRICT_QUALIFIER const mode)
+        : file(DoFOpenOrThrow(fname, mode)) {}
+
     FilePtr(const FilePtr&)            = delete;
     FilePtr(FilePtr&&)                 = delete;
     FilePtr& operator=(const FilePtr&) = delete;
     FilePtr& operator=(FilePtr&&)      = delete;
+
     ~FilePtr() {
         if (std::fclose(file) != 0) {
             std::perror("fclose");
@@ -153,8 +164,9 @@ struct FilePtr final {
 private:
     ATTRIBUTE_NODISCARD_WITH_MESSAGE("impl error")
     ATTRIBUTE_RETURNS_NONNULL
-    ATTRIBUTE_ALWAYS_INLINE
-    static FileHandle DoFOpenOrThrow(const char* const fname, const char* const mode) {
+    ATTRIBUTE_NONNULL_ALL_ARGS
+    static FileHandle DoFOpenOrThrow(const char* RESTRICT_QUALIFIER const fname,
+                                     const char* RESTRICT_QUALIFIER const mode) {
         // NOLINTNEXTLINE(misc-misplaced-const, cppcoreguidelines-owning-memory)
         FileHandle const file_handle = std::fopen(fname, mode);
         if (unlikely(file_handle == nullptr)) {
@@ -163,10 +175,13 @@ private:
 
         return file_handle;
     }
-    [[noreturn]] ATTRIBUTE_COLD static void ThrowOnFOpenFail(const char* const fname,
-                                                             const char* const mode) {
-        constexpr std::size_t kMaxErrorMessageSize = 1024 * sizeof(char);
-        const auto errno_value                     = errno;
+
+    [[noreturn]]
+    ATTRIBUTE_COLD ATTRIBUTE_NONNULL_ALL_ARGS static void ThrowOnFOpenFail(
+        const char* RESTRICT_QUALIFIER const fname, const char* RESTRICT_QUALIFIER const mode) {
+        static constexpr std::size_t kMaxErrorMessageSize = 1024 * sizeof(char);
+
+        const auto errno_value = errno;
         std::array<char, kMaxErrorMessageSize> buffer{};
         const int bytes_written = std::snprintf(
             buffer.data(), buffer.size(),
@@ -189,7 +204,7 @@ private:
             buffer[std::size(msg)] = '\0';
         }
 
-        throw std::runtime_error(buffer.data());
+        throw std::runtime_error{buffer.data()};
     }
 };
 

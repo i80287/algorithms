@@ -5,11 +5,13 @@
 #include <string_view>
 #include <vector>
 
+#include "../misc/config_macros.hpp"
+
 namespace str_tools {
 
 using std::size_t;
 
-#if CONFIG_HAS_AT_LEAST_CXX_20 && !defined(_GLIBCXX_DEBUG)
+#if CONFIG_HAS_AT_LEAST_CXX_20 && !defined(_GLIBCXX_DEBUG) && !defined(_GLIBCXX_ASSERTIONS)
 #define CONSTEXPR_VECTOR_CXX_20 constexpr
 #else
 #define CONSTEXPR_VECTOR_CXX_20 inline

@@ -650,7 +650,7 @@ public:
 
 protected:
     static constexpr void ComputeLinksForNodes(std::vector<Node>& nodes) {
-        nodes[kRootNodeIndex].suffix_link            = kFakePrerootNodeIndex;
+        nodes.at(kRootNodeIndex).suffix_link         = kFakePrerootNodeIndex;
         nodes[kRootNodeIndex].compressed_suffix_link = kRootNodeIndex;
         nodes[kFakePrerootNodeIndex].edges.fill(kRootNodeIndex);
         // std::vector is used instead of std::queue

@@ -78,13 +78,17 @@ constexpr bool verify() {
         if (levenshtein_distance(s2_rev_view, s1_rev_view) != ans) {
             return false;
         }
+
+        if (config::is_constant_evaluated()) {
+            break;
+        }
     }
 
     return true;
 }
 
 int main() {
-#if CONFIG_HAS_AT_LEAST_CXX_20 && !defined(_GLIBCXX_DEBUG)
+#if CONFIG_HAS_AT_LEAST_CXX_20 && !defined(_GLIBCXX_DEBUG) && !defined(_GLIBCXX_ASSERTIONS)
     static_assert(verify(), "");
 #endif
     assert(verify());
