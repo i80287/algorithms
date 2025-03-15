@@ -160,15 +160,10 @@ private:
                                  STR_LITERAL(CharType, " may exist")) ==
                STR_LITERAL(CharType, "path /dev/null may exist"));
 
-        constexpr const auto kOSSpecificRet =
-#ifdef _WIN32
-            STR_LITERAL(CharType, "path C:\\Windows may exist");
-#else
-            STR_LITERAL(CharType, "path C:/Windows may exist");
-#endif
         assert(misc::JoinStrings(STR_LITERAL(CharType, "path "),
                                  std::filesystem::path{"C:/Windows"},
-                                 STR_LITERAL(CharType, " may exist")) == kOSSpecificRet);
+                                 STR_LITERAL(CharType, " may exist")) ==
+               STR_LITERAL(CharType, "path C:/Windows may exist"));
 
 #endif
     }

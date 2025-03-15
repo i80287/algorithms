@@ -251,7 +251,7 @@ inline std::basic_string<CharType> FilesystemPathToString(const std::filesystem:
     // clang-format on
 
     static_assert(is_char_v<CharType>, "implementation error");
-    return path.template string<CharType>();
+    return path.template generic_string<CharType>();
 }
 
 #else
