@@ -17,18 +17,18 @@ public:
 
 private:
     struct Node {
-        int32_t* keys_            = nullptr;
-        uint32_t* child_indexes_  = nullptr;
-        size_t keys_size_         = 0;
+        int32_t* keys_ = nullptr;
+        uint32_t* child_indexes_ = nullptr;
+        size_t keys_size_ = 0;
         size_t next_in_row_index_ = 0;
 
         explicit Node(size_t keys_capacity) {
             assert(keys_capacity != 0);
-            keys_          = new int32_t[keys_capacity]();
+            keys_ = new int32_t[keys_capacity]();
             child_indexes_ = new uint32_t[keys_capacity + 1]();
         }
 
-        Node(const Node&)            = delete;
+        Node(const Node&) = delete;
         Node& operator=(const Node&) = delete;
 
         constexpr Node(Node&& other) noexcept
@@ -36,21 +36,21 @@ private:
             , child_indexes_(other.child_indexes_)
             , keys_size_(other.keys_size_)
             , next_in_row_index_(other.next_in_row_index_) {
-            other.keys_              = nullptr;
-            other.child_indexes_     = nullptr;
-            other.keys_size_         = 0;
+            other.keys_ = nullptr;
+            other.child_indexes_ = nullptr;
+            other.keys_size_ = 0;
             other.next_in_row_index_ = 0;
         }
 
         constexpr Node& operator=(Node&& other) noexcept {
             this->~Node();
-            keys_                    = other.keys_;
-            child_indexes_           = other.child_indexes_;
-            keys_size_               = other.keys_size_;
-            next_in_row_index_       = other.next_in_row_index_;
-            other.keys_              = nullptr;
-            other.child_indexes_     = nullptr;
-            other.keys_size_         = 0;
+            keys_ = other.keys_;
+            child_indexes_ = other.child_indexes_;
+            keys_size_ = other.keys_size_;
+            next_in_row_index_ = other.next_in_row_index_;
+            other.keys_ = nullptr;
+            other.child_indexes_ = nullptr;
+            other.keys_size_ = 0;
             other.next_in_row_index_ = 0;
             return *this;
         }
@@ -130,7 +130,7 @@ private:
             memcpy(&new_brother->keys_[0], &keys_[middle_key_index + 1],
                    new_node_size * sizeof(int32_t));
             new_brother->keys_size_ = new_node_size;
-            keys_size_              = middle_key_index;
+            keys_size_ = middle_key_index;
             memcpy(&new_brother->child_indexes_[0], &child_indexes_[middle_key_index + 1],
                    (new_node_size + 1) * sizeof(uint32_t));
 
@@ -144,7 +144,7 @@ private:
             }
 
             new_brother->next_in_row_index_ = next_in_row_index_;
-            next_in_row_index_              = new_brother_index;
+            next_in_row_index_ = new_brother_index;
 
             return jostile_key;
         }
@@ -159,7 +159,7 @@ private:
 public:
     std::vector<Node> nodes_;
     size_t keys_capacity_ = 0;
-    uint32_t root_index_  = 0;
+    uint32_t root_index_ = 0;
 };
 
 BTree::BTree(size_t t) {
@@ -173,8 +173,8 @@ void BTree::insert(int32_t key) {
     size_t pos;
     uint32_t current_node_index = root_index_;
     if (__builtin_expect(current_node_index == 0, 0)) {
-        root_index_                    = add_new_node();
-        nodes_[root_index_].keys_[0]   = key;
+        root_index_ = add_new_node();
+        nodes_[root_index_].keys_[0] = key;
         nodes_[root_index_].keys_size_ = 1;
         return;
     }
@@ -191,7 +191,7 @@ void BTree::insert(int32_t key) {
         uint32_t next_node_index = nodes_[current_node_index].child_indexes_[pos];
         if (next_node_index) {
             prev_node_index_stack[++prev_node_index_stack_index] = current_node_index;
-            current_node_index                                   = next_node_index;
+            current_node_index = next_node_index;
         } else {
             break;
         }
@@ -213,16 +213,16 @@ void BTree::insert(int32_t key) {
         child_index = jostle_node_index;
         if (__builtin_expect(prev_node_index_stack_index != size_t(-1), 1)) {
             current_node_index = prev_node_index_stack[prev_node_index_stack_index--];
-            pos                = nodes_[current_node_index].next_node_index(key);
+            pos = nodes_[current_node_index].next_node_index(key);
             continue;
         }
 
         assert(root_index_ == current_node_index);
-        uint32_t new_root_index           = add_new_node();
-        nodes_[new_root_index].keys_[0]   = key;
+        uint32_t new_root_index = add_new_node();
+        nodes_[new_root_index].keys_[0] = key;
         nodes_[new_root_index].keys_size_ = 1;
 
-        current_node      = &nodes_[current_node_index];
+        current_node = &nodes_[current_node_index];
         Node* jostle_node = &nodes_[jostle_node_index];
         assert(current_node->first_key() <= current_node->last_key());
         assert(jostle_node->first_key() <= jostle_node->last_key());

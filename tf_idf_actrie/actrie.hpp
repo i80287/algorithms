@@ -20,25 +20,25 @@ namespace actrie {
 using Symbol = unsigned char;
 
 inline constexpr Symbol kDefaultAlphabetStart = 'A';
-inline constexpr Symbol kDefaultAlphabetEnd   = 'z';
+inline constexpr Symbol kDefaultAlphabetEnd = 'z';
 
-template <Symbol AlphabetStart   = kDefaultAlphabetStart,
-          Symbol AlphabetEnd     = kDefaultAlphabetEnd,
+template <Symbol AlphabetStart = kDefaultAlphabetStart,
+          Symbol AlphabetEnd = kDefaultAlphabetEnd,
           bool IsCaseInsensetive = false>
 class ACTrie;
 
-template <Symbol AlphabetStart   = kDefaultAlphabetStart,
-          Symbol AlphabetEnd     = kDefaultAlphabetEnd,
+template <Symbol AlphabetStart = kDefaultAlphabetStart,
+          Symbol AlphabetEnd = kDefaultAlphabetEnd,
           bool IsCaseInsensetive = false>
 class ReplacingACTrie;
 
-template <Symbol AlphabetStart   = kDefaultAlphabetStart,
-          Symbol AlphabetEnd     = kDefaultAlphabetEnd,
+template <Symbol AlphabetStart = kDefaultAlphabetStart,
+          Symbol AlphabetEnd = kDefaultAlphabetEnd,
           bool IsCaseInsensetive = false>
 class ACTrieBuilder;
 
-template <Symbol AlphabetStart   = kDefaultAlphabetStart,
-          Symbol AlphabetEnd     = kDefaultAlphabetEnd,
+template <Symbol AlphabetStart = kDefaultAlphabetStart,
+          Symbol AlphabetEnd = kDefaultAlphabetEnd,
           bool IsCaseInsensetive = false>
 class ReplacingACTrieBuilder;
 
@@ -47,14 +47,14 @@ class [[nodiscard]] ACTrie {
 public:
     friend class ACTrieBuilder<AlphabetStart, AlphabetEnd, IsCaseInsensetive>;
 
-    using size_type          = std::size_t;
-    using StoredNodeIndex    = std::uint32_t;
-    using StoredPatternSize  = std::uint32_t;
+    using size_type = std::size_t;
+    using StoredNodeIndex = std::uint32_t;
+    using StoredPatternSize = std::uint32_t;
     using StoredPatternIndex = std::uint32_t;
 
 protected:
-    static constexpr Symbol kAlphabetStart     = AlphabetStart;
-    static constexpr Symbol kAlphabetEnd       = AlphabetEnd;
+    static constexpr Symbol kAlphabetStart = AlphabetStart;
+    static constexpr Symbol kAlphabetEnd = AlphabetEnd;
     static constexpr Symbol kIsCaseInsensetive = IsCaseInsensetive;
 
     static_assert('\0' < kAlphabetStart && kAlphabetStart < kAlphabetEnd &&
@@ -62,9 +62,9 @@ protected:
                   "Invalid alphabet boundaries");
     static constexpr Symbol kAlphabetLength = kAlphabetEnd - kAlphabetStart + 1;
 
-    static constexpr StoredNodeIndex kNullNodeIndex        = 0;
+    static constexpr StoredNodeIndex kNullNodeIndex = 0;
     static constexpr StoredNodeIndex kFakePrerootNodeIndex = kNullNodeIndex + 1;
-    static constexpr StoredNodeIndex kRootNodeIndex        = kFakePrerootNodeIndex + 1;
+    static constexpr StoredNodeIndex kRootNodeIndex = kFakePrerootNodeIndex + 1;
 
     using EdgesArray = std::array<StoredNodeIndex, kAlphabetLength>;
 
@@ -78,10 +78,10 @@ protected:
         static constexpr StoredPatternIndex kMissingWordIndex =
             std::numeric_limits<StoredPatternIndex>::max();
 
-        EdgesArray edges                       = CreateEdgesArray();
-        StoredNodeIndex suffix_link            = kNullNodeIndex;
+        EdgesArray edges = CreateEdgesArray();
+        StoredNodeIndex suffix_link = kNullNodeIndex;
         StoredNodeIndex compressed_suffix_link = kNullNodeIndex;
-        StoredPatternIndex pattern_index       = kMissingWordIndex;
+        StoredPatternIndex pattern_index = kMissingWordIndex;
 
         [[nodiscard]] constexpr StoredNodeIndex operator[](const size_type index) const noexcept {
             return edges[index];
@@ -132,7 +132,7 @@ public:
                     assert(pattern_index < patterns_lengths_.size());
                 }
 
-                const size_type pattern_size          = patterns_lengths_[pattern_index];
+                const size_type pattern_size = patterns_lengths_[pattern_index];
                 const size_type occurance_start_index = i + 1 - pattern_size;
 
                 find_callback(text.substr(occurance_start_index, pattern_size),
@@ -152,7 +152,7 @@ public:
                     assert(pattern_index < patterns_lengths_.size());
                 }
 
-                const size_type pattern_size          = patterns_lengths_[pattern_index];
+                const size_type pattern_size = patterns_lengths_[pattern_index];
                 const size_type occurance_start_index = i + 1 - pattern_size;
 
                 find_callback(text.substr(occurance_start_index, pattern_size),
@@ -178,8 +178,8 @@ public:
     }
 
     template <bool IsExactWordsMatching = true,
-              bool CountEmptyLines      = true,
-              Symbol LinesDelimeter     = '\n',
+              bool CountEmptyLines = true,
+              Symbol LinesDelimeter = '\n',
               typename QueryWordCallback,
               typename NewLineCallback>
         requires requires(QueryWordCallback func,
@@ -213,13 +213,13 @@ public:
         }
 
         StoredNodeIndex current_node_index = kRootNodeIndex;
-        size_type line_start_index         = 0;
-        size_type current_line             = 1;
-        size_type words_on_current_line    = 0;
-        size_type lines_count              = 0;
-        bool prev_symbol_in_alphabet       = false;
+        size_type line_start_index = 0;
+        size_type current_line = 1;
+        size_type words_on_current_line = 0;
+        size_type lines_count = 0;
+        bool prev_symbol_in_alphabet = false;
         for (size_type i = 0; i < text.size(); i++) {
-            const Symbol symbol          = CharToSymbol(text[i]);
+            const Symbol symbol = CharToSymbol(text[i]);
             const size_type symbol_index = SymbolToIndex(symbol);
             if (symbol_index >= kAlphabetLength) {
                 current_node_index = kRootNodeIndex;
@@ -231,7 +231,7 @@ public:
                         lines_count++;
                     }
                     current_line++;
-                    line_start_index      = i + 1;
+                    line_start_index = i + 1;
                     words_on_current_line = 0;
                 }
 
@@ -251,7 +251,7 @@ public:
                 }
 
                 if constexpr (IsExactWordsMatching) {
-                    const size_type pattern_size     = patterns_lengths_[pattern_index];
+                    const size_type pattern_size = patterns_lengths_[pattern_index];
                     const size_type word_begin_index = i + 1 - pattern_size;
                     const bool prev_symbol_and_next_symbol_not_in_the_alphabet =
                         (word_begin_index == 0 || !IsInAlphabet(text[word_begin_index - 1])) &&
@@ -279,7 +279,7 @@ public:
 
                 if constexpr (IsExactWordsMatching) {
                     const size_type pattern_size = patterns_lengths_[pattern_index];
-                    const size_type l            = i + 1 - pattern_size;
+                    const size_type l = i + 1 - pattern_size;
                     if ((l == 0 || !IsInAlphabet(text[l - 1])) &&
                         (i + 1 == text.size() || !IsInAlphabet(text[i + 1]))) {
                         find_callback(current_line, pattern_index);
@@ -380,9 +380,9 @@ private:
     friend class ReplacingACTrieBuilder<AlphabetStart, AlphabetEnd, IsCaseInsensetive>;
 
 public:
-    using size_type          = typename Base::size_type;
-    using StoredNodeIndex    = typename Base::StoredNodeIndex;
-    using StoredPatternSize  = typename Base::StoredPatternSize;
+    using size_type = typename Base::size_type;
+    using StoredNodeIndex = typename Base::StoredNodeIndex;
+    using StoredPatternSize = typename Base::StoredPatternSize;
     using StoredPatternIndex = typename Base::StoredPatternIndex;
 
     using Base::ContainsPattern;
@@ -427,8 +427,8 @@ public:
 
             current_node_index = this->nodes_[current_node_index][symbol_index];
             assert(current_node_index != Base::kNullNodeIndex);
-            const Node& current_node                     = Base::nodes_[current_node_index];
-            const bool current_node_is_terminal          = current_node.IsTerminal();
+            const Node& current_node = Base::nodes_[current_node_index];
+            const bool current_node_is_terminal = current_node.IsTerminal();
             const StoredNodeIndex compressed_suffix_link = current_node.compressed_suffix_link;
 
             const bool no_match =
@@ -445,8 +445,8 @@ public:
             const size_type r_index_including = static_cast<size_type>(iter - text.begin());
             assert(pattern_index < this->patterns_lengths_.size());
             const StoredPatternSize pattern_length = this->patterns_lengths_[pattern_index];
-            const size_type l_index_including      = r_index_including + 1 - pattern_length;
-            const std::string& replacement         = words_replacements_[pattern_index];
+            const size_type l_index_including = r_index_including + 1 - pattern_length;
+            const std::string& replacement = words_replacements_[pattern_index];
 
             const bool replace_inplace =
                 planned_replacements.empty() && pattern_length == replacement.size();
@@ -457,7 +457,7 @@ public:
             } else {
                 planned_replacements.push_back(ReplacementInfo{
                     .l_index_in_text = l_index_including,
-                    .pattern_index   = pattern_index,
+                    .pattern_index = pattern_index,
                 });
                 new_length += (replacement.size() - pattern_length);
             }
@@ -476,7 +476,7 @@ public:
         }
 
         size_type right_boundary = text.size();
-        size_type right_offset   = 0;
+        size_type right_offset = 0;
         if (new_length > text.size()) {
             text.resize(new_length);
         }
@@ -496,16 +496,16 @@ public:
             };
             return RevStruct{
                 .begin_iter = vec.rbegin(),
-                .end_iter   = vec.rend(),
+                .end_iter = vec.rend(),
             };
         };
         // std::ranges::reverse fails to call `begin(planned_replacements)` on clang 14.0.0
         for (const ReplacementInfo& info : reverse(planned_replacements)) {
-            const size_type pattern_index        = info.pattern_index;
+            const size_type pattern_index = info.pattern_index;
             const StoredPatternSize pattern_size = Base::patterns_lengths_[pattern_index];
-            const size_type l_index_in_text      = info.l_index_in_text;
-            const size_type r_index_in_text      = l_index_in_text + pattern_size;
-            size_type moved_part_length          = right_boundary - r_index_in_text;
+            const size_type l_index_in_text = info.l_index_in_text;
+            const size_type r_index_in_text = l_index_in_text + pattern_size;
+            size_type moved_part_length = right_boundary - r_index_in_text;
             char* dst_address = text.data() + (new_length - right_offset - moved_part_length);
             const char* const src_address = text.data() + r_index_in_text;
             if (dst_address != src_address) {
@@ -541,8 +541,8 @@ public:
 
             current_node_index = this->nodes_[current_node_index][symbol_index];
             assert(current_node_index != Base::kNullNodeIndex);
-            const Node& current_node                  = this->nodes_[current_node_index];
-            bool current_node_is_terminal             = current_node.IsTerminal();
+            const Node& current_node = this->nodes_[current_node_index];
+            bool current_node_is_terminal = current_node.IsTerminal();
             StoredPatternIndex compressed_suffix_link = current_node.compressed_suffix_link;
 
             const bool no_match =
@@ -575,8 +575,8 @@ private:
             static_cast<size_type>(occurance_last_position_iter - text.begin());
         assert(pattern_index < patterns_lengths.size());
         const StoredPatternSize pattern_size = patterns_lengths[pattern_index];
-        const size_type l_index_including    = r_index_including + 1 - pattern_size;
-        const std::string& replacement       = words_replacements[pattern_index];
+        const size_type l_index_including = r_index_including + 1 - pattern_size;
+        const std::string& replacement = words_replacements[pattern_index];
 
         if (replacement.size() != pattern_size) {
             text.resize(text.size() - pattern_size + replacement.size());
@@ -602,22 +602,22 @@ private:
 template <Symbol AlphabetStart, Symbol AlphabetEnd, bool IsCaseInsensetive>
 class [[nodiscard]] ACTrieBuilder {
 public:
-    using ACTrieType         = ACTrie<AlphabetStart, AlphabetEnd, IsCaseInsensetive>;
-    using size_type          = typename ACTrieType::size_type;
-    using StoredNodeIndex    = typename ACTrieType::StoredNodeIndex;
-    using StoredPatternSize  = typename ACTrieType::StoredPatternSize;
+    using ACTrieType = ACTrie<AlphabetStart, AlphabetEnd, IsCaseInsensetive>;
+    using size_type = typename ACTrieType::size_type;
+    using StoredNodeIndex = typename ACTrieType::StoredNodeIndex;
+    using StoredPatternSize = typename ACTrieType::StoredPatternSize;
     using StoredPatternIndex = typename ACTrieType::StoredPatternIndex;
 
 protected:
     using Node = typename ACTrieType::Node;
 
-    static constexpr auto kAlphabetStart        = ACTrieType::kAlphabetStart;
-    static constexpr auto kAlphabetEnd          = ACTrieType::kAlphabetEnd;
-    static constexpr auto kAlphabetLength       = ACTrieType::kAlphabetLength;
-    static constexpr auto kIsCaseInsensetive    = ACTrieType::kIsCaseInsensetive;
-    static constexpr auto kNullNodeIndex        = ACTrieType::kNullNodeIndex;
+    static constexpr auto kAlphabetStart = ACTrieType::kAlphabetStart;
+    static constexpr auto kAlphabetEnd = ACTrieType::kAlphabetEnd;
+    static constexpr auto kAlphabetLength = ACTrieType::kAlphabetLength;
+    static constexpr auto kIsCaseInsensetive = ACTrieType::kIsCaseInsensetive;
+    static constexpr auto kNullNodeIndex = ACTrieType::kNullNodeIndex;
     static constexpr auto kFakePrerootNodeIndex = ACTrieType::kFakePrerootNodeIndex;
-    static constexpr auto kRootNodeIndex        = ACTrieType::kRootNodeIndex;
+    static constexpr auto kRootNodeIndex = ACTrieType::kRootNodeIndex;
 
 public:
     constexpr ACTrieBuilder() : nodes_(), patterns_lengths_() {
@@ -650,14 +650,14 @@ public:
 
 protected:
     static constexpr void ComputeLinksForNodes(std::vector<Node>& nodes) {
-        nodes.at(kRootNodeIndex).suffix_link         = kFakePrerootNodeIndex;
+        nodes.at(kRootNodeIndex).suffix_link = kFakePrerootNodeIndex;
         nodes[kRootNodeIndex].compressed_suffix_link = kRootNodeIndex;
         nodes[kFakePrerootNodeIndex].edges.fill(kRootNodeIndex);
         // std::vector is used instead of std::queue
         //  in order to make the method constexpr.
         std::vector<size_type> bfs_queue(nodes.size());
-        size_type queue_head    = 0;
-        size_type queue_tail    = 0;
+        size_type queue_head = 0;
+        size_type queue_tail = 0;
         bfs_queue[queue_tail++] = kRootNodeIndex;
         do {
             const size_type node_index = bfs_queue[queue_head++];
@@ -673,7 +673,7 @@ private:
         Node& node = nodes[node_index];
         for (size_type symbol_index = 0; symbol_index < kAlphabetLength; symbol_index++) {
             const StoredNodeIndex child_link_v_index = nodes[node.suffix_link][symbol_index];
-            const size_type child_index              = node[symbol_index];
+            const size_type child_index = node[symbol_index];
             if (child_index != kNullNodeIndex) {
                 nodes[child_index].suffix_link = child_link_v_index;
                 const StoredNodeIndex child_comp_sl =
@@ -722,7 +722,7 @@ private:
 
             nodes.emplace_back();
             nodes[current_node_index][symbol_index] = static_cast<StoredNodeIndex>(new_node_index);
-            current_node_index                      = new_node_index++;
+            current_node_index = new_node_index++;
         }
 
         const StoredPatternIndex pattern_index =
@@ -745,10 +745,10 @@ private:
     using Node = typename Base::Node;
 
 public:
-    using ACTrieType         = ReplacingACTrie<AlphabetStart, AlphabetEnd, IsCaseInsensetive>;
-    using size_type          = typename Base::size_type;
-    using StoredNodeIndex    = typename Base::StoredNodeIndex;
-    using StoredPatternSize  = typename Base::StoredPatternSize;
+    using ACTrieType = ReplacingACTrie<AlphabetStart, AlphabetEnd, IsCaseInsensetive>;
+    using size_type = typename Base::size_type;
+    using StoredNodeIndex = typename Base::StoredNodeIndex;
+    using StoredPatternSize = typename Base::StoredPatternSize;
     using StoredPatternIndex = typename Base::StoredPatternIndex;
 
     static constexpr ReplacingACTrieBuilder WithCapacity(const size_type patterns_capacity) {

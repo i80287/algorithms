@@ -82,7 +82,7 @@ int TestHungarianAlgorithm() {
             {1, 0, 0, 0, 1, 1, 1, 0, 0, 1},
         },
     }};
-    constexpr std::array output       = {1U, 11U, 39U, 0U, 194U, 125U, 149U, 0U};
+    constexpr std::array output = {1U, 11U, 39U, 0U, 194U, 125U, 149U, 0U};
     constexpr std::size_t total_tests = std::size(output);
     static_assert(input.size() == total_tests);
 

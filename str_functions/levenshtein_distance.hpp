@@ -37,7 +37,7 @@ template <size_t ReplacementCost = 1, size_t DeletionCost = 1, size_t InsertionC
             const size_t total_cost_with_replacement =
                 dp1[j - 1] + size_t{replace_char} * ReplacementCost;
 
-            const size_t total_cost_with_deletion  = dp1[j] + DeletionCost;
+            const size_t total_cost_with_deletion = dp1[j] + DeletionCost;
             const size_t total_cost_with_insertion = dp2[j - 1] + InsertionCost;
 
             dp2[j] = std::min(total_cost_with_replacement,

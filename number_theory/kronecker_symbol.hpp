@@ -70,8 +70,8 @@ ATTRIBUTE_CONST constexpr std::int32_t kronecker_symbol_ui(Uint a, Uint n) noexc
         // step 2
         if (a % 2 == 0) {
             auto [a_odd_part, a_exp] = ::math_functions::extract_pow2(a);
-            a                        = a_odd_part;
-            r                        = n % 8;
+            a = a_odd_part;
+            r = n % 8;
             CONFIG_ASSUME_STATEMENT(r <= 7);
             switch (r) {
                 case 3:
@@ -103,8 +103,8 @@ template <typename Sint>
 #endif
 ATTRIBUTE_CONST constexpr std::int32_t kronecker_symbol_si(Sint a, Sint n) noexcept {
     const bool carry = n < 0 && a < 0;
-    using Uint       = typename int128_traits::make_unsigned_t<Sint>;
-    Uint n_u         = ::math_functions::uabs(n);
+    using Uint = typename int128_traits::make_unsigned_t<Sint>;
+    Uint n_u = ::math_functions::uabs(n);
 
     std::int32_t t = 1;
     if (n_u % 2 == 0) {
@@ -150,14 +150,14 @@ ATTRIBUTE_CONST constexpr std::int32_t kronecker_symbol_si(Sint a, Sint n) noexc
     CONFIG_ASSUME_STATEMENT(n_u > 0);
     // step 1
     Uint a_u = (static_cast<Uint>(a % static_cast<Sint>(n_u)) + n_u) % n_u;
-    Uint r   = 0;
+    Uint r = 0;
     // step 3
     while (a_u != 0) {
         // step 2
         if (a_u % 2 == 0) {
             auto [a_u_odd_part, a_u_exp] = ::math_functions::extract_pow2(a_u);
-            a_u                          = a_u_odd_part;
-            r                            = n_u % 8;
+            a_u = a_u_odd_part;
+            r = n_u % 8;
             CONFIG_ASSUME_STATEMENT(r <= 7);
             switch (r) {
                 case 3:
@@ -170,7 +170,7 @@ ATTRIBUTE_CONST constexpr std::int32_t kronecker_symbol_si(Sint a, Sint n) noexc
         }
 
         // step 4
-        r   = n_u;
+        r = n_u;
         n_u = a_u;
         a_u = r;
         if (a_u % 4 == 3 && n_u % 4 == 3) {
@@ -234,14 +234,14 @@ ATTRIBUTE_CONST constexpr int32_t kronecker_symbol_si_ui(Sint a, Uint n) noexcep
     // step 1
     //  a_u = a mod n
     Uint a_u = (a >= 0 ? static_cast<Uint>(a) : (n - (-static_cast<Uint>(a)) % n)) % n;
-    Uint r   = 0;
+    Uint r = 0;
     // step 3
     while (a_u != 0) {
         // step 2
         if (a_u % 2 == 0) {
             auto [a_u_odd_part, a_u_exp] = ::math_functions::extract_pow2(a_u);
-            a_u                          = a_u_odd_part;
-            r                            = n % 8;
+            a_u = a_u_odd_part;
+            r = n % 8;
             switch (r) {
                 case 3:
                 case 5:
@@ -253,8 +253,8 @@ ATTRIBUTE_CONST constexpr int32_t kronecker_symbol_si_ui(Sint a, Uint n) noexcep
         }
 
         // step 4
-        r   = n;
-        n   = a_u;
+        r = n;
+        n = a_u;
         a_u = r;
         if (a_u % 4 == 3 && n % 4 == 3) {
             t = -t;

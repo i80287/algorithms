@@ -14,7 +14,7 @@
 
 namespace fft {
 
-using f64     = double;
+using f64 = double;
 using complex = std::complex<f64>;
 
 /// @brief Multiply polinomials @a p1 and @a p2 of size @a n
@@ -66,10 +66,10 @@ private:
 
         // Unrolled loop for step = 1
         for (std::size_t block_start = 0; block_start < k; block_start += 2) {
-            const complex p0_i     = p[block_start];
+            const complex p0_i = p[block_start];
             const complex w_j_p1_i = p[block_start + 1];
-            p[block_start]         = p0_i + w_j_p1_i;
-            p[block_start + 1]     = p0_i - w_j_p1_i;
+            p[block_start] = p0_i + w_j_p1_i;
+            p[block_start + 1] = p0_i - w_j_p1_i;
         }
 
         for (std::size_t step = 2; step < k; step *= 2) {
@@ -84,7 +84,7 @@ private:
                     } else {
                         w_j_p1_i = points[point_index] * p[pos_in_block + step];
                     }
-                    p[pos_in_block]        = p0_i + w_j_p1_i;
+                    p[pos_in_block] = p0_i + w_j_p1_i;
                     p[pos_in_block + step] = p0_i - w_j_p1_i;
                 }
 
@@ -179,9 +179,9 @@ inline void forward_backward_fft(complex* p1, complex* p2, const std::size_t n) 
     constexpr complex one_over_four_i(f64{0}, f64{-0.25});  // 1 / (4 * i) == -i / 4
     for (std::size_t j = 0; j < n; j++) {
         const std::size_t n_j = (n - j) & (n - 1);  // <=> mod n because n is power of two
-        const complex p_w_j   = p1[j];
+        const complex p_w_j = p1[j];
         const complex p_w_n_j = std::conj(p1[n_j]);
-        p2[j]                 = (p_w_j + p_w_n_j) * (p_w_j - p_w_n_j) * one_over_four_i;
+        p2[j] = (p_w_j + p_w_n_j) * (p_w_j - p_w_n_j) * one_over_four_i;
     }
     fft::detail::private_impl::forward_or_backward_fft</*IsBackwardFFT = */ true>(p2, n);
 }

@@ -47,7 +47,7 @@ public:
     Node* root_ = nullptr;
 
 private:
-    Node* nodes_            = nullptr;
+    Node* nodes_ = nullptr;
     size_t allocator_index_ = 0;
 
     void LeftRotateImpl(Node* node) noexcept {
@@ -64,7 +64,7 @@ private:
         }
 
         Node* parent_parent_node = parent_node->parent;
-        node->parent             = parent_parent_node;
+        node->parent = parent_parent_node;
         if (parent_parent_node != nullptr) {
             if (parent_parent_node->left == parent_node) {
                 parent_parent_node->left = node;
@@ -76,7 +76,7 @@ private:
             assert(parent_node == root_);
         }
 
-        node->left          = parent_node;
+        node->left = parent_node;
         parent_node->parent = node;
 
         if (parent_node == root_) {
@@ -104,7 +104,7 @@ private:
         }
 
         Node* parent_parent_node = parent_node->parent;
-        node->parent             = parent_parent_node;
+        node->parent = parent_parent_node;
         if (parent_parent_node != nullptr) {
             if (parent_parent_node->left == parent_node) {
                 parent_parent_node->left = node;
@@ -116,7 +116,7 @@ private:
             assert(parent_node == root_);
         }
 
-        node->right         = parent_node;
+        node->right = parent_node;
         parent_node->parent = node;
 
         if (parent_node == root_) {
@@ -184,7 +184,7 @@ private:
 
     constexpr Node* AddNewNode(int key) noexcept {
         Node* new_node = &nodes_[allocator_index_++];
-        new_node->key  = key;
+        new_node->key = key;
         return new_node;
     }
 };
@@ -220,7 +220,7 @@ void SplayTree::insert(int32_t key) {
         current_node = next_node;
     }
 
-    Node* new_node   = AddNewNode(key);
+    Node* new_node = AddNewNode(key);
     new_node->parent = current_node;
     if (current_node->key < key) {
         current_node->right = new_node;

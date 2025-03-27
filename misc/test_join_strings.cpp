@@ -73,10 +73,10 @@ private:
     static void test_misc() {
         test_tools::log_tests_started();
 
-        const std::basic_string s1      = STR_LITERAL(CharType, "ab");
+        const std::basic_string s1 = STR_LITERAL(CharType, "ab");
         const std::basic_string_view s2 = STR_LITERAL(CharType, "cde");
-        const auto s3                   = STR_LITERAL(CharType, "fghi");
-        const auto* const s4            = STR_LITERAL(CharType, "jklmn");
+        const auto s3 = STR_LITERAL(CharType, "fghi");
+        const auto* const s4 = STR_LITERAL(CharType, "jklmn");
 
         assert(misc::join_strings(s1) == s1);
         assert(misc::join_strings(s2) == s2);
@@ -186,7 +186,7 @@ enum class E1 : std::uint8_t {
 };
 
 enum struct Condition : bool {
-    kNo  = false,
+    kNo = false,
     kYes = true,
 };
 
@@ -339,7 +339,7 @@ public:
     }
 
 private:
-    static constexpr CharType kCharSep                          = STR_LITERAL(CharType, '~');
+    static constexpr CharType kCharSep = STR_LITERAL(CharType, '~');
     static constexpr std::basic_string_view<CharType> kEmptySep = STR_LITERAL(CharType, "");
     static_assert(kEmptySep.empty());
     static constexpr const CharType* kNonEmptySep = STR_LITERAL(CharType, " sep ");

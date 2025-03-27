@@ -17,7 +17,7 @@
 #if (defined(__clang__) || defined(__GNUC__)) && defined(__SIZEOF_INT128__)
 
 using uint128_t = __uint128_t;
-using int128_t  = __int128_t;
+using int128_t = __int128_t;
 
 #define HAS_INT128_TYPEDEF
 
@@ -25,7 +25,7 @@ using int128_t  = __int128_t;
 
 #include <__msvc_int128.hpp>
 using uint128_t = std::_Unsigned128;
-using int128_t  = std::_Signed128;
+using int128_t = std::_Signed128;
 
 #define HAS_INT128_TYPEDEF
 
@@ -133,8 +133,8 @@ I128_CONSTEXPR char* uint128_t_format_fill_chars_buffer(uint128_t number,
 
     if (number >= kBase1) {
         const auto remainder_index = static_cast<std::size_t>(number) * 2;
-        *--buffer_ptr              = static_cast<char>(remainders[remainder_index + 1]);
-        *--buffer_ptr              = static_cast<char>(remainders[remainder_index]);
+        *--buffer_ptr = static_cast<char>(remainders[remainder_index + 1]);
+        *--buffer_ptr = static_cast<char>(remainders[remainder_index]);
     } else {
         *--buffer_ptr = static_cast<char>('0' + number);
     }
@@ -277,7 +277,7 @@ inline std::ostream& operator<<(std::ostream& out, uint128_t number) {
 
     char digits[buffer_size];
     digits[buffer_size - 1] = '\0';
-    const char* ptr         = ::format_impl_uint128_t::uint128_t_format_fill_chars_buffer(
+    const char* ptr = ::format_impl_uint128_t::uint128_t_format_fill_chars_buffer(
         number, &digits[buffer_size - 1]);
     const auto length = static_cast<std::size_t>(&digits[buffer_size - 1] - ptr);
     return out << std::string_view(ptr, length);
@@ -313,7 +313,7 @@ inline int fprint_u128(uint128_t number, std::FILE* filestream) noexcept {
     constexpr auto buffer_size = ::format_impl_uint128_t::kMaxStringLengthU128 + 1;
     char digits[buffer_size];
     digits[buffer_size - 1] = '\0';
-    const char* ptr         = ::format_impl_uint128_t::uint128_t_format_fill_chars_buffer(
+    const char* ptr = ::format_impl_uint128_t::uint128_t_format_fill_chars_buffer(
         number, &digits[buffer_size - 1]);
     return std::fputs(ptr, filestream);
 }
@@ -329,7 +329,7 @@ inline int fprint_u128_newline(uint128_t number, std::FILE* filestream) noexcept
     char digits[buffer_size];
     digits[buffer_size - 2] = '\n';
     digits[buffer_size - 1] = '\0';
-    const char* ptr         = ::format_impl_uint128_t::uint128_t_format_fill_chars_buffer(
+    const char* ptr = ::format_impl_uint128_t::uint128_t_format_fill_chars_buffer(
         number, &digits[buffer_size - 2]);
     return std::fputs(ptr, filestream);
 }
@@ -361,7 +361,7 @@ inline int print_u128_newline(uint128_t number) noexcept {
     digits[buffer_size - 1] = '\0';
 
     // NOLINTNEXTLINE(hicpp-signed-bitwise)
-    const uint128_t t          = static_cast<uint128_t>(number >> 127U);
+    const uint128_t t = static_cast<uint128_t>(number >> 127U);
     const uint128_t number_abs = (static_cast<uint128_t>(number) ^ t) - t;
 
     char* ptr = ::format_impl_uint128_t::uint128_t_format_fill_chars_buffer(

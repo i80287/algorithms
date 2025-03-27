@@ -466,7 +466,7 @@ CONSTEXPR_IF_AT_LEAST_CXX_20 bool test_transpose_64x64() noexcept {
         constexpr uint64_t A = std::minstd_rand0::multiplier;
         constexpr uint64_t C = std::minstd_rand0::increment;
         constexpr uint64_t M = std::minstd_rand0::modulus;
-        random_state         = (A * random_state + C) % M;
+        random_state = (A * random_state + C) % M;
         return random_state;
     };
 
@@ -477,8 +477,8 @@ CONSTEXPR_IF_AT_LEAST_CXX_20 bool test_transpose_64x64() noexcept {
         for (std::size_t iter = 1U << 20U; iter > 0; iter--) {
             for (std::size_t i = 0; i < 32; i++) {
                 const uint64_t w = random_gen();
-                a[i * 2]         = static_cast<uint32_t>(w);
-                a[i * 2 + 1]     = static_cast<uint32_t>(w >> 32U);
+                a[i * 2] = static_cast<uint32_t>(w);
+                a[i * 2 + 1] = static_cast<uint32_t>(w >> 32U);
             }
             std::copy(&a[0], &a[64], &src[0]);
             transpose64(a);

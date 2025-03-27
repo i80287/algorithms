@@ -18,15 +18,15 @@ void test_fib_u64() noexcept {
     static_assert(math_functions::nth_fibonacci_num(0) == 1);
     static_assert(math_functions::nth_fibonacci_num(1) == 1);
     uint64_t prev_prev_fib = 1;
-    uint64_t prev_fib      = 1;
+    uint64_t prev_fib = 1;
     for (uint32_t n = 2; n < k; n++) {
         const uint64_t current_fib = prev_prev_fib + prev_fib;
-        const auto [f_n_1, f_n]    = math_functions::fibonacci_nums(n);
+        const auto [f_n_1, f_n] = math_functions::fibonacci_nums(n);
         assert(f_n_1 == prev_fib);
         assert(f_n == current_fib);
         assert(f_n == math_functions::nth_fibonacci_num(n));
         prev_prev_fib = prev_fib;
-        prev_fib      = current_fib;
+        prev_fib = current_fib;
     }
 }
 
@@ -40,15 +40,15 @@ void test_fib_u128() noexcept {
     assert(math_functions::nth_fibonacci_num_u128(0) == 1);
     assert(math_functions::nth_fibonacci_num_u128(1) == 1);
     uint128_t prev_prev_fib = 1;
-    uint128_t prev_fib      = 1;
+    uint128_t prev_fib = 1;
     for (uint32_t n = 2; n < k; n++) {
         const uint128_t current_fib = prev_prev_fib + prev_fib;
-        const auto [f_n_1, f_n]     = math_functions::fibonacci_nums_u128(n);
+        const auto [f_n_1, f_n] = math_functions::fibonacci_nums_u128(n);
         assert(f_n_1 == prev_fib);
         assert(f_n == current_fib);
         assert(f_n == math_functions::nth_fibonacci_num_u128(n));
         prev_prev_fib = prev_fib;
-        prev_fib      = current_fib;
+        prev_fib = current_fib;
     }
 }
 

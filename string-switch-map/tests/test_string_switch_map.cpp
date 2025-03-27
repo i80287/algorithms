@@ -220,10 +220,10 @@ inline constexpr std::array kStrings{
 // clang-format on
 
 constexpr uint64_t operator-(const timespec& t2, const timespec& t1) noexcept {
-    const uint64_t sec_passed                = static_cast<uint64_t>(t2.tv_sec - t1.tv_sec);
+    const uint64_t sec_passed = static_cast<uint64_t>(t2.tv_sec - t1.tv_sec);
     constexpr uint64_t kNanoSecondsPerSecond = 1'000'000'000;
-    uint64_t nanoseconds_passed              = sec_passed * kNanoSecondsPerSecond;
-    using unsigned_nanoseconds_t             = std::make_unsigned_t<decltype(timespec::tv_nsec)>;
+    uint64_t nanoseconds_passed = sec_passed * kNanoSecondsPerSecond;
+    using unsigned_nanoseconds_t = std::make_unsigned_t<decltype(timespec::tv_nsec)>;
     nanoseconds_passed += static_cast<unsigned_nanoseconds_t>(t2.tv_nsec);
     nanoseconds_passed -= static_cast<unsigned_nanoseconds_t>(t1.tv_nsec);
     return nanoseconds_passed;

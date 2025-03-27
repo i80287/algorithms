@@ -150,10 +150,10 @@ struct FilePtr final {
     FilePtr(const char* RESTRICT_QUALIFIER const fname, const char* RESTRICT_QUALIFIER const mode)
         : file(DoFOpenOrThrow(fname, mode)) {}
 
-    FilePtr(const FilePtr&)            = delete;
-    FilePtr(FilePtr&&)                 = delete;
+    FilePtr(const FilePtr&) = delete;
+    FilePtr(FilePtr&&) = delete;
     FilePtr& operator=(const FilePtr&) = delete;
-    FilePtr& operator=(FilePtr&&)      = delete;
+    FilePtr& operator=(FilePtr&&) = delete;
 
     ~FilePtr() {
         if (std::fclose(file) != 0) {

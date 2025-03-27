@@ -37,7 +37,7 @@ static inline void memset_int_avx(int32_t* dst,
                                   size_t size) CONFIG_NOEXCEPT_FUNCTION {
     uint32_t* aligned_4_address = (uint32_t*)dst;
     __m256i* aligned_32_address = (__m256i*)(((uintptr_t)aligned_4_address + 31) & ~(uintptr_t)31);
-    const uint32_t uvalue_32    = (uint32_t)value;
+    const uint32_t uvalue_32 = (uint32_t)value;
     uintptr_t offset =
         ((uintptr_t)aligned_32_address - (uintptr_t)aligned_4_address) / sizeof(uint32_t);
     if (unlikely(offset > size)) {
@@ -55,7 +55,7 @@ static inline void memset_int_avx(int32_t* dst,
     }
 
     uint64_t* aligned_8_address = (uint64_t*)aligned_32_address;
-    const uint64_t uvalue_64    = ((uint64_t)uvalue_32 << 32) | uvalue_32;
+    const uint64_t uvalue_64 = ((uint64_t)uvalue_32 << 32) | uvalue_32;
     switch (size / 2) {
         case 3:
             *aligned_8_address = uvalue_64;
@@ -76,7 +76,7 @@ static inline void memset_int_avx(int32_t* dst,
             break;
     }
     if (size % 2) {
-        aligned_4_address  = (uint32_t*)aligned_8_address;
+        aligned_4_address = (uint32_t*)aligned_8_address;
         *aligned_4_address = uvalue_32;
     }
 }

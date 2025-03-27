@@ -622,7 +622,7 @@ concept CharOrStringLike = Char<T> || is_basic_string_v<T> || is_basic_string_vi
 
 template <class StringType,
           bool has_value_type = is_basic_string_v<StringType> || is_basic_string_view_v<StringType>,
-          bool is_c_str       = is_c_str_v<StringType> || is_c_str_arr_v<StringType>>
+          bool is_c_str = is_c_str_v<StringType> || is_c_str_arr_v<StringType>>
 struct string_char_selector {
     using type = void;
 };
@@ -651,10 +651,10 @@ inline constexpr size_t kSizeOnOverflow = std::numeric_limits<size_t>::max();
 template <std::ranges::forward_range Container>
 [[nodiscard]] size_t StringsTotalSizeImpl(const Container &strings) noexcept {
     size_t total_size = 0;
-    bool overflow     = false;
+    bool overflow = false;
     for (const auto &elem : strings) {
         const size_t elem_size = elem.size();
-        const size_t new_size  = total_size + elem_size;
+        const size_t new_size = total_size + elem_size;
         overflow |= total_size > new_size || elem_size > new_size;
         total_size = new_size;
     }
@@ -665,7 +665,7 @@ template <std::ranges::forward_range Container>
 template <std::ranges::forward_range Container>
 [[nodiscard]] size_t StringsTotalSize(const Container &strings) {
     const size_t strings_total_size = join_strings_detail::StringsTotalSizeImpl(strings);
-    const bool total_size_overflow  = strings_total_size == kSizeOnOverflow;
+    const bool total_size_overflow = strings_total_size == kSizeOnOverflow;
 
     if (unlikely(total_size_overflow)) {
         ThrowOnStringsTotalSizeOverflow();
@@ -676,9 +676,9 @@ template <std::ranges::forward_range Container>
 
 template <std::ranges::forward_range Container>
 [[nodiscard]] size_t StringsTotalSizeWithCharSep(const Container &strings) {
-    const size_t strings_total_size   = join_strings_detail::StringsTotalSizeImpl(strings);
-    const size_t seps_total_size      = strings.size();
-    const bool strings_size_overflow  = strings_total_size == kSizeOnOverflow;
+    const size_t strings_total_size = join_strings_detail::StringsTotalSizeImpl(strings);
+    const size_t seps_total_size = strings.size();
+    const bool strings_size_overflow = strings_total_size == kSizeOnOverflow;
     const size_t total_size_with_seps = strings_total_size + seps_total_size;
     const bool total_size_overflow =
         strings_total_size > total_size_with_seps || seps_total_size > total_size_with_seps;
@@ -699,8 +699,8 @@ template <join_strings_detail::Char T, std::ranges::forward_range Container>
     // clang-format on
 
     const size_t strings_total_size = join_strings_detail::StringsTotalSizeImpl(strings);
-    const size_t container_size     = strings.size();
-    const size_t sep_size           = sep.size();
+    const size_t container_size = strings.size();
+    const size_t sep_size = sep.size();
     CONFIG_ASSUME_STATEMENT(sep_size >= 2);
     const size_t seps_total_size =
         container_size == 0 ? size_t{0} : sep_size * (container_size - 1);
@@ -761,7 +761,7 @@ template <join_strings_detail::Char T, std::ranges::forward_range Container>
     const size_t total_size = join_strings_detail::StringsTotalSizeWithAtLeast2SvSep(sep, strings);
     std::basic_string<T> result(total_size, '\0');
 
-    auto iter           = std::begin(strings);
+    auto iter = std::begin(strings);
     const auto end_iter = std::end(strings);
     if (unlikely(iter == end_iter)) {
         return result;
@@ -1004,9 +1004,9 @@ template <class CharType>
 std::basic_string_view<CharType> TrimCharsImpl(std::basic_string_view<CharType> str ATTRIBUTE_LIFETIME_BOUND,
                                                const std::basic_string_view<CharType> trim_chars) noexcept {
     // clang-format on
-    using UType                            = std::make_unsigned_t<CharType>;
+    using UType = std::make_unsigned_t<CharType>;
     static constexpr size_t kMaxUTypeValue = static_cast<size_t>(std::numeric_limits<UType>::max());
-    static constexpr bool kUseArrayMap     = kMaxUTypeValue <= std::numeric_limits<uint16_t>::max();
+    static constexpr bool kUseArrayMap = kMaxUTypeValue <= std::numeric_limits<uint16_t>::max();
 
     using MapType = std::conditional_t<kUseArrayMap, std::array<bool, kMaxUTypeValue + 1>,
                                        std::unordered_set<UType>>;

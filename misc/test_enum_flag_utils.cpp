@@ -5,20 +5,20 @@
 namespace some {
 
 enum CStyleEnum {
-    zero  = 0,
-    one   = 1 << 0,
-    two   = 1 << 1,
-    four  = 1 << 2,
+    zero = 0,
+    one = 1 << 0,
+    two = 1 << 1,
+    four = 1 << 2,
     eight = 1 << 3,
 };
 
 GENERATE_ENUM_FLAG_BIT_OPERATIONS(CStyleEnum)
 
 enum struct EnumClass1 : uint32_t {
-    zero  = 0,
-    one   = 1 << 0,
-    two   = 1 << 1,
-    four  = 1 << 2,
+    zero = 0,
+    one = 1 << 0,
+    two = 1 << 1,
+    four = 1 << 2,
     eight = 1 << 3,
 };
 
@@ -27,10 +27,10 @@ GENERATE_ENUM_FLAG_BIT_OPERATIONS(EnumClass1)
 }  // namespace some
 
 enum class EnumClass2 {
-    zero  = 0,
-    one   = 1 << 0,
-    two   = 1 << 1,
-    four  = 1 << 2,
+    zero = 0,
+    one = 1 << 0,
+    two = 1 << 1,
+    four = 1 << 2,
     eight = 1 << 3,
 };
 

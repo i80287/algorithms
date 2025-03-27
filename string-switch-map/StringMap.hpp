@@ -149,18 +149,18 @@ template <strmapdetail::CompileTimeStringLiteral FirstString,
 [[nodiscard]] STRING_MAP_CONSTEVAL MinMaxCharsType FindMinMaxChars() noexcept {
     static_assert(FirstString.size() > 0, "Empty string was passed in StringMatch / StringMap");
 
-    std::uint32_t min_char    = FirstString[0];
-    std::uint32_t max_char    = FirstString[0];
+    std::uint32_t min_char = FirstString[0];
+    std::uint32_t max_char = FirstString[0];
     constexpr std::size_t len = FirstString.size();
     for (std::size_t i = 1; i < len; i++) {
         const std::uint32_t chr = static_cast<std::uint8_t>(FirstString[i]);
-        min_char                = std::min(min_char, chr);
-        max_char                = std::max(max_char, chr);
+        min_char = std::min(min_char, chr);
+        max_char = std::max(max_char, chr);
     }
     if constexpr (sizeof...(Strings) > 0) {
         constexpr MinMaxCharsType mn_mx_chars = FindMinMaxChars<Strings...>();
-        min_char                              = std::min(min_char, mn_mx_chars.min_char);
-        max_char                              = std::max(max_char, mn_mx_chars.max_char);
+        min_char = std::min(min_char, mn_mx_chars.min_char);
+        max_char = std::max(max_char, mn_mx_chars.max_char);
     }
 
     return {
@@ -178,12 +178,12 @@ struct [[nodiscard]] CountingNode final {
 
 template <std::size_t AlphabetSize>
 struct [[nodiscard]] CountingVector final {
-    using value_type      = CountingNode<AlphabetSize>;
-    using reference       = value_type&;
+    using value_type = CountingNode<AlphabetSize>;
+    using reference = value_type&;
     using const_reference = const value_type&;
-    using pointer         = value_type*;
-    using const_pointer   = const value_type*;
-    using size_type       = std::size_t;
+    using pointer = value_type*;
+    using const_pointer = const value_type*;
+    using size_type = std::size_t;
 
     struct CountingVectorAllocatorImpl final {
         [[nodiscard]] constexpr pointer allocate(size_type size) const {
@@ -257,7 +257,7 @@ struct [[nodiscard]] CountingVector final {
     }
     constexpr void growth_storage() {
         const size_type new_capacity = std::max(capacity_ * 2, kMinCapacity);
-        pointer new_data             = allocator_type{}.allocate(new_capacity);
+        pointer new_data = allocator_type{}.allocate(new_capacity);
 #if defined(__cpp_lib_constexpr_algorithms) && __cpp_lib_constexpr_algorithms >= 201806L
         std::move(data_, data_ + size_, new_data);
 #else
@@ -267,7 +267,7 @@ struct [[nodiscard]] CountingVector final {
         }
 #endif
         allocator_type{}.deallocate(data_, capacity_);
-        data_     = new_data;
+        data_ = new_data;
         capacity_ = new_capacity;
     }
 
@@ -288,15 +288,15 @@ template <trie_tools::TrieParamsType TrieParams,
 CountNodesSizeAndMaxHeightImpl(CountingVector<TrieParams.trie_alphabet_size>& nodes,
                                std::size_t max_seen_height) {
     std::size_t current_node_index = 0;
-    constexpr std::size_t len      = FirstString.size();
+    constexpr std::size_t len = FirstString.size();
     for (std::size_t i = 0; i < len; i++) {
-        const std::size_t index     = TrieParams.CharToNodeIndex(FirstString[i]);
+        const std::size_t index = TrieParams.CharToNodeIndex(FirstString[i]);
         std::size_t next_node_index = nodes[current_node_index].edges[index];
         if (next_node_index == 0) {
             const std::size_t new_node_index = nodes.size();
             nodes.emplace_back();
             nodes[current_node_index].edges[index] = static_cast<std::uint32_t>(new_node_index);
-            next_node_index                        = new_node_index;
+            next_node_index = new_node_index;
         }
         current_node_index = next_node_index;
     }
@@ -321,7 +321,7 @@ CountNodesSizeAndMaxHeight() {
 
 template <strmapdetail::CompileTimeStringLiteral... Strings>
 [[nodiscard]] STRING_MAP_CONSTEVAL TrieParamsType TrieParams() {
-    constexpr MinMaxCharsType kMinMaxChars    = FindMinMaxChars<Strings...>();
+    constexpr MinMaxCharsType kMinMaxChars = FindMinMaxChars<Strings...>();
     constexpr TrieParamsType kTrieParamsProto = {
         .min_char = kMinMaxChars.min_char,
         .max_char = kMinMaxChars.max_char,
@@ -329,9 +329,9 @@ template <strmapdetail::CompileTimeStringLiteral... Strings>
     const auto [nodes_size, max_tree_height] =
         CountNodesSizeAndMaxHeight<kTrieParamsProto, Strings...>();
     return {
-        .min_char        = kTrieParamsProto.min_char,
-        .max_char        = kTrieParamsProto.max_char,
-        .nodes_size      = nodes_size,
+        .min_char = kTrieParamsProto.min_char,
+        .max_char = kTrieParamsProto.max_char,
+        .nodes_size = nodes_size,
         .max_tree_height = max_tree_height,
     };
 }
@@ -367,10 +367,10 @@ class [[nodiscard]] StringMapImplManyStrings final {
     template <bool InCompileTime, bool ForceUnsignedChar = false>
     struct [[nodiscard]] InternalIterator final {
         using iterator_category = std::random_access_iterator_tag;
-        using difference_type   = std::ptrdiff_t;
-        using value_type        = std::
+        using difference_type = std::ptrdiff_t;
+        using value_type = std::
             conditional_t<InCompileTime && !ForceUnsignedChar, const char, const unsigned char>;
-        using pointer   = value_type*;
+        using pointer = value_type*;
         using reference = value_type&;
 
         // clang-format off
@@ -442,14 +442,14 @@ private:
 
 public:
     static constexpr MappedType kDefaultValue = DefaultMapValue;
-    static constexpr char kMinChar            = static_cast<char>(TrieParams.min_char);
-    static constexpr char kMaxChar            = static_cast<char>(TrieParams.max_char);
+    static constexpr char kMinChar = static_cast<char>(TrieParams.min_char);
+    static constexpr char kMaxChar = static_cast<char>(TrieParams.max_char);
 
     STRING_MAP_CONSTEVAL StringMapImplManyStrings() {
         this->add_pattern<0, Strings...>(kRootNodeIndex + 1);
     }
 
-    constexpr MappedType operator()(std::nullptr_t) const              = delete;
+    constexpr MappedType operator()(std::nullptr_t) const = delete;
     constexpr MappedType operator()(std::nullptr_t, std::size_t) const = delete;
 
     // clang-format off
@@ -533,9 +533,9 @@ public:
 private:
     using NodeIndex = std::uint32_t;
 
-    static constexpr NodeIndex kRootNodeIndex      = TrieParams.kRootNodeIndex;
+    static constexpr NodeIndex kRootNodeIndex = TrieParams.kRootNodeIndex;
     static constexpr std::size_t kTrieAlphabetSize = TrieParams.trie_alphabet_size;
-    static constexpr std::size_t kNodesSize        = TrieParams.nodes_size;
+    static constexpr std::size_t kNodesSize = TrieParams.nodes_size;
 
     struct TrieNodeImpl final {
         std::array<NodeIndex, kTrieAlphabetSize> edges{};
@@ -557,10 +557,10 @@ private:
               strmapdetail::CompileTimeStringLiteral... AddStrings>
     STRING_MAP_CONSTEVAL void add_pattern(std::size_t first_free_node_index) {
         std::size_t current_node_index = 0;
-        constexpr std::size_t len      = String.size();
+        constexpr std::size_t len = String.size();
         for (std::size_t i = 0; i < len; i++) {
             const std::size_t symbol_index = TrieParams.CharToNodeIndex(String[i]);
-            std::size_t next_node_index    = nodes_[current_node_index].edges[symbol_index];
+            std::size_t next_node_index = nodes_[current_node_index].edges[symbol_index];
             if (next_node_index == 0) {
                 nodes_[current_node_index].edges[symbol_index] =
                     static_cast<NodeIndex>(first_free_node_index);
@@ -670,8 +670,8 @@ private:
             }
 
             info.trivially_ordered = true;
-            info.min_value         = MappedValues.front();
-            info.max_value         = MappedValues.front();
+            info.min_value = MappedValues.front();
+            info.max_value = MappedValues.front();
             for (const MappedType& value : MappedValues) {
                 if (std::less<MappedType>{}(value, info.min_value)) {
                     info.min_value = value;
@@ -711,12 +711,12 @@ private:
 
 public:
     static constexpr MappedType kDefaultValue = DefaultMapValue;
-    static constexpr char kMinChar            = static_cast<char>(TrieParams.min_char);
-    static constexpr char kMaxChar            = static_cast<char>(TrieParams.max_char);
+    static constexpr char kMinChar = static_cast<char>(TrieParams.min_char);
+    static constexpr char kMaxChar = static_cast<char>(TrieParams.max_char);
 
     STRING_MAP_CONSTEVAL StringMapImplFewStrings() noexcept = default;
 
-    constexpr MappedType operator()(std::nullptr_t) const              = delete;
+    constexpr MappedType operator()(std::nullptr_t) const = delete;
     constexpr MappedType operator()(std::nullptr_t, std::size_t) const = delete;
 
     // clang-format off

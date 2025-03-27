@@ -30,11 +30,11 @@ ATTRIBUTE_NODISCARD_WITH_MESSAGE("impl error")
 MISC_GET_TYPENAME_CONSTEVAL std::size_t get_typename_end_pos_impl(const std::string_view s) {
     // Variables are not inside of the for init for
     //  the compatibility with C++17.
-    std::size_t opened_square_brackets   = 0;
-    std::size_t opened_round_brackets    = 0;
-    std::size_t opened_curly_brackets    = 0;
+    std::size_t opened_square_brackets = 0;
+    std::size_t opened_round_brackets = 0;
+    std::size_t opened_curly_brackets = 0;
     std::size_t opened_triangle_brackets = 0;
-    std::size_t i                        = 0;
+    std::size_t i = 0;
     for (const char c : s) {
         switch (static_cast<unsigned char>(c)) {
             case '(': {
@@ -136,16 +136,16 @@ std::string_view extract_typename_impl(
 
 #if defined(__GNUG__) || defined(__clang__)
     constexpr std::string_view type_prefix = "T = ";
-    const std::size_t prefix_start_pos     = function_name.find(type_prefix);
+    const std::size_t prefix_start_pos = function_name.find(type_prefix);
     CONSTEVAL_ASSERT(prefix_start_pos != std::string_view::npos);
     std::size_t typename_start_pos = prefix_start_pos + type_prefix.size();
 #elif defined(_MSC_VER)
     constexpr std::string_view type_prefix = "get_typename_impl<";
-    const std::size_t prefix_start_pos     = function_name.find(type_prefix);
+    const std::size_t prefix_start_pos = function_name.find(type_prefix);
     CONSTEVAL_ASSERT(prefix_start_pos != std::string_view::npos);
     std::size_t typename_start_pos = prefix_start_pos + type_prefix.size();
     CONSTEVAL_ASSERT(typename_start_pos < function_name.size());
-    std::string_view piece                 = function_name.substr(typename_start_pos);
+    std::string_view piece = function_name.substr(typename_start_pos);
     constexpr std::string_view kKeywords[] = {
         "class",
         "struct",

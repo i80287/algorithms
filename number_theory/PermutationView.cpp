@@ -78,9 +78,9 @@ public:
     }
 
     std::string to_string() const {
-        const size_type n                = elems_.size();
+        const size_type n = elems_.size();
         const size_type max_digits_count = std::to_string(n).size();
-        const size_type one_line_length  = n * max_digits_count + (n - 1);  // n - 1 spaces
+        const size_type one_line_length = n * max_digits_count + (n - 1);  // n - 1 spaces
         // 1 for '\n', 8 for "/ ", "\ ", " \", " /"
         const size_type capacity = one_line_length + 1 + one_line_length + 8;
         std::string s;
@@ -89,7 +89,7 @@ public:
         s.push_back(' ');
 
         for (uint32_t i = 1; i <= n; i++) {
-            std::string str_i_repr        = std::to_string(i);
+            std::string str_i_repr = std::to_string(i);
             size_type needed_spaces_count = max_digits_count - str_i_repr.size();
             // Unroll while loop for small i space padding
             switch (needed_spaces_count) {
@@ -116,7 +116,7 @@ public:
         s.append("\\\n\\ ");
 
         for (uint32_t i = 0; i < n; i++) {
-            std::string str_i_repr        = std::to_string(elems_[i]);
+            std::string str_i_repr = std::to_string(elems_[i]);
             size_type needed_spaces_count = max_digits_count - str_i_repr.size();
             // Unroll while loop for small i space padding
             switch (needed_spaces_count) {

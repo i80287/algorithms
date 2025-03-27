@@ -12,7 +12,7 @@
 #include "../misc/do_not_optimize_away.h"
 #include "memset_int.h"
 
-const size_t kTests      = 32;
+const size_t kTests = 32;
 const size_t kBufferSize = 10000000;
 
 ATTRIBUTE_NOINLINE

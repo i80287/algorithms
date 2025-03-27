@@ -55,10 +55,10 @@ public:
         return g.accumulate_over(matrix_iter_begin);
     }
 
-    MinAssignmentGraph(const MinAssignmentGraph&)            = delete;
-    MinAssignmentGraph(MinAssignmentGraph&&)                 = delete;
+    MinAssignmentGraph(const MinAssignmentGraph&) = delete;
+    MinAssignmentGraph(MinAssignmentGraph&&) = delete;
     MinAssignmentGraph& operator=(const MinAssignmentGraph&) = delete;
-    MinAssignmentGraph& operator=(MinAssignmentGraph&&)      = delete;
+    MinAssignmentGraph& operator=(MinAssignmentGraph&&) = delete;
     ~MinAssignmentGraph() {
         operator delete(std::bit_cast<std::byte*>(matrix_));
     }
@@ -73,13 +73,13 @@ private:
         const size_t matrix_size = align_size(sizeof(T*) * n + sizeof(T) * n * n);
         const size_t bipartite_graph_matrix_size =
             align_size(sizeof(bool*) * n + sizeof(bool) * n * n);
-        const size_t first_part_matches_size  = align_size(sizeof(vertex_t) * n);
+        const size_t first_part_matches_size = align_size(sizeof(vertex_t) * n);
         const size_t second_part_matches_size = align_size(sizeof(vertex_t) * n);
         const size_t neighbours_size = align_size(sizeof(vertex_t*) * n + sizeof(vertex_t) * n * n);
-        const size_t neighbours_count_size    = align_size(sizeof(size_t) * n);
-        const size_t first_part_visited_size  = align_size(sizeof(bool) * n);
+        const size_t neighbours_count_size = align_size(sizeof(size_t) * n);
+        const size_t first_part_visited_size = align_size(sizeof(bool) * n);
         const size_t second_part_visited_size = align_size(sizeof(bool) * n);
-        const size_t algorithm_memory_size    = matrix_size + bipartite_graph_matrix_size +
+        const size_t algorithm_memory_size = matrix_size + bipartite_graph_matrix_size +
                                              first_part_matches_size + second_part_matches_size +
                                              neighbours_size + neighbours_count_size +
                                              first_part_visited_size + second_part_visited_size;
@@ -88,7 +88,7 @@ private:
         std::fill_n(current_free_memory_ptr, algorithm_memory_size, std::byte{0});
         [[maybe_unused]] const auto* const allocated_memory_begin = current_free_memory_ptr;
 
-        T** const matrix     = std::launder(std::bit_cast<T**>(current_free_memory_ptr));
+        T** const matrix = std::launder(std::bit_cast<T**>(current_free_memory_ptr));
         T* matrix_data_start = std::launder(std::bit_cast<T*>(matrix + n));
         current_free_memory_ptr += matrix_size;
 
@@ -124,9 +124,9 @@ private:
         assert(current_free_memory_ptr == allocated_memory_begin + algorithm_memory_size);
 
         for (std::size_t i = 0; i < n; i++) {
-            matrix[i]                 = matrix_data_start + i * n;
+            matrix[i] = matrix_data_start + i * n;
             bipartite_graph_matrix[i] = bipartite_graph_matrix_data_start + i * n;
-            neighbours[i]             = neighbours_data_start + i * n;
+            neighbours[i] = neighbours_data_start + i * n;
         }
 
         copy_matrix_with_subtraction(original_matrix_iter_begin, n, matrix);
@@ -201,7 +201,7 @@ private:
         }
 
         for (std::size_t i = 0; i < n; i++) {
-            T* row             = matrix_copy[i];
+            T* row = matrix_copy[i];
             const T min_in_row = *std::min_element(row, row + n);
             for (std::size_t j = 0; j < n; j++) {
                 row[j] -= min_in_row;
@@ -234,11 +234,11 @@ private:
         for (vertex_t i = 0; i < size_; i++) {
             bool* bipartite_graph_matrix_row = bipartite_graph_matrix_[i];
 
-            vertex_t* i_neighbours         = neighbours_[i];
+            vertex_t* i_neighbours = neighbours_[i];
             std::size_t i_neighbours_count = 0;
             for (vertex_t j = 0; j < size_; j++) {
                 if (matrix_[i][j] == 0) {
-                    bipartite_graph_matrix_row[j]    = true;
+                    bipartite_graph_matrix_row[j] = true;
                     i_neighbours[i_neighbours_count] = j;
                     i_neighbours_count++;
                 }
@@ -248,7 +248,7 @@ private:
         }
 
         for (vertex_t i = 0; i < size_; i++) {
-            first_part_matches_[i]  = kNoMatch;
+            first_part_matches_[i] = kNoMatch;
             second_part_matches_[i] = kNoMatch;
         }
 
@@ -258,7 +258,7 @@ private:
                 continue;
             }
 
-            const std::size_t* i_neighbours      = neighbours_[i];
+            const std::size_t* i_neighbours = neighbours_[i];
             const std::size_t i_neighbours_count = neighbours_count_[i];
             for (std::size_t neighbour_index = 0; neighbour_index < i_neighbours_count;
                  ++neighbour_index) {
@@ -266,7 +266,7 @@ private:
                 assert(bipartite_graph_matrix_[i][j]);
                 if (second_part_matches_[j] == kNoMatch) {
                     second_part_matches_[j] = i;
-                    first_part_matches_[i]  = j;
+                    first_part_matches_[i] = j;
                     break;
                 }
             }
@@ -297,7 +297,7 @@ private:
 
     [[nodiscard]] constexpr std::size_t dfs_find_chain_and_update_matches(std::size_t i) noexcept {
         assert(!first_part_visited_[i]);
-        first_part_visited_[i]          = true;
+        first_part_visited_[i] = true;
         const std::size_t* i_neighbours = neighbours_[i];
 
         for (std::size_t neighbour_index = 0, total_neighbours = neighbours_count_[i];
@@ -319,7 +319,7 @@ private:
              */
             if (k == kNoMatch) {
                 second_part_matches_[j] = i;
-                first_part_matches_[i]  = j;
+                first_part_matches_[i] = j;
                 return j;
             }
 
@@ -336,11 +336,11 @@ private:
              *
              */
             if (!second_part_visited_[j] && !first_part_visited_[k]) {
-                second_part_visited_[j]      = true;
+                second_part_visited_[j] = true;
                 const std::size_t end_vertex = dfs_find_chain_and_update_matches(k);
                 if (end_vertex != kNoVertex) {
                     second_part_matches_[j] = i;
-                    first_part_matches_[i]  = j;
+                    first_part_matches_[i] = j;
                     return end_vertex;
                 }
             }
@@ -350,13 +350,13 @@ private:
     }
 
     constexpr void dfs_from_unmatched(std::size_t i) noexcept {
-        first_part_visited_[i]          = true;
+        first_part_visited_[i] = true;
         const std::size_t* i_neighbours = neighbours_[i];
 
         for (std::size_t neighbour_index = 0, total_neighbours = neighbours_count_[i];
              neighbour_index < total_neighbours; ++neighbour_index) {
             const std::size_t j = i_neighbours[neighbour_index];
-            const vertex_t k    = second_part_matches_[j];
+            const vertex_t k = second_part_matches_[j];
             if (k != kNoMatch && !first_part_visited_[k]) {
                 second_part_visited_[j] = true;
                 dfs_from_unmatched(k);
@@ -398,7 +398,7 @@ private:
         return min;
     }
 
-    static constexpr vertex_t kNoMatch  = static_cast<vertex_t>(-1);
+    static constexpr vertex_t kNoMatch = static_cast<vertex_t>(-1);
     static constexpr vertex_t kNoVertex = static_cast<vertex_t>(-1);
 
     vertex_t* const RESTRICT_QUALIFIER first_part_matches_;

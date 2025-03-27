@@ -1868,20 +1868,20 @@ struct longint {
 
         constexpr void assign_uint32_unchecked(const uint32_t n) noexcept {
             const dec_digit_t low = n % kDecimalBase;
-            digits_[0]            = low;
-            const dec_digit_t hi  = n / kDecimalBase;
-            digits_[1]            = hi;
-            size_                 = hi != 0 ? 2 : low != 0;
+            digits_[0] = low;
+            const dec_digit_t hi = n / kDecimalBase;
+            digits_[1] = hi;
+            size_ = hi != 0 ? 2 : low != 0;
         }
         constexpr void assign_uint64_unchecked(const uint64_t n) noexcept {
-            const auto low   = static_cast<dec_digit_t>(n % kDecimalBase);
+            const auto low = static_cast<dec_digit_t>(n % kDecimalBase);
             const uint64_t t = n / kDecimalBase;
-            const auto mid   = static_cast<dec_digit_t>(t % kDecimalBase);
-            const auto hi    = static_cast<dec_digit_t>(t / kDecimalBase);
-            digits_[0]       = low;
-            digits_[1]       = mid;
-            digits_[2]       = hi;
-            size_            = hi != 0 ? 3 : (mid != 0 ? 2 : low != 0);
+            const auto mid = static_cast<dec_digit_t>(t % kDecimalBase);
+            const auto hi = static_cast<dec_digit_t>(t / kDecimalBase);
+            digits_[0] = low;
+            digits_[1] = mid;
+            digits_[2] = hi;
+            size_ = hi != 0 ? 3 : (mid != 0 ? 2 : low != 0);
         }
     };
 
@@ -1906,12 +1906,12 @@ private:
             digit_t* ans_store_ptr = ans;
             for (size_type j = 0; j < m; ans_store_ptr++, j++) {
                 const double_digit_t b_j = m_ptr[j];
-                double_digit_t carry     = 0;
+                double_digit_t carry = 0;
                 for (size_type i = 0; i < k; i++) {
                     const double_digit_t a_i = k_ptr[i];
                     const double_digit_t res = a_i * b_j + double_digit_t{ans_store_ptr[i]} + carry;
-                    ans_store_ptr[i]         = static_cast<digit_t>(res);
-                    carry                    = res / kNumsBase;
+                    ans_store_ptr[i] = static_cast<digit_t>(res);
+                    carry = res / kNumsBase;
                 }
 
                 ans_store_ptr[k] = static_cast<digit_t>(carry);
@@ -1948,7 +1948,7 @@ private:
                                                      digit_t* RESTRICT_QUALIFIER nums,
                                                      const size_type nums_size) {
             static_assert(sizeof(digit_t) == sizeof(uint32_t));
-            double_digit_t carry          = 0;
+            double_digit_t carry = 0;
             const digit_t* const nums_end = nums + nums_size;
             if (likely(!is_high_precision)) {
                 do {
@@ -2152,10 +2152,10 @@ private:
         for (digit_t *const nums_iter_rend = nums_ - 1, *nums_riter = nums_iter_rend + usize();
              nums_riter != nums_iter_rend; --nums_riter) {
             const double_digit_t cur = (carry << kNumsBits) | double_digit_t{*nums_riter};
-            const double_digit_t q   = cur / n;
-            const double_digit_t r   = cur - q * n;
-            *nums_riter              = static_cast<digit_t>(q);
-            carry                    = r;
+            const double_digit_t q = cur / n;
+            const double_digit_t r = cur - q * n;
+            *nums_riter = static_cast<digit_t>(q);
+            carry = r;
         }
 
         pop_leading_zeros();
@@ -2180,7 +2180,7 @@ private:
                 /* Quite return when dividing by zero. */
                 return;
             case 1:
-                rem   = this->divmod(other[0]);
+                rem = this->divmod(other[0]);
                 size_ = sign_product >= 0 ? size_ : -size_;
                 return;
             default:
@@ -2197,11 +2197,11 @@ private:
 
         static_assert(max_size() + max_size() > max_size());
         digit_t* const vn_and_un = allocate(std::size_t{n + m} + 1);
-        digit_t* const vn        = vn_and_un;
-        digit_t* const un        = vn_and_un + n;
+        digit_t* const vn = vn_and_un;
+        digit_t* const un = vn_and_un + n;
 
-        const digit_t* const u   = nums_;
-        const digit_t* const v   = other.nums_;
+        const digit_t* const u = nums_;
+        const digit_t* const v = other.nums_;
         const digit_t last_v_num = v[n - 1];
         LONGINT_DEBUG_ASSERT(last_v_num > 0);
         CONFIG_ASSUME_STATEMENT(last_v_num > 0);
@@ -2265,7 +2265,7 @@ private:
             CONFIG_ASSUME_STATEMENT(qhat * last_vn + rhat == cur);
             // Multiply and subtract
             double_digit_t t = divmod_mult_sub(un + j, vn, vn_size, qhat);
-            quot[j]          = static_cast<digit_t>(qhat);  // Store quotient digit
+            quot[j] = static_cast<digit_t>(qhat);  // Store quotient digit
             if (static_cast<std::make_signed_t<double_digit_t>>(t) < 0) {
                 assert(qhat > 0);
                 // If we subtracted too much, add back
@@ -2298,11 +2298,11 @@ private:
         for (size_type i = 0; i < vn_size; i++) {
             double_digit_t p = qhat * vn[i];
             double_digit_t t = double_digit_t{un[i]} - carry - static_cast<digit_t>(p % kNumsBase);
-            un[i]            = static_cast<digit_t>(t % kNumsBase);
-            carry            = static_cast<digit_t>((p / kNumsBase) - (t / kNumsBase));
+            un[i] = static_cast<digit_t>(t % kNumsBase);
+            carry = static_cast<digit_t>((p / kNumsBase) - (t / kNumsBase));
         }
         double_digit_t t = un[vn_size] - carry;
-        un[vn_size]      = static_cast<digit_t>(t);
+        un[vn_size] = static_cast<digit_t>(t);
         return t;
     }
 
@@ -2318,8 +2318,8 @@ private:
         double_digit_t carry = 0;
         for (size_type i = 0; i < vn_size; i++) {
             double_digit_t t = double_digit_t{un[i]} + double_digit_t{vn[i]} + carry;
-            un[i]            = static_cast<digit_t>(t % kNumsBase);
-            carry            = t / kNumsBase;
+            un[i] = static_cast<digit_t>(t % kNumsBase);
+            carry = t / kNumsBase;
         }
         un[vn_size] += static_cast<digit_t>(carry);
     }
@@ -2408,7 +2408,7 @@ private:
     void reserveUninitializedWithoutCopy(const size_type capacity) {
         if (capacity > capacity_) {
             deallocate(nums_);
-            nums_     = allocate(capacity);
+            nums_ = allocate(capacity);
             capacity_ = capacity;
         }
         size_ = 0;
@@ -2437,7 +2437,7 @@ private:
                                       fft::complex fft_poly_buffer[]) {
         LONGINT_DEBUG_ASSERT(0 < conv_base_pow.size_);
         CONFIG_ASSUME_STATEMENT(0 < conv_base_pow.size_);
-        const size_type m_size     = conv_base_pow.usize();
+        const size_type m_size = conv_base_pow.usize();
         const digit_t* const m_ptr = conv_base_pow.nums_;
         assert(0 < m_size && m_size <= conv_len / 2);
         convertDecBaseMultAddImpl(conv_digits, conv_len, m_ptr, m_size, mult_add_buffer,
@@ -2472,7 +2472,7 @@ private:
                                                 mult_add_buffer);
         } else {
             const auto [n, need_high_precision] = LongIntFFT::compute_fft_product_params(prod_size);
-            fft::complex* const p1              = fft_poly_buffer;
+            fft::complex* const p1 = fft_poly_buffer;
             LongIntFFT::convert_longint_nums_to_fft_poly(m_ptr, m_size, num_hi, half_conv_len, p1,
                                                          n, need_high_precision);
             fft::complex* const p2 = p1 + n;
@@ -2487,12 +2487,12 @@ private:
             const double_digit_t res =
                 double_digit_t{*conv_digits} + double_digit_t{*mult_add_buffer} + carry;
             *conv_digits = static_cast<digit_t>(res);
-            carry        = res >> kNumsBits;
+            carry = res >> kNumsBits;
         }
         for (size_type i = half_conv_len; i > 0; i--, conv_digits++, mult_add_buffer++) {
             const double_digit_t res = double_digit_t{*mult_add_buffer} + carry;
-            *conv_digits             = static_cast<digit_t>(res);
-            carry                    = res >> kNumsBits;
+            *conv_digits = static_cast<digit_t>(res);
+            carry = res >> kNumsBits;
         }
         assert(carry == 0);
     }
@@ -2512,7 +2512,7 @@ private:
         }
 
         const Decimal low_dec = convertBinBaseImpl(nums, size / 2);
-        Decimal high_dec      = convertBinBaseImpl(nums + size / 2, size / 2);
+        Decimal high_dec = convertBinBaseImpl(nums + size / 2, size / 2);
 
         const uint32_t idx = math_functions::log2_floor(size) - 1;
         LONGINT_DEBUG_ASSERT(idx < conv_bin_base_pows.size());
@@ -2564,7 +2564,7 @@ private:
     }
 
     void allocate_default_capacity_32() {
-        nums_     = allocate(kDefaultLINumsCapacity32);
+        nums_ = allocate(kDefaultLINumsCapacity32);
         capacity_ = kDefaultLINumsCapacity32;
     }
     void ensure_default_capacity_op_asgn_32() {
@@ -2575,16 +2575,16 @@ private:
     }
     constexpr void assign_u32_unchecked(uint32_t n) noexcept {
         static_assert(kNumsBits >= 32);
-        size_    = n != 0;
+        size_ = n != 0;
         nums_[0] = n;
     }
     constexpr void assign_i32_unchecked(int32_t n) noexcept {
         static_assert(kNumsBits >= 32);
-        size_    = math_functions::sign(n);
+        size_ = math_functions::sign(n);
         nums_[0] = math_functions::uabs(n);
     }
     void allocate_default_capacity_64() {
-        nums_     = allocate(kDefaultLINumsCapacity64);
+        nums_ = allocate(kDefaultLINumsCapacity64);
         capacity_ = kDefaultLINumsCapacity64;
     }
     void ensure_default_capacity_op_asgn_64() {
@@ -2595,7 +2595,7 @@ private:
     }
     constexpr void assign_u64_unchecked(uint64_t n) noexcept {
         static_assert(kNumsBits == 32);
-        size_    = n != 0;
+        size_ = n != 0;
         nums_[0] = static_cast<uint32_t>(n);
         n >>= 32;
         size_ += n != 0;
@@ -2608,7 +2608,7 @@ private:
     }
 #if defined(INTEGERS_128_BIT_HPP)
     void allocate_default_capacity_128() {
-        nums_     = allocate(kDefaultLINumsCapacity128);
+        nums_ = allocate(kDefaultLINumsCapacity128);
         capacity_ = kDefaultLINumsCapacity128;
     }
     void ensure_default_capacity_op_asgn_128() {
@@ -2619,7 +2619,7 @@ private:
     }
     I128_CONSTEXPR void assign_u128_unchecked(uint128_t n) noexcept {
         static_assert(kNumsBits == 32);
-        size_    = n != 0;
+        size_ = n != 0;
         nums_[0] = static_cast<uint32_t>(n);
         n >>= 32;
         size_ += n != 0;
@@ -2647,20 +2647,20 @@ private:
                                                       const size_type rhs_size) noexcept {
         LONGINT_DEBUG_ASSERT(lhs_size > rhs_size);
         CONFIG_ASSUME_STATEMENT(lhs_size > rhs_size);
-        double_digit_t carry         = 0;
+        double_digit_t carry = 0;
         const digit_t* const lhs_end = lhs + lhs_size;
         const digit_t* const rhs_end = rhs + rhs_size;
         for (; rhs != rhs_end; ++rhs, ++lhs) {
             const double_digit_t res = double_digit_t{*lhs} + double_digit_t{*rhs} + carry;
-            *lhs                     = static_cast<digit_t>(res);
-            carry                    = res / kNumsBase;
+            *lhs = static_cast<digit_t>(res);
+            carry = res / kNumsBase;
         }
 
         for (; carry != 0; ++lhs) {
             assert(lhs != lhs_end);
             const double_digit_t res = double_digit_t{*lhs} + carry;
-            *lhs                     = static_cast<digit_t>(res);
-            carry                    = res / kNumsBase;
+            *lhs = static_cast<digit_t>(res);
+            carry = res / kNumsBase;
         }
     }
 
@@ -2694,18 +2694,18 @@ private:
         CONFIG_ASSUME_STATEMENT(lhs_size >= rhs_size);
         const digit_t* const lhs_end = lhs + lhs_size;
         const digit_t* const rhs_end = rhs + rhs_size;
-        bool carry                   = false;
+        bool carry = false;
         for (; rhs != rhs_end; ++rhs, ++lhs) {
             const digit_t lhs_val = *lhs;
-            const auto sub_val    = double_digit_t{*rhs} + double_digit_t{carry};
+            const auto sub_val = double_digit_t{*rhs} + double_digit_t{carry};
             const digit_t res_val = lhs_val - static_cast<digit_t>(sub_val);
-            carry                 = lhs_val < sub_val;
-            *lhs                  = res_val;
+            carry = lhs_val < sub_val;
+            *lhs = res_val;
         }
         if (carry) {
             for (; lhs != lhs_end; ++lhs) {
                 const digit_t lhs_val = *lhs;
-                *lhs                  = lhs_val - 1;
+                *lhs = lhs_val - 1;
                 if (lhs_val > 0) {
                     return false;
                 }
@@ -2717,13 +2717,13 @@ private:
 
     void nonZeroSizeAddUInt(uint32_t n) {
         static_assert(sizeof(digit_t) >= sizeof(uint32_t));
-        digit_t* it             = begin();
+        digit_t* it = begin();
         const digit_t* end_iter = end();
-        double_digit_t carry    = n;
+        double_digit_t carry = n;
         do {
             const double_digit_t res = double_digit_t{*it} + carry;
-            carry                    = res >> kNumsBits;
-            *it                      = static_cast<digit_t>(res);
+            carry = res >> kNumsBits;
+            *it = static_cast<digit_t>(res);
             if (carry == 0) {
                 return;
             }
@@ -2746,12 +2746,12 @@ private:
     constexpr void nonZeroSizeSubUInt(uint32_t n) {
         static_assert(sizeof(digit_t) == sizeof(uint32_t));
         const size_type usize_value = usize();
-        digit_t* nums_iter          = nums_;
-        const digit_t low_num       = nums_iter[0];
+        digit_t* nums_iter = nums_;
+        const digit_t low_num = nums_iter[0];
         if (usize_value != 1) {
-            digit_t res      = low_num - n;
+            digit_t res = low_num - n;
             const bool carry = res > low_num;
-            nums_iter[0]     = res;
+            nums_iter[0] = res;
             if (carry) {
                 do {
                     ++nums_iter;
@@ -2824,7 +2824,7 @@ private:
             file_name, line, function_name, new_size_value, max_size_value);
         if (unlikely(bytes_written < 0)) {
             constexpr const char kFallbackMessage[] = "size error at ";
-            constexpr auto kPrefixSize              = std::size(kFallbackMessage) - 1;
+            constexpr auto kPrefixSize = std::size(kFallbackMessage) - 1;
             std::char_traits<char>::copy(std::data(message), kFallbackMessage, kPrefixSize);
             const auto fn_name_size = std::char_traits<char>::length(function_name);
             const auto fn_name_copy_size =
@@ -2841,7 +2841,7 @@ private:
     /**
      * size_ < 0 <=> sign = -1; size_ == 0 <=> sign = 0; size > 0 <=> sign = 1
      */
-    ssize_type size_    = 0;
+    ssize_type size_ = 0;
     size_type capacity_ = 0;
 };
 
@@ -2878,9 +2878,9 @@ private:
 
 inline void longint::set_str_impl(const unsigned char* str, const std::size_t str_size) {
     const unsigned char* str_iter = str;
-    const unsigned char* str_end  = str + str_size;
+    const unsigned char* str_end = str + str_size;
 
-    std::int32_t sgn        = 1;
+    std::int32_t sgn = 1;
     constexpr auto is_digit = [](const std::uint32_t chr) constexpr noexcept {
         return chr - '0' <= '9' - '0';
     };
