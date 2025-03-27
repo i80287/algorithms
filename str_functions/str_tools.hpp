@@ -56,16 +56,15 @@ ATTRIBUTE_PURE constexpr uint16_t unique_chars_count_impl(const char* str_ptr,
         has_char[static_cast<uint8_t>(str_ptr[i])] = true;
     }
 
-    static_assert(kMapSize < std::numeric_limits<uint16_t>::max());
-    uint16_t count = 0;
+    size_t count = 0;
     for (const bool has_i_pos : has_char) {
         count += uint8_t{has_i_pos};
     }
 
     CONFIG_ASSUME_STATEMENT(count <= str_size);
     CONFIG_ASSUME_STATEMENT(count <= kMapSize);
-
-    return count;
+    static_assert(kMapSize < std::numeric_limits<uint16_t>::max());
+    return static_cast<uint16_t>(count);
 }
 
 ATTRIBUTE_NODISCARD
