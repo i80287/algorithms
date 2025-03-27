@@ -58,7 +58,7 @@ void test0() {
     constexpr std::string_view patterns[] = {
         "a", "ab", "ba", "aa", "bb", "fasb",
     };
-    constexpr std::string_view text               = "ababcdacafaasbfasbabcc";
+    constexpr std::string_view text = "ababcdacafaasbfasbabcc";
     const OccurancesContainer expected_occurances = {
         {"a", 0},  {"ab", 0},    {"ba", 1},  {"a", 2},   {"ab", 2},
         {"a", 6},  {"a", 8},     {"a", 10},  {"aa", 10}, {"a", 11},
@@ -157,7 +157,7 @@ void test0() {
     constexpr std::string_view patterns_with_replacements[][2] = {
         {"ab", "cd"}, {"ba", "dc"}, {"aa", "cc"}, {"bb", "dd"}, {"fasb", "xfasbx"},
     };
-    std::string input_text     = "ababcdacafaasbfasbabcc";
+    std::string input_text = "ababcdacafaasbfasbabcc";
     const std::string expected = "cdcdcdacafccsbxfasbxcdcc";
     assert(test_replacing_actrie(patterns_with_replacements, input_text, expected, true));
 }
@@ -166,7 +166,7 @@ void test1() {
     constexpr std::string_view patterns_with_replacements[][2] = {
         {"ab", "cd"}, {"ba", "dc"}, {"aa", "cc"}, {"bb", "dd"}, {"xfasbx", "fasb"},
     };
-    std::string input_text     = "ababcdacafaasbxfasbxabcc";
+    std::string input_text = "ababcdacafaasbxfasbxabcc";
     const std::string expected = "cdcdcdacafccsbfasbcdcc";
     assert(test_replacing_actrie(patterns_with_replacements, input_text, expected, true));
 }
@@ -175,7 +175,7 @@ void test2() {
     constexpr std::string_view patterns_with_replacements[][2] = {
         {"LM", "0000"}, {"GHI", "111111"}, {"BCD", "2222222"}, {"nop", "3333"}, {"jk", "44444"},
     };
-    std::string input_text     = "ABCDEFGHIJKLMNOP";
+    std::string input_text = "ABCDEFGHIJKLMNOP";
     const std::string expected = "A2222222EF1111114444400003333";
     assert(test_replacing_actrie(patterns_with_replacements, input_text, expected, true));
 }
@@ -184,7 +184,7 @@ void test3() {
     constexpr std::string_view patterns_with_replacements[][2] = {
         {"AB", "111111111111111111111111"}, {"CD", "cd"}, {"EF", "ef"}, {"JK", "jk"}, {"NO", "no"},
     };
-    std::string input_text     = "ABCDEFGHIJKLMNOP";
+    std::string input_text = "ABCDEFGHIJKLMNOP";
     const std::string expected = "111111111111111111111111cdefGHIjkLMnoP";
     assert(test_replacing_actrie(patterns_with_replacements, input_text, expected, true));
 }
@@ -193,7 +193,7 @@ void test4() {
     constexpr std::string_view patterns_with_replacements[][2] = {
         {"AB", "ab"}, {"CD", "cd"}, {"EF", "ef"}, {"JK", "jk"}, {"NO", "111111111111111111111111"},
     };
-    std::string input_text     = "ABCDEFGHIJKLMNOP";
+    std::string input_text = "ABCDEFGHIJKLMNOP";
     const std::string expected = "abcdefGHIjkLM111111111111111111111111P";
     assert(test_replacing_actrie(patterns_with_replacements, input_text, expected, true));
 }
@@ -202,7 +202,7 @@ void test5() {
     constexpr std::string_view patterns_with_replacements[][2] = {
         {"AB", "ab"}, {"CD", "cd"}, {"EF", "111111111111111111111111"}, {"JK", "jk"}, {"NO", "no"},
     };
-    std::string input_text     = "ABCDEFGHIJKLMNOP";
+    std::string input_text = "ABCDEFGHIJKLMNOP";
     const std::string expected = "abcd111111111111111111111111GHIjkLMnoP";
     assert(test_replacing_actrie(patterns_with_replacements, input_text, expected, true));
 }
@@ -212,7 +212,7 @@ void test6() {
         {"kernel", "Kewnel"}, {"linux", "Linuwu"},         {"debian", "Debinyan"},
         {"ubuntu", "Uwuntu"}, {"windows", "WinyandOwOws"},
     };
-    std::string input_text     = "linux kernel; debian os; ubuntu os; windows os";
+    std::string input_text = "linux kernel; debian os; ubuntu os; windows os";
     const std::string expected = "Linuwu Kewnel; Debinyan os; Uwuntu os; WinyandOwOws os";
     assert(test_replacing_actrie(patterns_with_replacements, input_text, expected, true));
 }
@@ -416,7 +416,7 @@ void test9() {
         {"abc", "def"},
         {"ghi", "jkz"},
     };
-    std::string input_text              = "Abghciashjdhwdjahwdjhabdabanabwc";
+    std::string input_text = "Abghciashjdhwdjahwdjhabdabanabwc";
     constexpr std::string_view expected = "Abghciashjdhwdjahwdjhabdabanabwc";
     std::string input_text_copy(input_text);
     assert(test_replacing_actrie(patterns_with_replacements, input_text_copy, expected,
@@ -432,8 +432,8 @@ void test10() {
         {"abc", "def"},
         {"ghi", "jkz"},
     };
-    std::string input_text                                     = "Qghiabcabcghiabc";
-    constexpr std::string_view expected_after_one_replacement  = "Qjkzabcabcghiabc";
+    std::string input_text = "Qghiabcabcghiabc";
+    constexpr std::string_view expected_after_one_replacement = "Qjkzabcabcghiabc";
     constexpr std::string_view expected_after_all_replacements = "Qjkzdefdefjkzdef";
     std::string input_text_copy(input_text);
     assert(test_replacing_actrie(patterns_with_replacements, input_text_copy,

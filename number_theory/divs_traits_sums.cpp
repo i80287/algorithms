@@ -72,7 +72,7 @@ int main() {
     primes_vec.reserve(3 * n / log2_floor(n));
     for (uint32_t i = 2; i <= n; i++) {
         if (primes[i]) {
-            divs_sum[i]   = i + 1;
+            divs_sum[i] = i + 1;
             divs_count[i] = 2;
             euler_func[i] = i - 1;
             primes_vec.push_back(i);
@@ -117,7 +117,7 @@ int main() {
                 sum1 += prime_number;
 
                 uint32_t prime_power = 0;
-                uint32_t current_k   = k;
+                uint32_t current_k = k;
                 do {
                     current_k /= prime_number;
                     prime_power++;

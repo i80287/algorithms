@@ -218,8 +218,8 @@ void CheckJacobiBasic() noexcept {
             if (unlikely(p == q)) {
                 continue;
             }
-            const int32_t j_p_q        = kronecker_symbol(p, q);
-            const int32_t j_q_p        = kronecker_symbol(q, p);
+            const int32_t j_p_q = kronecker_symbol(p, q);
+            const int32_t j_q_p = kronecker_symbol(q, p);
             const uint32_t p12_q12_pow = ((p - 1) / 2) * ((q - 1) / 2);
             // (-1)^{ ((p - 1) / 2) * ((q - 1) / 2) }
             const int32_t to_p12_q12_pow = 1 - static_cast<int32_t>((p12_q12_pow % 2) * 2);
@@ -227,7 +227,7 @@ void CheckJacobiBasic() noexcept {
         }
 
         const int32_t j_m1_p = kronecker_symbol(-1, p);
-        const int32_t j_2_p  = kronecker_symbol(2U, p);
+        const int32_t j_2_p = kronecker_symbol(2U, p);
         switch (p % 8) {
             case 1:
                 assert(j_m1_p == 1);
@@ -264,7 +264,7 @@ void CheckJacobiBasic() noexcept {
                 break;
         }
 
-        const int32_t j_5_p  = kronecker_symbol(5U, p);
+        const int32_t j_5_p = kronecker_symbol(5U, p);
         uint32_t j_5_p_mod_p = static_cast<uint32_t>(j_5_p);
         switch (p % 5) {
             case 1:
@@ -297,7 +297,7 @@ void CheckJacobiBasic() noexcept {
             const int32_t j_a_p = kronecker_symbol(a, p);
             assert(j_a_p == -1 || j_a_p == 0 || j_a_p == 1);
             const uint32_t j_a_p_mod_p = j_a_p == -1 ? p - 1 : static_cast<uint32_t>(j_a_p);
-            const uint32_t a_p12       = math_functions::bin_pow_mod(a, (p - 1) / 2, p);
+            const uint32_t a_p12 = math_functions::bin_pow_mod(a, (p - 1) / 2, p);
             assert(j_a_p_mod_p == a_p12);
             for (uint32_t b = 0; b <= kLen; b++) {
                 const int32_t j_b_p = kronecker_symbol(b, p);
@@ -313,7 +313,7 @@ void CheckJacobiBasic() noexcept {
 
 void CheckJacobi(int32_t i, int32_t j, const mpz_class& n1, const mpz_class& n2) noexcept {
     const int32_t func_jac = kronecker_symbol(i, j);
-    const int real_jac     = mpz_jacobi(n1.get_mpz_t(), n2.get_mpz_t());
+    const int real_jac = mpz_jacobi(n1.get_mpz_t(), n2.get_mpz_t());
     if (func_jac != real_jac) {
         std::printf("Error at (%" PRId32 ", %" PRId32 "): given J = %d, correct J = %d\n", i, j,
                     func_jac, real_jac);
@@ -322,7 +322,7 @@ void CheckJacobi(int32_t i, int32_t j, const mpz_class& n1, const mpz_class& n2)
 
 void CheckJacobi(int64_t i, int64_t j, const mpz_class& n1, const mpz_class& n2) noexcept {
     const int32_t func_jac = kronecker_symbol(i, j);
-    const int real_jac     = mpz_jacobi(n1.get_mpz_t(), n2.get_mpz_t());
+    const int real_jac = mpz_jacobi(n1.get_mpz_t(), n2.get_mpz_t());
     if (func_jac != real_jac) {
         std::printf("Error at (%" PRId64 ", %" PRId64 "): given J = %d, correct J = %d\n", i, j,
                     func_jac, real_jac);
@@ -331,7 +331,7 @@ void CheckJacobi(int64_t i, int64_t j, const mpz_class& n1, const mpz_class& n2)
 
 void CheckJacobi(uint32_t i, uint32_t j, const mpz_class& n1, const mpz_class& n2) noexcept {
     const int32_t func_jac = kronecker_symbol(i, j);
-    const int real_jac     = mpz_jacobi(n1.get_mpz_t(), n2.get_mpz_t());
+    const int real_jac = mpz_jacobi(n1.get_mpz_t(), n2.get_mpz_t());
     if (func_jac != real_jac) {
         std::printf("Error at (%" PRIu32 ", %" PRIu32 "): given J = %d, correct J = %d\n", i, j,
                     func_jac, real_jac);
@@ -340,7 +340,7 @@ void CheckJacobi(uint32_t i, uint32_t j, const mpz_class& n1, const mpz_class& n
 
 void CheckJacobi(uint64_t i, uint64_t j, const mpz_class& n1, const mpz_class& n2) noexcept {
     const int32_t func_jac = kronecker_symbol(i, j);
-    const int real_jac     = mpz_jacobi(n1.get_mpz_t(), n2.get_mpz_t());
+    const int real_jac = mpz_jacobi(n1.get_mpz_t(), n2.get_mpz_t());
     if (func_jac != real_jac) {
         std::printf("Error at (%" PRIu64 ", %" PRIu64 "): given J = %d, correct J = %d\n", i, j,
                     func_jac, real_jac);
@@ -349,7 +349,7 @@ void CheckJacobi(uint64_t i, uint64_t j, const mpz_class& n1, const mpz_class& n
 
 void CheckJacobi(uint32_t i, int32_t j, const mpz_class& n1, const mpz_class& n2) noexcept {
     const int32_t func_jac = kronecker_symbol(i, j);
-    const int real_jac     = mpz_jacobi(n1.get_mpz_t(), n2.get_mpz_t());
+    const int real_jac = mpz_jacobi(n1.get_mpz_t(), n2.get_mpz_t());
     if (func_jac != real_jac) {
         std::printf("Error at (%" PRIu32 ", %" PRId32 "): given J = %d, correct J = %d\n", i, j,
                     func_jac, real_jac);
@@ -358,7 +358,7 @@ void CheckJacobi(uint32_t i, int32_t j, const mpz_class& n1, const mpz_class& n2
 
 void CheckJacobi(int32_t i, uint32_t j, const mpz_class& n1, const mpz_class& n2) noexcept {
     const int32_t func_jac = kronecker_symbol(i, j);
-    const int real_jac     = mpz_jacobi(n1.get_mpz_t(), n2.get_mpz_t());
+    const int real_jac = mpz_jacobi(n1.get_mpz_t(), n2.get_mpz_t());
     if (func_jac != real_jac) {
         std::printf("Error at (%" PRId32 ", %" PRIu32 "): given J = %d, correct J = %d\n", i, j,
                     func_jac, real_jac);
@@ -367,7 +367,7 @@ void CheckJacobi(int32_t i, uint32_t j, const mpz_class& n1, const mpz_class& n2
 
 void CheckJacobi(uint64_t i, int64_t j, const mpz_class& n1, const mpz_class& n2) noexcept {
     const int32_t func_jac = kronecker_symbol(i, j);
-    const int real_jac     = mpz_jacobi(n1.get_mpz_t(), n2.get_mpz_t());
+    const int real_jac = mpz_jacobi(n1.get_mpz_t(), n2.get_mpz_t());
     if (func_jac != real_jac) {
         std::printf("Error at (%" PRIu64 ", %" PRId64 "): given J = %d, correct J = %d\n", i, j,
                     func_jac, real_jac);
@@ -376,7 +376,7 @@ void CheckJacobi(uint64_t i, int64_t j, const mpz_class& n1, const mpz_class& n2
 
 void CheckJacobi(int64_t i, uint64_t j, const mpz_class& n1, const mpz_class& n2) noexcept {
     const int32_t func_jac = kronecker_symbol(i, j);
-    const int real_jac     = mpz_jacobi(n1.get_mpz_t(), n2.get_mpz_t());
+    const int real_jac = mpz_jacobi(n1.get_mpz_t(), n2.get_mpz_t());
     if (func_jac != real_jac) {
         std::printf("Error at (%" PRId64 ", %" PRIu64 "): given J = %d, correct J = %d\n", i, j,
                     func_jac, real_jac);

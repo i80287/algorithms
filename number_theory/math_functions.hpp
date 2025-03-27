@@ -123,8 +123,8 @@ template <class T>
 [[nodiscard]] ATTRIBUTE_CONST constexpr T bin_pow(T n, ptrdiff_t p) noexcept(noexcept(n *= n) &&
                                                                              noexcept(1 / n)) {
     const bool not_inverse = p >= 0;
-    const size_t p_u       = p >= 0 ? static_cast<size_t>(p) : -static_cast<size_t>(p);
-    const T res            = ::math_functions::bin_pow(std::move(n), p_u);
+    const size_t p_u = p >= 0 ? static_cast<size_t>(p) : -static_cast<size_t>(p);
+    const T res = ::math_functions::bin_pow(std::move(n), p_u);
     return not_inverse ? res : T(1) / res;
 }
 
@@ -136,7 +136,7 @@ template <class T>
 [[nodiscard]] ATTRIBUTE_CONST constexpr uint32_t bin_pow_mod(uint32_t n,
                                                              uint64_t p,
                                                              uint32_t mod) noexcept {
-    uint64_t res     = mod != 1;
+    uint64_t res = mod != 1;
     uint64_t widen_n = n;
     while (true) {
         if (p % 2 != 0) {
@@ -249,11 +249,11 @@ ATTRIBUTE_CONST I128_CONSTEXPR uint64_t bin_pow_mod(uint64_t n, uint64_t p, uint
     /**
      * See Hackers Delight Chapter 11.
      */
-    uint64_t l               = 0;
+    uint64_t l = 0;
     const uint128_t r_approx = (n >> 6U) + 16U;
-    uint64_t r               = r_approx > std::numeric_limits<uint64_t>::max()
-                                   ? std::numeric_limits<uint64_t>::max()
-                                   : static_cast<uint64_t>(r_approx);
+    uint64_t r = r_approx > std::numeric_limits<uint64_t>::max()
+                     ? std::numeric_limits<uint64_t>::max()
+                     : static_cast<uint64_t>(r_approx);
     do {
         // m = (l + r + 1) / 2
         const uint64_t m = (l / 2) + (r / 2) + ((r % 2) | (l % 2));
@@ -398,7 +398,7 @@ ATTRIBUTE_CONST constexpr IsPerfectSquareResult<uint32_t> is_perfect_square(uint
         case 1:
         case 4:
         case 9: {
-            const uint32_t root       = ::math_functions::isqrt(n);
+            const uint32_t root = ::math_functions::isqrt(n);
             const bool is_perf_square = root * root == n;
             return {is_perf_square ? root : 0, is_perf_square};
         }
@@ -429,7 +429,7 @@ ATTRIBUTE_CONST constexpr IsPerfectSquareResult<uint32_t> is_perfect_square(uint
         case 1:
         case 4:
         case 9: {
-            const uint32_t root       = ::math_functions::isqrt(n);
+            const uint32_t root = ::math_functions::isqrt(n);
             const bool is_perf_square = uint64_t{root} * root == n;
             return {is_perf_square ? root : 0, is_perf_square};
         }
@@ -463,7 +463,7 @@ ATTRIBUTE_CONST I128_CONSTEXPR
         case 1:
         case 4:
         case 9: {
-            const uint64_t root       = ::math_functions::isqrt(n);
+            const uint64_t root = ::math_functions::isqrt(n);
             const bool is_perf_square = uint128_t{root} * root == n;
             return {is_perf_square ? root : 0, is_perf_square};
         }
@@ -699,7 +699,7 @@ int32_t sign(char x) = delete;
     return ::math_functions::sign(a) == ::math_functions::sign(b);
 }
 
-bool uabs(bool n)          = delete;
+bool uabs(bool n) = delete;
 unsigned char uabs(char n) = delete;
 
 [[nodiscard]] ATTRIBUTE_CONST constexpr unsigned char uabs(signed char n) noexcept {
@@ -1139,7 +1139,7 @@ template <class T>
         // Reason: cppcheck can not deduce that n is uint128_t here
         // cppcheck-suppress [shiftTooManyBits]
         const uint64_t high = static_cast<uint64_t>(n >> 64U);
-        const uint64_t low  = static_cast<uint64_t>(n);
+        const uint64_t low = static_cast<uint64_t>(n);
         return ::math_functions::popcount<uint64_t>(high) +
                ::math_functions::popcount<uint64_t>(low);
     } else
@@ -1271,7 +1271,7 @@ ATTRIBUTE_CONST constexpr auto nearest_greater_equal_power_of_two(const UIntType
     static_assert(::math_functions::is_unsigned_v<UIntType> && sizeof(UIntType) >= sizeof(unsigned),
                   "unsigned integral type (at least unsigned int) is expected");
 
-    using ShiftType       = int32_t;
+    using ShiftType = int32_t;
     const ShiftType shift = ShiftType{sizeof(n) * CHAR_BIT} -
                             ShiftType{::math_functions::countl_zero(n | 1U)} -
                             ShiftType{(n & (n - 1)) == 0};
@@ -1306,9 +1306,9 @@ template <class IntType>
 [[nodiscard]] ATTRIBUTE_CONST constexpr IntType least_bit_set(IntType n) noexcept {
     static_assert(::math_functions::is_integral_v<IntType>, "integral type expected");
 
-    using UIntType              = ::math_functions::make_unsigned_t<IntType>;
+    using UIntType = ::math_functions::make_unsigned_t<IntType>;
     using UIntTypeAtLeastUInt32 = std::common_type_t<UIntType, uint32_t>;
-    auto unsigned_n             = static_cast<UIntTypeAtLeastUInt32>(static_cast<UIntType>(n));
+    auto unsigned_n = static_cast<UIntTypeAtLeastUInt32>(static_cast<UIntType>(n));
     return static_cast<IntType>(unsigned_n & -unsigned_n);
 }
 
@@ -1337,7 +1337,7 @@ template <class IntType>
             break;
         }
 
-        const bool n_has_jth_bit                           = (n & (IntType{1} << j)) != 0;
+        const bool n_has_jth_bit = (n & (IntType{1} << j)) != 0;
         const IntType number_of_full_blocks_with_j_bit_set = ((n >> j) / 2);
         const IntType nums_from_last_possibly_nonfull_block =
             n_has_jth_bit ? n - (((n >> j) << j) - 1) : IntType{0};
@@ -1372,7 +1372,7 @@ template <class T>
 [[nodiscard]]
 ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_CONST constexpr uint32_t base_b_len_impl(
     T value, const uint8_t base = 10) noexcept {
-    const uint32_t b  = base;
+    const uint32_t b = base;
     const uint32_t b2 = b * b;
     const uint32_t b3 = b2 * b;
     const uint32_t b4 = b3 * b;
@@ -1730,8 +1730,8 @@ ATTRIBUTE_CONST SumSinCos<FloatType> sum_of_sines_and_cosines(const FloatType al
                                                               const uint32_t n) noexcept {
     static_assert(std::is_floating_point_v<FloatType>, "Invalid type in sum_of_sines_and_cosines");
 
-    const FloatType nf       = static_cast<FloatType>(n);
-    const auto half_beta     = beta / 2;
+    const FloatType nf = static_cast<FloatType>(n);
+    const auto half_beta = beta / 2;
     const auto half_beta_sin = std::sin(half_beta);
     if (unlikely(std::abs(half_beta_sin) <= std::numeric_limits<FloatType>::epsilon())) {
         // If beta = 2 pi k, k \in Z
@@ -1748,9 +1748,9 @@ ATTRIBUTE_CONST SumSinCos<FloatType> sum_of_sines_and_cosines(const FloatType al
     }
 
     const auto sin_numer_over_sin_denum = std::sin(nf * half_beta) / half_beta_sin;
-    const auto arg                      = alpha + (nf - 1) * half_beta;
-    const auto sin_mult                 = std::sin(arg);
-    const auto cos_mult                 = std::cos(arg);
+    const auto arg = alpha + (nf - 1) * half_beta;
+    const auto sin_mult = std::sin(arg);
+    const auto cos_mult = std::cos(arg);
     return {
 #if CONFIG_HAS_AT_LEAST_CXX_20
         .sines_sum =
@@ -1889,7 +1889,7 @@ constexpr void visit_prime_factors(NumericType n, Function visitor) noexcept(
     // clang-format on
 
     using UnsignedNumericType = typename ::math_functions::make_unsigned_t<NumericType>;
-    using PrimeFactorType     = typename ::math_functions::PrimeFactor<UnsignedNumericType>;
+    using PrimeFactorType = typename ::math_functions::PrimeFactor<UnsignedNumericType>;
     UnsignedNumericType n_abs = ::math_functions::uabs(n);
 
     constexpr bool check_early_exit = std::is_invocable_r_v<bool, Function, PrimeFactorType>;
@@ -1897,7 +1897,7 @@ constexpr void visit_prime_factors(NumericType n, Function visitor) noexcept(
     if (n_abs % 2 == 0 && n_abs > 0) {
         // n_abs = s * 2^pow_of_2, where s is odd
         auto [s, pow_of_2] = ::math_functions::extract_pow2(n_abs);
-        n_abs              = s;
+        n_abs = s;
         if constexpr (check_early_exit) {
             if (!visitor(PrimeFactorType{UnsignedNumericType{2}, pow_of_2})) {
                 return;
@@ -1985,7 +1985,7 @@ public:
                 primes_.push_back(i);
             }
             for (size_t prime_index = 0;; prime_index++) {
-                const auto p   = primes_.at(prime_index);
+                const auto p = primes_.at(prime_index);
                 const size_t x = size_t{p} * i;
                 if (x > n) {
                     break;
@@ -2050,12 +2050,12 @@ private:
     static constexpr uint32_t number_of_unique_prime_factors_impl(
         const uint32_t* RESTRICT_QUALIFIER least_prime_factor, uint32_t n) noexcept {
         uint32_t unique_pfs_count = 0;
-        uint32_t last_pf          = 0;
+        uint32_t last_pf = 0;
         if (n % 2 == 0) {
             if (unlikely(n == 0)) {
                 return unique_pfs_count;
             }
-            n       = ::math_functions::extract_pow2(n).odd_part;
+            n = ::math_functions::extract_pow2(n).odd_part;
             last_pf = 2;
             unique_pfs_count++;
         }
@@ -2082,7 +2082,7 @@ private:
     std::vector<bool> primes(size_t{n} + 1, true);
     primes[0] = false;
     if (likely(n > 0)) {
-        primes[1]           = false;
+        primes[1] = false;
         const uint32_t root = ::math_functions::isqrt(n);
         if (const uint32_t i = 2; i <= root) {
             for (size_t j = size_t{i} * size_t{i}; j <= n; j += i) {
@@ -2130,7 +2130,7 @@ template <uint32_t N>
         primes.set();
         primes[0] = false;
         if constexpr (primes.size() > 1) {
-            primes[1]               = false;
+            primes[1] = false;
             constexpr uint32_t root = ::math_functions::isqrt(N);
             if constexpr (constexpr uint32_t i = 2; i <= root) {
                 // NOLINTNEXTLINE(bugprone-implicit-widening-of-multiplication-result)
@@ -2183,28 +2183,28 @@ template <typename IntType>
     static_assert(::math_functions::is_integral_v<IntType>, "Integral type expected");
 
     int64_t u_previous = a != 0;
-    int64_t u_current  = 0;
+    int64_t u_current = 0;
     int64_t v_previous = 0;
-    int64_t v_current  = 1;
+    int64_t v_current = 1;
 
     using CompIntType = std::conditional_t<sizeof(IntType) >= sizeof(int), IntType, int64_t>;
 
     CompIntType r_previous = a;
-    CompIntType r_current  = b;
+    CompIntType r_current = b;
     while (r_current != 0) {
-        const int64_t q_current  = static_cast<int64_t>(r_previous / r_current);
+        const int64_t q_current = static_cast<int64_t>(r_previous / r_current);
         const CompIntType r_next = r_previous % r_current;
 
         r_previous = r_current;
-        r_current  = r_next;
+        r_current = r_next;
 
         const int64_t u_next = u_previous - u_current * q_current;
-        u_previous           = u_current;
-        u_current            = u_next;
+        u_previous = u_current;
+        u_current = u_next;
 
         const int64_t v_next = v_previous - v_current * q_current;
-        v_previous           = v_current;
-        v_current            = v_next;
+        v_previous = v_current;
+        v_current = v_next;
     }
 
     if constexpr (::math_functions::is_signed_v<CompIntType>) {
@@ -2229,7 +2229,7 @@ namespace detail {
 
 struct HelperRetType {
     uint32_t x0 = kNoCongruenceSolution;  // first solution of congruence
-    uint32_t d  = 0;                      // gcd(a, m)
+    uint32_t d = 0;                       // gcd(a, m)
     uint32_t m_ = 0;                      // m / d
 };
 
@@ -2255,7 +2255,7 @@ constexpr HelperRetType congruence_helper(const uint32_t a,
     const uint32_t c_ = c / d;
     const uint32_t m_ = m / d;
     // a_ * u_ + m_ * v_ == 1
-    const int64_t u_       = ::math_functions::extended_euclid_algorithm<uint32_t>(a_, m_).u_value;
+    const int64_t u_ = ::math_functions::extended_euclid_algorithm<uint32_t>(a_, m_).u_value;
     const auto unsigned_u_ = static_cast<uint64_t>(u_ >= 0 ? u_ : u_ + m_);
 
     // a_ * (u_ * c_) + m_ * (v_ * c_) == c_
@@ -2399,7 +2399,7 @@ typename ::math_functions::InverseResult inv_range_mod_m_impl(Iter nums_begin, I
     // clang-format on
 
     const auto n = static_cast<size_t>(std::distance(nums_begin, nums_end));
-    auto res     = ::math_functions::InverseResult{
+    auto res = ::math_functions::InverseResult{
 #if CONFIG_HAS_AT_LEAST_CXX_20
         .numbers_mod_m =
 #endif
@@ -2412,14 +2412,14 @@ typename ::math_functions::InverseResult inv_range_mod_m_impl(Iter nums_begin, I
 
     uint32_t prod_mod_m = 1;
     {
-        auto nums_mod_m_iter     = res.numbers_mod_m.begin();
+        auto nums_mod_m_iter = res.numbers_mod_m.begin();
         auto inv_nums_mod_m_iter = res.inversed_numbers.begin();
         for (auto iter = nums_begin; iter != nums_end;
              ++iter, ++nums_mod_m_iter, ++inv_nums_mod_m_iter) {
             const auto num_mod_m = ::math_functions::detail::congruence_arg(*iter, m);
-            *nums_mod_m_iter     = num_mod_m;
+            *nums_mod_m_iter = num_mod_m;
             *inv_nums_mod_m_iter = prod_mod_m;
-            prod_mod_m           = static_cast<uint32_t>((uint64_t{prod_mod_m} * num_mod_m) % m);
+            prod_mod_m = static_cast<uint32_t>((uint64_t{prod_mod_m} * num_mod_m) % m);
         }
     }
 
@@ -2427,12 +2427,12 @@ typename ::math_functions::InverseResult inv_range_mod_m_impl(Iter nums_begin, I
 
     {
         auto inv_nums_mod_m_iter = res.inversed_numbers.rbegin();
-        uint32_t suffix_prod     = 1;
+        uint32_t suffix_prod = 1;
         for (auto iter = res.numbers_mod_m.rbegin(), nums_mod_m_rend = res.numbers_mod_m.rend();
              iter != nums_mod_m_rend; ++iter, ++inv_nums_mod_m_iter) {
-            const uint64_t t     = (uint64_t{suffix_prod} * *inv_nums_mod_m_iter) % m;
+            const uint64_t t = (uint64_t{suffix_prod} * *inv_nums_mod_m_iter) % m;
             *inv_nums_mod_m_iter = static_cast<uint32_t>((t * inv_nums_prod_mod_m) % m);
-            suffix_prod          = static_cast<uint32_t>((uint64_t{suffix_prod} * *iter) % m);
+            suffix_prod = static_cast<uint32_t>((uint64_t{suffix_prod} * *iter) % m);
         }
     }
 
@@ -2545,7 +2545,7 @@ ATTRIBUTE_CONST constexpr uint32_t solve_binary_congruence_modulo_m(const uint32
     /**
      * Solve 2^{k-s} * x ≡ c / 2^{s} (mod r), where r = m_ = m / 2^{s}
      */
-    uint64_t rhs       = c_mod_m_;
+    uint64_t rhs = c_mod_m_;
     auto lhs_bin_power = k - s;
 
     constexpr unsigned kThreshold = 60;
@@ -2628,7 +2628,7 @@ ATTRIBUTE_CONST constexpr uint32_t solve_binary_congruence_modulo_m(const uint32
             } while (pow_of_p_i <= n);
 
             const uint32_t a_i = pf.factor_power;
-            ans                = std::min(ans, b_i / a_i);
+            ans = std::min(ans, b_i / a_i);
             return true;
         });
 
@@ -2652,7 +2652,7 @@ ATTRIBUTE_CONST constexpr uint32_t solve_binary_congruence_modulo_m(const uint32
     // See https://en.wikipedia.org/wiki/List_of_Mersenne_primes_and_perfect_numbers
 #if defined(MATH_FUNCTIONS_HPP_ENABLE_TARGET_OPTIONS)
     const auto [q, pm1] = extract_pow2(n);
-    const auto p        = pm1 + 1;
+    const auto p = pm1 + 1;
     if (q != (uint64_t{1} << p) - 1) {
         return false;
     }
@@ -2797,8 +2797,8 @@ ATTRIBUTE_CONST constexpr T powers_sum(const uint32_t n) noexcept {
     } else if constexpr (M == 2) {
         // n * (n + 1) * (2 * n + 1) / 6
         const auto n_u64 = static_cast<uint64_t>(n);
-        const T tmp      = static_cast<T>((n * (n_u64 + 1)) / 2);
-        const auto tmp2  = 2 * n_u64 + 1;
+        const T tmp = static_cast<T>((n * (n_u64 + 1)) / 2);
+        const auto tmp2 = 2 * n_u64 + 1;
         return (tmp2 % 3 == 0) ? (tmp * (tmp2 / 3)) : ((tmp / 3) * tmp2);
     } else if constexpr (M == 3) {
         // n * n * (n + 1) * (n + 1) / 4
@@ -2806,11 +2806,11 @@ ATTRIBUTE_CONST constexpr T powers_sum(const uint32_t n) noexcept {
         return tmp * tmp;
     } else if constexpr (M == 4) {
         // n * (n + 1) * (6 * n^3 + 9 * n^2 + n - 1) / 30
-        const auto n_u64                = static_cast<uint64_t>(n);
-        const uint64_t n_square_u64     = n_u64 * n;
-        const auto tmp                  = static_cast<T>((n_square_u64 + n) / 2);
+        const auto n_u64 = static_cast<uint64_t>(n);
+        const uint64_t n_square_u64 = n_u64 * n;
+        const auto tmp = static_cast<T>((n_square_u64 + n) / 2);
         const uint64_t two_n_plus_3_u64 = 2 * n_u64 + 3;
-        const uint32_t n_minus_1        = n - 1;
+        const uint32_t n_minus_1 = n - 1;
         switch (n % 5) {
             case 0:
             case 4: {
@@ -2971,7 +2971,7 @@ CONSTEXPR_VECTOR std::vector<T> pow_arange(const size_t n, const T p) {
 
     std::vector<T> values(n + 1 != 0 ? n + 1 : n);
     T current_pow = T{1};
-    values[0]     = current_pow;
+    values[0] = current_pow;
     for (size_t i = 1; i <= n; i++) {
         current_pow *= p;
         values[i] = current_pow;
@@ -2998,10 +2998,10 @@ CONSTEXPR_VECTOR std::vector<uint32_t> pow_mod_m_arange(const size_t n,
                                                         const uint32_t m) {
     std::vector<uint32_t> values(n + 1 != 0 ? n + 1 : n);
     uint32_t current_pow = m != 1 ? 1u : 0u;
-    values[0]            = current_pow;
+    values[0] = current_pow;
     for (size_t i = 1; i <= n; i++) {
         current_pow = static_cast<uint32_t>((uint64_t{current_pow} * uint64_t{p}) % m);
-        values[i]   = current_pow;
+        values[i] = current_pow;
     }
 
     return values;
@@ -3014,10 +3014,10 @@ CONSTEXPR_VECTOR std::vector<uint32_t> pow_mod_m_arange(const size_t n,
 CONSTEXPR_VECTOR std::vector<uint32_t> factorial_mod_m_arange(const size_t n, const uint32_t m) {
     std::vector<uint32_t> values(n + 1 != 0 ? n + 1 : n);
     uint32_t current_factorial = m != 1 ? 1U : 0U;
-    values[0]                  = current_factorial;
+    values[0] = current_factorial;
     for (size_t i = 1; i <= n; i++) {
         current_factorial = static_cast<uint32_t>((uint64_t{current_factorial} * uint64_t{i}) % m);
-        values[i]         = current_factorial;
+        values[i] = current_factorial;
     }
 
     return values;
@@ -3037,15 +3037,15 @@ constexpr Iterator find_wmedian_iter(uint64_t weighted_sum,
                            const size_t prefsums_size) noexcept {
     // clang-format on
 
-    uint64_t min_weighted_sum      = weighted_sum;
+    uint64_t min_weighted_sum = weighted_sum;
     Iterator min_weighted_sum_iter = iter;
     ++iter;
-    const size_t n             = prefsums_size - 1;
+    const size_t n = prefsums_size - 1;
     const uint64_t max_prefsum = prefsums[n];
     for (size_t j = 1; j < n; ++iter, ++j) {
         weighted_sum = weighted_sum + prefsums[j] - (max_prefsum - prefsums[j]);
         if (weighted_sum < min_weighted_sum) {
-            min_weighted_sum      = weighted_sum;
+            min_weighted_sum = weighted_sum;
             min_weighted_sum_iter = iter;
         }
     }
@@ -3067,11 +3067,11 @@ CONSTEXPR_VECTOR Iterator wmedian_impl(const Iterator begin, const Iterator end)
 
     const size_t n = static_cast<size_t>(n_signed);
     std::vector<uint64_t> prefsums(n + 1);
-    size_t i              = 0;
+    size_t i = 0;
     uint64_t weighted_sum = 0;
     for (Iterator iter = begin; iter != end; ++iter, ++i) {
         const uint32_t val = *iter;
-        prefsums[i + 1]    = prefsums[i] + uint64_t{val};
+        prefsums[i + 1] = prefsums[i] + uint64_t{val};
         weighted_sum += uint64_t{i} * uint64_t{val};
     }
 
@@ -3135,8 +3135,8 @@ I128_CONSTEXPR uint128_t gcd(uint128_t a, uint128_t b) noexcept {
         return a;
     }
 
-    const uint32_t ra   = static_cast<uint32_t>(::math_functions::countr_zero(a));
-    const uint32_t rb   = static_cast<uint32_t>(::math_functions::countr_zero(b));
+    const uint32_t ra = static_cast<uint32_t>(::math_functions::countr_zero(a));
+    const uint32_t rb = static_cast<uint32_t>(::math_functions::countr_zero(b));
     const uint32_t mult = std::min(ra, rb);
     a >>= ra;
     b >>= rb;
@@ -3144,8 +3144,8 @@ I128_CONSTEXPR uint128_t gcd(uint128_t a, uint128_t b) noexcept {
         if (a < b) {
             // std::swap is not constexpr in C++17
             const uint128_t tmp = a;
-            a                   = b;
-            b                   = tmp;
+            a = b;
+            b = tmp;
         }
 
         a -= b;

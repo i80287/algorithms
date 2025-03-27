@@ -20,7 +20,7 @@ int main() {
         // offset = 1 => arr is aligned on a 4-byte boundary
         int32_t* const arr = &buffer[offset];
         for (size_t i = 0; i <= arr_len; i++) {
-            const uint8_t kMagicByte  = 251;
+            const uint8_t kMagicByte = 251;
             const int32_t kMagicInt32 = static_cast<int32_t>(
                 ((uint32_t{kMagicByte}) << 24) | ((uint32_t{kMagicByte}) << 16) |
                 ((uint32_t{kMagicByte}) << 8) | ((uint32_t{kMagicByte}) << 0));

@@ -21,7 +21,7 @@ using std::uint32_t;
 namespace {
 
 using ACTrieBuilder = actrie::ACTrieBuilder<'a', 'z', /*IsCaseInsensetive = */ true>;
-using ACTrie        = typename ACTrieBuilder::ACTrieType;
+using ACTrie = typename ACTrieBuilder::ACTrieType;
 
 template <char QueryWordsDelimiter = ' '>
 ACTrie ParseQuery(const string_view query) {
@@ -61,14 +61,14 @@ template <bool IsExactWordsMatching>
 std::vector<string_view> Search(const string_view text,
                                 const string_view query,
                                 const size_t max_result_size) {
-    const ACTrie act               = ParseQuery(query);
+    const ACTrie act = ParseQuery(query);
     const size_t query_words_count = act.PatternsSize();
 
     struct LineInfo {
-        size_t LineNumber     = 0;
-        size_t WordsCount     = 0;
+        size_t LineNumber = 0;
+        size_t WordsCount = 0;
         size_t LineStartIndex = 0;
-        size_t LineEndIndex   = 0;
+        size_t LineEndIndex = 0;
         std::unordered_map<size_t, uint32_t> QueryWordsIndexes{};
     };
 
@@ -99,9 +99,9 @@ std::vector<string_view> Search(const string_view text,
                     return;
                 }
 
-                ref.WordsCount     = words_on_current_line;
+                ref.WordsCount = words_on_current_line;
                 ref.LineStartIndex = line_start_index;
-                ref.LineEndIndex   = line_end_index;
+                ref.LineEndIndex = line_end_index;
             });
 
     std::vector<double> query_words_inv_idf_log(query_words_count);
@@ -125,14 +125,14 @@ std::vector<string_view> Search(const string_view text,
     };
     std::vector<LineScoreWithIndex> lines_score(query_words_on_lines.size());
     for (size_t line_index = 0; const LineInfo& line_info : query_words_on_lines) {
-        double line_score        = 0;
+        double line_score = 0;
         const double words_count = static_cast<double>(line_info.WordsCount);
         for (auto&& [query_word_index, word_count] : line_info.QueryWordsIndexes) {
             line_score += (word_count / words_count) * query_words_inv_idf_log.at(query_word_index);
         }
 
         lines_score[line_index] = LineScoreWithIndex{
-            .Score     = line_score,
+            .Score = line_score,
             .LineIndex = line_index,
         };
         line_index++;
@@ -147,9 +147,9 @@ std::vector<string_view> Search(const string_view text,
     const size_t result_size = std::min(lines_score.size(), max_result_size);
     std::vector<string_view> result_lines(result_size);
     for (size_t result_index = 0; result_index < result_size; result_index++) {
-        const size_t line_index       = lines_score[result_index].LineIndex;
+        const size_t line_index = lines_score[result_index].LineIndex;
         const size_t line_start_index = query_words_on_lines[line_index].LineStartIndex;
-        const size_t line_end_index   = query_words_on_lines[line_index].LineEndIndex;
+        const size_t line_end_index = query_words_on_lines[line_index].LineEndIndex;
         result_lines[result_index] =
             text.substr(line_start_index, line_end_index - line_start_index);
     }

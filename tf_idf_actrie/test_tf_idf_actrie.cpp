@@ -35,7 +35,7 @@ void test1() {
         "publishing software like Aldus PageMaker\n"
         "including versions of Lorem Ipsum."sv;
 
-    constexpr auto query              = "typesetting release"sv;
+    constexpr auto query = "typesetting release"sv;
     constexpr std::size_t result_size = 3;
 
     auto res = search_lib::Search(text, query, result_size);
@@ -58,12 +58,12 @@ void test2() {
     }();
     text.shrink_to_fit();
 
-    constexpr auto query              = "london city borough burg"sv;
+    constexpr auto query = "london city borough burg"sv;
     constexpr std::size_t result_size = 32;
 
-    const auto start                        = std::chrono::high_resolution_clock::now();
+    const auto start = std::chrono::high_resolution_clock::now();
     const std::vector<std::string_view> res = search_lib::Search(text, query, result_size);
-    const auto end                          = std::chrono::high_resolution_clock::now();
+    const auto end = std::chrono::high_resolution_clock::now();
     [[maybe_unused]] const auto duration =
         std::chrono::duration_cast<std::chrono::nanoseconds>(end - start);
 

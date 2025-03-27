@@ -18,18 +18,18 @@
 
 class SquareMatrix final {
 public:
-    using side_type              = std::uint32_t;
-    using value_type             = std::uint64_t;
-    using reference              = value_type&;
-    using const_reference        = const value_type&;
-    using pointer                = value_type*;
-    using const_pointer          = const value_type*;
-    using allocator_type         = typename std::allocator<value_type>;
-    using allocator_traits       = typename std::allocator_traits<allocator_type>;
-    using size_type              = typename allocator_type::size_type;
-    using iterator               = pointer;
-    using const_iterator         = const_pointer;
-    using reverse_iterator       = typename std::reverse_iterator<iterator>;
+    using side_type = std::uint32_t;
+    using value_type = std::uint64_t;
+    using reference = value_type&;
+    using const_reference = const value_type&;
+    using pointer = value_type*;
+    using const_pointer = const value_type*;
+    using allocator_type = typename std::allocator<value_type>;
+    using allocator_traits = typename std::allocator_traits<allocator_type>;
+    using size_type = typename allocator_type::size_type;
+    using iterator = pointer;
+    using const_iterator = const_pointer;
+    using reverse_iterator = typename std::reverse_iterator<iterator>;
     using const_reverse_iterator = typename std::reverse_iterator<const_iterator>;
 
     explicit CXX20_CONSTEXPR SquareMatrix(side_type side_size)
@@ -201,10 +201,10 @@ inline constexpr std::uint32_t kNoMod = 0;
 template <std::uint32_t Mod = kNoMod>
 class CNKCounter {
 public:
-    using storage          = SquareMatrix;
+    using storage = SquareMatrix;
     using max_precalc_type = typename storage::side_type;
-    using size_type        = typename storage::size_type;
-    using int_type         = typename storage::value_type;
+    using size_type = typename storage::size_type;
+    using int_type = typename storage::value_type;
 
     static_assert(std::is_unsigned_v<int_type>, "impl error");
     // NOLINTNEXTLINE(misc-redundant-expression)
@@ -246,7 +246,7 @@ public:
         }
 
         const int_type C_n_1_k_1 = (*this)(n - 1, k - 1);
-        const int_type C_n_1_k   = (*this)(n - 1, k);
+        const int_type C_n_1_k = (*this)(n - 1, k);
         return ByMod(C_n_1_k_1 + C_n_1_k);
     }
 

@@ -12,7 +12,7 @@ BraceWrapping:
     BeforeElse: true
 BreakConstructorInitializers: BeforeComma
 BreakInheritanceList: BeforeComma
-AlignConsecutiveAssignments: true
+AlignConsecutiveAssignments: false
 InsertNewlineAtEOF: true
 AllowShortFunctionsOnASingleLine: Empty
 BreakAfterAttributes: Leave

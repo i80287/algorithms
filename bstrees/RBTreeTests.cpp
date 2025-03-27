@@ -28,9 +28,9 @@ constexpr bool non_intersecting_sets(const std::array<T, N> &s1,
     class Iter {
     public:
         using difference_type [[maybe_unused]] = std::ptrdiff_t;
-        using value_type                       = T;
-        using reference                        = value_type &;
-        using pointer                          = value_type *;
+        using value_type = T;
+        using reference = value_type &;
+        using pointer = value_type *;
 
         constexpr pointer operator->() const noexcept {
             was_de_referenced_ = true;
@@ -123,7 +123,7 @@ void test_on_range(const Range1 &nums, const Range2 &not_in_nums) {
         auto check = [&t, &checker](const auto &sub_range) {
             for (const T &lb_num : sub_range) {
                 {
-                    const auto p                = t.lower_bound(lb_num);
+                    const auto p = t.lower_bound(lb_num);
                     const auto correct_ans_iter = checker.lower_bound(lb_num);
                     assert(t.size() == checker.size());
                     if (correct_ans_iter == checker.end()) {
@@ -135,7 +135,7 @@ void test_on_range(const Range1 &nums, const Range2 &not_in_nums) {
                     }
                 }
                 {
-                    const auto p                = t.find(lb_num);
+                    const auto p = t.find(lb_num);
                     const auto correct_ans_iter = checker.find(lb_num);
                     assert(t.size() == checker.size());
                     if (correct_ans_iter == checker.end()) {
@@ -320,15 +320,15 @@ void test_with_comparator() {
     };
     class NonCopyableCmp : public Cmp {
     public:
-        NonCopyableCmp()                                              = default;
-        NonCopyableCmp(const NonCopyableCmp &)                        = delete;
-        NonCopyableCmp &operator=(const NonCopyableCmp &)             = delete;
-        NonCopyableCmp(NonCopyableCmp &&)                             = default;
+        NonCopyableCmp() = default;
+        NonCopyableCmp(const NonCopyableCmp &) = delete;
+        NonCopyableCmp &operator=(const NonCopyableCmp &) = delete;
+        NonCopyableCmp(NonCopyableCmp &&) = default;
         [[maybe_unused]] NonCopyableCmp &operator=(NonCopyableCmp &&) = default;
     };
 
-    using Set     = RBTree<T, NonCopyableCmp>;
-    using StdSet  = std::set<T, Cmp>;
+    using Set = RBTree<T, NonCopyableCmp>;
+    using StdSet = std::set<T, Cmp>;
     auto cmp_sets = [](const Set &lhs, const StdSet &rhs) {
         assert(lhs.size() == rhs.size());
         for (auto rhs_iter = rhs.begin(); const T &lhs_t : lhs) {

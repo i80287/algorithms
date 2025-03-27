@@ -9,7 +9,7 @@ static vector<size_t> prefix_function(string_view s) {
     const size_t n = s.length();
     vector<size_t> pi(n);
     for (size_t i = 1; i < n; i++) {
-        size_t j     = pi[i - 1];
+        size_t j = pi[i - 1];
         uint32_t c_i = uint8_t(s[i]);
         while (j > 0 && c_i != uint8_t(s[j])) {
             j = pi[j - 1];

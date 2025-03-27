@@ -1,7 +1,6 @@
 #pragma once
 
 #include <cstddef>
-#include <cstdint>
 #include <string>
 #include <string_view>
 #include <type_traits>
@@ -28,16 +27,16 @@ namespace misc {
 namespace misc_detail {
 
 ATTRIBUTE_NODISCARD_WITH_MESSAGE("impl error")
-MISC_GET_TYPENAME_CONSTEVAL std::size_t get_typenameEndPosImpl(const std::string_view s) {
+MISC_GET_TYPENAME_CONSTEVAL std::size_t get_typename_end_pos_impl(const std::string_view s) {
     // Variables are not inside of the for init for
     //  the compatibility with C++17.
-    std::size_t opened_square_brackets   = 0;
-    std::size_t opened_round_brackets    = 0;
-    std::size_t opened_curly_brackets    = 0;
+    std::size_t opened_square_brackets = 0;
+    std::size_t opened_round_brackets = 0;
+    std::size_t opened_curly_brackets = 0;
     std::size_t opened_triangle_brackets = 0;
-    std::size_t i                        = 0;
+    std::size_t i = 0;
     for (const char c : s) {
-        switch (static_cast<std::uint8_t>(c)) {
+        switch (static_cast<unsigned char>(c)) {
             case '(': {
                 opened_round_brackets++;
                 break;
@@ -121,8 +120,9 @@ ATTRIBUTE_NODISCARD_WITH_MESSAGE("impl error")
 MISC_GET_TYPENAME_CONSTEVAL
 std::string_view extract_typename_impl(
     const std::string_view function_name ATTRIBUTE_LIFETIME_BOUND) {
-    const auto is_space = [](char c) constexpr noexcept {
-        switch (static_cast<std::uint8_t>(c)) {
+    const auto is_space = [](const char c) constexpr noexcept {
+        switch (static_cast<unsigned char>(c)) {
+            case '\t':
             case '\n':
             case '\v':
             case '\f':
@@ -136,16 +136,16 @@ std::string_view extract_typename_impl(
 
 #if defined(__GNUG__) || defined(__clang__)
     constexpr std::string_view type_prefix = "T = ";
-    const auto prefix_start_pos            = function_name.find(type_prefix);
+    const std::size_t prefix_start_pos = function_name.find(type_prefix);
     CONSTEVAL_ASSERT(prefix_start_pos != std::string_view::npos);
-    auto typename_start_pos = prefix_start_pos + type_prefix.size();
+    std::size_t typename_start_pos = prefix_start_pos + type_prefix.size();
 #elif defined(_MSC_VER)
     constexpr std::string_view type_prefix = "get_typename_impl<";
-    const auto prefix_start_pos            = function_name.find(type_prefix);
+    const std::size_t prefix_start_pos = function_name.find(type_prefix);
     CONSTEVAL_ASSERT(prefix_start_pos != std::string_view::npos);
-    auto typename_start_pos = prefix_start_pos + type_prefix.size();
+    std::size_t typename_start_pos = prefix_start_pos + type_prefix.size();
     CONSTEVAL_ASSERT(typename_start_pos < function_name.size());
-    std::string_view piece                 = function_name.substr(typename_start_pos);
+    std::string_view piece = function_name.substr(typename_start_pos);
     constexpr std::string_view kKeywords[] = {
         "class",
         "struct",
@@ -158,7 +158,7 @@ std::string_view extract_typename_impl(
             piece.remove_prefix(1);
             typename_start_pos++;
         }
-        for (const auto keyword : kKeywords) {
+        for (const std::string_view keyword : kKeywords) {
 #if CONFIG_HAS_AT_LEAST_CXX_20
             if (piece.starts_with(keyword))
 #else
@@ -183,8 +183,8 @@ std::string_view extract_typename_impl(
         typename_start_pos++;
     }
     CONSTEVAL_ASSERT(typename_start_pos < function_name.size());
-    const auto typename_end_pos =
-        typename_start_pos + get_typenameEndPosImpl(function_name.substr(typename_start_pos));
+    const std::size_t typename_end_pos =
+        typename_start_pos + get_typename_end_pos_impl(function_name.substr(typename_start_pos));
     CONSTEVAL_ASSERT(typename_end_pos < function_name.size());
     CONSTEVAL_ASSERT(typename_start_pos < typename_end_pos);
     return function_name.substr(typename_start_pos, typename_end_pos - typename_start_pos);
@@ -226,18 +226,18 @@ std::string_view extract_enum_value_name_impl(const std::string_view function_na
 #error("Unsupported compiler")
 #endif
 
-    const auto prefix_start_pos = function_name.find(prefix);
+    const std::size_t prefix_start_pos = function_name.find(prefix);
     CONSTEVAL_ASSERT(prefix_start_pos != string_view::npos);
-    auto value_start_pos = prefix_start_pos + prefix.size();
+    std::size_t value_start_pos = prefix_start_pos + prefix.size();
     CONSTEVAL_ASSERT(value_start_pos < function_name.size());
-    const auto value_end_pos =
-        value_start_pos + get_typenameEndPosImpl(function_name.substr(value_start_pos));
+    const std::size_t value_end_pos =
+        value_start_pos + get_typename_end_pos_impl(function_name.substr(value_start_pos));
     CONSTEVAL_ASSERT(value_start_pos < value_end_pos);
     CONSTEVAL_ASSERT(value_end_pos < function_name.size());
     std::string_view full_name =
         function_name.substr(value_start_pos, value_end_pos - value_start_pos);
     constexpr std::string_view kScopeResolutionOperator = "::";
-    if (const auto scope_res_operator_pos = full_name.rfind(kScopeResolutionOperator);
+    if (const std::size_t scope_res_operator_pos = full_name.rfind(kScopeResolutionOperator);
         scope_res_operator_pos != std::string_view::npos) {
         full_name = full_name.substr(scope_res_operator_pos + kScopeResolutionOperator.size());
     }

@@ -37,10 +37,10 @@ constexpr LoopDetectResult loop_detection_Gosper(Function f, std::int32_t x0) no
 #endif
     // clang-format on
 
-    f_values[0]     = x0;
+    f_values[0] = x0;
     std::int32_t xn = x0;
     for (std::uint32_t n = 1;;) {
-        xn                       = std::invoke(f, std::int32_t{xn});
+        xn = std::invoke(f, std::int32_t{xn});
         const std::uint32_t kmax = ::math_functions::log2_floor(n);
         for (std::uint32_t k = 0; k <= kmax; k++) {
             if (unlikely(xn == f_values[k])) {
@@ -60,7 +60,7 @@ constexpr LoopDetectResult loop_detection_Gosper(Function f, std::int32_t x0) no
                 const std::uint32_t lambda = n - m;
                 CONFIG_ASSUME_STATEMENT(lambda >= 1);
                 const auto mu_upper = m;
-                const auto gap      = std::max(1U, lambda - 1) - 1;
+                const auto gap = std::max(1U, lambda - 1) - 1;
                 const auto mu_lower = mu_upper >= gap ? mu_upper - gap : 0;
                 CONFIG_ASSUME_STATEMENT(mu_lower <= mu_upper);
                 return {mu_lower, mu_upper, lambda};

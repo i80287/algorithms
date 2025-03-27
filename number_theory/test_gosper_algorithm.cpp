@@ -33,7 +33,7 @@ using std::uint32_t;
 
 void test1() noexcept {
     test_tools::log_tests_started();
-    const int32_t x0                        = 0;
+    const int32_t x0 = 0;
     const auto [mu_lower, mu_upper, lambda] = math_functions::loop_detection_Gosper(f2, x0);
     assert(lambda == 2);
     assert(mu_lower == mu_upper);
@@ -62,7 +62,7 @@ void test2() noexcept {
 
 void test3() noexcept {
     test_tools::log_tests_started();
-    const int32_t x0                        = 0;
+    const int32_t x0 = 0;
     const auto [mu_lower, mu_upper, lambda] = math_functions::loop_detection_Gosper(f3, x0);
     assert(mu_lower <= mu_upper);
     int xi = x0;
@@ -72,7 +72,7 @@ void test3() noexcept {
     constexpr size_t kPeriod = 4;
     assert(lambda == kPeriod);
     using PeriodicValues = std::array<int32_t, kPeriod>;
-    auto fillarray       = [](PeriodicValues& mem, int32_t x_start) constexpr noexcept {
+    auto fillarray = [](PeriodicValues& mem, int32_t x_start) constexpr noexcept {
         mem[0] = x_start;
         for (size_t i = 1; i < mem.size(); i++) {
             mem[i] = f3(mem[i - 1]);

@@ -95,7 +95,7 @@ ATTRIBUTE_CONST I128_CONSTEXPR bool is_strong_lucas_prp(uint64_t n,
                                                         uint16_t p,
                                                         int32_t q) noexcept {
     const uint32_t p2 = uint32_t{p} * uint32_t{p};
-    const int64_t d   = int64_t{p2} - int64_t{q} * 4;
+    const int64_t d = int64_t{p2} - int64_t{q} * 4;
     if constexpr (BasicChecks) {
         /* Check if p*p - 4*q == 0. */
         if (unlikely(d == 0)) {
@@ -130,8 +130,8 @@ ATTRIBUTE_CONST I128_CONSTEXPR bool is_strong_lucas_prp(uint64_t n,
 
     /* Find s and r satisfying: nmj = s * (2 ^ r), s odd */
     const auto extraction_res = ::math_functions::extract_pow2(nmj);
-    const uint64_t s          = extraction_res.odd_part;
-    const uint32_t r          = extraction_res.power;
+    const uint64_t s = extraction_res.odd_part;
+    const uint32_t r = extraction_res.power;
     CONFIG_ASSUME_STATEMENT(r >= 1);
     CONFIG_ASSUME_STATEMENT(s % 2 == 1);
     // Redundant but still
@@ -171,11 +171,11 @@ ATTRIBUTE_CONST I128_CONSTEXPR bool is_strong_lucas_prp(uint64_t n,
             CONFIG_ASSUME_STATEMENT(vl < n);
             /* vl = vh*vl - p*ql (mod n) */
             const uint64_t vh_vl = static_cast<uint64_t>((uint128_t{vh} * vl) % n);
-            const uint64_t p_ql  = static_cast<uint64_t>((p * uint128_t{ql}) % n);
+            const uint64_t p_ql = static_cast<uint64_t>((p * uint128_t{ql}) % n);
             CONFIG_ASSUME_STATEMENT(vh_vl < n);
             CONFIG_ASSUME_STATEMENT(p_ql < n);
             const uint64_t tmp_vl = vh_vl - p_ql;
-            vl                    = vh_vl >= p_ql ? tmp_vl : tmp_vl + n;
+            vl = vh_vl >= p_ql ? tmp_vl : tmp_vl + n;
             CONFIG_ASSUME_STATEMENT(vl < n);
 
             CONFIG_ASSUME_STATEMENT(vh < n);
@@ -189,7 +189,7 @@ ATTRIBUTE_CONST I128_CONSTEXPR bool is_strong_lucas_prp(uint64_t n,
             CONFIG_ASSUME_STATEMENT(qh_2 < n);
             CONFIG_ASSUME_STATEMENT(qh_2 == (uint128_t{qh} * 2) % n);
             const uint64_t tmp_vh = vh_vh - qh_2;
-            vh                    = vh_vh >= qh_2 ? tmp_vh : tmp_vh + n;
+            vh = vh_vh >= qh_2 ? tmp_vh : tmp_vh + n;
             CONFIG_ASSUME_STATEMENT(vh < n);
         } else {
             /* qh = ql */
@@ -202,18 +202,18 @@ ATTRIBUTE_CONST I128_CONSTEXPR bool is_strong_lucas_prp(uint64_t n,
             CONFIG_ASSUME_STATEMENT(uh_vl < n);
             CONFIG_ASSUME_STATEMENT(ql < n);
             const uint64_t tmp_uh = uh_vl - ql;
-            uh                    = uh_vl >= ql ? tmp_uh : tmp_uh + n;
+            uh = uh_vl >= ql ? tmp_uh : tmp_uh + n;
             CONFIG_ASSUME_STATEMENT(uh < n);
 
             CONFIG_ASSUME_STATEMENT(vh < n);
             CONFIG_ASSUME_STATEMENT(vl < n);
             /* vh = vh*vl - p*ql (mod n) */
             const uint64_t vh_vl = static_cast<uint64_t>((uint128_t{vh} * vl) % n);
-            const uint64_t p_ql  = static_cast<uint64_t>((p * uint128_t{ql}) % n);
+            const uint64_t p_ql = static_cast<uint64_t>((p * uint128_t{ql}) % n);
             CONFIG_ASSUME_STATEMENT(vh_vl < n);
             CONFIG_ASSUME_STATEMENT(p_ql < n);
             const uint64_t tmp_vh = vh_vl - p_ql;
-            vh                    = vh_vl >= p_ql ? tmp_vh : tmp_vh + n;
+            vh = vh_vl >= p_ql ? tmp_vh : tmp_vh + n;
             CONFIG_ASSUME_STATEMENT(vh < n);
 
             CONFIG_ASSUME_STATEMENT(vl < n);
@@ -227,7 +227,7 @@ ATTRIBUTE_CONST I128_CONSTEXPR bool is_strong_lucas_prp(uint64_t n,
             CONFIG_ASSUME_STATEMENT(ql_2 < n);
             CONFIG_ASSUME_STATEMENT(ql_2 == (uint128_t{ql} * 2) % n);
             const uint64_t tmp_vl = vl_vl - ql_2;
-            vl                    = vl_vl >= ql_2 ? tmp_vl : tmp_vl + n;
+            vl = vl_vl >= ql_2 ? tmp_vl : tmp_vl + n;
             CONFIG_ASSUME_STATEMENT(vl < n);
         }
     }
@@ -248,7 +248,7 @@ ATTRIBUTE_CONST I128_CONSTEXPR bool is_strong_lucas_prp(uint64_t n,
     CONFIG_ASSUME_STATEMENT(uh_vl < n);
     CONFIG_ASSUME_STATEMENT(ql < n);
     const uint64_t tmp_uh = uh_vl - ql;
-    uh                    = uh_vl >= ql ? tmp_uh : tmp_uh + n;
+    uh = uh_vl >= ql ? tmp_uh : tmp_uh + n;
     CONFIG_ASSUME_STATEMENT(uh < n);
     CONFIG_ASSUME_STATEMENT(uh == (uint128_t{n} + uh_vl - ql) % n);
 
@@ -260,9 +260,9 @@ ATTRIBUTE_CONST I128_CONSTEXPR bool is_strong_lucas_prp(uint64_t n,
     CONFIG_ASSUME_STATEMENT(vl < n);
     /* vl = vh*vl - p*ql (mod n) */
     const uint64_t vh_vl = static_cast<uint64_t>((uint128_t{vh} * vl) % n);
-    const uint64_t p_ql  = static_cast<uint64_t>((p * uint128_t{ql}) % n);
-    uint64_t tmp_vl      = vh_vl - p_ql;
-    vl                   = vh_vl >= p_ql ? tmp_vl : tmp_vl + n;
+    const uint64_t p_ql = static_cast<uint64_t>((p * uint128_t{ql}) % n);
+    uint64_t tmp_vl = vh_vl - p_ql;
+    vl = vh_vl >= p_ql ? tmp_vl : tmp_vl + n;
     CONFIG_ASSUME_STATEMENT(vl < n);
     CONFIG_ASSUME_STATEMENT(vl == (uint128_t{n} + vh_vl - p_ql) % n);
 
@@ -289,7 +289,7 @@ ATTRIBUTE_CONST I128_CONSTEXPR bool is_strong_lucas_prp(uint64_t n,
         CONFIG_ASSUME_STATEMENT(ql_2 < n);
         CONFIG_ASSUME_STATEMENT(ql_2 == (uint128_t{ql} * 2) % n);
         tmp_vl = vl_vl - ql_2;
-        vl     = vl_vl >= ql_2 ? tmp_vl : tmp_vl + n;
+        vl = vl_vl >= ql_2 ? tmp_vl : tmp_vl + n;
         CONFIG_ASSUME_STATEMENT(vl < n);
         CONFIG_ASSUME_STATEMENT(vl == (uint128_t{n} + vl_vl - ql_2) % n);
 
@@ -417,7 +417,7 @@ ATTRIBUTE_CONST I128_CONSTEXPR bool is_strong_selfridge_prp(uint64_t n) noexcept
     if (unlikely(n < 7 * 7)) {
         return n != 1;
     }
-    uint32_t i          = 7;
+    uint32_t i = 7;
     const uint32_t root = ::math_functions::isqrt(n);
     do {
         if (n % i == 0 || n % (i + 4) == 0 || n % (i + 6) == 0 || n % (i + 10) == 0 ||
@@ -443,7 +443,7 @@ ATTRIBUTE_CONST I128_CONSTEXPR bool is_strong_selfridge_prp(uint64_t n) noexcept
     if (unlikely(n < 7 * 7)) {
         return n != 1;
     }
-    uint64_t i          = 7;
+    uint64_t i = 7;
     const uint64_t root = ::math_functions::isqrt(n);
     do {
         if (n % i == 0 || n % (i + 4) == 0 || n % (i + 6) == 0 || n % (i + 10) == 0 ||
@@ -469,7 +469,7 @@ ATTRIBUTE_CONST I128_CONSTEXPR bool is_strong_selfridge_prp(uint64_t n) noexcept
     if (unlikely(n < 7 * 7)) {
         return n != 1;
     }
-    uint64_t i                   = 7;
+    uint64_t i = 7;
     constexpr uint64_t kMaxPrime = 18446744073709551557ULL;
     static_assert(kMaxPrime < kMaxPrime + 30, "impl error");
     /**

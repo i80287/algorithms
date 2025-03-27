@@ -1236,7 +1236,7 @@ void TestToString() {
         AssertInvariants(n);
     }
 
-    constexpr size_t k             = static_cast<size_t>(1e6);
+    constexpr size_t k = static_cast<size_t>(1e6);
     constexpr size_t kSquareDigits = 2 * k;
     n.set_string(std::string(k, '9'));
     n.SquareInplace();
@@ -1485,7 +1485,7 @@ void TestDecimal() {
     }
 
     {
-        d1                 = static_cast<uint64_t>(1e18);
+        d1 = static_cast<uint64_t>(1e18);
         constexpr size_t k = 29;
         for (size_t i = 0; i < k; i++) {
             d1 += d1;
@@ -1527,7 +1527,7 @@ void TestDecimal() {
     }
 
     {
-        d1                                 = static_cast<uint64_t>(1e18);
+        d1 = static_cast<uint64_t>(1e18);
         constexpr size_t kInitialZeroLimbs = 2;
         assert(d1.size_ == kInitialZeroLimbs + 1);
         for (size_t i = 0; i < kInitialZeroLimbs; i++) {
@@ -1583,7 +1583,7 @@ void TestDecimal() {
     }
 
     {
-        d1                                 = static_cast<uint64_t>(1e18);
+        d1 = static_cast<uint64_t>(1e18);
         constexpr size_t kInitialZeroLimbs = 2;
         assert(d1.size_ == kInitialZeroLimbs + 1);
         for (size_t i = 0; i < kInitialZeroLimbs; i++) {
@@ -1739,7 +1739,7 @@ void TestDivModImpl() {
     auto test_i_j = [n = longint{}, m = longint{}, li_rem = longint{}](const T i,
                                                                        const T j) mutable {
         if constexpr (std::is_same_v<T, uint32_t>) {
-            n              = i;
+            n = i;
             const auto rem = n.divmod(j);
             assert(n == i / j);
             assert(rem == i % j);

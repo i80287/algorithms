@@ -71,7 +71,7 @@ void test_isqrt() noexcept {
 
     constexpr uint32_t kProbes = 100'000;
     for (uint32_t i = 0; i <= std::min(kProbes, 65535U); i++) {
-        const uint32_t i_square      = i * i;
+        const uint32_t i_square = i * i;
         const uint32_t next_i_square = (i + 1) * (i + 1);
         for (uint32_t j = i_square; j != next_i_square; j++) {
             test_sqrts(i, j);
@@ -128,7 +128,7 @@ void test_icbrt() noexcept {
     log_tests_started();
 
     for (uint32_t n = 1; n < 1625; n++) {
-        const uint32_t tr               = n * n * n;
+        const uint32_t tr = n * n * n;
         const uint32_t n_cube_minus_one = tr + 3 * n * n + 3 * n;
         assert(icbrt(tr) == n);
         assert(icbrt(uint64_t{tr}) == n);
@@ -141,7 +141,7 @@ void test_icbrt() noexcept {
     assert(icbrt(std::numeric_limits<uint32_t>::max()) == 1625);
 
     for (uint64_t n = 1625; n < 2642245; n++) {
-        const uint64_t tr               = n * n * n;
+        const uint64_t tr = n * n * n;
         const uint64_t n_cube_minus_one = tr + 3 * n * n + 3 * n;
         assert(icbrt(tr) == n);
         assert(icbrt(n_cube_minus_one) == n);
@@ -205,7 +205,7 @@ void test_bit_reverse() noexcept {
     };
     uint128_t n = std::numeric_limits<uint64_t>::max();
     for (auto k = static_cast<uint32_t>(1e7); k > 0; k--) {
-        const auto hi_64  = static_cast<uint64_t>(n >> 64U);
+        const auto hi_64 = static_cast<uint64_t>(n >> 64U);
         const auto low_64 = static_cast<uint64_t>(n);
         const uint128_t b = (uint128_t{bit_reverse(low_64)} << 64U) | bit_reverse(hi_64);
         assert(bit_reverse(n) == b);
@@ -260,10 +260,10 @@ template <class FloatType>
 void test_sin_cos_sum_generic() noexcept {
     log_tests_started();
 
-    constexpr uint32_t kMaxN       = 1e2;
-    constexpr int32_t k            = 5;
+    constexpr uint32_t kMaxN = 1e2;
+    constexpr int32_t k = 5;
     constexpr uint32_t angle_scale = 10;
-    constexpr double angle_start   = bin_pow(double{angle_scale}, -std::ptrdiff_t{k});
+    constexpr double angle_start = bin_pow(double{angle_scale}, -std::ptrdiff_t{k});
 
     constexpr FloatType kSumEps = []() constexpr noexcept -> FloatType {
         if constexpr (std::is_same_v<FloatType, float>) {
@@ -366,10 +366,10 @@ void test_visit_all_submasks() noexcept {
 void test_prime_bitarrays() {
     log_tests_started();
 
-    constexpr size_t N                    = 1000;
-    const std::vector primes_as_bvector   = math_functions::dynamic_primes_sieve(N);
+    constexpr size_t N = 1000;
+    const std::vector primes_as_bvector = math_functions::dynamic_primes_sieve(N);
     const std::bitset<N + 1>& primes_bset = math_functions::fixed_primes_sieve<N>();
-    constexpr std::array primes           = {
+    constexpr std::array primes = {
         2U,   3U,   5U,   7U,    11U,  13U,  17U,  19U,  23U,  29U,  31U,  37U,  41U,  43U,  47U,
         53U,  59U,  61U,  67U,   71U,  73U,  79U,  83U,  89U,  97U,  101U, 103U, 107U, 109U, 113U,
         127U, 131U, 137U, 139U,  149U, 151U, 157U, 163U, 167U, 173U, 179U, 181U, 191U, 193U, 197U,
@@ -533,8 +533,8 @@ template <class IntType>
 [[nodiscard]] bool multi_thread_test_extended_euclid_algorithm() {
     log_tests_started();
 
-    constexpr std::size_t kTotalTests     = 1ULL << 30U;
-    constexpr std::size_t kTotalThreads   = 4;
+    constexpr std::size_t kTotalTests = 1ULL << 30U;
+    constexpr std::size_t kTotalThreads = 4;
     constexpr std::size_t kTestsPerThread = kTotalTests / kTotalThreads;
 
     std::vector<std::thread> threads;
@@ -579,11 +579,11 @@ template <class IntType>
 #endif  // INTEGERS_128_BIT_HPP
 
 void test_extended_euclid_algorithm() {
-    constexpr uint64_t a     = std::numeric_limits<uint64_t>::max();
-    constexpr uint64_t b     = 0;
-    constexpr auto q         = math_functions::extended_euclid_algorithm(a, b);
-    constexpr auto u_value   = q.u_value;
-    constexpr auto v_value   = q.v_value;
+    constexpr uint64_t a = std::numeric_limits<uint64_t>::max();
+    constexpr uint64_t b = 0;
+    constexpr auto q = math_functions::extended_euclid_algorithm(a, b);
+    constexpr auto u_value = q.u_value;
+    constexpr auto v_value = q.v_value;
     constexpr auto gcd_value = q.gcd_value;
     static_assert(gcd_value == std::gcd(a, b));
     static_assert(u_value * a + v_value * b == gcd_value);
@@ -609,15 +609,15 @@ void test_solve_congruence_modulo_m_all_roots() {
         if (unlikely(m == 0)) {
             continue;
         }
-        const auto a       = static_cast<std::uint32_t>(rnd_32());
-        const auto c       = static_cast<std::uint32_t>(rnd_32());
-        const auto roots   = math_functions::solve_congruence_modulo_m_all_roots(a, c, m);
+        const auto a = static_cast<std::uint32_t>(rnd_32());
+        const auto c = static_cast<std::uint32_t>(rnd_32());
+        const auto roots = math_functions::solve_congruence_modulo_m_all_roots(a, c, m);
         const auto gcd_a_m = std::gcd(a, m);
         assert((c % gcd_a_m == 0) == !roots.empty());
         if (!roots.empty()) {
             const auto c_mod_m = c % m;
-            const auto step    = m / gcd_a_m;
-            auto expected_x    = roots[0];
+            const auto step = m / gcd_a_m;
+            auto expected_x = roots[0];
             for (const std::uint32_t x : roots) {
                 assert(x < m);
                 assert((uint64_t{a} * uint64_t{x}) % m == c_mod_m);
@@ -631,7 +631,7 @@ void test_solve_congruence_modulo_m_all_roots() {
 void test_solve_binary_congruence_modulo_m() {
     log_tests_started();
 
-    using SeedType      = typename std::ranlux24::result_type;
+    using SeedType = typename std::ranlux24::result_type;
     const SeedType seed = std::ranlux24(static_cast<SeedType>(std::time(nullptr)))();
     std::printf("Seed: %" PRIuFAST32 "\n", seed);
     std::mt19937 rnd_32(seed);
@@ -645,8 +645,8 @@ void test_solve_binary_congruence_modulo_m() {
 
         const auto k = std::uniform_int_distribution<uint32_t>(
             0, std::numeric_limits<uint16_t>::max())(rnd_32);
-        const uint32_t c  = static_cast<uint32_t>(rnd_32());
-        const auto x      = solve_binary_congruence_modulo_m(k, c, m);
+        const uint32_t c = static_cast<uint32_t>(rnd_32());
+        const auto x = solve_binary_congruence_modulo_m(k, c, m);
         const auto [r, s] = math_functions::extract_pow2(m);
         assert(r % 2 == 1 && r << s == m);
         const auto gcd_2k_m = uint32_t{1} << std::min(k, s);
@@ -810,7 +810,7 @@ void test_powers_sum() noexcept {
         constexpr uint32_t kOffset = 50;
         assert(max_n >= kOffset);
         const uint32_t start_n = max_n - kOffset;
-        uint64_t s             = 0;
+        uint64_t s = 0;
         for (size_t i = 1; i < start_n; i++) {
             s += math_functions::bin_pow(i, m);
         }
@@ -2058,7 +2058,7 @@ void test_general_asserts() noexcept {
     I128_ASSERT_THAT(
         (math_functions::powers_sum_u128<3>(100) == 100U * 100U * (100U + 1) * (100U + 1) / 4));
 
-    constexpr auto kN    = static_cast<uint32_t>(3e9);
+    constexpr auto kN = static_cast<uint32_t>(3e9);
     constexpr auto kN128 = static_cast<uint128_t>(kN);
     I128_ASSERT_THAT(
         (math_functions::powers_sum_u128<3>(kN) == kN128 * kN128 * (kN128 + 1) * (kN128 + 1) / 4));
@@ -3516,7 +3516,7 @@ void test_log2_arange() {
     using std::vector;
 
     assert(log2_arange(0) == vector<uint32_t>{static_cast<uint32_t>(-1)});
-    const uint32_t n             = 1'000'000;
+    const uint32_t n = 1'000'000;
     const vector<uint32_t> range = log2_arange(n);
     assert(range.size() == n + 1);
     for (uint32_t i = 0; i <= n; i++) {
@@ -3530,7 +3530,7 @@ void test_pow_arange() {
     using std::vector;
 
     for (const uint32_t n : {0U, 1U, 10U, 100U}) {
-        const long double p    = 1.42L;
+        const long double p = 1.42L;
         const vector pow_range = pow_arange(n, p);
         assert(pow_range.size() == n + 1);
         for (uint32_t i = 0; i <= n; i++) {
@@ -3560,7 +3560,7 @@ void test_pow_mod_m_arange() {
 
     for (const uint32_t m : {2U, 4U, static_cast<uint32_t>(1e7) + 9}) {
         for (const uint32_t n : {0U, 1U, 10U, 100U, 1000U}) {
-            const uint32_t p                 = 31;
+            const uint32_t p = 31;
             const vector<uint32_t> pow_range = pow_mod_m_arange(n, p, m);
             assert(pow_range.size() == n + 1);
             for (uint32_t i = 0; i <= n; i++) {

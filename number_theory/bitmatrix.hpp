@@ -26,13 +26,13 @@
 // clang-format on
 
 using CStyleMatrix8x8 = uint8_t[8];
-using Matrix8x8       = std::array<uint8_t, 8>;
+using Matrix8x8 = std::array<uint8_t, 8>;
 
 using CStyleMatrix32x32 = uint32_t[32];
-using Matrix32x32       = std::array<uint32_t, 32>;
+using Matrix32x32 = std::array<uint32_t, 32>;
 
 using CStyleMatrix64x64 = uint64_t[64];
-using Matrix64x64       = std::array<uint64_t, 64>;
+using Matrix64x64 = std::array<uint64_t, 64>;
 
 namespace bitmatrix_detail {
 
@@ -326,7 +326,7 @@ private:
     static_assert(std::is_unsigned_v<word_type>, "word_type should be unsigned integral type");
 
     static constexpr std::size_t kAlignmentBits = sizeof(word_type) * CHAR_BIT;
-    static constexpr std::size_t kBits          = (N + kAlignmentBits - 1) & ~(kAlignmentBits - 1);
+    static constexpr std::size_t kBits = (N + kAlignmentBits - 1) & ~(kAlignmentBits - 1);
     static_assert(sizeof(std::bitset<N>) == sizeof(std::bitset<kBits>),
                   "Invalid word_type passed to the square_bitmatrix");
 
@@ -344,20 +344,20 @@ private:
     }
 
 public:
-    using matrix_type            = typename std::array<std::bitset<N>, kBits>;
-    using value_type             = typename matrix_type::value_type;
-    using pointer                = typename matrix_type::pointer;
-    using const_pointer          = typename matrix_type::const_pointer;
-    using reference              = typename matrix_type::reference;
-    using const_reference        = typename matrix_type::const_reference;
-    using iterator               = typename matrix_type::iterator;
-    using const_iterator         = typename matrix_type::const_iterator;
-    using size_type              = typename matrix_type::size_type;
-    using difference_type        = typename matrix_type::difference_type;
-    using reverse_iterator       = typename matrix_type::reverse_iterator;
+    using matrix_type = typename std::array<std::bitset<N>, kBits>;
+    using value_type = typename matrix_type::value_type;
+    using pointer = typename matrix_type::pointer;
+    using const_pointer = typename matrix_type::const_pointer;
+    using reference = typename matrix_type::reference;
+    using const_reference = typename matrix_type::const_reference;
+    using iterator = typename matrix_type::iterator;
+    using const_iterator = typename matrix_type::const_iterator;
+    using size_type = typename matrix_type::size_type;
+    using difference_type = typename matrix_type::difference_type;
+    using reverse_iterator = typename matrix_type::reverse_iterator;
     using const_reverse_iterator = typename matrix_type::const_reverse_iterator;
-    using row_type               = value_type;
-    using bit_reference          = typename value_type::reference;
+    using row_type = value_type;
+    using bit_reference = typename value_type::reference;
 
     // Made public for the simple initialization from the
     // initializers like {0b00, 0b10, ...} (like in the std::array)

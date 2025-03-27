@@ -1,15 +1,15 @@
-#include <cstdint>
-#include <vector>
 #include <array>
-#include <string_view>
+#include <cstdint>
 #include <limits>
+#include <string_view>
+#include <vector>
 
 using namespace std;
 
 /// @brief Boyer-Moore-Horspool algorithm
-/// @param pattern 
-/// @param text 
-/// @return 
+/// @param pattern
+/// @param text
+/// @return
 vector<size_t> find_substrings_bmh(const string_view pattern, const string_view text) {
     // Just 256
     constexpr auto kSize = std::numeric_limits<uint8_t>::max() + 1;

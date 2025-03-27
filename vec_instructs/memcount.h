@@ -55,7 +55,7 @@ static inline size_t memcount_avx(const uint8_t* const src,
         eq_count += *not_aligned_address == cmp_chr_u32;
     }
 
-    mem_offset   = size % 32;
+    mem_offset = size % 32;
     size_t steps = size / 32;
 
     for (const __m256i chr_vector = _mm256_set1_epi8((char)chr); steps > 0;
@@ -85,7 +85,7 @@ MEMCOUNT_ATTRIBUTES
 static inline size_t memcount_default(const uint8_t* const src,
                                       const uint8_t chr,
                                       size_t size) CONFIG_NOEXCEPT_FUNCTION {
-    size_t cnt       = 0;
+    size_t cnt = 0;
     const uint32_t c = chr;
     for (const uint8_t* s = src; size > 0; ++s, --size) {
         cnt += *s == c;
