@@ -7,6 +7,7 @@
 #include <iterator>
 #include <limits>
 #include <ranges>
+#include <span>
 #include <string>
 #include <string_view>
 #include <type_traits>
@@ -68,13 +69,13 @@ protected:
 
     using EdgesArray = std::array<StoredNodeIndex, kAlphabetLength>;
 
-    static constexpr EdgesArray CreateEdgesArray() noexcept {
+    [[nodiscard]] static constexpr EdgesArray CreateEdgesArray() noexcept {
         EdgesArray edges{};
         edges.fill(kNullNodeIndex);
         return edges;
     }
 
-    struct Node {
+    struct Node final {
         static constexpr StoredPatternIndex kMissingWordIndex =
             std::numeric_limits<StoredPatternIndex>::max();
 
@@ -107,9 +108,7 @@ public:
     constexpr void FindAllSubstringsInText(const std::string_view text,
                                            FindCallback find_callback) const {
         if constexpr (std::is_convertible_v<decltype(find_callback), bool>) {
-            if (!std::is_constant_evaluated()) {
-                assert(find_callback);
-            }
+            assert(find_callback);
         }
 
         StoredNodeIndex current_node_index = kRootNodeIndex;
@@ -121,9 +120,7 @@ public:
             }
 
             current_node_index = nodes_[current_node_index][symbol_index];
-            if (!std::is_constant_evaluated()) {
-                assert(current_node_index != kNullNodeIndex);
-            }
+            assert(current_node_index != kNullNodeIndex);
 
             const Node& node = nodes_[current_node_index];
             if (node.IsTerminal()) {
@@ -142,15 +139,11 @@ public:
             for (StoredNodeIndex terminal_node_index = node.compressed_suffix_link;
                  terminal_node_index != kRootNodeIndex;
                  terminal_node_index = nodes_[terminal_node_index].compressed_suffix_link) {
-                if (!std::is_constant_evaluated()) {
-                    assert(terminal_node_index != kNullNodeIndex);
-                    assert(nodes_[terminal_node_index].IsTerminal());
-                }
+                assert(terminal_node_index != kNullNodeIndex);
+                assert(nodes_[terminal_node_index].IsTerminal());
 
                 const size_type pattern_index = nodes_[terminal_node_index].pattern_index;
-                if (!std::is_constant_evaluated()) {
-                    assert(pattern_index < patterns_lengths_.size());
-                }
+                assert(pattern_index < patterns_lengths_.size());
 
                 const size_type pattern_size = patterns_lengths_[pattern_index];
                 const size_type occurance_start_index = i + 1 - pattern_size;
@@ -202,14 +195,10 @@ public:
                       "Lines delimeter can\'t be in the alphabet");
 
         if constexpr (std::is_convertible_v<decltype(find_callback), bool>) {
-            if (!std::is_constant_evaluated()) {
-                assert(find_callback);
-            }
+            assert(find_callback);
         }
         if constexpr (std::is_convertible_v<decltype(line_callback), bool>) {
-            if (!std::is_constant_evaluated()) {
-                assert(line_callback);
-            }
+            assert(line_callback);
         }
 
         StoredNodeIndex current_node_index = kRootNodeIndex;
@@ -319,6 +308,7 @@ protected:
                 return false;
             }
 
+            assert(current_node_index < nodes.size());
             const size_type next_node_index = nodes[current_node_index][index];
             if (next_node_index == kNullNodeIndex) {
                 return false;
@@ -327,15 +317,20 @@ protected:
             current_node_index = next_node_index;
         }
 
+        assert(current_node_index < nodes.size());
         return nodes[current_node_index].IsTerminal();
     }
-    [[nodiscard]] static constexpr bool IsInAlphabet(const Symbol symbol) noexcept {
+
+    [[nodiscard]]
+    ATTRIBUTE_CONST static constexpr bool IsInAlphabet(const Symbol symbol) noexcept {
         return SymbolToUInt(symbol) - kAlphabetStart <= kAlphabetEnd - kAlphabetStart;
     }
-    [[nodiscard]] static constexpr bool IsInAlphabet(const char symbol) noexcept {
+    [[nodiscard]]
+    ATTRIBUTE_CONST static constexpr bool IsInAlphabet(const char symbol) noexcept {
         return IsInAlphabet(CharToSymbol(symbol));
     }
-    [[nodiscard]] static constexpr size_type SymbolToIndex(const Symbol symbol) noexcept {
+    [[nodiscard]]
+    ATTRIBUTE_CONST static constexpr size_type SymbolToIndex(const Symbol symbol) noexcept {
         std::uint32_t symbol_as_int = SymbolToUInt(symbol);
         if constexpr (kIsCaseInsensetive) {
             // We don't use std::tolower because we know that all
@@ -347,22 +342,27 @@ protected:
 
         return size_type{symbol_as_int} - kAlphabetStart;
     }
-    [[nodiscard]] static constexpr std::uint32_t SymbolToUInt(const Symbol symbol) noexcept {
+    [[nodiscard]]
+    ATTRIBUTE_CONST static constexpr std::uint32_t SymbolToUInt(const Symbol symbol) noexcept {
         return std::uint32_t{symbol};
     }
-    [[nodiscard]] static constexpr size_type CharToIndex(const char chr) noexcept {
+    [[nodiscard]]
+    ATTRIBUTE_CONST static constexpr size_type CharToIndex(const char chr) noexcept {
         return SymbolToIndex(CharToSymbol(chr));
     }
-    [[nodiscard]] static constexpr Symbol CharToSymbol(const char chr) noexcept {
+    [[nodiscard]]
+    ATTRIBUTE_CONST static constexpr Symbol CharToSymbol(const char chr) noexcept {
         static_assert(std::is_same_v<Symbol, unsigned char>);
         return static_cast<Symbol>(chr);
     }
 
 private:
-    [[nodiscard]] static constexpr std::uint32_t ToLowerImpl(const std::uint32_t c) noexcept {
+    [[nodiscard]]
+    ATTRIBUTE_CONST static constexpr std::uint32_t ToLowerImpl(const std::uint32_t c) noexcept {
         return c | (IsUpperImpl(c) * std::uint32_t{'a' - 'A'});
     }
-    [[nodiscard]] static constexpr bool IsUpperImpl(const std::uint32_t c) noexcept {
+    [[nodiscard]]
+    ATTRIBUTE_CONST static constexpr bool IsUpperImpl(const std::uint32_t c) noexcept {
         return c - 'A' <= 'Z' - 'A';
     }
 
@@ -482,23 +482,26 @@ public:
         }
 
         assert(replaced_occurances + planned_replacements.size() <= max_replacements);
-        auto reverse = [](const ReplacementInfoVector& vec ATTRIBUTE_LIFETIME_BOUND) noexcept {
-            using Iterator = typename ReplacementInfoVector::const_reverse_iterator;
-            struct RevStruct {
-                Iterator begin_iter;
-                Iterator end_iter;
-                Iterator begin() const noexcept {
-                    return begin_iter;
-                }
-                Iterator end() const noexcept {
-                    return end_iter;
-                }
+        const auto reverse =
+            [](const ReplacementInfoVector& vec ATTRIBUTE_LIFETIME_BOUND) noexcept {
+                using Iterator = typename ReplacementInfoVector::const_reverse_iterator;
+                struct RevStruct final {
+                    Iterator begin_iter;
+                    Iterator end_iter;
+
+                    [[nodiscard]] Iterator begin() const noexcept {
+                        return begin_iter;
+                    }
+                    [[nodiscard]] Iterator end() const noexcept {
+                        return end_iter;
+                    }
+                };
+
+                return RevStruct{
+                    .begin_iter = vec.rbegin(),
+                    .end_iter = vec.rend(),
+                };
             };
-            return RevStruct{
-                .begin_iter = vec.rbegin(),
-                .end_iter = vec.rend(),
-            };
-        };
         // std::ranges::reverse fails to call `begin(planned_replacements)` on clang 14.0.0
         for (const ReplacementInfo& info : reverse(planned_replacements)) {
             const size_type pattern_index = info.pattern_index;
@@ -653,39 +656,48 @@ protected:
         nodes.at(kRootNodeIndex).suffix_link = kFakePrerootNodeIndex;
         nodes[kRootNodeIndex].compressed_suffix_link = kRootNodeIndex;
         nodes[kFakePrerootNodeIndex].edges.fill(kRootNodeIndex);
+
+        constexpr size_type kInvalidIndex = std::numeric_limits<size_type>::max();
+
         // std::vector is used instead of std::queue
         //  in order to make the method constexpr.
-        std::vector<size_type> bfs_queue(nodes.size());
+        std::vector<size_type> bfs_queue(nodes.size(), kInvalidIndex);
         size_type queue_head = 0;
         size_type queue_tail = 0;
         bfs_queue[queue_tail++] = kRootNodeIndex;
         do {
             const size_type node_index = bfs_queue[queue_head++];
+            assert(node_index != kInvalidIndex);
             ComputeLinksForNodeChildren(node_index, nodes, bfs_queue, queue_tail);
         } while (queue_head < queue_tail);
     }
 
 private:
     static constexpr void ComputeLinksForNodeChildren(const size_type node_index,
-                                                      std::vector<Node>& nodes,
-                                                      std::vector<size_type>& bfs_queue,
+                                                      const std::span<Node> nodes,
+                                                      const std::span<size_type> bfs_queue,
                                                       size_type& queue_tail) noexcept {
+        assert(node_index < nodes.size());
         Node& node = nodes[node_index];
         for (size_type symbol_index = 0; symbol_index < kAlphabetLength; symbol_index++) {
+            assert(node.suffix_link < nodes.size());
             const StoredNodeIndex child_link_v_index = nodes[node.suffix_link][symbol_index];
             const size_type child_index = node[symbol_index];
-            if (child_index != kNullNodeIndex) {
-                nodes[child_index].suffix_link = child_link_v_index;
-                const StoredNodeIndex child_comp_sl =
-                    nodes[child_link_v_index].compressed_suffix_link;
-                const bool is_terminal_or_root =
-                    nodes[child_link_v_index].IsTerminal() || child_link_v_index == kRootNodeIndex;
-                nodes[child_index].compressed_suffix_link =
-                    is_terminal_or_root ? child_link_v_index : child_comp_sl;
-                bfs_queue[queue_tail++] = child_index;
-            } else {
+            if (child_index == kNullNodeIndex) {
                 node[symbol_index] = child_link_v_index;
+                continue;
             }
+
+            assert(child_index < nodes.size());
+            nodes[child_index].suffix_link = child_link_v_index;
+            assert(child_link_v_index < nodes.size());
+            const StoredNodeIndex child_comp_sl = nodes[child_link_v_index].compressed_suffix_link;
+            const bool is_terminal_or_root =
+                nodes[child_link_v_index].IsTerminal() || child_link_v_index == kRootNodeIndex;
+            nodes[child_index].compressed_suffix_link =
+                is_terminal_or_root ? child_link_v_index : child_comp_sl;
+            assert(queue_tail < bfs_queue.size());
+            bfs_queue[queue_tail++] = child_index;
         }
     }
 
@@ -702,6 +714,7 @@ private:
                 return false;
             }
 
+            assert(current_node_index < nodes.size());
             const size_type next_node_index = nodes[current_node_index][symbol_index];
             if (next_node_index == kNullNodeIndex) {
                 break;
@@ -721,12 +734,14 @@ private:
             }
 
             nodes.emplace_back();
+            assert(current_node_index < nodes.size());
             nodes[current_node_index][symbol_index] = static_cast<StoredNodeIndex>(new_node_index);
             current_node_index = new_node_index++;
         }
 
         const StoredPatternIndex pattern_index =
             static_cast<StoredPatternIndex>(words_lengths.size());
+        assert(current_node_index < nodes.size());
         nodes[current_node_index].pattern_index = pattern_index;
         words_lengths.push_back(static_cast<StoredPatternSize>(pattern_size));
         return true;
@@ -751,6 +766,8 @@ public:
     using StoredPatternSize = typename Base::StoredPatternSize;
     using StoredPatternIndex = typename Base::StoredPatternIndex;
 
+    constexpr ReplacingACTrieBuilder() : words_replacements_() {}
+
     static constexpr ReplacingACTrieBuilder WithCapacity(const size_type patterns_capacity) {
         ReplacingACTrieBuilder builder;
         builder.patterns_lengths_.reserve(patterns_capacity);
@@ -763,7 +780,7 @@ public:
 
     bool AddPatternWithReplacement(const std::string_view pattern, std::string replacement) {
         const bool added = Base::AddPattern(pattern);
-        if (added) {
+        if (added) [[likely]] {
 #if defined(__GNUG__) && __GNUG__ == 14 && !defined(__clang__)
 // Bug in GCC 14: false positive may occur with
 //  warning -Walloc-size-larger-than=x if x < 9223372036854775776
@@ -785,7 +802,7 @@ public:
     }
 
 private:
-    std::vector<std::string> words_replacements_{};
+    std::vector<std::string> words_replacements_;
 };
 
 // cppcheck-suppress-end [duplInheritedMember]
