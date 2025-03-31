@@ -780,7 +780,7 @@ public:
 
     bool AddPatternWithReplacement(const std::string_view pattern, std::string replacement) {
         const bool added = Base::AddPattern(pattern);
-        if (added) [[likely]] {
+        if (likely(added)) {
 #if defined(__GNUG__) && __GNUG__ == 14 && !defined(__clang__)
 // Bug in GCC 14: false positive may occur with
 //  warning -Walloc-size-larger-than=x if x < 9223372036854775776
