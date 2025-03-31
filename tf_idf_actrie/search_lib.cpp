@@ -90,7 +90,7 @@ vector<string_view> Search(const string_view text,
             [&query_words_on_lines](const size_t line_number, const size_t words_on_current_line,
                                     const size_t line_start_index,
                                     const size_t line_end_index) constexpr noexcept {
-                if (query_words_on_lines.empty()) [[unlikely]] {
+                if (unlikely(query_words_on_lines.empty())) {
                     return;
                 }
 
