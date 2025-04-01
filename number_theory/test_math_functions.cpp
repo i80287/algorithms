@@ -35,13 +35,11 @@
 #include <bit>
 #endif
 
-#if CONFIG_HAS_INCLUDE(<mpfr.h>)
+#if CONFIG_HAS_INCLUDE(<mpfr.h>) && !defined(__APPLE__)
 #include <mpfr.h>
 #define HAS_MPFR_DURING_TESTING
-#else
-#if defined(__linux__) && !defined(__MINGW32__)
-#error "mpfr tests should be available on linux"
-#endif
+#elif defined(__linux__) && !defined(__MINGW32__)
+#error mpfr tests should be available on linux
 #endif
 
 // NOLINTNEXTLINE(google-build-using-namespace)
@@ -213,7 +211,7 @@ void test_bit_reverse() noexcept {
     }
 }
 
-#if defined(HAS_MPFR_DURING_TESTING)
+#ifdef HAS_MPFR_DURING_TESTING
 
 // NOLINTNEXTLINE(cert-err58-cpp)
 const mpfr_rnd_t kRoundMode = mpfr_get_default_rounding_mode();
@@ -3843,7 +3841,7 @@ int main() {
     test_icbrt();
     test_log2();
     test_bit_reverse();
-#if defined(HAS_MPFR_DURING_TESTING)
+#ifdef HAS_MPFR_DURING_TESTING
     test_sin_cos_sum();
 #endif
     test_visit_all_submasks();
