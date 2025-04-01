@@ -16,14 +16,12 @@
 using math_functions::kronecker_symbol;
 using math_functions::nth_fibonacci_num;
 
-#if CONFIG_HAS_INCLUDE(<gmpxx.h>)
+#if CONFIG_HAS_INCLUDE(<gmpxx.h>) && !defined(__APPLE__)
 #include <gmp.h>
 #include <gmpxx.h>
 #define HAS_GMPXX_DURING_TESTING
-#else
-#if defined(__linux__) && !defined(__MINGW32__)
-#error "gmpxx tests should be available on linux"
-#endif
+#elif defined(__linux__) && !defined(__MINGW32__)
+#error gmp tests should be available on linux
 #endif
 
 // clang-format off
