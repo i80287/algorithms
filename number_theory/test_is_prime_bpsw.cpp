@@ -17,13 +17,11 @@
 #include "integers_128_bit.hpp"
 #include "is_prime.hpp"
 
-#if CONFIG_HAS_INCLUDE(<gmp.h>)
+#if CONFIG_HAS_INCLUDE(<gmp.h>) && !defined(__APPLE__)
 #include <gmp.h>
 #define HAS_GMP_DURING_TESTING
-#else
-#if defined(__linux__) && !defined(__MINGW32__)
-#error "gmp tests should be available on linux"
-#endif
+#elif defined(__linux__) && !defined(__MINGW32__)
+#error gmp tests should be available on linux
 #endif
 
 // clang-format off
