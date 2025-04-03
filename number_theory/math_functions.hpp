@@ -452,7 +452,7 @@ ATTRIBUTE_CONST constexpr IsPerfectSquareResultRetType<T> is_perfect_square(cons
      * but switch statement could be less efficient in this case
      */
     // clang-format on
-    switch (n % 16U) {
+    switch (static_cast<uint32_t>(n) % 16U) {
         case 0:
         case 1:
         case 4:
