@@ -79,6 +79,14 @@ using std::size_t;
 using std::uint32_t;
 using std::uint64_t;
 
+namespace detail {
+
+#if defined(INTEGERS_128_BIT_HPP)
+namespace helper_ns = int128_traits;
+#else
+namespace helper_ns = std;
+#endif
+
 #if CONFIG_HAS_CONCEPTS
 template <class T>
 concept InplaceMultipliable = requires(T a, const T b) {
@@ -86,13 +94,68 @@ concept InplaceMultipliable = requires(T a, const T b) {
 };
 #endif
 
+}  // namespace detail
+
+template <class T>
+inline constexpr bool is_integral_v = ::math_functions::detail::helper_ns::is_integral_v<T>;
+
+template <class T>
+inline constexpr bool is_unsigned_v = ::math_functions::detail::helper_ns::is_unsigned_v<T>;
+
+template <class T>
+inline constexpr bool is_signed_v = ::math_functions::detail::helper_ns::is_signed_v<T>;
+
+template <class T>
+using make_unsigned_t = typename ::math_functions::detail::helper_ns::make_unsigned_t<T>;
+
+template <class T>
+using make_signed_t = typename ::math_functions::detail::helper_ns::make_signed_t<T>;
+
+template <class T>
+inline constexpr bool is_math_integral_type_v =
+    ::math_functions::is_integral_v<T> && !std::is_same_v<T, bool> && !std::is_same_v<T, char>;
+
+#if CONFIG_HAS_CONCEPTS
+
+template <class T>
+concept integral = ::math_functions::detail::helper_ns::integral<T>;
+
+template <class T>
+concept signed_integral = ::math_functions::detail::helper_ns::signed_integral<T>;
+
+template <class T>
+concept unsigned_integral = ::math_functions::detail::helper_ns::unsigned_integral<T>;
+
+template <class T>
+concept math_integral_type = ::math_functions::is_math_integral_type_v<T>;
+
+#endif
+
+namespace detail {
+
+template <class T>
+ATTRIBUTE_ALWAYS_INLINE constexpr void check_math_int_type() noexcept {
+    static_assert(::math_functions::is_math_integral_type_v<T>,
+                  "integral type that is not a bool nor a char is expected");
+}
+
+template <class IntType>
+ATTRIBUTE_NODISCARD ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_CONST constexpr auto to_uint_at_least_32(
+    const IntType n) noexcept {
+    using UIntType = ::math_functions::make_unsigned_t<IntType>;
+    using UIntTypeAtLeastUInt32 = std::common_type_t<UIntType, unsigned>;
+    return UIntTypeAtLeastUInt32{static_cast<UIntType>(n)};
+}
+
+}  // namespace detail
+
 /// @brief Calculates T ^ p
 /// @tparam T
 /// @param[in] n
 /// @param[in] p
 /// @return T ^ p
 #if CONFIG_HAS_CONCEPTS
-template <InplaceMultipliable T>
+template <::math_functions::detail::InplaceMultipliable T>
 #else
 template <class T>
 #endif
@@ -116,7 +179,7 @@ template <class T>
 /// @param[in] p
 /// @return T ^ p
 #if CONFIG_HAS_CONCEPTS
-template <InplaceMultipliable T>
+template <::math_functions::detail::InplaceMultipliable T>
 #else
 template <class T>
 #endif
@@ -350,37 +413,33 @@ ATTRIBUTE_CONST I128_CONSTEXPR uint64_t bin_pow_mod(uint64_t n, uint64_t p, uint
 /// @note ⌊n^0.25⌋ = ⌊⌊n^0.5⌋^0.5⌋ (see Hackers Delight Chapter 11, ex.1)
 /// @param[in] n
 /// @return ⌊n^0.25⌋
-[[nodiscard]] ATTRIBUTE_CONST constexpr uint32_t ifrrt(const uint64_t n) noexcept {
+template <class T>
+[[nodiscard]] ATTRIBUTE_CONST constexpr uint32_t ifrrt(const T n) noexcept {
+    static_assert(::math_functions::is_unsigned_v<T>, "unsigned integer is expected");
     return ::math_functions::isqrt(::math_functions::isqrt(n));
 }
-
-#if defined(INTEGERS_128_BIT_HPP)
-
-/// @brief Return integer part of the fourth root of n, that is ⌊n^0.25⌋
-///         It can be shown that ⌊n^0.25⌋ = ⌊⌊n^0.5⌋^0.5⌋
-/// @param[in] n
-/// @return
-[[nodiscard]] ATTRIBUTE_CONST I128_CONSTEXPR uint32_t ifrrt(const uint128_t n) noexcept {
-    return ::math_functions::isqrt(::math_functions::isqrt(n));
-}
-
-#endif
 
 template <class T>
 struct IsPerfectSquareResult {
     T root{};
     bool is_perfect_square{};
 
-    [[nodiscard]] constexpr explicit operator bool() const noexcept {
+    [[nodiscard]] ATTRIBUTE_PURE constexpr explicit operator bool() const noexcept {
         return is_perfect_square;
     }
 };
 
+template <class T>
+using IsPerfectSquareResultRetType = IsPerfectSquareResult<decltype(::math_functions::isqrt(T{}))>;
+
 /// @brief Checks whether @a `n` is perfect square or not.
 /// @param[in] n
-/// @return {true, sqrt(n)} if @a `n` is perfect square and {false, 0} otherwise.
+/// @return {sqrt(n), true} if @a `n` is perfect square and {0, false} otherwise.
+template <class T>
 [[nodiscard]]
-ATTRIBUTE_CONST constexpr IsPerfectSquareResult<uint32_t> is_perfect_square(uint32_t n) noexcept {
+ATTRIBUTE_CONST constexpr IsPerfectSquareResultRetType<T> is_perfect_square(const T n) noexcept {
+    static_assert(::math_functions::is_unsigned_v<T>, "unsigned integer is expected");
+
     // clang-format off
     /**
      * +------------+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+
@@ -398,81 +457,14 @@ ATTRIBUTE_CONST constexpr IsPerfectSquareResult<uint32_t> is_perfect_square(uint
         case 1:
         case 4:
         case 9: {
-            const uint32_t root = ::math_functions::isqrt(n);
-            const bool is_perf_square = root * root == n;
+            const auto root = ::math_functions::isqrt(n);
+            const bool is_perf_square = T{root} * T{root} == n;
             return {is_perf_square ? root : 0, is_perf_square};
         }
         default:
             return {0, false};
     }
 }
-
-/// @brief Checks whether @a `n` is perfect square or not.
-/// @param[in] n
-/// @return {true, sqrt(n)} if @a `n` is perfect square and {false, 0} otherwise.
-[[nodiscard]]
-ATTRIBUTE_CONST constexpr IsPerfectSquareResult<uint32_t> is_perfect_square(uint64_t n) noexcept {
-    // clang-format off
-    /**
-     * +------------+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+
-     * |   n mod 16 |  0 |  1 |  2 |  3 |  4 |  5 |  6 |  7 |  8 |  9 | 10 | 11 | 12 | 13 | 14 | 15 |
-     * +------------+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+
-     * | n*n mod 16 |  0 |  1 |  4 |  9 |  0 |  9 |  4 |  1 |  0 |  1 |  4 |  9 |  0 |  9 |  4 |  1 |
-     * +------------+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+
-     *
-     * If we peek mod 32, then we should check only for n & 31 in { 0, 1, 4, 9, 16, 17, 25 },
-     * but switch statement could be less efficient in this case
-     */
-    // clang-format on
-    switch (n % 16U) {
-        case 0:
-        case 1:
-        case 4:
-        case 9: {
-            const uint32_t root = ::math_functions::isqrt(n);
-            const bool is_perf_square = uint64_t{root} * root == n;
-            return {is_perf_square ? root : 0, is_perf_square};
-        }
-        default:
-            return {0, false};
-    }
-}
-
-#if defined(INTEGERS_128_BIT_HPP)
-
-/// @brief Checks whether @a `n` is perfect square or not.
-/// @param[in] n
-/// @return {true, sqrt(n)} if @a `n` is perfect square and {false, 0} otherwise.
-[[nodiscard]]
-ATTRIBUTE_CONST I128_CONSTEXPR
-    IsPerfectSquareResult<uint64_t> is_perfect_square(uint128_t n) noexcept {
-    // clang-format off
-    /**
-     * +------------+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+
-     * |   n mod 16 |  0 |  1 |  2 |  3 |  4 |  5 |  6 |  7 |  8 |  9 | 10 | 11 | 12 | 13 | 14 | 15 |
-     * +------------+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+
-     * | n*n mod 16 |  0 |  1 |  4 |  9 |  0 |  9 |  4 |  1 |  0 |  1 |  4 |  9 |  0 |  9 |  4 |  1 |
-     * +------------+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+
-     *
-     * If we peek mod 32, then we should check only for n & 31 in { 0, 1, 4, 9, 16, 17, 25 },
-     * but switch statement could be less efficient in this case
-     */
-    // clang-format on
-    switch (static_cast<uint64_t>(n) % 16) {
-        case 0:
-        case 1:
-        case 4:
-        case 9: {
-            const uint64_t root = ::math_functions::isqrt(n);
-            const bool is_perf_square = uint128_t{root} * root == n;
-            return {is_perf_square ? root : 0, is_perf_square};
-        }
-        default:
-            return {0, false};
-    }
-}
-
-#endif
 
 /// @brief This function reverses bits of the @a `b`
 /// @param[in] b
@@ -538,12 +530,15 @@ ATTRIBUTE_CONST I128_CONSTEXPR
 
 #endif
 
-template <class Functor>
+template <class F>
 #if CONFIG_HAS_AT_LEAST_CXX_20
-    requires requires(Functor f, uint64_t mask) { f(uint64_t{mask}); }
+    requires requires(F f, uint64_t mask) { f(uint64_t{mask}); }
 #endif
-ATTRIBUTE_ALWAYS_INLINE constexpr void visit_all_submasks(uint64_t mask, Functor visiter) noexcept(
-    std::is_nothrow_invocable_v<Functor, const uint64_t>) {
+ATTRIBUTE_ALWAYS_INLINE constexpr void visit_all_submasks(const uint64_t mask, F visiter) noexcept(
+    std::is_nothrow_invocable_v<F, uint64_t>) {
+    static_assert(std::is_invocable_v<F, uint64_t>,
+                  "callable object that accepts uint64_t is expected");
+
     uint64_t s = mask;
     do {
         visiter(uint64_t{s});
@@ -551,214 +546,73 @@ ATTRIBUTE_ALWAYS_INLINE constexpr void visit_all_submasks(uint64_t mask, Functor
     } while (s != 0);
 }
 
-// NOLINTBEGIN(google-runtime-int)
-
-int32_t sign(bool x) = delete;
-int32_t sign(char x) = delete;
-
-[[nodiscard]] ATTRIBUTE_CONST constexpr int32_t sign(signed char x) noexcept {
-    return static_cast<int32_t>(x > 0) - static_cast<int32_t>(x < 0);
-}
-
-[[nodiscard]] ATTRIBUTE_CONST constexpr int32_t sign(unsigned char x) noexcept {
-    return x > 0 ? 1 : 0;
-}
-
-[[nodiscard]] ATTRIBUTE_CONST constexpr int32_t sign(short x) noexcept {
-    return static_cast<int32_t>(x > 0) - static_cast<int32_t>(x < 0);
-}
-
-[[nodiscard]] ATTRIBUTE_CONST constexpr int32_t sign(unsigned short x) noexcept {
-    return x > 0 ? 1 : 0;
-}
-
-[[nodiscard]] ATTRIBUTE_CONST constexpr int32_t sign(int x) noexcept {
-    return static_cast<int32_t>(x > 0) - static_cast<int32_t>(x < 0);
-}
-
-[[nodiscard]] ATTRIBUTE_CONST constexpr int32_t sign(unsigned x) noexcept {
-    return x > 0 ? 1 : 0;
-}
-
-[[nodiscard]] ATTRIBUTE_CONST constexpr int32_t sign(long x) noexcept {
-    return static_cast<int32_t>(x > 0) - static_cast<int32_t>(x < 0);
-}
-
-[[nodiscard]] ATTRIBUTE_CONST constexpr int32_t sign(unsigned long x) noexcept {
-    return x > 0 ? 1 : 0;
-}
-
-[[nodiscard]] ATTRIBUTE_CONST constexpr int32_t sign(long long x) noexcept {
-    return static_cast<int32_t>(x > 0) - static_cast<int32_t>(x < 0);
-}
-
-[[nodiscard]] ATTRIBUTE_CONST constexpr int32_t sign(unsigned long long x) noexcept {
-    return x > 0 ? 1 : 0;
-}
-
+template <class IntType>
+[[nodiscard]] ATTRIBUTE_CONST constexpr int32_t sign(const IntType n) noexcept {
+    ::math_functions::detail::check_math_int_type<IntType>();
+    if constexpr (::math_functions::is_signed_v<IntType>) {
 #if defined(INTEGERS_128_BIT_HPP)
-
-[[nodiscard]] ATTRIBUTE_CONST I128_CONSTEXPR int32_t sign(int128_t x) noexcept {
-    const uint32_t sign_bit = static_cast<uint32_t>(static_cast<uint128_t>(x) >> 127U);
-    return static_cast<int32_t>(x != 0) - static_cast<int32_t>(2 * sign_bit);
-}
-
-[[nodiscard]] ATTRIBUTE_CONST constexpr int32_t sign(uint128_t x) noexcept {
-    return x > 0 ? 1 : 0;
-}
-
+        if constexpr (std::is_same_v<IntType, int128_t>) {
+            const uint32_t sign_bit = static_cast<uint32_t>(static_cast<uint128_t>(n) >> 127U);
+            return static_cast<int32_t>(n != 0) - static_cast<int32_t>(2 * sign_bit);
+        }
 #endif
 
-/// @brief a >= 0 and b > 0 => true
-///        a >= 0 and b = 0 => true
-///        a >= 0 and b < 0 => false
-///        a < 0 and b > 0 => false
-///        a < 0 and b = 0 => false
-///        a < 0 and b < 0 => true
-/// @param[in] a
-/// @param[in] b
-/// @return
-[[nodiscard]] ATTRIBUTE_CONST constexpr bool same_sign_soft(int a, int b) noexcept {
-    // NOLINTNEXTLINE(hicpp-signed-bitwise)
-    return (a ^ b) >= 0;
+        return static_cast<int32_t>(n > 0) - static_cast<int32_t>(n < 0);
+    } else {
+        return n > 0 ? 1 : 0;
+    }
 }
 
-/// @brief a >= 0 and b > 0 => true
-///        a >= 0 and b = 0 => true
-///        a >= 0 and b < 0 => false
-///        a < 0 and b > 0 => false
-///        a < 0 and b = 0 => false
-///        a < 0 and b < 0 => true
-/// @param[in] a
-/// @param[in] b
-/// @return
-[[nodiscard]] ATTRIBUTE_CONST constexpr bool same_sign_soft(long a, long b) noexcept {
-    // NOLINTNEXTLINE(hicpp-signed-bitwise)
-    return (a ^ b) >= 0;
-}
+template <class IntType>
+[[nodiscard]] ATTRIBUTE_CONST constexpr auto uabs(const IntType n) noexcept {
+    ::math_functions::detail::check_math_int_type<IntType>();
 
-/// @brief a >= 0 and b > 0 => true
-///        a >= 0 and b = 0 => true
-///        a >= 0 and b < 0 => false
-///        a < 0 and b > 0 => false
-///        a < 0 and b = 0 => false
-///        a < 0 and b < 0 => true
-/// @param[in] a
-/// @param[in] b
-/// @return
-[[nodiscard]] ATTRIBUTE_CONST constexpr bool same_sign_soft(long long a, long long b) noexcept {
-    // NOLINTNEXTLINE(hicpp-signed-bitwise)
-    return (a ^ b) >= 0;
-}
-
-/// @brief a > 0 and b > 0 => true
-///        a > 0 and b = 0 => false
-///        a > 0 and b < 0 => false
-///        a = 0 and b > 0 => false
-///        a = 0 and b = 0 => true
-///        a = 0 and b < 0 => false
-///        a < 0 and b > 0 => false
-///        a < 0 and b = 0 => false
-///        a < 0 and b < 0 => true
-/// @param[in] a
-/// @param[in] b
-/// @return
-[[nodiscard]] ATTRIBUTE_CONST constexpr bool same_sign(int a, int b) noexcept {
-    return ::math_functions::sign(a) == ::math_functions::sign(b);
-}
-
-/// @brief a > 0 and b > 0 => true
-///        a > 0 and b = 0 => false
-///        a > 0 and b < 0 => false
-///        a = 0 and b > 0 => false
-///        a = 0 and b = 0 => true
-///        a = 0 and b < 0 => false
-///        a < 0 and b > 0 => false
-///        a < 0 and b = 0 => false
-///        a < 0 and b < 0 => true
-/// @param[in] a
-/// @param[in] b
-/// @return
-[[nodiscard]] ATTRIBUTE_CONST constexpr bool same_sign(long a, long b) noexcept {
-    return ::math_functions::sign(a) == ::math_functions::sign(b);
-}
-
-/// @brief a > 0 and b > 0 => true
-///        a > 0 and b = 0 => false
-///        a > 0 and b < 0 => false
-///        a = 0 and b > 0 => false
-///        a = 0 and b = 0 => true
-///        a = 0 and b < 0 => false
-///        a < 0 and b > 0 => false
-///        a < 0 and b = 0 => false
-///        a < 0 and b < 0 => true
-/// @param[in] a
-/// @param[in] b
-/// @return
-[[nodiscard]] ATTRIBUTE_CONST constexpr bool same_sign(long long a, long long b) noexcept {
-    return ::math_functions::sign(a) == ::math_functions::sign(b);
-}
-
-bool uabs(bool n) = delete;
-unsigned char uabs(char n) = delete;
-
-[[nodiscard]] ATTRIBUTE_CONST constexpr unsigned char uabs(signed char n) noexcept {
-    return n >= 0 ? static_cast<unsigned char>(n)
-                  : static_cast<unsigned char>(-static_cast<unsigned char>(n));
-}
-
-[[nodiscard]] ATTRIBUTE_CONST constexpr unsigned char uabs(unsigned char n) noexcept {
-    return n;
-}
-
-[[nodiscard]] ATTRIBUTE_CONST constexpr unsigned short uabs(short n) noexcept {
-    return n >= 0 ? static_cast<unsigned short>(n)
-                  : static_cast<unsigned short>(-static_cast<unsigned short>(n));
-}
-
-[[nodiscard]] ATTRIBUTE_CONST constexpr unsigned short uabs(unsigned short n) noexcept {
-    return n;
-}
-
-[[nodiscard]] ATTRIBUTE_CONST constexpr unsigned uabs(int n) noexcept {
-    return n >= 0 ? static_cast<unsigned>(n) : -static_cast<unsigned>(n);
-}
-
-[[nodiscard]] ATTRIBUTE_CONST constexpr unsigned uabs(unsigned n) noexcept {
-    return n;
-}
-
-[[nodiscard]] ATTRIBUTE_CONST constexpr unsigned long uabs(long n) noexcept {
-    return n >= 0 ? static_cast<unsigned long>(n) : -static_cast<unsigned long>(n);
-}
-
-[[nodiscard]] ATTRIBUTE_CONST constexpr unsigned long uabs(unsigned long n) noexcept {
-    return n;
-}
-
-[[nodiscard]] ATTRIBUTE_CONST constexpr unsigned long long uabs(long long n) noexcept {
-    return n >= 0 ? static_cast<unsigned long long>(n) : -static_cast<unsigned long long>(n);
-}
-
-[[nodiscard]] ATTRIBUTE_CONST constexpr unsigned long long uabs(unsigned long long n) noexcept {
-    return n;
-}
-
-// NOLINTEND(google-runtime-int)
+    if constexpr (::math_functions::is_signed_v<IntType>) {
+        using UIntType = ::math_functions::make_unsigned_t<IntType>;
 
 #if defined(INTEGERS_128_BIT_HPP)
-
-[[nodiscard]] ATTRIBUTE_CONST I128_CONSTEXPR uint128_t uabs(int128_t n) noexcept {
-    // NOLINTNEXTLINE(hicpp-signed-bitwise)
-    const uint128_t t = static_cast<uint128_t>(n >> 127U);
-    return (static_cast<uint128_t>(n) ^ t) - t;
-}
-
-[[nodiscard]] ATTRIBUTE_CONST I128_CONSTEXPR uint128_t uabs(uint128_t n) noexcept {
-    return n;
-}
-
+        if constexpr (std::is_same_v<IntType, int128_t>) {
+            const uint128_t t = static_cast<uint128_t>(n >> 127U);
+            return (static_cast<uint128_t>(n) ^ t) - t;
+        }
 #endif
+        return n >= 0 ? static_cast<UIntType>(n) : static_cast<UIntType>(-static_cast<UIntType>(n));
+    } else {
+        return n;
+    }
+}
+
+/// @brief a > 0 and b > 0 => true
+///        a > 0 and b = 0 => false
+///        a > 0 and b < 0 => false
+///        a = 0 and b > 0 => false
+///        a = 0 and b = 0 => true
+///        a = 0 and b < 0 => false
+///        a < 0 and b > 0 => false
+///        a < 0 and b = 0 => false
+///        a < 0 and b < 0 => true
+/// @param[in] a
+/// @param[in] b
+/// @return
+template <class IntType>
+[[nodiscard]] ATTRIBUTE_CONST constexpr bool same_sign(const IntType a, const IntType b) noexcept {
+    ::math_functions::detail::check_math_int_type<IntType>();
+
+    return ::math_functions::sign(a) == ::math_functions::sign(b);
+}
+
+template <class IntType>
+[[nodiscard]] ATTRIBUTE_CONST constexpr bool is_power_of_two(const IntType n) noexcept {
+    ::math_functions::detail::check_math_int_type<IntType>();
+
+    if constexpr (::math_functions::is_signed_v<IntType>) {
+        // Cast to unsigned type to avoid potential overflow (ub for the signed type)
+        const auto m = ::math_functions::detail::to_uint_at_least_32(n);
+        return (m & (m - 1)) == 0 && n > 0;
+    } else {
+        return (n & (n - 1)) == 0 && n != 0;
+    }
+}
 
 namespace detail {
 
@@ -938,43 +792,9 @@ ATTRIBUTE_NODISCARD ATTRIBUTE_CONST constexpr uint64_t pop_count_64_software(uin
     return n;
 }
 
-#if defined(INTEGERS_128_BIT_HPP)
-namespace helper_ns = int128_traits;
-#else
-namespace helper_ns = std;
-#endif
-
 }  // namespace detail
 
-template <class T>
-inline constexpr bool is_integral_v = ::math_functions::detail::helper_ns::is_integral_v<T>;
-
-template <class T>
-inline constexpr bool is_unsigned_v = ::math_functions::detail::helper_ns::is_unsigned_v<T>;
-
-template <class T>
-inline constexpr bool is_signed_v = ::math_functions::detail::helper_ns::is_signed_v<T>;
-
-template <class T>
-using make_unsigned_t = typename ::math_functions::detail::helper_ns::make_unsigned_t<T>;
-
-template <class T>
-using make_signed_t = typename ::math_functions::detail::helper_ns::make_signed_t<T>;
-
-#if CONFIG_HAS_CONCEPTS
-
-template <class T>
-concept integral = ::math_functions::detail::helper_ns::integral<T>;
-
-template <class T>
-concept signed_integral = ::math_functions::detail::helper_ns::signed_integral<T>;
-
-template <class T>
-concept unsigned_integral = ::math_functions::detail::helper_ns::unsigned_integral<T>;
-
-#endif
-
-[[nodiscard]] ATTRIBUTE_CONST constexpr int32_t pop_diff(uint32_t x, uint32_t y) noexcept {
+[[nodiscard]] ATTRIBUTE_CONST constexpr int32_t diff_popcount(uint32_t x, uint32_t y) noexcept {
     /**
      * See Hackers Delight Chapter 5.
      */
@@ -990,7 +810,8 @@ concept unsigned_integral = ::math_functions::detail::helper_ns::unsigned_integr
     return static_cast<int32_t>(x & 0x0000007FU) - 32;
 }
 
-[[nodiscard]] ATTRIBUTE_CONST constexpr int32_t pop_cmp(uint32_t x, uint32_t y) noexcept {
+[[nodiscard]] ATTRIBUTE_CONST constexpr int32_t compare_popcount(const uint32_t x,
+                                                                 const uint32_t y) noexcept {
     /**
      * See Hackers Delight Chapter 5.
      */
@@ -1015,7 +836,8 @@ template <typename T>
 #if CONFIG_HAS_CONCEPTS
     requires ::math_functions::unsigned_integral<T>
 #endif
-[[nodiscard]] ATTRIBUTE_CONST constexpr int32_t countr_zero(T n) noexcept {
+[[nodiscard]]
+ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_CONST constexpr int32_t countr_zero(const T n) noexcept {
     static_assert(::math_functions::is_unsigned_v<T>, "Unsigned integral type expected");
 
     if (unlikely(n == 0)) {
@@ -1075,7 +897,8 @@ template <typename T>
 #if CONFIG_HAS_CONCEPTS
     requires ::math_functions::unsigned_integral<T>
 #endif
-[[nodiscard]] ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_CONST constexpr int32_t countl_zero(T n) noexcept {
+[[nodiscard]]
+ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_CONST constexpr int32_t countl_zero(const T n) noexcept {
     static_assert(::math_functions::is_unsigned_v<T>, "Unsigned integral type expected");
 
     if (unlikely(n == 0)) {
@@ -1131,7 +954,8 @@ template <class T>
 #if CONFIG_HAS_CONCEPTS
     requires ::math_functions::unsigned_integral<T>
 #endif
-[[nodiscard]] ATTRIBUTE_CONST constexpr int32_t popcount(T n) noexcept {
+[[nodiscard]]
+ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_CONST constexpr int32_t popcount(const T n) noexcept {
     static_assert(::math_functions::is_unsigned_v<T>, "Unsigned integral type expected");
 
 #if defined(INTEGERS_128_BIT_HPP)
@@ -1190,7 +1014,8 @@ template <class T>
 ///        0 -> 0
 /// @param[in] x
 /// @return
-[[nodiscard]] ATTRIBUTE_CONST constexpr uint32_t next_n_bits_permutation(uint32_t x) noexcept {
+[[nodiscard]]
+ATTRIBUTE_CONST constexpr uint32_t next_n_bits_permutation(const uint32_t x) noexcept {
     // See
     // https://graphics.stanford.edu/~seander/bithacks.html#RoundUpPowerOf2
 
@@ -1202,68 +1027,6 @@ template <class T>
            static_cast<uint32_t>(uint64_t{(~t & -~t) - 1} >>
                                  static_cast<uint32_t>(::math_functions::countr_zero(x) + 1));
 }
-
-// NOLINTBEGIN(google-runtime-int)
-
-bool is_power_of_two(bool) = delete;
-bool is_power_of_two(char) = delete;
-
-[[nodiscard]] ATTRIBUTE_CONST constexpr bool is_power_of_two(signed char n) noexcept {
-    // Cast to unsigned to avoid potential overflow (ub for signed char)
-    const unsigned m = unsigned{static_cast<unsigned char>(n)};
-    return (m & (m - 1)) == 0 && n > 0;
-}
-
-[[nodiscard]] ATTRIBUTE_CONST constexpr bool is_power_of_two(unsigned char n) noexcept {
-    const unsigned n_int = unsigned{n};
-    return (n_int & (n_int - 1)) == 0 && n_int != 0;
-}
-
-[[nodiscard]] ATTRIBUTE_CONST constexpr bool is_power_of_two(int n) noexcept {
-    // Cast to unsigned to avoid potential overflow (ub for int)
-    const unsigned m = static_cast<unsigned>(n);
-    return (m & (m - 1)) == 0 && n > 0;
-}
-
-[[nodiscard]] ATTRIBUTE_CONST constexpr bool is_power_of_two(long n) noexcept {
-    // Cast to unsigned to avoid potential overflow (ub for long)
-    const unsigned long m = static_cast<unsigned long>(n);
-    return (m & (m - 1)) == 0 && n > 0;
-}
-
-[[nodiscard]] ATTRIBUTE_CONST constexpr bool is_power_of_two(long long n) noexcept {
-    // Cast to unsigned to avoid potential overflow (ub for long long)
-    const unsigned long long m = static_cast<unsigned long long>(n);
-    return (m & (m - 1)) == 0 && n > 0;
-}
-
-[[nodiscard]] ATTRIBUTE_CONST constexpr bool is_power_of_two(unsigned int n) noexcept {
-    return (n & (n - 1)) == 0 && n != 0;
-}
-
-[[nodiscard]] ATTRIBUTE_CONST constexpr bool is_power_of_two(unsigned long n) noexcept {
-    return (n & (n - 1)) == 0 && n != 0;
-}
-
-[[nodiscard]] ATTRIBUTE_CONST constexpr bool is_power_of_two(unsigned long long n) noexcept {
-    return (n & (n - 1)) == 0 && n != 0;
-}
-
-// NOLINTEND(google-runtime-int)
-
-#if defined(INTEGERS_128_BIT_HPP)
-
-[[nodiscard]] ATTRIBUTE_CONST I128_CONSTEXPR bool is_power_of_two(int128_t n) noexcept {
-    // Cast to unsigned to avoid potential overflow (ub for int128_t)
-    const uint128_t m = static_cast<uint128_t>(n);
-    return (m & (m - 1)) == 0 && n > 0;
-}
-
-[[nodiscard]] ATTRIBUTE_CONST I128_CONSTEXPR bool is_power_of_two(uint128_t n) noexcept {
-    return (n & (n - 1)) == 0 && n != 0;
-}
-
-#endif
 
 template <class UIntType>
 [[nodiscard]]
@@ -1303,12 +1066,10 @@ ATTRIBUTE_CONST constexpr auto nearest_greater_power_of_two(const UIntType n) no
 /// @param[in] n
 /// @return
 template <class IntType>
-[[nodiscard]] ATTRIBUTE_CONST constexpr IntType least_bit_set(IntType n) noexcept {
-    static_assert(::math_functions::is_integral_v<IntType>, "integral type expected");
+[[nodiscard]] ATTRIBUTE_CONST constexpr IntType least_bit_set(const IntType n) noexcept {
+    ::math_functions::detail::check_math_int_type<IntType>();
 
-    using UIntType = ::math_functions::make_unsigned_t<IntType>;
-    using UIntTypeAtLeastUInt32 = std::common_type_t<UIntType, uint32_t>;
-    auto unsigned_n = static_cast<UIntTypeAtLeastUInt32>(static_cast<UIntType>(n));
+    const auto unsigned_n = ::math_functions::detail::to_uint_at_least_32(n);
     return static_cast<IntType>(unsigned_n & -unsigned_n);
 }
 
@@ -1322,7 +1083,8 @@ template <class IntType>
 #if CONFIG_HAS_CONCEPTS
     requires ::math_functions::unsigned_integral<IntType> && (sizeof(IntType) >= sizeof(unsigned))
 #endif
-[[nodiscard]] ATTRIBUTE_CONST constexpr IntType masked_popcount_sum(IntType n, IntType k) noexcept {
+[[nodiscard]]
+ATTRIBUTE_CONST constexpr IntType masked_popcount_sum(const IntType n, const IntType k) noexcept {
     static_assert(::math_functions::is_unsigned_v<IntType> && sizeof(IntType) >= sizeof(unsigned),
                   "unsigned integral type (at least unsigned int) is expected");
 
@@ -1357,7 +1119,7 @@ template <class IntType>
 /// @param k
 /// @return
 template <class IntType>
-[[nodiscard]] ATTRIBUTE_CONST constexpr IntType popcount_sum(IntType n) noexcept {
+[[nodiscard]] ATTRIBUTE_CONST constexpr IntType popcount_sum(const IntType n) noexcept {
     return ::math_functions::masked_popcount_sum(n, ~IntType{0});
 }
 
@@ -1408,9 +1170,7 @@ ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_CONST constexpr uint32_t base_b_len_impl(
 template <typename T>
 [[nodiscard]] ATTRIBUTE_CONST constexpr uint32_t base_b_len(T value,
                                                             const uint8_t base = 10) noexcept {
-    static_assert(
-        ::math_functions::is_integral_v<T> && !std::is_same_v<T, bool> && !std::is_same_v<T, char>,
-        "integral type (not bool or char) is expected in the base_b_len");
+    ::math_functions::detail::check_math_int_type<T>();
 
     if constexpr (::math_functions::is_signed_v<T>) {
         const uint32_t is_negative = uint32_t{value < 0};
@@ -2178,9 +1938,9 @@ struct [[nodiscard]] ExtEuclidAlgoRet {
 /// @param b b value
 /// @return {u, v, gcd(a, b)}
 template <typename IntType>
-[[nodiscard]] ATTRIBUTE_CONST constexpr auto extended_euclid_algorithm(IntType a,
-                                                                       IntType b) noexcept {
-    static_assert(::math_functions::is_integral_v<IntType>, "Integral type expected");
+[[nodiscard]] ATTRIBUTE_CONST constexpr auto extended_euclid_algorithm(const IntType a,
+                                                                       const IntType b) noexcept {
+    ::math_functions::detail::check_math_int_type<IntType>();
 
     int64_t u_previous = a != 0;
     int64_t u_current = 0;
@@ -2233,6 +1993,7 @@ struct HelperRetType {
     uint32_t m_ = 0;                      // m / d
 };
 
+ATTRIBUTE_NODISCARD
 ATTRIBUTE_CONST
 ATTRIBUTE_ALWAYS_INLINE
 constexpr HelperRetType congruence_helper(const uint32_t a,
@@ -2266,6 +2027,7 @@ constexpr HelperRetType congruence_helper(const uint32_t a,
     return {x0, d, m_};
 }
 
+ATTRIBUTE_NODISCARD
 CONSTEXPR_VECTOR
 std::vector<uint32_t> solve_congruence_modulo_m_all_roots_impl(uint32_t a, uint32_t c, uint32_t m) {
     const auto [x0, d, m_] = ::math_functions::detail::congruence_helper(a, c, m);
@@ -2279,16 +2041,16 @@ std::vector<uint32_t> solve_congruence_modulo_m_all_roots_impl(uint32_t a, uint3
     return solutions;
 }
 
-ATTRIBUTE_CONST constexpr uint32_t solve_congruence_modulo_m_impl(uint32_t a,
-                                                                  uint32_t c,
-                                                                  uint32_t m) noexcept {
+ATTRIBUTE_NODISCARD ATTRIBUTE_CONST constexpr uint32_t solve_congruence_modulo_m_impl(
+    uint32_t a, uint32_t c, uint32_t m) noexcept {
     return ::math_functions::detail::congruence_helper(a, c, m).x0;
 }
 
 template <class T>
-ATTRIBUTE_CONST ATTRIBUTE_ALWAYS_INLINE constexpr uint32_t congruence_arg(
-    T x, [[maybe_unused]] uint32_t m) noexcept {
-    static_assert(::math_functions::is_integral_v<T>, "Expected integral type in the congruence");
+ATTRIBUTE_NODISCARD ATTRIBUTE_CONST ATTRIBUTE_ALWAYS_INLINE constexpr uint32_t congruence_arg(
+    const T x, [[maybe_unused]] uint32_t m) noexcept {
+    ::math_functions::detail::check_math_int_type<T>();
+
     if constexpr (::math_functions::is_unsigned_v<T>) {
         if constexpr (sizeof(x) > sizeof(uint32_t)) {
             return static_cast<uint32_t>(x % m);
@@ -2308,6 +2070,8 @@ ATTRIBUTE_CONST ATTRIBUTE_ALWAYS_INLINE constexpr uint32_t congruence_arg(
 
 }  // namespace detail
 
+// clang-format off
+
 /// @brief Solves congruence a * x ≡ c (mod m)
 /// @note Roots exist <=> c % gcd(a, m) == 0.
 ///       If roots exist, then exactly gcd(a, m)
@@ -2323,12 +2087,17 @@ ATTRIBUTE_CONST ATTRIBUTE_ALWAYS_INLINE constexpr uint32_t congruence_arg(
 ///          x_{0} < m / gcd(a, m), x_{i + 1} = x_{i} + m / gcd(a, m).
 ///         Otherwise, return empty vector.
 template <class T1, class T2>
-[[nodiscard]] ATTRIBUTE_ALWAYS_INLINE CONSTEXPR_VECTOR std::vector<uint32_t>
-solve_congruence_modulo_m_all_roots(T1 a, T2 c, uint32_t m) {
+[[nodiscard]]
+ATTRIBUTE_ALWAYS_INLINE
+CONSTEXPR_VECTOR
+std::vector<uint32_t> solve_congruence_modulo_m_all_roots(const T1 a, const T2 c, const uint32_t m) {
+    // clang-format on
     return ::math_functions::detail::solve_congruence_modulo_m_all_roots_impl(
         ::math_functions::detail::congruence_arg(a, m),
         ::math_functions::detail::congruence_arg(c, m), m);
 }
+
+// clang-format off
 
 /// @brief Solves modulus congruence a * x ≡ c (mod m)
 /// @note Roots exist <=> c % gcd(a, m) == 0.
@@ -2343,8 +2112,11 @@ solve_congruence_modulo_m_all_roots(T1 a, T2 c, uint32_t m) {
 /// @return If roots exist, return root x such that 0 <= x < m / gcd(a, m).
 ///         Otherwise, return math_functions::kNoCongruenceSolution
 template <class T1, class T2>
-[[nodiscard]] ATTRIBUTE_CONST ATTRIBUTE_ALWAYS_INLINE constexpr uint32_t solve_congruence_modulo_m(
-    T1 a, T2 c, uint32_t m) noexcept {
+[[nodiscard]]
+ATTRIBUTE_CONST
+ATTRIBUTE_ALWAYS_INLINE
+constexpr uint32_t solve_congruence_modulo_m(const T1 a, const T2 c, const uint32_t m) noexcept {
+    // clang-format on
     return ::math_functions::detail::solve_congruence_modulo_m_impl(
         ::math_functions::detail::congruence_arg(a, m),
         ::math_functions::detail::congruence_arg(c, m), m);
@@ -2359,10 +2131,9 @@ template <class T1, class T2>
 /// @param a
 /// @param m
 /// @return
-template <::math_functions::integral IntType>
-    requires(!std::is_same_v<IntType, bool>)
+template <::math_functions::math_integral_type IntType>
 [[nodiscard]]
-ATTRIBUTE_CONST constexpr uint32_t inv_mod_m(IntType a, uint32_t m) noexcept {
+ATTRIBUTE_CONST constexpr uint32_t inv_mod_m(const IntType a, const uint32_t m) noexcept {
     return ::math_functions::solve_congruence_modulo_m(a, uint32_t{1}, m);
 }
 
@@ -2392,10 +2163,10 @@ namespace detail {
 
 // clang-format off
 
-template <class Iter>
+template <class Iter, class IterSentinel>
 ATTRIBUTE_NODISCARD
 CONSTEXPR_VECTOR
-typename ::math_functions::InverseResult inv_range_mod_m_impl(Iter nums_begin, Iter nums_end, uint32_t m) {
+typename ::math_functions::InverseResult inv_range_mod_m_impl(Iter nums_begin, const IterSentinel nums_end, uint32_t m) {
     // clang-format on
 
     const auto n = static_cast<size_t>(std::distance(nums_begin, nums_end));
@@ -2446,15 +2217,16 @@ typename ::math_functions::InverseResult inv_range_mod_m_impl(Iter nums_begin, I
 template <class Iterator>
 concept integral_forward_iterator =
     std::forward_iterator<Iterator> &&
-    ::math_functions::integral<typename std::iter_value_t<Iterator>> &&
-    (!std::same_as<typename std::iter_value_t<Iterator>, bool>);
+    ::math_functions::math_integral_type<typename std::iter_value_t<Iterator>>;
 
-template <::math_functions::integral_forward_iterator Iterator>
+template <::math_functions::integral_forward_iterator Iterator,
+          std::sentinel_for<Iterator> Sentinel>
 [[nodiscard]]
 CONSTEXPR_VECTOR ::math_functions::InverseResult inv_range_mod_m(Iterator nums_begin,
-                                                                 Iterator nums_end,
-                                                                 uint32_t m) {
-    return ::math_functions::detail::inv_range_mod_m_impl(nums_begin, nums_end, m);
+                                                                 Sentinel nums_end,
+                                                                 const uint32_t m) {
+    return ::math_functions::detail::inv_range_mod_m_impl(std::move(nums_begin),
+                                                          std::move(nums_end), m);
 }
 
 /// @brief Inverse @a nums mod m
@@ -2465,8 +2237,7 @@ CONSTEXPR_VECTOR ::math_functions::InverseResult inv_range_mod_m(Iterator nums_b
 /// @return
 template <std::ranges::forward_range Range>
 [[nodiscard]]
-// NOLINTNEXTLINE(cppcoreguidelines-missing-std-forward)
-CONSTEXPR_VECTOR ::math_functions::InverseResult inv_range_mod_m(Range&& nums, uint32_t m) {
+CONSTEXPR_VECTOR ::math_functions::InverseResult inv_range_mod_m(const Range& nums, uint32_t m) {
     return ::math_functions::inv_range_mod_m(std::begin(nums), std::end(nums), m);
 }
 
@@ -2475,26 +2246,27 @@ CONSTEXPR_VECTOR ::math_functions::InverseResult inv_range_mod_m(Range&& nums, u
 // clang-format off
 
 template <class Iter,
-          std::enable_if_t<
-              ::math_functions::is_integral_v<typename std::iterator_traits<Iter>::value_type> &&
-                  !std::is_same_v<typename std::iterator_traits<Iter>::value_type, bool>,
-              int> = 0>
+          class Sentinel,
+          std::enable_if_t<::math_functions::is_math_integral_type_v<typename std::iterator_traits<Iter>::value_type>, int> = 0>
 ATTRIBUTE_NODISCARD
-CONSTEXPR_VECTOR ::math_functions::InverseResult inv_range_mod_m(Iter nums_iter_begin,
-                                                                 Iter nums_iter_end,
-                                                                 uint32_t m) {
-    return ::math_functions::detail::inv_range_mod_m_impl(nums_iter_begin, nums_iter_end, m);
+CONSTEXPR_VECTOR
+::math_functions::InverseResult inv_range_mod_m(Iter nums_iter_begin,
+                                                Sentinel nums_iter_end,
+                                                const uint32_t m) {
+    return ::math_functions::detail::inv_range_mod_m_impl(std::move(nums_iter_begin), std::move(nums_iter_end), m);
 }
 
 template <class Range,
-          std::enable_if_t<::math_functions::is_integral_v<typename std::iterator_traits<
-                               decltype(std::begin(std::declval<Range&&>()))>::value_type>&& ::
-                               math_functions::is_integral_v<typename std::iterator_traits<
-                                   decltype(std::end(std::declval<Range&&>()))>::value_type>,
+          std::enable_if_t<::math_functions::is_integral_v<
+                             typename std::iterator_traits<decltype(std::begin(std::declval<const Range&>()))>::value_type
+                           >
+                           &&
+                           ::math_functions::is_integral_v<
+                             typename std::iterator_traits<decltype(std::end(std::declval<const Range&>()))>::value_type
+                           >,
                            int> = 0>
 ATTRIBUTE_NODISCARD
-// NOLINTNEXTLINE(cppcoreguidelines-missing-std-forward)
-CONSTEXPR_VECTOR ::math_functions::InverseResult inv_range_mod_m(Range&& nums, uint32_t m) {
+CONSTEXPR_VECTOR ::math_functions::InverseResult inv_range_mod_m(const Range& nums, uint32_t m) {
     return ::math_functions::inv_range_mod_m(std::begin(nums), std::end(nums), m);
 }
 
@@ -2514,7 +2286,7 @@ CONSTEXPR_VECTOR ::math_functions::InverseResult inv_range_mod_m(Range&& nums, u
 ATTRIBUTE_CONST constexpr uint32_t solve_binary_congruence_modulo_m(const uint32_t k,
                                                                     const uint32_t c,
                                                                     const uint32_t m) noexcept {
-    if (m == 0) {
+    if (unlikely(m == 0)) {
         return ::math_functions::kNoCongruenceSolution;
     }
 
@@ -2584,8 +2356,9 @@ ATTRIBUTE_CONST constexpr uint32_t solve_binary_congruence_modulo_m(const uint32
 /// @param n
 /// @param k
 /// @return q if k > 1 and std::numeric_limits<uint32_t>::max() otherwise
-[[nodiscard]] ATTRIBUTE_CONST constexpr uint32_t solve_factorial_congruence(uint32_t n,
-                                                                            uint32_t k) noexcept {
+[[nodiscard]]
+ATTRIBUTE_CONST constexpr uint32_t solve_factorial_congruence(const uint32_t n,
+                                                              const uint32_t k) noexcept {
     /*
      * let k  = p_1^a_1 * p_2^a_2 * ... * p_m^a_m
      * let n! = p_1^b_1 * p_2^b_2 * ...
@@ -2635,7 +2408,7 @@ ATTRIBUTE_CONST constexpr uint32_t solve_binary_congruence_modulo_m(const uint32
     return ans;
 }
 
-[[nodiscard]] ATTRIBUTE_CONST constexpr bool is_perfect_number(uint32_t n) noexcept {
+[[nodiscard]] ATTRIBUTE_CONST constexpr bool is_perfect_number(const uint32_t n) noexcept {
     switch (n) {
         case 6:
         case 28:
@@ -2715,7 +2488,7 @@ ATTRIBUTE_CONST constexpr uint32_t solve_binary_congruence_modulo_m(const uint32
 
 #if defined(INTEGERS_128_BIT_HPP)
 
-[[nodiscard]] ATTRIBUTE_CONST I128_CONSTEXPR bool is_perfect_number(uint128_t n) noexcept {
+[[nodiscard]] ATTRIBUTE_CONST I128_CONSTEXPR bool is_perfect_number(const uint128_t n) noexcept {
     return n > std::numeric_limits<uint64_t>::max()
                ? n == (((uint128_t{1} << 61U) - 1) << (61U - 1U))
                : ::math_functions::is_perfect_number(static_cast<uint64_t>(n));
@@ -2726,7 +2499,7 @@ ATTRIBUTE_CONST constexpr uint32_t solve_binary_congruence_modulo_m(const uint32
 namespace detail {
 
 template <uint32_t M, class T>
-ATTRIBUTE_CONST ATTRIBUTE_ALWAYS_INLINE constexpr T unrolled_pow(
+ATTRIBUTE_NODISCARD ATTRIBUTE_CONST ATTRIBUTE_ALWAYS_INLINE constexpr T unrolled_pow(
     [[maybe_unused]] const uint32_t n) noexcept {
     if constexpr (M == 0) {
         return 1;
@@ -2745,7 +2518,7 @@ ATTRIBUTE_CONST ATTRIBUTE_ALWAYS_INLINE constexpr T unrolled_pow(
 }
 
 template <uint32_t N, uint32_t K, class T>
-ATTRIBUTE_CONST ATTRIBUTE_ALWAYS_INLINE constexpr T unrolled_cnk() noexcept {
+ATTRIBUTE_NODISCARD ATTRIBUTE_CONST ATTRIBUTE_ALWAYS_INLINE constexpr T unrolled_cnk() noexcept {
     if constexpr (K > N) {
         return 0;
     } else {
@@ -2769,10 +2542,11 @@ ATTRIBUTE_CONST ATTRIBUTE_ALWAYS_INLINE constexpr T unrolled_cnk() noexcept {
 }
 
 template <uint32_t M, class T>
-ATTRIBUTE_CONST constexpr T powers_sum(const uint32_t n) noexcept;
+ATTRIBUTE_NODISCARD ATTRIBUTE_CONST constexpr T powers_sum(const uint32_t n) noexcept;
 
 template <uint32_t M, uint32_t I, class T>
-ATTRIBUTE_CONST ATTRIBUTE_ALWAYS_INLINE constexpr T helper(const uint32_t n) noexcept {
+ATTRIBUTE_NODISCARD ATTRIBUTE_CONST ATTRIBUTE_ALWAYS_INLINE constexpr T helper(
+    const uint32_t n) noexcept {
     static_assert(I <= M + 1);
     const auto res = ::math_functions::detail::unrolled_cnk<M + 1, I, T>() *
                      ::math_functions::detail::powers_sum<M + 1 - I, T>(n);
@@ -2784,7 +2558,7 @@ ATTRIBUTE_CONST ATTRIBUTE_ALWAYS_INLINE constexpr T helper(const uint32_t n) noe
 }
 
 template <uint32_t M, class T>
-ATTRIBUTE_CONST constexpr T powers_sum(const uint32_t n) noexcept {
+ATTRIBUTE_NODISCARD ATTRIBUTE_CONST constexpr T powers_sum(const uint32_t n) noexcept {
     static_assert(sizeof(T) >= sizeof(uint64_t));
     static_assert(M + 1 > M);
 
@@ -2864,8 +2638,7 @@ constexpr double kE = static_cast<double>(2.71828182845904523536L);
 /// @param n
 /// @return
 template <uint32_t M>
-[[nodiscard]]
-ATTRIBUTE_CONST constexpr uint64_t powers_sum_u64(const uint32_t n) noexcept {
+[[nodiscard]] ATTRIBUTE_CONST constexpr uint64_t powers_sum_u64(const uint32_t n) noexcept {
     return ::math_functions::detail::powers_sum<M, uint64_t>(n);
 }
 
@@ -2921,10 +2694,8 @@ template <class T>
 #if CONFIG_HAS_CONCEPTS
     requires ::math_functions::integral<T>
 #endif
-[[nodiscard]] CONSTEXPR_VECTOR std::vector<T> arange(T begin, T end, T step) {
-    static_assert(
-        ::math_functions::is_integral_v<T> && !std::is_same_v<T, bool> && !std::is_same_v<T, char>,
-        "integral type (not bool or char) is expected in the arange");
+[[nodiscard]] CONSTEXPR_VECTOR std::vector<T> arange(const T begin, const T end, const T step) {
+    ::math_functions::detail::check_math_int_type<T>();
 
     const size_t size = ::math_functions::detail::arange_size(begin, end, step);
     std::vector<T> rng(size);
@@ -2938,12 +2709,12 @@ template <class T>
 }
 
 template <class T>
-[[nodiscard]] CONSTEXPR_VECTOR std::vector<T> arange(T begin, T end) {
+[[nodiscard]] CONSTEXPR_VECTOR std::vector<T> arange(const T begin, const T end) {
     return ::math_functions::arange(begin, end, T{1});
 }
 
 template <class T>
-[[nodiscard]] CONSTEXPR_VECTOR std::vector<T> arange(T n) {
+[[nodiscard]] CONSTEXPR_VECTOR std::vector<T> arange(const T n) {
     return ::math_functions::arange(T{0}, n);
 }
 
@@ -2986,7 +2757,7 @@ CONSTEXPR_VECTOR std::vector<T> pow_arange(const size_t n, const T p) {
 template <class T>
 [[nodiscard]]
 CONSTEXPR_VECTOR std::vector<T> exp_arange(const size_t n) {
-    return ::math_functions::pow_arange<T>(n, ::math_functions::detail::kE);
+    return ::math_functions::pow_arange<T>(n, static_cast<T>(::math_functions::detail::kE));
 }
 
 /// @brief Return vector of elements {p^0 mod m, p^1 mod m, p^2 mod m, p^3 mod m, ..., p^n mod m}
@@ -3032,9 +2803,9 @@ ATTRIBUTE_NODISCARD
 ATTRIBUTE_ALWAYS_INLINE
 ATTRIBUTE_SIZED_ACCESS(read_only, 3, 4)
 constexpr Iterator find_wmedian_iter(uint64_t weighted_sum,
-                           Iterator iter,
-                           const uint64_t* const RESTRICT_QUALIFIER prefsums,
-                           const size_t prefsums_size) noexcept {
+                                     Iterator iter,
+                                     const uint64_t* const RESTRICT_QUALIFIER prefsums,
+                                     const size_t prefsums_size) noexcept {
     // clang-format on
 
     uint64_t min_weighted_sum = weighted_sum;
@@ -3086,7 +2857,7 @@ CONSTEXPR_VECTOR Iterator wmedian_impl(const Iterator begin, const Iterator end)
 template <::math_functions::integral_forward_iterator Iterator>
     requires std::same_as<typename std::iter_value_t<Iterator>, uint32_t>
 [[nodiscard]] CONSTEXPR_VECTOR Iterator weighted_median(Iterator begin, Iterator end) {
-    return ::math_functions::detail::wmedian_impl(begin, end);
+    return ::math_functions::detail::wmedian_impl(std::move(begin), std::move(end));
 }
 
 // clang-format off
@@ -3107,7 +2878,7 @@ CONSTEXPR_VECTOR typename std::ranges::borrowed_iterator_t<Range> weighted_media
 template <class Iterator,
           std::enable_if_t<std::is_same_v<typename std::iterator_traits<Iterator>::value_type, uint32_t>, int> = 0>
 ATTRIBUTE_NODISCARD CONSTEXPR_VECTOR Iterator weighted_median(Iterator begin, Iterator end) {
-    return ::math_functions::detail::wmedian_impl(begin, end);
+    return ::math_functions::detail::wmedian_impl(std::move(begin), std::move(end));
 }
 // clang-format on
 
