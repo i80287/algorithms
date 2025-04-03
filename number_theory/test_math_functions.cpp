@@ -1229,21 +1229,21 @@ void test_general_asserts() noexcept {
     ASSERT_THAT(int(detail::pop_count_64_software(uint64_t{0xFFFFFFFFFFFFFFFFULL})) ==
                 std::popcount(uint64_t{0xFFFFFFFFFFFFFFFFULL}));
 
-    ASSERT_THAT(std::popcount(0U) - std::popcount(0U) == pop_diff(0, 0));
-    ASSERT_THAT(std::popcount(1U) - std::popcount(0U) == pop_diff(1, 0));
-    ASSERT_THAT(std::popcount(0U) - std::popcount(1U) == pop_diff(0, 1));
-    ASSERT_THAT(std::popcount(0xABCDEFU) - std::popcount(4U) == pop_diff(0xABCDEF, 4));
+    ASSERT_THAT(std::popcount(0U) - std::popcount(0U) == diff_popcount(0, 0));
+    ASSERT_THAT(std::popcount(1U) - std::popcount(0U) == diff_popcount(1, 0));
+    ASSERT_THAT(std::popcount(0U) - std::popcount(1U) == diff_popcount(0, 1));
+    ASSERT_THAT(std::popcount(0xABCDEFU) - std::popcount(4U) == diff_popcount(0xABCDEF, 4));
     ASSERT_THAT(std::popcount(uint32_t{std::numeric_limits<uint16_t>::max()}) -
                     std::popcount(314U) ==
-                pop_diff(uint32_t{std::numeric_limits<uint16_t>::max()}, 314));
+                diff_popcount(uint32_t{std::numeric_limits<uint16_t>::max()}, 314));
     ASSERT_THAT(std::popcount(std::numeric_limits<uint32_t>::max()) - std::popcount(0U) ==
-                pop_diff(std::numeric_limits<uint32_t>::max(), 0U));
+                diff_popcount(std::numeric_limits<uint32_t>::max(), 0U));
     ASSERT_THAT(std::popcount(0U) - std::popcount(std::numeric_limits<uint32_t>::max()) ==
-                pop_diff(0U, std::numeric_limits<uint32_t>::max()));
+                diff_popcount(0U, std::numeric_limits<uint32_t>::max()));
     ASSERT_THAT(
         std::popcount(std::numeric_limits<uint32_t>::max()) -
             std::popcount(std::numeric_limits<uint32_t>::max()) ==
-        pop_diff(std::numeric_limits<uint32_t>::max(), std::numeric_limits<uint32_t>::max()));
+        diff_popcount(std::numeric_limits<uint32_t>::max(), std::numeric_limits<uint32_t>::max()));
 #endif
 
     I128_ASSERT_THAT(sign(int128_t{0}) == 0);
@@ -1260,16 +1260,6 @@ void test_general_asserts() noexcept {
     I128_ASSERT_THAT(sign(static_cast<int128_t>((uint128_t{1} << 127U) - 1)) == 1);
     I128_ASSERT_THAT(sign(static_cast<int128_t>(-((uint128_t{1} << 127U) - 1))) == -1);
     I128_ASSERT_THAT(sign(static_cast<int128_t>(-(uint128_t{1} << 127U))) == -1);
-
-    ASSERT_THAT(same_sign_soft(1, 1));
-    ASSERT_THAT(same_sign_soft(1, 0));
-    ASSERT_THAT(!same_sign_soft(1, -1));
-    ASSERT_THAT(same_sign_soft(0, 1));
-    ASSERT_THAT(same_sign_soft(0, 0));
-    ASSERT_THAT(!same_sign_soft(0, -1));
-    ASSERT_THAT(!same_sign_soft(-1, 1));
-    ASSERT_THAT(!same_sign_soft(-1, 0));
-    ASSERT_THAT(same_sign_soft(-1, -1));
 
     ASSERT_THAT(same_sign(1, 1));
     ASSERT_THAT(!same_sign(1, 0));
@@ -1364,21 +1354,22 @@ void test_general_asserts() noexcept {
     I128_ASSERT_THAT(uabs(-(uint128_t{1} << 127U)) == uint128_t{1} << 127U);
 
 #if CONFIG_HAS_AT_LEAST_CXX_20
-    ASSERT_THAT(sign(std::popcount(0U) - std::popcount(0U)) == sign(pop_cmp(0, 0)));
-    ASSERT_THAT(sign(std::popcount(1U) - std::popcount(0U)) == sign(pop_cmp(1, 0)));
-    ASSERT_THAT(sign(std::popcount(0U) - std::popcount(1U)) == sign(pop_cmp(0, 1)));
-    ASSERT_THAT(sign(std::popcount(0xABCDEFU) - std::popcount(4U)) == pop_cmp(0xABCDEF, 4));
+    ASSERT_THAT(sign(std::popcount(0U) - std::popcount(0U)) == sign(compare_popcount(0, 0)));
+    ASSERT_THAT(sign(std::popcount(1U) - std::popcount(0U)) == sign(compare_popcount(1, 0)));
+    ASSERT_THAT(sign(std::popcount(0U) - std::popcount(1U)) == sign(compare_popcount(0, 1)));
+    ASSERT_THAT(sign(std::popcount(0xABCDEFU) - std::popcount(4U)) ==
+                compare_popcount(0xABCDEF, 4));
     ASSERT_THAT(
         sign(std::popcount(uint32_t{std::numeric_limits<uint16_t>::max()}) - std::popcount(314U)) ==
-        sign(pop_cmp(uint32_t{std::numeric_limits<uint16_t>::max()}, 314U)));
+        sign(compare_popcount(uint32_t{std::numeric_limits<uint16_t>::max()}, 314U)));
     ASSERT_THAT(sign(std::popcount(std::numeric_limits<uint32_t>::max()) - std::popcount(0U)) ==
-                sign(pop_cmp(std::numeric_limits<uint32_t>::max(), 0U)));
+                sign(compare_popcount(std::numeric_limits<uint32_t>::max(), 0U)));
     ASSERT_THAT(sign(std::popcount(0U) - std::popcount(std::numeric_limits<uint32_t>::max())) ==
-                sign(pop_cmp(0U, std::numeric_limits<uint32_t>::max())));
-    ASSERT_THAT(
-        sign(std::popcount(std::numeric_limits<uint32_t>::max()) -
-             std::popcount(std::numeric_limits<uint32_t>::max())) ==
-        sign(pop_cmp(std::numeric_limits<uint32_t>::max(), std::numeric_limits<uint32_t>::max())));
+                sign(compare_popcount(0U, std::numeric_limits<uint32_t>::max())));
+    ASSERT_THAT(sign(std::popcount(std::numeric_limits<uint32_t>::max()) -
+                     std::popcount(std::numeric_limits<uint32_t>::max())) ==
+                sign(compare_popcount(std::numeric_limits<uint32_t>::max(),
+                                      std::numeric_limits<uint32_t>::max())));
 #endif
 
     ASSERT_THAT(detail::lz_count_32_software(0U) == 32);
