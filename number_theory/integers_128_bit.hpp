@@ -16,16 +16,16 @@
 
 #if (defined(__clang__) || defined(__GNUC__)) && defined(__SIZEOF_INT128__)
 
-using uint128_t = __uint128_t;
-using int128_t = __int128_t;
+typedef __uint128_t uint128_t;
+typedef __int128_t int128_t;
 
 #define HAS_INT128_TYPEDEF
 
 #elif defined(_MSC_VER) && CONFIG_HAS_INCLUDE(<__msvc_int128.hpp>)
 
 #include <__msvc_int128.hpp>
-using uint128_t = std::_Unsigned128;
-using int128_t = std::_Signed128;
+typedef std::_Unsigned128 uint128_t;
+typedef std::_Signed128 int128_t;
 
 #define HAS_INT128_TYPEDEF
 
@@ -38,7 +38,7 @@ using int128_t = std::_Signed128;
 #warning "Unsupported compiler, typedef 128-bit integer specific for your compiler"
 #elif defined(_MSC_VER)
 // cppcheck-suppress [preprocessorErrorDirective]
-#pragma message WARN("your warning message here")
+#pragma message WARN("Unsupported compiler, typedef 128-bit integer specific for your compiler")
 #endif
 
 #endif
