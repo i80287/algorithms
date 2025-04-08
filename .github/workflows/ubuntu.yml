@@ -17,7 +17,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        ubuntu_version: [20.04, 22.04, 24.04]
+        ubuntu_version: [22.04, 24.04]
 
     steps:
     - uses: actions/checkout@v4
@@ -42,7 +42,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        ubuntu_version: [20.04, 22.04, 24.04]
+        ubuntu_version: [22.04, 24.04]
 
     steps:
     - uses: actions/checkout@v4
