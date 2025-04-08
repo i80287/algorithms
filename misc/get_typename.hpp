@@ -1,7 +1,6 @@
 #pragma once
 
 #include <cstddef>
-#include <string>
 #include <string_view>
 #include <type_traits>
 
@@ -26,15 +25,18 @@ namespace misc {
 
 namespace misc_detail {
 
-ATTRIBUTE_NODISCARD_WITH_MESSAGE("impl error")
-MISC_GET_TYPENAME_CONSTEVAL std::size_t get_typename_end_pos_impl(const std::string_view s) {
+using std::size_t;
+using std::string_view;
+
+[[nodiscard]]
+MISC_GET_TYPENAME_CONSTEVAL size_t get_typename_end_pos_impl(const string_view s) noexcept {
     // Variables are not inside of the for init for
     //  the compatibility with C++17.
-    std::size_t opened_square_brackets = 0;
-    std::size_t opened_round_brackets = 0;
-    std::size_t opened_curly_brackets = 0;
-    std::size_t opened_triangle_brackets = 0;
-    std::size_t i = 0;
+    size_t opened_square_brackets = 0;
+    size_t opened_round_brackets = 0;
+    size_t opened_curly_brackets = 0;
+    size_t opened_triangle_brackets = 0;
+    size_t i = 0;
     for (const char c : s) {
         switch (static_cast<unsigned char>(c)) {
             case '(': {
@@ -99,11 +101,6 @@ MISC_GET_TYPENAME_CONSTEVAL std::size_t get_typename_end_pos_impl(const std::str
     return s.size();
 }
 
-#define CONSTEVAL_ASSERT_CONCAT_IMPL(arg1, arg2, arg3) arg1##arg2##arg3
-#define CONSTEVAL_ASSERT_CONCAT(arg1, arg2, arg3)      CONSTEVAL_ASSERT_CONCAT_IMPL(arg1, arg2, arg3)
-#define CONSTEVAL_ASSERT_GENERATE_UNIQUE_NAME(prefix) \
-    CONSTEVAL_ASSERT_CONCAT(prefix, _unique_addendum_, __COUNTER__)
-
 #if CONFIG_GNUC_AT_LEAST(12, 1) || defined(__clang__)
 #define CONSTEVAL_ASSERT(expr)                         \
     do {                                               \
@@ -116,10 +113,8 @@ MISC_GET_TYPENAME_CONSTEVAL std::size_t get_typename_end_pos_impl(const std::str
     } while (false)
 #endif
 
-ATTRIBUTE_NODISCARD_WITH_MESSAGE("impl error")
-MISC_GET_TYPENAME_CONSTEVAL
-std::string_view extract_typename_impl(
-    const std::string_view function_name ATTRIBUTE_LIFETIME_BOUND) {
+[[nodiscard]]
+MISC_GET_TYPENAME_CONSTEVAL string_view extract_typename_impl(const string_view function_name) {
     const auto is_space = [](const char c) constexpr noexcept {
         switch (static_cast<unsigned char>(c)) {
             case '\t':
@@ -135,18 +130,18 @@ std::string_view extract_typename_impl(
     };
 
 #if defined(__GNUG__) || defined(__clang__)
-    constexpr std::string_view type_prefix = "T = ";
-    const std::size_t prefix_start_pos = function_name.find(type_prefix);
-    CONSTEVAL_ASSERT(prefix_start_pos != std::string_view::npos);
-    std::size_t typename_start_pos = prefix_start_pos + type_prefix.size();
+    constexpr string_view type_prefix = "T = ";
+    const size_t prefix_start_pos = function_name.find(type_prefix);
+    CONSTEVAL_ASSERT(prefix_start_pos != string_view::npos);
+    size_t typename_start_pos = prefix_start_pos + type_prefix.size();
 #elif defined(_MSC_VER)
-    constexpr std::string_view type_prefix = "get_typename_impl<";
-    const std::size_t prefix_start_pos = function_name.find(type_prefix);
-    CONSTEVAL_ASSERT(prefix_start_pos != std::string_view::npos);
-    std::size_t typename_start_pos = prefix_start_pos + type_prefix.size();
+    constexpr string_view type_prefix = "get_typename_impl<";
+    const size_t prefix_start_pos = function_name.find(type_prefix);
+    CONSTEVAL_ASSERT(prefix_start_pos != string_view::npos);
+    size_t typename_start_pos = prefix_start_pos + type_prefix.size();
     CONSTEVAL_ASSERT(typename_start_pos < function_name.size());
-    std::string_view piece = function_name.substr(typename_start_pos);
-    constexpr std::string_view kKeywords[] = {
+    string_view piece = function_name.substr(typename_start_pos);
+    constexpr string_view kKeywords[] = {
         "class",
         "struct",
         "enum",
@@ -158,7 +153,7 @@ std::string_view extract_typename_impl(
             piece.remove_prefix(1);
             typename_start_pos++;
         }
-        for (const std::string_view keyword : kKeywords) {
+        for (const string_view keyword : kKeywords) {
 #if CONFIG_HAS_AT_LEAST_CXX_20
             if (piece.starts_with(keyword))
 #else
@@ -175,7 +170,7 @@ std::string_view extract_typename_impl(
 
 #else
 // cppcheck-suppress [preprocessorErrorDirective]
-#error("Unsupported compiler")
+#error ("Unsupported compiler")
 #endif
 
     CONSTEVAL_ASSERT(typename_start_pos < function_name.size());
@@ -183,7 +178,7 @@ std::string_view extract_typename_impl(
         typename_start_pos++;
     }
     CONSTEVAL_ASSERT(typename_start_pos < function_name.size());
-    const std::size_t typename_end_pos =
+    const size_t typename_end_pos =
         typename_start_pos + get_typename_end_pos_impl(function_name.substr(typename_start_pos));
     CONSTEVAL_ASSERT(typename_end_pos < function_name.size());
     CONSTEVAL_ASSERT(typename_start_pos < typename_end_pos);
@@ -191,9 +186,9 @@ std::string_view extract_typename_impl(
 }
 
 template <class T>
-ATTRIBUTE_NODISCARD_WITH_MESSAGE("impl error")
-MISC_GET_TYPENAME_CONSTEVAL std::string_view get_typename_impl() {
-    const std::string_view function_name =
+[[nodiscard]]
+MISC_GET_TYPENAME_CONSTEVAL string_view get_typename_impl() {
+    const string_view function_name =
 #ifdef MISC_GET_TYPENAME_HAS_SOURCE_LOCATION
         std::source_location::current().function_name();
 #else
@@ -203,19 +198,12 @@ MISC_GET_TYPENAME_CONSTEVAL std::string_view get_typename_impl() {
     return ::misc::misc_detail::extract_typename_impl(function_name);
 }
 
-}  // namespace misc_detail
-
-namespace misc_detail {
-
 // clang-format off
 
-template <class EnumType, EnumType EnumValue>
-ATTRIBUTE_NODISCARD_WITH_MESSAGE("impl error")
+[[nodiscard]]
 MISC_GET_TYPENAME_CONSTEVAL
-std::string_view extract_enum_value_name_impl(const std::string_view function_name ATTRIBUTE_LIFETIME_BOUND) {
+string_view extract_enum_value_name_impl(const string_view function_name) {
     // clang-format on
-
-    using std::string_view;
 
 #if defined(__GNUG__) || defined(__clang__)
     constexpr string_view prefix = "EnumValue = ";
@@ -223,43 +211,39 @@ std::string_view extract_enum_value_name_impl(const std::string_view function_na
     constexpr string_view prefix = "get_enum_value_name_impl<";
 #else
 // cppcheck-suppress [preprocessorErrorDirective]
-#error("Unsupported compiler")
+#error ("Unsupported compiler")
 #endif
 
-    const std::size_t prefix_start_pos = function_name.find(prefix);
+    const size_t prefix_start_pos = function_name.find(prefix);
     CONSTEVAL_ASSERT(prefix_start_pos != string_view::npos);
-    std::size_t value_start_pos = prefix_start_pos + prefix.size();
+    size_t value_start_pos = prefix_start_pos + prefix.size();
     CONSTEVAL_ASSERT(value_start_pos < function_name.size());
-    const std::size_t value_end_pos =
+    const size_t value_end_pos =
         value_start_pos + get_typename_end_pos_impl(function_name.substr(value_start_pos));
     CONSTEVAL_ASSERT(value_start_pos < value_end_pos);
     CONSTEVAL_ASSERT(value_end_pos < function_name.size());
-    std::string_view full_name =
-        function_name.substr(value_start_pos, value_end_pos - value_start_pos);
-    constexpr std::string_view kScopeResolutionOperator = "::";
-    if (const std::size_t scope_res_operator_pos = full_name.rfind(kScopeResolutionOperator);
-        scope_res_operator_pos != std::string_view::npos) {
+    string_view full_name = function_name.substr(value_start_pos, value_end_pos - value_start_pos);
+    constexpr string_view kScopeResolutionOperator = "::";
+    if (const size_t scope_res_operator_pos = full_name.rfind(kScopeResolutionOperator);
+        scope_res_operator_pos != string_view::npos) {
         full_name = full_name.substr(scope_res_operator_pos + kScopeResolutionOperator.size());
     }
     return full_name;
 }
 
 template <auto EnumValue, class EnumType>
-ATTRIBUTE_NODISCARD_WITH_MESSAGE("impl error")
-MISC_GET_TYPENAME_CONSTEVAL std::string_view get_enum_value_name_impl() {
-    const std::string_view function_name =
+[[nodiscard]]
+MISC_GET_TYPENAME_CONSTEVAL string_view get_enum_value_name_impl() {
+    const string_view function_name =
 #ifdef MISC_GET_TYPENAME_HAS_SOURCE_LOCATION
         std::source_location::current().function_name();
 #else
         CONFIG_CURRENT_FUNCTION_NAME;
 #endif
-    return ::misc::misc_detail::extract_enum_value_name_impl<EnumType, EnumValue>(function_name);
+    return ::misc::misc_detail::extract_enum_value_name_impl(function_name);
 }
 
 #undef CONSTEVAL_ASSERT
-#undef CONSTEVAL_ASSERT_GENERATE_UNIQUE_NAME
-#undef CONSTEVAL_ASSERT_CONCAT
-#undef CONSTEVAL_ASSERT_CONCAT_IMPL
 
 }  // namespace misc_detail
 

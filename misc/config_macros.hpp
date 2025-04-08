@@ -3,6 +3,98 @@
 #ifndef CONFIG_MACROS_HPP
 #define CONFIG_MACROS_HPP
 
+// clang-format off
+/**
+ *
+ * Useful checkers (expand to 0 or 1):
+ * 
+ *   Compiler version checkers:
+ *     CONFIG_GNUC_AT_LEAST(major_version, minor_version)
+ *     CONFIG_CLANG_AT_LEAST(major_version, minor_version)
+ *   
+ *   Include path checker:
+ *     CONFIG_HAS_INCLUDE(include_string)
+ *   
+ *   Attributes presence checkers:
+ *     CONFIG_HAS_C_ATTRIBUTE(attribute_name)
+ *     CONFIG_HAS_CPP_ATTRIBUTE(attribute_name)
+ *     CONFIG_HAS_GCC_ATTRIBUTE(attribute_name)
+ *   
+ *   Compiler builtin presence checker:
+ *     CONFIG_HAS_BUILTIN(builtin_name)
+ * 
+ * Useful flags (expand to 0 or 1):
+ *   CONFIG_HAS_AT_LEAST_CXX_11
+ *   CONFIG_HAS_AT_LEAST_CXX_14
+ *   CONFIG_HAS_AT_LEAST_CXX_17
+ *   CONFIG_HAS_AT_LEAST_CXX_20
+ *   CONFIG_HAS_AT_LEAST_CXX_23
+ *   CONFIG_HAS_AT_LEAST_C_99
+ *   CONFIG_HAS_AT_LEAST_C_11
+ *   CONFIG_HAS_AT_LEAST_C_17
+ *   CONFIG_HAS_AT_LEAST_C_23
+ *   CONFIG_HAS_CONCEPTS
+ *   CONFIG_HAS_EXCEPTIONS
+ *   CONFIG_HAS_RTTI
+ * 
+ * Restrict qualifier for C++ (in C expands to `restrict`):
+ *   RESTRICT_QUALIFIER
+ * 
+ * Current function name macro (like __func__, __PRETTY_FUNCTION__, __FUNGSIG__, etc.):
+ *   CONFIG_CURRENT_FUNCTION_NAME
+ * 
+ * Assume statement (use like `CONFIG_ASSUME_STATEMENT(x == 2 && y >= 3);`) functional macro:
+ *   CONFIG_ASSUME_STATEMENT(expression)
+ * 
+ * Unreachable functional macro (use like `if (can_not_evaluate_to_true) { CONFIG_UNREACHABLE(); }`)
+ *   CONFIG_UNREACHABLE()
+ * 
+ * likely/unlikely functional macros (use like `if (unlikely(ptr == nullptr)) { handle_null_pointer(); }`):
+ *   likely(expression)
+ *   unlikely(expression)
+ * 
+ * Attributes:
+ *   ATTRIBUTE_CONST
+ *   ATTRIBUTE_MAYBE_UNUSED
+ *   ATTRIBUTE_PURE
+ *   ATTRIBUTE_NOINLINE
+ *   ATTRIBUTE_ALWAYS_INLINE
+ *   ATTRIBUTE_COLD
+ *   ATTRIBUTE_HOT
+ *   ATTRIBUTE_ALLOC_SIZE(...)
+ *   ATTRIBUTE_ACCESS(mode, memory_argument_pos)
+ *   ATTRIBUTE_SIZED_ACCESS(mode, memory_argument_pos, range_size_argument_pos)
+ *   ATTRIBUTE_ACCESS_NONE(memory_argument_pos)
+ *   ATTRIBUTE_NONNULL(...)
+ *   ATTRIBUTE_NONNULL_ALL_ARGS
+ *   ATTRIBUTE_RETURNS_NONNULL
+ *   ATTRIBUTE_TARGET(config_string)
+ *   ATTRIBUTE_LIFETIME_BOUND
+ *   ATTRIBUTE_REINITIALIZES
+ *   ATTRIBUTE_NODISCARD
+ *   ATTRIBUTE_NODISCARD_WITH_MESSAGE(message)
+ *   ATTRIBUTE_NORETURN
+ *   ATTRIBUTE_FALLTHROUGH
+ *   ATTRIBUTE_NOTHROW
+ * 
+ * Noexcept specifier (useful if noexcept function is intended to be used in both C/C++):
+ *   CONFIG_NOEXCEPT_FUNCTION
+ * 
+ * Clang nullability qualifiers extension:
+ *   CONFIG_CLANG_NONNULL_QUALIFIER
+ *   CONFIG_CLANG_NULLABLE_QUALIFIER
+ * 
+ * Platform byte order macros (expand to 0 or 1):
+ *   CONFIG_BYTE_ORDER_LITTLE_ENDIAN
+ *   CONFIG_BYTE_ORDER_BIG_ENDIAN
+ * 
+ * Functions for the C++:
+ *   constexpr bool config::is_constant_evaluated() noexcept
+ *   constexpr bool config::is_gcc_constant_p<trivial_type>(trivial_type value) noexcept
+ * 
+ **/
+// clang-format on
+
 // NOLINTBEGIN(cppcoreguidelines-macro-usage)
 
 /* Test for gcc >= maj.min, as per __GNUC_PREREQ in glibc */
@@ -118,6 +210,18 @@
 #define CONFIG_HAS_CONCEPTS 1
 #else
 #define CONFIG_HAS_CONCEPTS 0
+#endif
+
+#if defined(__cplusplus) && defined(__cpp_exceptions) && __cpp_exceptions == 199711L
+#define CONFIG_HAS_EXCEPTIONS 1
+#else
+#define CONFIG_HAS_EXCEPTIONS 0
+#endif
+
+#if defined(__cplusplus) && defined(__cpp_rtti) && __cpp_rtti == 199711L
+#define CONFIG_HAS_RTTI 1
+#else
+#define CONFIG_HAS_RTTI 0
 #endif
 
 #if CONFIG_HAS_AT_LEAST_C_99
@@ -621,7 +725,7 @@
 
 namespace config {
 
-ATTRIBUTE_ALWAYS_INLINE constexpr bool is_constant_evaluated() noexcept {
+ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_NODISCARD constexpr bool is_constant_evaluated() noexcept {
 #if defined(__cpp_lib_is_constant_evaluated) && __cpp_lib_is_constant_evaluated >= 201811L && \
     CONFIG_HAS_INCLUDE(<type_traits>)
     return std::is_constant_evaluated();
@@ -633,14 +737,17 @@ ATTRIBUTE_ALWAYS_INLINE constexpr bool is_constant_evaluated() noexcept {
 }
 
 template <class T>
-ATTRIBUTE_ALWAYS_INLINE constexpr bool is_gcc_constant_p(ATTRIBUTE_MAYBE_UNUSED T expr) noexcept {
+ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_NODISCARD constexpr bool is_gcc_constant_p(
+    ATTRIBUTE_MAYBE_UNUSED T expr) noexcept {
 #if CONFIG_HAS_BUILTIN(__builtin_constant_p)
 #if CONFIG_HAS_INCLUDE(<type_traits>)
+#if !defined(CONFIG_HAS_AT_LEAST_C_26) || !CONFIG_HAS_AT_LEAST_C_26
     // NOLINTBEGIN(modernize-type-traits)
     // not std::is_trivial_v for backward compatibility with old C++ versions and compilers
     static_assert(std::is_trivial<T>::value,
                   "Type passed to the is_gcc_constant_p() should be trivial");
     // NOLINTEND(modernize-type-traits)
+#endif
 #endif
 
 #if defined(__clang__)
