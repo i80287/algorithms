@@ -229,7 +229,8 @@ concept DirectlyConvertableToString =
 template <class CharType, class T>
 [[nodiscard]] inline std::basic_string<CharType> ToStringOneArgViaOStringStream(const T &arg) {
     std::basic_ostringstream<CharType> oss;
-    std::ignore = oss << arg;
+    // not std::ignore because user defined operator<< may return void
+    static_cast<void>(oss << arg);
     return std::move(oss).str();
 }
 
