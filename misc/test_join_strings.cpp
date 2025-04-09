@@ -190,7 +190,7 @@ enum struct Condition : bool {
     kYes = true,
 };
 
-#ifdef JOIN_STRINGS_SUPPORTS_CUSTOM_ENUM_TO_STRING
+#ifdef JOIN_STRINGS_SUPPORTS_CUSTOM_TO_STRING
 
 namespace some {
 
@@ -285,7 +285,7 @@ void test_enums() {
     assert(misc::join_strings<wchar_t>(E1::kValue2) ==
            std::to_wstring(unsigned{static_cast<std::underlying_type_t<E1>>(E1::kValue2)}));
 
-#ifdef JOIN_STRINGS_SUPPORTS_CUSTOM_ENUM_TO_STRING
+#ifdef JOIN_STRINGS_SUPPORTS_CUSTOM_TO_STRING
     test_custom_enum_to_string();
 #endif
 }
@@ -317,12 +317,54 @@ void test_pointers() {
     // clang-format on
 }
 
+#ifdef JOIN_STRINGS_SUPPORTS_CUSTOM_OSTRINGSTREAM
+
+class OStringStreamWriteable final {
+public:
+    explicit constexpr OStringStreamWriteable(const int value) noexcept : value_{value} {}
+
+    // [[nodiscard]] is added in order to test that ignoring
+    //  returned value of the operator<< doesn't cause any warning
+    //  in the join_strings()
+    template <class T>
+    [[nodiscard]]
+    friend std::basic_ostream<T>& operator<<(std::basic_ostream<T>& os,
+                                             const OStringStreamWriteable& arg) {
+        return os << arg.value_;
+    }
+
+private:
+    int value_;
+};
+
+template <class CharType>
+class OStringStreamWritingTestSuite final {
+public:
+    static void run() {
+        for (const int i :
+             {std::numeric_limits<int>::min(), -1, 0, 1, std::numeric_limits<int>::max()}) {
+            const std::string str = std::to_string(i);
+            assert(misc::join_strings<CharType>(OStringStreamWriteable{i}) ==
+                   std::basic_string<CharType>(str.begin(), str.end()));
+        }
+    }
+};
+
+void test_custom_ostringstream() {
+    OStringStreamWritingTestSuite<char>::run();
+}
+
+#endif
+
 }  // namespace join_strings_test
 
 void test_join_strings() {
     join_strings_test::test_basic_joins();
     join_strings_test::test_enums();
     join_strings_test::test_pointers();
+#ifdef JOIN_STRINGS_SUPPORTS_CUSTOM_OSTRINGSTREAM
+    join_strings_test::test_custom_ostringstream();
+#endif
 }
 
 #ifdef JOIN_STRINGS_SUPPORTS_JOIN_STRINGS_COLLECTION

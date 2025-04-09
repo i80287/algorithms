@@ -134,29 +134,7 @@ ATTRIBUTE_ALWAYS_INLINE inline std::basic_string<CharType> EnumToString(const T 
         } else {
             return std::basic_string<CharType>(str.begin(), str.end());
         }
-    } else
-#ifdef JOIN_STRINGS_SUPPORTS_CUSTOM_ENUM_TO_STRING
-        if constexpr (requires(const T &enum_value) {
-                          {
-                              to_basic_string<CharType>(enum_value)
-                          } -> std::same_as<std::basic_string<CharType>>;
-                      }) {
-        return to_basic_string<CharType>(arg);
-    } else if constexpr (requires(const T &enum_value) {
-                             { to_wstring(enum_value) } -> std::same_as<std::wstring>;
-                         } && std::is_same_v<CharType, wchar_t>) {
-    } else if constexpr (requires(const T &enum_value) {
-                             { to_string(enum_value) } -> std::same_as<std::string>;
-                         }) {
-        const std::string str = to_string(arg);
-        if constexpr (std::is_same_v<CharType, char>) {
-            return str;
-        } else {
-            return std::basic_string<CharType>(str.begin(), str.end());
-        }
-    } else
-#endif
-    {
+    } else {
         return ArithmeticToString<CharType>(static_cast<std::underlying_type_t<T>>(arg));
     }
 }
@@ -236,15 +214,63 @@ std::basic_string<CharType> FilesystemPathToString(const T &) = delete;
 
 #endif
 
+#ifdef JOIN_STRINGS_SUPPORTS_CUSTOM_OSTRINGSTREAM
+
+template <class T, class CharType>
+concept WriteableViaOStringStream =
+    requires(const T &arg, std::basic_ostringstream<CharType> &oss) {
+        { oss << arg };
+    };
+
+template <class T, class CharType>
+concept DirectlyConvertableToString =
+    std::constructible_from<std::basic_string<CharType>, const T &>;
+
+template <class CharType, class T>
+[[nodiscard]] inline std::basic_string<CharType> ToStringOneArgViaOStringStream(const T &arg) {
+    std::basic_ostringstream<CharType> oss;
+    std::ignore = oss << arg;
+    return std::move(oss).str();
+}
+
+#endif
+
 template <class CharType, class T>
 [[nodiscard]]
 ATTRIBUTE_ALWAYS_INLINE inline std::basic_string<CharType> ToStringOneArg(const T &arg) {
     static_assert(is_char_v<CharType>, "implementation error");
 
-    if constexpr (std::is_scalar_v<T>) {
+#ifdef JOIN_STRINGS_SUPPORTS_CUSTOM_TO_STRING
+    if constexpr (requires(const T &test_arg) {
+                      {
+                          to_basic_string<CharType>(test_arg)
+                      } -> std::same_as<std::basic_string<CharType>>;
+                  }) {
+        return to_basic_string<CharType>(arg);
+    } else if constexpr (requires(const T &test_arg) {
+                             { to_wstring(test_arg) } -> std::same_as<std::wstring>;
+                         } && std::is_same_v<CharType, wchar_t>) {
+        return to_wstring(arg);
+    } else if constexpr (requires(const T &test_arg) {
+                             { to_string(test_arg) } -> std::same_as<std::string>;
+                         }) {
+        const std::string str = to_string(arg);
+        if constexpr (std::is_same_v<CharType, char>) {
+            return str;
+        } else {
+            return std::basic_string<CharType>(str.begin(), str.end());
+        }
+    } else
+#endif
+        if constexpr (std::is_scalar_v<T>) {
         return ToStringScalarArg<CharType>(arg);
     } else if constexpr (is_filesystem_path_v<T>) {
         return FilesystemPathToString<CharType>(arg);
+#ifdef JOIN_STRINGS_SUPPORTS_CUSTOM_OSTRINGSTREAM
+    } else if constexpr (WriteableViaOStringStream<T, CharType> &&
+                         !DirectlyConvertableToString<T, CharType>) {
+        return ToStringOneArgViaOStringStream<CharType>(arg);
+#endif
     } else {
         return std::basic_string<CharType>{arg};
     }
@@ -255,32 +281,46 @@ ATTRIBUTE_ALWAYS_INLINE inline std::basic_string<CharType> ToStringOneArg(const 
 template <class CharType, class... Args>
 [[nodiscard]]
 ATTRIBUTE_ALWAYS_INLINE
-constexpr std::enable_if_t<is_char_v<CharType>, size_t> CalculateStringArgsSize(CharType /*c*/, Args... args) noexcept;
+constexpr size_t CalculateStringArgsSize(CharType /*c*/, Args... args) noexcept;
 
 template <class CharType, class... Args>
 [[nodiscard]]
 ATTRIBUTE_ALWAYS_INLINE
-constexpr std::enable_if_t<is_char_v<CharType>, size_t> CalculateStringArgsSize(std::basic_string_view<CharType> s, Args... args) noexcept;
+constexpr size_t CalculateStringArgsSize(std::basic_string_view<CharType> s, Args... args) noexcept;
 
 // clang-format on
 
 template <class CharType, class... Args>
-constexpr std::enable_if_t<is_char_v<CharType>, size_t> CalculateStringArgsSize(
-    CharType /*c*/, Args... args) noexcept {
+constexpr size_t CalculateStringArgsSize(CharType /*c*/, Args... args) noexcept {
     size_t size = 1;
     if constexpr (sizeof...(args) > 0) {
-        size += join_strings_detail::CalculateStringArgsSize<CharType>(args...);
+        const size_t other_args_size =
+            join_strings_detail::CalculateStringArgsSize<CharType>(args...);
+        const bool will_overflow = other_args_size == std::numeric_limits<size_t>::max();
+        if (unlikely(will_overflow)) {
+            return other_args_size;
+        }
+
+        size += other_args_size;
     }
+
     return size;
 }
 
 template <class CharType, class... Args>
-constexpr std::enable_if_t<is_char_v<CharType>, size_t> CalculateStringArgsSize(
-    std::basic_string_view<CharType> s, Args... args) noexcept {
+constexpr size_t CalculateStringArgsSize(const std::basic_string_view<CharType> s,
+                                         Args... args) noexcept {
     size_t size = s.size();
     if constexpr (sizeof...(args) > 0) {
-        size += join_strings_detail::CalculateStringArgsSize<CharType>(args...);
+        const size_t other_args_size =
+            join_strings_detail::CalculateStringArgsSize<CharType>(args...);
+        size += other_args_size;
+        const bool overflow_occured = size < other_args_size;
+        if (unlikely(overflow_occured)) {
+            return std::numeric_limits<size_t>::max();
+        }
     }
+
     return size;
 }
 
@@ -290,20 +330,20 @@ template <class CharType, class... Args>
 ATTRIBUTE_NONNULL_ALL_ARGS
 ATTRIBUTE_ACCESS(write_only, 1)
 ATTRIBUTE_ALWAYS_INLINE
-constexpr std::enable_if_t<is_char_v<CharType>> WriteStringsInplace(CharType* result, CharType c, Args... args) noexcept;
+constexpr void WriteStringsInplace(CharType* result, CharType c, Args... args) noexcept;
 
 template <class CharType, class... Args>
 ATTRIBUTE_NONNULL_ALL_ARGS
 ATTRIBUTE_ACCESS(write_only, 1)
 ATTRIBUTE_ALWAYS_INLINE
-constexpr std::enable_if_t<is_char_v<CharType>> WriteStringsInplace(CharType* result, std::basic_string_view<CharType> s, Args... args) noexcept;
+constexpr void WriteStringsInplace(CharType* result, std::basic_string_view<CharType> s, Args... args) noexcept;
 
 // clang-format on
 
 template <class CharType, class... Args>
-constexpr std::enable_if_t<is_char_v<CharType>> WriteStringsInplace(CharType *result,
-                                                                    CharType c,
-                                                                    Args... args) noexcept {
+constexpr void WriteStringsInplace(CharType *const result,
+                                   const CharType c,
+                                   Args... args) noexcept {
     *result = c;
     if constexpr (sizeof...(args) > 0) {
         join_strings_detail::WriteStringsInplace<CharType>(result + 1, args...);
@@ -311,8 +351,9 @@ constexpr std::enable_if_t<is_char_v<CharType>> WriteStringsInplace(CharType *re
 }
 
 template <class CharType, class... Args>
-constexpr std::enable_if_t<is_char_v<CharType>> WriteStringsInplace(
-    CharType *result, std::basic_string_view<CharType> s, Args... args) noexcept {
+constexpr void WriteStringsInplace(CharType *const result,
+                                   const std::basic_string_view<CharType> s,
+                                   Args... args) noexcept {
     std::char_traits<CharType>::copy(result, s.data(), s.size());
     if constexpr (sizeof...(args) > 0) {
         join_strings_detail::WriteStringsInplace<CharType>(result + s.size(), args...);
@@ -325,15 +366,14 @@ template <class CharType, class... Args>
 ATTRIBUTE_NONNULL_ALL_ARGS
 ATTRIBUTE_SIZED_ACCESS(write_only, 1, 2)
 ATTRIBUTE_ALWAYS_INLINE
-constexpr std::enable_if_t<is_char_v<CharType>> WriteStringToBuffer(CharType* buffer, size_t /*buffer_size*/, Args... args) noexcept {
+constexpr void WriteStringToBuffer(CharType* const buffer, size_t /*buffer_size*/, Args... args) noexcept {
     join_strings_detail::WriteStringsInplace<CharType>(buffer, args...);
 }
 
 // clang-format on
 
 template <class CharType, class... Args>
-[[nodiscard]] inline std::enable_if_t<is_char_v<CharType>, std::basic_string<CharType>>
-JoinStringsImpl(Args... args) {
+[[nodiscard]] inline std::basic_string<CharType> JoinStringsImpl(Args... args) {
     if constexpr (sizeof...(args) >= 2) {
         const size_t size = CalculateStringArgsSize<CharType>(args...);
         std::basic_string<CharType> result(size, CharType{});
@@ -349,21 +389,18 @@ JoinStringsImpl(Args... args) {
 template <class CharType, size_t I, class... Args>
 [[nodiscard]]
 ATTRIBUTE_ALWAYS_INLINE
-inline
-std::enable_if_t<is_char_v<CharType>, std::basic_string<CharType>> JoinStringsConvArgsToStrViewImpl(std::basic_string_view<CharType> str, const Args&... args);
+inline std::basic_string<CharType> JoinStringsConvArgsToStrViewImpl(std::basic_string_view<CharType> str, const Args&... args);
 
 template <class CharType, size_t I, class T, class... Args>
 [[nodiscard]]
 ATTRIBUTE_ALWAYS_INLINE
-inline
-std::enable_if_t<is_char_v<CharType> && (std::is_scalar_v<T> || is_filesystem_path_v<T>) && !is_pointer_to_char_v<T>, std::basic_string<CharType>>
-JoinStringsConvArgsToStrViewImpl(T num, const Args&... args);
+inline std::enable_if_t<!is_pointer_to_char_v<T>, std::basic_string<CharType>> JoinStringsConvArgsToStrViewImpl(const T& value, const Args&... args);
 
 // clang-format on
 
 template <class CharType, size_t I, class... Args>
-inline std::enable_if_t<is_char_v<CharType>, std::basic_string<CharType>>
-JoinStringsConvArgsToStrViewImpl(std::basic_string_view<CharType> str, const Args &...args) {
+inline std::basic_string<CharType> JoinStringsConvArgsToStrViewImpl(
+    const std::basic_string_view<CharType> str, const Args &...args) {
     if constexpr (I == 1 + sizeof...(args)) {
         return join_strings_detail::JoinStringsImpl<CharType>(str, args...);
     } else {
@@ -372,23 +409,51 @@ JoinStringsConvArgsToStrViewImpl(std::basic_string_view<CharType> str, const Arg
 }
 
 template <class CharType, size_t I, class T, class... Args>
-inline std::enable_if_t<is_char_v<CharType> && (std::is_scalar_v<T> || is_filesystem_path_v<T>) &&
-                            !is_pointer_to_char_v<T>,
-                        std::basic_string<CharType>>
-JoinStringsConvArgsToStrViewImpl(T num, const Args &...args) {
+inline std::enable_if_t<!is_pointer_to_char_v<T>, std::basic_string<CharType>>
+JoinStringsConvArgsToStrViewImpl(const T &value, const Args &...args) {
     if constexpr (std::is_same_v<T, CharType>) {
         if constexpr (I == 1 + sizeof...(args)) {
-            return join_strings_detail::JoinStringsImpl<CharType>(num, args...);
+            return join_strings_detail::JoinStringsImpl<CharType>(value, args...);
         } else {
             return join_strings_detail::JoinStringsConvArgsToStrViewImpl<CharType, I + 1>(args...,
-                                                                                          num);
+                                                                                          value);
         }
     } else {
         static_assert(I < 1 + sizeof...(args));
         return join_strings_detail::JoinStringsConvArgsToStrViewImpl<CharType, I + 1>(
-            args..., std::basic_string_view<CharType>{ToStringOneArg<CharType>(num)});
+            args..., std::basic_string_view<CharType>{ToStringOneArg<CharType>(value)});
     }
 }
+
+template <class T, class CharType>
+struct same_char_types
+    : std::conditional_t<misc::is_char_v<T>, std::is_same<T, CharType>, std::true_type> {};
+
+template <class StrCharType, class CharType>
+struct same_char_types<std::basic_string<StrCharType>, CharType>
+    : std::is_same<StrCharType, CharType> {};
+
+template <class StrCharType, class CharType>
+struct same_char_types<std::basic_string_view<StrCharType>, CharType>
+    : std::is_same<StrCharType, CharType> {};
+
+template <class StrCharType, class CharType, size_t N>
+struct same_char_types<const StrCharType[N], CharType> : std::is_same<StrCharType, CharType> {};
+
+template <class StrCharType, class CharType, size_t N>
+struct same_char_types<StrCharType[N], CharType> : std::is_same<StrCharType, CharType> {};
+
+template <class StrCharType, class CharType>
+struct same_char_types<const StrCharType *, CharType>
+    : std::conditional_t<misc::is_char_v<StrCharType>,
+                         std::is_same<StrCharType, CharType>,
+                         std::true_type> {};
+
+template <class StrCharType, class CharType>
+struct same_char_types<StrCharType *, CharType>
+    : std::conditional_t<misc::is_char_v<StrCharType>,
+                         std::is_same<StrCharType, CharType>,
+                         std::true_type> {};
 
 struct dummy_base {};
 
@@ -396,33 +461,6 @@ template <class T>
 struct dummy_base_with_type {
     using type = T;
 };
-
-template <class T, class CharType>
-struct same_char_types
-    : std::conditional_t<std::is_scalar_v<T> || is_filesystem_path_v<T>,
-                         std::true_type,
-                         std::false_type> {};
-
-template <class CharType>
-struct same_char_types<std::basic_string<CharType>, CharType> : std::true_type {};
-
-template <class CharType>
-struct same_char_types<std::basic_string_view<CharType>, CharType> : std::true_type {};
-
-template <class CharType, size_t N>
-struct same_char_types<const CharType[N], CharType> : std::true_type {};
-
-template <class CharType, size_t N>
-struct same_char_types<CharType[N], CharType> : std::true_type {};
-
-template <class CharType>
-struct same_char_types<const CharType *, CharType> : std::true_type {};
-
-template <class CharType>
-struct same_char_types<CharType *, CharType> : std::true_type {};
-
-template <class CharType>
-struct same_char_types<CharType, CharType> : std::true_type {};
 
 template <class... Types>
 struct determine_char_type {
