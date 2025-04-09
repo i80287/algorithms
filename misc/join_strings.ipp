@@ -55,32 +55,13 @@ ATTRIBUTE_ALWAYS_INLINE inline auto ArithmeticToStringImpl(const T arg) {
 
     if constexpr (std::is_integral_v<T>) {
         if (config::is_constant_evaluated() || config::is_gcc_constant_p(arg)) {
-            if (arg == 0) {
-                if constexpr (UseWChar) {
-                    return std::wstring{L"0"};
-                } else {
-                    return std::string{"0"};
-                }
-            } else if constexpr (sizeof(T) > sizeof(int)) {
-                if constexpr (std::is_unsigned_v<T>) {
-                    if (arg <= std::numeric_limits<unsigned>::max()) {
-                        const unsigned comp_arg = static_cast<unsigned>(arg);
-                        if constexpr (UseWChar) {
-                            return std::to_wstring(comp_arg);
-                        } else {
-                            return std::to_string(comp_arg);
-                        }
-                    }
-                } else {
-                    if (arg >= std::numeric_limits<int>::min() &&
-                        arg <= std::numeric_limits<int>::max()) {
-                        const int comp_arg = static_cast<int>(arg);
-                        if constexpr (UseWChar) {
-                            return std::to_wstring(comp_arg);
-                        } else {
-                            return std::to_string(comp_arg);
-                        }
-                    }
+            if constexpr (sizeof(T) > sizeof(int)) {
+                using CompressedIntType = std::conditional_t<std::is_unsigned_v<T>, unsigned, int>;
+
+                if (arg >= std::numeric_limits<CompressedIntType>::min() &&
+                    arg <= std::numeric_limits<CompressedIntType>::max()) {
+                    return join_strings_detail::ArithmeticToStringImpl<UseWChar>(
+                        static_cast<CompressedIntType>(arg));
                 }
             }
         }
@@ -88,15 +69,30 @@ ATTRIBUTE_ALWAYS_INLINE inline auto ArithmeticToStringImpl(const T arg) {
 
     constexpr bool kShortIntegralType = std::is_integral_v<T> && sizeof(T) < sizeof(int);
 
-    const auto ext_arg =
+    const auto extended_arg =
         kShortIntegralType
             ? static_cast<std::conditional_t<std::is_unsigned_v<T>, unsigned, int>>(arg)
             : arg;
 
     if constexpr (UseWChar) {
-        return std::to_wstring(ext_arg);
+        return std::to_wstring(extended_arg);
     } else {
-        return std::to_string(ext_arg);
+        return std::to_string(extended_arg);
+    }
+}
+
+template <class ToCharType>
+[[nodiscard]] inline std::basic_string<ToCharType> ConvertString(const std::string_view str) {
+    static_assert(!std::is_same_v<ToCharType, char>, "implementation error");
+
+#if CONFIG_HAS_AT_LEAST_CXX_20 && defined(__cpp_char8_t) && __cpp_char8_t >= 201811L
+    if constexpr (std::is_same_v<ToCharType, char8_t>) {
+        return std::basic_string<ToCharType>(str.begin(), str.end());
+    } else
+#endif
+    {
+        return std::wstring_convert<std::codecvt_utf8_utf16<ToCharType>, ToCharType>{}.from_bytes(
+            str.data(), str.data() + str.size());
     }
 }
 
@@ -111,7 +107,7 @@ ATTRIBUTE_ALWAYS_INLINE inline std::basic_string<CharType> ArithmeticToString(co
     if constexpr (std::is_same_v<CharType, char> || std::is_same_v<CharType, wchar_t>) {
         return str;
     } else {
-        return std::basic_string<CharType>(str.begin(), str.end());
+        return ConvertString<CharType>(str);
     }
 }
 
@@ -125,14 +121,14 @@ ATTRIBUTE_ALWAYS_INLINE inline std::basic_string<CharType> EnumToString(const T 
         if constexpr (std::is_same_v<CharType, char>) {
             return str;
         } else {
-            return std::basic_string<CharType>(str.begin(), str.end());
+            return ConvertString<CharType>(str);
         }
     } else if constexpr (std::is_error_condition_enum_v<T>) {
         const std::string str = std::make_error_condition(arg).message();
         if constexpr (std::is_same_v<CharType, char>) {
             return str;
         } else {
-            return std::basic_string<CharType>(str.begin(), str.end());
+            return ConvertString<CharType>(str);
         }
     } else {
         return ArithmeticToString<CharType>(static_cast<std::underlying_type_t<T>>(arg));
@@ -167,7 +163,7 @@ ATTRIBUTE_ALWAYS_INLINE inline std::basic_string<CharType> PointerTypeToString(c
     static_assert(std::is_pointer_v<T> || std::is_member_pointer_v<T> || std::is_null_pointer_v<T>,
                   "implementation error");
 
-    const std::uintptr_t ptr_num = reinterpret_cast<std::uintptr_t>(arg);
+    const auto ptr_num = reinterpret_cast<std::uintptr_t>(arg);
     if constexpr (std::is_null_pointer_v<T>) {
         return NullPtrToString<CharType>();
     } else if (ptr_num == 0) {
@@ -259,7 +255,16 @@ ATTRIBUTE_ALWAYS_INLINE inline std::basic_string<CharType> ToStringOneArg(const 
         if constexpr (std::is_same_v<CharType, char>) {
             return str;
         } else {
-            return std::basic_string<CharType>(str.begin(), str.end());
+            return ConvertString<CharType>(str);
+        }
+    } else if constexpr (requires(const T &test_arg) {
+                             { test_arg.to_string() } -> std::same_as<std::string>;
+                         }) {
+        const std::string str = arg.to_string();
+        if constexpr (std::is_same_v<CharType, char>) {
+            return str;
+        } else {
+            return ConvertString<CharType>(str);
         }
     } else
 #endif
@@ -282,7 +287,7 @@ ATTRIBUTE_ALWAYS_INLINE inline std::basic_string<CharType> ToStringOneArg(const 
 template <class CharType, class... Args>
 [[nodiscard]]
 ATTRIBUTE_ALWAYS_INLINE
-constexpr size_t CalculateStringArgsSize(CharType /*c*/, Args... args) noexcept;
+constexpr size_t CalculateStringArgsSize(CharType chr, Args... args) noexcept;
 
 template <class CharType, class... Args>
 [[nodiscard]]
@@ -292,7 +297,7 @@ constexpr size_t CalculateStringArgsSize(std::basic_string_view<CharType> s, Arg
 // clang-format on
 
 template <class CharType, class... Args>
-constexpr size_t CalculateStringArgsSize(CharType /*c*/, Args... args) noexcept {
+constexpr size_t CalculateStringArgsSize(CharType /*chr*/, Args... args) noexcept {
     size_t size = 1;
     if constexpr (sizeof...(args) > 0) {
         const size_t other_args_size =
@@ -569,6 +574,11 @@ inline auto join_strings(const Args&... args) {
         // Do not make more unreadable CEs when kAllCharTypesAreSame == false, static assertion has already failed
         return std::basic_string<CharType>{};
     }
+}
+
+template <class ToCharType>
+inline std::basic_string<ToCharType> convert_bytes_to(const std::string_view bytes_str) {
+    return join_strings_detail::ConvertString<ToCharType>(bytes_str);
 }
 
 // clang-format on

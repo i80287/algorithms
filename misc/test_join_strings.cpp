@@ -773,6 +773,26 @@ void test_to_upper() {
     ToUpperTestSuite<wchar_t>::run();
 }
 
+template <class CharType>
+class ConvertStringTestSuite {
+public:
+    static void run() {
+        assert(misc::convert_bytes_to<CharType>("Düsseldorf") ==
+               STR_LITERAL(CharType, "Düsseldorf"));
+        assert(misc::convert_bytes_to<CharType>("Coup d'état") ==
+               STR_LITERAL(CharType, "Coup d'état"));
+    }
+};
+
+void test_convert_string() {
+    ConvertStringTestSuite<wchar_t>::run();
+#if CONFIG_HAS_AT_LEAST_CXX_20 && defined(__cpp_char8_t) && __cpp_char8_t >= 201811L
+    ConvertStringTestSuite<char8_t>::run();
+#endif
+    ConvertStringTestSuite<char16_t>::run();
+    ConvertStringTestSuite<char32_t>::run();
+}
+
 }  // namespace
 
 int main() {
@@ -784,4 +804,5 @@ int main() {
     test_trim_strings();
     test_to_lower();
     test_to_upper();
+    test_convert_string();
 }
