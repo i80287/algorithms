@@ -7,11 +7,16 @@
 /**
  *
  * Public macros:
- *   Defines bitwise operators ~, |, &, ^, |=, &=, ^= for the given enum type enum_type:
+ *   Defines bitwise operators ~, |, &, ^, |=, &=, ^=, <<, >>, <<=, >>=
+ *   for the given enum type enum_type:
  *     GENERATE_ENUM_FLAG_BIT_OPERATIONS(enum_type)
  *
  *   Defines `IntType to_integer<IntType>(enum_type)` conversion function
  *     GENERATE_ENUM_TO_INTEGER(enum_type)
+ *
+ *   Defines to_string(enum_type) and to_string_view(enum_type) noexcept
+ *   for the given enumeration values (members) of the enum_type
+ *     GENERATE_ENUM_TO_STRING_FOR_ENUM_MEMBERS(enum_type, ...)
  */
 
 #if CONFIG_HAS_AT_LEAST_CXX_20
@@ -175,13 +180,13 @@ constexpr std::string_view enum_value_to_string_view(const EnumType value) noexc
 
 }  // namespace enum_utils_detail
 
-#define GENERATE_ENUM_TO_STRING_FOR_ENUM_MEMBERS(EnumType, ...)                            \
-    ATTRIBUTE_CONST [[nodiscard]]                                                          \
-    constexpr std::string_view to_string_view(const EnumType value) noexcept {             \
-        return enum_utils_detail::enum_value_to_string_view<EnumType, __VA_ARGS__>(value); \
-    }                                                                                      \
-    [[nodiscard]] std::string to_string(const EnumType value) {                            \
-        return std::string{to_string_view(value)};                                         \
+#define GENERATE_ENUM_TO_STRING_FOR_ENUM_MEMBERS(enum_type, ...)                            \
+    ATTRIBUTE_CONST [[nodiscard]]                                                           \
+    constexpr std::string_view to_string_view(const enum_type value) noexcept {             \
+        return enum_utils_detail::enum_value_to_string_view<enum_type, __VA_ARGS__>(value); \
+    }                                                                                       \
+    [[nodiscard]] std::string to_string(const enum_type value) {                            \
+        return std::string{to_string_view(value)};                                          \
     }
 
 #endif
