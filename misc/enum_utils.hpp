@@ -185,7 +185,7 @@ constexpr std::string_view enum_value_to_string_view(const EnumType value) noexc
     constexpr std::string_view to_string_view(const enum_type value) noexcept {             \
         return enum_utils_detail::enum_value_to_string_view<enum_type, __VA_ARGS__>(value); \
     }                                                                                       \
-    [[nodiscard]] std::string to_string(const enum_type value) {                            \
+    [[nodiscard]] inline std::string to_string(const enum_type value) {                     \
         return std::string{to_string_view(value)};                                          \
     }
 

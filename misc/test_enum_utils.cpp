@@ -34,7 +34,7 @@ GENERATE_ENUM_TO_STRING_FOR_ENUM_MEMBERS(CStyleEnum,
 
 #endif
 
-enum struct EnumClass1 : uint32_t {
+enum struct EnumClass1 : std::uint32_t {
     zero = 0,
     one = 1 << 0,
     two = 1 << 1,
@@ -59,7 +59,7 @@ GENERATE_ENUM_TO_STRING_FOR_ENUM_MEMBERS(EnumClass1,
 
 }  // namespace some
 
-enum class EnumClass2 {
+enum class EnumClass2 : std::int8_t {
     zero = 0,
     one = 1 << 0,
     two = 1 << 1,
