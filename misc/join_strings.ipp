@@ -22,9 +22,9 @@
 
 namespace misc {
 
-using std::size_t;
-
 namespace join_strings_detail {
+
+using std::size_t;
 
 template <class T>
 struct is_pointer_to_char : std::false_type {};
@@ -208,7 +208,7 @@ ATTRIBUTE_ALWAYS_INLINE inline std::basic_string<CharType> ToStringScalarArg(con
     if constexpr (std::is_enum_v<T>) {
         return EnumToString<CharType>(arg);
     } else if constexpr (std::is_same_v<T, CharType>) {
-        return std::basic_string<CharType>(std::size_t{1}, arg);
+        return std::basic_string<CharType>(size_t{1}, arg);
     } else if constexpr (std::is_arithmetic_v<T>) {
         return ArithmeticToString<CharType>(arg);
     } else {
@@ -255,17 +255,17 @@ ATTRIBUTE_ALWAYS_INLINE inline std::basic_string<CharType> ToStringOneArg(const 
 template <class CharType, class... Args>
 [[nodiscard]]
 ATTRIBUTE_ALWAYS_INLINE
-constexpr std::enable_if_t<is_char_v<CharType>, std::size_t> CalculateStringArgsSize(CharType /*c*/, Args... args) noexcept;
+constexpr std::enable_if_t<is_char_v<CharType>, size_t> CalculateStringArgsSize(CharType /*c*/, Args... args) noexcept;
 
 template <class CharType, class... Args>
 [[nodiscard]]
 ATTRIBUTE_ALWAYS_INLINE
-constexpr std::enable_if_t<is_char_v<CharType>, std::size_t> CalculateStringArgsSize(std::basic_string_view<CharType> s, Args... args) noexcept;
+constexpr std::enable_if_t<is_char_v<CharType>, size_t> CalculateStringArgsSize(std::basic_string_view<CharType> s, Args... args) noexcept;
 
 // clang-format on
 
 template <class CharType, class... Args>
-constexpr std::enable_if_t<is_char_v<CharType>, std::size_t> CalculateStringArgsSize(
+constexpr std::enable_if_t<is_char_v<CharType>, size_t> CalculateStringArgsSize(
     CharType /*c*/, Args... args) noexcept {
     size_t size = 1;
     if constexpr (sizeof...(args) > 0) {
@@ -275,7 +275,7 @@ constexpr std::enable_if_t<is_char_v<CharType>, std::size_t> CalculateStringArgs
 }
 
 template <class CharType, class... Args>
-constexpr std::enable_if_t<is_char_v<CharType>, std::size_t> CalculateStringArgsSize(
+constexpr std::enable_if_t<is_char_v<CharType>, size_t> CalculateStringArgsSize(
     std::basic_string_view<CharType> s, Args... args) noexcept {
     size_t size = s.size();
     if constexpr (sizeof...(args) > 0) {
@@ -290,20 +290,20 @@ template <class CharType, class... Args>
 ATTRIBUTE_NONNULL_ALL_ARGS
 ATTRIBUTE_ACCESS(write_only, 1)
 ATTRIBUTE_ALWAYS_INLINE
-constexpr std::enable_if_t<is_char_v<CharType>, void> WriteStringsInplace(CharType* result, CharType c, Args... args) noexcept;
+constexpr std::enable_if_t<is_char_v<CharType>> WriteStringsInplace(CharType* result, CharType c, Args... args) noexcept;
 
 template <class CharType, class... Args>
 ATTRIBUTE_NONNULL_ALL_ARGS
 ATTRIBUTE_ACCESS(write_only, 1)
 ATTRIBUTE_ALWAYS_INLINE
-constexpr std::enable_if_t<is_char_v<CharType>, void> WriteStringsInplace(CharType* result, std::basic_string_view<CharType> s, Args... args) noexcept;
+constexpr std::enable_if_t<is_char_v<CharType>> WriteStringsInplace(CharType* result, std::basic_string_view<CharType> s, Args... args) noexcept;
 
 // clang-format on
 
 template <class CharType, class... Args>
-constexpr std::enable_if_t<is_char_v<CharType>, void> WriteStringsInplace(CharType *result,
-                                                                          CharType c,
-                                                                          Args... args) noexcept {
+constexpr std::enable_if_t<is_char_v<CharType>> WriteStringsInplace(CharType *result,
+                                                                    CharType c,
+                                                                    Args... args) noexcept {
     *result = c;
     if constexpr (sizeof...(args) > 0) {
         join_strings_detail::WriteStringsInplace<CharType>(result + 1, args...);
@@ -311,7 +311,7 @@ constexpr std::enable_if_t<is_char_v<CharType>, void> WriteStringsInplace(CharTy
 }
 
 template <class CharType, class... Args>
-constexpr std::enable_if_t<is_char_v<CharType>, void> WriteStringsInplace(
+constexpr std::enable_if_t<is_char_v<CharType>> WriteStringsInplace(
     CharType *result, std::basic_string_view<CharType> s, Args... args) noexcept {
     std::char_traits<CharType>::copy(result, s.data(), s.size());
     if constexpr (sizeof...(args) > 0) {
@@ -325,7 +325,7 @@ template <class CharType, class... Args>
 ATTRIBUTE_NONNULL_ALL_ARGS
 ATTRIBUTE_SIZED_ACCESS(write_only, 1, 2)
 ATTRIBUTE_ALWAYS_INLINE
-constexpr std::enable_if_t<is_char_v<CharType>, void> WriteStringToBuffer(CharType* buffer, size_t /*buffer_size*/, Args... args) noexcept {
+constexpr std::enable_if_t<is_char_v<CharType>> WriteStringToBuffer(CharType* buffer, size_t /*buffer_size*/, Args... args) noexcept {
     join_strings_detail::WriteStringsInplace<CharType>(buffer, args...);
 }
 
@@ -335,7 +335,7 @@ template <class CharType, class... Args>
 [[nodiscard]] inline std::enable_if_t<is_char_v<CharType>, std::basic_string<CharType>>
 JoinStringsImpl(Args... args) {
     if constexpr (sizeof...(args) >= 2) {
-        const std::size_t size = CalculateStringArgsSize<CharType>(args...);
+        const size_t size = CalculateStringArgsSize<CharType>(args...);
         std::basic_string<CharType> result(size, CharType{});
         join_strings_detail::WriteStringToBuffer<CharType>(result.data(), result.size(), args...);
         return result;
@@ -409,10 +409,10 @@ struct same_char_types<std::basic_string<CharType>, CharType> : std::true_type {
 template <class CharType>
 struct same_char_types<std::basic_string_view<CharType>, CharType> : std::true_type {};
 
-template <class CharType, std::size_t N>
+template <class CharType, size_t N>
 struct same_char_types<const CharType[N], CharType> : std::true_type {};
 
-template <class CharType, std::size_t N>
+template <class CharType, size_t N>
 struct same_char_types<CharType[N], CharType> : std::true_type {};
 
 template <class CharType>
@@ -457,13 +457,13 @@ struct determine_char_type<std::basic_string<CharType>, Types...> {
     using type = CharType;
 };
 
-template <class CharType, std::size_t N, class... Types>
+template <class CharType, size_t N, class... Types>
 struct determine_char_type<const CharType[N], Types...>
     : std::enable_if_t<is_char_v<CharType>, dummy_base> {
     using type = CharType;
 };
 
-template <class CharType, std::size_t N, class... Types>
+template <class CharType, size_t N, class... Types>
 struct determine_char_type<CharType[N], Types...>
     : std::enable_if_t<is_char_v<CharType>, dummy_base> {
     using type = CharType;
@@ -890,10 +890,14 @@ template <class CharType>
 template <class CharType, class Predicate>
 [[nodiscard]]
 ATTRIBUTE_ALWAYS_INLINE
-inline std::basic_string_view<CharType> trim_if(std::basic_string_view<CharType> str ATTRIBUTE_LIFETIME_BOUND, Predicate pred) noexcept(std::is_nothrow_invocable_v<Predicate, CharType>) {
+inline std::basic_string_view<CharType> trim_if(std::basic_string_view<CharType> str, Predicate pred) noexcept(std::is_nothrow_invocable_v<Predicate, CharType>) {
     // clang-format on
     static_assert(std::is_invocable_r_v<bool, Predicate, CharType>,
                   "predicate should accept CharType and return bool");
+
+#if CONFIG_HAS_CONCEPTS
+    static_assert(std::predicate<Predicate, CharType>);
+#endif
 
     while (!str.empty() && pred(str.front())) {
         str.remove_prefix(1);
@@ -908,8 +912,7 @@ inline std::basic_string_view<CharType> trim_if(std::basic_string_view<CharType>
 // clang-format off
 template <class CharType>
 [[nodiscard]]
-constexpr std::basic_string_view<CharType> TrimChar(std::basic_string_view<CharType> str ATTRIBUTE_LIFETIME_BOUND,
-                                                    const CharType trim_char) noexcept {
+constexpr std::basic_string_view<CharType> TrimChar(const std::basic_string_view<CharType> str, const CharType trim_char) noexcept {
     // clang-format on
     return detail::trim_if(
         str, [trim_char](const CharType c) constexpr noexcept -> bool { return c == trim_char; });
@@ -918,7 +921,7 @@ constexpr std::basic_string_view<CharType> TrimChar(std::basic_string_view<CharT
 // clang-format off
 template <class CharType>
 [[nodiscard]]
-std::basic_string_view<CharType> TrimCharsImpl(std::basic_string_view<CharType> str ATTRIBUTE_LIFETIME_BOUND,
+std::basic_string_view<CharType> TrimCharsImpl(const std::basic_string_view<CharType> str,
                                                const std::basic_string_view<CharType> trim_chars) noexcept {
     // clang-format on
     using UType = std::make_unsigned_t<CharType>;
@@ -952,7 +955,7 @@ std::basic_string_view<CharType> TrimCharsImpl(std::basic_string_view<CharType> 
 template <class CharType>
 [[nodiscard]]
 ATTRIBUTE_ALWAYS_INLINE
-inline std::basic_string_view<CharType> TrimChars(const std::basic_string_view<CharType> str ATTRIBUTE_LIFETIME_BOUND,
+inline std::basic_string_view<CharType> TrimChars(const std::basic_string_view<CharType> str,
                                                   const std::basic_string_view<CharType> trim_chars) noexcept {
     // clang-format on
     const size_t trim_size = trim_chars.size();

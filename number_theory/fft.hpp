@@ -4,11 +4,6 @@
 #include <cmath>
 #include <complex>
 #include <cstddef>
-#if defined(__cpp_exceptions) && __cpp_exceptions >= 199711
-#include <stdexcept>
-#else
-#include <exception>
-#endif
 #include <utility>
 #include <vector>
 
@@ -17,6 +12,13 @@
 #endif
 
 #include "../misc/config_macros.hpp"
+
+#if CONFIG_HAS_EXCEPTIONS
+#include <stdexcept>
+#else
+#include <exception>
+#include <iostream>
+#endif
 
 namespace fft {
 
@@ -32,8 +34,7 @@ using std::size_t;
 /// @param n
 ATTRIBUTE_SIZED_ACCESS(read_write, 1, 3)
 ATTRIBUTE_SIZED_ACCESS(read_write, 2, 3)
-ATTRIBUTE_NONNULL(1)
-ATTRIBUTE_NONNULL(2)
+ATTRIBUTE_NONNULL_ALL_ARGS
 inline void forward_backward_fft(complex* RESTRICT_QUALIFIER p1,
                                  complex* RESTRICT_QUALIFIER p2,
                                  size_t n);
@@ -54,11 +55,54 @@ private:
         complex{1, 0},
     };
 
+    ATTRIBUTE_NORETURN
+    ATTRIBUTE_COLD
+    ATTRIBUTE_NONNULL_ALL_ARGS
+    static void throw_impl(const char* const message) {
+#if CONFIG_HAS_EXCEPTIONS
+        throw std::runtime_error{message};
+#else
+        std::cerr << "Terminating with message " << message << std::endl;
+        std::terminate();
+#endif
+    }
+
+    ATTRIBUTE_NONNULL_ALL_ARGS
+    ATTRIBUTE_ALWAYS_INLINE
+    static void throw_if_not_impl(const bool expr, const char* const message) {
+        if (unlikely(!expr)) {
+            throw_impl(message);
+        }
+    }
+
+#define THROW_IF_NOT2(expr, expr_str, file_name_str, line_int) \
+    throw_if_not_impl(                                         \
+        expr, "Expression \"" expr_str "\" evaluated to false at " file_name_str ":" #line_int)
+
+#define THROW_IF_NOT1(expr, expr_str, file_name_str, line_int) \
+    THROW_IF_NOT2(expr, expr_str, file_name_str, line_int)
+
+#define THROW_IF_NOT(expr) THROW_IF_NOT1(expr, #expr, __FILE__, __LINE__)
+
+    ATTRIBUTE_ALWAYS_INLINE
+    static void check_polynomial_size(const size_t n) {
+        THROW_IF_NOT(n > 0 && (n & (n - 1)) == 0);
+    }
+
+#undef THROW_IF_NOT
+#undef THROW_IF_NOT1
+#undef THROW_IF_NOT2
+
+    ATTRIBUTE_ALWAYS_INLINE
+    static void assume_polynomial_size_is_checked(const size_t n) noexcept {
+        CONFIG_ASSUME_STATEMENT(n > 0 && (n & (n - 1)) == 0);
+    }
+
     template <bool IsBackwardFFT = false /* Forward of backward FFT */>
     ATTRIBUTE_SIZED_ACCESS(read_write, 1, 2)
     ATTRIBUTE_NONNULL(1) static void forward_or_backward_fft(complex* const p,
                                                              const size_t k) noexcept {
-        CONFIG_ASSUME_STATEMENT(k > 0 && (k & (k - 1)) == 0);
+        assume_polynomial_size_is_checked(k);
 
         for (std::size_t i = 1, k_reversed_i = 0; i < k; i++) {
             // 'Increase' k_reversed_i by one
@@ -115,34 +159,8 @@ private:
         ensure_roots_capacity_impl(n, fft_roots);
     }
 
-    ATTRIBUTE_NORETURN
-    ATTRIBUTE_COLD
-    static void throw_impl(const char* const message) {
-#if defined(__cpp_exceptions) && __cpp_exceptions >= 199711
-        throw std::runtime_error{message};
-#else
-        std::terminate();
-#endif
-    }
-
-    ATTRIBUTE_NONNULL(2)
-    static void throw_if_not_impl(const bool expr, const char* const message) {
-        if (unlikely(!expr)) {
-            throw_impl(message);
-        }
-    }
-
-#define THROW_IF_NOT2(expr, expr_str, file_name_str, line_int) \
-    throw_if_not_impl(                                         \
-        expr, "Expression \"" expr_str "\" evaluated to false at " file_name_str ":" #line_int)
-
-#define THROW_IF_NOT1(expr, expr_str, file_name_str, line_int) \
-    THROW_IF_NOT2(expr, expr_str, file_name_str, line_int)
-
-#define THROW_IF_NOT(expr) THROW_IF_NOT1(expr, #expr, __FILE__, __LINE__)
-
     static void ensure_roots_capacity_impl(const size_t n, std::vector<complex>& roots) {
-        THROW_IF_NOT(n > 0 && (n & (n - 1)) == 0);
+        assume_polynomial_size_is_checked(n);
 
         size_t current_len = roots.size();
         assert(current_len >= 2 && (current_len & (current_len - 1)) == 0);
@@ -178,18 +196,13 @@ private:
         assert(current_len == n);
     }
 
-#undef THROW_IF_NOT
-#undef THROW_IF_NOT1
-#undef THROW_IF_NOT2
-
     friend inline void fft::forward_backward_fft(complex* p1, complex* p2, size_t n);
 };
 
 }  // namespace detail
 
 inline void forward_backward_fft(complex* const p1, complex* const p2, const size_t n) {
-    assert(n > 0 && (n & (n - 1)) == 0);
-    CONFIG_ASSUME_STATEMENT(n > 0 && (n & (n - 1)) == 0);
+    fft::detail::private_impl::check_polynomial_size(n);
 
     fft::detail::private_impl::ensure_roots_capacity(n);
     fft::detail::private_impl::forward_or_backward_fft</*IsBackwardFFT = */ false>(p1, n);
