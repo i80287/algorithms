@@ -8,10 +8,8 @@
 
 #if CONFIG_HAS_AT_LEAST_CXX_20 && CONFIG_HAS_CONCEPTS && CONFIG_HAS_INCLUDE(<concepts>)
 
-#include <concepts>
 #define JOIN_STRINGS_SUPPORTS_CUSTOM_TO_STRING
 
-#include <sstream>
 #define JOIN_STRINGS_SUPPORTS_CUSTOM_OSTRINGSTREAM
 
 #endif
@@ -27,7 +25,6 @@
 #if CONFIG_HAS_AT_LEAST_CXX_17 && defined(__cpp_lib_filesystem) && \
     __cpp_lib_filesystem >= 201703L && CONFIG_HAS_INCLUDE(<filesystem>)
 
-#include <filesystem>
 #define JOIN_STRINGS_SUPPORTS_FILESYSTEM_PATH
 
 #endif

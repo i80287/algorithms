@@ -3,6 +3,16 @@
 #error This header should not be used directly
 #endif
 
+// clang-format off
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable : 4996)
+#endif
+
+#include <charconv>
+#include <codecvt>
+// clang-format on
+
 #include <array>
 #include <cctype>
 #include <cstddef>
@@ -17,6 +27,23 @@
 #include <type_traits>
 #include <unordered_set>
 #include <utility>
+
+#ifdef JOIN_STRINGS_SUPPORTS_CUSTOM_TO_STRING
+#include <concepts>
+#endif
+
+#ifdef JOIN_STRINGS_SUPPORTS_CUSTOM_OSTRINGSTREAM
+#include <concepts>
+#include <sstream>
+#endif
+
+#ifdef JOIN_STRINGS_SUPPORTS_JOIN_STRINGS_COLLECTION
+#include <ranges>
+#endif
+
+#ifdef JOIN_STRINGS_SUPPORTS_FILESYSTEM_PATH
+#include <filesystem>
+#endif
 
 #include "config_macros.hpp"
 
@@ -1185,3 +1212,7 @@ inline std::basic_string<CharType> to_upper(const CharType *const str) {
 }
 
 }  // namespace misc
+
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif
