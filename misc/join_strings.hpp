@@ -111,9 +111,6 @@ concept CharOrStringLike =
 template <class HintCharType = char, class... Args>
 [[nodiscard]] ATTRIBUTE_ALWAYS_INLINE inline auto join_strings(const Args &...args);
 
-template <class ToCharType>
-[[nodiscard]] inline std::basic_string<ToCharType> convert_bytes_to(std::string_view bytes_str);
-
 #ifdef JOIN_STRINGS_SUPPORTS_JOIN_STRINGS_COLLECTION
 
 template <misc::CharOrStringLike Sep, std::ranges::forward_range Container>

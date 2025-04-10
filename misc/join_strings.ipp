@@ -607,11 +607,6 @@ inline auto join_strings(const Args&... args) {
     }
 }
 
-template <class ToCharType>
-inline std::basic_string<ToCharType> convert_bytes_to(const std::string_view bytes_str) {
-    return join_strings_detail::ConvertString<ToCharType>(bytes_str);
-}
-
 // clang-format on
 
 #ifdef JOIN_STRINGS_SUPPORTS_JOIN_STRINGS_COLLECTION
