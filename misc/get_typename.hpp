@@ -170,7 +170,7 @@ MISC_GET_TYPENAME_CONSTEVAL string_view extract_typename_impl(const string_view 
 
 #else
 // cppcheck-suppress [preprocessorErrorDirective]
-#error("Unsupported compiler")
+#error Unsupported compiler
 #endif
 
     CONSTEVAL_ASSERT(typename_start_pos < function_name.size());
@@ -211,7 +211,7 @@ string_view extract_enum_value_name_impl(const string_view function_name) {
     constexpr string_view prefix = "get_enum_value_name_impl<";
 #else
 // cppcheck-suppress [preprocessorErrorDirective]
-#error("Unsupported compiler")
+#error Unsupported compiler
 #endif
 
     const size_t prefix_start_pos = function_name.find(prefix);

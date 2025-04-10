@@ -3,18 +3,10 @@
 #error This header should not be used directly
 #endif
 
-// clang-format off
-#ifdef _MSC_VER
-#pragma warning(push)
-#pragma warning(disable : 4996)
-#endif
-
-#include <charconv>
-#include <codecvt>
-// clang-format on
-
 #include <array>
 #include <cctype>
+#include <charconv>
+#include <codecvt>
 #include <cstddef>
 #include <cstdint>
 #include <cwchar>
@@ -118,8 +110,20 @@ template <class ToCharType>
     } else
 #endif
     {
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated"
+#elif defined(_MSC_VER)
+#pragma warning(push)
+#pragma warning(disable : 4996)
+#endif
         return std::wstring_convert<std::codecvt_utf8_utf16<ToCharType>, ToCharType>{}.from_bytes(
             str.data(), str.data() + str.size());
+#ifdef __clang__
+#pragma clang diagnostic pop
+#elif defined(_MSC_VER)
+#pragma warning(pop)
+#endif
     }
 }
 
@@ -1212,7 +1216,3 @@ inline std::basic_string<CharType> to_upper(const CharType *const str) {
 }
 
 }  // namespace misc
-
-#ifdef _MSC_VER
-#pragma warning(pop)
-#endif
