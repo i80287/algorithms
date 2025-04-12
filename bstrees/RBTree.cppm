@@ -19,6 +19,11 @@ module;
 #include <type_traits>
 #include <utility>
 
+#ifdef RBTREE_DEBUG
+#include <chrono>
+#include <string_view>
+#endif
+
 #include "../misc/config_macros.hpp"
 
 export module rbtree;
@@ -247,8 +252,10 @@ private:
 };
 
 template <class T>
-class Node final : public NodeBase {
+class Node : public NodeBase {
     using Base = NodeBase;
+
+protected:
     using KeyType = T;
 
 public:
@@ -442,7 +449,7 @@ protected:
 
     RBTREE_ATTRIBUTE_NONNULL_ALL_ARGS
     ATTRIBUTE_ACCESS(read_only, 2)
-    constexpr void ExtractNode(NodeBase* const node) noexcept {
+    constexpr void ExtractNode(const NodeBase* const node) noexcept {
         RBTREE_ASSERT_INVARIANT(Size() >= 1);
         RBTREE_ASSERT_INVARIANT(Begin() != End());
         RBTREE_ASSERT_INVARIANT(node != PreRootNil());
@@ -995,7 +1002,7 @@ private:
                         RBTREE_ASSERT_INVARIANT(current_node_parent->Right() == w_left);
                         w = w_left;
                         w_left = nullptr;  // to ensure this won't be used later and thus should not
-                                           // be set to w->Left()
+                        // be set to w->Left()
                         w_right = w->Right();
                     } else {
                         RBTREE_ASSERT_INVARIANT(w_right->Color() == NodeColor::kRed);
@@ -1182,95 +1189,13 @@ constexpr NodeType *Decrement(NodeType *node) noexcept {
 
 // clang-format on
 
-template <class KeyType>
-class RBTreeContainer;
-
-template <class KeyType, bool IsConstIterator>
-class Iterator final {
-    using IterNodeBaseType = std::conditional_t<IsConstIterator, const NodeBase, NodeBase>;
-    using IterNodeType = std::conditional_t<IsConstIterator, const Node<KeyType>, Node<KeyType>>;
-    using IterKeyType = std::conditional_t<IsConstIterator, const KeyType, KeyType>;
-    using OtherIterator = Iterator<KeyType, !IsConstIterator>;
-
-    friend class RBTreeContainer<KeyType>;
-    friend OtherIterator;
-
-    RBTREE_ATTRIBUTE_NONNULL_ALL_ARGS
-    explicit constexpr Iterator(IterNodeType* const node_ptr ATTRIBUTE_LIFETIME_BOUND) noexcept
-        : node_(node_ptr) {
-        RBTREE_ASSERT_INVARIANT(node_ != nullptr);
-    }
-
-public:
-    using value_type = KeyType;
-    using reference = IterKeyType&;
-    using pointer = IterKeyType*;
-    using difference_type = std::ptrdiff_t;
-    using iterator_category = std::bidirectional_iterator_tag;
-
-    constexpr Iterator() noexcept = default;
-
-    // clang-format off
-    // NOLINTNEXTLINE(google-explicit-constructor, hicpp-explicit-conversions)
-    /* implicit */ constexpr Iterator(const OtherIterator other) noexcept
-        requires(IsConstIterator)
-        : Iterator(other.node_) {
-        // clang-format on
-    }
-
-    explicit Iterator(std::nullptr_t) = delete;
-
-    [[nodiscard]] constexpr reference operator*() const noexcept {
-        RBTREE_ASSERT_INVARIANT(node_ != nullptr);
-        return node_->Key();
-    }
-
-    [[nodiscard]]
-    ATTRIBUTE_RETURNS_NONNULL constexpr pointer operator->() const noexcept {
-        RBTREE_ASSERT_INVARIANT(node_ != nullptr);
-        return std::addressof(node_->Key());
-    }
-
-    [[nodiscard]] bool operator==(const Iterator&) const = default;
-
-    constexpr Iterator& operator++() noexcept ATTRIBUTE_LIFETIME_BOUND {
-        node_ = static_cast<IterNodeType*>(Increment<IterNodeBaseType>(node_));
-        RBTREE_ASSERT_INVARIANT(node_ != nullptr);
-        return *this;
-    }
-
-    [[nodiscard]] constexpr Iterator operator++(int) & noexcept {
-        const Iterator copy(*this);
-        ++*this;
-        return copy;
-    }
-
-    constexpr Iterator& operator--() noexcept ATTRIBUTE_LIFETIME_BOUND {
-        node_ = static_cast<IterNodeType*>(Decrement<IterNodeBaseType>(node_));
-        RBTREE_ASSERT_INVARIANT(node_ != nullptr);
-        return *this;
-    }
-
-    [[nodiscard]] constexpr Iterator operator--(int) & noexcept {
-        const Iterator copy(*this);
-        --*this;
-        return copy;
-    }
-
-private:
-    IterNodeType* node_{};
-};
-
-// clang-format off
 template <std::size_t N>
-RBTREE_ATTRIBUTE_NONNULL_ALL_ARGS
-ATTRIBUTE_ACCESS(read_only, 1)
 ATTRIBUTE_ACCESS(write_only, 2)
-void FillLengthErrorReport(const char* const function_name,
+void FillLengthErrorReport(const std::source_location& location,
                            std::array<char, N>& buffer) noexcept {
-    // clang-format on
-    const int written_bytes_count = std::snprintf(
-        buffer.data(), buffer.size(), "Could not create node: size error at %s", function_name);
+    const int written_bytes_count =
+        std::snprintf(buffer.data(), buffer.size(), "Could not create node: size error at %s:%u:%s",
+                      location.file_name(), location.line(), location.function_name());
     if (written_bytes_count <= 0) [[unlikely]] {
         constexpr std::array kFallbackReport = std::to_array(
             "Could not create error report on node creation error because of the size error");
@@ -1279,33 +1204,105 @@ void FillLengthErrorReport(const char* const function_name,
     }
 }
 
-// clang-format off
 [[noreturn]]
-RBTREE_ATTRIBUTE_NONNULL_ALL_ARGS
-ATTRIBUTE_ACCESS(read_only, 1)
-ATTRIBUTE_COLD
-void ThrowLengthError(const char *const function_name) {
-    // clang-format on
+ATTRIBUTE_COLD void ThrowLengthError(
+    const std::source_location& location = std::source_location::current()) {
     constexpr std::size_t kErrorReportBufferSize = 1024;
     std::array<char, kErrorReportBufferSize> buffer{};
-    FillLengthErrorReport(function_name, buffer);
+    FillLengthErrorReport(location, buffer);
     throw std::length_error{buffer.data()};
 }
 
-template <class KeyType>
+template <class KeyType, std::derived_from<NodeBase> NodeType = Node<KeyType>>
 class RBTreeContainer : private RBTreeContainerImpl {
     using Base = RBTreeContainerImpl;
 
 protected:
+    template <bool IsConstIterator>
+    class Iterator final {
+        using IterNodeBaseType = std::conditional_t<IsConstIterator, const NodeBase, NodeBase>;
+        using IterNodeType =
+            std::conditional_t<IsConstIterator, const Node<KeyType>, Node<KeyType>>;
+        using IterKeyType = std::conditional_t<IsConstIterator, const KeyType, KeyType>;
+        using OtherIterator = Iterator<!IsConstIterator>;
+
+        friend RBTreeContainer;
+        friend OtherIterator;
+
+        RBTREE_ATTRIBUTE_NONNULL_ALL_ARGS
+        explicit constexpr Iterator(IterNodeType* const node_ptr ATTRIBUTE_LIFETIME_BOUND) noexcept
+            : node_(node_ptr) {
+            RBTREE_ASSERT_INVARIANT(node_ != nullptr);
+        }
+
+    public:
+        using value_type = KeyType;
+        using reference = IterKeyType&;
+        using pointer = IterKeyType*;
+        using difference_type = std::ptrdiff_t;
+        using iterator_category = std::bidirectional_iterator_tag;
+
+        constexpr Iterator() noexcept = default;
+
+        // clang-format off
+    // NOLINTNEXTLINE(google-explicit-constructor, hicpp-explicit-conversions)
+    /* implicit */ constexpr Iterator(const OtherIterator other) noexcept
+        requires(IsConstIterator)
+        : Iterator(other.node_) {
+            // clang-format on
+        }
+
+        explicit Iterator(std::nullptr_t) = delete;
+
+        [[nodiscard]] constexpr reference operator*() const noexcept {
+            RBTREE_ASSERT_INVARIANT(node_ != nullptr);
+            return node_->Key();
+        }
+
+        [[nodiscard]]
+        ATTRIBUTE_RETURNS_NONNULL constexpr pointer operator->() const noexcept {
+            RBTREE_ASSERT_INVARIANT(node_ != nullptr);
+            return std::addressof(node_->Key());
+        }
+
+        [[nodiscard]] bool operator==(const Iterator&) const = default;
+
+        constexpr Iterator& operator++() noexcept ATTRIBUTE_LIFETIME_BOUND {
+            node_ = static_cast<IterNodeType*>(Increment<IterNodeBaseType>(node_));
+            RBTREE_ASSERT_INVARIANT(node_ != nullptr);
+            return *this;
+        }
+
+        [[nodiscard]] constexpr Iterator operator++(int) & noexcept {
+            const Iterator copy(*this);
+            ++*this;
+            return copy;
+        }
+
+        constexpr Iterator& operator--() noexcept ATTRIBUTE_LIFETIME_BOUND {
+            node_ = static_cast<IterNodeType*>(Decrement<IterNodeBaseType>(node_));
+            RBTREE_ASSERT_INVARIANT(node_ != nullptr);
+            return *this;
+        }
+
+        [[nodiscard]] constexpr Iterator operator--(int) & noexcept {
+            const Iterator copy(*this);
+            --*this;
+            return copy;
+        }
+
+    private:
+        IterNodeType* node_{};
+    };
+
     using size_type = std::size_t;
     using difference_type = std::ptrdiff_t;
-    using const_iterator = Iterator<KeyType, /*IsConstIterator = */ true>;
+    using const_iterator = Iterator</*IsConstIterator = */ true>;
     using iterator = const_iterator;
     using value_type = KeyType;
     using key_type = KeyType;
     using reference = value_type&;
     using const_reference = const value_type&;
-    using NodeType = Node<KeyType>;
     using allocator_type = std::allocator<NodeType>;
     using allocator_traits = std::allocator_traits<allocator_type>;
     using reverse_iterator = std::reverse_iterator<iterator>;
@@ -1471,7 +1468,7 @@ private:
         // clang-format on
         if (tree_size >= max_size()) [[unlikely]] {
             RBTREE_ASSERT_INVARIANT(tree_size == max_size());
-            ThrowLengthError(std::source_location::current().function_name());
+            ThrowLengthError();
         }
 
         return RBTreeContainer::CreateNodeUnchecked(std::forward<Args>(args)...);
@@ -1650,15 +1647,24 @@ private:
 #undef RBTREE_ATTRIBUTE_NONNULL_ALL_ARGS
 
 template <class T>
-[[maybe_unused]] inline constexpr bool kUseByValue =
+inline constexpr bool kUseByValue =
     std::is_trivial_v<T> ||
     (std::is_standard_layout_v<T> && !std::is_polymorphic_v<T> && !std::is_array_v<T> &&
-     std::is_nothrow_default_constructible_v<T> && sizeof(T) <= 32 &&
+     std::is_nothrow_default_constructible_v<T> && sizeof(T) <= 16 &&
      std::is_nothrow_copy_constructible_v<T> && std::is_trivially_copy_constructible_v<T> &&
      std::is_nothrow_copy_assignable_v<T> && std::is_trivially_copy_assignable_v<T> &&
      std::is_nothrow_move_constructible_v<T> && std::is_trivially_move_constructible_v<T> &&
      std::is_nothrow_move_assignable_v<T> && std::is_trivially_move_assignable_v<T> &&
      std::is_nothrow_destructible_v<T> && std::is_trivially_destructible_v<T>);
+
+#ifdef RBTREE_DEBUG
+static_assert(kUseByValue<bool>);
+static_assert(kUseByValue<std::int64_t>);
+static_assert(kUseByValue<long double>);
+static_assert(kUseByValue<std::nullptr_t>);
+static_assert(kUseByValue<std::chrono::nanoseconds>);
+static_assert(kUseByValue<std::string_view>);
+#endif
 
 export template <class Comparator>
 concept StatelessComparator =
@@ -1674,6 +1680,8 @@ static_assert(StatelessComparator<std::greater<long*>>);
 
 template <class ComparatorType>
 class StatelessComparatorStorage {
+    static_assert(StatelessComparator<ComparatorType>);
+
 protected:
     static constexpr bool kNoexceptDefaultConstructable = true;
     static constexpr bool kNoexceptConstructableFromComparator = true;
@@ -2052,6 +2060,86 @@ private:
         Base::ExtractAndDestroyNode(iter);
     }
 };
+
+namespace impl {
+template <class TimeType>
+    requires kUseByValue<TimeType>
+class TimeInterval final {
+public:
+    static TimeInterval FromLowHighEndpoints(const TimeType low, const TimeType high) {
+        if (low > high) [[unlikely]] {
+            ThrowOnInvalidTimeIntervalEndpoints(low, high);
+        }
+
+        return TimeInterval{
+            low,
+            high,
+        };
+    }
+
+    [[nodiscard]] constexpr const TimeType& LowEndpoint() const noexcept {
+        CheckInvariants();
+        return low_;
+    }
+
+    [[nodiscard]] constexpr const TimeType& HighEndpoint() const noexcept {
+        CheckInvariants();
+        return high_;
+    }
+
+private:
+    constexpr void CheckInvariants() const noexcept {
+        RBTREE_ASSERT_INVARIANT(low_ <= high_);
+        CONFIG_ASSUME_STATEMENT(low_ <= high_);
+    }
+
+    constexpr TimeInterval(const TimeType low, const TimeType high) noexcept(
+        std::is_nothrow_copy_constructible_v<TimeType>)
+        : low_(low), high_(high) {
+        CheckInvariants();
+    }
+
+    [[noreturn]]
+    ATTRIBUTE_COLD static void ThrowOnInvalidTimeIntervalEndpoints(
+        [[maybe_unused]] const TimeType low,
+        [[maybe_unused]] const TimeType high,
+        const std::source_location& location = std::source_location::current()) {
+        throw std::runtime_error{std::string{"low > high at "} + location.file_name() + ':' +
+                                 std::to_string(location.line()) + ':' + location.function_name()};
+    }
+
+    TimeType low_;
+    TimeType high_;
+};
+
+class TimeIntervalComparator {
+public:
+    template <class TimeType>
+    [[nodiscard]] constexpr bool operator()(
+        const TimeInterval<TimeType>& lhs,
+        const TimeInterval<TimeType>& rhs) noexcept(noexcept(std::declval<const TimeType&>() <
+                                                             std::declval<const TimeType&>())) {
+        return lhs.LowEndpoint() < rhs.LowEndpoint();
+    }
+};
+
+template <class TimeType>
+class TimeIntervalNode final : Node<TimeInterval<TimeType>> {
+    using Base = Node<TimeInterval<TimeType>>;
+
+public:
+    using Base::Base;
+    using Base::operator=;
+
+private:
+    TimeType max_subtree_endpoint_;
+};
+
+template <class TimeType = std::int64_t, class ComparatorType = TimeIntervalComparator>
+class IntervalTree final
+    : private RBTreeContainer<TimeInterval<TimeType>, TimeIntervalNode<TimeType>>
+    , private NonReflexiveComparatorHelper<TimeInterval<TimeType>, ComparatorType> {};
+}  // namespace impl
 
 template <class KeyType>
 struct [[nodiscard]] TestImplResult {
