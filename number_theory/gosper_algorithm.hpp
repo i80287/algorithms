@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <exception>
 #include <functional>
 #include <limits>
 #include <type_traits>
@@ -11,25 +12,28 @@
 
 namespace math_functions {
 
+using std::int32_t;
+using std::uint32_t;
+
 struct LoopDetectResult {
-    std::uint32_t cycle_start_lower_bound;
-    std::uint32_t cycle_start_upper_bound;
-    std::uint32_t cycle_period;
+    uint32_t cycle_start_lower_bound;
+    uint32_t cycle_start_upper_bound;
+    uint32_t cycle_period;
 };
 
-template <class Function>
+template <class F>
 #if CONFIG_HAS_AT_LEAST_CXX_20
-    requires std::is_invocable_r_v<std::int32_t, Function, std::int32_t>
+    requires std::is_invocable_r_v<int32_t, F, int32_t>
 #endif
 [[nodiscard]]
-constexpr LoopDetectResult loop_detection_Gosper(Function f, std::int32_t x0) noexcept(
-    std::is_nothrow_invocable_r_v<std::int32_t, Function, std::int32_t>) {
+constexpr LoopDetectResult loop_detection_Gosper(F f, const int32_t x0) noexcept(
+    std::is_nothrow_invocable_v<F, int32_t>) {
     /**
      * See Hackers Delight 5-5.
      */
     // clang-format off
     // NOLINTNEXTLINE(cppcoreguidelines-avoid-c-arrays, hicpp-avoid-c-arrays, modernize-avoid-c-arrays, cppcoreguidelines-avoid-magic-numbers)
-    std::int32_t f_values[33]
+    int32_t f_values[33]
 #if CONFIG_HAS_AT_LEAST_CXX_20
         ;
 #else
@@ -38,11 +42,11 @@ constexpr LoopDetectResult loop_detection_Gosper(Function f, std::int32_t x0) no
     // clang-format on
 
     f_values[0] = x0;
-    std::int32_t xn = x0;
-    for (std::uint32_t n = 1;;) {
-        xn = std::invoke(f, std::int32_t{xn});
-        const std::uint32_t kmax = ::math_functions::log2_floor(n);
-        for (std::uint32_t k = 0; k <= kmax; k++) {
+    int32_t xn = x0;
+    for (uint32_t n = 1;;) {
+        xn = std::invoke(f, int32_t{xn});
+        const uint32_t kmax = math_functions::log2_floor(n);
+        for (uint32_t k = 0; k <= kmax; k++) {
             if (unlikely(xn == f_values[k])) {
                 /**
                  * let ctz be a function for counting
@@ -55,9 +59,9 @@ constexpr LoopDetectResult loop_detection_Gosper(Function f, std::int32_t x0) no
                  * j := r' << k, ctz(j) == k
                  * m = j - 1
                  */
-                const std::uint32_t m = ((((n >> k) - 1U) | 1U) << k) - 1;
+                const uint32_t m = ((((n >> k) - 1U) | 1U) << k) - 1;
                 CONFIG_ASSUME_STATEMENT(m < n);
-                const std::uint32_t lambda = n - m;
+                const uint32_t lambda = n - m;
                 CONFIG_ASSUME_STATEMENT(lambda >= 1);
                 const auto mu_upper = m;
                 const auto gap = std::max(1U, lambda - 1) - 1;
@@ -67,10 +71,11 @@ constexpr LoopDetectResult loop_detection_Gosper(Function f, std::int32_t x0) no
             }
         }
 
-        if (unlikely(++n == 0)) {
+        n++;
+        if (unlikely(n == 0)) {
             break;
         }
-        f_values[static_cast<std::uint32_t>(::math_functions::countr_zero(n))] = xn;  // No match.
+        f_values[static_cast<uint32_t>(math_functions::countr_zero(n))] = xn;  // No match.
     }
 
     std::terminate();

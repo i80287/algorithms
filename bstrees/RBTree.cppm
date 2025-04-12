@@ -19,22 +19,25 @@ module;
 #include <type_traits>
 #include <utility>
 
+#ifdef RBTREE_DEBUG
+#include <chrono>
+#include <string_view>
+#endif
+
 #include "../misc/config_macros.hpp"
 
 export module rbtree;
 
 namespace rbtree {
-
 template <class KeyType>
 concept RBTreeKeyTypeConstraints =
-    sizeof(KeyType) >= 1                                       // Type can't be incomplete
-    && !std::is_array_v<KeyType>                               // Type can't be an array
-    && std::is_same_v<KeyType, std::remove_cvref_t<KeyType>>;  // Type can't be const nor reference
+    std::same_as<KeyType,
+                 std::remove_cvref_t<KeyType>>  // Type can't be const/volatile nor reference
+    && !std::is_array_v<KeyType>;               // Type can't be an array
 
 template <class ComparatorType, class Type>
-concept ComparatorForType =
-    !std::is_reference_v<ComparatorType> && std::destructible<ComparatorType> &&
-    std::predicate<ComparatorType, const Type &, const Type &>;
+concept ComparatorForType = std::same_as<ComparatorType, std::remove_cvref_t<ComparatorType>> &&
+                            std::predicate<ComparatorType, const Type&, const Type&>;
 
 export template <RBTreeKeyTypeConstraints KeyType, class ComparatorType = std::less<>>
     requires ComparatorForType<ComparatorType, KeyType>
@@ -57,8 +60,7 @@ export enum class TestStatus : std::uint8_t {
 };
 
 export template <class KeyType, class ComparatorType>
-[[nodiscard]] TestStatus RBTreeInvariantsUnitTest(const RBTree<KeyType, ComparatorType> &tree);
-
+[[nodiscard]] TestStatus RBTreeInvariantsUnitTest(const RBTree<KeyType, ComparatorType>& tree);
 }  // namespace rbtree
 
 #ifdef RBTREE_DEBUG
@@ -73,41 +75,38 @@ export template <class KeyType, class ComparatorType>
 
 enum class NodeColor : std::size_t { kRed = 0, kBlack };
 
-#if defined(__clang__)
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wnullability-extension"
-#define RBTREE_ATTRIBUTE_NONNULL_ALL_ARGS
-#define RBTREE_ATTRIBUTE_NONNULL(...)
-#else
 #define RBTREE_ATTRIBUTE_NONNULL_ALL_ARGS ATTRIBUTE_NONNULL_ALL_ARGS
 #define RBTREE_ATTRIBUTE_NONNULL(...)     ATTRIBUTE_NONNULL(__VA_ARGS__)
-
-#endif
 
 class NodeBase {
     friend class RBTreeContainerImpl;
 
 public:
-    NodeBase(const NodeBase &) = delete;
-    NodeBase &operator=(const NodeBase &) = delete;
+    NodeBase(const NodeBase&) = delete;
+
+    NodeBase& operator=(const NodeBase&) = delete;
 
 protected:
     constexpr NodeBase() noexcept
         : left_{nullptr}, right_{nullptr}, parent_{nullptr}, color_{NodeColor::kRed} {}
+
     constexpr ~NodeBase() = default;
-    constexpr NodeBase(NodeBase &&other) noexcept
+
+    constexpr NodeBase(NodeBase&& other) noexcept
         : left_{std::exchange(other.left_, nullptr)}
         , right_{std::exchange(other.right_, nullptr)}
         , parent_{std::exchange(other.parent_, nullptr)}
         , color_{std::exchange(other.color_, NodeColor{})} {}
-    constexpr NodeBase &operator=(NodeBase &&other) noexcept ATTRIBUTE_LIFETIME_BOUND {
+
+    constexpr NodeBase& operator=(NodeBase&& other) noexcept ATTRIBUTE_LIFETIME_BOUND {
         left_ = std::exchange(other.left_, nullptr);
         right_ = std::exchange(other.right_, nullptr);
         parent_ = std::exchange(other.parent_, nullptr);
         color_ = std::exchange(other.color_, NodeColor{});
         return *this;
     }
-    constexpr void Swap(NodeBase &other) noexcept {
+
+    constexpr void Swap(NodeBase& other) noexcept {
         std::swap(left_, other.left_);
         std::swap(right_, other.right_);
         std::swap(parent_, other.parent_);
@@ -115,73 +114,85 @@ protected:
     }
 
 public:
-    [[nodiscard]] ATTRIBUTE_RETURNS_NONNULL constexpr const NodeBase *LeftMostNode() const noexcept
+    [[nodiscard]]
+    ATTRIBUTE_RETURNS_NONNULL constexpr const NodeBase* LeftMostNode() const noexcept
         ATTRIBUTE_LIFETIME_BOUND {
         return LeftMostNodeOf(this);
     }
-    [[nodiscard]] ATTRIBUTE_RETURNS_NONNULL constexpr NodeBase *LeftMostNode() noexcept
-        ATTRIBUTE_LIFETIME_BOUND {
+
+    [[nodiscard]]
+    ATTRIBUTE_RETURNS_NONNULL constexpr NodeBase* LeftMostNode() noexcept ATTRIBUTE_LIFETIME_BOUND {
         return LeftMostNodeOf(this);
     }
-    [[nodiscard]] ATTRIBUTE_RETURNS_NONNULL constexpr const NodeBase *RightMostNode() const noexcept
+
+    [[nodiscard]]
+    ATTRIBUTE_RETURNS_NONNULL constexpr const NodeBase* RightMostNode() const noexcept
         ATTRIBUTE_LIFETIME_BOUND {
         return RightMostNodeOf(this);
     }
-    [[nodiscard]] ATTRIBUTE_RETURNS_NONNULL constexpr NodeBase *RightMostNode() noexcept
+
+    [[nodiscard]]
+    ATTRIBUTE_RETURNS_NONNULL constexpr NodeBase* RightMostNode() noexcept
         ATTRIBUTE_LIFETIME_BOUND {
         return RightMostNodeOf(this);
     }
-    [[nodiscard]] ATTRIBUTE_RETURNS_NONNULL constexpr const NodeBase *FarthestParent()
-        const noexcept ATTRIBUTE_LIFETIME_BOUND {
-        return FarthestParentNodeOf(this);
-    }
-    [[nodiscard]] ATTRIBUTE_RETURNS_NONNULL constexpr NodeBase *FarthestParent() noexcept
+
+    [[nodiscard]]
+    ATTRIBUTE_RETURNS_NONNULL constexpr const NodeBase* FarthestParent() const noexcept
         ATTRIBUTE_LIFETIME_BOUND {
         return FarthestParentNodeOf(this);
     }
-    [[nodiscard]] constexpr const NodeBase *OtherSibling(const NodeBase *child) const noexcept {
+
+    [[nodiscard]]
+    ATTRIBUTE_RETURNS_NONNULL constexpr NodeBase* FarthestParent() noexcept
+        ATTRIBUTE_LIFETIME_BOUND {
+        return FarthestParentNodeOf(this);
+    }
+
+    [[nodiscard]] constexpr const NodeBase* OtherSibling(const NodeBase* child) const noexcept {
         RBTREE_ASSERT_INVARIANT(IsChildNode(child));
-        return (left_ == child) ? right_ : left_;
+        return left_ == child ? right_ : left_;
     }
-    [[nodiscard]] constexpr NodeBase *OtherSibling(const NodeBase *child) noexcept {
+
+    [[nodiscard]] constexpr NodeBase* OtherSibling(const NodeBase* child) noexcept {
         RBTREE_ASSERT_INVARIANT(IsChildNode(child));
-        return (left_ == child) ? right_ : left_;
+        return left_ == child ? right_ : left_;
     }
-    [[nodiscard]] constexpr const NodeBase *Parent() const noexcept {
+
+    [[nodiscard]] constexpr NodeBase* Parent() const noexcept {
         return parent_;
     }
-    [[nodiscard]] constexpr NodeBase *Parent() noexcept {
+
+    [[nodiscard]] constexpr NodeBase*& ParentMutableReference() noexcept ATTRIBUTE_LIFETIME_BOUND {
         return parent_;
     }
-    [[nodiscard]] constexpr NodeBase *&ParentMutableReference() noexcept ATTRIBUTE_LIFETIME_BOUND {
-        return parent_;
-    }
-    constexpr void SetParent(NodeBase *new_parent) noexcept {
+
+    constexpr void SetParent(NodeBase* new_parent) noexcept {
         parent_ = new_parent;
     }
-    [[nodiscard]] constexpr const NodeBase *Left() const noexcept {
+
+    [[nodiscard]] constexpr NodeBase* Left() const noexcept {
         return left_;
     }
-    [[nodiscard]] constexpr NodeBase *Left() noexcept {
-        return left_;
-    }
-    constexpr void SetLeft(NodeBase *new_left) noexcept {
+
+    constexpr void SetLeft(NodeBase* new_left) noexcept {
         left_ = new_left;
     }
-    [[nodiscard]] constexpr const NodeBase *Right() const noexcept {
+
+    [[nodiscard]] constexpr NodeBase* Right() const noexcept {
         return right_;
     }
-    [[nodiscard]] constexpr NodeBase *Right() noexcept {
-        return right_;
-    }
-    constexpr void SetRight(NodeBase *new_right) noexcept {
+
+    constexpr void SetRight(NodeBase* new_right) noexcept {
         right_ = new_right;
     }
-    constexpr void SetColor(const NodeColor new_color) noexcept {
-        color_ = new_color;
-    }
+
     [[nodiscard]] constexpr NodeColor Color() const noexcept {
         return color_;
+    }
+
+    constexpr void SetColor(const NodeColor new_color) noexcept {
+        color_ = new_color;
     }
 
 private:
@@ -192,8 +203,7 @@ private:
     ATTRIBUTE_RETURNS_NONNULL
     ATTRIBUTE_PURE
     ATTRIBUTE_ACCESS(read_only, 1)
-    ATTRIBUTE_ALWAYS_INLINE
-    static constexpr NodeType *LeftMostNodeOf(NodeType * CONFIG_CLANG_NONNULL_QUALIFIER node ATTRIBUTE_LIFETIME_BOUND) noexcept {
+    static constexpr NodeType* LeftMostNodeOf(NodeType* node ATTRIBUTE_LIFETIME_BOUND) noexcept {
         // clang-format on
         while (node->Left() != nullptr) {
             node = node->Left();
@@ -208,8 +218,7 @@ private:
     ATTRIBUTE_RETURNS_NONNULL
     ATTRIBUTE_PURE
     ATTRIBUTE_ACCESS(read_only, 1)
-    ATTRIBUTE_ALWAYS_INLINE
-    static constexpr NodeType *RightMostNodeOf(NodeType * CONFIG_CLANG_NONNULL_QUALIFIER node ATTRIBUTE_LIFETIME_BOUND) noexcept {
+    static constexpr NodeType* RightMostNodeOf(NodeType* node ATTRIBUTE_LIFETIME_BOUND) noexcept {
         // clang-format on
         while (node->Right() != nullptr) {
             node = node->Right();
@@ -224,8 +233,7 @@ private:
     ATTRIBUTE_RETURNS_NONNULL
     ATTRIBUTE_PURE
     ATTRIBUTE_ACCESS(read_only, 1)
-    ATTRIBUTE_ALWAYS_INLINE
-    static constexpr NodeType *FarthestParentNodeOf(NodeType * CONFIG_CLANG_NONNULL_QUALIFIER node ATTRIBUTE_LIFETIME_BOUND) noexcept {
+    static constexpr NodeType *FarthestParentNodeOf(NodeType* node ATTRIBUTE_LIFETIME_BOUND) noexcept {
         // clang-format on
         while (node->Parent() != nullptr) {
             node = node->Parent();
@@ -233,59 +241,69 @@ private:
         return node;
     }
 
-    [[nodiscard]] constexpr bool IsChildNode(const NodeBase *node) const noexcept {
+    [[nodiscard]] constexpr bool IsChildNode(const NodeBase* const node) const noexcept {
         return (node == left_) ^ (node == right_);
     }
 
-    NodeBase *left_;
-    NodeBase *right_;
-    NodeBase *parent_;
+    NodeBase* left_;
+    NodeBase* right_;
+    NodeBase* parent_;
     NodeColor color_;
 };
 
-template <typename T>
-class Node final : public NodeBase {
+template <class T>
+class Node : public NodeBase {
     using Base = NodeBase;
+
+protected:
     using KeyType = T;
 
 public:
     template <class U>
-        requires std::constructible_from<KeyType, U &&>
-    explicit constexpr Node(U &&key) noexcept(std::is_nothrow_constructible_v<KeyType, U &&>)
+        requires std::constructible_from<KeyType, U&&>
+    explicit constexpr Node(U&& key) noexcept(std::is_nothrow_constructible_v<KeyType, U&&>)
         : key_(std::forward<U>(key)) {}
 
-    [[nodiscard]] constexpr const Node *Left() const noexcept {
-        return static_cast<const Node *>(Base::Left());
+    [[nodiscard]] constexpr const Node* Left() const noexcept {
+        return static_cast<const Node*>(Base::Left());
     }
-    [[nodiscard]] constexpr Node *Left() noexcept {
-        return static_cast<Node *>(Base::Left());
+
+    [[nodiscard]] constexpr Node* Left() noexcept {
+        return static_cast<Node*>(Base::Left());
     }
-    [[nodiscard]] constexpr const Node *Right() const noexcept {
-        return static_cast<const Node *>(Base::Right());
+
+    [[nodiscard]] constexpr const Node* Right() const noexcept {
+        return static_cast<const Node*>(Base::Right());
     }
-    [[nodiscard]] constexpr Node *Right() noexcept {
-        return static_cast<Node *>(Base::Right());
+
+    [[nodiscard]] constexpr Node* Right() noexcept {
+        return static_cast<Node*>(Base::Right());
     }
-    [[nodiscard]] constexpr const Node *Parent() const noexcept {
-        return static_cast<const Node *>(Base::Parent());
+
+    [[nodiscard]] constexpr const Node* Parent() const noexcept {
+        return static_cast<const Node*>(Base::Parent());
     }
-    [[nodiscard]] constexpr Node *Parent() noexcept {
-        return static_cast<Node *>(Base::Parent());
+
+    [[nodiscard]] constexpr Node* Parent() noexcept {
+        return static_cast<Node*>(Base::Parent());
     }
+
     template <class AssignedKeyType>
-    constexpr void SetKey(AssignedKeyType &&new_key) noexcept(
-        std::is_nothrow_assignable_v<KeyType, AssignedKeyType &&>)
-        requires(std::is_assignable_v<KeyType, AssignedKeyType &&>)
-    {
+        requires(std::assignable_from<KeyType&, AssignedKeyType>)
+    constexpr void SetKey(AssignedKeyType&& new_key) noexcept(
+        std::is_nothrow_assignable_v<KeyType, AssignedKeyType&&>) {
         key_ = std::forward<AssignedKeyType>(new_key);
     }
-    [[nodiscard]] constexpr const KeyType &Key() const noexcept ATTRIBUTE_LIFETIME_BOUND {
+
+    [[nodiscard]] constexpr const KeyType& Key() const noexcept ATTRIBUTE_LIFETIME_BOUND {
         return key_;
     }
-    [[nodiscard]] constexpr KeyType &Key() noexcept ATTRIBUTE_LIFETIME_BOUND {
+
+    [[nodiscard]] constexpr KeyType& Key() noexcept ATTRIBUTE_LIFETIME_BOUND {
         return key_;
     }
-    constexpr void Swap(Node &other) noexcept(std::is_nothrow_swappable_v<KeyType>)
+
+    constexpr void Swap(Node& other) noexcept(std::is_nothrow_swappable_v<KeyType>)
         requires std::swappable<KeyType>
     {
         std::ranges::swap(key_, other.key_);
@@ -304,89 +322,102 @@ protected:
     }
 
 public:
-    RBTreeContainerImpl(const RBTreeContainerImpl &other) = delete;
-    RBTreeContainerImpl &operator=(const RBTreeContainerImpl &other) = delete;
+    RBTreeContainerImpl(const RBTreeContainerImpl& other) = delete;
+
+    RBTreeContainerImpl& operator=(const RBTreeContainerImpl& other) = delete;
 
 protected:
-    constexpr RBTreeContainerImpl(RBTreeContainerImpl &&other) noexcept
+    constexpr RBTreeContainerImpl(RBTreeContainerImpl&& other) noexcept
         : fake_root_(std::move(other.fake_root_)) {
         this->SynchronizeInvariantsOnMove();
     }
-    RBTreeContainerImpl &operator=(RBTreeContainerImpl &&other) noexcept ATTRIBUTE_LIFETIME_BOUND {
+
+    RBTreeContainerImpl& operator=(RBTreeContainerImpl&& other) noexcept ATTRIBUTE_LIFETIME_BOUND {
         this->Swap(other);
         this->AssertTreeInvariants();
         return *this;
     }
-    constexpr void Swap(RBTreeContainerImpl &other) noexcept {
+
+    constexpr void Swap(RBTreeContainerImpl& other) noexcept {
         fake_root_.Swap(other.fake_root_);
         this->SynchronizeInvariantsOnMove();
         other.SynchronizeInvariantsOnMove();
     }
+
     struct CompleteTreeRawData {
-        NodeBase *root_node;
-        NodeBase *leftmost_node;
-        NodeBase *rightmost_node;
+        NodeBase* root_node;
+        NodeBase* leftmost_node;
+        NodeBase* rightmost_node;
         std::size_t tree_size;
     };
-    explicit constexpr RBTreeContainerImpl(const CompleteTreeRawData data) noexcept : fake_root_{} {
+
+    explicit constexpr RBTreeContainerImpl(const CompleteTreeRawData& data) noexcept
+        : fake_root_{} {
         this->SetRootUnchecked(data.root_node);
         this->SetBeginUnchecked(data.leftmost_node);
         this->SetLastUnchecked(data.rightmost_node);
         this->SetSize(data.tree_size);
         this->SynchronizeInvariantsOnMove();
     }
+
     constexpr ~RBTreeContainerImpl() = default;
 
-    constexpr void SetBegin(NodeBase *new_begin) noexcept {
+    constexpr void SetBegin(NodeBase* new_begin) noexcept {
         this->AssertBeginInvariants();
         this->SetBeginUnchecked(new_begin);
     }
-    [[nodiscard]] constexpr NodeBase *Begin() noexcept ATTRIBUTE_LIFETIME_BOUND {
+
+    [[nodiscard]] constexpr NodeBase* Begin() noexcept ATTRIBUTE_LIFETIME_BOUND {
         this->AssertBeginInvariants();
         return this->GetBeginUnchecked();
     }
-    [[nodiscard]] constexpr const NodeBase *Begin() const noexcept ATTRIBUTE_LIFETIME_BOUND {
+
+    [[nodiscard]] constexpr const NodeBase* Begin() const noexcept ATTRIBUTE_LIFETIME_BOUND {
         this->AssertBeginInvariants();
         return this->GetBeginUnchecked();
     }
-    [[nodiscard]] constexpr NodeBase *PreRootNil() noexcept ATTRIBUTE_LIFETIME_BOUND {
-        this->AssertPreRootInvariants();
-        return this->GetPreRootNilUnchecked();
-    }
-    [[nodiscard]] constexpr const NodeBase *PreRootNil() const noexcept ATTRIBUTE_LIFETIME_BOUND {
+
+    [[nodiscard]] constexpr NodeBase* PreRootNil() noexcept ATTRIBUTE_LIFETIME_BOUND {
         this->AssertPreRootInvariants();
         return this->GetPreRootNilUnchecked();
     }
 
-    [[nodiscard]] constexpr NodeBase *Root() noexcept ATTRIBUTE_LIFETIME_BOUND {
+    [[nodiscard]] constexpr const NodeBase* PreRootNil() const noexcept ATTRIBUTE_LIFETIME_BOUND {
+        this->AssertPreRootInvariants();
+        return this->GetPreRootNilUnchecked();
+    }
+
+    [[nodiscard]] constexpr NodeBase* Root() noexcept ATTRIBUTE_LIFETIME_BOUND {
         this->AssertRootInvariants();
         return this->GetRootUnchecked();
     }
 
-    [[nodiscard]] constexpr const NodeBase *Root() const noexcept ATTRIBUTE_LIFETIME_BOUND {
+    [[nodiscard]] constexpr const NodeBase* Root() const noexcept ATTRIBUTE_LIFETIME_BOUND {
         this->AssertRootInvariants();
         return this->GetRootUnchecked();
     }
 
-    [[nodiscard]] constexpr NodeBase *End() noexcept ATTRIBUTE_LIFETIME_BOUND {
+    [[nodiscard]] constexpr NodeBase* End() noexcept ATTRIBUTE_LIFETIME_BOUND {
         this->AssertEndInvariants();
         return this->GetEndUnchecked();
     }
 
-    [[nodiscard]] constexpr const NodeBase *End() const noexcept ATTRIBUTE_LIFETIME_BOUND {
+    [[nodiscard]] constexpr const NodeBase* End() const noexcept ATTRIBUTE_LIFETIME_BOUND {
         this->AssertEndInvariants();
         return this->GetEndUnchecked();
     }
 
-    constexpr void SetLast(NodeBase *new_last) noexcept {
+    constexpr void SetLast(NodeBase* new_last) noexcept {
         this->AssertLastInvariants();
         this->SetLastUnchecked(new_last);
     }
-    [[nodiscard]] constexpr const NodeBase *Last() const noexcept ATTRIBUTE_LIFETIME_BOUND {
+
+    [[nodiscard]] constexpr const NodeBase* Last() const noexcept ATTRIBUTE_LIFETIME_BOUND {
         this->AssertLastInvariants();
         return this->GetLastUnchecked();
     }
-    [[nodiscard]] constexpr NodeBase *Last() noexcept ATTRIBUTE_LIFETIME_BOUND {
+
+    [[nodiscard]] constexpr NodeBase* Last() noexcept ATTRIBUTE_LIFETIME_BOUND {
         this->AssertLastInvariants();
         return this->GetLastUnchecked();
     }
@@ -398,15 +429,13 @@ protected:
     RBTREE_ATTRIBUTE_NONNULL_ALL_ARGS
     ATTRIBUTE_ACCESS(read_write, 2)
     ATTRIBUTE_ACCESS(read_write, 4)
-    void InsertNode(NodeBase *const CONFIG_CLANG_NONNULL_QUALIFIER node_parent,
+    void InsertNode(NodeBase* const node_parent,
                     const bool is_left,
-                    NodeBase *const CONFIG_CLANG_NONNULL_QUALIFIER node) noexcept {
-        RBTREE_ASSERT_INVARIANT(node != nullptr);
+                    NodeBase* const node) noexcept {
         node->SetParent(node_parent);
         RBTREE_ASSERT_INVARIANT(node->Left() == nullptr);
         RBTREE_ASSERT_INVARIANT(node->Right() == nullptr);
         RBTREE_ASSERT_INVARIANT(node->Color() == NodeColor::kRed);
-        RBTREE_ASSERT_INVARIANT(node_parent != nullptr);
         RBTREE_ASSERT_INVARIANT(Size() >= 1 || node_parent == PreRootNil());
         RBTREE_ASSERT_INVARIANT(Size() >= 1 || !is_left);
         if (is_left) {
@@ -420,17 +449,16 @@ protected:
 
     RBTREE_ATTRIBUTE_NONNULL_ALL_ARGS
     ATTRIBUTE_ACCESS(read_only, 2)
-    constexpr void ExtractNode(NodeBase *const CONFIG_CLANG_NONNULL_QUALIFIER node) noexcept {
+    constexpr void ExtractNode(const NodeBase* const node) noexcept {
         RBTREE_ASSERT_INVARIANT(Size() >= 1);
         RBTREE_ASSERT_INVARIANT(Begin() != End());
-        RBTREE_ASSERT_INVARIANT(node != nullptr);
         RBTREE_ASSERT_INVARIANT(node != PreRootNil());
-        NodeBase *const node_parent = node->Parent();
+        NodeBase* const node_parent = node->Parent();
         RBTREE_ASSERT_INVARIANT(node_parent != nullptr);
-        NodeBase *const node_left_child = node->Left();
-        NodeBase *const node_right_child = node->Right();
-        NodeBase *propagated_node{};
-        NodeBase *propagated_node_parent{};
+        NodeBase* const node_left_child = node->Left();
+        NodeBase* const node_right_child = node->Right();
+        NodeBase* propagated_node{};
+        NodeBase* propagated_node_parent{};
         NodeColor color = node->Color();
         RBTREE_ASSERT_INVARIANT(color == NodeColor::kRed || color == NodeColor::kBlack);
         if (node_left_child == nullptr || node_right_child == nullptr) {
@@ -450,7 +478,7 @@ protected:
         } else {
             RBTREE_ASSERT_INVARIANT(node != Begin());
             RBTREE_ASSERT_INVARIANT(node != Last());
-            NodeBase *const node_successor = node_right_child->LeftMostNode();
+            NodeBase* const node_successor = node_right_child->LeftMostNode();
             RBTREE_ASSERT_INVARIANT(node_successor != nullptr);
             RBTREE_ASSERT_INVARIANT(node_successor != PreRootNil());
             RBTREE_ASSERT_INVARIANT(node_successor->Left() == nullptr);
@@ -491,6 +519,7 @@ private:
         // NOLINTNEXTLINE(clang-analyzer-optin.core.EnumCastOutOfRange)
         fake_root_.SetColor(static_cast<NodeColor>(new_size));
     }
+
     constexpr void IncrementSize() noexcept {
         this->SetSize(static_cast<std::size_t>(fake_root_.Color()) + 1);
     }
@@ -501,7 +530,7 @@ private:
     }
 
     constexpr void SynchronizeInvariantsOnMove() noexcept {
-        if (auto *root = this->GetRootUnchecked(); root != nullptr) {
+        if (auto* root = this->GetRootUnchecked(); root != nullptr) {
             root->SetParent(this->GetPreRootNilUnchecked());
             RBTREE_ASSERT_INVARIANT(this->Size() >= 1);
         } else {
@@ -527,18 +556,22 @@ private:
         RBTREE_ASSERT_INVARIANT((this->GetRootUnchecked() == nullptr && this->Size() == 0) ^
                                 (this->GetRootUnchecked() != nullptr && this->Size() >= 1));
     }
-    [[nodiscard]] constexpr NodeBase *GetRootUnchecked() noexcept ATTRIBUTE_LIFETIME_BOUND {
+
+    [[nodiscard]] constexpr NodeBase* GetRootUnchecked() noexcept ATTRIBUTE_LIFETIME_BOUND {
         return fake_root_.Parent();
     }
-    [[nodiscard]] constexpr const NodeBase *GetRootUnchecked() const noexcept
+
+    [[nodiscard]] constexpr const NodeBase* GetRootUnchecked() const noexcept
         ATTRIBUTE_LIFETIME_BOUND {
         return fake_root_.Parent();
     }
-    [[nodiscard]] constexpr NodeBase *&GetRootMutableReferenceUnchecked() noexcept
+
+    [[nodiscard]] constexpr NodeBase*& GetRootMutableReferenceUnchecked() noexcept
         ATTRIBUTE_LIFETIME_BOUND {
         return fake_root_.ParentMutableReference();
     }
-    constexpr void SetRootUnchecked(NodeBase *new_root) noexcept {
+
+    constexpr void SetRootUnchecked(NodeBase* new_root) noexcept {
         return fake_root_.SetParent(new_root);
     }
 
@@ -549,11 +582,12 @@ private:
         RBTREE_ASSERT_INVARIANT((this->GetRootUnchecked() == nullptr && this->Size() == 0) ^
                                 (this->GetRootUnchecked() != nullptr && this->Size() >= 1));
     }
-    [[nodiscard]] constexpr NodeBase *GetPreRootNilUnchecked() noexcept ATTRIBUTE_LIFETIME_BOUND {
+
+    [[nodiscard]] constexpr NodeBase* GetPreRootNilUnchecked() noexcept ATTRIBUTE_LIFETIME_BOUND {
         return std::addressof(fake_root_);
     }
 
-    [[nodiscard]] constexpr const NodeBase *GetPreRootNilUnchecked() const noexcept
+    [[nodiscard]] constexpr const NodeBase* GetPreRootNilUnchecked() const noexcept
         ATTRIBUTE_LIFETIME_BOUND {
         return std::addressof(fake_root_);
     }
@@ -570,14 +604,17 @@ private:
         RBTREE_ASSERT_INVARIANT(this->GetBeginUnchecked() == this->GetEndUnchecked() ||
                                 this->GetBeginUnchecked()->Left() == nullptr);
     }
-    [[nodiscard]] constexpr NodeBase *GetBeginUnchecked() noexcept ATTRIBUTE_LIFETIME_BOUND {
+
+    [[nodiscard]] constexpr NodeBase* GetBeginUnchecked() noexcept ATTRIBUTE_LIFETIME_BOUND {
         return fake_root_.Right();
     }
-    [[nodiscard]] constexpr const NodeBase *GetBeginUnchecked() const noexcept
+
+    [[nodiscard]] constexpr const NodeBase* GetBeginUnchecked() const noexcept
         ATTRIBUTE_LIFETIME_BOUND {
         return fake_root_.Right();
     }
-    constexpr void SetBeginUnchecked(NodeBase *new_begin) noexcept {
+
+    constexpr void SetBeginUnchecked(NodeBase* new_begin) noexcept {
         return fake_root_.SetRight(new_begin);
     }
 
@@ -586,11 +623,12 @@ private:
             (this->Size() == 0 && this->GetBeginUnchecked() == this->GetEndUnchecked()) ^
             (this->Size() >= 1 && this->GetBeginUnchecked() != this->GetEndUnchecked()));
     }
-    [[nodiscard]] constexpr NodeBase *GetEndUnchecked() noexcept ATTRIBUTE_LIFETIME_BOUND {
+
+    [[nodiscard]] constexpr NodeBase* GetEndUnchecked() noexcept ATTRIBUTE_LIFETIME_BOUND {
         return this->GetPreRootNilUnchecked();
     }
 
-    [[nodiscard]] constexpr const NodeBase *GetEndUnchecked() const noexcept
+    [[nodiscard]] constexpr const NodeBase* GetEndUnchecked() const noexcept
         ATTRIBUTE_LIFETIME_BOUND {
         return this->GetPreRootNilUnchecked();
     }
@@ -604,22 +642,24 @@ private:
         RBTREE_ASSERT_INVARIANT(this->GetLastUnchecked() != this->GetPreRootNilUnchecked());
         RBTREE_ASSERT_INVARIANT(this->GetLastUnchecked()->Right() == nullptr);
     }
-    [[nodiscard]] constexpr NodeBase *GetLastUnchecked() noexcept ATTRIBUTE_LIFETIME_BOUND {
+
+    [[nodiscard]] constexpr NodeBase* GetLastUnchecked() noexcept ATTRIBUTE_LIFETIME_BOUND {
         return fake_root_.Left();
     }
-    [[nodiscard]] constexpr const NodeBase *GetLastUnchecked() const noexcept
-        ATTRIBUTE_LIFETIME_BOUND {
+
+    [[nodiscard]]
+    constexpr const NodeBase* GetLastUnchecked() const noexcept ATTRIBUTE_LIFETIME_BOUND {
         return fake_root_.Left();
     }
-    constexpr void SetLastUnchecked(NodeBase *new_last) noexcept {
+
+    constexpr void SetLastUnchecked(NodeBase* new_last) noexcept {
         return fake_root_.SetLeft(new_last);
     }
 
     RBTREE_ATTRIBUTE_NONNULL_ALL_ARGS
     ATTRIBUTE_ACCESS(read_write, 1)
     ATTRIBUTE_ACCESS(read_write, 2)
-    static constexpr void LeftRotate(NodeBase *const CONFIG_CLANG_NONNULL_QUALIFIER node,
-                                     NodeBase *&root) noexcept {
+    static constexpr void LeftRotate(NodeBase* const node, NodeBase*& root) noexcept {
         /**
          *  parent_parent (or nullptr)
          *       |
@@ -637,16 +677,15 @@ private:
          *    /  \
          * subt1 subt2
          */
-        RBTREE_ASSERT_INVARIANT(node != nullptr);
         RBTREE_ASSERT_INVARIANT(node != root);
         RBTREE_ASSERT_INVARIANT(node != root->Parent());
-        NodeBase *const parent = node->Parent();
+        NodeBase* const parent = node->Parent();
         RBTREE_ASSERT_INVARIANT(parent != nullptr);
         RBTREE_ASSERT_INVARIANT(parent->Right() == node);
-        NodeBase *const parent_parent = parent->Parent();
+        NodeBase* const parent_parent = parent->Parent();
 
         parent->SetRight(node->Left());
-        if (auto *node_left = node->Left(); node_left != nullptr) {
+        if (auto* node_left = node->Left(); node_left != nullptr) {
             node_left->SetParent(parent);
         }
 
@@ -668,8 +707,7 @@ private:
     RBTREE_ATTRIBUTE_NONNULL_ALL_ARGS
     ATTRIBUTE_ACCESS(read_write, 1)
     ATTRIBUTE_ACCESS(read_write, 2)
-    static constexpr void RightRotate(NodeBase *const CONFIG_CLANG_NONNULL_QUALIFIER node,
-                                      NodeBase *&root) noexcept {
+    static constexpr void RightRotate(NodeBase* const node, NodeBase*& root) noexcept {
         /**
          *    parent_parent
          *         |
@@ -687,14 +725,13 @@ private:
          *           /  \
          *        subt2 subt1
          */
-        RBTREE_ASSERT_INVARIANT(node != nullptr);
-        NodeBase *const parent = node->Parent();
+        NodeBase* const parent = node->Parent();
         RBTREE_ASSERT_INVARIANT(parent != nullptr);
         RBTREE_ASSERT_INVARIANT(parent->Left() == node);
-        NodeBase *const parent_parent = parent->Parent();
+        NodeBase* const parent_parent = parent->Parent();
 
         parent->SetLeft(node->Right());
-        if (auto *node_right = node->Right(); node_right != nullptr) {
+        if (auto* node_right = node->Right(); node_right != nullptr) {
             node_right->SetParent(parent);
         }
 
@@ -713,16 +750,11 @@ private:
         }
     }
 
-    // clang-format off
-
     RBTREE_ATTRIBUTE_NONNULL_ALL_ARGS
     ATTRIBUTE_ACCESS(read_write, 2)
     ATTRIBUTE_ACCESS(read_only, 3)
-    constexpr void MakeLeftOnInsertion(NodeBase *const CONFIG_CLANG_NONNULL_QUALIFIER node_parent,
-                                       NodeBase *const CONFIG_CLANG_NONNULL_QUALIFIER node) noexcept {
-        RBTREE_ASSERT_INVARIANT(node_parent != nullptr);
+    constexpr void MakeLeftOnInsertion(NodeBase* const node_parent, NodeBase* const node) noexcept {
         RBTREE_ASSERT_INVARIANT(node_parent != PreRootNil() && node_parent->Left() == nullptr);
-        RBTREE_ASSERT_INVARIANT(node != nullptr);
         RBTREE_ASSERT_INVARIANT(node->Parent() == node_parent);
         RBTREE_ASSERT_INVARIANT(node->Left() == nullptr);
         RBTREE_ASSERT_INVARIANT(node->Right() == nullptr);
@@ -737,11 +769,9 @@ private:
     RBTREE_ATTRIBUTE_NONNULL_ALL_ARGS
     ATTRIBUTE_ACCESS(read_write, 2)
     ATTRIBUTE_ACCESS(read_only, 3)
-    constexpr void MakeRightOnInsertion(NodeBase *const CONFIG_CLANG_NONNULL_QUALIFIER node_parent,
-                                       NodeBase *const CONFIG_CLANG_NONNULL_QUALIFIER node) noexcept {
-        RBTREE_ASSERT_INVARIANT(node_parent != nullptr);
+    constexpr void MakeRightOnInsertion(NodeBase* const node_parent,
+                                        NodeBase* const node) noexcept {
         RBTREE_ASSERT_INVARIANT(node_parent == PreRootNil() || node_parent->Right() == nullptr);
-        RBTREE_ASSERT_INVARIANT(node != nullptr);
         RBTREE_ASSERT_INVARIANT(node->Parent() == node_parent);
         RBTREE_ASSERT_INVARIANT(node->Left() == nullptr);
         RBTREE_ASSERT_INVARIANT(node->Right() == nullptr);
@@ -763,26 +793,23 @@ private:
 
     RBTREE_ATTRIBUTE_NONNULL_ALL_ARGS
     ATTRIBUTE_ACCESS(read_write, 2)
-    constexpr void RebalanceAfterInsertion(
-        NodeBase *const CONFIG_CLANG_NONNULL_QUALIFIER new_inserted_node) noexcept {
-        RBTREE_ASSERT_INVARIANT(new_inserted_node != nullptr);
+    constexpr void RebalanceAfterInsertion(NodeBase* const new_inserted_node) noexcept {
         RBTREE_ASSERT_INVARIANT(new_inserted_node->Color() == NodeColor::kRed);
         RBTREE_ASSERT_INVARIANT(this->Size() >= 1);
-        NodeBase *CONFIG_CLANG_NONNULL_QUALIFIER current_node = new_inserted_node;
-        NodeBase *current_node_parent = nullptr;
-        NodeBase *&root = this->GetRootMutableReferenceUnchecked();
+        NodeBase* current_node = new_inserted_node;
+        NodeBase* current_node_parent = nullptr;
+        NodeBase*& root = this->GetRootMutableReferenceUnchecked();
         while ((current_node_parent = current_node->Parent()) != root &&
                current_node_parent->Color() == NodeColor::kRed) {
             RBTREE_ASSERT_INVARIANT(current_node_parent != this->GetPreRootNilUnchecked());
             RBTREE_ASSERT_INVARIANT(current_node_parent->OtherSibling(current_node) == nullptr ||
                                     current_node_parent->OtherSibling(current_node)->Color() ==
                                         NodeColor::kBlack);
-            NodeBase *CONFIG_CLANG_NONNULL_QUALIFIER current_node_parent_parent =
-                current_node_parent->Parent();
+            NodeBase* const current_node_parent_parent = current_node_parent->Parent();
             RBTREE_ASSERT_INVARIANT(current_node_parent_parent != nullptr);
             RBTREE_ASSERT_INVARIANT(current_node_parent_parent->Color() == NodeColor::kBlack);
 
-            NodeBase *current_node_parent_sibling =
+            NodeBase* current_node_parent_sibling =
                 current_node_parent_parent->OtherSibling(current_node_parent);
             if (current_node_parent_sibling != nullptr &&
                 current_node_parent_sibling->Color() == NodeColor::kRed) {
@@ -854,21 +881,21 @@ private:
              */
             if (current_node_parent == current_node_parent_parent->Left()) {
                 if (current_node == current_node_parent->Right()) {
-                    this->LeftRotate(current_node, root);
+                    LeftRotate(current_node, root);
                     current_node_parent = current_node;
                 } else {
                     RBTREE_ASSERT_INVARIANT(current_node == current_node_parent->Left());
                 }
-                this->RightRotate(current_node_parent, root);
+                RightRotate(current_node_parent, root);
             } else {
                 RBTREE_ASSERT_INVARIANT(current_node_parent == current_node_parent_parent->Right());
                 if (current_node == current_node_parent->Left()) {
-                    this->RightRotate(current_node, root);
+                    RightRotate(current_node, root);
                     current_node_parent = current_node;
                 } else {
                     RBTREE_ASSERT_INVARIANT(current_node == current_node_parent->Right());
                 }
-                this->LeftRotate(current_node_parent, root);
+                LeftRotate(current_node_parent, root);
             }
             current_node_parent_parent->SetColor(NodeColor::kRed);
             current_node_parent->SetColor(NodeColor::kBlack);
@@ -883,13 +910,12 @@ private:
     RBTREE_ATTRIBUTE_NONNULL(2)
     ATTRIBUTE_ACCESS(read_only, 2)
     ATTRIBUTE_ACCESS(read_write, 3)
-    constexpr void Transplant(NodeBase *const CONFIG_CLANG_NONNULL_QUALIFIER which_node,
-                              NodeBase *const with_node) noexcept {
-        RBTREE_ASSERT_INVARIANT(which_node != nullptr);
+    constexpr void Transplant(const NodeBase* const which_node,
+                              NodeBase* const with_node) noexcept {
         RBTREE_ASSERT_INVARIANT(which_node != this->PreRootNil());
         RBTREE_ASSERT_INVARIANT(with_node != this->PreRootNil());
         RBTREE_ASSERT_INVARIANT(with_node != this->Root());
-        NodeBase *const which_node_parent = which_node->Parent();
+        NodeBase* const which_node_parent = which_node->Parent();
         RBTREE_ASSERT_INVARIANT(which_node_parent != nullptr);
         RBTREE_ASSERT_INVARIANT(with_node == nullptr || with_node->Parent() != which_node_parent);
         if (which_node_parent == this->PreRootNil()) [[unlikely]] {
@@ -907,13 +933,13 @@ private:
 
     RBTREE_ATTRIBUTE_NONNULL(3)
     ATTRIBUTE_ACCESS(read_write, 2)
-    constexpr void RebalanceAfterExtraction(NodeBase *const CONFIG_CLANG_NULLABLE_QUALIFIER node,
-                                            NodeBase *const
-                                            CONFIG_CLANG_NONNULL_QUALIFIER node_parent) noexcept {
+    ATTRIBUTE_ACCESS(read_write, 3)
+    constexpr void RebalanceAfterExtraction(NodeBase* const node,
+                                            NodeBase* const node_parent) noexcept {
         RBTREE_ASSERT_INVARIANT(node != this->GetPreRootNilUnchecked());
-        NodeBase *current_node = node;
-        NodeBase *current_node_parent = node_parent;
-        NodeBase *&root = this->GetRootMutableReferenceUnchecked();
+        NodeBase* current_node = node;
+        NodeBase* current_node_parent = node_parent;
+        NodeBase*& root = this->GetRootMutableReferenceUnchecked();
         RBTREE_ASSERT_INVARIANT(root != this->GetPreRootNilUnchecked());
         while (current_node != root &&
                (current_node == nullptr || current_node->Color() == NodeColor::kBlack)) {
@@ -921,7 +947,7 @@ private:
             RBTREE_ASSERT_INVARIANT(current_node_parent != nullptr);
             RBTREE_ASSERT_INVARIANT(current_node_parent != this->PreRootNil());
             if (current_node == current_node_parent->Left()) {
-                NodeBase *current_node_sibling = current_node_parent->Right();
+                NodeBase* current_node_sibling = current_node_parent->Right();
                 RBTREE_ASSERT_INVARIANT(current_node_sibling != nullptr);
                 if (current_node_sibling->Color() == NodeColor::kRed) {
                     RBTREE_ASSERT_INVARIANT(current_node_sibling != this->PreRootNil());
@@ -937,23 +963,23 @@ private:
                     current_node_sibling->SetColor(NodeColor::kBlack);
                     current_node_parent->SetColor(NodeColor::kRed);
 #ifdef RBTREE_DEBUG
-                    const NodeBase *const current_node_sibling_original_left_child =
+                    const NodeBase* const current_node_sibling_original_left_child =
                         current_node_sibling->Left();
                     RBTREE_ASSERT_INVARIANT(current_node_sibling_original_left_child != nullptr);
                     RBTREE_ASSERT_INVARIANT(current_node_sibling_original_left_child->Color() ==
                                             NodeColor::kBlack);
 #endif
-                    this->LeftRotate(current_node_sibling, root);
+                    LeftRotate(current_node_sibling, root);
                     RBTREE_ASSERT_INVARIANT(current_node_parent->Right() != current_node_sibling);
                     RBTREE_ASSERT_INVARIANT(current_node_parent->Right() ==
                                             current_node_sibling_original_left_child);
                     current_node_sibling = current_node_parent->Right();
                     RBTREE_ASSERT_INVARIANT(current_node_sibling != nullptr);
                 }
-                NodeBase *w = current_node_sibling;
+                NodeBase* w = current_node_sibling;
                 RBTREE_ASSERT_INVARIANT(w != nullptr);
-                NodeBase *w_left = w->Left();
-                NodeBase *w_right = w->Right();
+                NodeBase* w_left = w->Left();
+                NodeBase* w_right = w->Right();
                 if ((w_left == nullptr || w_left->Color() == NodeColor::kBlack) &&
                     (w_right == nullptr || w_right->Color() == NodeColor::kBlack)) {
                     w->SetColor(NodeColor::kRed);
@@ -969,14 +995,14 @@ private:
                         RBTREE_ASSERT_INVARIANT(w_left->Color() == NodeColor::kRed);
                         w_left->SetColor(NodeColor::kBlack);
                         w->SetColor(NodeColor::kRed);
-                        this->RightRotate(w_left, root);
+                        RightRotate(w_left, root);
                         RBTREE_ASSERT_INVARIANT(current_node == nullptr ||
                                                 current_node_parent ==
                                                     current_node->Parent());  // ????
                         RBTREE_ASSERT_INVARIANT(current_node_parent->Right() == w_left);
                         w = w_left;
                         w_left = nullptr;  // to ensure this won't be used later and thus should not
-                                           // be set to w->Left()
+                        // be set to w->Left()
                         w_right = w->Right();
                     } else {
                         RBTREE_ASSERT_INVARIANT(w_right->Color() == NodeColor::kRed);
@@ -989,7 +1015,7 @@ private:
                     if (w_right != nullptr) {
                         w_right->SetColor(NodeColor::kBlack);
                     }
-                    this->LeftRotate(w, root);
+                    LeftRotate(w, root);
                     // useless write, just in order to follow the Cormen's book
                     current_node = root;
                     break;
@@ -997,7 +1023,7 @@ private:
             } else {
                 RBTREE_ASSERT_INVARIANT(current_node == nullptr ||
                                         current_node == current_node_parent->Right());
-                NodeBase *current_node_sibling = current_node_parent->Left();
+                NodeBase* current_node_sibling = current_node_parent->Left();
                 RBTREE_ASSERT_INVARIANT(current_node_sibling != nullptr);
                 if (current_node_sibling->Color() == NodeColor::kRed) {
                     RBTREE_ASSERT_INVARIANT(current_node_sibling != this->PreRootNil());
@@ -1013,23 +1039,23 @@ private:
                     current_node_sibling->SetColor(NodeColor::kBlack);
                     current_node_parent->SetColor(NodeColor::kRed);
 #ifdef RBTREE_DEBUG
-                    const NodeBase *const current_node_sibling_original_right_child =
+                    const NodeBase* const current_node_sibling_original_right_child =
                         current_node_sibling->Right();
                     RBTREE_ASSERT_INVARIANT(current_node_sibling_original_right_child != nullptr);
                     RBTREE_ASSERT_INVARIANT(current_node_sibling_original_right_child->Color() ==
                                             NodeColor::kBlack);
 #endif
-                    this->RightRotate(current_node_sibling, root);
+                    RightRotate(current_node_sibling, root);
                     RBTREE_ASSERT_INVARIANT(current_node_parent->Left() != current_node_sibling);
                     RBTREE_ASSERT_INVARIANT(current_node_parent->Left() ==
                                             current_node_sibling_original_right_child);
                     current_node_sibling = current_node_parent->Left();
                     RBTREE_ASSERT_INVARIANT(current_node_sibling != nullptr);
                 }
-                NodeBase *w = current_node_sibling;
+                NodeBase* w = current_node_sibling;
                 RBTREE_ASSERT_INVARIANT(w != nullptr);
-                NodeBase *w_left = w->Left();
-                NodeBase *w_right = w->Right();
+                NodeBase* w_left = w->Left();
+                NodeBase* w_right = w->Right();
                 if ((w_left == nullptr || w_left->Color() == NodeColor::kBlack) &&
                     (w_right == nullptr || w_right->Color() == NodeColor::kBlack)) {
                     w->SetColor(NodeColor::kRed);
@@ -1045,13 +1071,13 @@ private:
                         RBTREE_ASSERT_INVARIANT(w_right->Color() == NodeColor::kRed);
                         w_right->SetColor(NodeColor::kBlack);
                         w->SetColor(NodeColor::kRed);
-                        this->LeftRotate(w_right, root);
+                        LeftRotate(w_right, root);
                         RBTREE_ASSERT_INVARIANT(current_node == nullptr ||
                                                 current_node_parent == current_node->Parent());
                         RBTREE_ASSERT_INVARIANT(current_node_parent->Left() == w_right);
                         w = w_right;
                         w_right = nullptr;  // to ensure this won't be used later and thus should
-                                            // not be set to w->Right()
+                        // not be set to w->Right()
                         w_left = w->Left();
                     } else {
                         RBTREE_ASSERT_INVARIANT(w_left->Color() == NodeColor::kRed);
@@ -1064,8 +1090,7 @@ private:
                     if (w_left != nullptr) {
                         w_left->SetColor(NodeColor::kBlack);
                     }
-                    this->RightRotate(w, root);
-                    // useless write, just in order to follow the Cormen's book
+                    RightRotate(w, root);
                     current_node = root;
                     break;
                 }
@@ -1087,7 +1112,8 @@ private:
 
 [[nodiscard]]
 ATTRIBUTE_ACCESS(read_only, 1)
-ATTRIBUTE_PURE constexpr bool IsFakeNodeOrRoot(const NodeBase *node) noexcept {
+ATTRIBUTE_PURE
+constexpr bool IsFakeNodeOrRoot(const NodeBase *node) noexcept {
     if (node == nullptr) {
         return false;
     }
@@ -1104,7 +1130,7 @@ RBTREE_ATTRIBUTE_NONNULL_ALL_ARGS
 ATTRIBUTE_ACCESS(read_only, 1)
 ATTRIBUTE_PURE
 ATTRIBUTE_RETURNS_NONNULL
-constexpr NodeType *Increment(NodeType *CONFIG_CLANG_NONNULL_QUALIFIER node) noexcept {
+constexpr NodeType *Increment(NodeType *node) noexcept {
     if (auto *right_child = node->Right(); right_child != nullptr) {
         return right_child->LeftMostNode();
     }
@@ -1137,8 +1163,7 @@ RBTREE_ATTRIBUTE_NONNULL_ALL_ARGS
 ATTRIBUTE_ACCESS(read_only, 1)
 ATTRIBUTE_PURE
 ATTRIBUTE_RETURNS_NONNULL
-constexpr NodeType *Decrement(NodeType *CONFIG_CLANG_NONNULL_QUALIFIER node) noexcept {
-    RBTREE_ASSERT_INVARIANT(node != nullptr);
+constexpr NodeType *Decrement(NodeType *node) noexcept {
     if (auto *left_child = node->Left(); left_child != nullptr) {
         return left_child->RightMostNode();
     }
@@ -1164,92 +1189,13 @@ constexpr NodeType *Decrement(NodeType *CONFIG_CLANG_NONNULL_QUALIFIER node) noe
 
 // clang-format on
 
-template <class KeyType>
-class RBTreeContainer;
-
-template <class KeyType, bool IsConstIterator>
-class Iterator final {
-    using IterNodeBaseType = std::conditional_t<IsConstIterator, const NodeBase, NodeBase>;
-    using IterNodeType = std::conditional_t<IsConstIterator, const Node<KeyType>, Node<KeyType>>;
-    using IterKeyType = std::conditional_t<IsConstIterator, const KeyType, KeyType>;
-    using OtherIterator = Iterator<KeyType, !IsConstIterator>;
-
-    friend class RBTreeContainer<KeyType>;
-    friend OtherIterator;
-
-    RBTREE_ATTRIBUTE_NONNULL_ALL_ARGS
-    explicit constexpr Iterator(
-        IterNodeType *CONFIG_CLANG_NONNULL_QUALIFIER node_ptr ATTRIBUTE_LIFETIME_BOUND) noexcept
-        : node_(node_ptr) {
-        RBTREE_ASSERT_INVARIANT(node_ != nullptr);
-    }
-
-public:
-    using value_type = KeyType;
-    using reference = IterKeyType &;
-    using pointer = IterKeyType *;
-    using difference_type = std::ptrdiff_t;
-    using iterator_category = std::bidirectional_iterator_tag;
-
-    constexpr Iterator() noexcept = default;
-    // NOLINTNEXTLINE(google-explicit-constructor, hicpp-explicit-conversions)
-    /* implicit */ constexpr Iterator(OtherIterator other) noexcept
-        requires(IsConstIterator)
-        : Iterator(other.node_) {}
-
-    explicit Iterator(std::nullptr_t) = delete;
-
-    [[nodiscard]] constexpr reference operator*() const noexcept {
-        RBTREE_ASSERT_INVARIANT(node_ != nullptr);
-        return node_->Key();
-    }
-
-    [[nodiscard]] ATTRIBUTE_RETURNS_NONNULL constexpr pointer operator->() const noexcept
-        ATTRIBUTE_LIFETIME_BOUND {
-        RBTREE_ASSERT_INVARIANT(node_ != nullptr);
-        return std::addressof(node_->Key());
-    }
-
-    [[nodiscard]] constexpr bool operator==(const Iterator &) const noexcept = default;
-
-    constexpr Iterator &operator++() noexcept ATTRIBUTE_LIFETIME_BOUND {
-        node_ = static_cast<IterNodeType *>(Increment<IterNodeBaseType>(node_));
-        RBTREE_ASSERT_INVARIANT(node_ != nullptr);
-        return *this;
-    }
-
-    [[nodiscard]] constexpr Iterator operator++(int) & noexcept {
-        const Iterator copy(*this);
-        ++*this;
-        return copy;
-    }
-
-    constexpr Iterator &operator--() noexcept ATTRIBUTE_LIFETIME_BOUND {
-        node_ = static_cast<IterNodeType *>(Decrement<IterNodeBaseType>(node_));
-        RBTREE_ASSERT_INVARIANT(node_ != nullptr);
-        return *this;
-    }
-
-    [[nodiscard]] constexpr Iterator operator--(int) & noexcept {
-        const Iterator copy(*this);
-        --*this;
-        return copy;
-    }
-
-private:
-    IterNodeType *node_{};
-};
-
-// clang-format off
 template <std::size_t N>
-RBTREE_ATTRIBUTE_NONNULL_ALL_ARGS
-ATTRIBUTE_ACCESS(read_only, 1)
 ATTRIBUTE_ACCESS(write_only, 2)
-void FillLengthErrorReport(const char *CONFIG_CLANG_NONNULL_QUALIFIER function_name,
+void FillLengthErrorReport(const std::source_location& location,
                            std::array<char, N>& buffer) noexcept {
-    // clang-format on
-    const int written_bytes_count = std::snprintf(
-        buffer.data(), buffer.size(), "Could not create node: size error at %s", function_name);
+    const int written_bytes_count =
+        std::snprintf(buffer.data(), buffer.size(), "Could not create node: size error at %s:%u:%s",
+                      location.file_name(), location.line(), location.function_name());
     if (written_bytes_count <= 0) [[unlikely]] {
         constexpr std::array kFallbackReport = std::to_array(
             "Could not create error report on node creation error because of the size error");
@@ -1258,33 +1204,105 @@ void FillLengthErrorReport(const char *CONFIG_CLANG_NONNULL_QUALIFIER function_n
     }
 }
 
-// clang-format off
 [[noreturn]]
-RBTREE_ATTRIBUTE_NONNULL_ALL_ARGS
-ATTRIBUTE_ACCESS(read_only, 1)
-ATTRIBUTE_COLD
-void ThrowLengthError(const char *CONFIG_CLANG_NONNULL_QUALIFIER function_name) {
-    // clang-format on
+ATTRIBUTE_COLD void ThrowLengthError(
+    const std::source_location& location = std::source_location::current()) {
     constexpr std::size_t kErrorReportBufferSize = 1024;
     std::array<char, kErrorReportBufferSize> buffer{};
-    FillLengthErrorReport(function_name, buffer);
+    FillLengthErrorReport(location, buffer);
     throw std::length_error{buffer.data()};
 }
 
-template <class KeyType>
+template <class KeyType, std::derived_from<NodeBase> NodeType = Node<KeyType>>
 class RBTreeContainer : private RBTreeContainerImpl {
     using Base = RBTreeContainerImpl;
 
 protected:
+    template <bool IsConstIterator>
+    class Iterator final {
+        using IterNodeBaseType = std::conditional_t<IsConstIterator, const NodeBase, NodeBase>;
+        using IterNodeType =
+            std::conditional_t<IsConstIterator, const Node<KeyType>, Node<KeyType>>;
+        using IterKeyType = std::conditional_t<IsConstIterator, const KeyType, KeyType>;
+        using OtherIterator = Iterator<!IsConstIterator>;
+
+        friend RBTreeContainer;
+        friend OtherIterator;
+
+        RBTREE_ATTRIBUTE_NONNULL_ALL_ARGS
+        explicit constexpr Iterator(IterNodeType* const node_ptr ATTRIBUTE_LIFETIME_BOUND) noexcept
+            : node_(node_ptr) {
+            RBTREE_ASSERT_INVARIANT(node_ != nullptr);
+        }
+
+    public:
+        using value_type = KeyType;
+        using reference = IterKeyType&;
+        using pointer = IterKeyType*;
+        using difference_type = std::ptrdiff_t;
+        using iterator_category = std::bidirectional_iterator_tag;
+
+        constexpr Iterator() noexcept = default;
+
+        // clang-format off
+    // NOLINTNEXTLINE(google-explicit-constructor, hicpp-explicit-conversions)
+    /* implicit */ constexpr Iterator(const OtherIterator other) noexcept
+        requires(IsConstIterator)
+        : Iterator(other.node_) {
+            // clang-format on
+        }
+
+        explicit Iterator(std::nullptr_t) = delete;
+
+        [[nodiscard]] constexpr reference operator*() const noexcept {
+            RBTREE_ASSERT_INVARIANT(node_ != nullptr);
+            return node_->Key();
+        }
+
+        [[nodiscard]]
+        ATTRIBUTE_RETURNS_NONNULL constexpr pointer operator->() const noexcept {
+            RBTREE_ASSERT_INVARIANT(node_ != nullptr);
+            return std::addressof(node_->Key());
+        }
+
+        [[nodiscard]] bool operator==(const Iterator&) const = default;
+
+        constexpr Iterator& operator++() noexcept ATTRIBUTE_LIFETIME_BOUND {
+            node_ = static_cast<IterNodeType*>(Increment<IterNodeBaseType>(node_));
+            RBTREE_ASSERT_INVARIANT(node_ != nullptr);
+            return *this;
+        }
+
+        [[nodiscard]] constexpr Iterator operator++(int) & noexcept {
+            const Iterator copy(*this);
+            ++*this;
+            return copy;
+        }
+
+        constexpr Iterator& operator--() noexcept ATTRIBUTE_LIFETIME_BOUND {
+            node_ = static_cast<IterNodeType*>(Decrement<IterNodeBaseType>(node_));
+            RBTREE_ASSERT_INVARIANT(node_ != nullptr);
+            return *this;
+        }
+
+        [[nodiscard]] constexpr Iterator operator--(int) & noexcept {
+            const Iterator copy(*this);
+            --*this;
+            return copy;
+        }
+
+    private:
+        IterNodeType* node_{};
+    };
+
     using size_type = std::size_t;
     using difference_type = std::ptrdiff_t;
-    using const_iterator = Iterator<KeyType, /*IsConstIterator = */ true>;
+    using const_iterator = Iterator</*IsConstIterator = */ true>;
     using iterator = const_iterator;
     using value_type = KeyType;
     using key_type = KeyType;
-    using reference = value_type &;
-    using const_reference = const value_type &;
-    using NodeType = Node<KeyType>;
+    using reference = value_type&;
+    using const_reference = const value_type&;
     using allocator_type = std::allocator<NodeType>;
     using allocator_traits = std::allocator_traits<allocator_type>;
     using reverse_iterator = std::reverse_iterator<iterator>;
@@ -1296,22 +1314,29 @@ protected:
 
     static constexpr bool kIsNodeNoexceptDestructible = std::is_nothrow_destructible_v<NodeType>;
 
-    constexpr RBTreeContainer() noexcept = default;
-    constexpr RBTreeContainer(const RBTreeContainer &other) : Base(CloneTree(other)) {}
-    constexpr RBTreeContainer &operator=(const RBTreeContainer &other) ATTRIBUTE_LIFETIME_BOUND {
+    RBTreeContainer() = default;
+
+    constexpr RBTreeContainer(const RBTreeContainer& other) : Base(CloneTree(other)) {}
+
+    constexpr RBTreeContainer& operator=(const RBTreeContainer& other) ATTRIBUTE_LIFETIME_BOUND {
         // NOLINTNEXTLINE(cppcoreguidelines-c-copy-assignment-signature)
         return *this = RBTreeContainer(other);  // NOLINT(misc-unconventional-assign-operator)
     }
-    constexpr RBTreeContainer(RBTreeContainer &&) = default;
-    constexpr RBTreeContainer &operator=(RBTreeContainer &&) = default;
+
+    constexpr RBTreeContainer(RBTreeContainer&&) = default;
+
+    constexpr RBTreeContainer& operator=(RBTreeContainer&&) = default;
+
     constexpr ~RBTreeContainer() noexcept(noexcept(DeleteTree(Root()))) {
         RBTreeContainer::DeleteTree(Root());
     }
-    constexpr void Swap(RBTreeContainer &other) noexcept {
+
+    constexpr void swap(RBTreeContainer& other) noexcept {
         Base::Swap(other);
     }
+
     ATTRIBUTE_REINITIALIZES constexpr void clear() noexcept {
-        RBTreeContainer{}.Swap(*this);
+        RBTreeContainer{}.swap(*this);
     }
 
     // clang-format off
@@ -1381,26 +1406,24 @@ protected:
         return kMaxSize;
     }
 
-    [[nodiscard]] constexpr NodeType *Root() noexcept ATTRIBUTE_LIFETIME_BOUND {
-        return static_cast<NodeType *>(Base::Root());
+    [[nodiscard]] constexpr NodeType* Root() noexcept ATTRIBUTE_LIFETIME_BOUND {
+        return static_cast<NodeType*>(Base::Root());
     }
-    [[nodiscard]] constexpr const NodeType *Root() const noexcept ATTRIBUTE_LIFETIME_BOUND {
-        return static_cast<const NodeType *>(Base::Root());
+    [[nodiscard]] constexpr const NodeType* Root() const noexcept ATTRIBUTE_LIFETIME_BOUND {
+        return static_cast<const NodeType*>(Base::Root());
     }
-    [[nodiscard]] constexpr const NodeType *PreRootNodePtr() const noexcept ATTRIBUTE_LIFETIME_BOUND {
-        return static_cast<const NodeType *>(Base::PreRootNil());
+    [[nodiscard]] constexpr const NodeType* PreRootNodePtr() const noexcept ATTRIBUTE_LIFETIME_BOUND {
+        return static_cast<const NodeType*>(Base::PreRootNil());
     }
-    [[nodiscard]] constexpr NodeType *PreRootNodePtr() noexcept ATTRIBUTE_LIFETIME_BOUND {
-        return static_cast<NodeType *>(Base::PreRootNil());
+    [[nodiscard]] constexpr NodeType* PreRootNodePtr() noexcept ATTRIBUTE_LIFETIME_BOUND {
+        return static_cast<NodeType*>(Base::PreRootNil());
     }
     [[nodiscard]]
-    ATTRIBUTE_ALWAYS_INLINE
     ATTRIBUTE_PURE
     static constexpr iterator NodePtrToIterator(NodeType* node_ptr ATTRIBUTE_LIFETIME_BOUND) noexcept {
         return iterator{node_ptr};
     }
     [[nodiscard]]
-    ATTRIBUTE_ALWAYS_INLINE
     ATTRIBUTE_PURE
     static constexpr const_iterator NodePtrToConstIterator(const NodeType* node_ptr ATTRIBUTE_LIFETIME_BOUND) noexcept {
         return const_iterator{node_ptr};
@@ -1411,16 +1434,14 @@ protected:
     RBTREE_ATTRIBUTE_NONNULL(2)
     ATTRIBUTE_ACCESS(read_write, 2)
     ATTRIBUTE_RETURNS_NONNULL
-    constexpr NodeType *InsertNode(NodeType *const CONFIG_CLANG_NONNULL_QUALIFIER node_parent,
-                                   const bool insert_left,
-                                   Args &&...args) ATTRIBUTE_LIFETIME_BOUND {
+    constexpr NodeType *InsertNode(NodeType *const node_parent, const bool insert_left, Args &&...args) ATTRIBUTE_LIFETIME_BOUND {
         NodeType *const new_node = this->CreateNode(std::forward<Args>(args)...);
         Base::InsertNode(node_parent, insert_left, new_node);
         return new_node;
     }
 
-    constexpr void ExtractAndDestroyNode(const_iterator iter) noexcept(kIsNodeNoexceptDestructible) {
-        NodeType *const node = const_cast<NodeType *>(iter.node_);
+    constexpr void ExtractAndDestroyNode(const const_iterator iter) noexcept(kIsNodeNoexceptDestructible) {
+        auto *const node = const_cast<NodeType *>(iter.node_);
         RBTREE_ASSERT_INVARIANT(node != nullptr);
         Base::ExtractNode(node);
         DestroyNode(node);
@@ -1447,7 +1468,7 @@ private:
         // clang-format on
         if (tree_size >= max_size()) [[unlikely]] {
             RBTREE_ASSERT_INVARIANT(tree_size == max_size());
-            ThrowLengthError(std::source_location::current().function_name());
+            ThrowLengthError();
         }
 
         return RBTreeContainer::CreateNodeUnchecked(std::forward<Args>(args)...);
@@ -1463,7 +1484,7 @@ private:
 
         class NodeStorageProxy final {
         public:
-            using pointer = NodeType *;
+            using pointer = NodeType*;
 
         private:
             // clang-format off
@@ -1479,21 +1500,27 @@ private:
         public:
             ATTRIBUTE_ALWAYS_INLINE
             constexpr NodeStorageProxy() : node_storage_{AllocateStorage()} {}
-            NodeStorageProxy(const NodeStorageProxy &) = delete;
-            NodeStorageProxy &operator=(const NodeStorageProxy &) = delete;
-            NodeStorageProxy(NodeStorageProxy &&other) noexcept = delete;
-            NodeStorageProxy &operator=(NodeStorageProxy &&other) noexcept = delete;
+
+            NodeStorageProxy(const NodeStorageProxy&) = delete;
+
+            NodeStorageProxy& operator=(const NodeStorageProxy&) = delete;
+
+            NodeStorageProxy(NodeStorageProxy&& other) noexcept = delete;
+
+            NodeStorageProxy& operator=(NodeStorageProxy&& other) noexcept = delete;
+
             ATTRIBUTE_ALWAYS_INLINE constexpr ~NodeStorageProxy() {
                 if (node_storage_ != nullptr) [[unlikely]] {
                     allocator_type alloc = GetAllocator();
                     allocator_traits::deallocate(alloc, node_storage_, 1);
                 }
             }
+
             // clang-format off
             [[nodiscard]]
             ATTRIBUTE_ALWAYS_INLINE
             ATTRIBUTE_RETURNS_NONNULL
-            constexpr pointer ConstructNodeAndReleaseStorage(Args &&... args) {
+            constexpr pointer ConstructNodeAndReleaseStorage(Args&& ... args) {
                 // clang-format on
                 allocator_type alloc = GetAllocator();
                 RBTREE_ASSERT_INVARIANT(node_storage_ != nullptr);
@@ -1509,13 +1536,13 @@ private:
     }
 
     [[nodiscard]] ATTRIBUTE_ALWAYS_INLINE static constexpr allocator_type GetAllocator() noexcept {
-        static_assert(
-            sizeof(allocator_type) <= 1 && std::is_nothrow_default_constructible_v<allocator_type>,
-            "Stateless allocator is expected");
+        static_assert(sizeof(allocator_type) <= sizeof([]() {}) &&
+                          std::is_nothrow_default_constructible_v<allocator_type>,
+                      "Stateless allocator is expected");
         return allocator_type{};
     }
 
-    static constexpr void DestroyNode(NodeType *const node) noexcept(kIsNodeNoexceptDestructible) {
+    static constexpr void DestroyNode(NodeType* const node) noexcept(kIsNodeNoexceptDestructible) {
         static_assert(std::is_destructible_v<KeyType>);
         allocator_type alloc = GetAllocator();
         allocator_traits::destroy(alloc, node);
@@ -1523,12 +1550,13 @@ private:
     }
 
     struct ClonedTreeData {
-        NodeType *root_node;
-        NodeType *left_most_node;
-        NodeType *right_most_node;
+        NodeType* root_node;
+        NodeType* left_most_node;
+        NodeType* right_most_node;
     };
-    static constexpr CompleteTreeRawData CloneTree(const RBTreeContainer &other) {
-        const NodeType *const other_root = other.Root();
+
+    static constexpr CompleteTreeRawData CloneTree(const RBTreeContainer& other) {
+        const NodeType* const other_root = other.Root();
         const ClonedTreeData tree_data =
             other_root != nullptr ? CloneTreeImpl(other_root) : ClonedTreeData{};
         return CompleteTreeRawData{
@@ -1538,13 +1566,12 @@ private:
             .tree_size = other.size(),
         };
     }
+
     RBTREE_ATTRIBUTE_NONNULL_ALL_ARGS
     ATTRIBUTE_ACCESS(read_only, 1)
-    static constexpr ClonedTreeData CloneTreeImpl(const NodeType *const
-                                                  CONFIG_CLANG_NONNULL_QUALIFIER other_root) {
-        RBTREE_ASSERT_INVARIANT(other_root != nullptr);
+    static constexpr ClonedTreeData CloneTreeImpl(const NodeType* const other_root) {
         struct TemporaryTreeDeleter final {
-            void operator()(NodeType *const node) const
+            void operator()(NodeType* const node) const
                 noexcept(noexcept(RBTreeContainer::DeleteTree(node))) {
                 RBTreeContainer::DeleteTree(node);
             }
@@ -1552,15 +1579,15 @@ private:
         using TemporaryTreeHolder = std::unique_ptr<NodeType, TemporaryTreeDeleter>;
         TemporaryTreeHolder new_root(RBTreeContainer::CreateNodeUnchecked(other_root->Key()));
         new_root->SetColor(other_root->Color());
-        NodeType *left_most_node = new_root.get();
-        NodeType *right_most_node = new_root.get();
-        if (const NodeType *left = other_root->Left(); left != nullptr) {
+        NodeType* left_most_node = new_root.get();
+        NodeType* right_most_node = new_root.get();
+        if (const NodeType* left = other_root->Left(); left != nullptr) {
             const ClonedTreeData left_clone_data = CloneTreeImpl(left);
             new_root->SetLeft(left_clone_data.root_node);
             left_clone_data.root_node->SetParent(new_root.get());
             left_most_node = left_clone_data.left_most_node;
         }
-        if (const NodeType *right = other_root->Right(); right != nullptr) {
+        if (const NodeType* right = other_root->Right(); right != nullptr) {
             const ClonedTreeData right_clone_data = CloneTreeImpl(right);
             new_root->SetRight(right_clone_data.root_node);
             right_clone_data.root_node->SetParent(new_root.get());
@@ -1575,17 +1602,18 @@ private:
     }
 
     ATTRIBUTE_ACCESS(read_write, 1)
-    static constexpr void DeleteTree(Node<KeyType> *const root) noexcept(
+
+    static constexpr void DeleteTree(Node<KeyType>* const root) noexcept(
         std::is_nothrow_destructible_v<KeyType>) {
         if (root == nullptr) {
             return;
         }
         root->SetParent(nullptr);
-        Node<KeyType> *local_root = root;
+        Node<KeyType>* local_root = root;
         do {
-            Node<KeyType> *const next_node = [left = local_root->Left(),
+            Node<KeyType>* const next_node = [left = local_root->Left(),
                                               right = local_root->Right(),
-                                              local_root]() noexcept -> Node<KeyType> * {
+                                              local_root]() noexcept -> Node<KeyType>* {
                 if (left != nullptr && right != nullptr) {
                     RBTREE_ASSERT_INVARIANT(left->Parent() == local_root);
                     RBTREE_ASSERT_INVARIANT(right->Parent() == local_root);
@@ -1617,44 +1645,46 @@ private:
 
 #undef RBTREE_ATTRIBUTE_NONNULL
 #undef RBTREE_ATTRIBUTE_NONNULL_ALL_ARGS
-#if defined(__clang__)
-#pragma clang diagnostic pop
-#endif
 
 template <class T>
-[[maybe_unused]] inline constexpr bool kUseByValue =
+inline constexpr bool kUseByValue =
     std::is_trivial_v<T> ||
     (std::is_standard_layout_v<T> && !std::is_polymorphic_v<T> && !std::is_array_v<T> &&
-     std::is_nothrow_default_constructible_v<T> && sizeof(T) <= 32 &&
+     std::is_nothrow_default_constructible_v<T> && sizeof(T) <= 16 &&
      std::is_nothrow_copy_constructible_v<T> && std::is_trivially_copy_constructible_v<T> &&
      std::is_nothrow_copy_assignable_v<T> && std::is_trivially_copy_assignable_v<T> &&
      std::is_nothrow_move_constructible_v<T> && std::is_trivially_move_constructible_v<T> &&
      std::is_nothrow_move_assignable_v<T> && std::is_trivially_move_assignable_v<T> &&
      std::is_nothrow_destructible_v<T> && std::is_trivially_destructible_v<T>);
 
+#ifdef RBTREE_DEBUG
+static_assert(kUseByValue<bool>);
+static_assert(kUseByValue<std::int64_t>);
+static_assert(kUseByValue<long double>);
+static_assert(kUseByValue<std::nullptr_t>);
+static_assert(kUseByValue<std::chrono::nanoseconds>);
+static_assert(kUseByValue<std::string_view>);
+#endif
+
 export template <class Comparator>
 concept StatelessComparator =
     std::is_trivially_default_constructible_v<Comparator> &&
     std::is_nothrow_default_constructible_v<Comparator> &&
     std::is_trivially_destructible_v<Comparator> && std::is_nothrow_destructible_v<Comparator> &&
-    sizeof(Comparator) <= sizeof(std::less<>);
+    sizeof(Comparator) <= std::min({sizeof(std::less<int>), sizeof(std::less<>), sizeof([]() {})});
 
 static_assert(StatelessComparator<std::less<>>);
 static_assert(StatelessComparator<std::less<std::pair<double, float>>>);
 static_assert(StatelessComparator<std::greater<int>>);
-static_assert(StatelessComparator<std::greater<long *>>);
+static_assert(StatelessComparator<std::greater<long*>>);
 
 template <class ComparatorType>
 class StatelessComparatorStorage {
+    static_assert(StatelessComparator<ComparatorType>);
+
 protected:
     static constexpr bool kNoexceptDefaultConstructable = true;
     static constexpr bool kNoexceptConstructableFromComparator = true;
-
-    [[nodiscard]] constexpr ComparatorType GetComparator() const noexcept
-        requires StatelessComparator<ComparatorType>
-    {
-        return ComparatorType{};
-    }
 };
 
 template <class ComparatorType>
@@ -1667,12 +1697,13 @@ protected:
         std::is_nothrow_move_constructible_v<ComparatorType>;
 
     constexpr ComparatorStorage() noexcept(kNoexceptDefaultConstructable) = default;
+
     explicit constexpr ComparatorStorage(ComparatorType comp) noexcept(
         kNoexceptConstructableFromComparator)
         : comp_{std::move(comp)} {}
 
-    [[nodiscard]] constexpr const ComparatorType &GetComparator() const noexcept
-        ATTRIBUTE_LIFETIME_BOUND {
+    [[nodiscard]]
+    constexpr const ComparatorType& GetComparator() const noexcept ATTRIBUTE_LIFETIME_BOUND {
         return comp_;
     }
 
@@ -1693,15 +1724,20 @@ class NonReflexiveComparatorHelper
                                     ComparatorStorage<ComparatorType>>;
 
     static constexpr bool kStdLess = std::is_same_v<ComparatorType, std::less<>> ||
-                                     std::is_same_v<ComparatorType, std::less<KeyType>>;
+                                     std::is_same_v<ComparatorType, std::less<KeyType>> ||
+                                     std::is_same_v<ComparatorType, std::ranges::less>;
+
     static constexpr bool kStdGreater = std::is_same_v<ComparatorType, std::greater<>> ||
-                                        std::is_same_v<ComparatorType, std::greater<KeyType>>;
+                                        std::is_same_v<ComparatorType, std::greater<KeyType>> ||
+                                        std::is_same_v<ComparatorType, std::ranges::greater>;
 
     static constexpr bool kReflexiveComparator =
         std::is_same_v<ComparatorType, std::less_equal<>> ||
         std::is_same_v<ComparatorType, std::greater_equal<>> ||
         std::is_same_v<ComparatorType, std::less_equal<KeyType>> ||
-        std::is_same_v<ComparatorType, std::greater_equal<KeyType>>;
+        std::is_same_v<ComparatorType, std::greater_equal<KeyType>> ||
+        std::is_same_v<ComparatorType, std::ranges::less_equal> ||
+        std::is_same_v<ComparatorType, std::ranges::greater_equal>;
 
     static_assert(
         !kReflexiveComparator,
@@ -1710,15 +1746,15 @@ class NonReflexiveComparatorHelper
     template <class LhsKeyType, class RhsKeyType>
     static constexpr bool IsNoexceptThreeWayComparable() noexcept {
         if constexpr (kStdLess || kStdGreater) {
-            return noexcept(std::compare_weak_order_fallback(std::declval<const LhsKeyType &>(),
-                                                             std::declval<const RhsKeyType &>())) &&
-                   noexcept(std::compare_weak_order_fallback(std::declval<const RhsKeyType &>(),
-                                                             std::declval<const LhsKeyType &>()));
+            return noexcept(std::compare_weak_order_fallback(std::declval<const LhsKeyType&>(),
+                                                             std::declval<const RhsKeyType&>())) &&
+                   noexcept(std::compare_weak_order_fallback(std::declval<const RhsKeyType&>(),
+                                                             std::declval<const LhsKeyType&>()));
         } else {
-            return noexcept(std::declval<const ComparatorType &>()(
-                       std::declval<const LhsKeyType &>(), std::declval<const RhsKeyType &>())) &&
-                   noexcept(std::declval<const ComparatorType &>()(
-                       std::declval<const RhsKeyType &>(), std::declval<const LhsKeyType &>()));
+            return noexcept(std::declval<const ComparatorType&>()(
+                       std::declval<const LhsKeyType&>(), std::declval<const RhsKeyType&>())) &&
+                   noexcept(std::declval<const ComparatorType&>()(
+                       std::declval<const RhsKeyType&>(), std::declval<const LhsKeyType&>()));
         }
     }
 
@@ -1741,11 +1777,12 @@ protected:
 
     template <class OtherKeyType>
     static constexpr bool kIsComparableWithKey =
-        !std::is_reference_v<OtherKeyType> && requires(const KeyType key,
-                                                       const KeyType &key_reference,
-                                                       OtherKeyType other_key,
-                                                       const OtherKeyType &other_key_reference,
-                                                       const ComparatorType &comparator) {
+        std::same_as<OtherKeyType, std::remove_cvref_t<OtherKeyType>> &&
+        requires(const KeyType key,
+                 const KeyType& key_reference,
+                 OtherKeyType other_key,
+                 const OtherKeyType& other_key_reference,
+                 const ComparatorType& comparator) {
             { comparator(key, other_key) } -> std::same_as<bool>;
             { comparator(other_key, key) } -> std::same_as<bool>;
             { comparator(key_reference, other_key) } -> std::same_as<bool>;
@@ -1762,19 +1799,19 @@ protected:
     template <class OtherKeyType>
     static constexpr bool kIsNoexceptThreeWayComparableWith =
         kIsComparableWithKey<OtherKeyType> &&
-        kAreNoexceptThreeWayComparable<const OtherKeyType &, const KeyType &>;
+        kAreNoexceptThreeWayComparable<const OtherKeyType&, const KeyType&>;
 
     template <class LhsKeyType, class RhsKeyType>
         requires(kIsComparableWithKey<LhsKeyType> && kIsComparableWithKey<RhsKeyType>)
-    [[nodiscard]] constexpr std::weak_ordering CompareThreeWay(const LhsKeyType &lhs,
-                                                               const RhsKeyType &rhs) const
+    [[nodiscard]] constexpr std::weak_ordering CompareThreeWay(const LhsKeyType& lhs,
+                                                               const RhsKeyType& rhs) const
         noexcept(kAreNoexceptThreeWayComparable<LhsKeyType, RhsKeyType>) {
         if constexpr (kStdLess) {
             return std::compare_weak_order_fallback(lhs, rhs);
         } else if constexpr (kStdGreater) {
             return std::compare_weak_order_fallback(rhs, lhs);
         } else {
-            const ComparatorType &cmp = Base::GetComparator();
+            const ComparatorType& cmp = Base::GetComparator();
             if (cmp(lhs, rhs)) {
                 return std::weak_ordering::less;
             }
@@ -1787,7 +1824,6 @@ protected:
 };
 
 namespace rbtree {
-
 template <RBTreeKeyTypeConstraints KeyType, class ComparatorType>
     requires ComparatorForType<ComparatorType, KeyType>
 class RBTree
@@ -1833,7 +1869,8 @@ public:
 
     explicit constexpr RBTree(ComparatorType cmp) noexcept : ComparatorBase(std::move(cmp)) {}
 
-    constexpr RBTree(std::initializer_list<KeyType> list) : RBTree(list.begin(), list.end()) {}
+    constexpr RBTree(const std::initializer_list<KeyType> list)
+        : RBTree(list.begin(), list.end()) {}
 
     template <std::input_iterator Iter, std::sentinel_for<Iter> SentinelIter>
     constexpr RBTree(Iter begin_iter, SentinelIter end_iter) {
@@ -1847,12 +1884,13 @@ public:
     }
 
     template <std::ranges::input_range Range>
-    constexpr void insert_range(const Range &range) {
+    constexpr void insert_range(const Range& range) {
         this->insert_range(std::begin(range), std::end(range));
     }
 
     template <std::ranges::input_range Range>
-    constexpr void insert_range(Range &&range) {
+        requires(!std::is_reference_v<Range>)
+    constexpr void insert_range(Range&& range) {
         this->insert_range(std::make_move_iterator(std::begin(range)),
                            std::make_move_iterator(std::end(range)));
     }
@@ -1871,21 +1909,22 @@ public:
     }
 
     template <std::ranges::input_range Range>
-    constexpr void assign_range(const Range &range) {
+    constexpr void assign_range(const Range& range) {
         this->assign_range(std::begin(range), std::end(range));
     }
 
     template <std::ranges::input_range Range>
         requires(!std::is_reference_v<Range>)
-    constexpr void assign_range(Range &&range) {
+    constexpr void assign_range(Range&& range) {
         this->assign_range(std::make_move_iterator(std::begin(range)),
                            std::make_move_iterator(std::end(range)));
     }
 
-    constexpr void swap(RBTree &other) noexcept {
-        Base::Swap(other);
+    constexpr void swap(RBTree& other) noexcept {
+        Base::swap(other);
     }
-    friend constexpr void swap(RBTree &lhs, RBTree &rhs) noexcept {
+
+    friend constexpr void swap(RBTree& lhs, RBTree& rhs) noexcept {
         lhs.swap(rhs);
     }
 
@@ -1895,18 +1934,18 @@ public:
     };
 
     template <class U = KeyType>
-    constexpr InsertResult insert(U &&key) ATTRIBUTE_LIFETIME_BOUND {
-        return this->insert_impl</*OverwriteIfExists = */ false>(std::forward<U>(key));
+    constexpr InsertResult insert(U&& key) ATTRIBUTE_LIFETIME_BOUND {
+        return this->template insert_impl</*OverwriteIfExists = */ false>(std::forward<U>(key));
     }
 
     template <class U = KeyType>
-    constexpr iterator insert_or_overwrite(U &&key) ATTRIBUTE_LIFETIME_BOUND {
-        return this->insert_impl</*OverwriteIfExists = */ true>(std::forward<U>(key));
+    constexpr iterator insert_or_overwrite(U&& key) ATTRIBUTE_LIFETIME_BOUND {
+        return this->template insert_impl</*OverwriteIfExists = */ true>(std::forward<U>(key));
     }
 
     template <class EraseKeyType = KeyType>
         requires(ComparatorBase::template kIsComparableWithKey<EraseKeyType>)
-    constexpr size_type erase(const EraseKeyType &key) noexcept(
+    constexpr size_type erase(const EraseKeyType& key) noexcept(
         ComparatorBase::template kIsNoexceptThreeWayComparableWith<EraseKeyType> &&
         Base::kIsNodeNoexceptDestructible) {
         const_iterator iter = this->find(key);
@@ -1919,16 +1958,16 @@ public:
 
     constexpr void erase(const_iterator iter) noexcept(Base::kIsNodeNoexceptDestructible) {
         RBTREE_ASSERT_INVARIANT(iter != end());
-        this->erase_impl(iter);
+        this->erase_impl(std::move(iter));
     }
 
     template <class LowerBoundKeyType = KeyType>
         requires(ComparatorBase::template kIsComparableWithKey<LowerBoundKeyType>)
-    [[nodiscard]] constexpr const_iterator lower_bound(const LowerBoundKeyType &key) const
+    [[nodiscard]] constexpr const_iterator lower_bound(const LowerBoundKeyType& key) const
         noexcept(ComparatorBase::template kIsNoexceptThreeWayComparableWith<LowerBoundKeyType>)
             ATTRIBUTE_LIFETIME_BOUND {
-        const node_type *last_left_turn = nullptr;
-        for (auto *current_node = this->Root(); current_node != nullptr;) {
+        const node_type* last_left_turn = nullptr;
+        for (auto* current_node = this->Root(); current_node != nullptr;) {
             const auto compare_result = CompareThreeWay(key, current_node->Key());
             if (compare_result < 0) {
                 last_left_turn = current_node;
@@ -1946,10 +1985,10 @@ public:
 
     template <class FindKeyType = KeyType>
         requires(ComparatorBase::template kIsComparableWithKey<FindKeyType>)
-    [[nodiscard]] constexpr const_iterator find(const FindKeyType &key) const
+    [[nodiscard]] constexpr const_iterator find(const FindKeyType& key) const
         noexcept(ComparatorBase::template kIsNoexceptThreeWayComparableWith<FindKeyType>)
             ATTRIBUTE_LIFETIME_BOUND {
-        for (auto *current_node = this->Root(); current_node != nullptr;) {
+        for (auto* current_node = this->Root(); current_node != nullptr;) {
             const auto compare_result = CompareThreeWay(key, current_node->Key());
             if (compare_result < 0) {
                 current_node = current_node->Left();
@@ -1965,16 +2004,16 @@ public:
 
     template <class FindKeyType = KeyType>
         requires(ComparatorBase::template kIsComparableWithKey<FindKeyType>)
-    [[nodiscard]] constexpr bool contains(const FindKeyType &key) const
+    [[nodiscard]] constexpr bool contains(const FindKeyType& key) const
         noexcept(ComparatorBase::template kIsNoexceptThreeWayComparableWith<FindKeyType>) {
         return this->find(key) != this->end();
     }
 
     friend TestStatus rbtree::RBTreeInvariantsUnitTest<KeyType, ComparatorType>(
-        const RBTree<KeyType, ComparatorType> &tree);
+        const RBTree<KeyType, ComparatorType>& tree);
 
 private:
-    [[nodiscard]] constexpr const node_type *Root() const noexcept ATTRIBUTE_LIFETIME_BOUND {
+    [[nodiscard]] constexpr const node_type* Root() const noexcept ATTRIBUTE_LIFETIME_BOUND {
         return Base::Root();
     }
 
@@ -1983,8 +2022,8 @@ private:
     [[nodiscard]]
     constexpr std::conditional_t<OverwriteIfExists, iterator, InsertResult> insert_impl(U &&key) ATTRIBUTE_LIFETIME_BOUND {
         // clang-format on
-        auto *previous_node = Base::PreRootNodePtr();
-        node_type *current_node = Base::Root();
+        auto* previous_node = Base::PreRootNodePtr();
+        node_type* current_node = Base::Root();
 
         bool last_cmp_res_was_left = false;
         while (current_node != nullptr) {
@@ -2009,13 +2048,14 @@ private:
         }
 
         const bool insert_left = last_cmp_res_was_left;
-        node_type *const new_node =
+        node_type* const new_node =
             Base::InsertNode(previous_node, insert_left, std::forward<U>(key));
+        auto inserted_node_iter = Base::NodePtrToIterator(new_node);
         if constexpr (OverwriteIfExists) {
-            return Base::NodePtrToIterator(new_node);
+            return inserted_node_iter;
         } else {
             return InsertResult{
-                .iter = Base::NodePtrToIterator(new_node),
+                .iter = std::move(inserted_node_iter),
                 .inserted = true,
             };
         }
@@ -2025,6 +2065,86 @@ private:
         Base::ExtractAndDestroyNode(iter);
     }
 };
+
+namespace impl {
+template <class TimeType>
+    requires kUseByValue<TimeType>
+class TimeInterval final {
+public:
+    static TimeInterval FromLowHighEndpoints(const TimeType low, const TimeType high) {
+        if (low > high) [[unlikely]] {
+            ThrowOnInvalidTimeIntervalEndpoints(low, high);
+        }
+
+        return TimeInterval{
+            low,
+            high,
+        };
+    }
+
+    [[nodiscard]] constexpr const TimeType& LowEndpoint() const noexcept {
+        CheckInvariants();
+        return low_;
+    }
+
+    [[nodiscard]] constexpr const TimeType& HighEndpoint() const noexcept {
+        CheckInvariants();
+        return high_;
+    }
+
+private:
+    constexpr void CheckInvariants() const noexcept {
+        RBTREE_ASSERT_INVARIANT(low_ <= high_);
+        CONFIG_ASSUME_STATEMENT(low_ <= high_);
+    }
+
+    constexpr TimeInterval(const TimeType low, const TimeType high) noexcept(
+        std::is_nothrow_copy_constructible_v<TimeType>)
+        : low_(low), high_(high) {
+        CheckInvariants();
+    }
+
+    [[noreturn]]
+    ATTRIBUTE_COLD static void ThrowOnInvalidTimeIntervalEndpoints(
+        [[maybe_unused]] const TimeType low,
+        [[maybe_unused]] const TimeType high,
+        const std::source_location& location = std::source_location::current()) {
+        throw std::runtime_error{std::string{"low > high at "} + location.file_name() + ':' +
+                                 std::to_string(location.line()) + ':' + location.function_name()};
+    }
+
+    TimeType low_;
+    TimeType high_;
+};
+
+class TimeIntervalComparator {
+public:
+    template <class TimeType>
+    [[nodiscard]] constexpr bool operator()(
+        const TimeInterval<TimeType>& lhs,
+        const TimeInterval<TimeType>& rhs) noexcept(noexcept(std::declval<const TimeType&>() <
+                                                             std::declval<const TimeType&>())) {
+        return lhs.LowEndpoint() < rhs.LowEndpoint();
+    }
+};
+
+template <class TimeType>
+class TimeIntervalNode final : Node<TimeInterval<TimeType>> {
+    using Base = Node<TimeInterval<TimeType>>;
+
+public:
+    using Base::Base;
+    using Base::operator=;
+
+private:
+    TimeType max_subtree_endpoint_;
+};
+
+template <class TimeType = std::int64_t, class ComparatorType = TimeIntervalComparator>
+class IntervalTree final
+    : private RBTreeContainer<TimeInterval<TimeType>, TimeIntervalNode<TimeType>>
+    , private NonReflexiveComparatorHelper<TimeInterval<TimeType>, ComparatorType> {};
+}  // namespace impl
 
 template <class KeyType>
 struct [[nodiscard]] TestImplResult {
@@ -2036,19 +2156,19 @@ struct [[nodiscard]] TestImplResult {
 
 template <class KeyType>
 [[nodiscard]] TestImplResult<KeyType> CheckRBTreeNodeInvariants(
-    const typename RBTree<KeyType>::node_type &node) {
+    const typename RBTree<KeyType>::node_type& node) {
     std::int32_t height_l = 0;
     std::int32_t height_r = 0;
 
     KeyType min_l = node.Key();
     KeyType max_r = node.Key();
 
-    const auto *const left_child_ptr = node.Left();
-    const auto *const right_child_ptr = node.Right();
+    const auto* const left_child_ptr = node.Left();
+    const auto* const right_child_ptr = node.Right();
 
     switch (node.Color()) {
         case NodeColor::kRed: {
-            if (auto *parent = node.Parent();
+            if (auto* parent = node.Parent();
                 parent == nullptr || parent->Color() != NodeColor::kBlack) {
                 return {
                     .status = TestStatus::kInvalidOrNotBlackParentOfRedNode,
@@ -2084,7 +2204,7 @@ template <class KeyType>
     }
 
     if (left_child_ptr != nullptr) {
-        const auto &left_child = *left_child_ptr;
+        const auto& left_child = *left_child_ptr;
         if (left_child.Key() >= node.Key()) {
             return {
                 .status = TestStatus::kKeyOfLeftSonGEThanKeyOfNode,
@@ -2122,7 +2242,7 @@ template <class KeyType>
     }
 
     if (right_child_ptr != nullptr) {
-        const auto &right_child = *right_child_ptr;
+        const auto& right_child = *right_child_ptr;
         if (node.Key() >= right_child.Key()) {
             return {
                 .status = TestStatus::kKeyOfNodeGEThanKeyOfRightSon,
@@ -2186,12 +2306,12 @@ template <class KeyType>
 }
 
 template <class KeyType, class ComparatorType>
-TestStatus RBTreeInvariantsUnitTest(const RBTree<KeyType, ComparatorType> &tree) {
-    const typename RBTree<KeyType>::node_type *root_ptr = tree.Root();
+TestStatus RBTreeInvariantsUnitTest(const RBTree<KeyType, ComparatorType>& tree) {
+    const typename RBTree<KeyType>::node_type* root_ptr = tree.Root();
     if (root_ptr == nullptr) {
         return TestStatus::kOk;
     }
-    const typename RBTree<KeyType>::node_type &root = *root_ptr;
+    const typename RBTree<KeyType>::node_type& root = *root_ptr;
     if (root.Color() != NodeColor::kBlack) {
         return TestStatus::kRootIsNotBlack;
     }
@@ -2215,5 +2335,4 @@ TestStatus RBTreeInvariantsUnitTest(const RBTree<KeyType, ComparatorType> &tree)
 
     return status;
 }
-
 }  // namespace rbtree
