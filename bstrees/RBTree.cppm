@@ -1724,15 +1724,20 @@ class NonReflexiveComparatorHelper
                                     ComparatorStorage<ComparatorType>>;
 
     static constexpr bool kStdLess = std::is_same_v<ComparatorType, std::less<>> ||
-                                     std::is_same_v<ComparatorType, std::less<KeyType>>;
+                                     std::is_same_v<ComparatorType, std::less<KeyType>> ||
+                                     std::is_same_v<ComparatorType, std::ranges::less>;
+
     static constexpr bool kStdGreater = std::is_same_v<ComparatorType, std::greater<>> ||
-                                        std::is_same_v<ComparatorType, std::greater<KeyType>>;
+                                        std::is_same_v<ComparatorType, std::greater<KeyType>> ||
+                                        std::is_same_v<ComparatorType, std::ranges::greater>;
 
     static constexpr bool kReflexiveComparator =
         std::is_same_v<ComparatorType, std::less_equal<>> ||
         std::is_same_v<ComparatorType, std::greater_equal<>> ||
         std::is_same_v<ComparatorType, std::less_equal<KeyType>> ||
-        std::is_same_v<ComparatorType, std::greater_equal<KeyType>>;
+        std::is_same_v<ComparatorType, std::greater_equal<KeyType>> ||
+        std::is_same_v<ComparatorType, std::ranges::less_equal> ||
+        std::is_same_v<ComparatorType, std::ranges::greater_equal>;
 
     static_assert(
         !kReflexiveComparator,
