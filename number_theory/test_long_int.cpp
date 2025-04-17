@@ -1740,6 +1740,7 @@ void TestDivModImpl() {
                                                                        const T j) mutable {
         if constexpr (std::is_same_v<T, uint32_t>) {
             n = i;
+            assert(n.mod(j) == i);
             const auto rem = n.divmod(j);
             assert(n == i / j);
             assert(rem == i % j);
@@ -1748,6 +1749,9 @@ void TestDivModImpl() {
 
         n = i;
         m = j;
+        // Test compile time constants
+        assert(n.mod(1) == i % 1);
+        assert(n.mod(2) == i % 2);
         n.divmod(m, li_rem);
         assert(n == i / j);
         assert(li_rem == i % j);
