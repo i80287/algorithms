@@ -290,7 +290,7 @@ void test_with_comparator_impl1() {
 void test_with_comparator() {
     struct S1 {
     private:
-        int x_{};
+        [[maybe_unused]] int x_{};
     };
     test_with_comparator_impl1<S1>();
 
