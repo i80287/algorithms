@@ -16,6 +16,7 @@ module;
 #include <ranges>
 #include <source_location>
 #include <stdexcept>
+#include <string>
 #include <type_traits>
 #include <utility>
 
@@ -2109,8 +2110,17 @@ private:
         [[maybe_unused]] const TimeType low,
         [[maybe_unused]] const TimeType high,
         const std::source_location& location = std::source_location::current()) {
+#if CONFIG_GNUC_AT_LEAST(15, 0) && !defined(__clang__)
+// Bug in GCC 15+: false positive may occur with
+//  warning -Walloc-size-larger-than=x if x < 9223372036854775807
+#pragma GCC diagnostic push
+#pragma GCC diagnostic warning "-Wno-alloc-size-larger-than"
+#endif
         throw std::runtime_error{std::string{"low > high at "} + location.file_name() + ':' +
                                  std::to_string(location.line()) + ':' + location.function_name()};
+#if CONFIG_GNUC_AT_LEAST(15, 0) && !defined(__clang__)
+#pragma GCC diagnostic pop
+#endif
     }
 
     TimeType low_;
