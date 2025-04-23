@@ -115,7 +115,7 @@ template <class ToCharType>
 #pragma clang diagnostic ignored "-Wdeprecated"
 #elif defined(__GNUG__)
 #pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wdeprecated"
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 #elif defined(_MSC_VER)
 #pragma warning(push)
 #pragma warning(disable : 4996)
