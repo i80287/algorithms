@@ -516,10 +516,46 @@
 #define ATTRIBUTE_LIFETIME_BOUND
 #endif
 
+#if CONFIG_CLANG_AT_LEAST(20, 1) && CONFIG_HAS_CPP_ATTRIBUTE(clang::lifetime_capture_by)
+#define ATTRIBUTE_LIFETIME_CAPTURE_BY(...) [[clang::lifetime_capture_by(__VA_ARGS__)]]
+#else
+#define ATTRIBUTE_LIFETIME_CAPTURE_BY(...)
+#endif
+
 #if defined(__clang__) && CONFIG_HAS_CPP_ATTRIBUTE(clang::reinitializes)
 #define ATTRIBUTE_REINITIALIZES [[clang::reinitializes]]
 #else
 #define ATTRIBUTE_REINITIALIZES
+#endif
+
+#if CONFIG_CLANG_AT_LEAST(10, 0) && CONFIG_HAS_CPP_ATTRIBUTE(gsl::Pointer)
+#define ATTRIBUTE_GSL_POINTER [[gsl::Pointer]]
+#else
+#define ATTRIBUTE_GSL_POINTER
+#endif
+
+#if CONFIG_CLANG_AT_LEAST(10, 0) && CONFIG_HAS_CPP_ATTRIBUTE(gsl::Owner)
+#define ATTRIBUTE_GSL_OWNER [[gsl::Owner]]
+#else
+#define ATTRIBUTE_GSL_OWNER
+#endif
+
+#if CONFIG_CLANG_AT_LEAST(20, 1) && CONFIG_HAS_CPP_ATTRIBUTE(clang::coro_await_elidable)
+#define ATTRIBUTE_CORO_AWAIT_ELIDABLE [[clang::coro_await_elidable]]
+#else
+#define ATTRIBUTE_CORO_AWAIT_ELIDABLE
+#endif
+
+#if CONFIG_CLANG_AT_LEAST(20, 1) && CONFIG_HAS_CPP_ATTRIBUTE(clang::coro_await_elidable_argument)
+#define ATTRIBUTE_CORO_AWAIT_ELIDABLE_ARGUMENT [[clang::coro_await_elidable_argument]]
+#else
+#define ATTRIBUTE_CORO_AWAIT_ELIDABLE_ARGUMENT
+#endif
+
+#if CONFIG_CLANG_AT_LEAST(20, 1) && CONFIG_HAS_CPP_ATTRIBUTE(clang::no_specializations)
+#define ATTRIBUTE_NO_SPECIALIZATIONS_ALLOWED [[clang::no_specializations]]
+#else
+#define ATTRIBUTE_NO_SPECIALIZATIONS_ALLOWED
 #endif
 
 #if CONFIG_HAS_AT_LEAST_CXX_17 && CONFIG_HAS_CPP_ATTRIBUTE(nodiscard)
