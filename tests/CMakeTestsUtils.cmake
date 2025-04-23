@@ -162,6 +162,12 @@ function(configure_gcc_or_clang_gcc_options)
                 -Winvalid-utf8 # enabled by default by Clang but Clang only warns about invalid utf in the comments
             )
         endif()
+        if(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 14.1.0)
+            set(LOCAL_FN_TEST_CXX_COMPILE_OPTIONS
+                ${LOCAL_FN_TEST_CXX_COMPILE_OPTIONS}
+                -Wflex-array-member-not-at-end
+            )
+        endif()
     endif()
     if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
         set(LOCAL_FN_TEST_CXX_COMPILE_OPTIONS
