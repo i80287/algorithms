@@ -781,14 +781,14 @@ public:
     bool AddPatternWithReplacement(const std::string_view pattern, std::string replacement) {
         const bool added = Base::AddPattern(pattern);
         if (likely(added)) {
-#if defined(__GNUG__) && __GNUG__ == 14 && !defined(__clang__)
-// Bug in GCC 14: false positive may occur with
+#if CONFIG_GNUC_AT_LEAST(14, 0) && !defined(__clang__)
+// Bug in GCC 14+: false positive may occur with
 //  warning -Walloc-size-larger-than=x if x < 9223372036854775776
 #pragma GCC diagnostic push
 #pragma GCC diagnostic warning "-Wno-alloc-size-larger-than"
 #endif
             words_replacements_.push_back(std::move(replacement));
-#if defined(__GNUG__) && __GNUG__ == 14 && !defined(__clang__)
+#if CONFIG_GNUC_AT_LEAST(14, 0) && !defined(__clang__)
 #pragma GCC diagnostic pop
 #endif
         }

@@ -6,7 +6,7 @@
 #include <vector>
 
 #ifdef NDEBUG
-#error("Can't test properly with NDEBUG macro defined (macro won't be undefined manually)")
+#error ("Can't test properly with NDEBUG macro defined (macro won't be undefined manually)")
 #endif
 
 #include <cassert>
@@ -122,8 +122,8 @@ template <bool IsCaseInsensetive = true, size_t PatternsSize>
         /* AlphabetEnd = */ '}',
         /* IsCaseInsensetive = */ IsCaseInsensetive>;
     auto builder = BuilderType::WithCapacity(PatternsSize);
-    for (const auto [pattern, replacement] : patterns_with_replacements) {
-        if (!builder.AddPatternWithReplacement(pattern, std::string(replacement))) {
+    for (const auto& [pattern, replacement] : patterns_with_replacements) {
+        if (!builder.AddPatternWithReplacement(pattern, std::string{replacement})) {
             return false;
         }
     }
