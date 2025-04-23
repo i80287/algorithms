@@ -49,15 +49,15 @@ class dsu_base {
     using container = std::vector<node_type>;
 
 public:
-    using node_t          = node_type;
-    using value_type      = typename container::value_type;
-    using pointer         = typename container::pointer;
-    using const_pointer   = typename container::const_pointer;
-    using reference       = typename container::reference;
+    using node_t = node_type;
+    using value_type = typename container::value_type;
+    using pointer = typename container::pointer;
+    using const_pointer = typename container::const_pointer;
+    using reference = typename container::reference;
     using const_reference = typename container::const_reference;
-    using size_type       = typename container::size_type;
+    using size_type = typename container::size_type;
     using difference_type = typename container::difference_type;
-    using allocator_type  = typename container::allocator_type;
+    using allocator_type = typename container::allocator_type;
 
     [[nodiscard]] constexpr size_type size() const noexcept {
         return nodes_.size();
@@ -68,7 +68,7 @@ public:
     // O(1)
     [[nodiscard]] CONSTEXPR_VECTOR size_type set_size_of(size_type node_index) const noexcept {
         assert(node_index < size());
-        const node_t& node       = nodes_[node_index];
+        const node_t& node = nodes_[node_index];
         const_pointer parent_ptr = node.parent_;
         return parent_ptr != nullptr ? parent_ptr->set_size_ : node.set_size_;
     }
@@ -81,7 +81,7 @@ public:
 protected:
     CONSTEXPR_VECTOR dsu_base(size_type nodes_count)
         : nodes_(nodes_count), sets_size_(nodes_count) {}
-    CONSTEXPR_VECTOR dsu_base(const dsu_base& other)            = default;
+    CONSTEXPR_VECTOR dsu_base(const dsu_base& other) = default;
     CONSTEXPR_VECTOR dsu_base& operator=(const dsu_base& other) = default;
     CONSTEXPR_VECTOR dsu_base(dsu_base&& other) noexcept
         : nodes_(std::move(other.nodes_)), sets_size_(std::exchange(other.sets_size_, 0)) {}
@@ -90,7 +90,7 @@ protected:
         return *this;
     }
     CONSTEXPR_VECTOR ~dsu_base() = default;
-    CONSTEXPR_VECTOR void swap(dsu_base& other) noexcept ATTRIBUTE_LIFETIME_BOUND {
+    CONSTEXPR_VECTOR void swap(dsu_base& other) noexcept {
         nodes_.swap(other.nodes_);
         std::swap(sets_size_, other.sets_size_);
     }
@@ -128,9 +128,9 @@ protected:
 
         // Now 'current_node' points to the root
         while (node != current_node) {
-            pointer next  = node->parent_;
+            pointer next = node->parent_;
             node->parent_ = current_node;
-            node          = next;
+            node = next;
         }
 
         return current_node;
@@ -154,7 +154,7 @@ public:
         return dsu_t{nodes_count};
     }
     CONSTEXPR_VECTOR dsu_t(const dsu_t& other) : base(other) {
-        node_t* const this_first_node        = data();
+        node_t* const this_first_node = data();
         const node_t* const other_first_node = other.data();
 
         for (size_type i = 0; i < other.size(); ++i) {
@@ -240,7 +240,7 @@ public:
 
     // O(n)
     CONSTEXPR_VECTOR weighted_dsu_t(const weighted_dsu_t& other) : base(other) {
-        node_t* const this_first_node        = data();
+        node_t* const this_first_node = data();
         const node_t* const other_first_node = other.data();
 
         for (size_type i = 0; i < other.size(); ++i) {

@@ -739,16 +739,20 @@ ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_NODISCARD constexpr bool is_constant_evaluated
 template <class T>
 ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_NODISCARD constexpr bool is_gcc_constant_p(
     ATTRIBUTE_MAYBE_UNUSED T expr) noexcept {
-#if CONFIG_HAS_BUILTIN(__builtin_constant_p)
-#if CONFIG_HAS_INCLUDE(<type_traits>)
-#if !defined(CONFIG_HAS_AT_LEAST_C_26) || !CONFIG_HAS_AT_LEAST_C_26
-    // NOLINTBEGIN(modernize-type-traits)
-    // not std::is_trivial_v for backward compatibility with old C++ versions and compilers
-    static_assert(std::is_trivial<T>::value,
-                  "Type passed to the is_gcc_constant_p() should be trivial");
+#if CONFIG_HAS_AT_LEAST_CXX_11 && CONFIG_HAS_INCLUDE(<type_traits>)
+    static_assert(
+#if CONFIG_HAS_AT_LEAST_CXX_17
+        std::is_trivially_copyable_v<T> && std::is_nothrow_copy_constructible_v<T>
+#else
+        // NOLINTBEGIN(modernize-type-traits)
+        std::is_trivial<T>::value
     // NOLINTEND(modernize-type-traits)
 #endif
+        ,
+        "Type passed to the is_gcc_constant_p() should be trivial");
 #endif
+
+#if CONFIG_HAS_BUILTIN(__builtin_constant_p)
 
 #if defined(__clang__)
 #pragma clang diagnostic push
