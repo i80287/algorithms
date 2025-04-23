@@ -2114,18 +2114,10 @@ private:
         [[maybe_unused]] const TimeType high,
         const std::source_location& location = std::source_location::current()) {
         using namespace std::string_view_literals;
-#if CONFIG_GNUC_AT_LEAST(15, 0) && !defined(__clang__)
-// Bug in GCC 15+: false positive may occur with warning -Walloc-size-larger-than=x
-#pragma GCC diagnostic push
-#pragma GCC diagnostic warning "-Wno-alloc-size-larger-than"
-#endif
         throw std::runtime_error{"low (which is "sv + std::to_string(low) +
                                  ") > high (which is "sv + std::to_string(high) + ") at "sv +
                                  location.file_name() + ':' + std::to_string(location.line()) +
                                  ':' + location.function_name()};
-#if CONFIG_GNUC_AT_LEAST(15, 0) && !defined(__clang__)
-#pragma GCC diagnostic pop
-#endif
     }
 
     TimeType low_;

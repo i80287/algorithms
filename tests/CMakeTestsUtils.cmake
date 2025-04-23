@@ -134,8 +134,6 @@ function(configure_gcc_or_clang_gcc_options)
             -Wsuggest-attribute=format
             -Wsuggest-attribute=cold
             -Wsuggest-attribute=malloc
-            -Walloc-size-larger-than=${allocation_limit_in_bytes}
-            -Wlarger-than=${allocation_limit_in_bytes}
             -Wstack-usage=${stack_allocation_limit_in_bytes}
             -Wattribute-alias=2
             -Wstringop-overflow=4
@@ -143,7 +141,15 @@ function(configure_gcc_or_clang_gcc_options)
             -Walloc-zero
             -Wtrampolines
             -Wcast-align=strict
-            -fdiagnostics-color=always)
+            -fdiagnostics-color=always
+        )
+        if(CMAKE_CXX_COMPILER_VERSION VERSION_LESS 15.0.0)
+            set(LOCAL_FN_TEST_CXX_COMPILE_OPTIONS
+                ${LOCAL_FN_TEST_CXX_COMPILE_OPTIONS}
+                -Walloc-size-larger-than=${allocation_limit_in_bytes}
+                -Wlarger-than=${allocation_limit_in_bytes}
+            )
+        endif()
         if(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 10.1.0)
             set(LOCAL_FN_TEST_CXX_COMPILE_OPTIONS
                 ${LOCAL_FN_TEST_CXX_COMPILE_OPTIONS}
