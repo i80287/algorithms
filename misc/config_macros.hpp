@@ -371,7 +371,7 @@
 #define __attribute__(...)
 #endif
 
-#if (defined(__GNUG__) || defined(__clang__)) && \
+#if (defined(__GNUC__) || defined(__clang__)) && \
     CONFIG_HELPER_HAS_CPP_STYLE_ATTRIBUTE__(gnu::__const__)
 #define ATTRIBUTE_CONST [[gnu::__const__]]
 #elif (CONFIG_GNUC_AT_LEAST(2, 6) || defined(__clang__)) && CONFIG_HAS_GCC_ATTRIBUTE(__const__)
@@ -388,7 +388,7 @@
 #define ATTRIBUTE_MAYBE_UNUSED
 #endif
 
-#if (defined(__GNUG__) || defined(__clang__)) && CONFIG_HELPER_HAS_CPP_STYLE_ATTRIBUTE__(gnu::pure)
+#if (defined(__GNUC__) || defined(__clang__)) && CONFIG_HELPER_HAS_CPP_STYLE_ATTRIBUTE__(gnu::pure)
 #define ATTRIBUTE_PURE [[gnu::pure]]
 #elif (CONFIG_GNUC_AT_LEAST(2, 96) || defined(__clang__)) && CONFIG_HAS_GCC_ATTRIBUTE(pure)
 #define ATTRIBUTE_PURE __attribute__((pure))
@@ -398,7 +398,7 @@
 
 #if defined(__clang__) && CONFIG_HELPER_HAS_CPP_STYLE_ATTRIBUTE__(clang::noinline)
 #define ATTRIBUTE_NOINLINE [[clang::noinline]]
-#elif defined(__GNUG__) && CONFIG_HELPER_HAS_CPP_STYLE_ATTRIBUTE__(gnu::noinline)
+#elif defined(__GNUC__) && CONFIG_HELPER_HAS_CPP_STYLE_ATTRIBUTE__(gnu::noinline)
 #define ATTRIBUTE_NOINLINE [[gnu::noinline]]
 #elif defined(_MSC_VER) && CONFIG_HELPER_HAS_CPP_STYLE_ATTRIBUTE__(msvc::noinline)
 #define ATTRIBUTE_NOINLINE [[msvc::noinline]]
@@ -412,7 +412,7 @@
 
 #if defined(__clang__) && CONFIG_HELPER_HAS_CPP_STYLE_ATTRIBUTE__(clang::always_inline)
 #define ATTRIBUTE_ALWAYS_INLINE [[clang::always_inline]]
-#elif defined(__GNUG__) && CONFIG_HELPER_HAS_CPP_STYLE_ATTRIBUTE__(gnu::always_inline)
+#elif defined(__GNUC__) && CONFIG_HELPER_HAS_CPP_STYLE_ATTRIBUTE__(gnu::always_inline)
 #define ATTRIBUTE_ALWAYS_INLINE [[gnu::always_inline]]
 #elif defined(_MSC_VER) && CONFIG_HELPER_HAS_CPP_STYLE_ATTRIBUTE__(msvc::forceinline)
 #define ATTRIBUTE_ALWAYS_INLINE [[msvc::forceinline]]
@@ -422,7 +422,7 @@
 #define ATTRIBUTE_ALWAYS_INLINE
 #endif
 
-#if (defined(__GNUG__) || defined(__clang__)) && CONFIG_HELPER_HAS_CPP_STYLE_ATTRIBUTE__(gnu::cold)
+#if (defined(__GNUC__) || defined(__clang__)) && CONFIG_HELPER_HAS_CPP_STYLE_ATTRIBUTE__(gnu::cold)
 #define ATTRIBUTE_COLD [[gnu::cold]]
 #elif (CONFIG_GNUC_AT_LEAST(4, 3) || defined(__clang__)) && CONFIG_HAS_GCC_ATTRIBUTE(cold)
 #define ATTRIBUTE_COLD __attribute__((cold))
@@ -430,7 +430,7 @@
 #define ATTRIBUTE_COLD
 #endif
 
-#if (defined(__GNUG__) || defined(__clang__)) && CONFIG_HELPER_HAS_CPP_STYLE_ATTRIBUTE__(gnu::hot)
+#if (defined(__GNUC__) || defined(__clang__)) && CONFIG_HELPER_HAS_CPP_STYLE_ATTRIBUTE__(gnu::hot)
 #define ATTRIBUTE_HOT [[gnu::hot]]
 #elif (CONFIG_GNUC_AT_LEAST(4, 3) || defined(__clang__)) && CONFIG_HAS_GCC_ATTRIBUTE(hot)
 #define ATTRIBUTE_HOT __attribute__((hot))
@@ -444,7 +444,7 @@
  *  indicate the size of the allocation.
  * Clang docs: https://clang.llvm.org/docs/AttributeReference.html#alloc-size
  */
-#if (defined(__GNUG__) || defined(__clang__)) && \
+#if (defined(__GNUC__) || defined(__clang__)) && \
     CONFIG_HELPER_HAS_CPP_STYLE_ATTRIBUTE__(gnu::alloc_size)
 #define ATTRIBUTE_ALLOC_SIZE(...) [[gnu::alloc_size(__VA_ARGS__)]]
 #elif (CONFIG_GNUC_AT_LEAST(4, 3) || defined(__clang__)) && CONFIG_HAS_GCC_ATTRIBUTE(alloc_size)
@@ -494,7 +494,7 @@
  *  See https://gcc.gnu.org/onlinedocs/gcc/Common-Function-Attributes.html
  *   and https://clang.llvm.org/docs/AttributeReference.html#id664 for more info
  */
-#if (defined(__GNUG__) || defined(__clang__)) && \
+#if (defined(__GNUC__) || defined(__clang__)) && \
     CONFIG_HELPER_HAS_CPP_STYLE_ATTRIBUTE__(gnu::nonnull)
 #define ATTRIBUTE_NONNULL(...)     [[gnu::nonnull(__VA_ARGS__)]]
 #define ATTRIBUTE_NONNULL_ALL_ARGS [[gnu::nonnull]]
@@ -506,7 +506,7 @@
 #define ATTRIBUTE_NONNULL_ALL_ARGS
 #endif
 
-#if (defined(__GNUG__) || defined(__clang__)) && \
+#if (defined(__GNUC__) || defined(__clang__)) && \
     CONFIG_HELPER_HAS_CPP_STYLE_ATTRIBUTE__(gnu::returns_nonnull)
 #define ATTRIBUTE_RETURNS_NONNULL [[gnu::returns_nonnull]]
 #elif (CONFIG_GNUC_AT_LEAST(4, 9) || defined(__clang__)) && \
@@ -516,7 +516,7 @@
 #define ATTRIBUTE_RETURNS_NONNULL
 #endif
 
-#if (defined(__GNUG__) || defined(__clang__)) && \
+#if (defined(__GNUC__) || defined(__clang__)) && \
     CONFIG_HELPER_HAS_CPP_STYLE_ATTRIBUTE__(gnu::target)
 #define ATTRIBUTE_TARGET(config_string) [[gnu::target(config_string)]]
 #elif (CONFIG_GNUC_AT_LEAST(4, 4) || defined(__clang__)) && CONFIG_HAS_GCC_ATTRIBUTE(target)
