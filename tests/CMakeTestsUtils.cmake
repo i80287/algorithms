@@ -303,18 +303,11 @@ function(configure_gcc_or_clang_gcc_options)
             -Wstrict-prototypes # enabled by default if Clang is used
             -Wold-style-definition
             -Wnested-externs
-            -Wc99-c11-compat
         )
         if(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 11.0.0)
             set(LOCAL_FN_TEST_C_COMPILE_OPTIONS
                 ${LOCAL_FN_TEST_C_COMPILE_OPTIONS}
                 -fanalyzer
-            )
-        endif()
-        if(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 14.0.0)
-            set(LOCAL_FN_TEST_C_COMPILE_OPTIONS
-                ${LOCAL_FN_TEST_C_COMPILE_OPTIONS}
-                -Wc11-c23-compat
             )
         endif()
     endif()
