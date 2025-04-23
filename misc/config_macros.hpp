@@ -211,6 +211,10 @@
 #define CONFIG_HAS_CPP_ATTRIBUTE(attr) 0
 #endif
 
+#define CONFIG_HELPER_HAS_CPP_STYLE_ATTRIBUTE__(attr)                  \
+    ((CONFIG_HAS_AT_LEAST_CXX_11 && CONFIG_HAS_CPP_ATTRIBUTE(attr)) || \
+     (CONFIG_HAS_AT_LEAST_C_23 && CONFIG_HAS_C_ATTRIBUTE(attr)))
+
 // https://en.cppreference.com/w/cpp/feature_test
 #if CONFIG_HAS_AT_LEAST_CXX_20 && defined(__cpp_concepts) && __cpp_concepts >= 201907L
 #define CONFIG_HAS_CONCEPTS 1
@@ -367,67 +371,68 @@
 #define __attribute__(...)
 #endif
 
-#if (defined(__GNUG__) || defined(__clang__)) && CONFIG_HAS_CPP_ATTRIBUTE(gnu::__const__)
+#if (defined(__GNUG__) || defined(__clang__)) && \
+    CONFIG_HELPER_HAS_CPP_STYLE_ATTRIBUTE__(gnu::__const__)
 #define ATTRIBUTE_CONST [[gnu::__const__]]
-#elif CONFIG_GNUC_AT_LEAST(2, 6) || CONFIG_HAS_GCC_ATTRIBUTE(__const__)
+#elif CONFIG_GNUC_AT_LEAST(2, 6) && CONFIG_HAS_GCC_ATTRIBUTE(__const__)
 #define ATTRIBUTE_CONST __attribute__((__const__))
 #else
 #define ATTRIBUTE_CONST
 #endif
 
-#if CONFIG_HAS_AT_LEAST_CXX_17 && CONFIG_HAS_CPP_ATTRIBUTE(maybe_unused)
+#if CONFIG_HELPER_HAS_CPP_STYLE_ATTRIBUTE__(maybe_unused)
 #define ATTRIBUTE_MAYBE_UNUSED [[maybe_unused]]
-#elif CONFIG_GNUC_AT_LEAST(2, 7) || CONFIG_HAS_GCC_ATTRIBUTE(unused)
+#elif CONFIG_GNUC_AT_LEAST(2, 7) && CONFIG_HAS_GCC_ATTRIBUTE(unused)
 #define ATTRIBUTE_MAYBE_UNUSED __attribute__((unused))
 #else
 #define ATTRIBUTE_MAYBE_UNUSED
 #endif
 
-#if (defined(__GNUG__) || defined(__clang__)) && CONFIG_HAS_CPP_ATTRIBUTE(gnu::pure)
+#if (defined(__GNUG__) || defined(__clang__)) && CONFIG_HELPER_HAS_CPP_STYLE_ATTRIBUTE__(gnu::pure)
 #define ATTRIBUTE_PURE [[gnu::pure]]
-#elif CONFIG_GNUC_AT_LEAST(2, 96) || CONFIG_HAS_GCC_ATTRIBUTE(pure)
+#elif CONFIG_GNUC_AT_LEAST(2, 96) && CONFIG_HAS_GCC_ATTRIBUTE(pure)
 #define ATTRIBUTE_PURE __attribute__((pure))
 #else
 #define ATTRIBUTE_PURE
 #endif
 
-#if defined(__clang__) && CONFIG_HAS_CPP_ATTRIBUTE(clang::noinline)
+#if defined(__clang__) && CONFIG_HELPER_HAS_CPP_STYLE_ATTRIBUTE__(clang::noinline)
 #define ATTRIBUTE_NOINLINE [[clang::noinline]]
-#elif defined(__GNUG__) && CONFIG_HAS_CPP_ATTRIBUTE(gnu::noinline)
+#elif defined(__GNUG__) && CONFIG_HELPER_HAS_CPP_STYLE_ATTRIBUTE__(gnu::noinline)
 #define ATTRIBUTE_NOINLINE [[gnu::noinline]]
-#elif defined(_MSC_VER) && CONFIG_HAS_CPP_ATTRIBUTE(msvc::noinline)
+#elif defined(_MSC_VER) && CONFIG_HELPER_HAS_CPP_STYLE_ATTRIBUTE__(msvc::noinline)
 #define ATTRIBUTE_NOINLINE [[msvc::noinline]]
 #elif defined(_MSC_VER) && _MSC_VER >= 1920 && defined(_MSC_FULL_VER) && _MSC_FULL_VER >= 191025017
 #define ATTRIBUTE_NOINLINE __declspec(noinline)
-#elif CONFIG_GNUC_AT_LEAST(3, 0) || CONFIG_HAS_GCC_ATTRIBUTE(noinline)
+#elif CONFIG_GNUC_AT_LEAST(3, 0) && CONFIG_HAS_GCC_ATTRIBUTE(noinline)
 #define ATTRIBUTE_NOINLINE __attribute__((noinline))
 #else
 #define ATTRIBUTE_NOINLINE
 #endif
 
-#if defined(__clang__) && CONFIG_HAS_CPP_ATTRIBUTE(clang::always_inline)
+#if defined(__clang__) && CONFIG_HELPER_HAS_CPP_STYLE_ATTRIBUTE__(clang::always_inline)
 #define ATTRIBUTE_ALWAYS_INLINE [[clang::always_inline]]
-#elif defined(__GNUG__) && CONFIG_HAS_CPP_ATTRIBUTE(gnu::always_inline)
+#elif defined(__GNUG__) && CONFIG_HELPER_HAS_CPP_STYLE_ATTRIBUTE__(gnu::always_inline)
 #define ATTRIBUTE_ALWAYS_INLINE [[gnu::always_inline]]
-#elif defined(_MSC_VER) && CONFIG_HAS_CPP_ATTRIBUTE(msvc::forceinline)
+#elif defined(_MSC_VER) && CONFIG_HELPER_HAS_CPP_STYLE_ATTRIBUTE__(msvc::forceinline)
 #define ATTRIBUTE_ALWAYS_INLINE [[msvc::forceinline]]
-#elif CONFIG_GNUC_AT_LEAST(3, 2) || CONFIG_HAS_GCC_ATTRIBUTE(always_inline)
+#elif CONFIG_GNUC_AT_LEAST(3, 2) && CONFIG_HAS_GCC_ATTRIBUTE(always_inline)
 #define ATTRIBUTE_ALWAYS_INLINE __attribute__((always_inline))
 #else
 #define ATTRIBUTE_ALWAYS_INLINE
 #endif
 
-#if (defined(__GNUG__) || defined(__clang__)) && CONFIG_HAS_CPP_ATTRIBUTE(gnu::cold)
+#if (defined(__GNUG__) || defined(__clang__)) && CONFIG_HELPER_HAS_CPP_STYLE_ATTRIBUTE__(gnu::cold)
 #define ATTRIBUTE_COLD [[gnu::cold]]
-#elif CONFIG_GNUC_AT_LEAST(4, 3) || CONFIG_HAS_GCC_ATTRIBUTE(cold)
+#elif CONFIG_GNUC_AT_LEAST(4, 3) && CONFIG_HAS_GCC_ATTRIBUTE(cold)
 #define ATTRIBUTE_COLD __attribute__((cold))
 #else
 #define ATTRIBUTE_COLD
 #endif
 
-#if (defined(__GNUG__) || defined(__clang__)) && CONFIG_HAS_CPP_ATTRIBUTE(gnu::hot)
+#if (defined(__GNUG__) || defined(__clang__)) && CONFIG_HELPER_HAS_CPP_STYLE_ATTRIBUTE__(gnu::hot)
 #define ATTRIBUTE_HOT [[gnu::hot]]
-#elif CONFIG_GNUC_AT_LEAST(4, 3) || CONFIG_HAS_GCC_ATTRIBUTE(hot)
+#elif CONFIG_GNUC_AT_LEAST(4, 3) && CONFIG_HAS_GCC_ATTRIBUTE(hot)
 #define ATTRIBUTE_HOT __attribute__((hot))
 #else
 #define ATTRIBUTE_HOT
@@ -439,9 +444,10 @@
  *  indicate the size of the allocation.
  * Clang docs: https://clang.llvm.org/docs/AttributeReference.html#alloc-size
  */
-#if (defined(__GNUG__) || defined(__clang__)) && CONFIG_HAS_CPP_ATTRIBUTE(gnu::alloc_size)
+#if (defined(__GNUG__) || defined(__clang__)) && \
+    CONFIG_HELPER_HAS_CPP_STYLE_ATTRIBUTE__(gnu::alloc_size)
 #define ATTRIBUTE_ALLOC_SIZE(...) [[gnu::alloc_size(__VA_ARGS__)]]
-#elif CONFIG_GNUC_AT_LEAST(4, 3) || CONFIG_HAS_GCC_ATTRIBUTE(alloc_size)
+#elif CONFIG_GNUC_AT_LEAST(4, 3) && CONFIG_HAS_GCC_ATTRIBUTE(alloc_size)
 #define ATTRIBUTE_ALLOC_SIZE(...) __attribute__((alloc_size(__VA_ARGS__)))
 #else
 #define ATTRIBUTE_ALLOC_SIZE(...)
@@ -456,27 +462,28 @@
  *
  *  See https://gcc.gnu.org/onlinedocs/gcc/Common-Function-Attributes.html for more info
  */
-#if CONFIG_GNUC_AT_LEAST(10, 0) || CONFIG_HAS_GCC_ATTRIBUTE(access)
-#if CONFIG_HAS_AT_LEAST_CXX_11 && CONFIG_HAS_CPP_ATTRIBUTE(gnu::access)
+#if CONFIG_GNUC_AT_LEAST(10, 0) && CONFIG_HAS_GCC_ATTRIBUTE(access)
+
+#if CONFIG_HELPER_HAS_CPP_STYLE_ATTRIBUTE__(gnu::access)
+
 #define ATTRIBUTE_ACCESS(mode, memory_argument_pos) [[gnu::access(mode, memory_argument_pos)]]
 #define ATTRIBUTE_SIZED_ACCESS(mode, memory_argument_pos, range_size_argument_pos) \
     [[gnu::access(mode, memory_argument_pos, range_size_argument_pos)]]
-#if CONFIG_GNUC_AT_LEAST(11, 0)
-#define ATTRIBUTE_ACCESS_NONE(memory_argument_pos) ATTRIBUTE_ACCESS(none, memory_argument_pos)
 #else
-#define ATTRIBUTE_ACCESS_NONE(memory_argument_pos)
-#endif
-#else
+
 #define ATTRIBUTE_ACCESS(mode, memory_argument_pos) \
     __attribute__((access(mode, memory_argument_pos)))
 #define ATTRIBUTE_SIZED_ACCESS(mode, memory_argument_pos, range_size_argument_pos) \
     __attribute__((access(mode, memory_argument_pos, range_size_argument_pos)))
+
+#endif
+
 #if CONFIG_GNUC_AT_LEAST(11, 0)
 #define ATTRIBUTE_ACCESS_NONE(memory_argument_pos) ATTRIBUTE_ACCESS(none, memory_argument_pos)
 #else
 #define ATTRIBUTE_ACCESS_NONE(memory_argument_pos)
 #endif
-#endif
+
 #else
 #define ATTRIBUTE_ACCESS(mode, memory_argument_pos)
 #define ATTRIBUTE_SIZED_ACCESS(mode, memory_argument_pos, range_size_argument_pos)
@@ -487,10 +494,11 @@
  *  See https://gcc.gnu.org/onlinedocs/gcc/Common-Function-Attributes.html
  *   and https://clang.llvm.org/docs/AttributeReference.html#id664 for more info
  */
-#if (defined(__GNUG__) || defined(__clang__)) && CONFIG_HAS_CPP_ATTRIBUTE(gnu::nonnull)
+#if (defined(__GNUG__) || defined(__clang__)) && \
+    CONFIG_HELPER_HAS_CPP_STYLE_ATTRIBUTE__(gnu::nonnull)
 #define ATTRIBUTE_NONNULL(...)     [[gnu::nonnull(__VA_ARGS__)]]
 #define ATTRIBUTE_NONNULL_ALL_ARGS [[gnu::nonnull]]
-#elif CONFIG_GNUC_AT_LEAST(3, 3) || CONFIG_HAS_GCC_ATTRIBUTE(nonnull)
+#elif CONFIG_GNUC_AT_LEAST(3, 3) && CONFIG_HAS_GCC_ATTRIBUTE(nonnull)
 #define ATTRIBUTE_NONNULL(...)     __attribute__((nonnull(__VA_ARGS__)))
 #define ATTRIBUTE_NONNULL_ALL_ARGS __attribute__((nonnull))
 #else
@@ -498,97 +506,98 @@
 #define ATTRIBUTE_NONNULL_ALL_ARGS
 #endif
 
-#if (defined(__GNUG__) || defined(__clang__)) && CONFIG_HAS_CPP_ATTRIBUTE(gnu::returns_nonnull)
+#if (defined(__GNUG__) || defined(__clang__)) && \
+    CONFIG_HELPER_HAS_CPP_STYLE_ATTRIBUTE__(gnu::returns_nonnull)
 #define ATTRIBUTE_RETURNS_NONNULL [[gnu::returns_nonnull]]
-#elif CONFIG_GNUC_AT_LEAST(4, 9) || CONFIG_HAS_GCC_ATTRIBUTE(returns_nonnull)
+#elif CONFIG_GNUC_AT_LEAST(4, 9) && CONFIG_HAS_GCC_ATTRIBUTE(returns_nonnull)
 #define ATTRIBUTE_RETURNS_NONNULL __attribute__((returns_nonnull))
 #else
 #define ATTRIBUTE_RETURNS_NONNULL
 #endif
 
-#if (defined(__GNUG__) || defined(__clang__)) && CONFIG_HAS_CPP_ATTRIBUTE(gnu::target)
+#if (defined(__GNUG__) || defined(__clang__)) && \
+    CONFIG_HELPER_HAS_CPP_STYLE_ATTRIBUTE__(gnu::target)
 #define ATTRIBUTE_TARGET(config_string) [[gnu::target(config_string)]]
-#elif CONFIG_GNUC_AT_LEAST(4, 4) || CONFIG_HAS_GCC_ATTRIBUTE(target)
+#elif CONFIG_GNUC_AT_LEAST(4, 4) && CONFIG_HAS_GCC_ATTRIBUTE(target)
 #define ATTRIBUTE_TARGET(config_string) __attribute__((target(config_string)))
 #else
 #define ATTRIBUTE_TARGET(config_string)
 #endif
 
-#if defined(__clang__) && CONFIG_HAS_CPP_ATTRIBUTE(clang::lifetimebound)
+#if defined(__clang__) && CONFIG_HELPER_HAS_CPP_STYLE_ATTRIBUTE__(clang::lifetimebound)
 #define ATTRIBUTE_LIFETIME_BOUND [[clang::lifetimebound]]
-#elif defined(_MSC_VER) && CONFIG_HAS_CPP_ATTRIBUTE(msvc::lifetimebound)
+#elif defined(_MSC_VER) && CONFIG_HELPER_HAS_CPP_STYLE_ATTRIBUTE__(msvc::lifetimebound)
 #define ATTRIBUTE_LIFETIME_BOUND [[msvc::lifetimebound]]
 #else
 #define ATTRIBUTE_LIFETIME_BOUND
 #endif
 
-#if CONFIG_CLANG_AT_LEAST(20, 1) && CONFIG_HAS_CPP_ATTRIBUTE(clang::lifetime_capture_by)
+#if CONFIG_CLANG_AT_LEAST(20, 1) && \
+    CONFIG_HELPER_HAS_CPP_STYLE_ATTRIBUTE__(clang::lifetime_capture_by)
 #define ATTRIBUTE_LIFETIME_CAPTURE_BY(...) [[clang::lifetime_capture_by(__VA_ARGS__)]]
 #else
 #define ATTRIBUTE_LIFETIME_CAPTURE_BY(...)
 #endif
 
-#if defined(__clang__) && CONFIG_HAS_CPP_ATTRIBUTE(clang::reinitializes)
+#if defined(__clang__) && CONFIG_HELPER_HAS_CPP_STYLE_ATTRIBUTE__(clang::reinitializes)
 #define ATTRIBUTE_REINITIALIZES [[clang::reinitializes]]
 #else
 #define ATTRIBUTE_REINITIALIZES
 #endif
 
-#if CONFIG_CLANG_AT_LEAST(10, 0) && CONFIG_HAS_CPP_ATTRIBUTE(gsl::Pointer)
+#if CONFIG_CLANG_AT_LEAST(10, 0) && CONFIG_HELPER_HAS_CPP_STYLE_ATTRIBUTE__(gsl::Pointer)
 #define ATTRIBUTE_GSL_POINTER [[gsl::Pointer]]
 #else
 #define ATTRIBUTE_GSL_POINTER
 #endif
 
-#if CONFIG_CLANG_AT_LEAST(10, 0) && CONFIG_HAS_CPP_ATTRIBUTE(gsl::Owner)
+#if CONFIG_CLANG_AT_LEAST(10, 0) && CONFIG_HELPER_HAS_CPP_STYLE_ATTRIBUTE__(gsl::Owner)
 #define ATTRIBUTE_GSL_OWNER [[gsl::Owner]]
 #else
 #define ATTRIBUTE_GSL_OWNER
 #endif
 
-#if CONFIG_CLANG_AT_LEAST(20, 1) && CONFIG_HAS_CPP_ATTRIBUTE(clang::coro_await_elidable)
+#if CONFIG_CLANG_AT_LEAST(20, 1) && \
+    CONFIG_HELPER_HAS_CPP_STYLE_ATTRIBUTE__(clang::coro_await_elidable)
 #define ATTRIBUTE_CORO_AWAIT_ELIDABLE [[clang::coro_await_elidable]]
 #else
 #define ATTRIBUTE_CORO_AWAIT_ELIDABLE
 #endif
 
-#if CONFIG_CLANG_AT_LEAST(20, 1) && CONFIG_HAS_CPP_ATTRIBUTE(clang::coro_await_elidable_argument)
+#if CONFIG_CLANG_AT_LEAST(20, 1) && \
+    CONFIG_HELPER_HAS_CPP_STYLE_ATTRIBUTE__(clang::coro_await_elidable_argument)
 #define ATTRIBUTE_CORO_AWAIT_ELIDABLE_ARGUMENT [[clang::coro_await_elidable_argument]]
 #else
 #define ATTRIBUTE_CORO_AWAIT_ELIDABLE_ARGUMENT
 #endif
 
-#if CONFIG_CLANG_AT_LEAST(20, 1) && CONFIG_HAS_CPP_ATTRIBUTE(clang::no_specializations)
+#if CONFIG_CLANG_AT_LEAST(20, 1) && \
+    CONFIG_HELPER_HAS_CPP_STYLE_ATTRIBUTE__(clang::no_specializations)
 #define ATTRIBUTE_NO_SPECIALIZATIONS_ALLOWED [[clang::no_specializations]]
 #else
 #define ATTRIBUTE_NO_SPECIALIZATIONS_ALLOWED
 #endif
 
-#if CONFIG_HAS_AT_LEAST_CXX_17 && CONFIG_HAS_CPP_ATTRIBUTE(nodiscard)
+#if CONFIG_HELPER_HAS_CPP_STYLE_ATTRIBUTE__(nodiscard)
 #define ATTRIBUTE_NODISCARD [[nodiscard]]
-#if CONFIG_HAS_AT_LEAST_CXX_20
+#if CONFIG_HAS_AT_LEAST_CXX_20 || CONFIG_HAS_AT_LEAST_C_23
 #define ATTRIBUTE_NODISCARD_WITH_MESSAGE(message) [[nodiscard(message)]]
-#else
-#define ATTRIBUTE_NODISCARD_WITH_MESSAGE(message) [[nodiscard]]
 #endif
-#elif CONFIG_HAS_AT_LEAST_C_23 && CONFIG_HAS_C_ATTRIBUTE(nodiscard)
-#define ATTRIBUTE_NODISCARD                       [[nodiscard]]
-#define ATTRIBUTE_NODISCARD_WITH_MESSAGE(message) [[nodiscard(message)]]
-#elif CONFIG_GNUC_AT_LEAST(3, 4) || CONFIG_HAS_GCC_ATTRIBUTE(warn_unused_result)
-#define ATTRIBUTE_NODISCARD                       __attribute__((warn_unused_result))
-#define ATTRIBUTE_NODISCARD_WITH_MESSAGE(message) __attribute__((warn_unused_result))
+#elif CONFIG_GNUC_AT_LEAST(3, 4) && CONFIG_HAS_GCC_ATTRIBUTE(warn_unused_result)
+#define ATTRIBUTE_NODISCARD __attribute__((warn_unused_result))
 #else
 #define ATTRIBUTE_NODISCARD
-#define ATTRIBUTE_NODISCARD_WITH_MESSAGE(message)
 #endif
 
-#if CONFIG_HAS_AT_LEAST_CXX_11 && CONFIG_HAS_CPP_ATTRIBUTE(noreturn)
-#define ATTRIBUTE_NORETURN [[noreturn]]
-#elif CONFIG_HAS_AT_LEAST_C_23 && CONFIG_HAS_C_ATTRIBUTE(noreturn)
+#ifndef ATTRIBUTE_NODISCARD_WITH_MESSAGE
+#define ATTRIBUTE_NODISCARD_WITH_MESSAGE(message) ATTRIBUTE_NODISCARD
+#endif
+
+#if CONFIG_HELPER_HAS_CPP_STYLE_ATTRIBUTE__(noreturn)
 #define ATTRIBUTE_NORETURN [[noreturn]]
 #elif CONFIG_HAS_AT_LEAST_C_11
 #define ATTRIBUTE_NORETURN _Noreturn
-#elif CONFIG_GNUC_AT_LEAST(2, 8) || CONFIG_HAS_GCC_ATTRIBUTE(noreturn)
+#elif CONFIG_GNUC_AT_LEAST(2, 8) && CONFIG_HAS_GCC_ATTRIBUTE(noreturn)
 #define ATTRIBUTE_NORETURN __attribute__((noreturn))
 #else
 #define ATTRIBUTE_NORETURN
@@ -604,19 +613,18 @@
 #define CONFIG_NOEXCEPT_FUNCTION
 #endif
 
-#if (defined(__GNUG__) || defined(__clang__)) && CONFIG_HAS_CPP_ATTRIBUTE(gnu::nothrow)
+#if (defined(__GNUC__) || defined(__clang__)) && \
+    CONFIG_HELPER_HAS_CPP_STYLE_ATTRIBUTE__(gnu::nothrow)
 #define ATTRIBUTE_NOTHROW [[gnu::nothrow]]
-#elif CONFIG_GNUC_AT_LEAST(3, 4) || CONFIG_HAS_GCC_ATTRIBUTE(nothrow)
+#elif CONFIG_GNUC_AT_LEAST(3, 4) && CONFIG_HAS_GCC_ATTRIBUTE(nothrow)
 #define ATTRIBUTE_NOTHROW __attribute__((nothrow))
 #else
 #define ATTRIBUTE_NOTHROW
 #endif
 
-#if CONFIG_HAS_AT_LEAST_CXX_17 && CONFIG_HAS_CPP_ATTRIBUTE(fallthrough)
+#if CONFIG_HELPER_HAS_CPP_STYLE_ATTRIBUTE__(fallthrough)
 #define ATTRIBUTE_FALLTHROUGH [[fallthrough]]
-#elif CONFIG_HAS_AT_LEAST_C_23 && CONFIG_HAS_C_ATTRIBUTE(fallthrough)
-#define ATTRIBUTE_FALLTHROUGH [[fallthrough]]
-#elif CONFIG_GNUC_AT_LEAST(7, 1) || CONFIG_HAS_GCC_ATTRIBUTE(fallthrough)
+#elif CONFIG_GNUC_AT_LEAST(7, 1) && CONFIG_HAS_GCC_ATTRIBUTE(fallthrough)
 #define ATTRIBUTE_FALLTHROUGH __attribute__((fallthrough))
 #else
 #define ATTRIBUTE_FALLTHROUGH
