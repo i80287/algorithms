@@ -66,7 +66,7 @@ export template <class KeyType, class ComparatorType>
 
 #ifdef RBTREE_DEBUG
 #ifdef NDEBUG
-#error("Can't assert rbtree invariants in release mode")
+#error ("Can't assert rbtree invariants in release mode")
 #endif
 // NOLINTNEXTLINE(cppcoreguidelines-macro-usage)
 #define RBTREE_ASSERT_INVARIANT(expr) assert(expr)
@@ -1648,6 +1648,9 @@ private:
 #undef RBTREE_ATTRIBUTE_NONNULL_ALL_ARGS
 
 template <class T>
+#ifndef RBTREE_DEBUG
+[[maybe_unused]]
+#endif
 inline constexpr bool kUseByValue =
     std::is_trivial_v<T> ||
     (std::is_standard_layout_v<T> && !std::is_polymorphic_v<T> && !std::is_array_v<T> &&
@@ -2069,7 +2072,7 @@ private:
 
 namespace impl {
 template <class TimeType>
-    requires kUseByValue<TimeType>
+    requires std::is_arithmetic_v<TimeType>
 class TimeInterval final {
 public:
     static TimeInterval FromLowHighEndpoints(const TimeType low, const TimeType high) {
@@ -2083,12 +2086,12 @@ public:
         };
     }
 
-    [[nodiscard]] constexpr const TimeType& LowEndpoint() const noexcept {
+    [[nodiscard]] constexpr const TimeType& LowEndpoint() const noexcept ATTRIBUTE_LIFETIME_BOUND {
         CheckInvariants();
         return low_;
     }
 
-    [[nodiscard]] constexpr const TimeType& HighEndpoint() const noexcept {
+    [[nodiscard]] constexpr const TimeType& HighEndpoint() const noexcept ATTRIBUTE_LIFETIME_BOUND {
         CheckInvariants();
         return high_;
     }
@@ -2110,17 +2113,11 @@ private:
         [[maybe_unused]] const TimeType low,
         [[maybe_unused]] const TimeType high,
         const std::source_location& location = std::source_location::current()) {
-#if CONFIG_GNUC_AT_LEAST(15, 0) && !defined(__clang__)
-// Bug in GCC 15+: false positive may occur with
-//  warning -Walloc-size-larger-than=x if x < 9223372036854775807
-#pragma GCC diagnostic push
-#pragma GCC diagnostic warning "-Wno-alloc-size-larger-than"
-#endif
-        throw std::runtime_error{std::string{"low > high at "} + location.file_name() + ':' +
-                                 std::to_string(location.line()) + ':' + location.function_name()};
-#if CONFIG_GNUC_AT_LEAST(15, 0) && !defined(__clang__)
-#pragma GCC diagnostic pop
-#endif
+        using namespace std::string_view_literals;
+        throw std::runtime_error{"low (which is "sv + std::to_string(low) +
+                                 ") > high (which is "sv + std::to_string(high) + ") at "sv +
+                                 location.file_name() + ':' + std::to_string(location.line()) +
+                                 ':' + location.function_name()};
     }
 
     TimeType low_;
