@@ -430,6 +430,13 @@ private:
             STR_LITERAL(CharType, "def"),
             STR_LITERAL(CharType, "ghi"),
         };
+
+#if CONFIG_GNUC_AT_LEAST(15, 0) && !defined(__clang__)
+// Bug in GCC 15+: false positive may occur with warning -Walloc-size-larger-than=x
+#pragma GCC diagnostic push
+#pragma GCC diagnostic warning "-Wno-alloc-size-larger-than"
+#endif
+
         assert(misc::join_strings_collection(kCharSep, arr_3_elems) ==
                std::basic_string<CharType>{arr_3_elems[0]} + kCharSep +
                    std::basic_string<CharType>{arr_3_elems[1]} + kCharSep +
@@ -451,6 +458,10 @@ private:
                    std::basic_string<CharType>{arr_3_elems[1]} +
                    std::basic_string<CharType>{kNonEmptySep} +
                    std::basic_string<CharType>{arr_3_elems[2]});
+
+#if CONFIG_GNUC_AT_LEAST(15, 0) && !defined(__clang__)
+#pragma GCC diagnostic pop
+#endif
     }
 
     static void test_list_of_empty_strings() {
