@@ -378,7 +378,7 @@ class [[nodiscard]] StringMapImplManyStrings final {
         template <std::integral CharType>
         ATTRIBUTE_NONNULL_ALL_ARGS
         ATTRIBUTE_ALWAYS_INLINE
-        explicit constexpr InternalIterator(const CharType* ATTRIBUTE_LIFETIME_BOUND str) noexcept {
+        explicit constexpr InternalIterator(const CharType* str ATTRIBUTE_LIFETIME_BOUND) noexcept {
             if constexpr (InCompileTime || std::is_same_v<CharType, value_type>) {
                 pointer_ = str;
             } else {

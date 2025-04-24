@@ -134,8 +134,6 @@ function(configure_gcc_or_clang_gcc_options)
             -Wsuggest-attribute=format
             -Wsuggest-attribute=cold
             -Wsuggest-attribute=malloc
-            -Walloc-size-larger-than=${allocation_limit_in_bytes}
-            -Wlarger-than=${allocation_limit_in_bytes}
             -Wstack-usage=${stack_allocation_limit_in_bytes}
             -Wattribute-alias=2
             -Wstringop-overflow=4
@@ -143,7 +141,15 @@ function(configure_gcc_or_clang_gcc_options)
             -Walloc-zero
             -Wtrampolines
             -Wcast-align=strict
-            -fdiagnostics-color=always)
+            -fdiagnostics-color=always
+        )
+        if(CMAKE_CXX_COMPILER_VERSION VERSION_LESS 15.0.0)
+            set(LOCAL_FN_TEST_CXX_COMPILE_OPTIONS
+                ${LOCAL_FN_TEST_CXX_COMPILE_OPTIONS}
+                -Walloc-size-larger-than=${allocation_limit_in_bytes}
+                -Wlarger-than=${allocation_limit_in_bytes}
+            )
+        endif()
         if(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 10.1.0)
             set(LOCAL_FN_TEST_CXX_COMPILE_OPTIONS
                 ${LOCAL_FN_TEST_CXX_COMPILE_OPTIONS}
@@ -160,6 +166,12 @@ function(configure_gcc_or_clang_gcc_options)
             set(LOCAL_FN_TEST_CXX_COMPILE_OPTIONS
                 ${LOCAL_FN_TEST_CXX_COMPILE_OPTIONS}
                 -Winvalid-utf8 # enabled by default by Clang but Clang only warns about invalid utf in the comments
+            )
+        endif()
+        if(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 14.1.0)
+            set(LOCAL_FN_TEST_CXX_COMPILE_OPTIONS
+                ${LOCAL_FN_TEST_CXX_COMPILE_OPTIONS}
+                -Wflex-array-member-not-at-end
             )
         endif()
     endif()
@@ -297,18 +309,11 @@ function(configure_gcc_or_clang_gcc_options)
             -Wstrict-prototypes # enabled by default if Clang is used
             -Wold-style-definition
             -Wnested-externs
-            -Wc99-c11-compat
         )
         if(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 11.0.0)
             set(LOCAL_FN_TEST_C_COMPILE_OPTIONS
                 ${LOCAL_FN_TEST_C_COMPILE_OPTIONS}
                 -fanalyzer
-            )
-        endif()
-        if(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 14.0.0)
-            set(LOCAL_FN_TEST_C_COMPILE_OPTIONS
-                ${LOCAL_FN_TEST_C_COMPILE_OPTIONS}
-                -Wc11-c23-compat
             )
         endif()
     endif()
