@@ -430,6 +430,7 @@ private:
             STR_LITERAL(CharType, "def"),
             STR_LITERAL(CharType, "ghi"),
         };
+
         assert(misc::join_strings_collection(kCharSep, arr_3_elems) ==
                std::basic_string<CharType>{arr_3_elems[0]} + kCharSep +
                    std::basic_string<CharType>{arr_3_elems[1]} + kCharSep +

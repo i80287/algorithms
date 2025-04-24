@@ -106,11 +106,11 @@ __attribute__((no_sanitize_address, no_sanitize_thread, no_sanitize_undefined))
 #endif
 static inline size_t (*resolve_memcount(void))(const uint8_t*, uint8_t, size_t) {
     __builtin_cpu_init();
-    return __builtin_cpu_supports("avx2") && __builtin_cpu_supports("popcnt") ? memcount_avx
-                                                                              : memcount_default;
+    return __builtin_cpu_supports("avx2") && __builtin_cpu_supports("popcnt") ? &memcount_avx
+                                                                              : &memcount_default;
 }
 
-#if defined(linux) || defined(__linux__)
+#ifdef __linux__
 
 // clang-format off
 
@@ -120,7 +120,7 @@ __attribute__((ifunc("_ZL16resolve_memcountv")))
 #else
 __attribute__((ifunc("resolve_memcount")))
 #endif
-static inline size_t memcount(const uint8_t* const src, const uint8_t chr, size_t size) CONFIG_NOEXCEPT_FUNCTION;
+static inline size_t memcount(const uint8_t* src, uint8_t chr, size_t size) CONFIG_NOEXCEPT_FUNCTION;
 
 #else  // !__linux__
 
@@ -129,11 +129,11 @@ static inline size_t memcount(const uint8_t* const src, const uint8_t chr, size_
 #if CONFIG_HAS_AT_LEAST_CXX_17
 static inline
 #endif
-size_t (*const memcount)(const uint8_t* const src, const uint8_t chr, size_t size) = resolve_memcount();
+size_t (*const memcount)(const uint8_t* src, uint8_t chr, size_t size) = resolve_memcount();
 
 #else
 
-size_t (*memcount)(const uint8_t* const src, const uint8_t chr, size_t size) = NULL;
+size_t (*memcount)(const uint8_t* src, uint8_t chr, size_t size) = NULL;
 
 // clang-format on
 
@@ -153,7 +153,7 @@ MEMCOUNT_ATTRIBUTES
 ATTRIBUTE_ALWAYS_INLINE
 static inline size_t memcount(const uint8_t* const src,
                               const uint8_t chr,
-                              size_t size) CONFIG_NOEXCEPT_FUNCTION {
+                              const size_t size) CONFIG_NOEXCEPT_FUNCTION {
     return memcount_default(src, chr, size);
 }
 
