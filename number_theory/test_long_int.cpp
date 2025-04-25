@@ -105,7 +105,7 @@ void AssertInvariants(const longint& n) noexcept {
     static_assert(noexcept(*n.begin()));
     static_assert(noexcept(*n.end()));
     static_assert(noexcept(n.empty()));
-    static_assert(noexcept(n.iszero()));
+    static_assert(noexcept(n.is_zero()));
     static_assert(noexcept(static_cast<bool>(n)));
     static_assert(noexcept(!n));
     assert(math_functions::uabs(n.size()) == n.usize());
@@ -132,7 +132,7 @@ void TestOperatorEqualsInt() {
     assert(n.sign() == 0);
     assert(n.size() == 0);
     assert(n == 0);
-    assert(n.iszero());
+    assert(n.is_zero());
     assert(!n);
     AssertInvariants(n);
     for (int32_t i = 1; i <= K; i++) {
@@ -156,7 +156,7 @@ void TestOperatorEqualsInt() {
     assert(n.sign() == 0);
     assert(n.size() == 0);
     assert(n == 0U);
-    assert(n.iszero());
+    assert(n.is_zero());
     assert(!n);
     AssertInvariants(n);
     for (uint32_t i = 1; i <= K; i++) {
@@ -172,7 +172,7 @@ void TestOperatorEqualsInt() {
     assert(n.sign() == 0);
     assert(n.size() == 0);
     assert(n == int64_t{0});
-    assert(n.iszero());
+    assert(n.is_zero());
     assert(!n);
     AssertInvariants(n);
     for (int64_t i = 1; i <= K; i++) {
@@ -196,7 +196,7 @@ void TestOperatorEqualsInt() {
     assert(n.sign() == 0);
     assert(n.size() == 0);
     assert(n == uint64_t{0});
-    assert(n.iszero());
+    assert(n.is_zero());
     assert(!n);
     AssertInvariants(n);
     for (uint64_t i = 1; i < K; i++) {
@@ -212,7 +212,7 @@ void TestOperatorEqualsInt() {
     assert(n.sign() == 0);
     assert(n.size() == 0);
     assert(n == int128_t{0});
-    assert(n.iszero());
+    assert(n.is_zero());
     assert(!n);
     AssertInvariants(n);
     for (int64_t i = 1; i <= K; i++) {
@@ -235,7 +235,7 @@ void TestOperatorEqualsInt() {
     n = uint128_t{0};
     assert(n.sign() == 0);
     assert(n.size() == 0);
-    assert(n.iszero());
+    assert(n.is_zero());
     assert(!n);
     AssertInvariants(n);
     n = static_cast<uint128_t>(-1);
@@ -769,7 +769,7 @@ void TestLongIntSquare() {
         "5210644015679228794060694325390955853335898483908056458352183851018372"
         "555735221");
     n.SquareInplace();
-    longint m(
+    auto m = longint::from_string(
         "2715081105813375912663740062136683840750740328631800602665129147391424"
         "5617262278768667220143322390759183606834362732983828281970077858087036"
         "385802059859918841");
@@ -882,7 +882,7 @@ void TestUIntAddAndSub() {
             n -= j;
             if (unlikely(i == j)) {
                 assert(!n);
-                assert(n.iszero());
+                assert(n.is_zero());
             }
             assert(n == int64_t{i} - int64_t{j});
             AssertInvariants(n);
@@ -899,7 +899,7 @@ void TestUIntAddAndSub() {
             n -= j;
             if (unlikely(i == j)) {
                 assert(!n);
-                assert(n.iszero());
+                assert(n.is_zero());
             }
             assert(n == int64_t{i} - int64_t{j});
             AssertInvariants(n);
@@ -1252,7 +1252,7 @@ void TestToString() {
     n.to_string(buffer);
     assert(buffer == ans && "Long int set to_string test failed");
 
-    n.change_sign();
+    n.flip_sign();
     n.to_string(buffer);
     assert(buffer[0] == '-');
     const std::string_view buffer_without_sign(&buffer[1], kSquareDigits);
@@ -1309,13 +1309,13 @@ void TestBitShifts() {
 
     for (uint32_t r = 0; r <= k; r++) {
         n = 0;
-        assert(n.iszero());
+        assert(n.is_zero());
         assert(n.sign() == 0);
         assert(n.size() == 0);
         AssertInvariants(n);
         n <<= r;
         assert(n == 0);
-        assert(n.iszero());
+        assert(n.is_zero());
         assert(n.sign() == 0);
         assert(n.size() == 0);
         AssertInvariants(n);
@@ -1572,13 +1572,13 @@ void TestDecimal() {
 
     for (uint32_t i = 0; i <= kC; i++) {
         d1 = i;
-        d1.SquareThisTo(d1);
+        d1.square_this_to(d1);
         assert(d1 == i * i);
     }
 
     for (uint32_t i = std::numeric_limits<uint32_t>::max() - kC; i != 0; i++) {
         d1 = i;
-        d1.SquareThisTo(d1);
+        d1.square_this_to(d1);
         assert(d1 == uint64_t{i} * i);
     }
 
@@ -1593,7 +1593,7 @@ void TestDecimal() {
 
         constexpr size_t kMults = 20;
         for (size_t i = 0; i < kMults; i++) {
-            d1.SquareThisTo(d1);
+            d1.square_this_to(d1);
         }
 
         constexpr size_t kNewZeroLimbs = kInitialZeroLimbs << kMults;
@@ -1609,16 +1609,16 @@ void TestDecimal() {
         assert(d1.size_ == 2);
         assert(d1.digits_[0] == 294967296 && d1.digits_[1] == 4);
 
-        d1.SquareThisTo(d1);
+        d1.square_this_to(d1);
         assert(d1.size_ == 3);
         assert(d1.digits_[0] == 709551616 && d1.digits_[1] == 446744073 && d1.digits_[2] == 18);
 
-        d1.SquareThisTo(d1);
+        d1.square_this_to(d1);
         assert(d1.size_ == 5);
         assert(d1.digits_[0] == 768211456 && d1.digits_[1] == 374607431 &&
                d1.digits_[2] == 938463463 && d1.digits_[3] == 282366920 && d1.digits_[4] == 340);
 
-        d1.SquareThisTo(d1);
+        d1.square_this_to(d1);
         assert(d1.size_ == 9);
         assert(d1.digits_[0] == 129639936 && d1.digits_[1] == 584007913 &&
                d1.digits_[2] == 564039457 && d1.digits_[3] == 984665640 &&
@@ -1679,8 +1679,7 @@ void TestToIntTypes() {
     test_tools::log_tests_started();
     constexpr uint32_t kC = 1000000;
 
-    longint n(longint::Reserve{4});
-    auto test = [&](const auto i) {
+    auto test = [n = longint{longint::Reserve{4}}](const auto i) mutable {
         n = i;
         if constexpr (sizeof(i) <= sizeof(uint32_t)) {
             assert(n.fits_in_uint32());
@@ -1726,40 +1725,60 @@ template <class T, T k>
 void TestDivModImpl() {
     test_tools::log_tests_started();
 
-    auto concat = [](std::vector<T> lhs, const std::vector<T>& rhs) {
+    const auto concat = [](std::vector<T> lhs, const std::vector<T>& rhs) {
         lhs.insert(lhs.end(), rhs.begin(), rhs.end());
         return lhs;
     };
+
     static_assert(k > 10);
-    const auto i_range = concat(math_functions::arange(T{0}, k + 1),
-                                math_functions::arange(std::numeric_limits<T>::max() - k, T{0}));
-    const auto j_range = concat(math_functions::arange(T{1}, k + 1),
-                                math_functions::arange(std::numeric_limits<T>::max() - k, T{0}));
+
+    const auto i_range = [&]() {
+        if constexpr (math_functions::is_unsigned_v<T>) {
+            return concat(math_functions::arange(T{0}, k + 1),
+                          math_functions::arange(std::numeric_limits<T>::max() - k, T{0}));
+        } else {
+            return math_functions::arange(-k, k + 1);
+        }
+    }();
+    const auto j_range = [&]() {
+        if constexpr (math_functions::is_unsigned_v<T>) {
+            return concat(math_functions::arange(T{1}, k + 1),
+                          math_functions::arange(std::numeric_limits<T>::max() - k, T{0}));
+        } else {
+            return concat(math_functions::arange(-k, T{0}), math_functions::arange(T{1}, k + 1));
+        }
+    }();
 
     auto test_i_j = [n = longint{}, m = longint{}, li_rem = longint{}](const T i,
                                                                        const T j) mutable {
         if constexpr (std::is_same_v<T, uint32_t>) {
             n = i;
             assert(n.mod(j) == i % j);
-            const auto rem = n.divmod(j);
+            const int64_t rem_i_j = n.divmod(j);
             assert(n == i / j);
-            assert(rem == i % j);
+            assert(rem_i_j == i % j);
             AssertInvariants(n);
         }
 
         n = i;
         m = j;
+
         // Test compile time constants
-        assert(n.mod(1) == i % 1);
-        assert(n.mod(2) == i % 2);
+        assert(n.mod(1u) == i % 1);
+        assert(n.mod(2u) == i % 2);
+        assert(n.mod(3u) == i % 3);
+
         n.divmod(m, li_rem);
         assert(n == i / j);
         assert(li_rem == i % j);
+
         AssertInvariants(n);
+        AssertInvariants(m);
+        AssertInvariants(li_rem);
     };
 
-    for (T i : i_range) {
-        for (T j : j_range) {
+    for (const T i : i_range) {
+        for (const T j : j_range) {
             test_i_j(i, j);
         }
     }
@@ -1767,10 +1786,14 @@ void TestDivModImpl() {
 
 void TestDivMod() {
     test_tools::log_tests_started();
-    TestDivModImpl<uint32_t, 6000>();
-    TestDivModImpl<uint64_t, 6000>();
+
+    TestDivModImpl<uint32_t, 4000>();
+    TestDivModImpl<int32_t, 4000>();
+    TestDivModImpl<uint64_t, 4000>();
+    TestDivModImpl<int64_t, 4000>();
 #if defined(INTEGERS_128_BIT_HPP) && (defined(__GNUG__) || defined(__clang__))
-    TestDivModImpl<uint128_t, 6000>();
+    TestDivModImpl<uint128_t, 4000>();
+    TestDivModImpl<int128_t, 4000>();
 #endif
 
     longint n;
