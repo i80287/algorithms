@@ -1764,9 +1764,9 @@ void TestDivModImpl() {
         m = j;
 
         // Test compile time constants
-        assert(n.mod(1u) == i % 1);
-        assert(n.mod(2u) == i % 2);
-        assert(n.mod(3u) == i % 3);
+        assert(n.mod(1u) == static_cast<int64_t>(i % 1));
+        assert(n.mod(2u) == static_cast<int64_t>(i % 2));
+        assert(n.mod(3u) == static_cast<int64_t>(i % 3));
 
         n.divmod(m, li_rem);
         assert(n == i / j);
