@@ -408,9 +408,9 @@ public:
     longint(const longint& other) : nums_(nullptr), size_(0), capacity_(0) {
         if (other.capacity_ > 0) {
             nums_ = allocate_uninitialized(other.capacity_);
-            std::uninitialized_copy_n(other.nums_, usize(), nums_);
             size_ = other.size_;
             capacity_ = other.capacity_;
+            std::uninitialized_copy_n(other.nums_, other.size_, nums_);
         }
     }
 
@@ -695,10 +695,6 @@ public:
     }
 
     void square_this_to(longint& other) const {
-        if (unlikely(this == std::addressof(other))) {
-            return;
-        }
-
         const size_type nums_size = usize();
         if (unlikely(nums_size == 0)) {
             other.assign_zero();
@@ -1529,7 +1525,7 @@ public:
     }
 
     ~longint() {
-        adopt_digits_sequence_without_changing_size(nullptr, 0);
+        deallocate(nums_, capacity_);
     }
 
     struct Decimal {
@@ -1537,7 +1533,7 @@ public:
         using double_dec_digit_t = uint64_t;
         using dec_size_type = std::size_t;
 
-        std::vector<dec_digit_t> digits_;
+        std::vector<dec_digit_t> digits_{};
 
         Decimal() = default;
         Decimal(const Decimal& other) = default;

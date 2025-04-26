@@ -122,6 +122,51 @@ void AssertInvariants(const longint& n) noexcept {
     }
 }
 
+void TestSemantic() {
+    test_tools::log_tests_started();
+
+    static_assert(std::is_default_constructible_v<longint>, "");
+    static_assert(std::is_copy_constructible_v<longint>, "");
+    static_assert(std::is_copy_assignable_v<longint>, "");
+    static_assert(std::is_nothrow_move_constructible_v<longint>, "");
+    static_assert(std::is_nothrow_move_assignable_v<longint>, "");
+    static_assert(std::is_nothrow_destructible_v<longint>, "");
+    static_assert(std::is_nothrow_swappable_v<longint>, "");
+
+    static constexpr uint32_t k1 = 10;
+    static constexpr uint32_t k2 = 100;
+
+    longint n{k1};
+
+    longint m = n;
+    assert(n == m);
+    AssertInvariants(n);
+    AssertInvariants(m);
+
+    m = k2;
+    static_assert(k1 != k2);
+    assert(n != m);
+
+    m.swap(n);
+    assert(n == k2);
+    assert(m == k1);
+
+    swap(n, m);
+    assert(n == k1);
+    assert(m == k2);
+
+    n = std::move(m);
+    assert(n == k2);
+
+    m.assign_zero();
+    assert(m == 0);
+    assert(m.is_zero());
+
+    n = m;
+    assert(n == m);
+    assert(n.is_zero());
+}
+
 void TestOperatorEqualsInt() {
     test_tools::log_tests_started();
     longint n;
@@ -735,6 +780,9 @@ void TestLongIntSquare() {
     for (uint32_t i = 0; i <= K; i++) {
         n = i;
         n.square_inplace();
+        if (n != i * i) {
+            std::cerr << "i = " << i << "\nn = " << n << '\n';
+        }
         assert(n == i * i);
         AssertInvariants(n);
     }
@@ -1850,6 +1898,7 @@ void TestDivMod() {
 
 // NOLINTNEXTLINE(bugprone-exception-escape)
 int main() {
+    TestSemantic();
     TestOperatorEqualsInt();
     TestToIntTypes();
     TestUIntMult();
