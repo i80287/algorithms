@@ -1626,7 +1626,11 @@ struct [[nodiscard]] PrimeFactor final {
     uint32_t factor_power;
 };
 
-#if CONFIG_HAS_AT_LEAST_CXX_20 && !defined(_GLIBCXX_DEBUG) && !defined(_GLIBCXX_ASSERTIONS)
+#if CONFIG_HAS_AT_LEAST_CXX_20 && !defined(_GLIBCXX_DEBUG) && !defined(_GLIBCXX_ASSERTIONS) && \
+    ((CONFIG_COMPILER_ID != CONFIG_CLANG_COMPILER_ID &&                                        \
+      CONFIG_COMPILER_ID != CONFIG_CLANG_CL_COMPILER_ID) ||                                    \
+     CONFIG_CLANG_AT_LEAST(15, 0)) &&                                                          \
+    (CONFIG_COMPILER_ID != CONFIG_GCC_COMPILER_ID || CONFIG_GNUC_AT_LEAST(12, 0))
 #define CONSTEXPR_VECTOR constexpr
 #else
 #define CONSTEXPR_VECTOR inline
