@@ -126,7 +126,7 @@ void TestOperatorEqualsInt() {
     test_tools::log_tests_started();
     longint n;
 
-    constexpr int32_t K = 150'000;
+    static constexpr int32_t K = 150'000;
 
     n = 0;
     assert(n.sign() == 0);
@@ -269,7 +269,7 @@ void TestLongIntMult() {
 
     longint n1;
     longint n2;
-    constexpr uint64_t K = 5000;
+    static constexpr uint64_t K = 5000;
     for (uint32_t i = 0; i <= K; i++) {
         for (uint32_t j = 0; j <= K; j++) {
             n1 = i;
@@ -297,7 +297,7 @@ void TestLongIntMult() {
         std::string_view right_mult{};
         std::string_view product{};
     };
-    constexpr std::array test_cases = {
+    static constexpr std::array kTestCases = {
         TestCase{
             "0",
             "0",
@@ -693,7 +693,7 @@ void TestLongIntMult() {
             "17392669574477053593427918093472288422759299448565",
         },
     };
-    for (const TestCase& test_case : test_cases) {
+    for (const TestCase& test_case : kTestCases) {
         n1.set_string(test_case.left_mult);
         n2.set_string(test_case.right_mult);
         n1 *= n2;
@@ -705,7 +705,7 @@ void TestLongIntMult() {
 
     namespace chrono = std::chrono;
 
-    constexpr size_t k = static_cast<size_t>(1e6);
+    static constexpr size_t k = static_cast<size_t>(1e6);
     n1.set_string(std::string(k, '9'));
     {
         auto start = chrono::high_resolution_clock::now();
@@ -731,31 +731,31 @@ void TestLongIntSquare() {
 
     longint n;
     n.reserve(4);
-    constexpr uint64_t K = 5000;
+    static constexpr uint64_t K = 5000;
     for (uint32_t i = 0; i <= K; i++) {
         n = i;
-        n.SquareInplace();
+        n.square_inplace();
         assert(n == i * i);
         AssertInvariants(n);
     }
 
     for (uint32_t i = std::numeric_limits<uint32_t>::max() - K; i != 0; i++) {
         n = i;
-        n.SquareInplace();
+        n.square_inplace();
         assert(n == uint64_t{i} * i);
         AssertInvariants(n);
     }
 
     for (uint64_t i = std::numeric_limits<uint64_t>::max() - K; i != 0; i++) {
         n = i;
-        n.SquareInplace();
+        n.square_inplace();
         assert(n == uint128_t{i} * i);
         AssertInvariants(n);
     }
 
     for (uint32_t p = 32; p <= 96; p += 32) {
         n = uint128_t{1} << p;
-        n.SquareInplace();
+        n.square_inplace();
         const uint32_t size = (p + p) / longint::kNumsBits + 1;
         assert(n.size() == static_cast<typename longint::ssize_type>(size));
         for (size_t i = 0; i < size - 1; i++) {
@@ -768,7 +768,7 @@ void TestLongIntSquare() {
     n.set_string(
         "5210644015679228794060694325390955853335898483908056458352183851018372"
         "555735221");
-    n.SquareInplace();
+    n.square_inplace();
     auto m = longint::from_string(
         "2715081105813375912663740062136683840750740328631800602665129147391424"
         "5617262278768667220143322390759183606834362732983828281970077858087036"
@@ -781,7 +781,7 @@ void TestLongIntSquare() {
         "3987458973628574634853764897536498753648546347568931275834617531694764"
         "8753619457374157823617426913817847816718871267134057345147516847576813"
         "468751364056130456875613458136745");
-    n.SquareInplace();
+    n.square_inplace();
     m.set_string(
         "1589982906637104586529079283861021897318944415573791408939111302044687"
         "2962918001208253201768214465836884044728300271809369841097032223695932"
@@ -796,7 +796,7 @@ void TestLongIntSquare() {
         "5387142880920439806100373072696674167138705550241027216564196797793749"
         "2381352744656633329902311958853296032765516041667295265055226543806948"
         "0844921279178590685230852805810043617124500309990368055562957");
-    n.SquareInplace();
+    n.square_inplace();
     m.set_string(
         "2902130841945177589665162016449731365749359124301015936787287192073762"
         "3928354379418542107057097772342111195376512765827019338736271117291725"
@@ -808,11 +808,11 @@ void TestLongIntSquare() {
     AssertInvariants(n);
     AssertInvariants(m);
 
-    constexpr size_t k = 572;
+    static constexpr size_t k = 572;
     std::string long_ten_pow(k + 1, '0');
     long_ten_pow[0] = '1';
     n.set_string(long_ten_pow);
-    n.SquareInplace();
+    n.square_inplace();
 
     std::string long_ten_pow_square(2 * k + 1, '0');
     long_ten_pow_square[0] = '1';
@@ -826,7 +826,7 @@ void TestUIntMult() {
     test_tools::log_tests_started();
 
     longint n;
-    constexpr uint64_t K = 5000;
+    static constexpr uint64_t K = 5000;
     for (uint64_t i = 0; i <= K; i++) {
         for (uint32_t j = 0; j <= K; j++) {
             n = i;
@@ -836,7 +836,7 @@ void TestUIntMult() {
         }
     }
 
-    constexpr uint128_t kStartPos1 = static_cast<uint128_t>(-1) / K;
+    static constexpr uint128_t kStartPos1 = static_cast<uint128_t>(-1) / K;
     for (uint128_t i = kStartPos1 - K; i != kStartPos1; i++) {
         for (uint32_t j = 0; j < K; j++) {
             n = i;
@@ -869,7 +869,7 @@ void TestUIntAddAndSub() {
     test_tools::log_tests_started();
 
     longint n(longint::Reserve(4));
-    constexpr uint32_t K = 4000;
+    static constexpr uint32_t K = 4000;
     n -= std::numeric_limits<uint32_t>::max();
     assert(n == -int64_t{std::numeric_limits<uint32_t>::max()});
     for (uint32_t i = 0; i <= K; i++) {
@@ -997,7 +997,7 @@ void TestInt32Div() {
     test_tools::log_tests_started();
 
     longint n(longint::Reserve(4));
-    constexpr uint32_t K = 5000;
+    static constexpr uint32_t K = 5000;
 
     for (uint32_t i = 0; i <= K; i++) {
         for (uint32_t j = 1; j <= K; j++) {
@@ -1061,7 +1061,7 @@ void TestLongIntAddAndSub() {
     test_tools::log_tests_started();
     longint n(longint::Reserve{4});
     longint m(longint::Reserve{4});
-    constexpr uint32_t K = 5000;
+    static constexpr uint32_t K = 5000;
     for (uint32_t i = 0; i <= K; i++) {
         for (uint32_t j = 0; j <= K; j++) {
             n = i;
@@ -1236,10 +1236,10 @@ void TestToString() {
         AssertInvariants(n);
     }
 
-    constexpr size_t k = static_cast<size_t>(1e6);
-    constexpr size_t kSquareDigits = 2 * k;
+    static constexpr size_t k = static_cast<size_t>(1e6);
+    static constexpr size_t kSquareDigits = 2 * k;
     n.set_string(std::string(k, '9'));
-    n.SquareInplace();
+    n.square_inplace();
     AssertInvariants(n);
 
     std::string ans(kSquareDigits, '\0');
@@ -1262,7 +1262,7 @@ void TestToString() {
 
 void TestBitShifts() {
     test_tools::log_tests_started();
-    constexpr uint32_t k = 5000;
+    static constexpr uint32_t k = 5000;
     longint n;
     n.reserve(4);
     for (uint32_t i = 0; i <= k; i++) {
@@ -1464,7 +1464,7 @@ void TestDecimal() {
     test_tools::log_tests_started();
     longint::Decimal d1(0U);
     longint::Decimal d2(0U);
-    constexpr uint32_t kC = 2500;
+    static constexpr uint32_t kC = 2500;
 
     for (uint32_t i = 0; i <= kC; i++) {
         for (uint32_t j = 0; j <= kC; j++) {
@@ -1486,16 +1486,16 @@ void TestDecimal() {
 
     {
         d1 = static_cast<uint64_t>(1e18);
-        constexpr size_t k = 29;
+        static constexpr size_t k = 29;
         for (size_t i = 0; i < k; i++) {
             d1 += d1;
         }
 
-        assert(d1.size_ == 3 && d1.digits_[0] == 0 && d1.digits_[1] == 0 &&
+        assert(d1.digits_.size() == 3 && d1.digits_[0] == 0 && d1.digits_[1] == 0 &&
                d1.digits_[2] == (1U << k));
 
         d1 += d1;
-        assert(d1.size_ == 4 && d1.digits_[0] == 0 && d1.digits_[1] == 0 &&
+        assert(d1.digits_.size() == 4 && d1.digits_[0] == 0 && d1.digits_[1] == 0 &&
                d1.digits_[2] == (1U << (k + 1)) % longint::kDecimalBase &&
                d1.digits_[3] == (1U << (k + 1)) / longint::kDecimalBase);
     }
@@ -1504,7 +1504,7 @@ void TestDecimal() {
         d1 = uint32_t{999'999'999};
         d2 = uint64_t{999'999'999'999'999'999ULL};
         d1 += d2;
-        assert(d1.size_ == 3 && d1.digits_[0] == 999999998 && d1.digits_[1] == 0 &&
+        assert(d1.digits_.size() == 3 && d1.digits_[0] == 999999998 && d1.digits_[1] == 0 &&
                d1.digits_[2] == 1);
     }
 
@@ -1528,20 +1528,20 @@ void TestDecimal() {
 
     {
         d1 = static_cast<uint64_t>(1e18);
-        constexpr size_t kInitialZeroLimbs = 2;
-        assert(d1.size_ == kInitialZeroLimbs + 1);
+        static constexpr size_t kInitialZeroLimbs = 2;
+        assert(d1.digits_.size() == kInitialZeroLimbs + 1);
         for (size_t i = 0; i < kInitialZeroLimbs; i++) {
             assert(d1.digits_[i] == 0);
         }
         assert(d1.digits_[kInitialZeroLimbs] == 1);
 
-        constexpr size_t kMults = 20;
+        static constexpr size_t kMults = 20;
         for (size_t i = 0; i < kMults; i++) {
             d1 *= d1;
         }
 
-        constexpr size_t kNewZeroLimbs = kInitialZeroLimbs << kMults;
-        assert(d1.size_ == kNewZeroLimbs + 1);
+        static constexpr size_t kNewZeroLimbs = kInitialZeroLimbs << kMults;
+        assert(d1.digits_.size() == kNewZeroLimbs + 1);
         for (size_t i = 0; i < kNewZeroLimbs; i++) {
             assert(d1.digits_[i] == 0);
         }
@@ -1550,20 +1550,20 @@ void TestDecimal() {
 
     {
         d1 = uint64_t{1} << 32U;
-        assert(d1.size_ == 2);
+        assert(d1.digits_.size() == 2);
         assert(d1.digits_[0] == 294967296 && d1.digits_[1] == 4);
 
         d1 *= d1;
-        assert(d1.size_ == 3);
+        assert(d1.digits_.size() == 3);
         assert(d1.digits_[0] == 709551616 && d1.digits_[1] == 446744073 && d1.digits_[2] == 18);
 
         d1 *= d1;
-        assert(d1.size_ == 5);
+        assert(d1.digits_.size() == 5);
         assert(d1.digits_[0] == 768211456 && d1.digits_[1] == 374607431 &&
                d1.digits_[2] == 938463463 && d1.digits_[3] == 282366920 && d1.digits_[4] == 340);
 
         d1 *= d1;
-        assert(d1.size_ == 9);
+        assert(d1.digits_.size() == 9);
         assert(d1.digits_[0] == 129639936 && d1.digits_[1] == 584007913 &&
                d1.digits_[2] == 564039457 && d1.digits_[3] == 984665640 &&
                d1.digits_[4] == 907853269 && d1.digits_[5] == 985008687 &&
@@ -1584,20 +1584,20 @@ void TestDecimal() {
 
     {
         d1 = static_cast<uint64_t>(1e18);
-        constexpr size_t kInitialZeroLimbs = 2;
-        assert(d1.size_ == kInitialZeroLimbs + 1);
+        static constexpr size_t kInitialZeroLimbs = 2;
+        assert(d1.digits_.size() == kInitialZeroLimbs + 1);
         for (size_t i = 0; i < kInitialZeroLimbs; i++) {
             assert(d1.digits_[i] == 0);
         }
         assert(d1.digits_[kInitialZeroLimbs] == 1);
 
-        constexpr size_t kMults = 20;
+        static constexpr size_t kMults = 20;
         for (size_t i = 0; i < kMults; i++) {
             d1.square_this_to(d1);
         }
 
-        constexpr size_t kNewZeroLimbs = kInitialZeroLimbs << kMults;
-        assert(d1.size_ == kNewZeroLimbs + 1);
+        static constexpr size_t kNewZeroLimbs = kInitialZeroLimbs << kMults;
+        assert(d1.digits_.size() == kNewZeroLimbs + 1);
         for (size_t i = 0; i < kNewZeroLimbs; i++) {
             assert(d1.digits_[i] == 0);
         }
@@ -1606,20 +1606,20 @@ void TestDecimal() {
 
     {
         d1 = uint64_t{1} << 32U;
-        assert(d1.size_ == 2);
+        assert(d1.digits_.size() == 2);
         assert(d1.digits_[0] == 294967296 && d1.digits_[1] == 4);
 
         d1.square_this_to(d1);
-        assert(d1.size_ == 3);
+        assert(d1.digits_.size() == 3);
         assert(d1.digits_[0] == 709551616 && d1.digits_[1] == 446744073 && d1.digits_[2] == 18);
 
         d1.square_this_to(d1);
-        assert(d1.size_ == 5);
+        assert(d1.digits_.size() == 5);
         assert(d1.digits_[0] == 768211456 && d1.digits_[1] == 374607431 &&
                d1.digits_[2] == 938463463 && d1.digits_[3] == 282366920 && d1.digits_[4] == 340);
 
         d1.square_this_to(d1);
-        assert(d1.size_ == 9);
+        assert(d1.digits_.size() == 9);
         assert(d1.digits_[0] == 129639936 && d1.digits_[1] == 584007913 &&
                d1.digits_[2] == 564039457 && d1.digits_[3] == 984665640 &&
                d1.digits_[4] == 907853269 && d1.digits_[5] == 985008687 &&
@@ -1628,28 +1628,28 @@ void TestDecimal() {
     {
         d1 = uint64_t{2327846273287647234ULL};
         d2 = uint64_t{3457132687423462ULL};
-        assert(d1.size_ == 3);
+        assert(d1.digits_.size() == 3);
         assert(d1.digits_[0] == 287647234 && d1.digits_[1] == 327846273 && d1.digits_[2] == 2);
-        assert(d2.size_ == 2);
+        assert(d2.digits_.size() == 2);
         assert(d2.digits_[0] == 687423462 && d2.digits_[1] == 3457132);
         d1 *= d2;
-        assert(d1.size_ == 4);
+        assert(d1.digits_.size() == 4);
         assert(d1.digits_[0] == 431004108 && d1.digits_[1] == 644565471 &&
                d1.digits_[2] == 442679614 && d1.digits_[3] == 8047673);
         d2 *= d1;
-        assert(d2.size_ == 6);
+        assert(d2.digits_.size() == 6);
         assert(d2.digits_[0] == 57581896 && d2.digits_[1] == 950661194 &&
                d2.digits_[2] == 173172305 && d2.digits_[3] == 400547675 &&
                d2.digits_[4] == 874916397 && d2.digits_[5] == 27821);
         d1 *= d2;
-        assert(d1.size_ == 10);
+        assert(d1.digits_.size() == 10);
         assert(d1.digits_[0] == 722428768 && d1.digits_[1] == 871316001 &&
                d1.digits_[2] == 60383639 && d1.digits_[3] == 98648366 &&
                d1.digits_[4] == 319440946 && d1.digits_[5] == 443692592 &&
                d1.digits_[6] == 814170539 && d1.digits_[7] == 245484337 &&
                d1.digits_[8] == 901363890 && d1.digits_[9] == 223);
         d2 *= d1;
-        assert(d2.size_ == 15);
+        assert(d2.digits_.size() == 15);
         assert(d2.digits_[0] == 186384128 && d2.digits_[1] == 561145706 &&
                d2.digits_[2] == 972792000 && d2.digits_[3] == 910361576 &&
                d2.digits_[4] == 370236792 && d2.digits_[5] == 997380172 &&
@@ -1659,7 +1659,7 @@ void TestDecimal() {
                d2.digits_[12] == 542415704 && d2.digits_[13] == 739765187 &&
                d2.digits_[14] == 6229355);
         d1 *= d2;
-        assert(d1.size_ == 25);
+        assert(d1.digits_.size() == 25);
         assert(d1.digits_[0] == 965794304 && d1.digits_[1] == 247551591 &&
                d1.digits_[2] == 78766772 && d1.digits_[3] == 645012061 &&
                d1.digits_[4] == 37370453 && d1.digits_[5] == 199399473 &&
@@ -1677,7 +1677,7 @@ void TestDecimal() {
 
 void TestToIntTypes() {
     test_tools::log_tests_started();
-    constexpr uint32_t kC = 1000000;
+    static constexpr uint32_t kC = 1000000;
 
     auto test = [n = longint{longint::Reserve{4}}](const auto i) mutable {
         n = i;
