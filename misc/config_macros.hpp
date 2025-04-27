@@ -34,7 +34,7 @@
  *   CONFIG_HAS_AT_LEAST_C_17
  *   CONFIG_HAS_AT_LEAST_C_23
  *
- *   CONFIG_COMPILER_ID, which is equal to the one of the following macros:
+ *   CONFIG_COMPILER_ID, which is equal to the one of the following pairwise distinct macros:
  *     CONFIG_CLANG_COMPILER_ID
  *     CONFIG_GCC_COMPILER_ID
  *     CONFIG_CLANG_CL_COMPILER_ID
@@ -300,7 +300,13 @@
 #if CONFIG_HAS_AT_LEAST_CXX_23 && CONFIG_HAS_CPP_ATTRIBUTE(assume)
 #define CONFIG_ASSUME_STATEMENT(expr) [[assume(expr)]]
 #elif defined(__clang__) && CONFIG_HAS_BUILTIN(__builtin_assume)
-#define CONFIG_ASSUME_STATEMENT(expr) __builtin_assume(expr)
+#define CONFIG_ASSUME_STATEMENT(expr)                     \
+    do {                                                  \
+        _Pragma("clang diagnostic push");                 \
+        _Pragma("clang diagnostic ignored \"-Wassume\""); \
+        __builtin_assume(expr);                           \
+        _Pragma("clang diagnostic pop");                  \
+    } while (0)
 #elif CONFIG_GNUC_AT_LEAST(13, 0) && CONFIG_HAS_GCC_ATTRIBUTE(assume)
 #if defined(__cplusplus) || CONFIG_HAS_AT_LEAST_C_23
 #define CONFIG_ASSUME_STATEMENT(expr)       \
@@ -348,7 +354,7 @@
 #endif
 #endif
 
-#if defined(__cplusplus)
+#if defined(__cplusplus) || CONFIG_HAS_AT_LEAST_C_23
 #define CONFIG_UNREACHABLE() CONFIG_ASSUME_STATEMENT(false)
 #else
 #define CONFIG_UNREACHABLE() CONFIG_ASSUME_STATEMENT(0)
