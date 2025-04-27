@@ -364,7 +364,7 @@ class longint final {
         }
 
         const bool n_is_non_negative = n >= 0;
-        const auto n_abs = math_functions::uabs(n);
+        const uint32_t n_abs = math_functions::uabs(n);
         const bool this_is_positive = is_positive();
         const bool same_sign = this_is_positive == n_is_non_negative;
         if (same_sign == (Operation == AddOrSub::kAdd)) {
@@ -403,7 +403,7 @@ public:
     static constexpr uint32_t kDecimalBase = kStrConvBase;
     static constexpr uint32_t kFFTDecimalBase = 1'000;
 
-    constexpr longint() noexcept = default;
+    longint() = default;
 
     longint(const longint& other) : nums_(nullptr), size_(0), capacity_(0) {
         if (other.capacity_ > 0) {
@@ -414,7 +414,7 @@ public:
         }
     }
 
-    longint& operator=(const longint& other) {
+    longint& operator=(const longint& other) ATTRIBUTE_LIFETIME_BOUND {
         return *this = longint{other};
     }
 
@@ -429,7 +429,7 @@ public:
     constexpr
 #endif
         longint&
-        operator=(longint&& other) noexcept {
+        operator=(longint&& other) noexcept ATTRIBUTE_LIFETIME_BOUND {
         this->swap(other);
         return *this;
     }
@@ -451,34 +451,34 @@ public:
         lhs.swap(rhs);
     }
 
-    longint(const uint32_t n) {
+    /* implicit */ longint(const uint32_t n) {
         this->allocate_default_capacity_32();
         this->assign_u32_unchecked(n);
     }
-    longint(const int32_t n) {
+    /* implicit */ longint(const int32_t n) {
         this->allocate_default_capacity_32();
         this->assign_i32_unchecked(n);
     }
-    longint(const uint64_t n) {
+    /* implicit */ longint(const uint64_t n) {
         this->allocate_default_capacity_64();
         this->assign_u64_unchecked(n);
     }
-    longint(const int64_t n) {
+    /* implicit */ longint(const int64_t n) {
         this->allocate_default_capacity_64();
         this->assign_i64_unchecked(n);
     }
 #if defined(INTEGERS_128_BIT_HPP)
-    longint(const uint128_t n) {
+    /* implicit */ longint(const uint128_t n) {
         this->allocate_default_capacity_128();
         this->assign_u128_unchecked(n);
     }
-    longint(const int128_t n) {
+    /* implicit */ longint(const int128_t n) {
         this->allocate_default_capacity_128();
         this->assign_i128_unchecked(n);
     }
 #endif
 
-    static longint from_string(const std::string_view s) {
+    [[nodiscard]] static longint from_string(const std::string_view s) {
         longint ret;
         ret.set_string(s);
         return ret;
@@ -500,33 +500,33 @@ public:
         reserve(reserve_tag.get_capacity());
     }
 
-    longint& operator=(const uint32_t n) {
+    longint& operator=(const uint32_t n) ATTRIBUTE_LIFETIME_BOUND {
         this->ensure_default_capacity_op_asgn_32();
         this->assign_u32_unchecked(n);
         return *this;
     }
-    longint& operator=(const int32_t n) {
+    longint& operator=(const int32_t n) ATTRIBUTE_LIFETIME_BOUND {
         this->ensure_default_capacity_op_asgn_32();
         this->assign_i32_unchecked(n);
         return *this;
     }
-    longint& operator=(const uint64_t n) {
+    longint& operator=(const uint64_t n) ATTRIBUTE_LIFETIME_BOUND {
         this->ensure_default_capacity_op_asgn_64();
         this->assign_u64_unchecked(n);
         return *this;
     }
-    longint& operator=(const int64_t n) {
+    longint& operator=(const int64_t n) ATTRIBUTE_LIFETIME_BOUND {
         this->ensure_default_capacity_op_asgn_64();
         this->assign_i64_unchecked(n);
         return *this;
     }
 #if defined(INTEGERS_128_BIT_HPP)
-    longint& operator=(const uint128_t n) {
+    longint& operator=(const uint128_t n) ATTRIBUTE_LIFETIME_BOUND {
         this->ensure_default_capacity_op_asgn_128();
         this->assign_u128_unchecked(n);
         return *this;
     }
-    longint& operator=(const int128_t n) {
+    longint& operator=(const int128_t n) ATTRIBUTE_LIFETIME_BOUND {
         this->ensure_default_capacity_op_asgn_128();
         this->assign_i128_unchecked(n);
         return *this;
@@ -537,8 +537,8 @@ public:
     ATTRIBUTE_CONST
     [[nodiscard]]
     static constexpr size_type max_size() noexcept {
-        constexpr auto kMaxSSize = std::numeric_limits<decltype(size_)>::max();
-        constexpr auto kMaxUSize = std::numeric_limits<decltype(capacity_)>::max();
+        constexpr auto kMaxSSize = std::numeric_limits<ssize_type>::max();
+        constexpr auto kMaxUSize = std::numeric_limits<size_type>::max();
         constexpr auto kMaxSize = static_cast<size_type>(std::min({
             static_cast<std::size_t>(kMaxSSize),
             static_cast<std::size_t>(kMaxUSize / 2),
@@ -818,16 +818,19 @@ public:
     }
 
     longint& operator+=(const longint& other) ATTRIBUTE_LIFETIME_BOUND {
-        const bool find_sum = (size_ ^ other.size_) >= 0;
-        const size_type usize2 = other.usize();
+        const bool find_sum = (size() ^ other.size()) >= 0;
+        const size_type other_usize = other.usize();
+
         static_assert(max_size() + 1 > max_size());
-        const size_type usize1 = set_size_at_least(std::max(usize(), usize2) + (find_sum ? 1 : 0));
-        LONGINT_ASSERT_ASSUME(usize1 >= usize2);
+        const size_type this_usize =
+            set_size_at_least(std::max(usize(), other_usize) + (find_sum ? 1u : 0u));
+
+        LONGINT_ASSERT_ASSUME(this_usize >= other_usize);
         if (find_sum) {
-            LONGINT_ASSERT_ASSUME(usize1 > usize2);
-            longint_add_with_free_space(nums_, usize1, other.nums_, usize2);
+            LONGINT_ASSERT_ASSUME(this_usize > other_usize);
+            longint_add_with_free_space(nums_, this_usize, other.nums_, other_usize);
         } else {
-            if (longint_subtract_with_free_space(nums_, usize1, other.nums_, usize2)) {
+            if (longint_subtract_with_free_space(nums_, this_usize, other.nums_, other_usize)) {
                 flip_sign();
             }
         }
@@ -1108,14 +1111,14 @@ public:
         return *this;
     }
 
-    longint& operator*=(const uint32_t x) {
-        if (unlikely(x == 0)) {
+    longint& operator*=(const uint32_t n) ATTRIBUTE_LIFETIME_BOUND {
+        if (unlikely(n == 0)) {
             assign_zero();
             return *this;
         }
 
         double_digit_t carry = 0;
-        const double_digit_t b_0 = x;
+        const double_digit_t b_0 = n;
         const size_type usize_value = usize();
         for (digit_t *nums_it = nums_, *nums_it_end = nums_it + usize_value; nums_it != nums_it_end;
              ++nums_it) {
@@ -1124,7 +1127,7 @@ public:
             carry = res >> kNumsBits;
         }
 
-        // x != 0 => sign won't change and there will be no leading zeros
+        // n != 0 => sign won't change and there will be no leading zeros
         if (carry != 0) {
             assert(usize_value <= capacity_);
             if (unlikely(usize_value >= capacity_)) {
@@ -1139,13 +1142,11 @@ public:
         return *this;
     }
 
-    longint& operator*=(const int32_t n) {
-        const bool negative = n < 0;
-        *this *= math_functions::uabs(n);
-        if (negative) {
+    longint& operator*=(const int32_t n) ATTRIBUTE_LIFETIME_BOUND {
+        if (n < 0) {
             flip_sign();
         }
-        return *this;
+        return *this *= math_functions::uabs(n);
     }
 
     ATTRIBUTE_ALWAYS_INLINE
@@ -1528,7 +1529,7 @@ public:
         deallocate(nums_, capacity_);
     }
 
-    struct Decimal {
+    struct Decimal final {
         using dec_digit_t = uint32_t;
         using double_dec_digit_t = uint64_t;
         using dec_size_type = std::size_t;
@@ -1536,11 +1537,6 @@ public:
         std::vector<dec_digit_t> digits_{};
 
         Decimal() = default;
-        Decimal(const Decimal& other) = default;
-        Decimal& operator=(const Decimal& other) = default;
-        Decimal(Decimal&& other) = default;
-        Decimal& operator=(Decimal&& other) = default;
-        ~Decimal() = default;
 
         explicit Decimal(const uint32_t n) {
             assign_uint32(n);
@@ -1649,14 +1645,18 @@ public:
         ATTRIBUTE_PURE CONSTEXPR_VECTOR bool operator==(const uint32_t n) const noexcept {
             static_assert(sizeof(dec_digit_t) == sizeof(uint32_t));
             switch (digits_.size()) {
-                case 0:
+                case 0: {
                     return n == 0;
-                case 1:
+                }
+                case 1: {
                     return digits_[0] == n;
-                case 2:
+                }
+                case 2: {
                     return static_cast<uint64_t>(digits_[1]) * kDecimalBase + digits_[0] == n;
-                default:
+                }
+                default: {
                     return false;
+                }
             }
         }
 
@@ -1669,12 +1669,15 @@ public:
         ATTRIBUTE_PURE CONSTEXPR_VECTOR bool operator==(const uint64_t n) const noexcept {
             static_assert(sizeof(dec_digit_t) == sizeof(uint32_t));
             switch (digits_.size()) {
-                case 0:
+                case 0: {
                     return n == 0;
-                case 1:
+                }
+                case 1: {
                     return digits_[0] == n;
-                case 2:
+                }
+                case 2: {
                     return static_cast<uint64_t>(digits_[1]) * kDecimalBase + digits_[0] == n;
+                }
                 case 3: {
                     constexpr uint64_t kDecimalBase2 =
                         static_cast<uint64_t>(kDecimalBase) * kDecimalBase;
@@ -1691,8 +1694,9 @@ public:
                     const uint64_t m = static_cast<uint64_t>(hi) * kDecimalBase2 + low_mid_m;
                     return m == n;
                 }
-                default:
+                default: {
                     return false;
+                }
             }
         }
 
@@ -1900,28 +1904,46 @@ public:
                     m_value /= kFFTDecimalBase;
                     dec_digit_t r2 = k_value % kFFTDecimalBase;
                     k_value /= kFFTDecimalBase;
-                    *p = fft::complex{static_cast<double>(r1), static_cast<double>(r2)};
+                    *p = fft::complex{
+                        static_cast<double>(r1),
+                        static_cast<double>(r2),
+                    };
                     p++;
                     r1 = m_value % kFFTDecimalBase;
                     m_value /= kFFTDecimalBase;
                     r2 = k_value % kFFTDecimalBase;
                     k_value /= kFFTDecimalBase;
-                    *p = fft::complex{static_cast<double>(r1), static_cast<double>(r2)};
+                    *p = fft::complex{
+                        static_cast<double>(r1),
+                        static_cast<double>(r2),
+                    };
                     p++;
-                    *p = fft::complex{static_cast<double>(m_value), static_cast<double>(k_value)};
+                    *p = fft::complex{
+                        static_cast<double>(m_value),
+                        static_cast<double>(k_value),
+                    };
                     p++;
                 }
                 for (dec_size_type i = m; i < k; i++) {
                     dec_digit_t k_value = k_digits[i];
                     dec_digit_t r2 = k_value % kFFTDecimalBase;
                     k_value /= kFFTDecimalBase;
-                    *p = fft::complex{0.0, static_cast<double>(r2)};
+                    *p = fft::complex{
+                        0.0,
+                        static_cast<double>(r2),
+                    };
                     p++;
                     r2 = k_value % kFFTDecimalBase;
                     k_value /= kFFTDecimalBase;
-                    *p = fft::complex{0.0, static_cast<double>(r2)};
+                    *p = fft::complex{
+                        0.0,
+                        static_cast<double>(r2),
+                    };
                     p++;
-                    *p = fft::complex{0.0, static_cast<double>(k_value)};
+                    *p = fft::complex{
+                        0.0,
+                        static_cast<double>(k_value),
+                    };
                     p++;
                 }
 
@@ -1940,13 +1962,22 @@ public:
                     dec_digit_t value = digits[i];
                     dec_digit_t r1 = value % kFFTDecimalBase;
                     value /= kFFTDecimalBase;
-                    *p = fft::complex{static_cast<double>(r1), static_cast<double>(r1)};
+                    *p = fft::complex{
+                        static_cast<double>(r1),
+                        static_cast<double>(r1),
+                    };
                     p++;
                     r1 = value % kFFTDecimalBase;
                     value /= kFFTDecimalBase;
-                    *p = fft::complex{static_cast<double>(r1), static_cast<double>(r1)};
+                    *p = fft::complex{
+                        static_cast<double>(r1),
+                        static_cast<double>(r1),
+                    };
                     p++;
-                    *p = fft::complex{static_cast<double>(value), static_cast<double>(value)};
+                    *p = fft::complex{
+                        static_cast<double>(value),
+                        static_cast<double>(value),
+                    };
                     p++;
                 }
 
@@ -1992,9 +2023,12 @@ public:
                 const fft::complex* RESTRICT_QUALIFIER poly,
                 dec_digit_t* RESTRICT_QUALIFIER digits,
                 const dec_size_type digits_size) noexcept {
+                LONGINT_ASSERT_ASSUME(digits_size > 0);
+
                 static_assert(sizeof(dec_digit_t) == sizeof(uint32_t));
                 double_dec_digit_t carry = 0;
                 const dec_digit_t* const digits_end = digits + digits_size;
+                LONGINT_ASSERT_ASSUME(std::less<>{}(digits, digits_end));
                 do {
                     double_dec_digit_t res = carry;
                     res += static_cast<double_dec_digit_t>(poly->real() + kFFTFloatRoundError);
@@ -2041,7 +2075,7 @@ public:
             fft::complex* const poly_;
         };
 
-        CONSTEXPR_VECTOR void assign_uint32(const uint32_t n) noexcept {
+        CONSTEXPR_VECTOR void assign_uint32(const uint32_t n) {
             const dec_digit_t low = n % kDecimalBase;
             const dec_digit_t hi = n / kDecimalBase;
             digits_.resize(4);
@@ -2059,7 +2093,7 @@ public:
             digits_.resize(real_size);
         }
 
-        CONSTEXPR_VECTOR void assign_uint64(const uint64_t n) noexcept {
+        CONSTEXPR_VECTOR void assign_uint64(const uint64_t n) {
             const auto low = static_cast<dec_digit_t>(n % kDecimalBase);
             const uint64_t t = n / kDecimalBase;
             const auto mid = static_cast<dec_digit_t>(t % kDecimalBase);
@@ -2120,11 +2154,16 @@ private:
     struct LongIntFFT final {
         using poly_size_type = std::size_t;
 
+        struct FFTParams final {
+            poly_size_type poly_size;
+            bool need_high_precision;
+        };
+
         ATTRIBUTE_NODISCARD_WITH_MESSAGE("impl error in fft longint product")
         ATTRIBUTE_ALWAYS_INLINE
         ATTRIBUTE_CONST
-        static constexpr std::pair<poly_size_type, bool> compute_fft_product_params(
-            size_type product_size) noexcept {
+        static constexpr FFTParams compute_fft_product_params(
+            const size_type product_size) noexcept {
             static_assert(max_size() * 2 > max_size());
             static_assert(2 * math_functions::nearest_greater_equal_power_of_two(max_size()) >=
                           2 * max_size());
@@ -2144,9 +2183,12 @@ private:
                                                      const fft::complex* RESTRICT_QUALIFIER poly,
                                                      digit_t* RESTRICT_QUALIFIER nums,
                                                      const size_type nums_size) {
+            LONGINT_ASSERT_ASSUME(nums_size > 0);
+
             static_assert(sizeof(digit_t) == sizeof(uint32_t));
             double_digit_t carry = 0;
             const digit_t* const nums_end = nums + nums_size;
+            LONGINT_ASSERT_ASSUME(std::less<>{}(nums, nums_end));
             if (likely(!is_high_precision)) {
                 do {
                     double_digit_t res = carry;
@@ -2187,7 +2229,7 @@ private:
                                                      const size_type k,
                                                      fft::complex* p,
                                                      const poly_size_type n,
-                                                     bool need_high_precision) noexcept {
+                                                     const bool need_high_precision) noexcept {
             LONGINT_ASSERT_ASSUME(0 < m);
             LONGINT_ASSERT_ASSUME(m <= k);
             LONGINT_ASSERT_ASSUME(m <= max_size());
@@ -2204,21 +2246,31 @@ private:
                     digit_t m_value = m_ptr[i];
                     digit_t k_value = k_ptr[i];
 
-                    *p = fft::complex{static_cast<double>(static_cast<uint16_t>(m_value)),
-                                      static_cast<double>(static_cast<uint16_t>(k_value))};
+                    *p = fft::complex{
+                        static_cast<double>(static_cast<uint16_t>(m_value)),
+                        static_cast<double>(static_cast<uint16_t>(k_value)),
+                    };
                     p++;
                     m_value >>= 16;
                     k_value >>= 16;
-                    *p = fft::complex{static_cast<double>(static_cast<uint16_t>(m_value)),
-                                      static_cast<double>(static_cast<uint16_t>(k_value))};
+                    *p = fft::complex{
+                        static_cast<double>(static_cast<uint16_t>(m_value)),
+                        static_cast<double>(static_cast<uint16_t>(k_value)),
+                    };
                     p++;
                 }
                 for (size_type i = m; i < k; i++) {
                     const digit_t k_value = k_ptr[i];
 
-                    *p = fft::complex{0.0, static_cast<double>(k_value & 0xFFFF)};
+                    *p = fft::complex{
+                        0.0,
+                        static_cast<double>(k_value & 0xFFFF),
+                    };
                     p++;
-                    *p = fft::complex{0.0, static_cast<double>(k_value >> 16)};
+                    *p = fft::complex{
+                        0.0,
+                        static_cast<double>(k_value >> 16),
+                    };
                     p++;
                 }
             } else {
@@ -2226,42 +2278,62 @@ private:
                     digit_t m_value = m_ptr[i];
                     digit_t k_value = k_ptr[i];
 
-                    *p = fft::complex{static_cast<double>(static_cast<uint8_t>(m_value)),
-                                      static_cast<double>(static_cast<uint8_t>(k_value))};
+                    *p = fft::complex{
+                        static_cast<double>(static_cast<uint8_t>(m_value)),
+                        static_cast<double>(static_cast<uint8_t>(k_value)),
+                    };
                     p++;
                     m_value >>= 8;
                     k_value >>= 8;
-                    *p = fft::complex{static_cast<double>(static_cast<uint8_t>(m_value)),
-                                      static_cast<double>(static_cast<uint8_t>(k_value))};
+                    *p = fft::complex{
+                        static_cast<double>(static_cast<uint8_t>(m_value)),
+                        static_cast<double>(static_cast<uint8_t>(k_value)),
+                    };
                     p++;
                     m_value >>= 8;
                     k_value >>= 8;
-                    *p = fft::complex{static_cast<double>(static_cast<uint8_t>(m_value)),
-                                      static_cast<double>(static_cast<uint8_t>(k_value))};
+                    *p = fft::complex{
+                        static_cast<double>(static_cast<uint8_t>(m_value)),
+                        static_cast<double>(static_cast<uint8_t>(k_value)),
+                    };
                     p++;
                     m_value >>= 8;
                     k_value >>= 8;
-                    *p = fft::complex{static_cast<double>(static_cast<uint8_t>(m_value)),
-                                      static_cast<double>(static_cast<uint8_t>(k_value))};
+                    *p = fft::complex{
+                        static_cast<double>(static_cast<uint8_t>(m_value)),
+                        static_cast<double>(static_cast<uint8_t>(k_value)),
+                    };
                     p++;
                 }
                 for (size_type i = m; i < k; i++) {
                     digit_t k_value = k_ptr[i];
 
-                    *p = fft::complex{0.0, static_cast<double>(static_cast<uint8_t>(k_value))};
+                    *p = fft::complex{
+                        0.0,
+                        static_cast<double>(static_cast<uint8_t>(k_value)),
+                    };
                     p++;
                     k_value >>= 8;
-                    *p = fft::complex{0.0, static_cast<double>(static_cast<uint8_t>(k_value))};
+                    *p = fft::complex{
+                        0.0,
+                        static_cast<double>(static_cast<uint8_t>(k_value)),
+                    };
                     p++;
                     k_value >>= 8;
-                    *p = fft::complex{0.0, static_cast<double>(static_cast<uint8_t>(k_value))};
+                    *p = fft::complex{
+                        0.0,
+                        static_cast<double>(static_cast<uint8_t>(k_value)),
+                    };
                     p++;
                     k_value >>= 8;
-                    *p = fft::complex{0.0, static_cast<double>(static_cast<uint8_t>(k_value))};
+                    *p = fft::complex{
+                        0.0,
+                        static_cast<double>(static_cast<uint8_t>(k_value)),
+                    };
                     p++;
                 }
             }
-            size_type complex_nums_filled = (2 * k);
+            size_type complex_nums_filled = 2 * k;
             if (need_high_precision) {
                 complex_nums_filled *= 2;
             }
@@ -2371,7 +2443,6 @@ private:
         }
 
         rem.reserveUninitializedWithoutCopy(n);
-        rem.size_ = static_cast<ssize_type>(n);
 
         // Normilize by shifting v left just enough so that
         // its high-order bit i on, and shift u left the
@@ -2402,6 +2473,7 @@ private:
         // Unnormalize remainder
         longint::divmod_unnormalize_remainder(rem.nums_, un, n, n + 1, s);
         deallocate(vn_and_un, vn_and_un_size);
+        rem.size_ = static_cast<ssize_type>(n);
         rem.pop_leading_zeros();
         set_ssize_from_size_and_sign(m - n + 1, /* sign = */ sign_product);
         pop_leading_zeros();
@@ -2559,6 +2631,7 @@ private:
     constexpr void set_ssize_from_size_and_sign(const size_type size,
                                                 const ssize_type sign) noexcept {
         static_assert(sizeof(ssize_type) == sizeof(size_type));
+        LONGINT_ASSERT_ASSUME(size <= max_size());
         size_ = static_cast<ssize_type>(sign >= 0 ? size : -size);
     }
 
@@ -2572,6 +2645,7 @@ private:
     }
 
     void reserveUninitializedWithoutCopy(const size_type capacity) {
+        size_ = 0;
         if (capacity > capacity_) {
             deallocate(nums_, capacity_);
             nums_ = nullptr;
@@ -2579,7 +2653,6 @@ private:
             nums_ = allocate_uninitialized(capacity);
             capacity_ = capacity;
         }
-        size_ = 0;
     }
 
     [[nodiscard]] static std::vector<Decimal> create_initial_conv_bin_base_pows() {
@@ -2796,7 +2869,7 @@ private:
         size_ += n != 0;
         nums_[3] = static_cast<uint32_t>(n);
     }
-    I128_CONSTEXPR void assign_i128_unchecked(int128_t n) noexcept {
+    I128_CONSTEXPR void assign_i128_unchecked(const int128_t n) noexcept {
         const std::int32_t sgn = math_functions::sign(n);
         assign_u128_unchecked(math_functions::uabs(n));
         size_ *= sgn;
@@ -2811,6 +2884,7 @@ private:
                                                       const digit_t rhs[],
                                                       const size_type rhs_size) noexcept {
         LONGINT_ASSERT_ASSUME(lhs_size > rhs_size);
+
         double_digit_t carry = 0;
         const digit_t* const lhs_end = lhs + lhs_size;
         const digit_t* const rhs_end = rhs + rhs_size;
@@ -2831,29 +2905,34 @@ private:
     ATTRIBUTE_SIZED_ACCESS(read_write, 1, 2)
     ATTRIBUTE_SIZED_ACCESS(read_only, 3, 4)
     ATTRIBUTE_NONNULL_ALL_ARGS
+    [[nodiscard]]
     static constexpr bool longint_subtract_with_free_space(digit_t lhs[],
                                                            const size_type lhs_size,
                                                            const digit_t rhs[],
                                                            const size_type rhs_size) noexcept {
         LONGINT_ASSERT_ASSUME(lhs_size >= rhs_size);
-        bool overflowed = longint_subtract_with_carry(lhs, lhs_size, rhs, rhs_size);
+
+        const bool overflowed = longint_subtract_with_carry(lhs, lhs_size, rhs, rhs_size);
         if (overflowed) {
             lhs[0] = -lhs[0];
             for (size_type i = 1; i < lhs_size; i++) {
                 lhs[i] = -(lhs[i] + 1);
             }
         }
+
         return overflowed;
     }
 
     ATTRIBUTE_SIZED_ACCESS(read_write, 1, 2)
     ATTRIBUTE_SIZED_ACCESS(read_only, 3, 4)
     ATTRIBUTE_NONNULL_ALL_ARGS
+    [[nodiscard]]
     static constexpr bool longint_subtract_with_carry(digit_t lhs[],
                                                       const size_type lhs_size,
                                                       const digit_t rhs[],
                                                       const size_type rhs_size) noexcept {
         LONGINT_ASSERT_ASSUME(lhs_size >= rhs_size);
+
         const digit_t* const lhs_end = lhs + lhs_size;
         const digit_t* const rhs_end = rhs + rhs_size;
         bool carry = false;
@@ -2877,7 +2956,9 @@ private:
         return carry;
     }
 
-    void nonZeroSizeAddUInt(uint32_t n) {
+    void nonZeroSizeAddUInt(const uint32_t n) {
+        LONGINT_ASSERT_ASSUME(size() != 0);
+
         static_assert(sizeof(digit_t) >= sizeof(uint32_t));
         digit_t* it = nums_;
         const digit_t* end_iter = nums_ + usize();
@@ -2905,7 +2986,9 @@ private:
         }
     }
 
-    constexpr void nonZeroSizeSubUInt(uint32_t n) {
+    constexpr void nonZeroSizeSubUInt(const uint32_t n) noexcept {
+        LONGINT_ASSERT_ASSUME(size() != 0);
+
         static_assert(sizeof(digit_t) == sizeof(uint32_t));
         const size_type usize_value = usize();
         digit_t* nums_iter = nums_;
