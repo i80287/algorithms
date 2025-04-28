@@ -2028,7 +2028,6 @@ public:
                 static_assert(sizeof(dec_digit_t) == sizeof(uint32_t));
                 double_dec_digit_t carry = 0;
                 const dec_digit_t* const digits_end = digits + digits_size;
-                LONGINT_ASSERT_ASSUME(std::less<>{}(digits, digits_end));
                 do {
                     double_dec_digit_t res = carry;
                     res += static_cast<double_dec_digit_t>(poly->real() + kFFTFloatRoundError);
@@ -2042,7 +2041,7 @@ public:
                     *digits = static_cast<dec_digit_t>(res % kDecimalBase);
                     carry = res / kDecimalBase;
                     digits++;
-                } while (digits != digits_end);
+                } while (digits < digits_end);
                 assert(carry == 0);
             }
 
@@ -2188,7 +2187,6 @@ private:
             static_assert(sizeof(digit_t) == sizeof(uint32_t));
             double_digit_t carry = 0;
             const digit_t* const nums_end = nums + nums_size;
-            LONGINT_ASSERT_ASSUME(std::less<>{}(nums, nums_end));
             if (likely(!is_high_precision)) {
                 do {
                     double_digit_t res = carry;
@@ -2199,7 +2197,7 @@ private:
                     *nums = static_cast<digit_t>(res);
                     carry = res / kNumsBase;
                     nums++;
-                } while (nums != nums_end);
+                } while (nums < nums_end);
             } else {
                 do {
                     double_digit_t res = carry;
@@ -2214,7 +2212,7 @@ private:
                     *nums = static_cast<digit_t>(res);
                     carry = res / kNumsBase;
                     nums++;
-                } while (nums != nums_end);
+                } while (nums < nums_end);
             }
             assert(carry == 0);
         }
