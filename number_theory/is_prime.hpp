@@ -376,7 +376,7 @@ ATTRIBUTE_CONST I128_CONSTEXPR bool is_strong_selfridge_prp(const uint64_t n) no
 #if CONFIG_HAS_AT_LEAST_CXX_17
 inline
 #endif
-    constexpr uint32_t kIsPrimeSqrtCycleStep = 30;
+    constexpr uint32_t kIsPrimeSqrtLoopStep = 30;
 
 template <class T>
 [[nodiscard]] ATTRIBUTE_CONST constexpr bool is_prime_sqrt_impl(const T n) noexcept {
@@ -402,14 +402,14 @@ template <class T>
     using DivisorType = std::conditional_t<sizeof(T) >= sizeof(uint64_t), uint64_t, uint32_t>;
     // DivisorType == uint64_t when T == uint64_t because max uint32 prime is 4294967291
     //  and if we make DivisorType == uint32_t, i will overflow when root >= 2^32 -
-    //  kIsPrimeSqrtCycleStep (which is possible since 2^32 - kIsPrimeSqrtCycleStep < 4294967291)
+    //  kIsPrimeSqrtLoopStep (which is possible since 2^32 - kIsPrimeSqrtLoopStep < 4294967291)
     DivisorType i = 7u;
     CONFIG_ASSUME_STATEMENT(i <= root);
 
     const DivisorType max_i = [root]() -> DivisorType {
         if constexpr (sizeof(RootType) == sizeof(uint64_t)) {
             constexpr uint64_t kMaxUInt64Prime = 18446744073709551557ULL;
-            static_assert(kMaxUInt64Prime < kMaxUInt64Prime + kIsPrimeSqrtCycleStep, "impl error");
+            static_assert(kMaxUInt64Prime < kMaxUInt64Prime + kIsPrimeSqrtLoopStep, "impl error");
             /**
              * There are no prime numbers on the segment
              * [kMaxUInt64Prime + 1; 2^64 - 1]
@@ -429,7 +429,7 @@ template <class T>
             n % (i + 12) == 0 || n % (i + 16) == 0 || n % (i + 22) == 0 || n % (i + 24) == 0) {
             return false;
         }
-        i += kIsPrimeSqrtCycleStep;
+        i += kIsPrimeSqrtLoopStep;
     } while (i <= max_i);
     return true;
 }
