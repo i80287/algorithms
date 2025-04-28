@@ -975,7 +975,7 @@ inline std::basic_string_view<CharType> trim_if(std::basic_string_view<CharType>
     static_assert(std::is_invocable_r_v<bool, Predicate, CharType>,
                   "predicate should accept CharType and return bool");
 
-#if CONFIG_HAS_CONCEPTS
+#if CONFIG_COMPILER_SUPPORTS_CONCEPTS
     static_assert(std::predicate<Predicate, CharType>);
 #endif
 

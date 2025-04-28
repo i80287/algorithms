@@ -47,6 +47,10 @@
 #define MATH_FUNCTIONS_HAS_NUMBERS
 #endif
 
+#if CONFIG_HAS_CONCEPTS
+#include <concepts>
+#endif
+
 #if CONFIG_HAS_INCLUDE("integers_128_bit.hpp")
 #include "integers_128_bit.hpp"
 #endif
@@ -87,7 +91,7 @@ namespace helper_ns = int128_traits;
 namespace helper_ns = std;
 #endif
 
-#if CONFIG_HAS_CONCEPTS
+#if CONFIG_COMPILER_SUPPORTS_CONCEPTS
 template <class T>
 concept InplaceMultipliable = requires(T a, const T b) {
     { a *= b };
@@ -321,7 +325,7 @@ ATTRIBUTE_NODISCARD ATTRIBUTE_CONST constexpr uint32_t max_ifrrt() noexcept {
 /// @param[in] n
 /// @param[in] p
 /// @return T ^ p
-#if CONFIG_HAS_CONCEPTS
+#if CONFIG_COMPILER_SUPPORTS_CONCEPTS
 template <math_functions::detail::InplaceMultipliable T>
 #else
 template <class T>
@@ -345,7 +349,7 @@ template <class T>
 /// @param[in] n
 /// @param[in] p
 /// @return T ^ p
-#if CONFIG_HAS_CONCEPTS
+#if CONFIG_COMPILER_SUPPORTS_CONCEPTS
 template <math_functions::detail::InplaceMultipliable T>
 #else
 template <class T>
