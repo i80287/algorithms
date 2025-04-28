@@ -56,7 +56,7 @@
 #endif
 
 // Visual C++ thinks that unary minus on unsigned is an error
-#if defined(_MSC_VER)
+#if CONFIG_COMPILER_IS_MSVC
 #pragma warning(push)
 #pragma warning(disable : 4146)
 #endif  // _MSC_VER
@@ -136,6 +136,58 @@ concept math_integral_type = math_functions::is_math_integral_type_v<T>;
 #endif
 
 namespace detail {
+
+template <class T>
+struct double_bits {
+    using type = void;
+};
+
+template <>
+struct double_bits<int8_t> {
+    using type = int16_t;
+};
+
+template <>
+struct double_bits<uint8_t> {
+    using type = uint16_t;
+};
+
+template <>
+struct double_bits<int16_t> {
+    using type = int32_t;
+};
+
+template <>
+struct double_bits<uint16_t> {
+    using type = uint32_t;
+};
+
+template <>
+struct double_bits<int32_t> {
+    using type = int64_t;
+};
+
+template <>
+struct double_bits<uint32_t> {
+    using type = uint64_t;
+};
+
+#if defined(INTEGERS_128_BIT_HPP)
+
+template <>
+struct double_bits<int64_t> {
+    using type = int128_t;
+};
+
+template <>
+struct double_bits<uint64_t> {
+    using type = uint128_t;
+};
+
+#endif
+
+template <class T>
+using double_bits_t = typename double_bits<T>::type;
 
 template <class T>
 ATTRIBUTE_ALWAYS_INLINE constexpr void check_math_int_type() noexcept {
@@ -318,19 +370,8 @@ ATTRIBUTE_NODISCARD ATTRIBUTE_CONST constexpr uint32_t max_ifrrt() noexcept {
     return ifrrt_of_one_plus_max_T - 1u;
 }
 
-}  // namespace detail
-
-/// @brief Calculates T ^ p
-/// @tparam T
-/// @param[in] n
-/// @param[in] p
-/// @return T ^ p
-#if CONFIG_COMPILER_SUPPORTS_CONCEPTS
-template <math_functions::detail::InplaceMultipliable T>
-#else
-template <class T>
-#endif
-[[nodiscard]] ATTRIBUTE_CONST constexpr T bin_pow(T n, size_t p) noexcept(noexcept(n *= n)) {
+template <class T, class P>
+[[nodiscard]] ATTRIBUTE_CONST constexpr T bin_pow_impl(T n, P p) noexcept(noexcept(n *= n)) {
     T res(1);
     while (true) {
         if (p % 2 != 0) {
@@ -344,81 +385,136 @@ template <class T>
     }
 }
 
-/// @brief Calculates T ^ p
-/// @tparam T
-/// @param[in] n
-/// @param[in] p
-/// @return T ^ p
-#if CONFIG_COMPILER_SUPPORTS_CONCEPTS
-template <math_functions::detail::InplaceMultipliable T>
-#else
-template <class T>
-#endif
-[[nodiscard]] ATTRIBUTE_CONST constexpr T bin_pow(T n,
-                                                  const ptrdiff_t p) noexcept(noexcept(n *= n) &&
-                                                                              noexcept(1 / n)) {
-    const bool not_inverse = p >= 0;
-    const size_t p_u = p >= 0 ? static_cast<size_t>(p) : -static_cast<size_t>(p);
-    const T res = math_functions::bin_pow(std::move(n), p_u);
-    return not_inverse ? res : T{1} / res;
-}
+}  // namespace detail
 
-/// @brief Calculate (n ^ p) % mod
-/// @param[in] n
-/// @param[in] p
-/// @param[in] mod
-/// @return (n ^ p) % mod
-[[nodiscard]] ATTRIBUTE_CONST constexpr uint32_t bin_pow_mod(uint32_t n,
-                                                             uint64_t p,
-                                                             const uint32_t mod) noexcept {
-    uint64_t res = mod != 1;
-    uint64_t widen_n = n;
-    while (true) {
-        if (p % 2 != 0) {
-            CONFIG_ASSUME_STATEMENT(widen_n < (uint64_t{1} << 32U));
-            res = (res * widen_n) % mod;
+template <class IntType>
+[[nodiscard]] ATTRIBUTE_CONST constexpr int32_t sign(const IntType n) noexcept {
+    math_functions::detail::check_math_int_type<IntType>();
+
+    if constexpr (math_functions::is_signed_v<IntType>) {
+#if defined(INTEGERS_128_BIT_HPP)
+        if constexpr (std::is_same_v<IntType, int128_t>) {
+            const uint32_t sign_bit = static_cast<uint32_t>(static_cast<uint128_t>(n) >> 127U);
+            return static_cast<int32_t>(n != 0) - static_cast<int32_t>(2 * sign_bit);
         }
-        p /= 2;
-        if (p == 0) {
-            return static_cast<uint32_t>(res);
-        }
-        CONFIG_ASSUME_STATEMENT(widen_n < (uint64_t{1} << 32U));
-        widen_n = (widen_n * widen_n) % mod;
-        CONFIG_ASSUME_STATEMENT(widen_n < (uint64_t{1} << 32U));
+#endif
+
+        return static_cast<int32_t>(n > 0) - static_cast<int32_t>(n < 0);
+    } else {
+        return n > 0 ? 1 : 0;
     }
 }
+
+template <class IntType>
+[[nodiscard]] ATTRIBUTE_CONST constexpr auto uabs(const IntType n) noexcept {
+    math_functions::detail::check_math_int_type<IntType>();
+
+    if constexpr (math_functions::is_signed_v<IntType>) {
+        using UIntType = math_functions::make_unsigned_t<IntType>;
 
 #if defined(INTEGERS_128_BIT_HPP)
+        if constexpr (std::is_same_v<IntType, int128_t>) {
+            const uint128_t t = static_cast<uint128_t>(n >> 127U);
+            return (static_cast<uint128_t>(n) ^ t) - t;
+        }
+#endif
+        return n >= 0 ? static_cast<UIntType>(n) : static_cast<UIntType>(-static_cast<UIntType>(n));
+    } else {
+        return n;
+    }
+}
+
+/// @brief a > 0 and b > 0 => true
+///        a > 0 and b = 0 => false
+///        a > 0 and b < 0 => false
+///        a = 0 and b > 0 => false
+///        a = 0 and b = 0 => true
+///        a = 0 and b < 0 => false
+///        a < 0 and b > 0 => false
+///        a < 0 and b = 0 => false
+///        a < 0 and b < 0 => true
+/// @param[in] a
+/// @param[in] b
+/// @return
+template <class IntType>
+[[nodiscard]] ATTRIBUTE_CONST constexpr bool same_sign(const IntType a, const IntType b) noexcept {
+    math_functions::detail::check_math_int_type<IntType>();
+
+    return math_functions::sign(a) == math_functions::sign(b);
+}
+
+/// @brief Calculate n ^ p
+/// @tparam T
+/// @tparam P integral type
+/// @param[in] n
+/// @param[in] p
+/// @return n ^ p
+template <class T, class P>
+#if CONFIG_COMPILER_SUPPORTS_CONCEPTS
+    requires math_functions::detail::InplaceMultipliable<T>
+#endif
+[[nodiscard]] ATTRIBUTE_CONST constexpr T bin_pow(T n, const P p) noexcept(noexcept(n *= n)) {
+    math_functions::detail::check_math_unsigned_int_type<P>();
+
+    T ret = math_functions::detail::bin_pow_impl(std::move(n), math_functions::uabs(p));
+    if constexpr (math_functions::is_unsigned_v<P>) {
+        return ret;
+    } else {
+        return p >= 0 ? std::move(ret) : T{1} / std::move(ret);
+    }
+}
 
 /// @brief Calculate (n ^ p) % mod
+/// @tparam T unsigned integral type
 /// @param[in] n
 /// @param[in] p
 /// @param[in] mod
 /// @return (n ^ p) % mod
-[[nodiscard]]
-ATTRIBUTE_CONST I128_CONSTEXPR uint64_t bin_pow_mod(uint64_t n,
-                                                    uint64_t p,
-                                                    const uint64_t mod) noexcept {
-    uint64_t res = mod != 1U;
+template <class T>
+[[nodiscard]] ATTRIBUTE_CONST constexpr T bin_pow_mod(T n, uint64_t p, const T mod) noexcept {
+    math_functions::detail::check_math_unsigned_int_type<T>();
+
+    using Q = math_functions::detail::double_bits_t<T>;
+    constexpr T kMaxT = std::numeric_limits<T>::max();
+
+    assert(mod != 0);
+
+    Q res = Q{mod != 1};
+    Q widen_n = n;
     while (true) {
         if (p % 2 != 0) {
-            res = static_cast<uint64_t>((uint128_t{res} * n) % mod);
+            CONFIG_ASSUME_STATEMENT(res <= kMaxT);
+            CONFIG_ASSUME_STATEMENT(res < mod);
+            CONFIG_ASSUME_STATEMENT(widen_n <= kMaxT);
+            res = (res * widen_n) % mod;
+            CONFIG_ASSUME_STATEMENT(res <= kMaxT);
+            CONFIG_ASSUME_STATEMENT(res < mod);
         }
         p /= 2;
         if (p == 0) {
-            return res;
+            CONFIG_ASSUME_STATEMENT(res <= kMaxT);
+            CONFIG_ASSUME_STATEMENT(res < mod);
+            return static_cast<T>(res);
         }
-        n = static_cast<uint64_t>((uint128_t{n} * n) % mod);
+        CONFIG_ASSUME_STATEMENT(widen_n <= kMaxT);
+        widen_n = (widen_n * widen_n) % mod;
+        CONFIG_ASSUME_STATEMENT(widen_n <= kMaxT);
+        CONFIG_ASSUME_STATEMENT(widen_n < mod);
     }
 }
 
-#endif
+[[nodiscard]] ATTRIBUTE_CONST constexpr uint8_t isqrt(const uint16_t n) noexcept {
+    const uint32_t ret = math_functions::detail::isqrt_u32(n);
+    CONFIG_ASSUME_STATEMENT(ret < (1U << 8U));
+    CONFIG_ASSUME_STATEMENT(ret * ret <= n);
+    return static_cast<uint8_t>(ret);
+}
 
-[[nodiscard]] ATTRIBUTE_CONST constexpr uint32_t isqrt(const uint32_t n) noexcept {
+[[nodiscard]] ATTRIBUTE_CONST constexpr uint16_t isqrt(const uint32_t n) noexcept {
     const uint32_t ret = math_functions::detail::isqrt_u32(n);
     CONFIG_ASSUME_STATEMENT(ret < (1U << 16U));
     CONFIG_ASSUME_STATEMENT(ret * ret <= n);
-    return ret;
+    return static_cast<uint16_t>(ret);
 }
 
 [[nodiscard]] ATTRIBUTE_CONST constexpr uint32_t isqrt(const uint64_t n) noexcept {
@@ -431,7 +527,7 @@ ATTRIBUTE_CONST I128_CONSTEXPR uint64_t bin_pow_mod(uint64_t n,
 
 [[nodiscard]] ATTRIBUTE_CONST I128_CONSTEXPR uint64_t isqrt(const uint128_t n) noexcept {
     const uint64_t ret = math_functions::detail::isqrt_u128(n);
-#if defined(__GNUG__) || defined(__clang__)
+#if CONFIG_COMPILER_IS_GCC_OR_ANY_CLANG
     CONFIG_ASSUME_STATEMENT(uint128_t{ret} * uint128_t{ret} <= n);
 #endif
     return ret;
@@ -620,7 +716,7 @@ ATTRIBUTE_CONST constexpr IsPerfectSquareResultRetType<T> is_perfect_square(cons
 #endif
 
 template <class F>
-#if CONFIG_HAS_AT_LEAST_CXX_20
+#if CONFIG_COMPILER_SUPPORTS_CONCEPTS
     requires requires(F f, const uint64_t mask) { f(uint64_t{mask}); }
 #endif
 ATTRIBUTE_ALWAYS_INLINE constexpr void visit_all_submasks(const uint64_t mask, F visiter) noexcept(
@@ -633,62 +729,6 @@ ATTRIBUTE_ALWAYS_INLINE constexpr void visit_all_submasks(const uint64_t mask, F
         visiter(uint64_t{s});
         s = (s - 1) & mask;
     } while (s != 0);
-}
-
-template <class IntType>
-[[nodiscard]] ATTRIBUTE_CONST constexpr int32_t sign(const IntType n) noexcept {
-    math_functions::detail::check_math_int_type<IntType>();
-
-    if constexpr (math_functions::is_signed_v<IntType>) {
-#if defined(INTEGERS_128_BIT_HPP)
-        if constexpr (std::is_same_v<IntType, int128_t>) {
-            const uint32_t sign_bit = static_cast<uint32_t>(static_cast<uint128_t>(n) >> 127U);
-            return static_cast<int32_t>(n != 0) - static_cast<int32_t>(2 * sign_bit);
-        }
-#endif
-
-        return static_cast<int32_t>(n > 0) - static_cast<int32_t>(n < 0);
-    } else {
-        return n > 0 ? 1 : 0;
-    }
-}
-
-template <class IntType>
-[[nodiscard]] ATTRIBUTE_CONST constexpr auto uabs(const IntType n) noexcept {
-    math_functions::detail::check_math_int_type<IntType>();
-
-    if constexpr (math_functions::is_signed_v<IntType>) {
-        using UIntType = math_functions::make_unsigned_t<IntType>;
-
-#if defined(INTEGERS_128_BIT_HPP)
-        if constexpr (std::is_same_v<IntType, int128_t>) {
-            const uint128_t t = static_cast<uint128_t>(n >> 127U);
-            return (static_cast<uint128_t>(n) ^ t) - t;
-        }
-#endif
-        return n >= 0 ? static_cast<UIntType>(n) : static_cast<UIntType>(-static_cast<UIntType>(n));
-    } else {
-        return n;
-    }
-}
-
-/// @brief a > 0 and b > 0 => true
-///        a > 0 and b = 0 => false
-///        a > 0 and b < 0 => false
-///        a = 0 and b > 0 => false
-///        a = 0 and b = 0 => true
-///        a = 0 and b < 0 => false
-///        a < 0 and b > 0 => false
-///        a < 0 and b = 0 => false
-///        a < 0 and b < 0 => true
-/// @param[in] a
-/// @param[in] b
-/// @return
-template <class IntType>
-[[nodiscard]] ATTRIBUTE_CONST constexpr bool same_sign(const IntType a, const IntType b) noexcept {
-    math_functions::detail::check_math_int_type<IntType>();
-
-    return math_functions::sign(a) == math_functions::sign(b);
 }
 
 template <class IntType>
@@ -3204,7 +3244,7 @@ ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_CONST constexpr std::common_type_t<M, N> gcd(c
 #undef MATH_FUNCTIONS_HPP_ENABLE_TARGET_OPTIONS
 #endif
 
-#if defined(_MSC_VER)
+#if CONFIG_COMPILER_IS_MSVC
 #pragma warning(pop)
 #endif  // _MSC_VER
 
