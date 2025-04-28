@@ -396,13 +396,13 @@ template <class T>
 
     const auto root = math_functions::isqrt(n);
     using RootType = std::remove_const_t<decltype(root)>;
-    static_assert(std::is_same_v<RootType, uint32_t> || std::is_same_v<RootType, uint64_t>,
-                  "impl error");
+    static_assert(math_functions::is_unsigned_v<RootType>);
 
     using DivisorType = std::conditional_t<sizeof(T) >= sizeof(uint64_t), uint64_t, uint32_t>;
-    // DivisorType == uint64_t when T == uint64_t because max uint32 prime is 4294967291
-    //  and if we make DivisorType == uint32_t, i will overflow when root >= 2^32 -
-    //  kIsPrimeSqrtLoopStep (which is possible since 2^32 - kIsPrimeSqrtLoopStep < 4294967291)
+    // DivisorType == uint64_t when T == uint64_t because max uint32_t prime is 4294967291
+    //  and if we make DivisorType == uint32_t, i will overflow when
+    //  root >= 2^32 - kIsPrimeSqrtLoopStep
+    //  (which is possible since 2^32 - kIsPrimeSqrtLoopStep < 4294967291)
     DivisorType i = 7u;
     CONFIG_ASSUME_STATEMENT(i <= root);
 
@@ -524,10 +524,12 @@ template <class T>
         case 49981:
         case 60701:
         case 60787:
-        case 65281:
+        case 65281: {
             return false;
-        default:
-            return math_functions::bin_pow_mod(2, n - 1, n) == 1;
+        }
+        default: {
+            return math_functions::bin_pow_mod(2u, n - 1, n) == 1;
+        }
     }
 }
 
