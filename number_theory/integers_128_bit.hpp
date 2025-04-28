@@ -14,14 +14,16 @@
 
 #include "../misc/config_macros.hpp"
 
-#if (defined(__clang__) || defined(__GNUC__)) && defined(__SIZEOF_INT128__)
+#if CONFIG_COMPILER_IS_GCC_OR_ANY_CLANG && defined(__SIZEOF_INT128__)
 
 typedef __uint128_t uint128_t;
 typedef __int128_t int128_t;
 
 #define HAS_INT128_TYPEDEF
 
-#elif defined(_MSC_VER) && CONFIG_HAS_INCLUDE(<__msvc_int128.hpp>)
+#define INT128_IS_BUILTIN_TYPE 1
+
+#elif CONFIG_COMPILER_IS_MSVC && CONFIG_HAS_INCLUDE(<__msvc_int128.hpp>)
 
 #include <__msvc_int128.hpp>
 typedef std::_Unsigned128 uint128_t;
@@ -29,18 +31,20 @@ typedef std::_Signed128 int128_t;
 
 #define HAS_INT128_TYPEDEF
 
+#define INT128_IS_BUILTIN_TYPE 0
+
 #else
 
 #if defined(INTEGERS_128_BIT_HPP_WARN_IF_UNSUPPORED)
-
-#if defined(__clang__) || defined(__GNUC__)
+#if CONFIG_COMPILER_IS_GCC_OR_ANY_CLANG
 // cppcheck-suppress [preprocessorErrorDirective]
 #warning "Unsupported compiler, typedef 128-bit integer specific for your compiler"
-#elif defined(_MSC_VER)
+#elif CONFIG_COMPILER_IS_MSVC
 // cppcheck-suppress [preprocessorErrorDirective]
 #pragma message WARN("Unsupported compiler, typedef 128-bit integer specific for your compiler")
+#else
+#error "Unknown compiler, could not warn about unsupported compiler for the 128-bit integer"
 #endif
-
 #endif
 
 #endif
@@ -52,22 +56,27 @@ typedef std::_Signed128 int128_t;
 
 #include <cstddef>
 #include <cstdint>
+#include <cstdio>
 #include <ostream>
 #include <string>
 #include <string_view>
 #include <type_traits>
 
-#if CONFIG_HAS_AT_LEAST_CXX_20 && !defined(__APPLE__) && \
-    (defined(__GNUC__) || defined(__clang__)) && CONFIG_HAS_INCLUDE(<format>)
+#if CONFIG_HAS_AT_LEAST_CXX_20 && !defined(__APPLE__) && CONFIG_COMPILER_IS_GCC_OR_ANY_CLANG && \
+    CONFIG_HAS_INCLUDE(<format>)
 #define SPECIALIZE_STD_FORMAT
 #include <format>
+#endif
+
+#if CONFIG_HAS_CONCEPTS
+#include <concepts>
 #endif
 
 /**
  * Macro defined if current [u]int128_t supports constexpr
  * operations.
  */
-#if (CONFIG_HAS_AT_LEAST_CXX_17 && (defined(__GNUG__) || defined(__clang__))) || \
+#if (CONFIG_HAS_AT_LEAST_CXX_17 && CONFIG_COMPILER_IS_GCC_OR_ANY_CLANG) || \
     (CONFIG_HAS_AT_LEAST_CXX_20 && defined(_MSC_VER))
 #define HAS_I128_CONSTEXPR
 #endif
@@ -112,8 +121,8 @@ constexpr std::size_t kMaxStringLengthI128 = 40;
 /// @param number
 /// @param buffer_ptr
 /// @return
-I128_CONSTEXPR char* uint128_t_format_fill_chars_buffer(uint128_t number,
-                                                        char* buffer_ptr) noexcept {
+[[nodiscard]] I128_CONSTEXPR char* uint128_t_format_fill_chars_buffer(
+    uint128_t number, char* buffer_ptr ATTRIBUTE_LIFETIME_BOUND) noexcept {
     constexpr std::uint8_t remainders[201] =
         "0001020304050607080910111213141516171819"
         "2021222324252627282930313233343536373839"
@@ -140,6 +149,12 @@ I128_CONSTEXPR char* uint128_t_format_fill_chars_buffer(uint128_t number,
     }
 
     return buffer_ptr;
+}
+
+[[nodiscard]] ATTRIBUTE_CONST I128_CONSTEXPR uint128_t uabs128(const int128_t number) noexcept {
+    // NOLINTNEXTLINE(hicpp-signed-bitwise)
+    const uint128_t t = static_cast<uint128_t>(number >> 127U);
+    return (static_cast<uint128_t>(number) ^ t) - t;
 }
 
 }  // namespace format_impl_uint128_t
@@ -271,32 +286,29 @@ concept unsigned_integral =
 
 }  // namespace int128_traits
 
-inline std::ostream& operator<<(std::ostream& out, uint128_t number) {
+inline std::ostream& operator<<(std::ostream& out, const uint128_t number) {
     // + 1 for '\0'
-    constexpr auto buffer_size = ::format_impl_uint128_t::kMaxStringLengthU128 + 1;
+    constexpr auto buffer_size = format_impl_uint128_t::kMaxStringLengthU128 + 1;
 
     char digits[buffer_size];
     digits[buffer_size - 1] = '\0';
-    const char* ptr = ::format_impl_uint128_t::uint128_t_format_fill_chars_buffer(
-        number, &digits[buffer_size - 1]);
+    const char* ptr =
+        format_impl_uint128_t::uint128_t_format_fill_chars_buffer(number, &digits[buffer_size - 1]);
     const auto length = static_cast<std::size_t>(&digits[buffer_size - 1] - ptr);
     return out << std::string_view(ptr, length);
 }
 
-inline std::ostream& operator<<(std::ostream& out, int128_t number) {
+inline std::ostream& operator<<(std::ostream& out, const int128_t number) {
     // + 1 for '\0'
-    constexpr auto buffer_size = ::format_impl_uint128_t::kMaxStringLengthI128 + 1;
+    constexpr auto buffer_size = format_impl_uint128_t::kMaxStringLengthI128 + 1;
     char digits[buffer_size];
     digits[buffer_size - 1] = '\0';
 
-    const bool negative = number < 0;
-    if (negative) {
-        number = -number;
-    }
+    const uint128_t number_abs = format_impl_uint128_t::uabs128(number);
 
-    char* ptr = ::format_impl_uint128_t::uint128_t_format_fill_chars_buffer(
-        static_cast<uint128_t>(number), &digits[buffer_size - 1]);
-    if (negative) {
+    char* ptr = format_impl_uint128_t::uint128_t_format_fill_chars_buffer(number_abs,
+                                                                          &digits[buffer_size - 1]);
+    if (number < 0) {
         *--ptr = '-';
     }
     const auto length = static_cast<std::size_t>(&digits[buffer_size - 1] - ptr);
@@ -308,13 +320,13 @@ inline std::ostream& operator<<(std::ostream& out, int128_t number) {
 }
 
 ATTRIBUTE_NONNULL(2)
-inline int fprint_u128(uint128_t number, std::FILE* filestream) noexcept {
+inline int fprint_u128(const uint128_t number, std::FILE* const filestream) noexcept {
     // + 1 for '\0'
-    constexpr auto buffer_size = ::format_impl_uint128_t::kMaxStringLengthU128 + 1;
+    constexpr auto buffer_size = format_impl_uint128_t::kMaxStringLengthU128 + 1;
     char digits[buffer_size];
     digits[buffer_size - 1] = '\0';
-    const char* ptr = ::format_impl_uint128_t::uint128_t_format_fill_chars_buffer(
-        number, &digits[buffer_size - 1]);
+    const char* const ptr =
+        format_impl_uint128_t::uint128_t_format_fill_chars_buffer(number, &digits[buffer_size - 1]);
     return std::fputs(ptr, filestream);
 }
 
@@ -323,29 +335,29 @@ inline int print_u128(uint128_t number) noexcept {
 }
 
 ATTRIBUTE_NONNULL(2)
-inline int fprint_u128_newline(uint128_t number, std::FILE* filestream) noexcept {
+inline int fprint_u128_newline(const uint128_t number, std::FILE* const filestream) noexcept {
     // + 1 for '\0', + 1 for '\n'
-    constexpr auto buffer_size = ::format_impl_uint128_t::kMaxStringLengthU128 + 1 + 1;
+    constexpr auto buffer_size = format_impl_uint128_t::kMaxStringLengthU128 + 1 + 1;
     char digits[buffer_size];
     digits[buffer_size - 2] = '\n';
     digits[buffer_size - 1] = '\0';
-    const char* ptr = ::format_impl_uint128_t::uint128_t_format_fill_chars_buffer(
-        number, &digits[buffer_size - 2]);
+    const char* const ptr =
+        format_impl_uint128_t::uint128_t_format_fill_chars_buffer(number, &digits[buffer_size - 2]);
     return std::fputs(ptr, filestream);
 }
 
-inline int print_u128_newline(uint128_t number) noexcept {
+inline int print_u128_newline(const uint128_t number) noexcept {
     return ::fprint_u128_newline(number, stdout);
 }
 
-[[nodiscard]] inline std::string to_string(uint128_t number) {
+[[nodiscard]] inline std::string to_string(const uint128_t number) {
     // + 1 for '\0'
-    constexpr auto buffer_size = ::format_impl_uint128_t::kMaxStringLengthU128 + 1;
+    constexpr auto buffer_size = format_impl_uint128_t::kMaxStringLengthU128 + 1;
     char digits[buffer_size];
     digits[buffer_size - 1] = '\0';
 
-    const char* ptr = ::format_impl_uint128_t::uint128_t_format_fill_chars_buffer(
-        number, &digits[buffer_size - 1]);
+    const char* const ptr =
+        format_impl_uint128_t::uint128_t_format_fill_chars_buffer(number, &digits[buffer_size - 1]);
     const auto length = static_cast<std::size_t>(&digits[buffer_size - 1] - ptr);
     if (length > buffer_size) {
         CONFIG_UNREACHABLE();
@@ -354,18 +366,16 @@ inline int print_u128_newline(uint128_t number) noexcept {
     return std::string(ptr, length);
 }
 
-[[nodiscard]] inline std::string to_string(int128_t number) {
+[[nodiscard]] inline std::string to_string(const int128_t number) {
     // + 1 for '\0'
-    constexpr auto buffer_size = ::format_impl_uint128_t::kMaxStringLengthI128 + 1;
+    constexpr auto buffer_size = format_impl_uint128_t::kMaxStringLengthI128 + 1;
     char digits[buffer_size];
     digits[buffer_size - 1] = '\0';
 
-    // NOLINTNEXTLINE(hicpp-signed-bitwise)
-    const uint128_t t = static_cast<uint128_t>(number >> 127U);
-    const uint128_t number_abs = (static_cast<uint128_t>(number) ^ t) - t;
+    const uint128_t number_abs = format_impl_uint128_t::uabs128(number);
 
-    char* ptr = ::format_impl_uint128_t::uint128_t_format_fill_chars_buffer(
-        number_abs, &digits[buffer_size - 1]);
+    char* ptr = format_impl_uint128_t::uint128_t_format_fill_chars_buffer(number_abs,
+                                                                          &digits[buffer_size - 1]);
     if (number < 0) {
         *--ptr = '-';
     }
@@ -391,7 +401,7 @@ struct std::formatter<uint128_t, CharT> {  // NOLINT(cert-dcl58-cpp)
     }
 
     template <class FmtContext>
-    typename FmtContext::iterator format(uint128_t n, FmtContext& ctx) const {
+    typename FmtContext::iterator format(const uint128_t n, FmtContext& ctx) const {
         std::string s = ::to_string(n);
         return std::copy(s.begin(), s.end(), ctx.out());
     }
@@ -405,7 +415,7 @@ struct std::formatter<int128_t, CharT> {  // NOLINT(cert-dcl58-cpp)
     }
 
     template <class FmtContext>
-    typename FmtContext::iterator format(int128_t n, FmtContext& ctx) const {
+    typename FmtContext::iterator format(const int128_t n, FmtContext& ctx) const {
         std::string s = ::to_string(n);
         return std::copy(s.begin(), s.end(), ctx.out());
     }
