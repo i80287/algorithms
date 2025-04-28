@@ -38,6 +38,13 @@
         CONFIG_ASSUME_STATEMENT(expr); \
     } while (false)
 
+#define CONCAT_STR_STR_INT2(str_literal_1, str_literal_2, int_literal) \
+    str_literal_1 str_literal_2 #int_literal
+#define CONCAT_STR_STR_INT1(str_literal_1, str_literal_2, int_literal) \
+    CONCAT_STR_STR_INT2(str_literal_1, str_literal_2, int_literal)
+#define LONGINT_FILE_LOCATION() \
+    CONCAT_STR_STR_INT1(__FILE__, ":", __LINE__), CONFIG_CURRENT_FUNCTION_NAME
+
 #if CONFIG_HAS_AT_LEAST_CXX_20 && !defined(_GLIBCXX_DEBUG) && !defined(_GLIBCXX_ASSERTIONS) && \
     ((CONFIG_COMPILER_ID != CONFIG_CLANG_COMPILER_ID &&                                        \
       CONFIG_COMPILER_ID != CONFIG_CLANG_CL_COMPILER_ID) ||                                    \
@@ -371,6 +378,53 @@ class longint final {
             nonZeroSizeAddUInt(n_abs);
         } else {
             nonZeroSizeSubUInt(n_abs);
+        }
+    }
+
+    template <class T>
+    [[nodiscard]]
+    ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_PURE constexpr T to_uint_unchecked() const noexcept {
+        T value = 0;
+        switch (usize()) {
+            default: {
+                static_assert(kDigitBits * 4 == 128, "add more cases");
+                [[fallthrough]];
+            }
+            case 4: {
+                if constexpr (sizeof(T) >= sizeof(digit_t) * 4) {
+                    value |= T{nums_[4 - 1]} << (kDigitBits * (4 - 1));
+                }
+
+                [[fallthrough]];
+            }
+            case 3: {
+                if constexpr (sizeof(T) >= sizeof(digit_t) * 3) {
+                    value |= T{nums_[3 - 1]} << (kDigitBits * (3 - 1));
+                }
+
+                [[fallthrough]];
+            }
+            case 2: {
+                if constexpr (sizeof(T) >= sizeof(digit_t) * 2) {
+                    value |= double_digit_t{nums_[2 - 1]} << (kDigitBits * (2 - 1));
+                }
+
+                [[fallthrough]];
+            }
+            case 1: {
+                if constexpr (sizeof(T) >= sizeof(digit_t) * 1) {
+                    value |= nums_[1 - 1] << (kDigitBits * (1 - 1));
+                }
+
+                if constexpr (sizeof(T) < sizeof(digit_t)) {
+                    value = nums_[0] & std::numeric_limits<T>::max();
+                }
+
+                [[fallthrough]];
+            }
+            case 0: {
+                return value;
+            }
         }
     }
 
@@ -1292,13 +1346,38 @@ public:
         if (nums_[usize_value - 1] == 0) {
             usize_value--;
         }
-        size_ = static_cast<std::int32_t>(size_ >= 0 ? usize_value : -usize_value);
+        set_ssize_from_size(usize_value);
         return *this;
     }
 
     void set_string(const std::string_view s) {
         // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
         this->set_str_impl(reinterpret_cast<const unsigned char*>(s.data()), s.size());
+    }
+
+    template <class T>
+    [[nodiscard]]
+    ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_PURE constexpr bool fits_in_uint() const noexcept {
+        // If size() < 0, this expression will evaluate to large positive number
+        const size_type size_value = static_cast<size_type>(size());
+
+        if (sizeof(T) >= sizeof(digit_t)) {
+            static_assert(sizeof(T) % sizeof(digit_t) == 0);
+            return size_value <= sizeof(T) / sizeof(digit_t);
+        } else {
+            return size_value == 0 ||
+                   (size_value == 1 && nums_[0] <= std::numeric_limits<T>::max());
+        }
+    }
+
+    template <class T>
+    [[nodiscard]]
+    ATTRIBUTE_ALWAYS_INLINE constexpr T to_uint() const {
+        if (unlikely(!fits_in_uint<T>())) {
+            throw_on_failed_uint_checked_cast(LONGINT_FILE_LOCATION());
+        }
+
+        return to_uint_unchecked<T>();
     }
 
     ATTRIBUTE_ALWAYS_INLINE
@@ -1313,7 +1392,7 @@ public:
     }
     ATTRIBUTE_ALWAYS_INLINE
     [[nodiscard]] constexpr std::uint32_t to_uint32() const {
-        return to_uint_checked<std::uint32_t>();
+        return to_uint<std::uint32_t>();
     }
 
     ATTRIBUTE_ALWAYS_INLINE
@@ -1329,7 +1408,7 @@ public:
     }
     ATTRIBUTE_ALWAYS_INLINE
     [[nodiscard]] constexpr std::uint64_t to_uint64() const {
-        return to_uint_checked<std::uint64_t>();
+        return to_uint<std::uint64_t>();
     }
 
 #if defined(INTEGERS_128_BIT_HPP)
@@ -1345,7 +1424,7 @@ public:
     }
     ATTRIBUTE_ALWAYS_INLINE
     [[nodiscard]] I128_CONSTEXPR uint128_t to_uint128() const noexcept {
-        return to_uint_checked<uint128_t>();
+        return to_uint<uint128_t>();
     }
 #endif
 
@@ -1785,8 +1864,7 @@ public:
             [[nodiscard]]
             static dec_size_type check_size_for_fft(const dec_size_type value) {
                 if (unlikely(value > kMaxDecFFTSize)) {
-                    throw_size_error(__FILE__, __LINE__, CONFIG_CURRENT_FUNCTION_NAME, value,
-                                     kMaxDecFFTSize);
+                    throw_size_error(LONGINT_FILE_LOCATION(), value, kMaxDecFFTSize);
                 }
 
                 return value;
@@ -2058,102 +2136,6 @@ private:
 #else
     static constexpr bool kUseCustomLongIntAllocator = false;
 #endif
-
-    template <class T>
-    [[nodiscard]]
-    ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_PURE constexpr bool fits_in_uint() const noexcept {
-        // If size() < 0, this expression will evaluate to large positive number
-        const size_type size_value = static_cast<size_type>(size());
-
-        if (sizeof(T) >= sizeof(digit_t)) {
-            static_assert(sizeof(T) % sizeof(digit_t) == 0);
-            return size_value <= sizeof(T) / sizeof(digit_t);
-        } else {
-            return size_value == 0 ||
-                   (size_value == 1 && nums_[0] <= std::numeric_limits<T>::max());
-        }
-    }
-
-    template <class T>
-    [[nodiscard]]
-    ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_PURE constexpr T to_uint_unchecked() const noexcept {
-        T value = 0;
-        const size_type usize_value = usize();
-
-        // if (usize_value > sizeof(T) / sizeof(digit_t)) {
-        //     if (fits_in_uint<T>()) {
-        //         CONFIG_UNREACHABLE();
-        //     }
-        // }
-
-        static_assert(kDigitBits == 32);
-        switch (usize_value) {
-            default: {
-                // if (fits_in_uint<T>()) {
-                //     CONFIG_UNREACHABLE();
-                // }
-
-                [[fallthrough]];
-            }
-            case 4: {
-                if constexpr (sizeof(T) >= sizeof(digit_t) * 4) {
-                    value |= T{nums_[4 - 1]} << (kDigitBits * (4 - 1));
-                }
-                // else if (fits_in_uint<T>()) {
-                //     CONFIG_UNREACHABLE();
-                // }
-
-                [[fallthrough]];
-            }
-            case 3: {
-                if constexpr (sizeof(T) >= sizeof(digit_t) * 3) {
-                    value |= T{nums_[3 - 1]} << (kDigitBits * (3 - 1));
-                }
-                // else if (fits_in_uint<T>()) {
-                //     CONFIG_UNREACHABLE();
-                // }
-
-                [[fallthrough]];
-            }
-            case 2: {
-                if constexpr (sizeof(T) >= sizeof(digit_t) * 2) {
-                    value |= double_digit_t{nums_[2 - 1]} << (kDigitBits * (2 - 1));
-                }
-                // else if (fits_in_uint<T>()) {
-                //     CONFIG_UNREACHABLE();
-                // }
-
-                [[fallthrough]];
-            }
-            case 1: {
-                if constexpr (sizeof(T) >= sizeof(digit_t) * 1) {
-                    value |= nums_[1 - 1] << (kDigitBits * (1 - 1));
-                }
-                // else if (fits_in_uint<T>()) {
-                //     CONFIG_UNREACHABLE();
-                // }
-
-                if constexpr (sizeof(T) < sizeof(digit_t)) {
-                    value = nums_[0] & std::numeric_limits<T>::max();
-                }
-
-                [[fallthrough]];
-            }
-            case 0: {
-                return value;
-            }
-        }
-    }
-
-    template <class T>
-    [[nodiscard]]
-    ATTRIBUTE_ALWAYS_INLINE constexpr T to_uint_checked() const {
-        if (unlikely(!fits_in_uint<T>())) {
-            std::abort();  // TODO
-        }
-
-        return to_uint_unchecked<T>();
-    }
 
     struct LongIntNaive final {
         ATTRIBUTE_SIZED_ACCESS(read_only, 1, 2)
@@ -3085,7 +3067,7 @@ private:
 
     ATTRIBUTE_ALWAYS_INLINE static size_type check_size(const std::size_t value) {
         if (unlikely(value > max_size())) {
-            throw_size_error(__FILE__, __LINE__, CONFIG_CURRENT_FUNCTION_NAME, value, max_size());
+            throw_size_error(LONGINT_FILE_LOCATION(), value, max_size());
         }
         const size_type checked_value = static_cast<size_type>(value);
         CONFIG_ASSUME_STATEMENT(checked_value <= max_size());
@@ -3100,31 +3082,52 @@ private:
         capacity_ = new_nums_capacity;
     }
 
-    [[noreturn]]
-    ATTRIBUTE_NOINLINE ATTRIBUTE_COLD static void throw_size_error(
-        const char* const file_name,
-        const std::uint32_t line,
-        const char* const function_name,
-        const std::size_t new_size_value,
-        const std::size_t max_size_value) {
-        std::array<char, 1024> message{};
-        const int bytes_written = std::snprintf(
-            message.data(), message.size(),
-            "%s:%u: size error at %s: new size (which is %zu) > max size (which is %zu)", file_name,
-            line, function_name, new_size_value, max_size_value);
+    ATTRIBUTE_COLD
+    [[noreturn]] static void throw_size_error(const char* const file_location,
+                                              const char* const function_name,
+                                              const std::size_t new_size_value,
+                                              const std::size_t max_size_value) {
+        static constexpr std::size_t kMessageSize = 1024;
+        std::array<char, kMessageSize> message{};
+        const int bytes_written =
+            std::snprintf(message.data(), message.size(),
+                          "%s: size error at %s: new size (which is %zu) > max size (which is %zu)",
+                          file_location, function_name, new_size_value, max_size_value);
 
         if (unlikely(bytes_written < 0)) {
-            constexpr const char kFallbackMessage[] = "size error at ";
-            constexpr auto kPrefixSize = std::size(kFallbackMessage) - 1;
-            std::char_traits<char>::copy(message.data(), kFallbackMessage, kPrefixSize);
+            constexpr std::string_view kFallbackMessage = "size error at ";
+            std::char_traits<char>::copy(message.data(), kFallbackMessage.data(),
+                                         kFallbackMessage.size());
             const auto fn_name_size = std::char_traits<char>::length(function_name);
-            const auto fn_name_copy_size = std::min(fn_name_size, message.size() - 1 - kPrefixSize);
-            std::char_traits<char>::copy(std::addressof(message[kPrefixSize]), function_name,
-                                         fn_name_copy_size);
-            message[kPrefixSize + fn_name_copy_size] = '\0';
+            static_assert(kFallbackMessage.size() < kMessageSize);
+            const auto fn_name_copy_size =
+                std::min(fn_name_size, message.size() - 1 - kFallbackMessage.size());
+            std::char_traits<char>::copy(std::addressof(message[kFallbackMessage.size()]),
+                                         function_name, fn_name_copy_size);
+            message[kFallbackMessage.size() + fn_name_copy_size] = '\0';
         }
 
         throw std::length_error{message.data()};
+    }
+
+    ATTRIBUTE_COLD
+    [[noreturn]] static void throw_on_failed_uint_checked_cast(const char* const file_location,
+                                                               const char* const function_name) {
+        static constexpr std::size_t kMessageSize = 1024;
+        std::array<char, kMessageSize> message{};
+        const int bytes_written = std::snprintf(
+            message.data(), message.size(),
+            "%s: checked cast longint to integral type failed at %s", file_location, function_name);
+        if (unlikely(bytes_written < 0)) {
+            constexpr std::string_view kFallbackMessage =
+                "checked cast longint to integral type failed";
+            static_assert(kFallbackMessage.size() <= kMessageSize);
+            std::char_traits<char>::copy(message.data(), kFallbackMessage.data(),
+                                         kFallbackMessage.size());
+            message[kFallbackMessage.size()] = '\0';
+        }
+
+        throw std::runtime_error{message.data()};
     }
 
     digit_t* nums_ = nullptr;
@@ -3308,5 +3311,8 @@ inline void longint::set_str_impl(const unsigned char* str, const std::size_t st
 #undef HAS_CUSTOM_LONGINT_ALLOCATOR
 #endif
 #undef CONSTEXPR_VECTOR
+#undef LONGINT_FILE_LOCATION
+#undef CONCAT_STR_STR_INT2
+#undef CONCAT_STR_STR_INT1
 #undef LONGINT_ASSERT_ASSUME
 #undef LONGINT_DEBUG_ASSERT
