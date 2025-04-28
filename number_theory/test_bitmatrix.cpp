@@ -73,7 +73,7 @@ CONSTEXPR_IF_AT_LEAST_CXX_20 bool test_transpose_8x8() noexcept {
     }
 
     if (!config::is_constant_evaluated()) {
-        Matrix8x8 b = {
+        ArrayMatrix8x8 b = {
             0b00001111,
             0b00000000,
             0b00001111,
@@ -83,7 +83,7 @@ CONSTEXPR_IF_AT_LEAST_CXX_20 bool test_transpose_8x8() noexcept {
             0b00001111,
             0b00000000,
         };
-        constexpr Matrix8x8 b_tr_1 = {
+        constexpr ArrayMatrix8x8 b_tr_1 = {
             0b01010101,
             0b01010101,
             0b01010101,
@@ -93,7 +93,7 @@ CONSTEXPR_IF_AT_LEAST_CXX_20 bool test_transpose_8x8() noexcept {
             0b00000000,
             0b00000000,
         };
-        constexpr Matrix8x8 b_tr_2 = {
+        constexpr ArrayMatrix8x8 b_tr_2 = {
             0b00000000,
             0b00000000,
             0b00000000,
