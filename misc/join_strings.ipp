@@ -4,11 +4,13 @@
 #endif
 
 #include <array>
+#include <cassert>
 #include <cctype>
 #include <charconv>
 #include <codecvt>
 #include <cstddef>
 #include <cstdint>
+#include <cuchar>
 #include <cwchar>
 #include <cwctype>
 #include <limits>
@@ -100,16 +102,75 @@ ATTRIBUTE_ALWAYS_INLINE inline auto ArithmeticToStringImpl(const T arg) {
     }
 }
 
+template <class CharType>
+[[nodiscard]] inline std::basic_string<CharType> ConvertBytesToString(std::string_view s) {
+    static_assert(!std::is_same_v<CharType, char>,
+                  "Desired char type should not be char (multibyte string)");
+
+    const auto bytes_to_char = [](CharType *const wide_char_ptr, const std::string_view str,
+                                  std::mbstate_t *const conversion_state_ptr) {
+        if constexpr (std::is_same_v<CharType, wchar_t>) {
+            return std::mbrtowc(wide_char_ptr, str.data(), str.size(), conversion_state_ptr);
+        } else if constexpr (std::is_same_v<CharType, char16_t>) {
+            return std::mbrtoc16(wide_char_ptr, str.data(), str.size(), conversion_state_ptr);
+        } else if constexpr (std::is_same_v<CharType, char32_t>) {
+            return std::mbrtoc32(wide_char_ptr, str.data(), str.size(), conversion_state_ptr);
+#if CONFIG_HAS_AT_LEAST_CXX_20 && defined(__cpp_char8_t) && __cpp_char8_t >= 201811L
+        } else if constexpr (std::is_same_v<CharType, char8_t>) {
+            return std::mbrtoc8(wide_char_ptr, str.data(), str.size(), conversion_state_ptr);
+#endif
+        } else {
+            static_assert([]() constexpr { return false; }(), "invalid CharType");
+        }
+    };
+
+    std::basic_string<CharType> result;
+    for (std::mbstate_t conversion_state{};;) {
+        CharType wide_char{};
+        const std::size_t bytes_consumed = bytes_to_char(&wide_char, s, &conversion_state);
+        const auto bytes_consumed_signed = static_cast<std::ptrdiff_t>(bytes_consumed);
+
+        if (likely(bytes_consumed_signed > 0)) {
+            assert(bytes_consumed <= s.size());
+            s.remove_prefix(bytes_consumed);
+            result.push_back(wide_char);
+            continue;
+        }
+
+        std::string_view error_message_prefix{};
+        switch (bytes_consumed_signed) {
+            case 0: {
+                return result;
+            }
+            case -1: {
+                error_message_prefix = "input string contains an invalid multibyte sequence";
+            }
+            case -2: {
+                error_message_prefix = "input string do not contain a complete multibyte character";
+            }
+            default: {
+                error_message_prefix = "unknown error occured while converting string";
+            }
+        }
+
+        throw std::runtime_error{misc::join_strings(error_message_prefix, " at ", __FILE__, ':',
+                                                    __LINE__, ':', CONFIG_CURRENT_FUNCTION_NAME)};
+    }
+}
+
 template <class ToCharType>
 [[nodiscard]] inline std::basic_string<ToCharType> ConvertString(const std::string_view str) {
     static_assert(!std::is_same_v<ToCharType, char>, "implementation error");
 
-#if CONFIG_HAS_AT_LEAST_CXX_20 && defined(__cpp_char8_t) && __cpp_char8_t >= 201811L
-    if constexpr (std::is_same_v<ToCharType, char8_t>) {
-        return std::basic_string<ToCharType>(str.begin(), str.end());
-    } else
+    if constexpr (false
+#if defined(CONFIG_HAS_AT_LEAST_CXX_26) && CONFIG_HAS_AT_LEAST_CXX_26
+                  || true
+#elif CONFIG_HAS_AT_LEAST_CXX_20 && defined(__cpp_char8_t) && __cpp_char8_t >= 201811L
+                  || std::is_same_v<ToCharType, char8_t>
 #endif
-    {
+    ) {
+        return ConvertBytesToString<ToCharType>(str);
+    } else {
 #ifdef __clang__
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wdeprecated"
