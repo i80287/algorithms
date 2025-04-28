@@ -454,7 +454,7 @@ template <class T, class P>
     requires math_functions::detail::InplaceMultipliable<T>
 #endif
 [[nodiscard]] ATTRIBUTE_CONST constexpr T bin_pow(T n, const P p) noexcept(noexcept(n *= n)) {
-    math_functions::detail::check_math_unsigned_int_type<P>();
+    math_functions::detail::check_math_int_type<P>();
 
     T ret = math_functions::detail::bin_pow_impl(std::move(n), math_functions::uabs(p));
     if constexpr (math_functions::is_unsigned_v<P>) {
@@ -503,21 +503,36 @@ template <class T>
     }
 }
 
-[[nodiscard]] ATTRIBUTE_CONST constexpr uint8_t isqrt(const uint16_t n) noexcept {
+ATTRIBUTE_ALWAYS_INLINE
+ATTRIBUTE_CONST
+[[nodiscard]] constexpr uint8_t isqrt(const uint8_t n) noexcept {
+    const uint32_t ret = math_functions::detail::isqrt_u32(n);
+    CONFIG_ASSUME_STATEMENT(ret < (1U << 4U));
+    CONFIG_ASSUME_STATEMENT(ret * ret <= n);
+    return static_cast<uint8_t>(ret);
+}
+
+ATTRIBUTE_ALWAYS_INLINE
+ATTRIBUTE_CONST
+[[nodiscard]] constexpr uint8_t isqrt(const uint16_t n) noexcept {
     const uint32_t ret = math_functions::detail::isqrt_u32(n);
     CONFIG_ASSUME_STATEMENT(ret < (1U << 8U));
     CONFIG_ASSUME_STATEMENT(ret * ret <= n);
     return static_cast<uint8_t>(ret);
 }
 
-[[nodiscard]] ATTRIBUTE_CONST constexpr uint16_t isqrt(const uint32_t n) noexcept {
+ATTRIBUTE_ALWAYS_INLINE
+ATTRIBUTE_CONST
+[[nodiscard]] constexpr uint16_t isqrt(const uint32_t n) noexcept {
     const uint32_t ret = math_functions::detail::isqrt_u32(n);
     CONFIG_ASSUME_STATEMENT(ret < (1U << 16U));
     CONFIG_ASSUME_STATEMENT(ret * ret <= n);
     return static_cast<uint16_t>(ret);
 }
 
-[[nodiscard]] ATTRIBUTE_CONST constexpr uint32_t isqrt(const uint64_t n) noexcept {
+ATTRIBUTE_ALWAYS_INLINE
+ATTRIBUTE_CONST
+[[nodiscard]] constexpr uint32_t isqrt(const uint64_t n) noexcept {
     const uint32_t ret = math_functions::detail::isqrt_u64(n);
     CONFIG_ASSUME_STATEMENT(uint64_t{ret} * uint64_t{ret} <= n);
     return ret;
@@ -525,7 +540,9 @@ template <class T>
 
 #if defined(INTEGERS_128_BIT_HPP)
 
-[[nodiscard]] ATTRIBUTE_CONST I128_CONSTEXPR uint64_t isqrt(const uint128_t n) noexcept {
+ATTRIBUTE_ALWAYS_INLINE
+ATTRIBUTE_CONST
+[[nodiscard]] I128_CONSTEXPR uint64_t isqrt(const uint128_t n) noexcept {
     const uint64_t ret = math_functions::detail::isqrt_u128(n);
 #if CONFIG_COMPILER_IS_GCC_OR_ANY_CLANG
     CONFIG_ASSUME_STATEMENT(uint128_t{ret} * uint128_t{ret} <= n);
@@ -538,7 +555,9 @@ template <class T>
 /// @brief Return integer part of the cube root of n, i.e. ⌊n^(1/3)⌋
 /// @param[in] n
 /// @return ⌊n^(1/3)⌋
-[[nodiscard]] ATTRIBUTE_CONST constexpr uint32_t icbrt(const uint32_t n) noexcept {
+ATTRIBUTE_ALWAYS_INLINE
+ATTRIBUTE_CONST
+[[nodiscard]] constexpr uint32_t icbrt(const uint32_t n) noexcept {
     const uint32_t ret = math_functions::detail::icbrt_u32(n);
 
     // 1625^3 = 4291015625 < 2^32 - 1 = 4294967295 < 4298942376 = 1626^3
@@ -557,7 +576,9 @@ template <class T>
 /// @brief Return integer part of the cube root of n, i.e. ⌊n^(1/3)⌋
 /// @param[in] n
 /// @return ⌊n^(1/3)⌋
-[[nodiscard]] ATTRIBUTE_CONST constexpr uint32_t icbrt(const uint64_t n) noexcept {
+ATTRIBUTE_ALWAYS_INLINE
+ATTRIBUTE_CONST
+[[nodiscard]] constexpr uint32_t icbrt(const uint64_t n) noexcept {
     const uint32_t ret = math_functions::detail::icbrt_u64(n);
 
     // clang-format off
@@ -574,10 +595,11 @@ template <class T>
 /// @param[in] n
 /// @return ⌊n^0.25⌋
 template <class T>
-[[nodiscard]] ATTRIBUTE_CONST constexpr uint32_t ifrrt(const T n) noexcept {
+[[nodiscard]] ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_CONST constexpr auto ifrrt(const T n) noexcept
+    -> decltype(math_functions::isqrt(math_functions::isqrt(n))) {
     math_functions::detail::check_math_unsigned_int_type<T>();
 
-    const uint32_t ret = math_functions::isqrt(math_functions::isqrt(n));
+    const auto ret = math_functions::isqrt(math_functions::isqrt(n));
 
     CONFIG_ASSUME_STATEMENT(ret <= math_functions::detail::max_ifrrt<T>());
     CONFIG_ASSUME_STATEMENT(T{ret} * T{ret} * T{ret} * T{ret} <= n);
