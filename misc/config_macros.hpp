@@ -34,14 +34,19 @@
  *   CONFIG_HAS_AT_LEAST_C_17
  *   CONFIG_HAS_AT_LEAST_C_23
  *
- *   CONFIG_COMPILER_ID, which is equal to the one of the following macros:
+ *   CONFIG_COMPILER_ID, which is equal to the one of the following pairwise distinct macros:
  *     CONFIG_CLANG_COMPILER_ID
  *     CONFIG_GCC_COMPILER_ID
  *     CONFIG_CLANG_CL_COMPILER_ID
  *     CONFIG_MSVC_COMPILER_ID
  *     CONFIG_UNKNOWN_COMPILER_ID
+ * 
+ *   Shortcuts based on the CONFIG_COMPILER_ID:
+ *     CONFIG_COMPILER_IS_GCC_OR_ANY_CLANG - either 0 or 1
+ *     CONFIG_COMPILER_IS_MSVC - either 0 or 1
  *
- *   CONFIG_HAS_CONCEPTS
+ *   CONFIG_COMPILER_SUPPORTS_CONCEPTS
+ *   CONFIG_HAS_CONCEPTS = CONFIG_COMPILER_SUPPORTS_CONCEPTS and CONFIG_HAS_INCLUDE(<concepts>)
  *   CONFIG_HAS_EXCEPTIONS
  *   CONFIG_HAS_RTTI
  * 
@@ -229,6 +234,19 @@
 #define CONFIG_COMPILER_ID CONFIG_UNKNOWN_COMPILER_ID
 #endif
 
+#if CONFIG_COMPILER_ID == CONFIG_GCC_COMPILER_ID ||   \
+    CONFIG_COMPILER_ID == CONFIG_CLANG_COMPILER_ID || \
+    CONFIG_COMPILER_ID == CONFIG_CLANG_CL_COMPILER_ID
+#define CONFIG_COMPILER_IS_GCC_OR_ANY_CLANG 1
+#define CONFIG_COMPILER_IS_MSVC             0
+#elif CONFIG_COMPILER_ID == CONFIG_MSVC_COMPILER_ID
+#define CONFIG_COMPILER_IS_GCC_OR_ANY_CLANG 0
+#define CONFIG_COMPILER_IS_MSVC             1
+#else
+#define CONFIG_COMPILER_IS_GCC_OR_ANY_CLANG 0
+#define CONFIG_COMPILER_IS_MSVC             0
+#endif
+
 #if CONFIG_HAS_AT_LEAST_C_23 && defined(__has_c_attribute)
 #define CONFIG_HAS_C_ATTRIBUTE(attr) __has_c_attribute(attr)
 #else
@@ -256,6 +274,12 @@
 
 // https://en.cppreference.com/w/cpp/feature_test
 #if CONFIG_HAS_AT_LEAST_CXX_20 && defined(__cpp_concepts) && __cpp_concepts >= 201907L
+#define CONFIG_COMPILER_SUPPORTS_CONCEPTS 1
+#else
+#define CONFIG_COMPILER_SUPPORTS_CONCEPTS 0
+#endif
+
+#if CONFIG_COMPILER_SUPPORTS_CONCEPTS && CONFIG_HAS_INCLUDE(<concepts>)
 #define CONFIG_HAS_CONCEPTS 1
 #else
 #define CONFIG_HAS_CONCEPTS 0
@@ -348,7 +372,7 @@
 #endif
 #endif
 
-#if defined(__cplusplus)
+#if defined(__cplusplus) || CONFIG_HAS_AT_LEAST_C_23
 #define CONFIG_UNREACHABLE() CONFIG_ASSUME_STATEMENT(false)
 #else
 #define CONFIG_UNREACHABLE() CONFIG_ASSUME_STATEMENT(0)

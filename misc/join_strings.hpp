@@ -6,7 +6,7 @@
 
 #include "config_macros.hpp"
 
-#if CONFIG_HAS_AT_LEAST_CXX_20 && CONFIG_HAS_CONCEPTS && CONFIG_HAS_INCLUDE(<concepts>)
+#if CONFIG_HAS_CONCEPTS
 
 #define JOIN_STRINGS_SUPPORTS_CUSTOM_TO_STRING
 

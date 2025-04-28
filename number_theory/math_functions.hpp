@@ -47,12 +47,16 @@
 #define MATH_FUNCTIONS_HAS_NUMBERS
 #endif
 
+#if CONFIG_HAS_CONCEPTS
+#include <concepts>
+#endif
+
 #if CONFIG_HAS_INCLUDE("integers_128_bit.hpp")
 #include "integers_128_bit.hpp"
 #endif
 
 // Visual C++ thinks that unary minus on unsigned is an error
-#if defined(_MSC_VER)
+#if CONFIG_COMPILER_IS_MSVC
 #pragma warning(push)
 #pragma warning(disable : 4146)
 #endif  // _MSC_VER
@@ -87,7 +91,7 @@ namespace helper_ns = int128_traits;
 namespace helper_ns = std;
 #endif
 
-#if CONFIG_HAS_CONCEPTS
+#if CONFIG_COMPILER_SUPPORTS_CONCEPTS
 template <class T>
 concept InplaceMultipliable = requires(T a, const T b) {
     { a *= b };
@@ -97,150 +101,115 @@ concept InplaceMultipliable = requires(T a, const T b) {
 }  // namespace detail
 
 template <class T>
-inline constexpr bool is_integral_v = ::math_functions::detail::helper_ns::is_integral_v<T>;
+inline constexpr bool is_integral_v = math_functions::detail::helper_ns::is_integral_v<T>;
 
 template <class T>
-inline constexpr bool is_unsigned_v = ::math_functions::detail::helper_ns::is_unsigned_v<T>;
+inline constexpr bool is_unsigned_v = math_functions::detail::helper_ns::is_unsigned_v<T>;
 
 template <class T>
-inline constexpr bool is_signed_v = ::math_functions::detail::helper_ns::is_signed_v<T>;
+inline constexpr bool is_signed_v = math_functions::detail::helper_ns::is_signed_v<T>;
 
 template <class T>
-using make_unsigned_t = typename ::math_functions::detail::helper_ns::make_unsigned_t<T>;
+using make_unsigned_t = typename math_functions::detail::helper_ns::make_unsigned_t<T>;
 
 template <class T>
-using make_signed_t = typename ::math_functions::detail::helper_ns::make_signed_t<T>;
+using make_signed_t = typename math_functions::detail::helper_ns::make_signed_t<T>;
 
 template <class T>
 inline constexpr bool is_math_integral_type_v =
-    ::math_functions::is_integral_v<T> && !std::is_same_v<T, bool> && !std::is_same_v<T, char>;
+    math_functions::is_integral_v<T> && !std::is_same_v<T, bool> && !std::is_same_v<T, char>;
 
 #if CONFIG_HAS_CONCEPTS
 
 template <class T>
-concept integral = ::math_functions::detail::helper_ns::integral<T>;
+concept integral = math_functions::detail::helper_ns::integral<T>;
 
 template <class T>
-concept signed_integral = ::math_functions::detail::helper_ns::signed_integral<T>;
+concept signed_integral = math_functions::detail::helper_ns::signed_integral<T>;
 
 template <class T>
-concept unsigned_integral = ::math_functions::detail::helper_ns::unsigned_integral<T>;
+concept unsigned_integral = math_functions::detail::helper_ns::unsigned_integral<T>;
 
 template <class T>
-concept math_integral_type = ::math_functions::is_math_integral_type_v<T>;
+concept math_integral_type = math_functions::is_math_integral_type_v<T>;
 
 #endif
 
 namespace detail {
 
 template <class T>
+struct double_bits {
+    using type = void;
+};
+
+template <>
+struct double_bits<int8_t> {
+    using type = int16_t;
+};
+
+template <>
+struct double_bits<uint8_t> {
+    using type = uint16_t;
+};
+
+template <>
+struct double_bits<int16_t> {
+    using type = int32_t;
+};
+
+template <>
+struct double_bits<uint16_t> {
+    using type = uint32_t;
+};
+
+template <>
+struct double_bits<int32_t> {
+    using type = int64_t;
+};
+
+template <>
+struct double_bits<uint32_t> {
+    using type = uint64_t;
+};
+
+#if defined(INTEGERS_128_BIT_HPP)
+
+template <>
+struct double_bits<int64_t> {
+    using type = int128_t;
+};
+
+template <>
+struct double_bits<uint64_t> {
+    using type = uint128_t;
+};
+
+#endif
+
+template <class T>
+using double_bits_t = typename double_bits<T>::type;
+
+template <class T>
 ATTRIBUTE_ALWAYS_INLINE constexpr void check_math_int_type() noexcept {
-    static_assert(::math_functions::is_math_integral_type_v<T>,
+    static_assert(math_functions::is_math_integral_type_v<T>,
                   "integral type that is not a bool nor a char is expected");
+}
+
+template <class T>
+ATTRIBUTE_ALWAYS_INLINE constexpr void check_math_unsigned_int_type() noexcept {
+    math_functions::detail::check_math_int_type<T>();
+    static_assert(math_functions::is_unsigned_v<T>, "unsigned integral type is expected");
 }
 
 template <class IntType>
 ATTRIBUTE_NODISCARD ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_CONST constexpr auto to_uint_at_least_32(
     const IntType n) noexcept {
-    using UIntType = ::math_functions::make_unsigned_t<IntType>;
+    using UIntType = math_functions::make_unsigned_t<IntType>;
     using UIntTypeAtLeastUInt32 = std::common_type_t<UIntType, unsigned>;
     return UIntTypeAtLeastUInt32{static_cast<UIntType>(n)};
 }
 
-}  // namespace detail
-
-/// @brief Calculates T ^ p
-/// @tparam T
-/// @param[in] n
-/// @param[in] p
-/// @return T ^ p
-#if CONFIG_HAS_CONCEPTS
-template <::math_functions::detail::InplaceMultipliable T>
-#else
-template <class T>
-#endif
-[[nodiscard]] ATTRIBUTE_CONST constexpr T bin_pow(T n, size_t p) noexcept(noexcept(n *= n)) {
-    T res(1);
-    while (true) {
-        if (p % 2 != 0) {
-            res *= n;
-        }
-        p /= 2;
-        if (p == 0) {
-            return res;
-        }
-        n *= n;
-    }
-}
-
-/// @brief Calculates T ^ p
-/// @tparam T
-/// @param[in] n
-/// @param[in] p
-/// @return T ^ p
-#if CONFIG_HAS_CONCEPTS
-template <::math_functions::detail::InplaceMultipliable T>
-#else
-template <class T>
-#endif
-[[nodiscard]] ATTRIBUTE_CONST constexpr T bin_pow(T n, ptrdiff_t p) noexcept(noexcept(n *= n) &&
-                                                                             noexcept(1 / n)) {
-    const bool not_inverse = p >= 0;
-    const size_t p_u = p >= 0 ? static_cast<size_t>(p) : -static_cast<size_t>(p);
-    const T res = ::math_functions::bin_pow(std::move(n), p_u);
-    return not_inverse ? res : T(1) / res;
-}
-
-/// @brief Calculate (n ^ p) % mod
-/// @param[in] n
-/// @param[in] p
-/// @param[in] mod
-/// @return (n ^ p) % mod
-[[nodiscard]] ATTRIBUTE_CONST constexpr uint32_t bin_pow_mod(uint32_t n,
-                                                             uint64_t p,
-                                                             uint32_t mod) noexcept {
-    uint64_t res = mod != 1;
-    uint64_t widen_n = n;
-    while (true) {
-        if (p % 2 != 0) {
-            CONFIG_ASSUME_STATEMENT(widen_n < (uint64_t{1} << 32U));
-            res = (res * widen_n) % mod;
-        }
-        p /= 2;
-        if (p == 0) {
-            return static_cast<uint32_t>(res);
-        }
-        CONFIG_ASSUME_STATEMENT(widen_n < (uint64_t{1} << 32U));
-        widen_n = (widen_n * widen_n) % mod;
-        CONFIG_ASSUME_STATEMENT(widen_n < (uint64_t{1} << 32U));
-    }
-}
-
-#if defined(INTEGERS_128_BIT_HPP)
-
-/// @brief Calculate (n ^ p) % mod
-/// @param[in] n
-/// @param[in] p
-/// @param[in] mod
-/// @return (n ^ p) % mod
-[[nodiscard]]
-ATTRIBUTE_CONST I128_CONSTEXPR uint64_t bin_pow_mod(uint64_t n, uint64_t p, uint64_t mod) noexcept {
-    uint64_t res = mod != 1U;
-    while (true) {
-        if (p % 2 != 0) {
-            res = static_cast<uint64_t>((uint128_t{res} * n) % mod);
-        }
-        p /= 2;
-        if (p == 0) {
-            return res;
-        }
-        n = static_cast<uint64_t>((uint128_t{n} * n) % mod);
-    }
-}
-
-#endif
-
-[[nodiscard]] ATTRIBUTE_CONST constexpr uint32_t isqrt(uint32_t n) noexcept {
+ATTRIBUTE_NODISCARD ATTRIBUTE_CONST constexpr uint32_t isqrt_u32(uint32_t n) noexcept {
     /**
      * In the runtime `sqrt` is used (but not for the msvc prior to the c++20).
      *
@@ -248,10 +217,11 @@ ATTRIBUTE_CONST I128_CONSTEXPR uint64_t bin_pow_mod(uint64_t n, uint64_t p, uint
      *  https://godbolt.org/z/7jK8xcjjf
      */
 
-    uint32_t y = 0;
 #if defined(__GNUG__) || defined(__clang__) || CONFIG_HAS_AT_LEAST_CXX_20
-    if (::config::is_constant_evaluated() || ::config::is_gcc_constant_p(n)) {
+    if (config::is_constant_evaluated() || config::is_gcc_constant_p(n)) {
 #endif
+        uint32_t y = 0;
+
         /**
          * See Hackers Delight Chapter 11.
          */
@@ -263,42 +233,43 @@ ATTRIBUTE_CONST I128_CONSTEXPR uint64_t bin_pow_mod(uint64_t n, uint64_t p, uint
                 y |= m;
             }
         }
+
+        return y;
 #if defined(__GNUG__) || defined(__clang__) || CONFIG_HAS_AT_LEAST_CXX_20
     } else {
-        y = static_cast<uint32_t>(std::sqrt(static_cast<double>(n)));
+        return static_cast<uint32_t>(std::sqrt(static_cast<double>(n)));
     }
 #endif
-
-    CONFIG_ASSUME_STATEMENT(y < (1U << 16U));
-    return y;
 }
 
-[[nodiscard]] ATTRIBUTE_CONST constexpr uint32_t isqrt(const uint64_t n) noexcept {
+ATTRIBUTE_NODISCARD ATTRIBUTE_CONST constexpr uint32_t isqrt_u64(const uint64_t n) noexcept {
     /**
      * In the runtime `sqrtl` is used (but not for the msvc prior to the c++20).
      */
 #if defined(__GNUG__) || defined(__clang__) || CONFIG_HAS_AT_LEAST_CXX_20
-    if (::config::is_constant_evaluated() || ::config::is_gcc_constant_p(n) ||
-        sizeof(long double) < 16) {
+    if (sizeof(long double) < 16 || config::is_constant_evaluated() ||
+        config::is_gcc_constant_p(n)) {
 #endif
         /**
          * See Hackers Delight Chapter 11.
          */
+        constexpr uint32_t kMaxUInt32 = std::numeric_limits<uint32_t>::max();
         uint64_t l = 1;
-        uint64_t r = std::min((n >> 5U) + 8U, uint64_t{std::numeric_limits<uint32_t>::max()});
+        uint64_t r = std::min((n >> 5U) + 8U, uint64_t{kMaxUInt32});
         do {
             CONFIG_ASSUME_STATEMENT(l <= r);
-            CONFIG_ASSUME_STATEMENT((r >> 32U) == 0);
+            CONFIG_ASSUME_STATEMENT(r <= kMaxUInt32);
             const uint64_t m = (l + r) / 2;
-            CONFIG_ASSUME_STATEMENT((m >> 32U) == 0);
+            CONFIG_ASSUME_STATEMENT(m <= kMaxUInt32);
             if (n >= m * m) {
                 l = m + 1;
             } else {
                 r = m - 1;
             }
         } while (r >= l);
-        CONFIG_ASSUME_STATEMENT(((l - 1) >> 32U) == 0);
-        return static_cast<uint32_t>(l - 1);
+        const uint64_t ret = l - 1;
+        CONFIG_ASSUME_STATEMENT(ret <= kMaxUInt32);
+        return static_cast<uint32_t>(ret);
 #if defined(__GNUG__) || defined(__clang__) || CONFIG_HAS_AT_LEAST_CXX_20
     }
 
@@ -306,12 +277,8 @@ ATTRIBUTE_CONST I128_CONSTEXPR uint64_t bin_pow_mod(uint64_t n, uint64_t p, uint
 #endif
 }
 
-#if defined(INTEGERS_128_BIT_HPP)
-
-[[nodiscard]] ATTRIBUTE_CONST I128_CONSTEXPR uint64_t isqrt(const uint128_t n) noexcept {
-    /**
-     * See Hackers Delight Chapter 11.
-     */
+/// @note  See Hackers Delight Chapter 11.
+ATTRIBUTE_NODISCARD ATTRIBUTE_CONST I128_CONSTEXPR uint64_t isqrt_u128(const uint128_t n) noexcept {
     uint64_t l = 0;
     const uint128_t r_approx = (n >> 6U) + 16U;
     uint64_t r = r_approx > std::numeric_limits<uint64_t>::max()
@@ -329,13 +296,8 @@ ATTRIBUTE_CONST I128_CONSTEXPR uint64_t bin_pow_mod(uint64_t n, uint64_t p, uint
     return l;
 }
 
-#endif
-
-/// @brief Return integer part of the cube root of n, i.e. ⌊n^(1/3)⌋
 /// @note  See Hackers Delight Chapter 11, section 11-2.
-/// @param[in] n
-/// @return ⌊n^(1/3)⌋
-[[nodiscard]] ATTRIBUTE_CONST constexpr uint32_t icbrt(uint32_t n) noexcept {
+ATTRIBUTE_NODISCARD ATTRIBUTE_CONST constexpr uint32_t icbrt_u32(uint32_t n) noexcept {
     /**
      * cbrt and cbrtl are not used here because according
      * to the Quick Bench results they are:
@@ -354,10 +316,6 @@ ATTRIBUTE_CONST I128_CONSTEXPR uint64_t bin_pow_mod(uint64_t n, uint64_t p, uint
      *  `uint32_t(std::cbrt(3375.0))` may be equal to 14
      */
 
-#if defined(__GNUG__) && !defined(__clang__) && CONFIG_HAS_AT_LEAST_CXX_17
-    ATTRIBUTE_MAYBE_UNUSED const auto n_original_value = n;
-#endif
-
     uint32_t y = 0;
     for (int32_t s = 30; s >= 0; s -= 3) {
         y *= 2;
@@ -368,22 +326,12 @@ ATTRIBUTE_CONST I128_CONSTEXPR uint64_t bin_pow_mod(uint64_t n, uint64_t p, uint
             y++;
         }
     }
-    // 1625^3 = 4291015625 < 2^32 - 1 = 4294967295 < 4298942376 = 1626^3
-    CONFIG_ASSUME_STATEMENT(y <= 1625U);
-#if defined(__GNUG__) && !defined(__clang__) && CONFIG_HAS_AT_LEAST_CXX_17
-    // Clang ignores this assumption because it contains potential side effects (fpu register
-    // flags), while GCC has made almost all math functions constexpr long before the C++26
-    CONFIG_ASSUME_STATEMENT(
-        y == (static_cast<uint32_t>(std::cbrt(static_cast<long double>(n_original_value)))));
-#endif
+
     return y;
 }
 
-/// @brief Return integer part of the cube root of n, i.e. ⌊n^(1/3)⌋
 /// @note  See Hackers Delight Chapter Chapter 11, ex. 2.
-/// @param[in] n
-/// @return ⌊n^(1/3)⌋
-[[nodiscard]] ATTRIBUTE_CONST constexpr uint32_t icbrt(uint64_t n) noexcept {
+ATTRIBUTE_NODISCARD ATTRIBUTE_CONST constexpr uint32_t icbrt_u64(uint64_t n) noexcept {
     uint64_t y = 0;
     if (n >= 0x1000000000000000ULL) {
         if (n >= 0x8000000000000000ULL) {
@@ -409,14 +357,254 @@ ATTRIBUTE_CONST I128_CONSTEXPR uint64_t bin_pow_mod(uint64_t n, uint64_t p, uint
     return static_cast<uint32_t>(y);
 }
 
+template <class T>
+ATTRIBUTE_NODISCARD ATTRIBUTE_CONST constexpr uint32_t max_ifrrt() noexcept {
+    constexpr uint32_t ifrrt_of_one_plus_max_T = []() constexpr noexcept {
+        constexpr auto kNumBits = CHAR_BIT * sizeof(T);
+        if constexpr (kNumBits == 128) {
+            return 0;
+        } else {
+            return 1u << (kNumBits / 4);
+        }
+    }();
+    return ifrrt_of_one_plus_max_T - 1u;
+}
+
+template <class T, class P>
+[[nodiscard]] ATTRIBUTE_CONST constexpr T bin_pow_impl(T n, P p) noexcept(noexcept(n *= n)) {
+    T res(1);
+    while (true) {
+        if (p % 2 != 0) {
+            res *= n;
+        }
+        p /= 2;
+        if (p == 0) {
+            return res;
+        }
+        n *= n;
+    }
+}
+
+}  // namespace detail
+
+template <class IntType>
+[[nodiscard]] ATTRIBUTE_CONST constexpr int32_t sign(const IntType n) noexcept {
+    math_functions::detail::check_math_int_type<IntType>();
+
+    if constexpr (math_functions::is_signed_v<IntType>) {
+#if defined(INTEGERS_128_BIT_HPP)
+        if constexpr (std::is_same_v<IntType, int128_t>) {
+            const uint32_t sign_bit = static_cast<uint32_t>(static_cast<uint128_t>(n) >> 127U);
+            return static_cast<int32_t>(n != 0) - static_cast<int32_t>(2 * sign_bit);
+        }
+#endif
+
+        return static_cast<int32_t>(n > 0) - static_cast<int32_t>(n < 0);
+    } else {
+        return n > 0 ? 1 : 0;
+    }
+}
+
+template <class IntType>
+[[nodiscard]] ATTRIBUTE_CONST constexpr auto uabs(const IntType n) noexcept {
+    math_functions::detail::check_math_int_type<IntType>();
+
+    if constexpr (math_functions::is_signed_v<IntType>) {
+        using UIntType = math_functions::make_unsigned_t<IntType>;
+
+#if defined(INTEGERS_128_BIT_HPP)
+        if constexpr (std::is_same_v<IntType, int128_t>) {
+            const uint128_t t = static_cast<uint128_t>(n >> 127U);
+            return (static_cast<uint128_t>(n) ^ t) - t;
+        }
+#endif
+        return n >= 0 ? static_cast<UIntType>(n) : static_cast<UIntType>(-static_cast<UIntType>(n));
+    } else {
+        return n;
+    }
+}
+
+/// @brief a > 0 and b > 0 => true
+///        a > 0 and b = 0 => false
+///        a > 0 and b < 0 => false
+///        a = 0 and b > 0 => false
+///        a = 0 and b = 0 => true
+///        a = 0 and b < 0 => false
+///        a < 0 and b > 0 => false
+///        a < 0 and b = 0 => false
+///        a < 0 and b < 0 => true
+/// @param[in] a
+/// @param[in] b
+/// @return
+template <class IntType>
+[[nodiscard]] ATTRIBUTE_CONST constexpr bool same_sign(const IntType a, const IntType b) noexcept {
+    math_functions::detail::check_math_int_type<IntType>();
+
+    return math_functions::sign(a) == math_functions::sign(b);
+}
+
+/// @brief Calculate n ^ p
+/// @tparam T
+/// @tparam P integral type
+/// @param[in] n
+/// @param[in] p
+/// @return n ^ p
+template <class T, class P>
+#if CONFIG_COMPILER_SUPPORTS_CONCEPTS
+    requires math_functions::detail::InplaceMultipliable<T>
+#endif
+[[nodiscard]] ATTRIBUTE_CONST constexpr T bin_pow(T n, const P p) noexcept(noexcept(n *= n)) {
+    math_functions::detail::check_math_int_type<P>();
+
+    T ret = math_functions::detail::bin_pow_impl(std::move(n), math_functions::uabs(p));
+    if constexpr (math_functions::is_unsigned_v<P>) {
+        return ret;
+    } else {
+        return p >= 0 ? std::move(ret) : T{1} / std::move(ret);
+    }
+}
+
+/// @brief Calculate (n ^ p) % mod
+/// @tparam T unsigned integral type
+/// @param[in] n
+/// @param[in] p
+/// @param[in] mod
+/// @return (n ^ p) % mod
+template <class T>
+[[nodiscard]] ATTRIBUTE_CONST constexpr T bin_pow_mod(T n, uint64_t p, const T mod) noexcept {
+    math_functions::detail::check_math_unsigned_int_type<T>();
+
+    using Q = math_functions::detail::double_bits_t<T>;
+    constexpr T kMaxT = std::numeric_limits<T>::max();
+
+    assert(mod != 0);
+
+    Q res = Q{mod != 1};
+    Q widen_n = n;
+    while (true) {
+        if (p % 2 != 0) {
+            CONFIG_ASSUME_STATEMENT(res <= kMaxT);
+            CONFIG_ASSUME_STATEMENT(res < mod);
+            CONFIG_ASSUME_STATEMENT(widen_n <= kMaxT);
+            res = (res * widen_n) % mod;
+            CONFIG_ASSUME_STATEMENT(res <= kMaxT);
+            CONFIG_ASSUME_STATEMENT(res < mod);
+        }
+        p /= 2;
+        if (p == 0) {
+            CONFIG_ASSUME_STATEMENT(res <= kMaxT);
+            CONFIG_ASSUME_STATEMENT(res < mod);
+            return static_cast<T>(res);
+        }
+        CONFIG_ASSUME_STATEMENT(widen_n <= kMaxT);
+        widen_n = (widen_n * widen_n) % mod;
+        CONFIG_ASSUME_STATEMENT(widen_n <= kMaxT);
+        CONFIG_ASSUME_STATEMENT(widen_n < mod);
+    }
+}
+
+ATTRIBUTE_ALWAYS_INLINE
+ATTRIBUTE_CONST
+[[nodiscard]] constexpr uint8_t isqrt(const uint8_t n) noexcept {
+    const uint32_t ret = math_functions::detail::isqrt_u32(n);
+    CONFIG_ASSUME_STATEMENT(ret < (1U << 4U));
+    CONFIG_ASSUME_STATEMENT(ret * ret <= n);
+    return static_cast<uint8_t>(ret);
+}
+
+ATTRIBUTE_ALWAYS_INLINE
+ATTRIBUTE_CONST
+[[nodiscard]] constexpr uint8_t isqrt(const uint16_t n) noexcept {
+    const uint32_t ret = math_functions::detail::isqrt_u32(n);
+    CONFIG_ASSUME_STATEMENT(ret < (1U << 8U));
+    CONFIG_ASSUME_STATEMENT(ret * ret <= n);
+    return static_cast<uint8_t>(ret);
+}
+
+ATTRIBUTE_ALWAYS_INLINE
+ATTRIBUTE_CONST
+[[nodiscard]] constexpr uint16_t isqrt(const uint32_t n) noexcept {
+    const uint32_t ret = math_functions::detail::isqrt_u32(n);
+    CONFIG_ASSUME_STATEMENT(ret < (1U << 16U));
+    CONFIG_ASSUME_STATEMENT(ret * ret <= n);
+    return static_cast<uint16_t>(ret);
+}
+
+ATTRIBUTE_ALWAYS_INLINE
+ATTRIBUTE_CONST
+[[nodiscard]] constexpr uint32_t isqrt(const uint64_t n) noexcept {
+    const uint32_t ret = math_functions::detail::isqrt_u64(n);
+    CONFIG_ASSUME_STATEMENT(uint64_t{ret} * uint64_t{ret} <= n);
+    return ret;
+}
+
+#if defined(INTEGERS_128_BIT_HPP)
+
+ATTRIBUTE_ALWAYS_INLINE
+ATTRIBUTE_CONST
+[[nodiscard]] I128_CONSTEXPR uint64_t isqrt(const uint128_t n) noexcept {
+    const uint64_t ret = math_functions::detail::isqrt_u128(n);
+#if CONFIG_COMPILER_IS_GCC_OR_ANY_CLANG
+    CONFIG_ASSUME_STATEMENT(uint128_t{ret} * uint128_t{ret} <= n);
+#endif
+    return ret;
+}
+
+#endif
+
+/// @brief Return integer part of the cube root of n, i.e. ⌊n^(1/3)⌋
+/// @param[in] n
+/// @return ⌊n^(1/3)⌋
+ATTRIBUTE_ALWAYS_INLINE
+ATTRIBUTE_CONST
+[[nodiscard]] constexpr uint32_t icbrt(const uint32_t n) noexcept {
+    const uint32_t ret = math_functions::detail::icbrt_u32(n);
+
+    // 1625^3 = 4291015625 < 2^32 - 1 = 4294967295 < 4298942376 = 1626^3
+    CONFIG_ASSUME_STATEMENT(ret <= 1625U);
+    CONFIG_ASSUME_STATEMENT(ret * ret * ret <= n);
+
+#if defined(__GNUG__) && !defined(__clang__) && CONFIG_HAS_AT_LEAST_CXX_17
+    // Clang ignores this assumption because it contains potential side effects (fpu register
+    // flags), while GCC has made almost all math functions constexpr long before the C++26
+    CONFIG_ASSUME_STATEMENT(ret == static_cast<uint32_t>(std::cbrt(static_cast<long double>(n))));
+#endif
+
+    return ret;
+}
+
+/// @brief Return integer part of the cube root of n, i.e. ⌊n^(1/3)⌋
+/// @param[in] n
+/// @return ⌊n^(1/3)⌋
+ATTRIBUTE_ALWAYS_INLINE
+ATTRIBUTE_CONST
+[[nodiscard]] constexpr uint32_t icbrt(const uint64_t n) noexcept {
+    const uint32_t ret = math_functions::detail::icbrt_u64(n);
+
+    // clang-format off
+    // 2642245^3 = 18446724184312856125 < 2^64 - 1 = 18446744073709551615 < 18446745128696702936 = 2642246^3
+    // clang-format on
+    CONFIG_ASSUME_STATEMENT(ret <= 2642245U);
+    CONFIG_ASSUME_STATEMENT(uint64_t{ret} * uint64_t{ret} * uint64_t{ret} <= n);
+
+    return ret;
+}
+
 /// @brief Return integer part of the fourth root of n, i.e. ⌊n^0.25⌋
 /// @note ⌊n^0.25⌋ = ⌊⌊n^0.5⌋^0.5⌋ (see Hackers Delight Chapter 11, ex.1)
 /// @param[in] n
 /// @return ⌊n^0.25⌋
 template <class T>
-[[nodiscard]] ATTRIBUTE_CONST constexpr uint32_t ifrrt(const T n) noexcept {
-    static_assert(::math_functions::is_unsigned_v<T>, "unsigned integer is expected");
-    return ::math_functions::isqrt(::math_functions::isqrt(n));
+[[nodiscard]] ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_CONST constexpr auto ifrrt(const T n) noexcept
+    -> decltype(math_functions::isqrt(math_functions::isqrt(n))) {
+    math_functions::detail::check_math_unsigned_int_type<T>();
+
+    const auto ret = math_functions::isqrt(math_functions::isqrt(n));
+
+    CONFIG_ASSUME_STATEMENT(ret <= math_functions::detail::max_ifrrt<T>());
+    CONFIG_ASSUME_STATEMENT(T{ret} * T{ret} * T{ret} * T{ret} <= n);
+
+    return ret;
 }
 
 template <class T>
@@ -430,7 +618,7 @@ struct IsPerfectSquareResult {
 };
 
 template <class T>
-using IsPerfectSquareResultRetType = IsPerfectSquareResult<decltype(::math_functions::isqrt(T{}))>;
+using IsPerfectSquareResultRetType = IsPerfectSquareResult<decltype(math_functions::isqrt(T{}))>;
 
 /// @brief Checks whether @a `n` is perfect square or not.
 /// @param[in] n
@@ -438,7 +626,7 @@ using IsPerfectSquareResultRetType = IsPerfectSquareResult<decltype(::math_funct
 template <class T>
 [[nodiscard]]
 ATTRIBUTE_CONST constexpr IsPerfectSquareResultRetType<T> is_perfect_square(const T n) noexcept {
-    static_assert(::math_functions::is_unsigned_v<T>, "unsigned integer is expected");
+    math_functions::detail::check_math_unsigned_int_type<T>();
 
     // clang-format off
     /**
@@ -457,12 +645,31 @@ ATTRIBUTE_CONST constexpr IsPerfectSquareResultRetType<T> is_perfect_square(cons
         case 1:
         case 4:
         case 9: {
-            const auto root = ::math_functions::isqrt(n);
+            const auto root = math_functions::isqrt(n);
             const bool is_perf_square = T{root} * T{root} == n;
-            return {is_perf_square ? root : 0, is_perf_square};
+            return {
+#if CONFIG_HAS_AT_LEAST_CXX_20
+                .root =
+#endif
+                    is_perf_square ? root : 0,
+#if CONFIG_HAS_AT_LEAST_CXX_20
+                .is_perfect_square =
+#endif
+                    is_perf_square,
+            };
         }
-        default:
-            return {0, false};
+        default: {
+            return {
+#if CONFIG_HAS_AT_LEAST_CXX_20
+                .root =
+#endif
+                    0,
+#if CONFIG_HAS_AT_LEAST_CXX_20
+                .is_perfect_square =
+#endif
+                    false,
+            };
+        }
     }
 }
 
@@ -531,8 +738,8 @@ ATTRIBUTE_CONST constexpr IsPerfectSquareResultRetType<T> is_perfect_square(cons
 #endif
 
 template <class F>
-#if CONFIG_HAS_AT_LEAST_CXX_20
-    requires requires(F f, uint64_t mask) { f(uint64_t{mask}); }
+#if CONFIG_COMPILER_SUPPORTS_CONCEPTS
+    requires requires(F f, const uint64_t mask) { f(uint64_t{mask}); }
 #endif
 ATTRIBUTE_ALWAYS_INLINE constexpr void visit_all_submasks(const uint64_t mask, F visiter) noexcept(
     std::is_nothrow_invocable_v<F, uint64_t>) {
@@ -547,67 +754,12 @@ ATTRIBUTE_ALWAYS_INLINE constexpr void visit_all_submasks(const uint64_t mask, F
 }
 
 template <class IntType>
-[[nodiscard]] ATTRIBUTE_CONST constexpr int32_t sign(const IntType n) noexcept {
-    ::math_functions::detail::check_math_int_type<IntType>();
-    if constexpr (::math_functions::is_signed_v<IntType>) {
-#if defined(INTEGERS_128_BIT_HPP)
-        if constexpr (std::is_same_v<IntType, int128_t>) {
-            const uint32_t sign_bit = static_cast<uint32_t>(static_cast<uint128_t>(n) >> 127U);
-            return static_cast<int32_t>(n != 0) - static_cast<int32_t>(2 * sign_bit);
-        }
-#endif
-
-        return static_cast<int32_t>(n > 0) - static_cast<int32_t>(n < 0);
-    } else {
-        return n > 0 ? 1 : 0;
-    }
-}
-
-template <class IntType>
-[[nodiscard]] ATTRIBUTE_CONST constexpr auto uabs(const IntType n) noexcept {
-    ::math_functions::detail::check_math_int_type<IntType>();
-
-    if constexpr (::math_functions::is_signed_v<IntType>) {
-        using UIntType = ::math_functions::make_unsigned_t<IntType>;
-
-#if defined(INTEGERS_128_BIT_HPP)
-        if constexpr (std::is_same_v<IntType, int128_t>) {
-            const uint128_t t = static_cast<uint128_t>(n >> 127U);
-            return (static_cast<uint128_t>(n) ^ t) - t;
-        }
-#endif
-        return n >= 0 ? static_cast<UIntType>(n) : static_cast<UIntType>(-static_cast<UIntType>(n));
-    } else {
-        return n;
-    }
-}
-
-/// @brief a > 0 and b > 0 => true
-///        a > 0 and b = 0 => false
-///        a > 0 and b < 0 => false
-///        a = 0 and b > 0 => false
-///        a = 0 and b = 0 => true
-///        a = 0 and b < 0 => false
-///        a < 0 and b > 0 => false
-///        a < 0 and b = 0 => false
-///        a < 0 and b < 0 => true
-/// @param[in] a
-/// @param[in] b
-/// @return
-template <class IntType>
-[[nodiscard]] ATTRIBUTE_CONST constexpr bool same_sign(const IntType a, const IntType b) noexcept {
-    ::math_functions::detail::check_math_int_type<IntType>();
-
-    return ::math_functions::sign(a) == ::math_functions::sign(b);
-}
-
-template <class IntType>
 [[nodiscard]] ATTRIBUTE_CONST constexpr bool is_power_of_two(const IntType n) noexcept {
-    ::math_functions::detail::check_math_int_type<IntType>();
+    math_functions::detail::check_math_int_type<IntType>();
 
-    if constexpr (::math_functions::is_signed_v<IntType>) {
+    if constexpr (math_functions::is_signed_v<IntType>) {
         // Cast to unsigned type to avoid potential overflow (ub for the signed type)
-        const auto m = ::math_functions::detail::to_uint_at_least_32(n);
+        const auto m = math_functions::detail::to_uint_at_least_32(n);
         return (m & (m - 1)) == 0 && n > 0;
     } else {
         return (n & (n - 1)) == 0 && n != 0;
@@ -636,7 +788,7 @@ namespace detail {
 }
 
 [[nodiscard]] ATTRIBUTE_CONST inline uint32_t log2_ceil_software(uint64_t n) {
-    return ::math_functions::detail::log2_floor_software(n) + ((n & (n - 1)) != 0);
+    return math_functions::detail::log2_floor_software(n) + ((n & (n - 1)) != 0);
 }
 
 /**
@@ -834,11 +986,11 @@ ATTRIBUTE_NODISCARD ATTRIBUTE_CONST constexpr uint64_t pop_count_64_software(uin
 /// @return trailing zeros count (sizeof(n) * 8 for n = 0)
 template <typename T>
 #if CONFIG_HAS_CONCEPTS
-    requires ::math_functions::unsigned_integral<T>
+    requires math_functions::unsigned_integral<T>
 #endif
 [[nodiscard]]
 ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_CONST constexpr int32_t countr_zero(const T n) noexcept {
-    static_assert(::math_functions::is_unsigned_v<T>, "Unsigned integral type expected");
+    static_assert(math_functions::is_unsigned_v<T>, "Unsigned integral type expected");
 
     if (unlikely(n == 0)) {
         return sizeof(n) * CHAR_BIT;
@@ -848,12 +1000,12 @@ ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_CONST constexpr int32_t countr_zero(const T n)
     if constexpr (std::is_same_v<T, uint128_t>) {
         const uint64_t low = static_cast<uint64_t>(n);
         if (low != 0) {
-            return ::math_functions::countr_zero<uint64_t>(low);
+            return math_functions::countr_zero<uint64_t>(low);
         }
 
         const uint64_t high = static_cast<uint64_t>(n >> 64U);
         CONFIG_ASSUME_STATEMENT(high != 0);
-        return 64 + ::math_functions::countr_zero<uint64_t>(high);
+        return 64 + math_functions::countr_zero<uint64_t>(high);
     } else
 #endif
 
@@ -867,14 +1019,14 @@ ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_CONST constexpr int32_t countr_zero(const T n)
 #if defined(__GNUG__)
         return __builtin_ctzll(n);
 #else
-        return static_cast<int32_t>(::math_functions::detail::tz_count_64_software(n));
+        return static_cast<int32_t>(math_functions::detail::tz_count_64_software(n));
 #endif
     } else if constexpr (std::is_same_v<T, unsigned long>) {
 #if defined(__GNUG__)
         return __builtin_ctzl(n);
 #else
         return static_cast<int32_t>(
-            ::math_functions::detail::tz_count_64_software(static_cast<unsigned long long>(n)));
+            math_functions::detail::tz_count_64_software(static_cast<unsigned long long>(n)));
 #endif
     } else {
         static_assert(std::is_same_v<T, unsigned int> || std::is_same_v<T, unsigned short> ||
@@ -883,7 +1035,7 @@ ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_CONST constexpr int32_t countr_zero(const T n)
 #if defined(__GNUG__)
         return __builtin_ctz(n);
 #else
-        return static_cast<int32_t>(::math_functions::detail::tz_count_32_software(n));
+        return static_cast<int32_t>(math_functions::detail::tz_count_32_software(n));
 #endif
     }
     // NOLINTEND(google-runtime-int)
@@ -895,11 +1047,11 @@ ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_CONST constexpr int32_t countr_zero(const T n)
 /// @return leading zeros count (sizeof(n) * 8 for n = 0)
 template <typename T>
 #if CONFIG_HAS_CONCEPTS
-    requires ::math_functions::unsigned_integral<T>
+    requires math_functions::unsigned_integral<T>
 #endif
 [[nodiscard]]
 ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_CONST constexpr int32_t countl_zero(const T n) noexcept {
-    static_assert(::math_functions::is_unsigned_v<T>, "Unsigned integral type expected");
+    static_assert(math_functions::is_unsigned_v<T>, "Unsigned integral type expected");
 
     if (unlikely(n == 0)) {
         return sizeof(n) * CHAR_BIT;
@@ -909,12 +1061,12 @@ ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_CONST constexpr int32_t countl_zero(const T n)
     if constexpr (std::is_same_v<T, uint128_t>) {
         const uint64_t high = static_cast<uint64_t>(n >> 64U);
         if (high != 0) {
-            return ::math_functions::countl_zero<uint64_t>(high);
+            return math_functions::countl_zero<uint64_t>(high);
         }
 
         const uint64_t low = static_cast<uint64_t>(n);
         CONFIG_ASSUME_STATEMENT(low != 0);
-        return 64U + ::math_functions::countl_zero<uint64_t>(low);
+        return 64U + math_functions::countl_zero<uint64_t>(low);
     } else
 #endif
 
@@ -928,13 +1080,13 @@ ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_CONST constexpr int32_t countl_zero(const T n)
 #if defined(__GNUG__)
         return __builtin_clzll(n);
 #else
-        return static_cast<int32_t>(::math_functions::detail::lz_count_64_software(n));
+        return static_cast<int32_t>(math_functions::detail::lz_count_64_software(n));
 #endif
     } else if constexpr (std::is_same_v<T, unsigned long>) {
 #if defined(__GNUG__)
         return __builtin_clzl(n);
 #else
-        return static_cast<int32_t>(::math_functions::detail::lz_count_64_software(n));
+        return static_cast<int32_t>(math_functions::detail::lz_count_64_software(n));
 #endif
     } else {
         static_assert(std::is_same_v<T, unsigned int> || std::is_same_v<T, unsigned short> ||
@@ -943,7 +1095,7 @@ ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_CONST constexpr int32_t countl_zero(const T n)
 #if defined(__GNUG__)
         return __builtin_clz(n);
 #else
-        return static_cast<int32_t>(::math_functions::detail::lz_count_32_software(n));
+        return static_cast<int32_t>(math_functions::detail::lz_count_32_software(n));
 #endif
     }
     // NOLINTEND(google-runtime-int)
@@ -952,11 +1104,11 @@ ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_CONST constexpr int32_t countl_zero(const T n)
 
 template <class T>
 #if CONFIG_HAS_CONCEPTS
-    requires ::math_functions::unsigned_integral<T>
+    requires math_functions::unsigned_integral<T>
 #endif
 [[nodiscard]]
 ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_CONST constexpr int32_t popcount(const T n) noexcept {
-    static_assert(::math_functions::is_unsigned_v<T>, "Unsigned integral type expected");
+    static_assert(math_functions::is_unsigned_v<T>, "Unsigned integral type expected");
 
 #if defined(INTEGERS_128_BIT_HPP)
     if constexpr (std::is_same_v<T, uint128_t>) {
@@ -964,8 +1116,7 @@ ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_CONST constexpr int32_t popcount(const T n) no
         // cppcheck-suppress [shiftTooManyBits]
         const uint64_t high = static_cast<uint64_t>(n >> 64U);
         const uint64_t low = static_cast<uint64_t>(n);
-        return ::math_functions::popcount<uint64_t>(high) +
-               ::math_functions::popcount<uint64_t>(low);
+        return math_functions::popcount<uint64_t>(high) + math_functions::popcount<uint64_t>(low);
     } else
 #endif
 
@@ -979,13 +1130,13 @@ ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_CONST constexpr int32_t popcount(const T n) no
 #if defined(__GNUG__)
         return __builtin_popcountll(n);
 #else
-        return static_cast<int32_t>(::math_functions::detail::pop_count_64_software(n));
+        return static_cast<int32_t>(math_functions::detail::pop_count_64_software(n));
 #endif
     } else if constexpr (std::is_same_v<T, unsigned long>) {
 #if defined(__GNUG__)
         return __builtin_popcountl(n);
 #else
-        return static_cast<int32_t>(::math_functions::detail::pop_count_64_software(n));
+        return static_cast<int32_t>(math_functions::detail::pop_count_64_software(n));
 #endif
     } else {
         static_assert(std::is_same_v<T, unsigned int> || std::is_same_v<T, unsigned short> ||
@@ -994,7 +1145,7 @@ ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_CONST constexpr int32_t popcount(const T n) no
 #if defined(__GNUG__)
         return __builtin_popcount(n);
 #else
-        return static_cast<int32_t>(::math_functions::detail::pop_count_32_software(n));
+        return static_cast<int32_t>(math_functions::detail::pop_count_32_software(n));
 #endif
     }
     // NOLINTEND(google-runtime-int)
@@ -1025,18 +1176,18 @@ ATTRIBUTE_CONST constexpr uint32_t next_n_bits_permutation(const uint32_t x) noe
     // set to 0 the least significant ones, and add the necessary 1 bits.
     return (t + 1) |
            static_cast<uint32_t>(uint64_t{(~t & -~t) - 1} >>
-                                 static_cast<uint32_t>(::math_functions::countr_zero(x) + 1));
+                                 static_cast<uint32_t>(math_functions::countr_zero(x) + 1));
 }
 
 template <class UIntType>
 [[nodiscard]]
 ATTRIBUTE_CONST constexpr auto nearest_greater_equal_power_of_two(const UIntType n) noexcept {
-    static_assert(::math_functions::is_unsigned_v<UIntType> && sizeof(UIntType) >= sizeof(unsigned),
+    static_assert(math_functions::is_unsigned_v<UIntType> && sizeof(UIntType) >= sizeof(unsigned),
                   "unsigned integral type (at least unsigned int) is expected");
 
     using ShiftType = int32_t;
     const ShiftType shift = ShiftType{sizeof(n) * CHAR_BIT} -
-                            ShiftType{::math_functions::countl_zero(n | 1U)} -
+                            ShiftType{math_functions::countl_zero(n | 1U)} -
                             ShiftType{(n & (n - 1)) == 0};
     using RetType =
         typename std::conditional_t<(sizeof(UIntType) > sizeof(uint32_t)), UIntType, uint64_t>;
@@ -1047,12 +1198,12 @@ ATTRIBUTE_CONST constexpr auto nearest_greater_equal_power_of_two(const UIntType
 template <class UIntType>
 [[nodiscard]]
 ATTRIBUTE_CONST constexpr auto nearest_greater_power_of_two(const UIntType n) noexcept {
-    static_assert(::math_functions::is_unsigned_v<UIntType> && sizeof(UIntType) >= sizeof(unsigned),
+    static_assert(math_functions::is_unsigned_v<UIntType> && sizeof(UIntType) >= sizeof(unsigned),
                   "unsigned integral type (at least unsigned int) is expected");
 
     using ShiftType = int32_t;
     const ShiftType shift =
-        ShiftType{sizeof(n) * CHAR_BIT} - ShiftType{::math_functions::countl_zero(n)};
+        ShiftType{sizeof(n) * CHAR_BIT} - ShiftType{math_functions::countl_zero(n)};
     using RetType =
         typename std::conditional_t<(sizeof(UIntType) > sizeof(uint32_t)), UIntType, uint64_t>;
     // NOLINTNEXTLINE(hicpp-signed-bitwise)
@@ -1067,9 +1218,9 @@ ATTRIBUTE_CONST constexpr auto nearest_greater_power_of_two(const UIntType n) no
 /// @return
 template <class IntType>
 [[nodiscard]] ATTRIBUTE_CONST constexpr IntType least_bit_set(const IntType n) noexcept {
-    ::math_functions::detail::check_math_int_type<IntType>();
+    math_functions::detail::check_math_int_type<IntType>();
 
-    const auto unsigned_n = ::math_functions::detail::to_uint_at_least_32(n);
+    const auto unsigned_n = math_functions::detail::to_uint_at_least_32(n);
     return static_cast<IntType>(unsigned_n & -unsigned_n);
 }
 
@@ -1081,11 +1232,11 @@ template <class IntType>
 /// @return
 template <class IntType>
 #if CONFIG_HAS_CONCEPTS
-    requires ::math_functions::unsigned_integral<IntType> && (sizeof(IntType) >= sizeof(unsigned))
+    requires math_functions::unsigned_integral<IntType> && (sizeof(IntType) >= sizeof(unsigned))
 #endif
 [[nodiscard]]
 ATTRIBUTE_CONST constexpr IntType masked_popcount_sum(const IntType n, const IntType k) noexcept {
-    static_assert(::math_functions::is_unsigned_v<IntType> && sizeof(IntType) >= sizeof(unsigned),
+    static_assert(math_functions::is_unsigned_v<IntType> && sizeof(IntType) >= sizeof(unsigned),
                   "unsigned integral type (at least unsigned int) is expected");
 
     IntType popcount_sum = 0;
@@ -1120,7 +1271,7 @@ ATTRIBUTE_CONST constexpr IntType masked_popcount_sum(const IntType n, const Int
 /// @return
 template <class IntType>
 [[nodiscard]] ATTRIBUTE_CONST constexpr IntType popcount_sum(const IntType n) noexcept {
-    return ::math_functions::masked_popcount_sum(n, ~IntType{0});
+    return math_functions::masked_popcount_sum(n, ~IntType{0});
 }
 
 namespace detail {
@@ -1170,14 +1321,14 @@ ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_CONST constexpr uint32_t base_b_len_impl(
 template <typename T>
 [[nodiscard]] ATTRIBUTE_CONST constexpr uint32_t base_b_len(T value,
                                                             const uint8_t base = 10) noexcept {
-    ::math_functions::detail::check_math_int_type<T>();
+    math_functions::detail::check_math_int_type<T>();
 
-    if constexpr (::math_functions::is_signed_v<T>) {
+    if constexpr (math_functions::is_signed_v<T>) {
         const uint32_t is_negative = uint32_t{value < 0};
         return is_negative +
-               ::math_functions::detail::base_b_len_impl(::math_functions::uabs(value), base);
+               math_functions::detail::base_b_len_impl(math_functions::uabs(value), base);
     } else {
-        return ::math_functions::detail::base_b_len_impl(value, base);
+        return math_functions::detail::base_b_len_impl(value, base);
     }
 }
 
@@ -1187,23 +1338,23 @@ template <typename T>
 /// @return
 template <class UIntType>
 #if CONFIG_HAS_CONCEPTS
-    requires ::math_functions::unsigned_integral<UIntType>
+    requires math_functions::unsigned_integral<UIntType>
 #endif
 [[nodiscard]]
 ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_CONST constexpr uint32_t log2_floor(const UIntType n) noexcept {
-    static_assert(::math_functions::is_unsigned_v<UIntType> && sizeof(UIntType) >= sizeof(unsigned),
+    static_assert(math_functions::is_unsigned_v<UIntType> && sizeof(UIntType) >= sizeof(unsigned),
                   "unsigned integral type (at least unsigned int) is expected");
 
 #if defined(INTEGERS_128_BIT_HPP)
     if constexpr (std::is_same_v<UIntType, uint128_t>) {
         const auto hi = static_cast<uint64_t>(n >> 64U);
-        return hi != 0 ? (127 - static_cast<uint32_t>(::math_functions::countl_zero(hi)))
-                       : (::math_functions::log2_floor(static_cast<uint64_t>(n)));
+        return hi != 0 ? (127 - static_cast<uint32_t>(math_functions::countl_zero(hi)))
+                       : (math_functions::log2_floor(static_cast<uint64_t>(n)));
     } else
 #endif
     {
         return uint32_t{sizeof(n) * CHAR_BIT - 1} -
-               static_cast<uint32_t>(::math_functions::countl_zero(n));
+               static_cast<uint32_t>(math_functions::countl_zero(n));
     }
 }
 
@@ -1213,22 +1364,22 @@ ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_CONST constexpr uint32_t log2_floor(const UInt
 /// @return
 template <class UIntType>
 #if CONFIG_HAS_CONCEPTS
-    requires ::math_functions::unsigned_integral<UIntType>
+    requires math_functions::unsigned_integral<UIntType>
 #endif
 [[nodiscard]]
 ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_CONST constexpr uint32_t log2_ceil(const UIntType n) noexcept {
-    return ::math_functions::log2_floor(n) + uint32_t{(n & (n - 1)) != 0};
+    return math_functions::log2_floor(n) + uint32_t{(n & (n - 1)) != 0};
 }
 
 template <class UIntType>
 #if CONFIG_HAS_CONCEPTS
-    requires ::math_functions::unsigned_integral<UIntType>
+    requires math_functions::unsigned_integral<UIntType>
 #endif
 [[nodiscard]]
 ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_CONST constexpr uint32_t base_2_len(const UIntType n) noexcept {
     // " | 1" operation does not affect answer for all
     //  numbers except n = 0. For n = 0 answer is 1.
-    return ::math_functions::log2_floor(n | 1) + 1;
+    return math_functions::log2_floor(n | 1) + 1;
 }
 
 namespace detail {
@@ -1241,7 +1392,7 @@ ATTRIBUTE_CONST constexpr uint32_t log10_floor_compile_time_impl(uint32_t n) noe
     constexpr std::array<uint32_t, 11> table2 = {
         1U, 10U, 100U, 1000U, 10000U, 100000U, 1000000U, 10000000U, 100000000U, 1000000000U, 0U,
     };
-    uint32_t digits = table1[static_cast<uint32_t>(::math_functions::countl_zero(n))];
+    uint32_t digits = table1[static_cast<uint32_t>(math_functions::countl_zero(n))];
     digits -= ((n - table2[digits]) >> 31U);
     return digits;
 }
@@ -1271,7 +1422,7 @@ ATTRIBUTE_CONST inline uint32_t log10_floor_runtime_impl(uint32_t n) noexcept {
             1U, 10U, 100U, 1000U, 10000U, 100000U, 1000000U, 10000000U, 100000000U, 1000000000U, 0U,
         };
 
-    uint32_t digits = table1[::math_functions::countl_zero(n)];
+    uint32_t digits = table1[math_functions::countl_zero(n)];
     digits -= ((n - table2[digits]) >> 31U);
     return digits;
 }
@@ -1290,11 +1441,11 @@ ATTRIBUTE_CONST inline uint32_t log10_floor_runtime_impl(uint32_t n) noexcept {
     (CONFIG_HAS_AT_LEAST_CXX_17 && (defined(__clang__) || CONFIG_GNUC_AT_LEAST(10, 0)))
     if (::config::is_constant_evaluated() || ::config::is_gcc_constant_p(n)) {
 #endif
-        return ::math_functions::detail::log10_floor_compile_time_impl(n);
+        return math_functions::detail::log10_floor_compile_time_impl(n);
 #if CONFIG_HAS_AT_LEAST_CXX_20 || \
     (CONFIG_HAS_AT_LEAST_CXX_17 && (defined(__clang__) || CONFIG_GNUC_AT_LEAST(10, 0)))
     }
-    return ::math_functions::detail::log10_floor_runtime_impl(n);
+    return math_functions::detail::log10_floor_runtime_impl(n);
 
 #endif
 }
@@ -1378,9 +1529,9 @@ ATTRIBUTE_CONST static inline uint32_t log10_floor_runtime_impl(uint64_t n,
      * See Hackers Delight 11-4
      */
 
-    static_assert(::math_functions::countl_zero(uint64_t{0}) == 64, "countl_zero detail error");
+    static_assert(math_functions::countl_zero(uint64_t{0}) == 64, "countl_zero detail error");
     // NOLINTNEXTLINE(hicpp-signed-bitwise)
-    const int32_t approx_log10 = (19 * (63 - ::math_functions::countl_zero(n))) >> 6U;
+    const int32_t approx_log10 = (19 * (63 - math_functions::countl_zero(n))) >> 6U;
     // NOLINTNEXTLINE(hicpp-signed-bitwise)
     CONFIG_ASSUME_STATEMENT((-19 >> 6U) <= approx_log10 && approx_log10 <= ((19 * 63) >> 6U));
 
@@ -1388,23 +1539,23 @@ ATTRIBUTE_CONST static inline uint32_t log10_floor_runtime_impl(uint64_t n,
     (CONFIG_HAS_AT_LEAST_CXX_17 && (defined(__clang__) || CONFIG_GNUC_AT_LEAST(10, 0)))
     if (::config::is_constant_evaluated() || ::config::is_gcc_constant_p(n)) {
 #endif
-        return ::math_functions::detail::log10_floor_compile_time_impl(n, approx_log10);
+        return math_functions::detail::log10_floor_compile_time_impl(n, approx_log10);
 #if CONFIG_HAS_AT_LEAST_CXX_20 || \
     (CONFIG_HAS_AT_LEAST_CXX_17 && (defined(__clang__) || CONFIG_GNUC_AT_LEAST(10, 0)))
     }
 
-    return ::math_functions::detail::log10_floor_runtime_impl(n, approx_log10);
+    return math_functions::detail::log10_floor_runtime_impl(n, approx_log10);
 #endif
 }
 
 [[nodiscard]] ATTRIBUTE_CONST constexpr uint32_t base_10_len(uint32_t n) noexcept {
     // or `n` with 1 so that base_10_len(0) = 1
-    return ::math_functions::log10_floor(n | 1U) + 1;
+    return math_functions::log10_floor(n | 1U) + 1;
 }
 
 [[nodiscard]] ATTRIBUTE_CONST constexpr uint32_t base_10_len(uint64_t n) noexcept {
     // or `n` with 1 so that base_10_len(0) = 1
-    return ::math_functions::log10_floor(n | 1U) + 1;
+    return math_functions::log10_floor(n | 1U) + 1;
 }
 
 template <class T>
@@ -1419,11 +1570,11 @@ struct ExtractPow2Result {
 /// @return Pair of q and r
 template <class UIntType>
 #if CONFIG_HAS_CONCEPTS
-    requires ::math_functions::unsigned_integral<UIntType>
+    requires math_functions::unsigned_integral<UIntType>
 #endif
 [[nodiscard]]
 ATTRIBUTE_CONST constexpr ExtractPow2Result<UIntType> extract_pow2(UIntType n) noexcept {
-    auto r = static_cast<uint32_t>(::math_functions::countr_zero(n));
+    auto r = static_cast<uint32_t>(math_functions::countr_zero(n));
     CONFIG_ASSUME_STATEMENT(r <= sizeof(n) * CHAR_BIT);
     return {n != 0 ? (n >> r) : 0, r};
 }
@@ -1439,10 +1590,10 @@ ATTRIBUTE_CONST constexpr ExtractPow2Result<UIntType> extract_pow2(UIntType n) n
 
 template <class T>
 #if CONFIG_HAS_CONCEPTS
-    requires ::math_functions::unsigned_integral<T>
+    requires math_functions::unsigned_integral<T>
 #endif
 [[nodiscard]] ATTRIBUTE_CONST constexpr T next_even(T n) noexcept {
-    static_assert(::math_functions::is_unsigned_v<T>, "unsigned integral type expected");
+    static_assert(math_functions::is_unsigned_v<T>, "unsigned integral type expected");
     return n + 2 - n % 2;
 }
 
@@ -1532,48 +1683,61 @@ namespace detail {
 /// @param[in] n
 /// @return
 ATTRIBUTE_NODISCARD
-ATTRIBUTE_CONST constexpr uint32_t max_number_of_unique_prime_divisors(uint32_t n) noexcept {
-    constexpr uint32_t kBoundary2 = 2 * 3;
-    constexpr uint32_t kBoundary3 = 2 * 3 * 5;
-    constexpr uint32_t kBoundary4 = 2 * 3 * 5 * 7;
-    constexpr uint32_t kBoundary5 = 2 * 3 * 5 * 7 * 11;
-    constexpr uint32_t kBoundary6 = 2 * 3 * 5 * 7 * 11 * 13;
-    constexpr uint32_t kBoundary7 = 2 * 3 * 5 * 7 * 11 * 13 * 17;
-    constexpr uint32_t kBoundary8 = 2 * 3 * 5 * 7 * 11 * 13 * 17 * 19;
-    constexpr uint32_t kBoundary9 = 2 * 3 * 5 * 7 * 11 * 13 * 17 * 19 * 23;
+ATTRIBUTE_CONST constexpr uint32_t max_number_of_unique_prime_divisors(const uint32_t n) noexcept {
+    constexpr uint32_t kBoundary1 = 2;
+    constexpr uint32_t kBoundary2 = kBoundary1 * 3;
+    constexpr uint32_t kBoundary3 = kBoundary2 * 5;
+    constexpr uint32_t kBoundary4 = kBoundary3 * 7;
+    constexpr uint32_t kBoundary5 = kBoundary4 * 11;
+    constexpr uint32_t kBoundary6 = kBoundary5 * 13;
+    constexpr uint32_t kBoundary7 = kBoundary6 * 17;
+    constexpr uint32_t kBoundary8 = kBoundary7 * 19;
+    constexpr uint32_t kBoundary9 = kBoundary8 * 23;
 
-#if defined(__GNUG__) || defined(__clang__)
-#if defined(__clang__)
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wgnu-case-range"
-#else
+#if CONFIG_COMPILER_IS_GCC_OR_ANY_CLANG
+#if CONFIG_COMPILER_ID == CONFIG_GCC_COMPILER_ID
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wpedantic"
+#else
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wgnu-case-range"
 #endif
     switch (n) {
-        case 0 ... kBoundary2 - 1:
+        case 0 ... kBoundary1 - 1: {
+            return 0;
+        }
+        case kBoundary1 ... kBoundary2 - 1: {
             return 1;
-        case kBoundary2 ... kBoundary3 - 1:
+        }
+        case kBoundary2 ... kBoundary3 - 1: {
             return 2;
-        case kBoundary3 ... kBoundary4 - 1:
+        }
+        case kBoundary3 ... kBoundary4 - 1: {
             return 3;
-        case kBoundary4 ... kBoundary5 - 1:
+        }
+        case kBoundary4 ... kBoundary5 - 1: {
             return 4;
-        case kBoundary5 ... kBoundary6 - 1:
+        }
+        case kBoundary5 ... kBoundary6 - 1: {
             return 5;
-        case kBoundary6 ... kBoundary7 - 1:
+        }
+        case kBoundary6 ... kBoundary7 - 1: {
             return 6;
-        case kBoundary7 ... kBoundary8 - 1:
+        }
+        case kBoundary7 ... kBoundary8 - 1: {
             return 7;
-        case kBoundary8 ... kBoundary9 - 1:
+        }
+        case kBoundary8 ... kBoundary9 - 1: {
             return 8;
-        default:
+        }
+        default: {
             return 9;
+        }
     }
-#if defined(__clang__)
-#pragma clang diagnostic pop
-#else
+#if CONFIG_COMPILER_ID == CONFIG_GCC_COMPILER_ID
 #pragma GCC diagnostic pop
+#else
+#pragma clang diagnostic pop
 #endif
 #else
     if (n >= kBoundary5) {
@@ -1605,7 +1769,11 @@ ATTRIBUTE_CONST constexpr uint32_t max_number_of_unique_prime_divisors(uint32_t 
             if (n >= kBoundary2) {
                 return 2;
             } else {
-                return 1;
+                if (n >= kBoundary1) {
+                    return 1;
+                } else {
+                    return 0;
+                }
             }
         }
     }
@@ -1619,7 +1787,7 @@ struct [[nodiscard]] PrimeFactor final {
     using IntType = NumericType;
 
     ATTRIBUTE_ALWAYS_INLINE
-    constexpr PrimeFactor(IntType prime_factor, uint32_t prime_factor_power) noexcept
+    constexpr PrimeFactor(const IntType prime_factor, const uint32_t prime_factor_power) noexcept
         : factor(prime_factor), factor_power(prime_factor_power) {}
 
     IntType factor;
@@ -1632,46 +1800,47 @@ struct [[nodiscard]] PrimeFactor final {
      CONFIG_CLANG_AT_LEAST(15, 0)) &&                                                          \
     (CONFIG_COMPILER_ID != CONFIG_GCC_COMPILER_ID || CONFIG_GNUC_AT_LEAST(12, 0))
 #define CONSTEXPR_VECTOR constexpr
+#define HAS_CONSTEXPR_VECTOR
 #else
 #define CONSTEXPR_VECTOR inline
 #endif
 
 // clang-format off
 
-template <class NumericType, class Function>
-#if CONFIG_HAS_CONCEPTS
-    requires(sizeof(NumericType) >= sizeof(int)) && ::math_functions::integral<NumericType> &&
-            std::is_invocable_v<Function,
-                                typename ::math_functions::PrimeFactor<
-                                    typename ::math_functions::make_unsigned_t<NumericType>>>
-#endif
+template <class IntType, class F>
 ATTRIBUTE_ALWAYS_INLINE
-constexpr void visit_prime_factors(NumericType n, Function visitor) noexcept(
-    std::is_nothrow_invocable_v<Function,
-                                typename ::math_functions::PrimeFactor<
-                                    typename ::math_functions::make_unsigned_t<NumericType>>>) {
+constexpr void visit_prime_factors(const IntType n, F visitor) noexcept(
+    std::is_nothrow_invocable_v<F, math_functions::PrimeFactor<math_functions::make_unsigned_t<IntType>>>) {
     // clang-format on
 
-    using UnsignedNumericType = typename ::math_functions::make_unsigned_t<NumericType>;
-    using PrimeFactorType = typename ::math_functions::PrimeFactor<UnsignedNumericType>;
-    UnsignedNumericType n_abs = ::math_functions::uabs(n);
+    math_functions::detail::check_math_int_type<IntType>();
 
-    constexpr bool check_early_exit = std::is_invocable_r_v<bool, Function, PrimeFactorType>;
+    static_assert(sizeof(IntType) >= sizeof(int), "integral type should be at least int in size");
+
+    using UnsignedIntType = math_functions::make_unsigned_t<IntType>;
+    using PrimeFactorType = math_functions::PrimeFactor<UnsignedIntType>;
+
+    static_assert(std::is_invocable_v<F, PrimeFactorType>,
+                  "Passed function should accept type PrimeFactor<make_unsigned<IntType>>");
+
+    UnsignedIntType n_abs = math_functions::uabs(n);
+
+    constexpr bool check_early_exit = std::is_invocable_r_v<bool, F, PrimeFactorType>;
 
     if (n_abs % 2 == 0 && n_abs > 0) {
         // n_abs = s * 2^pow_of_2, where s is odd
-        auto [s, pow_of_2] = ::math_functions::extract_pow2(n_abs);
+        auto [s, pow_of_2] = math_functions::extract_pow2(n_abs);
         n_abs = s;
         if constexpr (check_early_exit) {
-            if (!visitor(PrimeFactorType{UnsignedNumericType{2}, pow_of_2})) {
+            if (!visitor(PrimeFactorType{UnsignedIntType{2}, pow_of_2})) {
                 return;
             }
         } else {
-            visitor(PrimeFactorType{UnsignedNumericType{2}, pow_of_2});
+            visitor(PrimeFactorType{UnsignedIntType{2}, pow_of_2});
         }
     }
 
-    for (UnsignedNumericType d = 3; d * d <= n_abs; d += 2) {
+    for (UnsignedIntType d = 3; d * d <= n_abs; d += 2) {
         CONFIG_ASSUME_STATEMENT(d >= 3);
         if (n_abs % d == 0) {
             uint32_t pow_of_d = 0;
@@ -1681,39 +1850,41 @@ constexpr void visit_prime_factors(NumericType n, Function visitor) noexcept(
             } while (n_abs % d == 0);
 
             if constexpr (check_early_exit) {
-                if (!visitor(PrimeFactorType(d, pow_of_d))) {
+                if (!visitor(PrimeFactorType{d, pow_of_d})) {
                     return;
                 }
             } else {
-                visitor(PrimeFactorType(d, pow_of_d));
+                visitor(PrimeFactorType{d, pow_of_d});
             }
         }
     }
 
     if (n_abs > 1) {
-        visitor(PrimeFactorType(n_abs, uint32_t{1}));
+        visitor(PrimeFactorType{n_abs, uint32_t{1}});
     }
 }
 
 /// @brief
-/// @tparam NumericType
+/// @tparam IntType
 /// @param[in] n
 /// @return vector of pairs { prime_div : power_of_prime_div },
 ///          sorted by prime_div.
-template <class NumericType>
-[[nodiscard]] CONSTEXPR_VECTOR auto prime_factors_as_vector(NumericType n) {
-    using UnsignedNumericType = typename ::math_functions::make_unsigned_t<NumericType>;
+template <class IntType>
+[[nodiscard]] CONSTEXPR_VECTOR auto prime_factors_as_vector(const IntType n) {
+    math_functions::detail::check_math_int_type<IntType>();
 
-    std::vector<typename ::math_functions::PrimeFactor<UnsignedNumericType>> prime_factors_vector;
-    constexpr bool kReservePlaceForFactors = std::is_same_v<UnsignedNumericType, uint32_t>;
+    using UnsignedIntType = math_functions::make_unsigned_t<IntType>;
+
+    std::vector<math_functions::PrimeFactor<UnsignedIntType>> prime_factors_vector;
+    constexpr bool kReservePlaceForFactors = std::is_same_v<UnsignedIntType, uint32_t>;
     if constexpr (kReservePlaceForFactors) {
-        prime_factors_vector.reserve(::math_functions::detail::max_number_of_unique_prime_divisors(
-            ::math_functions::uabs(n)));
+        prime_factors_vector.reserve(
+            math_functions::detail::max_number_of_unique_prime_divisors(math_functions::uabs(n)));
     }
 
-    ::math_functions::visit_prime_factors(
-        n, [&prime_factors_vector](::math_functions::PrimeFactor<UnsignedNumericType> pf)
-#if CONFIG_HAS_AT_LEAST_CXX_20 && !defined(_GLIBCXX_DEBUG) && !defined(_GLIBCXX_ASSERTIONS)
+    math_functions::visit_prime_factors(
+        n, [&prime_factors_vector](math_functions::PrimeFactor<UnsignedIntType> pf)
+#ifdef HAS_CONSTEXPR_VECTOR
                constexpr
 #endif
         noexcept(kReservePlaceForFactors) { prime_factors_vector.push_back(std::move(pf)); });
@@ -1721,15 +1892,17 @@ template <class NumericType>
     return prime_factors_vector;
 }
 
-template <class NumericType>
-[[nodiscard]] inline auto prime_factors_as_map(NumericType n) {
-    using UnsignedNumericType = typename ::math_functions::make_unsigned_t<NumericType>;
+template <class IntType>
+[[nodiscard]] inline auto prime_factors_as_map(const IntType n) {
+    math_functions::detail::check_math_int_type<IntType>();
 
-    std::map<UnsignedNumericType, uint32_t> prime_factors_map;
+    using UnsignedIntType = typename math_functions::make_unsigned_t<IntType>;
 
-    ::math_functions::visit_prime_factors(
+    std::map<UnsignedIntType, uint32_t> prime_factors_map;
+
+    math_functions::visit_prime_factors(
         n, [&prime_factors_map, iter = prime_factors_map.end()](
-               ::math_functions::PrimeFactor<UnsignedNumericType> pf) mutable {
+               math_functions::PrimeFactor<UnsignedIntType> pf) mutable {
             iter = prime_factors_map.emplace_hint(iter, pf.factor, pf.factor_power);
         });
 
@@ -1741,7 +1914,7 @@ class [[nodiscard]] Factorizer final {
 public:
     using PrimeFactors = std::vector<PrimeFactor<uint32_t>>;
 
-    explicit CONSTEXPR_VECTOR Factorizer(uint32_t n)
+    explicit CONSTEXPR_VECTOR Factorizer(const uint32_t n)
         : primes_{}, least_prime_factor_(size_t{n} + 1) {
         for (uint32_t i = 2; i <= size_t{n}; i++) {
             if (least_prime_factor_[i] == 0) {
@@ -1766,11 +1939,12 @@ public:
     [[nodiscard]] constexpr const auto& sorted_primes() const noexcept ATTRIBUTE_LIFETIME_BOUND {
         return primes_;
     }
-    [[nodiscard]] constexpr const auto& least_prime_factors() const noexcept
-        ATTRIBUTE_LIFETIME_BOUND {
+    [[nodiscard]]
+    constexpr const auto& least_prime_factors() const noexcept ATTRIBUTE_LIFETIME_BOUND {
         return least_prime_factor_;
     }
-    [[nodiscard]] CONSTEXPR_VECTOR bool is_prime(uint32_t n) const noexcept {
+
+    [[nodiscard]] CONSTEXPR_VECTOR bool is_prime(const uint32_t n) const noexcept {
         return least_prime_factor_[n] == n && n >= 2;
     }
     [[nodiscard]] CONSTEXPR_VECTOR size_t max_checkable_number() const noexcept {
@@ -1780,7 +1954,7 @@ public:
     [[nodiscard]] CONSTEXPR_VECTOR PrimeFactors prime_factors(uint32_t n) const {
         PrimeFactors pfs;
         if (n % 2 == 0 && n > 0) {
-            const auto [n_div_pow_of_2, power_of_2] = ::math_functions::extract_pow2(n);
+            const auto [n_div_pow_of_2, power_of_2] = math_functions::extract_pow2(n);
             pfs.emplace_back(uint32_t{2}, power_of_2);
             n = n_div_pow_of_2;
         }
@@ -1802,8 +1976,8 @@ public:
     }
 
     [[nodiscard]]
-    CONSTEXPR_VECTOR uint32_t number_of_unique_prime_factors(uint32_t n) const noexcept {
-        return ::math_functions::Factorizer::number_of_unique_prime_factors_impl(
+    CONSTEXPR_VECTOR uint32_t number_of_unique_prime_factors(const uint32_t n) const noexcept {
+        return math_functions::Factorizer::number_of_unique_prime_factors_impl(
             least_prime_factor_.data(), n);
     }
 
@@ -1812,14 +1986,14 @@ private:
     ATTRIBUTE_PURE
     ATTRIBUTE_ACCESS(read_only, 1)
     static constexpr uint32_t number_of_unique_prime_factors_impl(
-        const uint32_t* RESTRICT_QUALIFIER least_prime_factor, uint32_t n) noexcept {
+        const uint32_t* const RESTRICT_QUALIFIER least_prime_factor, uint32_t n) noexcept {
         uint32_t unique_pfs_count = 0;
         uint32_t last_pf = 0;
         if (n % 2 == 0) {
             if (unlikely(n == 0)) {
                 return unique_pfs_count;
             }
-            n = ::math_functions::extract_pow2(n).odd_part;
+            n = math_functions::extract_pow2(n).odd_part;
             last_pf = 2;
             unique_pfs_count++;
         }
@@ -1842,12 +2016,12 @@ private:
 /// @brief Find all prime numbers in [2; n]
 /// @param n inclusive upper bound
 /// @return vector, such that vector[n] == true \iff n is prime
-[[nodiscard]] CONSTEXPR_VECTOR auto dynamic_primes_sieve(uint32_t n) {
+[[nodiscard]] CONSTEXPR_VECTOR auto dynamic_primes_sieve(const uint32_t n) {
     std::vector<bool> primes(size_t{n} + 1, true);
     primes[0] = false;
     if (likely(n > 0)) {
         primes[1] = false;
-        const uint32_t root = ::math_functions::isqrt(n);
+        const uint32_t root = math_functions::isqrt(n);
         if (const uint32_t i = 2; i <= root) {
             for (size_t j = size_t{i} * size_t{i}; j <= n; j += i) {
                 primes[j] = false;
@@ -1895,7 +2069,7 @@ template <uint32_t N>
         primes[0] = false;
         if constexpr (primes.size() > 1) {
             primes[1] = false;
-            constexpr uint32_t root = ::math_functions::isqrt(N);
+            constexpr uint32_t root = math_functions::isqrt(N);
             if constexpr (constexpr uint32_t i = 2; i <= root) {
                 // NOLINTNEXTLINE(bugprone-implicit-widening-of-multiplication-result)
                 for (size_t j = i * i; j <= N; j += i) {
@@ -1944,7 +2118,7 @@ struct [[nodiscard]] ExtEuclidAlgoRet {
 template <typename IntType>
 [[nodiscard]] ATTRIBUTE_CONST constexpr auto extended_euclid_algorithm(const IntType a,
                                                                        const IntType b) noexcept {
-    ::math_functions::detail::check_math_int_type<IntType>();
+    math_functions::detail::check_math_int_type<IntType>();
 
     int64_t u_previous = a != 0;
     int64_t u_current = 0;
@@ -1971,7 +2145,7 @@ template <typename IntType>
         v_current = v_next;
     }
 
-    if constexpr (::math_functions::is_signed_v<CompIntType>) {
+    if constexpr (math_functions::is_signed_v<CompIntType>) {
         if (r_previous < 0) {
             u_previous = -u_previous;
             v_previous = -v_previous;
@@ -1979,7 +2153,7 @@ template <typename IntType>
         }
     }
 
-    using RetUIntType = typename ::math_functions::make_unsigned_t<CompIntType>;
+    using RetUIntType = typename math_functions::make_unsigned_t<CompIntType>;
     return ExtEuclidAlgoRet<RetUIntType>{
         u_previous,
         v_previous,
@@ -2020,21 +2194,23 @@ constexpr HelperRetType congruence_helper(const uint32_t a,
     const uint32_t c_ = c / d;
     const uint32_t m_ = m / d;
     // a_ * u_ + m_ * v_ == 1
-    const int64_t u_ = ::math_functions::extended_euclid_algorithm<uint32_t>(a_, m_).u_value;
+    const int64_t u_ = math_functions::extended_euclid_algorithm<uint32_t>(a_, m_).u_value;
     const auto unsigned_u_ = static_cast<uint64_t>(u_ >= 0 ? u_ : u_ + m_);
 
     // a_ * (u_ * c_) + m_ * (v_ * c_) == c_
     // a * (u_ * c_) + m * (v_ * c_) == c
     // x0 = u_ * c_
     const auto x0 = static_cast<uint32_t>((unsigned_u_ * c_) % m_);
-    CONFIG_ASSUME_STATEMENT(x0 != ::math_functions::kNoCongruenceSolution);
+    CONFIG_ASSUME_STATEMENT(x0 != math_functions::kNoCongruenceSolution);
     return {x0, d, m_};
 }
 
 ATTRIBUTE_NODISCARD
 CONSTEXPR_VECTOR
-std::vector<uint32_t> solve_congruence_modulo_m_all_roots_impl(uint32_t a, uint32_t c, uint32_t m) {
-    const auto [x0, d, m_] = ::math_functions::detail::congruence_helper(a, c, m);
+std::vector<uint32_t> solve_congruence_modulo_m_all_roots_impl(const uint32_t a,
+                                                               const uint32_t c,
+                                                               const uint32_t m) {
+    const auto [x0, d, m_] = math_functions::detail::congruence_helper(a, c, m);
     std::vector<uint32_t> solutions(d);
     auto x = x0;
     for (uint32_t& ith_solution : solutions) {
@@ -2045,17 +2221,20 @@ std::vector<uint32_t> solve_congruence_modulo_m_all_roots_impl(uint32_t a, uint3
     return solutions;
 }
 
-ATTRIBUTE_NODISCARD ATTRIBUTE_CONST constexpr uint32_t solve_congruence_modulo_m_impl(
-    uint32_t a, uint32_t c, uint32_t m) noexcept {
-    return ::math_functions::detail::congruence_helper(a, c, m).x0;
+ATTRIBUTE_NODISCARD
+ATTRIBUTE_CONST
+constexpr uint32_t solve_congruence_modulo_m_impl(const uint32_t a,
+                                                  const uint32_t c,
+                                                  const uint32_t m) noexcept {
+    return math_functions::detail::congruence_helper(a, c, m).x0;
 }
 
 template <class T>
 ATTRIBUTE_NODISCARD ATTRIBUTE_CONST ATTRIBUTE_ALWAYS_INLINE constexpr uint32_t congruence_arg(
-    const T x, [[maybe_unused]] uint32_t m) noexcept {
-    ::math_functions::detail::check_math_int_type<T>();
+    const T x, ATTRIBUTE_MAYBE_UNUSED const uint32_t m) noexcept {
+    math_functions::detail::check_math_int_type<T>();
 
-    if constexpr (::math_functions::is_unsigned_v<T>) {
+    if constexpr (math_functions::is_unsigned_v<T>) {
         if constexpr (sizeof(x) > sizeof(uint32_t)) {
             return static_cast<uint32_t>(x % m);
         } else {
@@ -2096,9 +2275,9 @@ ATTRIBUTE_ALWAYS_INLINE
 CONSTEXPR_VECTOR
 std::vector<uint32_t> solve_congruence_modulo_m_all_roots(const T1 a, const T2 c, const uint32_t m) {
     // clang-format on
-    return ::math_functions::detail::solve_congruence_modulo_m_all_roots_impl(
-        ::math_functions::detail::congruence_arg(a, m),
-        ::math_functions::detail::congruence_arg(c, m), m);
+    return math_functions::detail::solve_congruence_modulo_m_all_roots_impl(
+        math_functions::detail::congruence_arg(a, m), math_functions::detail::congruence_arg(c, m),
+        m);
 }
 
 // clang-format off
@@ -2121,9 +2300,9 @@ ATTRIBUTE_CONST
 ATTRIBUTE_ALWAYS_INLINE
 constexpr uint32_t solve_congruence_modulo_m(const T1 a, const T2 c, const uint32_t m) noexcept {
     // clang-format on
-    return ::math_functions::detail::solve_congruence_modulo_m_impl(
-        ::math_functions::detail::congruence_arg(a, m),
-        ::math_functions::detail::congruence_arg(c, m), m);
+    return math_functions::detail::solve_congruence_modulo_m_impl(
+        math_functions::detail::congruence_arg(a, m), math_functions::detail::congruence_arg(c, m),
+        m);
 }
 
 #if CONFIG_HAS_CONCEPTS
@@ -2135,10 +2314,10 @@ constexpr uint32_t solve_congruence_modulo_m(const T1 a, const T2 c, const uint3
 /// @param a
 /// @param m
 /// @return
-template <::math_functions::math_integral_type IntType>
+template <math_functions::math_integral_type IntType>
 [[nodiscard]]
 ATTRIBUTE_CONST constexpr uint32_t inv_mod_m(const IntType a, const uint32_t m) noexcept {
-    return ::math_functions::solve_congruence_modulo_m(a, uint32_t{1}, m);
+    return math_functions::solve_congruence_modulo_m(a, uint32_t{1}, m);
 }
 
 #else
@@ -2150,10 +2329,10 @@ ATTRIBUTE_CONST constexpr uint32_t inv_mod_m(const IntType a, const uint32_t m) 
 /// @param a
 /// @param m
 /// @return
-template <class IntType, std::enable_if_t<::math_functions::is_integral_v<IntType>, int> = 0>
+template <class IntType, std::enable_if_t<math_functions::is_integral_v<IntType>, int> = 0>
 [[nodiscard]]
 ATTRIBUTE_CONST constexpr uint32_t inv_mod_m(IntType a, uint32_t m) noexcept {
-    return ::math_functions::solve_congruence_modulo_m(a, uint32_t{1}, m);
+    return math_functions::solve_congruence_modulo_m(a, uint32_t{1}, m);
 }
 
 #endif
@@ -2170,11 +2349,11 @@ namespace detail {
 template <class Iter, class IterSentinel>
 ATTRIBUTE_NODISCARD
 CONSTEXPR_VECTOR
-typename ::math_functions::InverseResult inv_range_mod_m_impl(Iter nums_begin, const IterSentinel nums_end, uint32_t m) {
+math_functions::InverseResult inv_range_mod_m_impl(Iter nums_begin, const IterSentinel nums_end, const uint32_t m) {
     // clang-format on
 
     const auto n = static_cast<size_t>(std::distance(nums_begin, nums_end));
-    auto res = ::math_functions::InverseResult{
+    auto res = math_functions::InverseResult{
 #if CONFIG_HAS_AT_LEAST_CXX_20
         .numbers_mod_m =
 #endif
@@ -2191,14 +2370,14 @@ typename ::math_functions::InverseResult inv_range_mod_m_impl(Iter nums_begin, c
         auto inv_nums_mod_m_iter = res.inversed_numbers.begin();
         for (auto iter = nums_begin; iter != nums_end;
              ++iter, ++nums_mod_m_iter, ++inv_nums_mod_m_iter) {
-            const auto num_mod_m = ::math_functions::detail::congruence_arg(*iter, m);
+            const auto num_mod_m = math_functions::detail::congruence_arg(*iter, m);
             *nums_mod_m_iter = num_mod_m;
             *inv_nums_mod_m_iter = prod_mod_m;
             prod_mod_m = static_cast<uint32_t>((uint64_t{prod_mod_m} * num_mod_m) % m);
         }
     }
 
-    const uint32_t inv_nums_prod_mod_m = ::math_functions::inv_mod_m(prod_mod_m, m);
+    const uint32_t inv_nums_prod_mod_m = math_functions::inv_mod_m(prod_mod_m, m);
 
     {
         auto inv_nums_mod_m_iter = res.inversed_numbers.rbegin();
@@ -2221,16 +2400,15 @@ typename ::math_functions::InverseResult inv_range_mod_m_impl(Iter nums_begin, c
 template <class Iterator>
 concept integral_forward_iterator =
     std::forward_iterator<Iterator> &&
-    ::math_functions::math_integral_type<typename std::iter_value_t<Iterator>>;
+    math_functions::math_integral_type<typename std::iter_value_t<Iterator>>;
 
-template <::math_functions::integral_forward_iterator Iterator,
-          std::sentinel_for<Iterator> Sentinel>
+template <math_functions::integral_forward_iterator Iterator, std::sentinel_for<Iterator> Sentinel>
 [[nodiscard]]
-CONSTEXPR_VECTOR ::math_functions::InverseResult inv_range_mod_m(Iterator nums_begin,
-                                                                 Sentinel nums_end,
-                                                                 const uint32_t m) {
-    return ::math_functions::detail::inv_range_mod_m_impl(std::move(nums_begin),
-                                                          std::move(nums_end), m);
+CONSTEXPR_VECTOR math_functions::InverseResult inv_range_mod_m(Iterator nums_begin,
+                                                               Sentinel nums_end,
+                                                               const uint32_t m) {
+    return math_functions::detail::inv_range_mod_m_impl(std::move(nums_begin), std::move(nums_end),
+                                                        m);
 }
 
 /// @brief Inverse @a nums mod m
@@ -2241,8 +2419,8 @@ CONSTEXPR_VECTOR ::math_functions::InverseResult inv_range_mod_m(Iterator nums_b
 /// @return
 template <std::ranges::forward_range Range>
 [[nodiscard]]
-CONSTEXPR_VECTOR ::math_functions::InverseResult inv_range_mod_m(const Range& nums, uint32_t m) {
-    return ::math_functions::inv_range_mod_m(std::begin(nums), std::end(nums), m);
+CONSTEXPR_VECTOR math_functions::InverseResult inv_range_mod_m(const Range& nums, uint32_t m) {
+    return math_functions::inv_range_mod_m(std::begin(nums), std::end(nums), m);
 }
 
 #else
@@ -2251,27 +2429,27 @@ CONSTEXPR_VECTOR ::math_functions::InverseResult inv_range_mod_m(const Range& nu
 
 template <class Iter,
           class Sentinel,
-          std::enable_if_t<::math_functions::is_math_integral_type_v<typename std::iterator_traits<Iter>::value_type>, int> = 0>
+          std::enable_if_t<math_functions::is_math_integral_type_v<typename std::iterator_traits<Iter>::value_type>, int> = 0>
 ATTRIBUTE_NODISCARD
 CONSTEXPR_VECTOR
-::math_functions::InverseResult inv_range_mod_m(Iter nums_iter_begin,
-                                                Sentinel nums_iter_end,
-                                                const uint32_t m) {
-    return ::math_functions::detail::inv_range_mod_m_impl(std::move(nums_iter_begin), std::move(nums_iter_end), m);
+math_functions::InverseResult inv_range_mod_m(Iter nums_iter_begin,
+                                              Sentinel nums_iter_end,
+                                              const uint32_t m) {
+    return math_functions::detail::inv_range_mod_m_impl(std::move(nums_iter_begin), std::move(nums_iter_end), m);
 }
 
 template <class Range,
-          std::enable_if_t<::math_functions::is_integral_v<
+          std::enable_if_t<math_functions::is_integral_v<
                              typename std::iterator_traits<decltype(std::begin(std::declval<const Range&>()))>::value_type
                            >
                            &&
-                           ::math_functions::is_integral_v<
+                           math_functions::is_integral_v<
                              typename std::iterator_traits<decltype(std::end(std::declval<const Range&>()))>::value_type
                            >,
                            int> = 0>
 ATTRIBUTE_NODISCARD
-CONSTEXPR_VECTOR ::math_functions::InverseResult inv_range_mod_m(const Range& nums, uint32_t m) {
-    return ::math_functions::inv_range_mod_m(std::begin(nums), std::end(nums), m);
+CONSTEXPR_VECTOR math_functions::InverseResult inv_range_mod_m(const Range& nums, uint32_t m) {
+    return math_functions::inv_range_mod_m(std::begin(nums), std::end(nums), m);
 }
 
 // clang-format on
@@ -2291,17 +2469,17 @@ ATTRIBUTE_CONST constexpr uint32_t solve_binary_congruence_modulo_m(const uint32
                                                                     const uint32_t c,
                                                                     const uint32_t m) noexcept {
     if (unlikely(m == 0)) {
-        return ::math_functions::kNoCongruenceSolution;
+        return math_functions::kNoCongruenceSolution;
     }
 
-    const auto [r, s] = ::math_functions::extract_pow2(m);
+    const auto [r, s] = math_functions::extract_pow2(m);
     CONFIG_ASSUME_STATEMENT(r >= 1);
     const auto min_k_s = std::min(k, uint32_t{s});
     CONFIG_ASSUME_STATEMENT(min_k_s < 32);
     // gcd(2^k, m)
     const auto gcd_2k_m = uint32_t{1} << min_k_s;
     if (c % gcd_2k_m != 0) {
-        return ::math_functions::kNoCongruenceSolution;
+        return math_functions::kNoCongruenceSolution;
     }
 
     const auto c_ = c >> min_k_s;
@@ -2326,8 +2504,8 @@ ATTRIBUTE_CONST constexpr uint32_t solve_binary_congruence_modulo_m(const uint32
 
     constexpr unsigned kThreshold = 60;
     if (lhs_bin_power > kThreshold) {
-        const int64_t u_ = ::math_functions::extended_euclid_algorithm<uint32_t>(
-                               ::math_functions::bin_pow_mod(uint32_t{2}, lhs_bin_power, m_), m_)
+        const int64_t u_ = math_functions::extended_euclid_algorithm<uint32_t>(
+                               math_functions::bin_pow_mod(uint32_t{2}, lhs_bin_power, m_), m_)
                                .u_value;
         CONFIG_ASSUME_STATEMENT(u_ < m_);
         const auto unsigned_u_ = static_cast<uint64_t>(u_ >= 0 ? u_ : u_ + m_);
@@ -2352,7 +2530,7 @@ ATTRIBUTE_CONST constexpr uint32_t solve_binary_congruence_modulo_m(const uint32
     }
 
     const auto x0 = static_cast<uint32_t>(rhs % m_);
-    CONFIG_ASSUME_STATEMENT(x0 != ::math_functions::kNoCongruenceSolution);
+    CONFIG_ASSUME_STATEMENT(x0 != math_functions::kNoCongruenceSolution);
     return x0;
 }
 
@@ -2372,8 +2550,8 @@ ATTRIBUTE_CONST constexpr uint32_t solve_factorial_congruence(const uint32_t n,
      **/
 
     auto ans = std::numeric_limits<uint32_t>::max();
-    ::math_functions::visit_prime_factors(
-        k, [&ans, n](::math_functions::PrimeFactor<uint32_t> pf) constexpr noexcept {
+    math_functions::visit_prime_factors(
+        k, [&ans, n](const math_functions::PrimeFactor<uint32_t> pf) constexpr noexcept {
             uint64_t pow_of_p_i = pf.factor;
             /**
              * max b_i can be reached if n = 4294967295 and p_i = 2, then:
@@ -2449,11 +2627,13 @@ ATTRIBUTE_CONST constexpr uint32_t solve_factorial_congruence(const uint32_t n,
                 case 33550336:
                 case 8589869056ULL:
                 case 137438691328ULL:
-                case 2305843008139952128ULL:
+                case 2305843008139952128ULL: {
                     break;
-                default:
+                }
+                default: {
                     CONFIG_UNREACHABLE();
                     break;
+                }
             }
             return true;
         default:
@@ -2465,11 +2645,13 @@ ATTRIBUTE_CONST constexpr uint32_t solve_factorial_congruence(const uint32_t n,
                 case 33550336:
                 case 8589869056ULL:
                 case 137438691328ULL:
-                case 2305843008139952128ULL:
+                case 2305843008139952128ULL: {
                     CONFIG_UNREACHABLE();
                     break;
-                default:
+                }
+                default: {
                     break;
+                }
             }
             return false;
     }
@@ -2482,10 +2664,12 @@ ATTRIBUTE_CONST constexpr uint32_t solve_factorial_congruence(const uint32_t n,
         case 33550336:
         case 8589869056ULL:
         case 137438691328ULL:
-        case 2305843008139952128ULL:
+        case 2305843008139952128ULL: {
             return true;
-        default:
+        }
+        default: {
             return false;
+        }
     }
 #endif
 }
@@ -2495,7 +2679,7 @@ ATTRIBUTE_CONST constexpr uint32_t solve_factorial_congruence(const uint32_t n,
 [[nodiscard]] ATTRIBUTE_CONST I128_CONSTEXPR bool is_perfect_number(const uint128_t n) noexcept {
     return n > std::numeric_limits<uint64_t>::max()
                ? n == (((uint128_t{1} << 61U) - 1) << (61U - 1U))
-               : ::math_functions::is_perfect_number(static_cast<uint64_t>(n));
+               : math_functions::is_perfect_number(static_cast<uint64_t>(n));
 }
 
 #endif
@@ -2512,7 +2696,7 @@ ATTRIBUTE_NODISCARD ATTRIBUTE_CONST ATTRIBUTE_ALWAYS_INLINE constexpr T unrolled
     } else if constexpr (M == 2) {
         return n * n;
     } else {
-        const auto tmp = ::math_functions::detail::unrolled_pow<M / 2, T>(n);
+        const T tmp = math_functions::detail::unrolled_pow<M / 2, T>(n);
         if constexpr (M % 2 == 0) {
             return tmp * tmp;
         } else {
@@ -2539,8 +2723,8 @@ ATTRIBUTE_NODISCARD ATTRIBUTE_CONST ATTRIBUTE_ALWAYS_INLINE constexpr T unrolled
             return static_cast<T>(N) * static_cast<T>(N - 1) / 2;
         } else {
             // C_n_k = C_{n - 1}_k + C_{n - 1}_{k - 1}
-            return ::math_functions::detail::unrolled_cnk<N - 1, KD, T>() +
-                   ::math_functions::detail::unrolled_cnk<N - 1, KD - 1, T>();
+            return math_functions::detail::unrolled_cnk<N - 1, KD, T>() +
+                   math_functions::detail::unrolled_cnk<N - 1, KD - 1, T>();
         }
     }
 }
@@ -2552,10 +2736,10 @@ template <uint32_t M, uint32_t I, class T>
 ATTRIBUTE_NODISCARD ATTRIBUTE_CONST ATTRIBUTE_ALWAYS_INLINE constexpr T helper(
     const uint32_t n) noexcept {
     static_assert(I <= M + 1);
-    const auto res = ::math_functions::detail::unrolled_cnk<M + 1, I, T>() *
-                     ::math_functions::detail::powers_sum<M + 1 - I, T>(n);
+    const auto res = math_functions::detail::unrolled_cnk<M + 1, I, T>() *
+                     math_functions::detail::powers_sum<M + 1 - I, T>(n);
     if constexpr (I + 1 <= M + 1) {
-        return res + ::math_functions::detail::helper<M, I + 1, T>(n);
+        return res + math_functions::detail::helper<M, I + 1, T>(n);
     } else {
         return res;
     }
@@ -2622,9 +2806,9 @@ ATTRIBUTE_NODISCARD ATTRIBUTE_CONST constexpr T powers_sum(const uint32_t n) noe
 
         return (tmp / 3) * ((3 * tmp2 + n_minus_1) / 5);
     } else {
-        return (::math_functions::detail::unrolled_pow<M + 1, T>(n + 1) - 1 -
-                ::math_functions::detail::helper<M, 2, T>(n)) /
-               ::math_functions::detail::unrolled_cnk<M + 1, 1, T>();
+        return (math_functions::detail::unrolled_pow<M + 1, T>(n + 1) - 1 -
+                math_functions::detail::helper<M, 2, T>(n)) /
+               math_functions::detail::unrolled_cnk<M + 1, 1, T>();
     }
 }
 
@@ -2643,7 +2827,7 @@ constexpr double kE = static_cast<double>(2.71828182845904523536L);
 /// @return
 template <uint32_t M>
 [[nodiscard]] ATTRIBUTE_CONST constexpr uint64_t powers_sum_u64(const uint32_t n) noexcept {
-    return ::math_functions::detail::powers_sum<M, uint64_t>(n);
+    return math_functions::detail::powers_sum<M, uint64_t>(n);
 }
 
 #if defined(INTEGERS_128_BIT_HPP)
@@ -2654,7 +2838,7 @@ template <uint32_t M>
 /// @return
 template <uint32_t M>
 [[nodiscard]] ATTRIBUTE_CONST constexpr uint128_t powers_sum_u128(const uint32_t n) noexcept {
-    return ::math_functions::detail::powers_sum<M, uint128_t>(n);
+    return math_functions::detail::powers_sum<M, uint128_t>(n);
 }
 
 #endif
@@ -2667,7 +2851,7 @@ ATTRIBUTE_NODISCARD ATTRIBUTE_CONST constexpr size_t arange_size(T begin, T end,
         return 0;
     }
 
-    if constexpr (::math_functions::is_signed_v<T>) {
+    if constexpr (math_functions::is_signed_v<T>) {
         if (step < 0) {
             step = -step;
             std::swap(begin, end);
@@ -2675,7 +2859,7 @@ ATTRIBUTE_NODISCARD ATTRIBUTE_CONST constexpr size_t arange_size(T begin, T end,
     }
 
     T approx_size = (end - begin + step - 1) / step;
-    if constexpr (::math_functions::is_signed_v<T>) {
+    if constexpr (math_functions::is_signed_v<T>) {
         approx_size = std::max(approx_size, T{0});
     }
 
@@ -2685,7 +2869,7 @@ ATTRIBUTE_NODISCARD ATTRIBUTE_CONST constexpr size_t arange_size(T begin, T end,
         return approx_size <= kUsizeMax ? static_cast<size_t>(approx_size) : kUsizeMax;
     } else
 #endif
-        if constexpr (::math_functions::is_signed_v<T>) {
+        if constexpr (math_functions::is_signed_v<T>) {
         return static_cast<size_t>(approx_size);
     } else {
         return size_t{approx_size};
@@ -2696,12 +2880,12 @@ ATTRIBUTE_NODISCARD ATTRIBUTE_CONST constexpr size_t arange_size(T begin, T end,
 
 template <class T>
 #if CONFIG_HAS_CONCEPTS
-    requires ::math_functions::integral<T>
+    requires math_functions::integral<T>
 #endif
 [[nodiscard]] CONSTEXPR_VECTOR std::vector<T> arange(const T begin, const T end, const T step) {
-    ::math_functions::detail::check_math_int_type<T>();
+    math_functions::detail::check_math_int_type<T>();
 
-    const size_t size = ::math_functions::detail::arange_size(begin, end, step);
+    const size_t size = math_functions::detail::arange_size(begin, end, step);
     std::vector<T> rng(size);
     T i = begin;
     for (T& elem : rng) {
@@ -2714,12 +2898,12 @@ template <class T>
 
 template <class T>
 [[nodiscard]] CONSTEXPR_VECTOR std::vector<T> arange(const T begin, const T end) {
-    return ::math_functions::arange(begin, end, T{1});
+    return math_functions::arange(begin, end, T{1});
 }
 
 template <class T>
 [[nodiscard]] CONSTEXPR_VECTOR std::vector<T> arange(const T n) {
-    return ::math_functions::arange(T{0}, n);
+    return math_functions::arange(T{0}, n);
 }
 
 /// @brief Return vector of elements {log2(0), log2(1), log2(2), log2(3), ..., log2(n)}
@@ -2761,7 +2945,7 @@ CONSTEXPR_VECTOR std::vector<T> pow_arange(const size_t n, const T p) {
 template <class T>
 [[nodiscard]]
 CONSTEXPR_VECTOR std::vector<T> exp_arange(const size_t n) {
-    return ::math_functions::pow_arange<T>(n, static_cast<T>(::math_functions::detail::kE));
+    return math_functions::pow_arange<T>(n, static_cast<T>(math_functions::detail::kE));
 }
 
 /// @brief Return vector of elements {p^0 mod m, p^1 mod m, p^2 mod m, p^3 mod m, ..., p^n mod m}
@@ -2850,18 +3034,18 @@ CONSTEXPR_VECTOR Iterator wmedian_impl(const Iterator begin, const Iterator end)
         weighted_sum += uint64_t{i} * uint64_t{val};
     }
 
-    return ::math_functions::detail::find_wmedian_iter(weighted_sum, begin,
-                                                       std::as_const(prefsums).data(), n + 1);
+    return math_functions::detail::find_wmedian_iter(weighted_sum, begin,
+                                                     std::as_const(prefsums).data(), n + 1);
 }
 
 }  // namespace detail
 
 #if CONFIG_HAS_CONCEPTS && defined(MATH_FUNCTIONS_HAS_RANGES)
 
-template <::math_functions::integral_forward_iterator Iterator>
-    requires std::same_as<typename std::iter_value_t<Iterator>, uint32_t>
+template <math_functions::integral_forward_iterator Iterator>
+    requires std::same_as<std::iter_value_t<Iterator>, uint32_t>
 [[nodiscard]] CONSTEXPR_VECTOR Iterator weighted_median(Iterator begin, Iterator end) {
-    return ::math_functions::detail::wmedian_impl(std::move(begin), std::move(end));
+    return math_functions::detail::wmedian_impl(std::move(begin), std::move(end));
 }
 
 // clang-format off
@@ -2869,8 +3053,8 @@ template <::math_functions::integral_forward_iterator Iterator>
 template <std::ranges::forward_range Range>
 [[nodiscard]]
 // NOLINTNEXTLINE(cppcoreguidelines-missing-std-forward)
-CONSTEXPR_VECTOR typename std::ranges::borrowed_iterator_t<Range> weighted_median(Range&& range ATTRIBUTE_LIFETIME_BOUND) {
-    return ::math_functions::weighted_median(std::begin(range), std::end(range));
+CONSTEXPR_VECTOR std::ranges::borrowed_iterator_t<Range> weighted_median(Range&& range ATTRIBUTE_LIFETIME_BOUND) {
+    return math_functions::weighted_median(std::begin(range), std::end(range));
 }
 
 // clang-format on
@@ -2882,14 +3066,14 @@ CONSTEXPR_VECTOR typename std::ranges::borrowed_iterator_t<Range> weighted_media
 template <class Iterator,
           std::enable_if_t<std::is_same_v<typename std::iterator_traits<Iterator>::value_type, uint32_t>, int> = 0>
 ATTRIBUTE_NODISCARD CONSTEXPR_VECTOR Iterator weighted_median(Iterator begin, Iterator end) {
-    return ::math_functions::detail::wmedian_impl(std::move(begin), std::move(end));
+    return math_functions::detail::wmedian_impl(std::move(begin), std::move(end));
 }
 // clang-format on
 
 template <class Range>
 // NOLINTNEXTLINE(cppcoreguidelines-missing-std-forward)
 ATTRIBUTE_NODISCARD CONSTEXPR_VECTOR auto weighted_median(Range&& range ATTRIBUTE_LIFETIME_BOUND) {
-    return ::math_functions::weighted_median(std::begin(range), std::end(range));
+    return math_functions::weighted_median(std::begin(range), std::end(range));
 }
 
 #endif
@@ -2910,8 +3094,8 @@ I128_CONSTEXPR uint128_t gcd(uint128_t a, uint128_t b) noexcept {
         return a;
     }
 
-    const uint32_t ra = static_cast<uint32_t>(::math_functions::countr_zero(a));
-    const uint32_t rb = static_cast<uint32_t>(::math_functions::countr_zero(b));
+    const uint32_t ra = static_cast<uint32_t>(math_functions::countr_zero(a));
+    const uint32_t rb = static_cast<uint32_t>(math_functions::countr_zero(b));
     const uint32_t mult = std::min(ra, rb);
     a >>= ra;
     b >>= rb;
@@ -2928,30 +3112,30 @@ I128_CONSTEXPR uint128_t gcd(uint128_t a, uint128_t b) noexcept {
             return b << mult;
         }
 
-        a >>= static_cast<uint32_t>(::math_functions::countr_zero(a));
+        a >>= static_cast<uint32_t>(math_functions::countr_zero(a));
     }
 }
 
 ATTRIBUTE_NODISCARD
 ATTRIBUTE_ALWAYS_INLINE
 ATTRIBUTE_CONST
-I128_CONSTEXPR uint128_t gcd(uint128_t a, int128_t b) noexcept {
-    return ::math_functions::detail::gcd(a, ::math_functions::uabs(b));
+I128_CONSTEXPR uint128_t gcd(const uint128_t a, const int128_t b) noexcept {
+    return math_functions::detail::gcd(a, math_functions::uabs(b));
 }
 
 ATTRIBUTE_NODISCARD
 ATTRIBUTE_ALWAYS_INLINE
 ATTRIBUTE_CONST
-I128_CONSTEXPR uint128_t gcd(int128_t a, uint128_t b) noexcept {
-    return ::math_functions::detail::gcd(::math_functions::uabs(a), b);
+I128_CONSTEXPR uint128_t gcd(const int128_t a, const uint128_t b) noexcept {
+    return math_functions::detail::gcd(math_functions::uabs(a), b);
 }
 
 ATTRIBUTE_NODISCARD
 ATTRIBUTE_ALWAYS_INLINE
 ATTRIBUTE_CONST
-I128_CONSTEXPR int128_t gcd(int128_t a, int128_t b) noexcept {
+I128_CONSTEXPR int128_t gcd(const int128_t a, const int128_t b) noexcept {
     const int128_t value =
-        static_cast<int128_t>(::math_functions::detail::gcd(::math_functions::uabs(a), b));
+        static_cast<int128_t>(math_functions::detail::gcd(math_functions::uabs(a), b));
     CONFIG_ASSUME_STATEMENT(value >= 0);
     return value;
 }
@@ -2959,7 +3143,7 @@ I128_CONSTEXPR int128_t gcd(int128_t a, int128_t b) noexcept {
 ATTRIBUTE_NODISCARD
 ATTRIBUTE_ALWAYS_INLINE
 ATTRIBUTE_CONST
-I128_CONSTEXPR uint128_t gcd(uint128_t a, uint64_t b) noexcept {
+I128_CONSTEXPR uint128_t gcd(const uint128_t a, const uint64_t b) noexcept {
     if ((config::is_constant_evaluated() && a <= std::numeric_limits<uint64_t>::max()) ||
         (config::is_gcc_constant_p(a <= std::numeric_limits<uint64_t>::max()) &&
          a <= std::numeric_limits<uint64_t>::max()) ||
@@ -2977,53 +3161,54 @@ I128_CONSTEXPR uint128_t gcd(uint128_t a, uint64_t b) noexcept {
 ATTRIBUTE_NODISCARD
 ATTRIBUTE_ALWAYS_INLINE
 ATTRIBUTE_CONST
-I128_CONSTEXPR uint128_t gcd(uint64_t a, uint128_t b) noexcept {
-    return ::math_functions::detail::gcd(b, a);
+I128_CONSTEXPR uint128_t gcd(const uint64_t a, const uint128_t b) noexcept {
+    return math_functions::detail::gcd(b, a);
 }
 
 ATTRIBUTE_NODISCARD
 ATTRIBUTE_ALWAYS_INLINE
 ATTRIBUTE_CONST
-I128_CONSTEXPR uint128_t gcd(uint128_t a, int64_t b) noexcept {
-    return ::math_functions::detail::gcd(a, ::math_functions::uabs(b));
+I128_CONSTEXPR uint128_t gcd(const uint128_t a, const int64_t b) noexcept {
+    return math_functions::detail::gcd(a, math_functions::uabs(b));
 }
 
 ATTRIBUTE_NODISCARD
 ATTRIBUTE_ALWAYS_INLINE
 ATTRIBUTE_CONST
-I128_CONSTEXPR uint128_t gcd(int64_t a, uint128_t b) noexcept {
-    return ::math_functions::detail::gcd(b, a);
+I128_CONSTEXPR uint128_t gcd(const int64_t a, const uint128_t b) noexcept {
+    return math_functions::detail::gcd(b, a);
 }
 
 ATTRIBUTE_NODISCARD
 ATTRIBUTE_ALWAYS_INLINE
 ATTRIBUTE_CONST
-I128_CONSTEXPR int128_t gcd(uint64_t a, int128_t b) noexcept {
+I128_CONSTEXPR int128_t gcd(const uint64_t a, const int128_t b) noexcept {
     const int128_t value =
-        static_cast<int128_t>(::math_functions::detail::gcd(a, ::math_functions::uabs(b)));
+        static_cast<int128_t>(math_functions::detail::gcd(a, math_functions::uabs(b)));
     CONFIG_ASSUME_STATEMENT(value >= 0);
+    CONFIG_ASSUME_STATEMENT(a == 0 || value <= a);
     return value;
 }
 
 ATTRIBUTE_NODISCARD
 ATTRIBUTE_ALWAYS_INLINE
 ATTRIBUTE_CONST
-I128_CONSTEXPR int128_t gcd(int128_t a, uint64_t b) noexcept {
-    return ::math_functions::detail::gcd(b, a);
+I128_CONSTEXPR int128_t gcd(const int128_t a, const uint64_t b) noexcept {
+    return math_functions::detail::gcd(b, a);
 }
 
 ATTRIBUTE_NODISCARD
 ATTRIBUTE_ALWAYS_INLINE
 ATTRIBUTE_CONST
-I128_CONSTEXPR int128_t gcd(int128_t a, int64_t b) noexcept {
-    return ::math_functions::detail::gcd(a, ::math_functions::uabs(b));
+I128_CONSTEXPR int128_t gcd(const int128_t a, const int64_t b) noexcept {
+    return math_functions::detail::gcd(a, math_functions::uabs(b));
 }
 
 ATTRIBUTE_NODISCARD
 ATTRIBUTE_ALWAYS_INLINE
 ATTRIBUTE_CONST
-I128_CONSTEXPR int128_t gcd(int64_t a, int128_t b) noexcept {
-    return ::math_functions::detail::gcd(b, a);
+I128_CONSTEXPR int128_t gcd(const int64_t a, const int128_t b) noexcept {
+    return math_functions::detail::gcd(b, a);
 }
 
 }  // namespace detail
@@ -3037,8 +3222,9 @@ I128_CONSTEXPR int128_t gcd(int64_t a, int128_t b) noexcept {
 /// @return gcd(a, b)
 template <class M, class N>
 [[nodiscard]]
-ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_CONST constexpr std::common_type_t<M, N> gcd(M m, N n) noexcept {
-    static_assert(::math_functions::is_integral_v<M> && ::math_functions::is_integral_v<N>,
+ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_CONST constexpr std::common_type_t<M, N> gcd(const M m,
+                                                                               const N n) noexcept {
+    static_assert(math_functions::is_integral_v<M> && math_functions::is_integral_v<N>,
                   "math_functions::gcd arguments must be integers");
 
 #if defined(INTEGERS_128_BIT_HPP)
@@ -3047,13 +3233,16 @@ ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_CONST constexpr std::common_type_t<M, N> gcd(M
         return std::gcd(m, n);
 #if defined(INTEGERS_128_BIT_HPP)
     } else {
-        return ::math_functions::detail::gcd(m, n);
+        return math_functions::detail::gcd(m, n);
     }
 #endif
 }
 
 }  // namespace math_functions
 
+#ifdef HAS_CONSTEXPR_VECTOR
+#undef HAS_CONSTEXPR_VECTOR
+#endif
 #undef CONSTEXPR_VECTOR
 
 #ifdef MATH_FUNCTIONS_HAS_NUMBERS
@@ -3077,7 +3266,7 @@ ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_CONST constexpr std::common_type_t<M, N> gcd(M
 #undef MATH_FUNCTIONS_HPP_ENABLE_TARGET_OPTIONS
 #endif
 
-#if defined(_MSC_VER)
+#if CONFIG_COMPILER_IS_MSVC
 #pragma warning(pop)
 #endif  // _MSC_VER
 
