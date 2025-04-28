@@ -330,7 +330,7 @@ class longint final {
         IterType const nums_iter_rend = lhs.nums_ - 1;
         for (IterType nums_riter = nums_iter_rend + lhs.usize(); nums_riter != nums_iter_rend;
              --nums_riter) {
-            const double_digit_t cur = (carry << kNumsBits) | double_digit_t{*nums_riter};
+            const double_digit_t cur = (carry << kDigitBits) | double_digit_t{*nums_riter};
             const double_digit_t q = cur / n;
             const double_digit_t r = cur % n;
             if constexpr (DoDivide) {
@@ -394,8 +394,10 @@ public:
     static constexpr std::uint32_t kStrConvBase = 1'000'000'000;
     static constexpr std::uint32_t kStrConvBaseDigits =
         math_functions::base_b_len(kStrConvBase - 1);
-    static constexpr std::uint32_t kNumsBits = 32;
-    static constexpr double_digit_t kNumsBase = double_digit_t{1} << kNumsBits;
+    static constexpr std::uint32_t kDigitBits = sizeof(digit_t) * CHAR_BIT;
+    static_assert(sizeof(digit_t) < sizeof(double_digit_t));
+    static constexpr double_digit_t kNumsBase = double_digit_t{1} << kDigitBits;
+
     static constexpr std::size_t kFFTPrecisionBorder = 1u << 18;
     static constexpr auto kFFTFloatRoundError =
         std::numeric_limits<typename fft::complex::value_type>::round_error();
@@ -714,7 +716,7 @@ public:
                     const double_digit_t a_i = nums_ptr[i];
                     const double_digit_t res = a_i * b_j + double_digit_t{ans[j + i]} + carry;
                     ans[j + i] = static_cast<digit_t>(res);
-                    carry = res >> kNumsBits;
+                    carry = res >> kDigitBits;
                 }
 
                 ans[j + nums_size] = static_cast<digit_t>(carry);
@@ -861,7 +863,7 @@ public:
             return is_zero();
         }
 
-        static_assert(kNumsBits == 32);
+        static_assert(kDigitBits == 32);
         switch (size_) {
             case 0: {
                 return n == 0;
@@ -887,7 +889,7 @@ public:
         }
 
         const uint64_t n_abs = math_functions::uabs(n);
-        static_assert(kNumsBits == 32);
+        static_assert(kDigitBits == 32);
         switch (size_) {
             case 0: {
                 return n == 0;
@@ -910,7 +912,7 @@ public:
             return is_zero();
         }
 
-        static_assert(kNumsBits == 32);
+        static_assert(kDigitBits == 32);
         switch (size_) {
             case 0: {
                 return n == 0;
@@ -928,7 +930,7 @@ public:
             return is_zero();
         }
 
-        static_assert(kNumsBits == 32);
+        static_assert(kDigitBits == 32);
         switch (size_) {
             case 0: {
                 return n == 0;
@@ -950,7 +952,7 @@ public:
             return is_zero();
         }
 
-        static_assert(kNumsBits == 32);
+        static_assert(kDigitBits == 32);
         switch (size_) {
             case 0: {
                 return n == 0;
@@ -985,7 +987,7 @@ public:
         }
 
         const uint128_t n_abs = math_functions::uabs(n);
-        static_assert(kNumsBits == 32);
+        static_assert(kDigitBits == 32);
         switch (size_) {
             case 0: {
                 return n == 0;
@@ -1124,7 +1126,7 @@ public:
              ++nums_it) {
             const double_digit_t res = *nums_it * b_0 + carry;
             *nums_it = static_cast<digit_t>(res);
-            carry = res >> kNumsBits;
+            carry = res >> kDigitBits;
         }
 
         // n != 0 => sign won't change and there will be no leading zeros
@@ -1216,7 +1218,7 @@ public:
         }
 
         size_type usize_value = usize();
-        const size_type uints_move = shift / kNumsBits;
+        const size_type uints_move = shift / kDigitBits;
         if (uints_move >= usize_value) {
             assign_zero();
             return *this;
@@ -1231,7 +1233,7 @@ public:
             std::copy(copy_src_start, copy_src_end, copy_dst_start);
         }
 
-        shift %= kNumsBits;
+        shift %= kDigitBits;
         digit_t* nums_iter = nums_;
         digit_t* const nums_iter_last = nums_iter + usize_value - 1;
         if (shift > 0) {
@@ -1239,7 +1241,7 @@ public:
                 const digit_t current_digit = nums_iter[0];
                 const digit_t next_digit = nums_iter[1];
                 *nums_iter = static_cast<digit_t>(
-                    (current_digit | double_digit_t{next_digit} << kNumsBits) >> shift);
+                    (current_digit | double_digit_t{next_digit} << kDigitBits) >> shift);
             }
             *nums_iter_last >>= shift;
         }
@@ -1261,7 +1263,7 @@ public:
         }
 
         static_assert(sizeof(digit_t) == sizeof(uint32_t));
-        const size_type new_trailig_zeros_digits = shift / kNumsBits;
+        const size_type new_trailig_zeros_digits = shift / kDigitBits;
         // + 1 for potentially new back digit (at the end of the nums_ array)
         const auto new_size = usize_value + new_trailig_zeros_digits + 1;
         reserve(new_size);
@@ -1273,7 +1275,7 @@ public:
         }
         usize_value = new_size;
 
-        shift %= kNumsBits;
+        shift %= kDigitBits;
         if (shift > 0) {
             digit_t* const nums_iter_begin = nums_ + new_trailig_zeros_digits;
             digit_t* const nums_iter_end = nums_ + usize_value;
@@ -1281,8 +1283,8 @@ public:
                 const digit_t prev_digit = *(nums_iter - 1);
                 const digit_t current_digit = *nums_iter;
                 const double_digit_t two_digits =
-                    (double_digit_t{current_digit} << kNumsBits) | prev_digit;
-                *nums_iter = static_cast<digit_t>(two_digits >> (kNumsBits - shift));
+                    (double_digit_t{current_digit} << kDigitBits) | prev_digit;
+                *nums_iter = static_cast<digit_t>(two_digits >> (kDigitBits - shift));
             }
             *nums_iter_begin = (*nums_iter_begin) << shift;
         }
@@ -1302,115 +1304,48 @@ public:
     ATTRIBUTE_ALWAYS_INLINE
     ATTRIBUTE_PURE
     [[nodiscard]] constexpr bool fits_in_uint32() const noexcept {
-        static_assert(kNumsBits == 32);
-        return static_cast<std::uint32_t>(size()) <= 1;
-    }
-    ATTRIBUTE_ALWAYS_INLINE
-    ATTRIBUTE_PURE
-    [[nodiscard]] constexpr std::uint32_t to_uint32() const noexcept {
-        static_assert(kNumsBits == 32);
-        switch (usize()) {
-            default: {
-                if (fits_in_uint32()) {
-                    CONFIG_UNREACHABLE();
-                }
-                [[fallthrough]];
-            }
-            case 1: {
-                return nums_[0];
-            }
-            case 0: {
-                return 0;
-            }
-        }
-    }
-    ATTRIBUTE_ALWAYS_INLINE
-    ATTRIBUTE_PURE
-    [[nodiscard]] constexpr bool fits_in_uint64() const noexcept {
-        static_assert(kNumsBits == 32);
-        return static_cast<size_type>(size()) <= 2;
-    }
-    ATTRIBUTE_ALWAYS_INLINE
-    ATTRIBUTE_PURE
-    [[nodiscard]] constexpr std::uint64_t to_uint64() const noexcept {
-        std::uint64_t value = 0;
-        static_assert(kNumsBits == 32);
-        switch (usize()) {
-            default: {
-                if (fits_in_uint64()) {
-                    CONFIG_UNREACHABLE();
-                }
-                [[fallthrough]];
-            }
-            case 2: {
-                value |= static_cast<std::uint64_t>(nums_[1]) << 32;
-                [[fallthrough]];
-            }
-            case 1: {
-                value |= nums_[0];
-                break;
-            }
-            case 0: {
-                break;
-            }
-        }
-        return value;
+        return fits_in_uint<std::uint32_t>();
     }
     ATTRIBUTE_ALWAYS_INLINE
     ATTRIBUTE_PURE
     [[nodiscard]] /* implicit */ constexpr operator std::uint32_t() const noexcept {
-        return to_uint32();
+        return to_uint_unchecked<std::uint32_t>();
     }
+    ATTRIBUTE_ALWAYS_INLINE
+    [[nodiscard]] constexpr std::uint32_t to_uint32() const {
+        return to_uint_checked<std::uint32_t>();
+    }
+
+    ATTRIBUTE_ALWAYS_INLINE
+    ATTRIBUTE_PURE
+    [[nodiscard]] constexpr bool fits_in_uint64() const noexcept {
+        return fits_in_uint<std::uint64_t>();
+    }
+
     ATTRIBUTE_ALWAYS_INLINE
     ATTRIBUTE_PURE
     [[nodiscard]] /* implicit */ constexpr operator std::uint64_t() const noexcept {
-        return to_uint64();
+        return to_uint_unchecked<std::uint64_t>();
     }
+    ATTRIBUTE_ALWAYS_INLINE
+    [[nodiscard]] constexpr std::uint64_t to_uint64() const {
+        return to_uint_checked<std::uint64_t>();
+    }
+
 #if defined(INTEGERS_128_BIT_HPP)
     ATTRIBUTE_ALWAYS_INLINE
     ATTRIBUTE_PURE
     [[nodiscard]] constexpr bool fits_in_uint128() const noexcept {
-        static_assert(kNumsBits == 32);
-        return static_cast<size_type>(size()) <= 4;
-    }
-    ATTRIBUTE_ALWAYS_INLINE
-    ATTRIBUTE_PURE
-    [[nodiscard]] I128_CONSTEXPR uint128_t to_uint128() const noexcept {
-        uint128_t value = 0;
-        static_assert(kNumsBits == 32);
-        switch (usize()) {
-            default: {
-                if (fits_in_uint128()) {
-                    CONFIG_UNREACHABLE();
-                }
-                [[fallthrough]];
-            }
-            case 4: {
-                value |= uint128_t{nums_[3]} << 96;
-                [[fallthrough]];
-            }
-            case 3: {
-                value |= uint128_t{nums_[2]} << 64;
-                [[fallthrough]];
-            }
-            case 2: {
-                value |= std::uint64_t{nums_[1]} << 32;
-                [[fallthrough]];
-            }
-            case 1: {
-                value |= nums_[0];
-                break;
-            }
-            case 0: {
-                break;
-            }
-        }
-        return value;
+        return fits_in_uint<uint128_t>();
     }
     ATTRIBUTE_ALWAYS_INLINE
     ATTRIBUTE_PURE
     [[nodiscard]] /* implicit */ I128_CONSTEXPR operator uint128_t() const noexcept {
-        return to_uint128();
+        return to_uint_unchecked<uint128_t>();
+    }
+    ATTRIBUTE_ALWAYS_INLINE
+    [[nodiscard]] I128_CONSTEXPR uint128_t to_uint128() const noexcept {
+        return to_uint_checked<uint128_t>();
     }
 #endif
 
@@ -1444,7 +1379,7 @@ public:
                 return;
             }
             case 2: {
-                ans += std::to_string((double_digit_t{nums_[1]} << kNumsBits) | nums_[0]);
+                ans += std::to_string((double_digit_t{nums_[1]} << kDigitBits) | nums_[0]);
                 return;
             }
             default: {
@@ -2124,6 +2059,102 @@ private:
     static constexpr bool kUseCustomLongIntAllocator = false;
 #endif
 
+    template <class T>
+    [[nodiscard]]
+    ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_PURE constexpr bool fits_in_uint() const noexcept {
+        // If size() < 0, this expression will evaluate to large positive number
+        const size_type size_value = static_cast<size_type>(size());
+
+        if (sizeof(T) >= sizeof(digit_t)) {
+            static_assert(sizeof(T) % sizeof(digit_t) == 0);
+            return size_value <= sizeof(T) / sizeof(digit_t);
+        } else {
+            return size_value == 0 ||
+                   (size_value == 1 && nums_[0] <= std::numeric_limits<T>::max());
+        }
+    }
+
+    template <class T>
+    [[nodiscard]]
+    ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_PURE constexpr T to_uint_unchecked() const noexcept {
+        T value = 0;
+        const size_type usize_value = usize();
+
+        // if (usize_value > sizeof(T) / sizeof(digit_t)) {
+        //     if (fits_in_uint<T>()) {
+        //         CONFIG_UNREACHABLE();
+        //     }
+        // }
+
+        static_assert(kDigitBits == 32);
+        switch (usize_value) {
+            default: {
+                // if (fits_in_uint<T>()) {
+                //     CONFIG_UNREACHABLE();
+                // }
+
+                [[fallthrough]];
+            }
+            case 4: {
+                if constexpr (sizeof(T) >= sizeof(digit_t) * 4) {
+                    value |= T{nums_[4 - 1]} << (kDigitBits * (4 - 1));
+                }
+                // else if (fits_in_uint<T>()) {
+                //     CONFIG_UNREACHABLE();
+                // }
+
+                [[fallthrough]];
+            }
+            case 3: {
+                if constexpr (sizeof(T) >= sizeof(digit_t) * 3) {
+                    value |= T{nums_[3 - 1]} << (kDigitBits * (3 - 1));
+                }
+                // else if (fits_in_uint<T>()) {
+                //     CONFIG_UNREACHABLE();
+                // }
+
+                [[fallthrough]];
+            }
+            case 2: {
+                if constexpr (sizeof(T) >= sizeof(digit_t) * 2) {
+                    value |= double_digit_t{nums_[2 - 1]} << (kDigitBits * (2 - 1));
+                }
+                // else if (fits_in_uint<T>()) {
+                //     CONFIG_UNREACHABLE();
+                // }
+
+                [[fallthrough]];
+            }
+            case 1: {
+                if constexpr (sizeof(T) >= sizeof(digit_t) * 1) {
+                    value |= nums_[1 - 1] << (kDigitBits * (1 - 1));
+                }
+                // else if (fits_in_uint<T>()) {
+                //     CONFIG_UNREACHABLE();
+                // }
+
+                if constexpr (sizeof(T) < sizeof(digit_t)) {
+                    value = nums_[0] & std::numeric_limits<T>::max();
+                }
+
+                [[fallthrough]];
+            }
+            case 0: {
+                return value;
+            }
+        }
+    }
+
+    template <class T>
+    [[nodiscard]]
+    ATTRIBUTE_ALWAYS_INLINE constexpr T to_uint_checked() const {
+        if (unlikely(!fits_in_uint<T>())) {
+            std::abort();  // TODO
+        }
+
+        return to_uint_unchecked<T>();
+    }
+
     struct LongIntNaive final {
         ATTRIBUTE_SIZED_ACCESS(read_only, 1, 2)
         ATTRIBUTE_SIZED_ACCESS(read_only, 3, 4)
@@ -2238,7 +2269,7 @@ private:
             LONGINT_ASSERT_ASSUME(!need_high_precision || n > kFFTPrecisionBorder * 2);
             LONGINT_ASSERT_ASSUME(math_functions::is_power_of_two(n));
 
-            static_assert(kNumsBits == 32);
+            static_assert(kDigitBits == 32);
             if (likely(!need_high_precision)) {
                 for (size_type i = 0; i < m; i++) {
                     digit_t m_value = m_ptr[i];
@@ -2353,7 +2384,7 @@ private:
             LONGINT_ASSERT_ASSUME(!need_high_precision || n > kFFTPrecisionBorder * 2);
             LONGINT_ASSERT_ASSUME(math_functions::is_power_of_two(n));
 
-            static_assert(kNumsBits == 32);
+            static_assert(kDigitBits == 32);
             if (likely(!need_high_precision)) {
                 for (size_type i = 0; i < nums_size; i++) {
                     digit_t value = nums_ptr[i];
@@ -2402,7 +2433,7 @@ private:
     ATTRIBUTE_PURE constexpr int64_t mod_by_power_of_2_ge_2_impl(const uint32_t n) const noexcept {
         LONGINT_ASSERT_ASSUME((n & (n - 1)) == 0);
         LONGINT_ASSERT_ASSUME(n >= 2);
-        static_assert(kNumsBits >= 32);
+        static_assert(kDigitBits >= 32);
         const uint32_t remainder{size_ == 0 ? digit_t{0} : nums_[0] & (n - 1)};
         return is_negative() ? -int64_t{remainder} : int64_t{remainder};
     }
@@ -2456,11 +2487,11 @@ private:
         const digit_t* const v = other.nums_;
         const digit_t last_v_num = v[n - 1];
         LONGINT_ASSERT_ASSUME(last_v_num > 0);
-        static_assert(kNumsBits == 32);
+        static_assert(kDigitBits == 32);
         // 0 <= s < kNumsBits
         const auto s = static_cast<std::uint32_t>(math_functions::countl_zero(last_v_num));
         longint::divmod_normalize_vn(vn, v, n, s);
-        LONGINT_ASSERT_ASSUME(vn[n - 1] >= digit_t{1} << (kNumsBits - 1));
+        LONGINT_ASSERT_ASSUME(vn[n - 1] >= digit_t{1} << (kDigitBits - 1));
         longint::divmod_normalize_un(un, u, m, m + 1, s);
         longint::divmod_impl_unchecked(
             /* un = */ un,
@@ -2492,9 +2523,9 @@ private:
         for (size_type j = un_size - vn_size - 1; static_cast<ssize_type>(j) >= 0; j--) {
             // Compute estimate qhat of q[j].
             const double_digit_t cur =
-                (double_digit_t{un[j + vn_size]} << kNumsBits) | un[j + vn_size - 1];
+                (double_digit_t{un[j + vn_size]} << kDigitBits) | un[j + vn_size - 1];
             const digit_t last_vn = vn[vn_size - 1];
-            LONGINT_ASSERT_ASSUME(last_vn >= digit_t{1} << (kNumsBits - 1));
+            LONGINT_ASSERT_ASSUME(last_vn >= digit_t{1} << (kDigitBits - 1));
             double_digit_t qhat = cur / last_vn;
             double_digit_t rhat = cur % last_vn;
             LONGINT_ASSERT_ASSUME(qhat * last_vn + rhat == cur);
@@ -2578,7 +2609,8 @@ private:
         LONGINT_ASSERT_ASSUME(n > 1);
         LONGINT_ASSERT_ASSUME(s < 32);
         for (size_type i = n - 1; i > 0; i--) {
-            vn[i] = (v[i] << s) | static_cast<digit_t>(double_digit_t{v[i - 1]} >> (kNumsBits - s));
+            vn[i] =
+                (v[i] << s) | static_cast<digit_t>(double_digit_t{v[i - 1]} >> (kDigitBits - s));
         }
         vn[0] = v[0] << s;
     }
@@ -2595,9 +2627,10 @@ private:
         LONGINT_ASSERT_ASSUME(m > 1);
         LONGINT_ASSERT_ASSUME(s < 32);
         LONGINT_ASSERT_ASSUME(m + 1 == m_plus_one);
-        un[m] = static_cast<digit_t>(double_digit_t{u[m - 1]} >> (kNumsBits - s));
+        un[m] = static_cast<digit_t>(double_digit_t{u[m - 1]} >> (kDigitBits - s));
         for (size_type i = m - 1; i > 0; i--) {
-            un[i] = (u[i] << s) | static_cast<digit_t>(double_digit_t{u[i - 1]} >> (kNumsBits - s));
+            un[i] =
+                (u[i] << s) | static_cast<digit_t>(double_digit_t{u[i - 1]} >> (kDigitBits - s));
         }
         un[0] = u[0] << s;
     }
@@ -2616,7 +2649,7 @@ private:
         LONGINT_ASSERT_ASSUME(n + 1 == n_plus_one);
         for (size_type i = 0; i < n; i++) {
             rem[i] =
-                (un[i] >> s) | static_cast<digit_t>(double_digit_t{un[i + 1]} << (kNumsBits - s));
+                (un[i] >> s) | static_cast<digit_t>(double_digit_t{un[i + 1]} << (kDigitBits - s));
         }
     }
 
@@ -2720,12 +2753,12 @@ private:
             const double_digit_t res =
                 double_digit_t{*conv_digits} + double_digit_t{*mult_add_buffer} + carry;
             *conv_digits = static_cast<digit_t>(res);
-            carry = res >> kNumsBits;
+            carry = res >> kDigitBits;
         }
         for (size_type i = half_conv_len; i > 0; i--, conv_digits++, mult_add_buffer++) {
             const double_digit_t res = double_digit_t{*mult_add_buffer} + carry;
             *conv_digits = static_cast<digit_t>(res);
-            carry = res >> kNumsBits;
+            carry = res >> kDigitBits;
         }
         assert(carry == 0);
     }
@@ -2810,12 +2843,12 @@ private:
         }
     }
     constexpr void assign_u32_unchecked(const uint32_t n) noexcept {
-        static_assert(kNumsBits >= 32);
+        static_assert(kDigitBits >= 32);
         size_ = n != 0;
         nums_[0] = n;
     }
     constexpr void assign_i32_unchecked(const int32_t n) noexcept {
-        static_assert(kNumsBits >= 32);
+        static_assert(kDigitBits >= 32);
         size_ = math_functions::sign(n);
         nums_[0] = math_functions::uabs(n);
     }
@@ -2830,7 +2863,7 @@ private:
         }
     }
     constexpr void assign_u64_unchecked(uint64_t n) noexcept {
-        static_assert(kNumsBits == 32);
+        static_assert(kDigitBits == 32);
         size_ = n != 0;
         nums_[0] = static_cast<uint32_t>(n);
         n >>= 32;
@@ -2854,7 +2887,7 @@ private:
         }
     }
     I128_CONSTEXPR void assign_u128_unchecked(uint128_t n) noexcept {
-        static_assert(kNumsBits == 32);
+        static_assert(kDigitBits == 32);
         size_ = n != 0;
         nums_[0] = static_cast<uint32_t>(n);
         n >>= 32;
@@ -2963,7 +2996,7 @@ private:
         double_digit_t carry = n;
         do {
             const double_digit_t res = double_digit_t{*it} + carry;
-            carry = res >> kNumsBits;
+            carry = res >> kDigitBits;
             *it = static_cast<digit_t>(res);
             if (carry == 0) {
                 return;
@@ -3187,7 +3220,7 @@ inline void longint::set_str_impl(const unsigned char* str, const std::size_t st
         }
 
         do {
-            static_assert(kStrConvBaseDigits == 9, "impl error");
+            static_assert(kStrConvBaseDigits == 9);
             uint32_t current = uint32_t{*str_iter} - '0';
             str_iter++;
             current = current * 10 + uint32_t{*str_iter} - '0';
