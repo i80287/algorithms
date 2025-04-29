@@ -475,7 +475,7 @@ template <class T>
     math_functions::detail::check_math_unsigned_int_type<T>();
 
     using Q = math_functions::detail::double_bits_t<T>;
-    constexpr T kMaxT = std::numeric_limits<T>::max();
+    [[maybe_unused]] constexpr T kMaxT = std::numeric_limits<T>::max();
 
     assert(mod != 0);
 
