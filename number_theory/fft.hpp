@@ -87,11 +87,10 @@ inline void throw_if_not_impl(const bool expr,
     THROW_IF_NOT1(expr, #expr, __FILE__, __LINE__, CONFIG_CURRENT_FUNCTION_NAME)
 
 template <class T>
-ATTRIBUTE_ACCESS_NONE(1)
-ATTRIBUTE_ACCESS_NONE(2)
-    [[nodiscard]] inline bool are_distinct_non_empty_ranges(const T* const array_1_begin,
-                                                            const T* const array_2_begin,
-                                                            const size_t n) noexcept {
+ATTRIBUTE_CONST [[nodiscard]]
+inline bool are_distinct_non_empty_ranges(const T* const array_1_begin,
+                                          const T* const array_2_begin,
+                                          const size_t n) noexcept {
     const auto array_1_begin_int = reinterpret_cast<uintptr_t>(array_1_begin);
     const auto array_2_begin_int = reinterpret_cast<uintptr_t>(array_2_begin);
     const auto array_1_end_int = array_1_begin_int + n * sizeof(T);
