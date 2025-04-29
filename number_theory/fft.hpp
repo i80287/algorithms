@@ -60,13 +60,13 @@ namespace detail {
 ATTRIBUTE_NORETURN
 ATTRIBUTE_COLD
 ATTRIBUTE_NONNULL_ALL_ARGS
-static void throw_impl(const char* const message, const char* const function_name) {
+inline void throw_impl(const char* const message, const char* const function_name) {
     throw std::runtime_error{std::string{message} + function_name};
 }
 
 ATTRIBUTE_NONNULL_ALL_ARGS
 ATTRIBUTE_ALWAYS_INLINE
-static void throw_if_not_impl(const bool expr,
+inline void throw_if_not_impl(const bool expr,
                               const char* const message,
                               const char* const function_name) {
     if (unlikely(!expr)) {
@@ -87,14 +87,18 @@ static void throw_if_not_impl(const bool expr,
     THROW_IF_NOT1(expr, #expr, __FILE__, __LINE__, CONFIG_CURRENT_FUNCTION_NAME)
 
 template <class T>
-[[nodiscard]] bool are_distinct_non_empty_ranges(const T* const array_1_begin,
-                                                 const T* const array_2_begin,
-                                                 const size_t n) noexcept {
+ATTRIBUTE_ACCESS_NONE(1)
+ATTRIBUTE_ACCESS_NONE(2)
+    [[nodiscard]] inline bool are_distinct_non_empty_ranges(const T* const array_1_begin,
+                                                            const T* const array_2_begin,
+                                                            const size_t n) noexcept {
     const auto array_1_begin_int = reinterpret_cast<uintptr_t>(array_1_begin);
     const auto array_2_begin_int = reinterpret_cast<uintptr_t>(array_2_begin);
     const auto array_1_end_int = array_1_begin_int + n * sizeof(T);
     const auto array_2_end_int = array_2_begin_int + n * sizeof(T);
-    return array_1_begin_int < array_1_end_int && array_2_begin_int < array_2_end_int &&
+
+    return array_1_begin_int != 0 && array_2_begin_int != 0 &&
+           array_1_begin_int < array_1_end_int && array_2_begin_int < array_2_end_int &&
            ((array_1_end_int <= array_2_begin_int) ^ (array_2_end_int <= array_1_begin_int));
 }
 
