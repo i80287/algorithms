@@ -3523,15 +3523,15 @@ void test_pow_arange() {
         const vector pow_range = pow_arange(n, p);
         assert(pow_range.size() == n + 1);
         for (uint32_t i = 0; i <= n; i++) {
-            const double eps = i <= 20   ? 1e-11
-                               : i <= 30 ? 1e-10
-                               : i <= 40 ? 1e-8
-                               : i <= 50 ? 1e-7
-                               : i <= 70 ? 1e-3
-                               : i <= 80 ? 1e-2
-                               : i < 90  ? 1e-1
-                               : i < 95  ? 1.0
-                                         : 5.0;
+            double eps = i <= 20   ? 1e-11
+                         : i <= 30 ? 1e-10
+                         : i <= 40 ? 1e-8
+                         : i <= 50 ? 1e-7
+                         : i <= 70 ? 1e-3
+                         : i <= 80 ? 1e-2
+                         : i < 90  ? 1e-1
+                         : i < 95  ? 1.0
+                                   : 5.0;
             // using mpq_t and mpfr_t it was determined that
             //  the std::pow(arg1, integer_argument) is less
             //  precise then the bin pow implementation on some
