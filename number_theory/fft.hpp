@@ -5,20 +5,21 @@
 #include <complex>
 #include <cstddef>
 #include <functional>
+#include <stdexcept>
 #include <utility>
 #include <vector>
 
-#if defined(__cpp_lib_math_constants) && __cpp_lib_math_constants >= 201907L
-#include <numbers>
-#endif
-
-#include <stdexcept>
-
 #include "../misc/config_macros.hpp"
+
+#if defined(__cpp_lib_math_constants) && __cpp_lib_math_constants >= 201907L && \
+    CONFIG_HAS_INCLUDE(<numbers>)
+#include <numbers>
+#define FFT_HAS_NUMBERS
+#endif
 
 #if defined(__cpp_lib_span) && __cpp_lib_span >= 202002L && CONFIG_HAS_INCLUDE(<span>)
 #include <span>
-#define LONGINT_HAS_SPAN
+#define FFT_HAS_SPAN
 #endif
 
 namespace fft {
@@ -40,7 +41,7 @@ inline void forward_backward_fft(complex* RESTRICT_QUALIFIER p1,
                                  complex* RESTRICT_QUALIFIER p2,
                                  size_t n);
 
-#ifdef LONGINT_HAS_SPAN
+#ifdef FFT_HAS_SPAN
 
 /// @brief See forward_backward_fft(complex*, complex*, size_t)
 ///         @a poly1 and @a poly2 should be of the same size
@@ -196,7 +197,7 @@ private:
         roots.reserve(n);
         const auto add_point = [roots_data = roots.data(), &current_len,
                                 &roots](const size_t i) noexcept {
-#if defined(__cpp_lib_math_constants) && __cpp_lib_math_constants >= 201907L
+#ifdef FFT_HAS_NUMBERS
             constexpr f64 kPi = std::numbers::pi_v<f64>;
 #else
             const f64 kPi = std::acos(static_cast<f64>(-1));
@@ -266,7 +267,7 @@ inline void forward_backward_fft(complex* const p1, complex* const p2, const siz
     fft::detail::private_impl::forward_or_backward_fft</*IsBackwardFFT = */ true>(p2, n);
 }
 
-#ifdef LONGINT_HAS_SPAN
+#ifdef FFT_HAS_SPAN
 
 inline void forward_backward_fft(std::span<complex> poly1, std::span<complex> poly2) {
     THROW_IF_NOT(poly1.size() == poly2.size());
@@ -294,4 +295,5 @@ inline void forward_backward_fft(std::span<complex> poly1, std::span<complex> po
 #undef THROW_IF_NOT
 #undef THROW_IF_NOT1
 #undef THROW_IF_NOT2
-#undef LONGINT_HAS_SPAN
+#undef FFT_HAS_SPAN
+#undef FFT_HAS_NUMBERS
