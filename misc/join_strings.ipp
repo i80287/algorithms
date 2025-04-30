@@ -582,12 +582,16 @@ using determine_char_t = typename determine_char_type<Args...>::type;
 /// @tparam HintCharType hint char type (default: `char`).
 ///         Can be passed if, for instance, join_strings(1, 2, 3.0)
 ///         should be std::wstring: join_strings<wchar_t>(1, 2, 3.0)
-/// @tparam Args Types of the arguments to join, e.g. char types, pointers to them,
-///         basic_string, basic_string_view, integral/floating point values
+/// @tparam Args Types of the arguments to join, e.g. char types, basic_string,
+///         basic_string_view, char pointer and C-style array (treated like strings),
+///         integral/floating point values, enums, std::filesystem::path, types with
+///         method to_string (which returns std::string) and types for which ADL can
+///         find to_string(const T&), to_wstring(const T&), to_basic_string<CharType>(const T&)
+///         or operator<<(std::basic_ostream<CharType>&, const T&)
 /// @param args arguments to join
 /// @return joined args as a string of type std::basic_string<CharType>
-///         where CharType is deducted by the @a Args... or HintCharType
-///         if @a Args is pack of numeric types
+///         where CharType is deducted from the @a Args... or HintCharType
+///         if @a Args... is pack of types without associated char type
 template <class HintCharType, class... Args>
 inline auto join_strings(const Args&... args) {
     static_assert(sizeof...(args) >= 1, "Empty input is explicitly prohibited");
