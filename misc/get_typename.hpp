@@ -9,8 +9,9 @@
 #if defined(__cpp_lib_source_location) && __cpp_lib_source_location >= 201907L && \
     CONFIG_HAS_INCLUDE(<source_location>)
 
-#if (!CONFIG_COMPILER_IS_MSVC || (defined(_USE_DETAILED_FUNCTION_NAME_IN_SOURCE_LOCATION) && \
-                                  _USE_DETAILED_FUNCTION_NAME_IN_SOURCE_LOCATION))
+#if !CONFIG_COMPILER_IS_MSVC ||                                                                   \
+    (CONFIG_MSVC_AT_LEAST(19, 39) && (!defined(_USE_DETAILED_FUNCTION_NAME_IN_SOURCE_LOCATION) || \
+                                      _USE_DETAILED_FUNCTION_NAME_IN_SOURCE_LOCATION))
 #define MISC_GET_TYPENAME_USE_SOURCE_LOCATION_FUNCTION_NAME
 #include <source_location>
 #endif
