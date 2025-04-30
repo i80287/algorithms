@@ -3519,7 +3519,7 @@ void test_pow_arange() {
     using std::vector;
 
     for (const uint32_t n : {0U, 1U, 10U, 100U}) {
-        const double p = 1.42L;
+        const double p = 1.42;
         const vector pow_range = pow_arange(n, p);
         assert(pow_range.size() == n + 1);
         for (uint32_t i = 0; i <= n; i++) {
