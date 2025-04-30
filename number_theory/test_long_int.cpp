@@ -804,7 +804,7 @@ void TestLongIntSquare() {
     for (uint32_t p = 32; p <= 96; p += 32) {
         n = uint128_t{1} << p;
         n.square_inplace();
-        const uint32_t size = (p + p) / longint::kNumsBits + 1;
+        const uint32_t size = (p + p) / longint::kDigitBits + 1;
         assert(n.size() == static_cast<typename longint::ssize_type>(size));
         for (size_t i = 0; i < size - 1; i++) {
             assert(n[i] == 0);
@@ -1226,13 +1226,13 @@ void TestSetString() {
 
     // 2^256 - 1
     n.set_string("115792089237316195423570985008687907853269984665640564039457584007913129639935");
-    AssertAllNumsSet(n, 256 / longint::kNumsBits);
+    AssertAllNumsSet(n, 256 / longint::kDigitBits);
 
     // 2^512 - 1
     n.set_string(
         "13407807929942597099574024998205846127479365820592393377723561443721764030073546976801"
         "874298166903427690031858186486050853753882811946569946433649006084095");
-    AssertAllNumsSet(n, 512 / longint::kNumsBits);
+    AssertAllNumsSet(n, 512 / longint::kDigitBits);
 
     // 2^1024 - 1
     n.set_string(
@@ -1240,7 +1240,7 @@ void TestSetString() {
         "322407536021120113879871393357658789768814416622492847430639474124377767893424865485276302"
         "219601246094119453082952085005768838150682342462881473913110540827237163350510684586298239"
         "947245938479716304835356329624224137215");
-    AssertAllNumsSet(n, 1024 / longint::kNumsBits);
+    AssertAllNumsSet(n, 1024 / longint::kDigitBits);
 }
 
 void TestToString() {

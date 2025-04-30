@@ -12,41 +12,71 @@
 #include <memory>
 #include <numeric>
 #include <sstream>
+#include <tuple>
 #include <type_traits>
 #include <utility>
 
 #include "../misc/config_macros.hpp"
 
-#if CONFIG_HAS_AT_LEAST_CXX_20 && CONFIG_HAS_INCLUDE(<concepts>)
+#if CONFIG_HAS_CONCEPTS
 #include <concepts>
+#endif
+
+#if CONFIG_HAS_AT_LEAST_CXX_20 && CONFIG_HAS_INCLUDE(<span>)
+#include <span>
+#define BITMATRIX_HAS_SPAN
 #endif
 
 // clang-format off
 // NOLINTBEGIN(cppcoreguidelines-avoid-magic-numbers, cppcoreguidelines-avoid-c-arrays, hicpp-avoid-c-arrays, modernize-avoid-c-arrays)
 // clang-format on
 
-using CStyleMatrix8x8 = uint8_t[8];
-using Matrix8x8 = std::array<uint8_t, 8>;
+using CStyleMatrix8x8 = std::uint8_t[8];
+using ArrayMatrix8x8 = std::array<std::uint8_t, 8>;
+#ifdef BITMATRIX_HAS_SPAN
+using RefMatrix8x8 = std::span<std::uint8_t, 8>;
+using ConstRefMatrix8x8 = std::span<const std::uint8_t, 8>;
+#endif
 
-using CStyleMatrix32x32 = uint32_t[32];
-using Matrix32x32 = std::array<uint32_t, 32>;
+using CStyleMatrix32x32 = std::uint32_t[32];
+using ArrayMatrix32x32 = std::array<std::uint32_t, 32>;
+#ifdef BITMATRIX_HAS_SPAN
+using RefMatrix32x32 = std::span<std::uint32_t, 32>;
+using ConstRefMatrix32x32 = std::span<const std::uint32_t, 32>;
+#endif
 
 using CStyleMatrix64x64 = uint64_t[64];
-using Matrix64x64 = std::array<uint64_t, 64>;
+using ArrayMatrix64x64 = std::array<uint64_t, 64>;
+#ifdef BITMATRIX_HAS_SPAN
+using RefMatrix64x64 = std::span<std::uint64_t, 64>;
+using ConstRefMatrix64x64 = std::span<const std::uint64_t, 64>;
+#endif
 
 namespace bitmatrix_detail {
 
 template <class T>
 inline constexpr bool kIsMatrix8x8 =
-    std::is_same_v<T, Matrix8x8> || std::is_same_v<T, CStyleMatrix8x8>;
+    std::is_same_v<T, ArrayMatrix8x8> || std::is_same_v<T, CStyleMatrix8x8>
+#ifdef BITMATRIX_HAS_SPAN
+    || std::is_same_v<T, RefMatrix8x8> || std::is_same_v<T, ConstRefMatrix8x8>
+#endif
+    ;
 
 template <class T>
 inline constexpr bool kIsMatrix32x32 =
-    std::is_same_v<T, Matrix32x32> || std::is_same_v<T, CStyleMatrix32x32>;
+    std::is_same_v<T, ArrayMatrix32x32> || std::is_same_v<T, CStyleMatrix32x32>
+#ifdef BITMATRIX_HAS_SPAN
+    || std::is_same_v<T, RefMatrix32x32> || std::is_same_v<T, ConstRefMatrix32x32>
+#endif
+    ;
 
 template <class T>
 inline constexpr bool kIsMatrix64x64 =
-    std::is_same_v<T, Matrix64x64> || std::is_same_v<T, CStyleMatrix64x64>;
+    std::is_same_v<T, ArrayMatrix64x64> || std::is_same_v<T, CStyleMatrix64x64>
+#ifdef BITMATRIX_HAS_SPAN
+    || std::is_same_v<T, RefMatrix64x64> || std::is_same_v<T, ConstRefMatrix64x64>
+#endif
+    ;
 
 }  // namespace bitmatrix_detail
 
@@ -719,12 +749,12 @@ public:
         return copy;
     }
     CONSTEXPR_BITSET_OPS
-    square_bitmatrix& flip_row(const size_type row_index) noexcept ATTRIBUTE_LIFETIME_BOUND {
+    square_bitmatrix& flip_row(const size_type row_index) ATTRIBUTE_LIFETIME_BOUND {
         do_flip_row_inplace(row_index);
         return *this;
     }
     CONSTEXPR_BITSET_OPS
-    square_bitmatrix& flip_column(const size_type column_index) noexcept ATTRIBUTE_LIFETIME_BOUND {
+    square_bitmatrix& flip_column(const size_type column_index) ATTRIBUTE_LIFETIME_BOUND {
         do_flip_column_inplace(column_index);
         return *this;
     }
@@ -775,43 +805,54 @@ public:
     ATTRIBUTE_REINITIALIZES constexpr void reset() noexcept {
         this->clear();
     }
-    [[nodiscard]]
+
+    // clang-format on
+
     ATTRIBUTE_PURE
-    CONSTEXPR_BITSET_OPS
-    bool operator==(const square_bitmatrix& other) const noexcept {
+    [[nodiscard]]
+    CONSTEXPR_BITSET_OPS bool operator==(const square_bitmatrix& other) const noexcept {
         return std::equal(begin(), end(), other.begin());
     }
+
 #if !defined(__cpp_impl_three_way_comparison) || __cpp_impl_three_way_comparison < 201907L
-    [[nodiscard]]
     ATTRIBUTE_PURE
-    CONSTEXPR_BITSET_OPS
-    bool operator!=(const square_bitmatrix& other) const noexcept {
+    [[nodiscard]]
+    CONSTEXPR_BITSET_OPS bool operator!=(const square_bitmatrix& other) const noexcept {
         return !(*this == other);
     }
 #endif
 
     template <class Function>
-#if CONFIG_HAS_AT_LEAST_CXX_20
+#if CONFIG_COMPILER_SUPPORTS_CONCEPTS
         requires requires(Function fn, const size_type i, const size_type j) {
             { fn(i, j) };
         }
 #endif
     constexpr void for_each_set_bit(Function fn) const noexcept(is_noexcept_coords_fn<Function>()) {
-        static_assert(std::is_invocable_v<Function, size_type, size_type>, "Function should accept 2 indices");
+        static_assert(std::is_invocable_v<Function, size_type, size_type>,
+                      "Function should accept 2 indices");
 
-        const_iterator iter     = begin();
+        const_iterator iter = begin();
         const_iterator iter_end = end();
         for (size_type i{}; iter != iter_end; ++iter, ++i) {
             for_each_row_set_bit_impl(*iter, [&](const size_type j) { fn(i, j); });
         }
     }
     template <class Function>
+#if CONFIG_COMPILER_SUPPORTS_CONCEPTS
+        requires requires(Function fn, const size_type column_index) {
+            { fn(column_index) };
+        }
+#endif
     constexpr void for_each_set_bit_in_row(const size_type row_index, Function fn) const {
-        static_assert(std::is_invocable_v<Function, size_type>, "Function should accept column index");
+        static_assert(std::is_invocable_v<Function, size_type>,
+                      "Function should accept column index");
 
         for_each_row_set_bit_impl(this->at(row_index), std::move(fn));
     }
-    friend std::ostream& operator<<(std::ostream& out ATTRIBUTE_LIFETIME_BOUND, const square_bitmatrix& matrix) {
+
+    friend std::ostream& operator<<(std::ostream& out ATTRIBUTE_LIFETIME_BOUND,
+                                    const square_bitmatrix& matrix) {
         std::ostringstream str;
         for (const row_type& row : matrix) {
             str << row << '\n';
@@ -820,9 +861,11 @@ public:
     }
 
 private:
+    // clang-format off
+
     static constexpr bool kUseSGIExtension =
-#if CONFIG_HAS_AT_LEAST_CXX_20
-#if CONFIG_HAS_INCLUDE(<concepts>)
+#if CONFIG_COMPILER_SUPPORTS_CONCEPTS
+#if CONFIG_HAS_CONCEPTS
         requires(const row_type row) {
             { row._Find_first() } -> std::convertible_to<size_type>;
             { row._Find_next(size_type{}) } -> std::convertible_to<size_type>;
@@ -837,9 +880,9 @@ private:
         false;
 #endif
 
-    template <class Function>
+    template <class F>
     ATTRIBUTE_ALWAYS_INLINE
-    static constexpr void for_each_row_set_bit_impl(const row_type& row, Function fn) noexcept(is_noexcept_index_fn<Function>()) {
+    static constexpr void for_each_row_set_bit_impl(const row_type& row, F fn) noexcept(is_noexcept_index_fn<F>()) {
         if constexpr (kUseSGIExtension) {
             for (size_type j = row._Find_first(); j < N; j = row._Find_next(j)) {
                 fn(j);
@@ -853,8 +896,7 @@ private:
         }
     }
 
-    CONSTEXPR_BITSET_OPS
-    void do_bitwise_or(const_pointer other_begin) noexcept {
+    CONSTEXPR_BITSET_OPS void do_bitwise_or(const const_pointer other_begin) noexcept {
         std::for_each(begin(), end(),
                       [other_iter = other_begin](
                           row_type& row_reference) mutable CONSTEXPR_BITSET_OPS noexcept {
@@ -862,8 +904,7 @@ private:
                           ++other_iter;
                       });
     }
-    CONSTEXPR_BITSET_OPS
-    void do_bitwise_and(const_pointer other_begin) noexcept {
+    CONSTEXPR_BITSET_OPS void do_bitwise_and(const const_pointer other_begin) noexcept {
         std::for_each(begin(), end(),
                       [other_iter = other_begin](
                           row_type& row_reference) mutable CONSTEXPR_BITSET_OPS noexcept {
@@ -871,8 +912,7 @@ private:
                           ++other_iter;
                       });
     }
-    CONSTEXPR_BITSET_OPS
-    void do_bitwise_xor(const_pointer other_begin) noexcept {
+    CONSTEXPR_BITSET_OPS void do_bitwise_xor(const const_pointer other_begin) noexcept {
         std::for_each(begin(), end(),
                       [other_iter = other_begin](
                           row_type& row_reference) mutable CONSTEXPR_BITSET_OPS noexcept {
@@ -880,13 +920,12 @@ private:
                           ++other_iter;
                       });
     }
-    CONSTEXPR_BITSET_OPS
-    void do_multiply_over_z2(const_pointer other_begin) noexcept {
+    CONSTEXPR_BITSET_OPS void do_multiply_over_z2(const const_pointer other_begin) noexcept {
         std::for_each(
             begin(), end(),
             [other_begin = other_begin](row_type& row_reference) CONSTEXPR_BITSET_OPS noexcept {
                 row_type row_mult{};
-                for_each_row_set_bit_impl(row_reference, [&](size_type j) CONSTEXPR_BITSET_OPS noexcept {
+                for_each_row_set_bit_impl(row_reference, [&](const size_type j) CONSTEXPR_BITSET_OPS noexcept {
                     row_mult ^= other_begin[j];
                 });
                 row_reference = row_mult;
@@ -902,23 +941,22 @@ private:
         }
         return result_vector;
     }
-    CONSTEXPR_BITSET_OPS
-    void do_flip_inplace() noexcept {
+    CONSTEXPR_BITSET_OPS void do_flip_inplace() noexcept {
         std::for_each(begin(), end(), [](row_type& row_reference) CONSTEXPR_BITSET_OPS noexcept {
             row_reference.flip();
         });
     }
-    CONSTEXPR_BITSET_OPS
-    void do_flip_row_inplace(size_type row_index) noexcept {
-        data_[row_index].flip();
+    CONSTEXPR_BITSET_OPS void do_flip_row_inplace(const size_type row_index) {
+        data_.at(row_index).flip();
     }
-    CONSTEXPR_BITSET_OPS
-    void do_flip_column_inplace(size_type column_index) noexcept {
+    CONSTEXPR_BITSET_OPS void do_flip_column_inplace(const size_type column_index) {
         if (unlikely(column_index >= columns())) {
-            // std::bitset<>::flip() will throw if column_index >= std::bitset<>::size()
-            return;
+            // throw now so that compiler can eliminate this
+            //  check in the std::bitset<>::flip(size_type) later
+            // (flip is called many times in the loop)
+            std::ignore = row_type{}.test(column_index);
         }
-        std::for_each(begin(), end(), [=](row_type& row_reference) CONSTEXPR_BITSET_OPS noexcept {
+        std::for_each(begin(), end(), [column_index](row_type& row_reference) CONSTEXPR_BITSET_OPS noexcept {
             row_reference.flip(column_index);
         });
     }
@@ -976,8 +1014,8 @@ private:
     template <class = void>
     ATTRIBUTE_ALWAYS_INLINE
     static constexpr void transpose_8_fallback(matrix_type& matrix) noexcept {
-        Matrix8x8 tmp1{};
-        Matrix8x8 tmp2{};
+        ArrayMatrix8x8 tmp1{};
+        ArrayMatrix8x8 tmp2{};
 
         // NOLINTBEGIN(cppcoreguidelines-pro-type-reinterpret-cast)
 

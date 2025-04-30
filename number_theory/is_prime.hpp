@@ -1,9 +1,10 @@
-#ifndef IS_PRIME_BPSW_HPP
-#define IS_PRIME_BPSW_HPP
+#pragma once
 
+#include <algorithm>
 #include <cstdint>
-#include <cstdlib>
+#include <exception>
 #include <numeric>
+#include <stdexcept>
 
 #include "../misc/config_macros.hpp"
 #include "integers_128_bit.hpp"
@@ -12,6 +13,8 @@
 
 namespace math_functions {
 
+using std::int32_t;
+using std::int64_t;
 using std::uint32_t;
 using std::uint64_t;
 
@@ -19,18 +22,24 @@ using std::uint64_t;
 
 namespace detail {
 
+#if CONFIG_COMPILER_ID == CONFIG_GCC_COMPILER_ID
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wsuggest-attribute=pure"
+#pragma GCC diagnostic ignored "-Wsuggest-attribute=const"
+#endif
+
 /**********************************************************************************************
  * mpz_sprp: (also called a Miller-Rabin probable prime)
  * A "strong probable prime" to the base a is an odd composite n = (2^r)*s+1
  * with s odd such that either a^s == 1 mod n, or a^((2^t)*s) == -1 mod n, for
  * some integer t, with 0 <= t < r.
  **********************************************************************************************/
-template <bool BasicChecks = true>
-ATTRIBUTE_CONST I128_CONSTEXPR bool is_strong_prp(uint64_t n, uint64_t a) noexcept {
-    if constexpr (BasicChecks) {
+template <bool DoBasicChecks = true>
+[[nodiscard]] I128_CONSTEXPR bool is_strong_prp(const uint64_t n,
+                                                const uint64_t a) noexcept(!DoBasicChecks) {
+    if constexpr (DoBasicChecks) {
         if (unlikely(a < 2)) {
-            // is_strong_prp requires 'a' greater than or equal to 2
-            a = 2;
+            throw std::invalid_argument{"is_strong_prp requires 'a' greater than or equal to 2"};
         }
 
         if (unlikely(n == 1)) {
@@ -42,8 +51,7 @@ ATTRIBUTE_CONST I128_CONSTEXPR bool is_strong_prp(uint64_t n, uint64_t a) noexce
         }
 
         if (unlikely(std::gcd(n, a) != 1)) {
-            // is_strong_prp requires gcd(n,a) == 1
-            return false;
+            throw std::invalid_argument{"is_strong_prp requires gcd(n, a) == 1"};
         }
     }
 
@@ -53,7 +61,7 @@ ATTRIBUTE_CONST I128_CONSTEXPR bool is_strong_prp(uint64_t n, uint64_t a) noexce
 
     const uint64_t n_minus_1 = n - 1;
     /* Find q and r satisfying: n - 1 = q * (2^r), q odd */
-    auto [q, r] = ::math_functions::extract_pow2(n_minus_1);
+    auto [q, r] = math_functions::extract_pow2(n_minus_1);
     // n - 1 >= 2 => r >= 1
     CONFIG_ASSUME_STATEMENT(r >= 1);
     CONFIG_ASSUME_STATEMENT(q % 2 == 1);
@@ -63,7 +71,7 @@ ATTRIBUTE_CONST I128_CONSTEXPR bool is_strong_prp(uint64_t n, uint64_t a) noexce
     /* Check a^((2^t)*q) mod n for 0 <= t < r */
 
     // Init test = ((a^q) mod n)
-    uint64_t test = ::math_functions::bin_pow_mod(a, q, n);
+    uint64_t test = math_functions::bin_pow_mod(a, q, n);
     CONFIG_ASSUME_STATEMENT(test < n);
     if (test == 1 || test == n_minus_1) {
         return true;
@@ -83,6 +91,23 @@ ATTRIBUTE_CONST I128_CONSTEXPR bool is_strong_prp(uint64_t n, uint64_t a) noexce
     return false;
 }
 
+#if CONFIG_COMPILER_ID == CONFIG_GCC_COMPILER_ID
+#pragma GCC diagnostic pop
+#endif
+
+ATTRIBUTE_CONST
+[[nodiscard]]
+I128_CONSTEXPR bool is_strong_prp_without_basic_checks(const uint64_t n,
+                                                       const uint64_t a) noexcept {
+    return detail::is_strong_prp<false>(n, a);
+}
+
+#if CONFIG_COMPILER_ID == CONFIG_GCC_COMPILER_ID
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wsuggest-attribute=pure"
+#pragma GCC diagnostic ignored "-Wsuggest-attribute=const"
+#endif
+
 /**********************************************************************************************
  * mpz_stronglucas_prp:
  * A "strong Lucas probable prime" with parameters (P,Q) is a composite n =
@@ -90,17 +115,18 @@ ATTRIBUTE_CONST I128_CONSTEXPR bool is_strong_prp(uint64_t n, uint64_t a) noexce
  * U_s == 0 mod n or V_((2^t)*s) == 0 mod n for some t, 0 <= t < r. [(D/n) is
  * the Jacobi symbol]
  **********************************************************************************************/
-template <bool BasicChecks = true>
-ATTRIBUTE_CONST I128_CONSTEXPR bool is_strong_lucas_prp(uint64_t n,
-                                                        uint16_t p,
-                                                        int32_t q) noexcept {
+template <bool DoBasicChecks = true>
+[[nodiscard]] I128_CONSTEXPR bool is_strong_lucas_prp(const uint64_t n,
+                                                      const uint16_t p,
+                                                      const int32_t q) noexcept(!DoBasicChecks) {
     const uint32_t p2 = uint32_t{p} * uint32_t{p};
     const int64_t d = int64_t{p2} - int64_t{q} * 4;
-    if constexpr (BasicChecks) {
+    if constexpr (DoBasicChecks) {
         /* Check if p*p - 4*q == 0. */
         if (unlikely(d == 0)) {
-            // Invalid values for p,q in is_strong_lucas_prp
-            return false;
+            throw std::invalid_argument{
+                std::string{"invalid values for p, q in "} + CONFIG_CURRENT_FUNCTION_NAME,
+            };
         }
 
         if (unlikely(n == 1)) {
@@ -114,8 +140,9 @@ ATTRIBUTE_CONST I128_CONSTEXPR bool is_strong_lucas_prp(uint64_t n,
         // NOLINTNEXTLINE(bugprone-implicit-widening-of-multiplication-result)
         const int128_t rhs = int128_t{int64_t{2} * int64_t{q}} * int128_t{d};
         if (unlikely(math_functions::gcd(n, rhs) != 1)) {
-            // is_strong_lucas_prp requires gcd(n, 2 * q * (p * p - 4 * q)) = 1
-            return false;
+            throw std::invalid_argument{
+                CONFIG_CURRENT_FUNCTION_NAME +
+                std::string{" requires gcd(n, 2 * q * (p * p - 4 * q)) == 1"}};
         }
     }
 
@@ -124,12 +151,11 @@ ATTRIBUTE_CONST I128_CONSTEXPR bool is_strong_lucas_prp(uint64_t n,
     CONFIG_ASSUME_STATEMENT(n >= 3);
 
     /* nmj = n - (D/n), where (D/n) is the Jacobi symbol */
-    const uint64_t nmj =
-        n - static_cast<uint64_t>(int64_t{::math_functions::kronecker_symbol(d, n)});
+    const uint64_t nmj = n - static_cast<uint64_t>(int64_t{math_functions::kronecker_symbol(d, n)});
     CONFIG_ASSUME_STATEMENT(nmj >= 2);
 
     /* Find s and r satisfying: nmj = s * (2 ^ r), s odd */
-    const auto extraction_res = ::math_functions::extract_pow2(nmj);
+    const auto extraction_res = math_functions::extract_pow2(nmj);
     const uint64_t s = extraction_res.odd_part;
     const uint32_t r = extraction_res.power;
     CONFIG_ASSUME_STATEMENT(r >= 1);
@@ -146,13 +172,19 @@ ATTRIBUTE_CONST I128_CONSTEXPR bool is_strong_lucas_prp(uint64_t n,
     uint64_t vh = uint64_t{p};  // Initial value for V_1
     uint64_t ql = 1;
     uint64_t qh = 1;
-    // q mod n
-    const uint64_t widen_q = (q >= 0 ? static_cast<uint32_t>(q)
-                                     : (n - static_cast<uint64_t>(-static_cast<uint32_t>(q)) % n)) %
-                             n;
+    constexpr auto i32_mod_u64 = [](const int32_t lhs, const uint64_t rhs) constexpr noexcept {
+        if (lhs >= 0) {
+            return static_cast<uint32_t>(lhs) % rhs;
+        }
+
+        const auto lhs_abs = -static_cast<uint32_t>(lhs);
+        const uint64_t rem = rhs - lhs_abs % rhs;
+        return rem == rhs ? 0 : rem;
+    };
+    const uint64_t widen_q = i32_mod_u64(q, n);
     CONFIG_ASSUME_STATEMENT(widen_q < n);
     // n >= 3 => n - 1 >= 2 => n - 1 >= 1 => s >= 1
-    for (uint32_t j = ::math_functions::log2_floor(s); j != 0; j--) {
+    for (uint32_t j = math_functions::log2_floor(s); j != 0; j--) {
         CONFIG_ASSUME_STATEMENT(ql < n);
         /* ql = ql*qh (mod n) */
         ql = static_cast<uint64_t>((uint128_t{ql} * qh) % n);
@@ -306,6 +338,18 @@ ATTRIBUTE_CONST I128_CONSTEXPR bool is_strong_lucas_prp(uint64_t n,
     return false;
 }
 
+#if CONFIG_COMPILER_ID == CONFIG_GCC_COMPILER_ID
+#pragma GCC diagnostic pop
+#endif
+
+ATTRIBUTE_CONST
+[[nodiscard]]
+I128_CONSTEXPR bool is_strong_lucas_prp_without_basic_checks(const uint64_t n,
+                                                             const uint16_t p,
+                                                             const int32_t q) noexcept {
+    return detail::is_strong_lucas_prp<false>(n, p, q);
+}
+
 /**********************************************************************************************************
  * mpz_strongselfridge_prp:
  * A "strong Lucas-Selfridge probable prime" n is a "strong Lucas probable
@@ -314,9 +358,10 @@ ATTRIBUTE_CONST I128_CONSTEXPR bool is_strong_lucas_prp(uint64_t n,
  * Q=(1-D)/4 in the strong Lucas probable prime test. Make sure n is not a
  * perfect square, otherwise the search for D will only stop when D=n.
  ***********************************************************************************************************/
-template <bool BasicChecks = true>
-ATTRIBUTE_CONST I128_CONSTEXPR bool is_strong_selfridge_prp(uint64_t n) noexcept {
-    if constexpr (BasicChecks) {
+template <bool DoBasicChecks = true>
+[[nodiscard]]
+ATTRIBUTE_CONST I128_CONSTEXPR bool is_strong_selfridge_prp(const uint64_t n) noexcept {
+    if constexpr (DoBasicChecks) {
         if (unlikely(n == 1)) {
             return false;
         }
@@ -329,22 +374,23 @@ ATTRIBUTE_CONST I128_CONSTEXPR bool is_strong_selfridge_prp(uint64_t n) noexcept
     CONFIG_ASSUME_STATEMENT(n % 2 == 1);
     // Redundant but still
     CONFIG_ASSUME_STATEMENT(n >= 1);
-    constexpr std::int32_t kStep = 2;
+    constexpr int32_t kStep = 2;
     for (int32_t d = 5;; d += (d > 0) ? kStep : -kStep, d = -d) {
-        constexpr std::int32_t kMaxD = 999'997;
+        constexpr int32_t kMaxD = 999'997;
         // Calculate the Jacobi symbol (d/n)
-        const int32_t jacobi = ::math_functions::kronecker_symbol(int64_t{d}, n);
+        const int32_t jacobi = math_functions::kronecker_symbol(int64_t{d}, n);
         switch (jacobi) {
             /**
              * if jacobi == 0, d is a factor of n, therefore n is composite
              * if d == n, then n is either prime or 9
              */
-            case 0:
-                return ::math_functions::uabs(d) == n && n != 9;
-            case 1:
+            case 0: {
+                return math_functions::uabs(d) == n && n != 9;
+            }
+            case 1: {
                 /* if we get to the 5th d, make sure we aren't dealing with a
                  * square... */
-                if (unlikely(d == 13 && ::math_functions::is_perfect_square(n))) {
+                if (unlikely(d == 13 && math_functions::is_perfect_square(n))) {
                     return false;
                 }
 
@@ -354,19 +400,88 @@ ATTRIBUTE_CONST I128_CONSTEXPR bool is_strong_selfridge_prp(uint64_t n) noexcept
                     return false;
                 }
                 break;
+            }
             case -1: {
                 CONFIG_ASSUME_STATEMENT(d <= kMaxD + kStep * 2);
                 CONFIG_ASSUME_STATEMENT(-kMaxD - kStep <= d);
                 CONFIG_ASSUME_STATEMENT((1 - d) % 4 == 0);
-                const std::int32_t q = (1 - d) / 4;
+                const int32_t q = (1 - d) / 4;
                 CONFIG_ASSUME_STATEMENT(1 - 4 * q == d);
-                return ::math_functions::detail::is_strong_lucas_prp<false>(n, 1, q);
+                return math_functions::detail::is_strong_lucas_prp_without_basic_checks(n, 1, q);
             }
-            default:
-                // For the analysers
-                std::abort();
+            default: {
+                assert(false);
+                std::terminate();
+            }
         }
     }
+}
+
+ATTRIBUTE_CONST
+[[nodiscard]]
+I128_CONSTEXPR bool is_strong_selfridge_prp_without_basic_checks(const uint64_t n) noexcept {
+    return detail::is_strong_selfridge_prp<false>(n);
+}
+
+#if CONFIG_HAS_AT_LEAST_CXX_17
+inline
+#endif
+    constexpr uint32_t kIsPrimeSqrtLoopStep = 30;
+
+template <class T>
+[[nodiscard]] ATTRIBUTE_CONST constexpr bool is_prime_sqrt_impl(const T n) noexcept {
+    if (n % 2 == 0) {
+        return n == 2;
+    }
+    if (n % 3 == 0) {
+        return n == 3;
+    }
+    if (n % 5 == 0) {
+        return n == 5;
+    }
+    // NOLINTNEXTLINE(bugprone-implicit-widening-of-multiplication-result)
+    if (unlikely(n < 7 * 7)) {
+        return n != 1;
+    }
+
+    const auto root = math_functions::isqrt(n);
+    using RootType = std::remove_const_t<decltype(root)>;
+    static_assert(math_functions::is_unsigned_v<RootType>);
+
+    using DivisorType = std::conditional_t<sizeof(T) >= sizeof(uint64_t), uint64_t, uint32_t>;
+    // DivisorType == uint64_t when T == uint64_t because max uint32_t prime is 4294967291
+    //  and if we make DivisorType == uint32_t, i will overflow when
+    //  root >= 2^32 - kIsPrimeSqrtLoopStep
+    //  (which is possible since 2^32 - kIsPrimeSqrtLoopStep < 4294967291)
+    DivisorType i = 7u;
+    CONFIG_ASSUME_STATEMENT(i <= root);
+
+    const DivisorType max_i = [root]() -> DivisorType {
+        if constexpr (sizeof(RootType) == sizeof(uint64_t)) {
+            constexpr uint64_t kMaxUInt64Prime = 18446744073709551557ULL;
+            static_assert(kMaxUInt64Prime < kMaxUInt64Prime + kIsPrimeSqrtLoopStep, "impl error");
+            /**
+             * There are no prime numbers on the segment
+             * [kMaxUInt64Prime + 1; 2^64 - 1]
+             *
+             * We do this in order to avoid uint64_t overflow
+             * (and endless cycle as a result) if root >= 2^64 - 30
+             */
+            return std::min(root, kMaxUInt64Prime);
+        } else {
+            return root;
+        }
+    }();
+
+    do {
+        CONFIG_ASSUME_STATEMENT(i <= max_i);
+        if (n % i == 0 || n % (i + 4) == 0 || n % (i + 6) == 0 || n % (i + 10) == 0 ||
+            n % (i + 12) == 0 || n % (i + 16) == 0 || n % (i + 22) == 0 || n % (i + 24) == 0) {
+            return false;
+        }
+        i += kIsPrimeSqrtLoopStep;
+    } while (i <= max_i);
+    return true;
 }
 
 }  // namespace detail
@@ -375,7 +490,7 @@ ATTRIBUTE_CONST I128_CONSTEXPR bool is_strong_selfridge_prp(uint64_t n) noexcept
 /// operations )
 /// @param n number to test
 /// @return true if n is prime and false otherwise
-[[nodiscard]] ATTRIBUTE_CONST I128_CONSTEXPR bool is_prime_bpsw(uint64_t n) noexcept {
+[[nodiscard]] ATTRIBUTE_CONST I128_CONSTEXPR bool is_prime_bpsw(const uint64_t n) noexcept {
     if (n % 2 == 0) {
         return n == 2;
     }
@@ -399,103 +514,26 @@ ATTRIBUTE_CONST I128_CONSTEXPR bool is_strong_selfridge_prp(uint64_t n) noexcept
         return true;
     }
 
-    return ::math_functions::detail::is_strong_prp<false>(n, 2) &&
-           ::math_functions::detail::is_strong_selfridge_prp<false>(n);
+    return math_functions::detail::is_strong_prp_without_basic_checks(n, 2) &&
+           math_functions::detail::is_strong_selfridge_prp_without_basic_checks(n);
 }
 
-[[nodiscard]] ATTRIBUTE_CONST constexpr bool is_prime_sqrt(uint32_t n) noexcept {
-    if (n % 2 == 0) {
-        return n == 2;
-    }
-    if (n % 3 == 0) {
-        return n == 3;
-    }
-    if (n % 5 == 0) {
-        return n == 5;
-    }
-    // NOLINTNEXTLINE(bugprone-implicit-widening-of-multiplication-result)
-    if (unlikely(n < 7 * 7)) {
-        return n != 1;
-    }
-    uint32_t i = 7;
-    const uint32_t root = ::math_functions::isqrt(n);
-    do {
-        if (n % i == 0 || n % (i + 4) == 0 || n % (i + 6) == 0 || n % (i + 10) == 0 ||
-            n % (i + 12) == 0 || n % (i + 16) == 0 || n % (i + 22) == 0 || n % (i + 24) == 0) {
-            return false;
-        }
-        i += 30;
-    } while (i <= root);
-    return true;
+[[nodiscard]] ATTRIBUTE_CONST constexpr bool is_prime_sqrt(const uint32_t n) noexcept {
+    return detail::is_prime_sqrt_impl(n);
 }
 
-[[nodiscard]] ATTRIBUTE_CONST constexpr bool is_prime_sqrt(uint64_t n) noexcept {
-    if (n % 2 == 0) {
-        return n == 2;
-    }
-    if (n % 3 == 0) {
-        return n == 3;
-    }
-    if (n % 5 == 0) {
-        return n == 5;
-    }
-    // NOLINTNEXTLINE(bugprone-implicit-widening-of-multiplication-result)
-    if (unlikely(n < 7 * 7)) {
-        return n != 1;
-    }
-    uint64_t i = 7;
-    const uint64_t root = ::math_functions::isqrt(n);
-    do {
-        if (n % i == 0 || n % (i + 4) == 0 || n % (i + 6) == 0 || n % (i + 10) == 0 ||
-            n % (i + 12) == 0 || n % (i + 16) == 0 || n % (i + 22) == 0 || n % (i + 24) == 0) {
-            return false;
-        }
-        i += 30;
-    } while (i <= root);
-    return true;
+[[nodiscard]] ATTRIBUTE_CONST constexpr bool is_prime_sqrt(const uint64_t n) noexcept {
+    return detail::is_prime_sqrt_impl(n);
 }
 
-[[nodiscard]] ATTRIBUTE_CONST I128_CONSTEXPR bool is_prime_sqrt(uint128_t n) noexcept {
-    if (n % 2 == 0) {
-        return n == 2;
-    }
-    if (n % 3 == 0) {
-        return n == 3;
-    }
-    if (n % 5 == 0) {
-        return n == 5;
-    }
-    // NOLINTNEXTLINE(bugprone-implicit-widening-of-multiplication-result)
-    if (unlikely(n < 7 * 7)) {
-        return n != 1;
-    }
-    uint64_t i = 7;
-    constexpr uint64_t kMaxPrime = 18446744073709551557ULL;
-    static_assert(kMaxPrime < kMaxPrime + 30, "impl error");
-    /**
-     * There are no prime numbers on the segment
-     * [18446744073709551558; 2^64 - 1]
-     *
-     * We do this in order to avoid uint64_t overflow
-     * (and endless cycle as a result) if root >= 2^64 - 30
-     */
-    const uint64_t root = std::min(::math_functions::isqrt(n), kMaxPrime);
-
-    do {
-        if (n % i == 0 || n % (i + 4) == 0 || n % (i + 6) == 0 || n % (i + 10) == 0 ||
-            n % (i + 12) == 0 || n % (i + 16) == 0 || n % (i + 22) == 0 || n % (i + 24) == 0) {
-            return false;
-        }
-        i += 30;
-    } while (i <= root);
-
-    return true;
+[[nodiscard]] ATTRIBUTE_CONST I128_CONSTEXPR bool is_prime_sqrt(const uint128_t n) noexcept {
+    return detail::is_prime_sqrt_impl(n);
 }
 
-/// @brief Funny realization that works in log(n)
+/// @brief Funny realization that works in log(m)
 /// @param m
-/// @return true if n is prime and false otherwise
-[[nodiscard]] ATTRIBUTE_CONST constexpr bool is_prime_u16(uint16_t m) noexcept {
+/// @return true if m is prime and false otherwise
+[[nodiscard]] ATTRIBUTE_CONST constexpr bool is_prime_u16(const uint16_t m) noexcept {
     const uint32_t n = m;
     if (n % 2 == 0) {
         return n == 2;
@@ -536,15 +574,17 @@ ATTRIBUTE_CONST I128_CONSTEXPR bool is_strong_selfridge_prp(uint64_t n) noexcept
         case 49981:
         case 60701:
         case 60787:
-        case 65281:
+        case 65281: {
             return false;
-        default:
-            return ::math_functions::bin_pow_mod(2, n - 1, n) == 1;
+        }
+        default: {
+            return math_functions::bin_pow_mod(2u, n - 1, n) == 1;
+        }
     }
 }
 
-[[nodiscard]] ATTRIBUTE_CONST constexpr bool is_mersenne_prime(const std::uint32_t n) noexcept {
-    const auto [q, p] = ::math_functions::extract_pow2(n + 1);
+[[nodiscard]] ATTRIBUTE_CONST constexpr bool is_mersenne_prime(const uint32_t n) noexcept {
+    const auto [q, p] = math_functions::extract_pow2(n + 1);
     if (q != 1) {
         return false;
     }
@@ -558,15 +598,17 @@ ATTRIBUTE_CONST I128_CONSTEXPR bool is_strong_selfridge_prp(uint64_t n) noexcept
         case 17:
         case 19:
         case 31:
-        case 61:
+        case 61: {
             return true;
-        default:
+        }
+        default: {
             return false;
+        }
     }
 }
 
-[[nodiscard]] ATTRIBUTE_CONST constexpr bool is_mersenne_prime(const std::uint64_t n) noexcept {
-    const auto [q, p] = ::math_functions::extract_pow2(n + 1);
+[[nodiscard]] ATTRIBUTE_CONST constexpr bool is_mersenne_prime(const uint64_t n) noexcept {
+    const auto [q, p] = math_functions::extract_pow2(n + 1);
     if (q != 1) {
         return false;
     }
@@ -580,19 +622,21 @@ ATTRIBUTE_CONST I128_CONSTEXPR bool is_strong_selfridge_prp(uint64_t n) noexcept
         case 17:
         case 19:
         case 31:
-        case 61:
+        case 61: {
             return true;
-        default:
+        }
+        default: {
             return false;
+        }
     }
 }
 
 [[nodiscard]] ATTRIBUTE_CONST I128_CONSTEXPR bool is_mersenne_prime(const uint128_t n) noexcept {
     const uint128_t np1 = n + 1;
-    if (!::math_functions::is_power_of_two(np1)) {
+    if (!math_functions::is_power_of_two(np1)) {
         return false;
     }
-    const auto [q, p] = ::math_functions::extract_pow2(np1);
+    const auto [q, p] = math_functions::extract_pow2(np1);
     CONFIG_ASSUME_STATEMENT(q == 1);
 
     switch (p) {
@@ -607,15 +651,15 @@ ATTRIBUTE_CONST I128_CONSTEXPR bool is_strong_selfridge_prp(uint64_t n) noexcept
         case 61:
         case 89:
         case 107:
-        case 127:
+        case 127: {
             return true;
-        default:
+        }
+        default: {
             return false;
+        }
     }
 }
 
 // NOLINTEND(cppcoreguidelines-avoid-magic-numbers)
 
 }  // namespace math_functions
-
-#endif  // !IS_PRIME_BPSW_HPP
