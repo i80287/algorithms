@@ -8,12 +8,17 @@
 
 #if defined(__cpp_lib_source_location) && __cpp_lib_source_location >= 201907L && \
     CONFIG_HAS_INCLUDE(<source_location>)
-#define MISC_GET_TYPENAME_HAS_SOURCE_LOCATION
+
+#if !CONFIG_COMPILER_IS_MSVC ||                                                                   \
+    (CONFIG_MSVC_AT_LEAST(19, 39) && (!defined(_USE_DETAILED_FUNCTION_NAME_IN_SOURCE_LOCATION) || \
+                                      _USE_DETAILED_FUNCTION_NAME_IN_SOURCE_LOCATION))
+#define MISC_GET_TYPENAME_USE_SOURCE_LOCATION_FUNCTION_NAME
 #include <source_location>
+#endif
 #endif
 
 // https://en.cppreference.com/w/cpp/language/consteval
-#if defined(__cpp_consteval) && __cpp_consteval >= 201811L
+#if CONFIG_HAS_AT_LEAST_CXX_20 && defined(__cpp_consteval) && __cpp_consteval >= 201811L
 #define MISC_GET_TYPENAME_CONSTEVAL consteval
 #else
 #define MISC_GET_TYPENAME_CONSTEVAL constexpr
@@ -101,17 +106,7 @@ MISC_GET_TYPENAME_CONSTEVAL size_t get_typename_end_pos_impl(const string_view s
     return s.size();
 }
 
-#if CONFIG_GNUC_AT_LEAST(12, 1) || defined(__clang__)
-#define CONSTEVAL_ASSERT(expr)                         \
-    do {                                               \
-        static_cast<void>(bool{(expr)} ? 0 : throw 0); \
-    } while (false)
-#else
-#define CONSTEVAL_ASSERT(expr)                                    \
-    do {                                                          \
-        static_cast<void>(static_cast<bool>(expr) ? 0 : throw 0); \
-    } while (false)
-#endif
+#define CONSTEVAL_ASSERT(expr) static_cast<void>(static_cast<bool>(expr) ? 0 : throw 0)
 
 [[nodiscard]]
 MISC_GET_TYPENAME_CONSTEVAL string_view extract_typename_impl(const string_view function_name) {
@@ -129,12 +124,12 @@ MISC_GET_TYPENAME_CONSTEVAL string_view extract_typename_impl(const string_view 
         }
     };
 
-#if defined(__GNUG__) || defined(__clang__)
+#if CONFIG_COMPILER_IS_GCC_OR_ANY_CLANG
     constexpr string_view type_prefix = "T = ";
     const size_t prefix_start_pos = function_name.find(type_prefix);
     CONSTEVAL_ASSERT(prefix_start_pos != string_view::npos);
     size_t typename_start_pos = prefix_start_pos + type_prefix.size();
-#elif defined(_MSC_VER)
+#elif CONFIG_COMPILER_IS_MSVC
     constexpr string_view type_prefix = "get_typename_impl<";
     const size_t prefix_start_pos = function_name.find(type_prefix);
     CONSTEVAL_ASSERT(prefix_start_pos != string_view::npos);
@@ -189,7 +184,7 @@ template <class T>
 [[nodiscard]]
 MISC_GET_TYPENAME_CONSTEVAL string_view get_typename_impl() {
     const string_view function_name =
-#ifdef MISC_GET_TYPENAME_HAS_SOURCE_LOCATION
+#ifdef MISC_GET_TYPENAME_USE_SOURCE_LOCATION_FUNCTION_NAME
         std::source_location::current().function_name();
 #else
         CONFIG_CURRENT_FUNCTION_NAME;
@@ -205,9 +200,9 @@ MISC_GET_TYPENAME_CONSTEVAL
 string_view extract_enum_value_name_impl(const string_view function_name) {
     // clang-format on
 
-#if defined(__GNUG__) || defined(__clang__)
+#if CONFIG_COMPILER_IS_GCC_OR_ANY_CLANG
     constexpr string_view prefix = "EnumValue = ";
-#elif defined(_MSC_VER)
+#elif CONFIG_COMPILER_IS_MSVC
     constexpr string_view prefix = "get_enum_value_name_impl<";
 #else
 // cppcheck-suppress [preprocessorErrorDirective]
@@ -235,7 +230,7 @@ template <auto EnumValue, class EnumType>
 [[nodiscard]]
 MISC_GET_TYPENAME_CONSTEVAL string_view get_enum_value_name_impl() {
     const string_view function_name =
-#ifdef MISC_GET_TYPENAME_HAS_SOURCE_LOCATION
+#ifdef MISC_GET_TYPENAME_USE_SOURCE_LOCATION_FUNCTION_NAME
         std::source_location::current().function_name();
 #else
         CONFIG_CURRENT_FUNCTION_NAME;
@@ -268,6 +263,6 @@ MISC_GET_TYPENAME_CONSTEVAL std::string_view get_enum_value_name() {
 }  // namespace misc
 
 #undef MISC_GET_TYPENAME_CONSTEVAL
-#ifdef MISC_GET_TYPENAME_HAS_SOURCE_LOCATION
-#undef MISC_GET_TYPENAME_HAS_SOURCE_LOCATION
+#ifdef MISC_GET_TYPENAME_USE_SOURCE_LOCATION_FUNCTION_NAME
+#undef MISC_GET_TYPENAME_USE_SOURCE_LOCATION_FUNCTION_NAME
 #endif

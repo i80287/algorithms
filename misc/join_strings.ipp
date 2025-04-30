@@ -578,23 +578,14 @@ using determine_char_t = typename determine_char_type<Args...>::type;
 
 // clang-format off
 
-/// @brief Join arguments @a args (converting to string if necessary)
-/// @tparam HintCharType hint char type (default: `char`).
-///         Can be passed if, for instance, join_strings(1, 2, 3.0)
-///         should be std::wstring: join_strings<wchar_t>(1, 2, 3.0)
-/// @tparam Args Types of the arguments to join, e.g. char types, pointers to them,
-///         basic_string, basic_string_view, integral/floating point values
-/// @param args arguments to join
-/// @return joined args as a string of type std::basic_string<CharType>
-///         where CharType is deducted by the @a Args... or HintCharType
-///         if @a Args is pack of numeric types
 template <class HintCharType, class... Args>
 inline auto join_strings(const Args&... args) {
     static_assert(sizeof...(args) >= 1, "Empty input is explicitly prohibited");
 
+    static_assert(misc::is_char_v<HintCharType>, "Hint type should be char, wchar_t, char8_t, char16_t or char32_t");
+
     using DeducedCharType = join_strings_detail::determine_char_t<Args...>;
 
-    static_assert(misc::is_char_v<HintCharType>, "Hint type should be char, wchar_t, char8_t, char16_t or char32_t");
     using CharType = std::conditional_t<misc::is_char_v<DeducedCharType>, DeducedCharType, HintCharType>;
 
     constexpr bool kAllCharTypesAreSame = std::conjunction_v<join_strings_detail::same_char_types<Args, CharType>...>;
