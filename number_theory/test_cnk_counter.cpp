@@ -9,7 +9,7 @@
 #include <utility>
 
 #include "../misc/config_macros.hpp"
-#include "../misc/test_tools.hpp"
+#include "../misc/tests/test_tools.hpp"
 #include "CNKCounter.hpp"
 
 // NOLINTBEGIN(cppcoreguidelines-avoid-magic-numbers)

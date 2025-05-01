@@ -6,7 +6,7 @@
 #include <random>
 
 #include "../misc/config_macros.hpp"
-#include "../misc/test_tools.hpp"
+#include "../misc/tests/test_tools.hpp"
 #include "bitmatrix.hpp"
 
 // clang-format off

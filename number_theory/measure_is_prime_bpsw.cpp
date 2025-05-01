@@ -6,7 +6,7 @@
 #include <vector>
 
 #include "../misc/do_not_optimize_away.h"
-#include "../misc/test_tools.hpp"
+#include "../misc/tests/test_tools.hpp"
 #include "is_prime.hpp"
 
 namespace {

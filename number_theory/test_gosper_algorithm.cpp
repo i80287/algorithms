@@ -7,7 +7,7 @@
 #include <cwchar>
 
 #include "../misc/config_macros.hpp"
-#include "../misc/test_tools.hpp"
+#include "../misc/tests/test_tools.hpp"
 #include "gosper_algorithm.hpp"
 #include "math_functions.hpp"
 
