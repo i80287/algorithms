@@ -4,7 +4,6 @@
 #endif
 
 #include <algorithm>
-#include <array>
 #include <cassert>
 #include <cctype>
 #include <charconv>
@@ -21,7 +20,6 @@
 #include <string_view>
 #include <system_error>
 #include <type_traits>
-#include <unordered_set>
 #include <utility>
 
 #ifdef JOIN_STRINGS_SUPPORTS_CUSTOM_TO_STRING
@@ -42,22 +40,13 @@
 #endif
 
 #include "config_macros.hpp"
+#include "string_traits.hpp"
 
 namespace misc {
 
-namespace join_strings_detail {
-
 using std::size_t;
 
-template <class T>
-struct is_pointer_to_char : std::false_type {};
-
-template <class T>
-struct is_pointer_to_char<T *>
-    : std::conditional_t<is_char_v<std::remove_cv_t<T>>, std::true_type, std::false_type> {};
-
-template <class T>
-inline constexpr bool is_pointer_to_char_v = is_pointer_to_char<T>::value;
+namespace join_strings_detail {
 
 #ifdef JOIN_STRINGS_SUPPORTS_FILESYSTEM_PATH
 
@@ -104,9 +93,32 @@ ATTRIBUTE_ALWAYS_INLINE inline auto ArithmeticToStringImpl(const T arg) {
     }
 }
 
+// utility wrapper to adapt locale-bound facets
+template <class Facet>
+class deletable_facet final : public Facet {
+    using Base = Facet;
+
+public:
+    using Base::Base;
+    using Base::operator=;
+
+    ~deletable_facet() = default;
+};
+
+#if CONFIG_COMPILER_IS_ANY_CLANG
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated"
+#elif CONFIG_COMPILER_IS_GCC
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+#elif CONFIG_COMPILER_IS_MSVC
+#pragma warning(push)
+#pragma warning(disable : 4996)
+#endif
+
 /// @brief See libstdc++ __do_str_codecvt
 template <typename OutCharType, typename InCharType, class CodecvtState = std::mbstate_t>
-[[nodiscard, maybe_unused]]
+[[nodiscard]]
 bool DoStrCodecvt(const std::basic_string_view<InCharType> in_str,
                   std::basic_string<OutCharType> &out_str,
                   const std::codecvt<OutCharType, InCharType, CodecvtState> &cvt,
@@ -129,20 +141,20 @@ bool DoStrCodecvt(const std::basic_string_view<InCharType> in_str,
     }
     const size_t maxlen = static_cast<unsigned>(maxlen_signed);
 
-    using cvt_result = std::codecvt_base::result;
+    using std::codecvt_base;
 
     CodecvtState state{};
-    cvt_result result;
+    codecvt_base::result result;
     do {
         out_str.resize(out_str.size() + static_cast<size_t>(last - next) * maxlen);
         OutCharType *outnext = &out_str.front() + outchars;
         OutCharType *const outlast = &out_str.back() + 1;
         result = cvt.in(state, next, last, next, outnext, outlast, outnext);
         outchars = static_cast<size_t>(outnext - &out_str.front());
-    } while (result == cvt_result::partial && next != last &&
+    } while (result == codecvt_base::partial && next != last &&
              static_cast<std::ptrdiff_t>(out_str.size() - outchars) < maxlen_signed);
 
-    if (result == cvt_result::error) {
+    if (result == codecvt_base::error) {
         count = static_cast<size_t>(next - first);
         return false;
     }
@@ -150,7 +162,7 @@ bool DoStrCodecvt(const std::basic_string_view<InCharType> in_str,
     // The codecvt facet will only return noconv when the types are
     // the same, so avoid instantiating basic_string::assign otherwise
     if constexpr (std::is_same_v<OutCharType, InCharType>) {
-        if (result == cvt_result::noconv) {
+        if (result == codecvt_base::noconv) {
             out_str.assign(first, last);
             count = static_cast<size_t>(last - first);
             return true;
@@ -162,51 +174,22 @@ bool DoStrCodecvt(const std::basic_string_view<InCharType> in_str,
     return true;
 }
 
-// utility wrapper to adapt locale-bound facets for wstring/wbuffer convert
-template <class Facet>
-class deletable_facet final : public Facet {
-public:
-    template <class... Args>
-    deletable_facet(Args &&...args) : Facet(std::forward<Args>(args)...) {}
-
-    ~deletable_facet() override = default;
-};
+ATTRIBUTE_NONNULL_ALL_ARGS
+ATTRIBUTE_COLD
+[[noreturn]]
+inline void ThrowOnFailedConversionToNotUTF8(bool conversion_succeeded,
+                                             size_t converted_bytes_count,
+                                             size_t string_size,
+                                             const char *file,
+                                             uint32_t line,
+                                             const char *function_name);
 
 template <class ToCharType>
-[[nodiscard]] inline std::basic_string<ToCharType> ConvertString(const std::string_view str) {
-    static_assert(!std::is_same_v<ToCharType, char>, "implementation error");
+[[nodiscard]]
+inline std::basic_string<ToCharType> ConvertBytesToNotUTF8(const std::string_view str) {
+    static_assert(!std::is_same_v<ToCharType, char>);
 
-#if CONFIG_HAS_AT_LEAST_CXX_20 && defined(__cpp_char8_t) && __cpp_char8_t >= 201811L
-    if constexpr (std::is_same_v<ToCharType, char8_t>) {
-        const auto is_ascii_nonzero_char = [](const char chr) constexpr noexcept {
-            const uint32_t u32_chr = static_cast<unsigned char>(chr);
-            constexpr uint32_t kMaxAsciiCharCode = 127;
-            return u32_chr - 1 <= kMaxAsciiCharCode - 1;
-        };
-
-        if (std::all_of(str.begin(), str.end(), is_ascii_nonzero_char)) {
-            return std::basic_string<ToCharType>(reinterpret_cast<const ToCharType *>(str.data()),
-                                                 str.size());
-        }
-
-        throw std::runtime_error{misc::join_strings(
-            "Unsupported conversion from multibyte string type to another string type in the ",
-            __FILE__, ':', __LINE__, ':', CONFIG_CURRENT_FUNCTION_NAME)};
-    }
-#endif
-
-#ifdef __clang__
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wdeprecated"
-#elif defined(__GNUG__)
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
-#elif defined(_MSC_VER)
-#pragma warning(push)
-#pragma warning(disable : 4996)
-#endif
-
-    if constexpr (true
+    if constexpr (false
 #if defined(CONFIG_HAS_AT_LEAST_CXX_26) && CONFIG_HAS_AT_LEAST_CXX_26
                   || true
 #endif
@@ -219,24 +202,61 @@ template <class ToCharType>
             return out_str;
         }
 
-        const std::string_view error_str =
-            !conversion_succeeded ? "Could not convert" : "Only partially converted";
-        throw std::runtime_error{misc::join_strings(
-            error_str, " multibyte string type to another string type (total bytes converted: ",
-            converted_bytes_count, " of ", str.size(), ") at ", __FILE__, ':', __LINE__, ':',
-            CONFIG_CURRENT_FUNCTION_NAME)};
+        join_strings_detail::ThrowOnFailedConversionToNotUTF8(
+            converted_bytes_count, str.size(), __FILE__, __LINE__, CONFIG_CURRENT_FUNCTION_NAME);
     } else {
         return std::wstring_convert<std::codecvt_utf8_utf16<ToCharType>, ToCharType>{}.from_bytes(
             str.data(), str.data() + str.size());
     }
+}
 
-#ifdef __clang__
+#if CONFIG_COMPILER_IS_ANY_CLANG
 #pragma clang diagnostic pop
-#elif defined(__GNUG__)
+#elif CONFIG_COMPILER_IS_GCC
 #pragma GCC diagnostic pop
-#elif defined(_MSC_VER)
+#elif CONFIG_COMPILER_IS_MSVC
 #pragma warning(pop)
 #endif
+
+#if CONFIG_HAS_AT_LEAST_CXX_20 && defined(__cpp_char8_t) && __cpp_char8_t >= 201811L
+
+ATTRIBUTE_NONNULL_ALL_ARGS
+ATTRIBUTE_COLD
+[[noreturn]]
+inline void ThrowOnFailedConversionToUTF8(const char *file,
+                                          uint32_t line,
+                                          const char *function_name);
+
+[[nodiscard]] inline std::u8string ConvertBytesToUTF8(const std::string_view bytes) {
+    const auto is_ascii_nonzero_char = [](const char chr) constexpr noexcept {
+        const uint32_t u32_chr = static_cast<unsigned char>(chr);
+        constexpr uint32_t kMinChar = 1;
+        constexpr uint32_t kMaxAsciiCharCode = 127;
+        return u32_chr - kMinChar <= kMaxAsciiCharCode - kMinChar;
+    };
+
+    static_assert(sizeof(char) == sizeof(char8_t));
+    static_assert(alignof(char) == alignof(char8_t));
+    if (likely(std::all_of(bytes.begin(), bytes.end(), is_ascii_nonzero_char))) {
+        return std::u8string(reinterpret_cast<const char8_t *>(bytes.data()), bytes.size());
+    }
+
+    join_strings_detail::ThrowOnFailedConversionToUTF8(__FILE__, __LINE__,
+                                                       CONFIG_CURRENT_FUNCTION_NAME);
+}
+
+#endif
+
+template <class ToCharType>
+[[nodiscard]] inline std::basic_string<ToCharType> ConvertBytesTo(const std::string_view str) {
+#if CONFIG_HAS_AT_LEAST_CXX_20 && defined(__cpp_char8_t) && __cpp_char8_t >= 201811L
+    if constexpr (std::is_same_v<ToCharType, char8_t>) {
+        return ConvertBytesToUTF8(str);
+    } else
+#endif
+    {
+        return ConvertBytesToNotUTF8<ToCharType>(str);
+    }
 }
 
 template <class CharType, class T>
@@ -250,7 +270,7 @@ ATTRIBUTE_ALWAYS_INLINE inline std::basic_string<CharType> ArithmeticToString(co
     if constexpr (std::is_same_v<CharType, char> || std::is_same_v<CharType, wchar_t>) {
         return str;
     } else {
-        return ConvertString<CharType>(str);
+        return ConvertBytesTo<CharType>(str);
     }
 }
 
@@ -264,14 +284,14 @@ ATTRIBUTE_ALWAYS_INLINE inline std::basic_string<CharType> EnumToString(const T 
         if constexpr (std::is_same_v<CharType, char>) {
             return str;
         } else {
-            return ConvertString<CharType>(str);
+            return ConvertBytesTo<CharType>(str);
         }
     } else if constexpr (std::is_error_condition_enum_v<T>) {
         const std::string str = std::make_error_condition(arg).message();
         if constexpr (std::is_same_v<CharType, char>) {
             return str;
         } else {
-            return ConvertString<CharType>(str);
+            return ConvertBytesTo<CharType>(str);
         }
     } else {
         return ArithmeticToString<CharType>(static_cast<std::underlying_type_t<T>>(arg));
@@ -404,7 +424,7 @@ ATTRIBUTE_ALWAYS_INLINE inline std::basic_string<CharType> ToStringOneArg(const 
         if constexpr (std::is_same_v<CharType, char>) {
             return str;
         } else {
-            return ConvertString<CharType>(str);
+            return ConvertBytesTo<CharType>(str);
         }
     } else if constexpr (requires(const T &test_arg) {
                              { test_arg.to_string() } -> std::same_as<std::string>;
@@ -413,7 +433,7 @@ ATTRIBUTE_ALWAYS_INLINE inline std::basic_string<CharType> ToStringOneArg(const 
         if constexpr (std::is_same_v<CharType, char>) {
             return str;
         } else {
-            return ConvertString<CharType>(str);
+            return ConvertBytesTo<CharType>(str);
         }
     } else
 #endif
@@ -427,9 +447,9 @@ ATTRIBUTE_ALWAYS_INLINE inline std::basic_string<CharType> ToStringOneArg(const 
     } else if constexpr (WriteableViaBasicOStringStream<T, CharType>) {
         return ToStringOneArgViaOStringStream<CharType>(arg);
     } else if constexpr (DirectlyConvertableToString<T>) {
-        return ConvertString<CharType>(std::string{arg});
+        return ConvertBytesTo<CharType>(std::string{arg});
     } else if constexpr (WriteableViaOStringStream<T>) {
-        return ConvertString<CharType>(ToStringOneArgViaOStringStream<char>(arg));
+        return ConvertBytesTo<CharType>(ToStringOneArgViaOStringStream<char>(arg));
 #endif
     } else {
         return std::basic_string<CharType>{arg};
@@ -554,7 +574,7 @@ inline std::basic_string<CharType> JoinStringsConvArgsToStrViewImpl(std::basic_s
 template <class CharType, size_t I, class T, class... Args>
 [[nodiscard]]
 ATTRIBUTE_ALWAYS_INLINE
-inline std::enable_if_t<!is_pointer_to_char_v<T>, std::basic_string<CharType>> JoinStringsConvArgsToStrViewImpl(const T& value, const Args&... args);
+inline std::enable_if_t<!is_string_like_v<T>, std::basic_string<CharType>> JoinStringsConvArgsToStrViewImpl(const T& value, const Args&... args);
 
 // clang-format on
 
@@ -569,7 +589,7 @@ inline std::basic_string<CharType> JoinStringsConvArgsToStrViewImpl(
 }
 
 template <class CharType, size_t I, class T, class... Args>
-inline std::enable_if_t<!is_pointer_to_char_v<T>, std::basic_string<CharType>>
+inline std::enable_if_t<!is_string_like_v<T>, std::basic_string<CharType>>
 JoinStringsConvArgsToStrViewImpl(const T &value, const Args &...args) {
     if constexpr (std::is_same_v<T, CharType>) {
         if constexpr (I == 1 + sizeof...(args)) {
@@ -584,114 +604,6 @@ JoinStringsConvArgsToStrViewImpl(const T &value, const Args &...args) {
             args..., std::basic_string_view<CharType>{ToStringOneArg<CharType>(value)});
     }
 }
-
-template <class T, class CharType>
-struct same_char_types
-    : std::conditional_t<misc::is_char_v<T>, std::is_same<T, CharType>, std::true_type> {};
-
-template <class StrCharType, class CharType>
-struct same_char_types<std::basic_string<StrCharType>, CharType>
-    : std::is_same<StrCharType, CharType> {};
-
-template <class StrCharType, class CharType>
-struct same_char_types<std::basic_string_view<StrCharType>, CharType>
-    : std::is_same<StrCharType, CharType> {};
-
-template <class StrCharType, class CharType, size_t N>
-struct same_char_types<const StrCharType[N], CharType> : std::is_same<StrCharType, CharType> {};
-
-template <class StrCharType, class CharType, size_t N>
-struct same_char_types<StrCharType[N], CharType> : std::is_same<StrCharType, CharType> {};
-
-template <class StrCharType, class CharType>
-struct same_char_types<const StrCharType *, CharType>
-    : std::conditional_t<misc::is_char_v<StrCharType>,
-                         std::is_same<StrCharType, CharType>,
-                         std::true_type> {};
-
-template <class StrCharType, class CharType>
-struct same_char_types<StrCharType *, CharType>
-    : std::conditional_t<misc::is_char_v<StrCharType>,
-                         std::is_same<StrCharType, CharType>,
-                         std::true_type> {};
-
-struct dummy_base {};
-
-template <class T>
-struct dummy_base_with_type {
-    using type = T;
-};
-
-template <class... Types>
-struct determine_char_type {
-    using type = void;
-};
-
-template <class... Types>
-struct recursion_selector final {
-    using type = typename determine_char_type<Types...>::type;
-};
-
-template <class CharType>
-struct char_selector final {
-    using type = CharType;
-};
-
-template <class FirstType, class... Types>
-struct determine_char_type<FirstType, Types...> {
-    using selector = std::
-        conditional_t<is_char_v<FirstType>, char_selector<FirstType>, recursion_selector<Types...>>;
-
-    using type = typename selector::type;
-};
-
-template <class CharType, class... Types>
-struct determine_char_type<std::basic_string_view<CharType>, Types...> {
-    using type = CharType;
-};
-
-template <class CharType, class... Types>
-struct determine_char_type<std::basic_string<CharType>, Types...> {
-    using type = CharType;
-};
-
-template <class CharType, size_t N, class... Types>
-struct determine_char_type<const CharType[N], Types...>
-    : std::enable_if_t<is_char_v<CharType>, dummy_base> {
-    using type = CharType;
-};
-
-template <class CharType, size_t N, class... Types>
-struct determine_char_type<CharType[N], Types...>
-    : std::enable_if_t<is_char_v<CharType>, dummy_base> {
-    using type = CharType;
-};
-
-template <class CharType, class... Types>
-struct determine_char_type<const CharType *, Types...>
-    : std::conditional_t<is_char_v<CharType>,
-                         dummy_base_with_type<CharType>,
-                         determine_char_type<Types...>> {
-    using Base = std::conditional_t<is_char_v<CharType>,
-                                    dummy_base_with_type<CharType>,
-                                    determine_char_type<Types...>>;
-    using type = typename Base::type;
-};
-
-template <class CharType, class... Types>
-struct determine_char_type<CharType *, Types...>
-    : std::conditional_t<is_char_v<CharType>,
-                         dummy_base_with_type<CharType>,
-                         determine_char_type<Types...>> {
-    using Base = std::conditional_t<is_char_v<CharType>,
-                                    dummy_base_with_type<CharType>,
-                                    determine_char_type<Types...>>;
-    using type = typename Base::type;
-};
-
-template <class... Args>
-using determine_char_t = typename determine_char_type<Args...>::type;
-
 }  // namespace join_strings_detail
 
 // clang-format off
@@ -702,11 +614,11 @@ inline auto join_strings(const Args&... args) {
 
     static_assert(misc::is_char_v<HintCharType>, "Hint type should be char, wchar_t, char8_t, char16_t or char32_t");
 
-    using DeducedCharType = join_strings_detail::determine_char_t<Args...>;
+    using DeducedCharType = misc::string_detail::determine_char_t<Args...>;
 
     using CharType = std::conditional_t<misc::is_char_v<DeducedCharType>, DeducedCharType, HintCharType>;
 
-    constexpr bool kAllCharTypesAreSame = std::conjunction_v<join_strings_detail::same_char_types<Args, CharType>...>;
+    constexpr bool kAllCharTypesAreSame = std::conjunction_v<misc::string_detail::same_char_types<Args, CharType>...>;
     static_assert(
         kAllCharTypesAreSame,
         "Hint:\n"
@@ -722,6 +634,39 @@ inline auto join_strings(const Args&... args) {
 }
 
 // clang-format on
+
+namespace join_strings_detail {
+
+inline void ThrowOnFailedConversionToNotUTF8(const bool conversion_succeeded,
+                                             const size_t converted_bytes_count,
+                                             const size_t string_size,
+                                             const char *const file,
+                                             const uint32_t line,
+                                             const char *const function_name) {
+    using namespace std::string_view_literals;
+
+    const std::string_view error_str =
+        !conversion_succeeded ? "Could not convert"sv : "Only partially converted"sv;
+    throw std::runtime_error{misc::join_strings(
+        error_str, " multibyte string type to another string type (total bytes converted: "sv,
+        converted_bytes_count, " of "sv, string_size, ") at "sv, file, ':', line, ':',
+        function_name)};
+}
+
+#if CONFIG_HAS_AT_LEAST_CXX_20 && defined(__cpp_char8_t) && __cpp_char8_t >= 201811L
+
+inline void ThrowOnFailedConversionToUTF8(const char *const file,
+                                          const uint32_t line,
+                                          const char *const function_name) {
+    throw std::runtime_error{
+        misc::join_strings("Unsupported conversion from multibyte string type to utf-8 string type "
+                           "(only ascii to utf-8 is supported) in the ",
+                           file, ':', line, ':', function_name)};
+}
+
+#endif
+
+}  // namespace join_strings_detail
 
 #ifdef JOIN_STRINGS_SUPPORTS_JOIN_STRINGS_COLLECTION
 
@@ -953,375 +898,5 @@ auto join_strings_collection(const Container &strings) {
 }
 
 #endif
-
-namespace detail {
-
-[[nodiscard]] constexpr bool IsWhitespaceUTF32(const char32_t c) noexcept {
-    switch (c) {
-        case U'\u0009':
-        case U'\u000A':
-        case U'\u000B':
-        case U'\u000C':
-        case U'\u000D':
-        case U'\u0020':
-        case U'\u0085':
-        case U'\u00A0':
-        case U'\u1680':
-        case U'\u2000':
-        case U'\u2001':
-        case U'\u2002':
-        case U'\u2003':
-        case U'\u2004':
-        case U'\u2005':
-        case U'\u2006':
-        case U'\u2007':
-        case U'\u2008':
-        case U'\u2009':
-        case U'\u200A':
-        case U'\u2028':
-        case U'\u2029':
-        case U'\u202F':
-        case U'\u205F':
-        case U'\u3000': {
-            return true;
-        }
-        default: {
-            return false;
-        }
-    }
-}
-
-}  // namespace detail
-
-template <class CharType>
-inline bool is_whitespace(const CharType c) noexcept {
-    if constexpr (std::is_same_v<CharType, char>) {
-        return static_cast<bool>(std::isspace(static_cast<unsigned char>(c)));
-    } else if constexpr (std::is_same_v<CharType, wchar_t>) {
-        return static_cast<bool>(std::iswspace(static_cast<wint_t>(c)));
-    } else {
-        static_assert(
-            std::is_same_v<CharType, char16_t> || std::is_same_v<CharType, char32_t>,
-            "char types other than char, wchar_t, char16_t and char32_t are not supported");
-        return detail::IsWhitespaceUTF32(static_cast<char32_t>(c));
-    }
-}
-
-template <class CharType>
-inline bool is_alpha(const CharType c) noexcept {
-    if constexpr (std::is_same_v<CharType, char>) {
-        return static_cast<bool>(std::isalpha(static_cast<unsigned char>(c)));
-    } else {
-        static_assert(std::is_same_v<CharType, wchar_t>,
-                      "char types other than char and wchar_t are not supported");
-        return static_cast<bool>(std::iswalpha(static_cast<wint_t>(c)));
-    }
-}
-
-template <class CharType>
-inline bool is_alpha_digit(const CharType c) noexcept {
-    if constexpr (std::is_same_v<CharType, char>) {
-        return static_cast<bool>(std::isalnum(static_cast<unsigned char>(c)));
-    } else {
-        static_assert(std::is_same_v<CharType, wchar_t>,
-                      "char types other than char and wchar_t are not supported");
-        return static_cast<bool>(std::iswalnum(static_cast<wint_t>(c)));
-    }
-}
-
-template <class CharType>
-inline bool is_digit(const CharType c) noexcept {
-    if constexpr (std::is_same_v<CharType, char>) {
-        return static_cast<bool>(std::isdigit(static_cast<unsigned char>(c)));
-    } else {
-        static_assert(std::is_same_v<CharType, wchar_t>,
-                      "char types other than char and wchar_t are not supported");
-        return static_cast<bool>(std::iswdigit(static_cast<wint_t>(c)));
-    }
-}
-
-template <class CharType>
-inline bool is_hex_digit(const CharType c) noexcept {
-    if constexpr (std::is_same_v<CharType, char>) {
-        return static_cast<bool>(std::isxdigit(static_cast<unsigned char>(c)));
-    } else {
-        static_assert(std::is_same_v<CharType, wchar_t>,
-                      "char types other than char and wchar_t are not supported");
-        return static_cast<bool>(std::iswxdigit(static_cast<wint_t>(c)));
-    }
-}
-
-namespace detail {
-
-template <class CharType>
-[[nodiscard]] CharType to_lower(const CharType c) noexcept {
-    if constexpr (std::is_same_v<CharType, char>) {
-        return static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
-    } else {
-        static_assert(std::is_same_v<CharType, wchar_t>,
-                      "char types other than char and wchar_t are not supported");
-        return static_cast<CharType>(std::towlower(static_cast<wint_t>(c)));
-    }
-}
-
-template <class CharType>
-[[nodiscard]] CharType to_upper(const CharType c) noexcept {
-    if constexpr (std::is_same_v<CharType, char>) {
-        return static_cast<char>(std::toupper(static_cast<unsigned char>(c)));
-    } else {
-        static_assert(std::is_same_v<CharType, wchar_t>,
-                      "char types other than char and wchar_t are not supported");
-        return static_cast<CharType>(std::towupper(static_cast<wint_t>(c)));
-    }
-}
-
-// clang-format off
-template <class CharType, class Predicate>
-[[nodiscard]]
-ATTRIBUTE_ALWAYS_INLINE
-inline std::basic_string_view<CharType> trim_if(std::basic_string_view<CharType> str, Predicate pred) noexcept(std::is_nothrow_invocable_v<Predicate, CharType>) {
-    // clang-format on
-    static_assert(std::is_invocable_r_v<bool, Predicate, CharType>,
-                  "predicate should accept CharType and return bool");
-
-#if CONFIG_COMPILER_SUPPORTS_CONCEPTS
-    static_assert(std::predicate<Predicate, CharType>);
-#endif
-
-    while (!str.empty() && pred(str.front())) {
-        str.remove_prefix(1);
-    }
-    while (!str.empty() && pred(str.back())) {
-        str.remove_suffix(1);
-    }
-
-    return str;
-}
-
-// clang-format off
-template <class CharType>
-[[nodiscard]]
-constexpr std::basic_string_view<CharType> TrimChar(const std::basic_string_view<CharType> str, const CharType trim_char) noexcept {
-    // clang-format on
-    return detail::trim_if(
-        str, [trim_char](const CharType c) constexpr noexcept -> bool { return c == trim_char; });
-}
-
-// clang-format off
-template <class CharType>
-[[nodiscard]]
-std::basic_string_view<CharType> TrimCharsImpl(const std::basic_string_view<CharType> str,
-                                               const std::basic_string_view<CharType> trim_chars) noexcept {
-    // clang-format on
-    using UType = std::make_unsigned_t<CharType>;
-    static constexpr size_t kMaxUTypeValue = static_cast<size_t>(std::numeric_limits<UType>::max());
-    static constexpr bool kUseArrayMap = kMaxUTypeValue <= std::numeric_limits<uint16_t>::max();
-
-    using MapType = std::conditional_t<kUseArrayMap, std::array<bool, kMaxUTypeValue + 1>,
-                                       std::unordered_set<UType>>;
-    MapType trim_chars_map{};
-    for (const CharType c : trim_chars) {
-        const auto key = static_cast<UType>(c);
-        if constexpr (kUseArrayMap) {
-            trim_chars_map[key] = true;
-        } else {
-            trim_chars_map.insert(key);
-        }
-    }
-
-    return detail::trim_if(
-        str, [&trim_chars_map = std::as_const(trim_chars_map)](const CharType c) noexcept -> bool {
-            const auto key = static_cast<UType>(c);
-            if constexpr (kUseArrayMap) {
-                return trim_chars_map[key];
-            } else {
-                return trim_chars_map.find(key) != trim_chars_map.end();
-            }
-        });
-}
-
-// clang-format off
-template <class CharType>
-[[nodiscard]]
-ATTRIBUTE_ALWAYS_INLINE
-inline std::basic_string_view<CharType> TrimChars(const std::basic_string_view<CharType> str,
-                                                  const std::basic_string_view<CharType> trim_chars) noexcept {
-    // clang-format on
-    const size_t trim_size = trim_chars.size();
-    if (config::is_constant_evaluated() || config::is_gcc_constant_p(trim_size)) {
-        if (trim_size == 0) {
-            return str;
-        }
-
-        if (trim_size == 1) {
-            return detail::TrimChar<CharType>(str, trim_chars.front());
-        }
-    }
-
-    return detail::TrimCharsImpl<CharType>(str, trim_chars);
-}
-
-template <class T>
-struct str_char {
-    using type = void;
-};
-
-template <class T>
-struct str_char<const T *> {
-    using type = T;
-};
-
-template <class T>
-struct str_char<T *> {
-    using type = T;
-};
-
-template <class T>
-struct str_char<const T[]> {
-    using type = T;
-};
-
-template <class T>
-struct str_char<T[]> {
-    using type = T;
-};
-
-template <class T, size_t N>
-struct str_char<const T[N]> {
-    using type = T;
-};
-
-template <class T, size_t N>
-struct str_char<T[N]> {
-    using type = T;
-};
-
-template <class T>
-struct str_char<std::basic_string<T>> {
-    using type = T;
-};
-
-template <class T>
-struct str_char<std::basic_string_view<T>> {
-    using type = T;
-};
-
-template <class T>
-using str_char_t = typename str_char<std::remove_cv_t<std::remove_reference_t<T>>>::type;
-
-}  // namespace detail
-
-template <class StrType, class TrimStrType>
-inline auto trim(const StrType &str, const TrimStrType &trim_chars) noexcept {
-    if constexpr (std::is_base_of_v<trim_tag, TrimStrType>) {
-        using CharType = join_strings_detail::determine_char_t<StrType>;
-        static_assert(misc::is_char_v<CharType>, "string is expected in the trim with tag");
-
-        const std::basic_string_view<CharType> str_sv{str};
-
-        if constexpr (std::is_same_v<TrimStrType, whitespace_tag>) {
-            return detail::trim_if(str_sv, [](const CharType c) constexpr noexcept {
-                return misc::is_whitespace<CharType>(c);
-            });
-        } else if constexpr (std::is_same_v<TrimStrType, alpha_tag>) {
-            return detail::trim_if(str_sv, misc::is_alpha<CharType>);
-        } else if constexpr (std::is_same_v<TrimStrType, digit_tag>) {
-            return detail::trim_if(str_sv, misc::is_digit<CharType>);
-        } else if constexpr (std::is_same_v<TrimStrType, alpha_digit_tag>) {
-            return detail::trim_if(str_sv, misc::is_alpha_digit<CharType>);
-        } else if constexpr (std::is_same_v<TrimStrType, hex_digit_tag>) {
-            return detail::trim_if(str_sv, misc::is_hex_digit<CharType>);
-        } else {
-            static_assert([]() constexpr { return false; }, "implementation error");
-            return str;
-        }
-    } else {
-        using CharType = join_strings_detail::determine_char_t<StrType, TrimStrType>;
-        static_assert(misc::is_char_v<CharType>,
-                      "strings with the same char type are expected in the trim");
-
-        return detail::TrimChars(std::basic_string_view<CharType>{str},
-                                 std::basic_string_view<CharType>{trim_chars});
-    }
-}
-
-template <class CharType>
-inline bool is_whitespace(const std::basic_string_view<CharType> str) noexcept {
-    for (const CharType c : str) {
-        if (!misc::is_whitespace(c)) {
-            return false;
-        }
-    }
-
-    return true;
-}
-
-template <class CharType>
-inline bool is_whitespace(const std::basic_string<CharType> &str) noexcept {
-    return misc::is_whitespace(std::basic_string_view<CharType>{str});
-}
-
-template <class CharType>
-inline bool is_whitespace(const CharType *const str) noexcept {
-    return misc::is_whitespace(std::basic_string_view<CharType>{str});
-}
-
-template <class CharType>
-inline void to_lower_inplace(CharType *const str, const size_t n) noexcept {
-    for (size_t i = 0; i < n; i++) {
-        str[i] = detail::to_lower(str[i]);
-    }
-}
-
-template <class CharType>
-inline void to_lower_inplace(std::basic_string<CharType> &str) noexcept {
-    misc::to_lower_inplace(str.data(), str.size());
-}
-
-template <class CharType>
-inline std::basic_string<CharType> to_lower(const std::basic_string_view<CharType> str) {
-    std::basic_string<CharType> ret{str};
-    misc::to_lower_inplace(ret);
-    return ret;
-}
-
-template <class CharType>
-inline std::basic_string<CharType> to_lower(const std::basic_string<CharType> &str) {
-    return misc::to_lower(std::basic_string_view<CharType>{str});
-}
-
-template <class CharType>
-inline std::basic_string<CharType> to_lower(const CharType *const str) {
-    return misc::to_lower(std::basic_string_view<CharType>{str});
-}
-
-template <class CharType>
-inline void to_upper_inplace(CharType *const str, const size_t n) noexcept {
-    for (size_t i = 0; i < n; i++) {
-        str[i] = detail::to_upper(str[i]);
-    }
-}
-
-template <class CharType>
-inline void to_upper_inplace(std::basic_string<CharType> &str) noexcept {
-    misc::to_upper_inplace(str.data(), str.size());
-}
-
-template <class CharType>
-inline std::basic_string<CharType> to_upper(const std::basic_string_view<CharType> str) {
-    std::basic_string<CharType> ret{str};
-    misc::to_upper_inplace(ret);
-    return ret;
-}
-
-template <class CharType>
-inline std::basic_string<CharType> to_upper(const std::basic_string<CharType> &str) {
-    return misc::to_upper(std::basic_string_view<CharType>{str});
-}
-
-template <class CharType>
-inline std::basic_string<CharType> to_upper(const CharType *const str) {
-    return misc::to_upper(std::basic_string_view<CharType>{str});
-}
 
 }  // namespace misc
