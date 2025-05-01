@@ -224,7 +224,7 @@ list(APPEND TestCompileOnly False)
 
 list(APPEND TestFilenames "test_join_strings.cpp")
 list(APPEND TestDirectories "misc")
-list(APPEND TestLangVersions "17 20 23")
+list(APPEND TestLangVersions "17 20 23 26")
 list(APPEND TestDependencies "")
 list(APPEND TestOptionalDependencies "")
 list(APPEND TestIsCProject False)
