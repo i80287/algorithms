@@ -66,21 +66,23 @@ public:
         return sets_size_;
     }
 
-    // O(log*(n)) = O(a(n))
+    // O(log*(n)) ~= O(a(n)) (Iterated logarithm, Ackermann function respectively)
     [[nodiscard]]
     CONSTEXPR_VECTOR size_type get_size_of_node_set(const size_type node_index) noexcept {
         assert(node_index < size());
         return find_root(node_index)->set_size_;
     }
 
+    // O(log*(n))
     [[nodiscard]]
     CONSTEXPR_VECTOR set_handle get_handle_of_node_set(const size_type node_index) noexcept {
         assert(node_index < size());
         return get_handle_of_node_set(nodes_[node_index]);
     }
 
+    // O(n log*(n))
     template <class Map = std::unordered_map<set_handle, std::vector<size_type>>>
-    [[nodiscard]] Map group_nodes_by_set() const {
+    [[nodiscard]] Map group_nodes_by_set() {
         Map set_handle_to_nodes_indices;
         size_type node_index = 0;
         for (node_t& node : nodes_) {
@@ -248,14 +250,14 @@ public:
         lhs.swap(rhs);
     }
 
-    // O(log*(n)) = O(a(n))
+    // O(log*(n))
     [[nodiscard]] CONSTEXPR_VECTOR bool equal(const size_type node_x_index,
                                               const size_type node_y_index) noexcept {
         assert(node_x_index < size() && node_y_index < size());
         return base::are_nodes_equal(node_x_index, node_y_index);
     }
 
-    // O(log*(n)) = O(a(n))
+    // O(log*(n))
     CONSTEXPR_VECTOR void unite(const size_type node_x_index,
                                 const size_type node_y_index) noexcept {
         assert(node_x_index < size() && node_y_index < size());

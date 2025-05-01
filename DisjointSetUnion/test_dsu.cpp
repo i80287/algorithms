@@ -70,7 +70,7 @@ private:
 };
 
 template <class DsuType>
-static void test_manual() {
+void test_manual() {
     constexpr size_t N = 40;
     constexpr bool is_weighted = std::is_same_v<DsuType, weighted_dsu_t>;
 
@@ -91,6 +91,16 @@ static void test_manual() {
         for (size_t j = 0; j <= 3; j++) {
             assert(tree.equal(i, j));
         }
+    }
+
+    assert(tree.get_handle_of_node_set(0) == tree.get_handle_of_node_set(1));
+    assert(tree.get_handle_of_node_set(1) == tree.get_handle_of_node_set(2));
+    assert(tree.get_handle_of_node_set(2) == tree.get_handle_of_node_set(3));
+
+    {
+        const std::unordered_map grouped_nodes = tree.group_nodes_by_set();
+        const auto& node_indicies = grouped_nodes.at(tree.get_handle_of_node_set(0));
+        assert((node_indicies == std::vector<std::size_t>{0, 1, 2, 3}));
     }
 
     if constexpr (is_weighted) {
@@ -203,6 +213,20 @@ static void test_manual() {
         }
     }
 
+    assert(tree.get_handle_of_node_set(34) == tree.get_handle_of_node_set(35));
+    assert(tree.get_handle_of_node_set(35) == tree.get_handle_of_node_set(36));
+    assert(tree.get_handle_of_node_set(36) == tree.get_handle_of_node_set(37));
+    assert(tree.get_handle_of_node_set(37) == tree.get_handle_of_node_set(38));
+    assert(tree.get_handle_of_node_set(38) == tree.get_handle_of_node_set(39));
+    {
+        const std::unordered_map grouped_nodes = tree.group_nodes_by_set();
+        assert((grouped_nodes.at(tree.get_handle_of_node_set(0)) ==
+                std::vector<std::size_t>{0, 1, 2, 3}));
+
+        assert((grouped_nodes.at(tree.get_handle_of_node_set(34)) ==
+                std::vector<std::size_t>{34, 35, 36, 37, 38, 39}));
+    }
+
     for (size_t i = 1; i < N; i++) {
         tree.unite(i - 1, i);
     }
@@ -210,10 +234,21 @@ static void test_manual() {
     for (size_t i = 0; i < N; i++) {
         for (size_t j = 0; j < N; j++) {
             assert(tree.equal(i, j));
+            assert(tree.get_handle_of_node_set(i) == tree.get_handle_of_node_set(j));
         }
 
         if constexpr (is_weighted) {
             assert(tree.get_weight_in_set(i) == 10 + 9);
+        }
+    }
+
+    {
+        const std::unordered_map grouped_nodes = tree.group_nodes_by_set();
+        assert(grouped_nodes.size() == 1);
+        const auto& indicies = grouped_nodes.at(tree.get_handle_of_node_set(0));
+        assert(indicies.size() == N);
+        for (size_t i = 0; i < N; i++) {
+            assert(indicies[i] == i);
         }
     }
 
@@ -248,7 +283,7 @@ static void test_manual() {
 }
 
 template <class DsuType>
-static void test_value_semantic() {
+void test_value_semantic() {
     DsuType d1 = DsuType::with_nodes_count(4);
 
     d1.unite(0, 1);
@@ -328,7 +363,7 @@ static void test_value_semantic() {
 }
 
 template <class DsuType>
-static void test_random_with_check() {
+void test_random_with_check() {
     constexpr size_t N = 1500;
     DsuType dsu = DsuType::with_nodes_count(N);
     assert(dsu.size() == N);
@@ -336,17 +371,21 @@ static void test_random_with_check() {
     std::mt19937 rnd;
 
     const auto compare = [&]() constexpr noexcept -> bool {
-        if (checker.get_sets_count() != dsu.get_sets_count()) {
+        if (unlikely(checker.get_sets_count() != dsu.get_sets_count())) {
+            return false;
+        }
+
+        if (unlikely(checker.get_sets_count() != dsu.group_nodes_by_set().size())) {
             return false;
         }
 
         for (size_t i = 0; i < N; i++) {
             const auto s = checker.get_size_of_node_set(i);
-            if (s != dsu.get_size_of_node_set(i)) {
+            if (unlikely(s != dsu.get_size_of_node_set(i))) {
                 return false;
             }
             for (size_t j = 0; j < N; j++) {
-                if (checker.equal(i, j) != dsu.equal(i, j)) {
+                if (unlikely(checker.equal(i, j) != dsu.equal(i, j))) {
                     return false;
                 }
             }
@@ -369,8 +408,8 @@ void test_dsu() {
     constexpr std::string_view tname = misc::get_typename<DsuType>();
     std::cout << "Started testing type \"" << tname << "\"\n";
 
-    // test_manual<DsuType>();
-    // test_value_semantic<DsuType>();
+    test_manual<DsuType>();
+    test_value_semantic<DsuType>();
     test_random_with_check<DsuType>();
 }
 }  // namespace
