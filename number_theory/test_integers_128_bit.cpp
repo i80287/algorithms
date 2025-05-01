@@ -5,7 +5,7 @@
 #include <type_traits>
 
 #include "../misc/config_macros.hpp"
-#include "../misc/test_tools.hpp"
+#include "../misc/tests/test_tools.hpp"
 #include "integers_128_bit.hpp"
 
 namespace {

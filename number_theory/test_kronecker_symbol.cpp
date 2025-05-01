@@ -8,7 +8,7 @@
 #include <numeric>
 
 #include "../misc/config_macros.hpp"
-#include "../misc/test_tools.hpp"
+#include "../misc/tests/test_tools.hpp"
 #include "fibonacci_num.hpp"
 #include "kronecker_symbol.hpp"
 #include "math_functions.hpp"
