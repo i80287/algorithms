@@ -3,7 +3,9 @@
 #include <cassert>
 #include <cstddef>
 #include <cstdint>
+#include <functional>
 #include <type_traits>
+#include <unordered_map>
 #include <utility>
 #include <vector>
 
@@ -53,43 +55,59 @@ public:
     using value_type = typename container::value_type;
     using pointer = typename container::pointer;
     using const_pointer = typename container::const_pointer;
-    using reference = typename container::reference;
-    using const_reference = typename container::const_reference;
     using size_type = typename container::size_type;
-    using difference_type = typename container::difference_type;
-    using allocator_type = typename container::allocator_type;
+
+    using set_handle = size_type;
 
     [[nodiscard]] constexpr size_type size() const noexcept {
         return nodes_.size();
     }
-    [[nodiscard]] constexpr size_type sets_size() const noexcept {
+    [[nodiscard]] constexpr size_type get_sets_count() const noexcept {
         return sets_size_;
     }
-    // O(1)
-    [[nodiscard]] CONSTEXPR_VECTOR size_type set_size_of(size_type node_index) const noexcept {
-        assert(node_index < size());
-        const node_t& node = nodes_[node_index];
-        const_pointer parent_ptr = node.parent_;
-        return parent_ptr != nullptr ? parent_ptr->set_size_ : node.set_size_;
-    }
+
     // O(log*(n)) = O(a(n))
-    [[nodiscard]] CONSTEXPR_VECTOR size_type set_size_of(size_type node_index) noexcept {
+    [[nodiscard]]
+    CONSTEXPR_VECTOR size_type get_size_of_node_set(const size_type node_index) noexcept {
         assert(node_index < size());
         return find_root(node_index)->set_size_;
     }
 
+    [[nodiscard]]
+    CONSTEXPR_VECTOR set_handle get_handle_of_node_set(const size_type node_index) noexcept {
+        assert(node_index < size());
+        return get_handle_of_node_set(nodes_[node_index]);
+    }
+
+    template <class Map = std::unordered_map<set_handle, std::vector<size_type>>>
+    [[nodiscard]] Map group_nodes_by_set() const {
+        Map set_handle_to_nodes_indices;
+        size_type node_index = 0;
+        for (node_t& node : nodes_) {
+            set_handle_to_nodes_indices[get_handle_of_node_set(node)].push_back(node_index);
+            node_index++;
+        }
+
+        assert(set_handle_to_nodes_indices.size() == get_sets_count());
+        return set_handle_to_nodes_indices;
+    }
+
 protected:
-    CONSTEXPR_VECTOR dsu_base(size_type nodes_count)
+    CONSTEXPR_VECTOR dsu_base(const size_type nodes_count)
         : nodes_(nodes_count), sets_size_(nodes_count) {}
+
     CONSTEXPR_VECTOR dsu_base(const dsu_base& other) = default;
     CONSTEXPR_VECTOR dsu_base& operator=(const dsu_base& other) = default;
+
     CONSTEXPR_VECTOR dsu_base(dsu_base&& other) noexcept
         : nodes_(std::move(other.nodes_)), sets_size_(std::exchange(other.sets_size_, 0)) {}
-    CONSTEXPR_VECTOR dsu_base& operator=(dsu_base&& other) noexcept {
+    CONSTEXPR_VECTOR dsu_base& operator=(dsu_base&& other) noexcept ATTRIBUTE_LIFETIME_BOUND {
         swap(other);
         return *this;
     }
+
     CONSTEXPR_VECTOR ~dsu_base() = default;
+
     CONSTEXPR_VECTOR void swap(dsu_base& other) noexcept {
         nodes_.swap(other.nodes_);
         std::swap(sets_size_, other.sets_size_);
@@ -100,40 +118,87 @@ protected:
     [[nodiscard]] CONSTEXPR_VECTOR pointer data() noexcept ATTRIBUTE_LIFETIME_BOUND {
         return nodes_.data();
     }
-    CONSTEXPR_VECTOR void reset() noexcept(std::is_nothrow_default_constructible_v<value_type> &&
-                                           std::is_nothrow_copy_assignable_v<value_type> &&
-                                           std::is_nothrow_destructible_v<value_type>) {
+
+    ATTRIBUTE_REINITIALIZES
+    CONSTEXPR_VECTOR
+    void reset() noexcept(std::is_nothrow_default_constructible_v<value_type> &&
+                          std::is_nothrow_copy_assignable_v<value_type> &&
+                          std::is_nothrow_destructible_v<value_type>) {
         std::fill_n(data(), size(), value_type{});
         sets_size_ = size();
     }
-    CONSTEXPR_VECTOR void clear() noexcept {
-        nodes_.clear();
-    }
 
-    [[nodiscard]] CONSTEXPR_VECTOR bool equal(size_type lhs_node_index,
-                                              size_type rhs_node_index) noexcept {
+    [[nodiscard]] CONSTEXPR_VECTOR bool are_nodes_equal(const size_type lhs_node_index,
+                                                        const size_type rhs_node_index) noexcept {
         return find_root(lhs_node_index) == find_root(rhs_node_index);
     }
-    [[nodiscard]] CONSTEXPR_VECTOR pointer find_root(size_type node_index) noexcept {
-        return find_root(std::addressof(nodes_[node_index]));
+
+    [[nodiscard]] CONSTEXPR_VECTOR pointer find_root(const size_type node_index) noexcept {
+        assert(node_index < size());
+        return find_root(nodes_[node_index]);
     }
-    [[nodiscard]] static constexpr pointer find_root(pointer node) noexcept {
-        pointer current_node = node;
+
+    constexpr void decrease_sets_count_on_unite() noexcept {
+        assert(sets_size_ > 0);
+        --sets_size_;
+    }
+
+private:
+    [[nodiscard]]
+    CONSTEXPR_VECTOR set_handle get_handle_of_node_set(node_t& node) noexcept {
+        return get_set_handle_from_parent_node(find_root(node));
+    }
+
+    [[nodiscard]] CONSTEXPR_VECTOR pointer find_root(node_t& node) noexcept {
+        return find_root_and_update_children(std::addressof(node));
+    }
+
+    template <class NodeType>
+    ATTRIBUTE_ACCESS(read_only, 1)
+    [[nodiscard]] static constexpr NodeType* only_find_root(NodeType* const node) noexcept {
+        NodeType* current_node = node;
         assert(current_node != nullptr);
-        while (current_node->parent_ != nullptr) {
-            assert(current_node != current_node->parent_);
-            current_node = current_node->parent_;
-            assert(current_node != nullptr);
+        while (!is_parent_node_of_set(*current_node)) {
+            NodeType* const current_node_parent = current_node->parent_;
+            assert(current_node != current_node_parent);
+            assert(current_node_parent != nullptr);
+            assert(current_node != current_node_parent->parent_);
+            current_node = current_node_parent;
         }
 
+        assert(current_node != nullptr);
+        return current_node;
+    }
+
+    ATTRIBUTE_ACCESS(read_write, 1)
+    [[nodiscard]] static constexpr pointer find_root_and_update_children(pointer node) noexcept {
+        pointer const node_root = only_find_root(node);
+        assert(is_parent_node_of_set(*node_root));
+
         // Now 'current_node' points to the root
-        while (node != current_node) {
-            pointer next = node->parent_;
-            node->parent_ = current_node;
+        while (node != node_root) {
+            pointer const next = node->parent_;
+            node->parent_ = node_root;
             node = next;
         }
 
-        return current_node;
+        return node_root;
+    }
+
+    ATTRIBUTE_ACCESS(read_only, 1)
+    [[nodiscard]]
+    static constexpr bool is_parent_node_of_set(const node_t& node) noexcept {
+        return node.parent_ == nullptr;
+    }
+
+    // clang-format off
+    [[nodiscard]]
+    CONSTEXPR_VECTOR set_handle get_set_handle_from_parent_node(const const_pointer parent_node_ptr) const noexcept {
+        // clang-format on
+        assert(std::less_equal{}(nodes_.data(), parent_node_ptr));
+        assert(std::less{}(parent_node_ptr, nodes_.data() + nodes_.size()));
+        assert(is_parent_node_of_set(*parent_node_ptr));
+        return parent_node_ptr - nodes_.data();
     }
 
     container nodes_;
@@ -150,9 +215,10 @@ public:
     dsu_t() = delete;
 
     [[nodiscard]]
-    static CONSTEXPR_VECTOR dsu_t with_nodes_count(size_type nodes_count) {
+    static CONSTEXPR_VECTOR dsu_t with_nodes_count(const size_type nodes_count) {
         return dsu_t{nodes_count};
     }
+
     CONSTEXPR_VECTOR dsu_t(const dsu_t& other) : base(other) {
         node_t* const this_first_node = data();
         const node_t* const other_first_node = other.data();
@@ -161,14 +227,14 @@ public:
             const node_t* other_i_node_parent = other_first_node[i].parent_;
             this_first_node[i].parent_ =
                 other_i_node_parent != nullptr
-                    ? this_first_node +
-                          static_cast<difference_type>(other_i_node_parent - other_first_node)
+                    ? this_first_node + (other_i_node_parent - other_first_node)
                     : nullptr;
         }
     }
     CONSTEXPR_VECTOR dsu_t& operator=(const dsu_t& other) ATTRIBUTE_LIFETIME_BOUND {
         return *this = dsu_t(other);
     }
+
     CONSTEXPR_VECTOR dsu_t(dsu_t&& other) noexcept : base(std::move(other)) {}
     CONSTEXPR_VECTOR dsu_t& operator=(dsu_t&& other) noexcept ATTRIBUTE_LIFETIME_BOUND {
         base::operator=(std::move(other));
@@ -183,13 +249,15 @@ public:
     }
 
     // O(log*(n)) = O(a(n))
-    [[nodiscard]] CONSTEXPR_VECTOR bool equal(size_type node_x_index,
-                                              size_type node_y_index) noexcept {
+    [[nodiscard]] CONSTEXPR_VECTOR bool equal(const size_type node_x_index,
+                                              const size_type node_y_index) noexcept {
         assert(node_x_index < size() && node_y_index < size());
-        return base::equal(node_x_index, node_y_index);
+        return base::are_nodes_equal(node_x_index, node_y_index);
     }
+
     // O(log*(n)) = O(a(n))
-    CONSTEXPR_VECTOR void unite(size_type node_x_index, size_type node_y_index) noexcept {
+    CONSTEXPR_VECTOR void unite(const size_type node_x_index,
+                                const size_type node_y_index) noexcept {
         assert(node_x_index < size() && node_y_index < size());
         node_t* node_x_root_ptr = base::find_root(node_x_index);
         node_t* node_y_root_ptr = base::find_root(node_y_index);
@@ -198,7 +266,7 @@ public:
             // root_node->parent_ == nullptr
             return;
         }
-        sets_size_--;
+        base::decrease_sets_count_on_unite();
         size_type node_x_root_rank = node_x_root_ptr->rank_;
         size_type node_y_root_rank = node_y_root_ptr->rank_;
         if (node_x_root_rank > node_y_root_rank) {
@@ -214,7 +282,7 @@ public:
     }
 
 private:
-    explicit CONSTEXPR_VECTOR dsu_t(size_type nodes_count) : base(nodes_count) {}
+    explicit CONSTEXPR_VECTOR dsu_t(const size_type nodes_count) : base(nodes_count) {}
 };
 
 /// @brief See also class dsu_t and
@@ -227,7 +295,7 @@ public:
 
     // O(n)
     [[nodiscard]]
-    static CONSTEXPR_VECTOR weighted_dsu_t with_nodes_count(size_type nodes_count) {
+    static CONSTEXPR_VECTOR weighted_dsu_t with_nodes_count(const size_type nodes_count) {
         return weighted_dsu_t{nodes_count};
     }
 
@@ -247,8 +315,7 @@ public:
             const node_t* other_i_node_parent = other_first_node[i].parent_;
             this_first_node[i].parent_ =
                 other_i_node_parent != nullptr
-                    ? this_first_node +
-                          static_cast<difference_type>(other_i_node_parent - other_first_node)
+                    ? this_first_node + (other_i_node_parent - other_first_node)
                     : nullptr;
         }
     }
@@ -257,8 +324,10 @@ public:
         ATTRIBUTE_LIFETIME_BOUND {
         return *this = weighted_dsu_t(other);
     }
+
     CONSTEXPR_VECTOR weighted_dsu_t(weighted_dsu_t&& other) noexcept : base(std::move(other)) {}
-    CONSTEXPR_VECTOR weighted_dsu_t& operator=(weighted_dsu_t&& other) noexcept {
+    CONSTEXPR_VECTOR weighted_dsu_t& operator=(weighted_dsu_t&& other) noexcept
+        ATTRIBUTE_LIFETIME_BOUND {
         base::operator=(std::move(other));
         return *this;
     }
@@ -271,13 +340,15 @@ public:
     }
 
     // O(log*(n))
-    [[nodiscard]] CONSTEXPR_VECTOR bool equal(size_type node_x_index,
-                                              size_type node_y_index) noexcept {
+    [[nodiscard]] CONSTEXPR_VECTOR bool equal(const size_type node_x_index,
+                                              const size_type node_y_index) noexcept {
         assert(node_x_index < size() && node_y_index < size());
-        return base::equal(node_x_index, node_y_index);
+        return base::are_nodes_equal(node_x_index, node_y_index);
     }
+
     // O(log*(n))
-    CONSTEXPR_VECTOR void unite(size_type node_x_index, size_type node_y_index) noexcept {
+    CONSTEXPR_VECTOR void unite(const size_type node_x_index,
+                                const size_type node_y_index) noexcept {
         assert(node_x_index < size() && node_y_index < size());
         node_t* node_x_root_ptr = base::find_root(node_x_index);
         node_t* node_y_root_ptr = base::find_root(node_y_index);
@@ -286,7 +357,7 @@ public:
             // root_node->parent_ == nullptr
             return;
         }
-        sets_size_--;
+        base::decrease_sets_count_on_unite();
         size_type node_x_root_rank = node_x_root_ptr->rank_;
         size_type node_y_root_rank = node_y_root_ptr->rank_;
 
@@ -305,19 +376,21 @@ public:
     }
 
     // O(log*(n))
-    [[nodiscard]] CONSTEXPR_VECTOR int64_t get_weight_is_set(size_type node_index) noexcept {
+    [[nodiscard]] CONSTEXPR_VECTOR int64_t get_weight_in_set(const size_type node_index) noexcept {
         assert(node_index < size());
         return base::find_root(node_index)->weight_;
     }
 
     // O(log*(n))
-    CONSTEXPR_VECTOR void add_weight_in_set(size_type node_index, int64_t delta) noexcept {
+    CONSTEXPR_VECTOR void add_weight_in_set(const size_type node_index,
+                                            const int64_t delta) noexcept {
         assert(node_index < size());
         base::find_root(node_index)->weight_ += delta;
     }
 
     // O(log*(n))
-    CONSTEXPR_VECTOR void set_weight_in_set(size_type node_index, int64_t weight) noexcept {
+    CONSTEXPR_VECTOR void set_weight_in_set(const size_type node_index,
+                                            const int64_t weight) noexcept {
         assert(node_index < size());
         base::find_root(node_index)->weight_ = weight;
     }
