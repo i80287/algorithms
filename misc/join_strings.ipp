@@ -3,6 +3,7 @@
 #error This header should not be used directly
 #endif
 
+#include <algorithm>
 #include <array>
 #include <cassert>
 #include <cctype>
@@ -14,6 +15,7 @@
 #include <cwchar>
 #include <cwctype>
 #include <limits>
+#include <locale>
 #include <stdexcept>
 #include <string>
 #include <string_view>
@@ -103,7 +105,8 @@ ATTRIBUTE_ALWAYS_INLINE inline auto ArithmeticToStringImpl(const T arg) {
 }
 
 template <class CharType>
-[[nodiscard]] inline std::basic_string<CharType> ConvertBytesToString(std::string_view s) {
+[[nodiscard, maybe_unused]]
+inline std::basic_string<CharType> SystemLocaleConvertBytesToString(std::string_view s) {
     static_assert(!std::is_same_v<CharType, char>,
                   "Desired char type should not be char (multibyte string)");
 
@@ -143,13 +146,21 @@ template <class CharType>
                 return result;
             }
             case -1: {
-                error_message_prefix = "input string contains an invalid multibyte sequence";
+                error_message_prefix = "the input string contains an invalid multibyte sequence";
+                break;
             }
             case -2: {
-                error_message_prefix = "input string do not contain a complete multibyte character";
+                if (s.empty()) {
+                    return result;
+                }
+
+                error_message_prefix =
+                    "the input string does not contain a complete multibyte character";
+                break;
             }
             default: {
-                error_message_prefix = "unknown error occured while converting string";
+                error_message_prefix = "an unknown error occured while converting string";
+                break;
             }
         }
 
@@ -158,19 +169,103 @@ template <class CharType>
     }
 }
 
+/// @brief See libstdc++ __do_str_codecvt
+template <typename OutCharType, typename InCharType, class CodecvtState = std::mbstate_t>
+[[nodiscard, maybe_unused]]
+bool DoStrCodecvt(const std::basic_string_view<InCharType> in_str,
+                  std::basic_string<OutCharType> &out_str,
+                  const std::codecvt<OutCharType, InCharType, CodecvtState> &cvt,
+                  size_t &count) {
+    const InCharType *const first = in_str.data();
+    const InCharType *const last = first + in_str.size();
+
+    if (unlikely(first == last)) {
+        out_str.clear();
+        count = 0;
+        return true;
+    }
+
+    size_t outchars = 0;
+    const InCharType *next = first;
+    const int maxlen_signed = cvt.max_length() + 1;
+    if (unlikely(maxlen_signed <= 0)) {
+        // __do_str_codecvt doesn't check it but this function does just in case
+        throw std::runtime_error{"codecvt::max_length() returned negative value"};
+    }
+    const size_t maxlen = static_cast<unsigned>(maxlen_signed);
+
+    using cvt_result = std::codecvt_base::result;
+
+    CodecvtState state{};
+    cvt_result result;
+    do {
+        out_str.resize(out_str.size() + static_cast<size_t>(last - next) * maxlen);
+        OutCharType *outnext = &out_str.front() + outchars;
+        OutCharType *const outlast = &out_str.back() + 1;
+        result = cvt.in(state, next, last, next, outnext, outlast, outnext);
+        outchars = static_cast<size_t>(outnext - &out_str.front());
+    } while (result == cvt_result::partial && next != last &&
+             static_cast<std::ptrdiff_t>(out_str.size() - outchars) < maxlen_signed);
+
+    if (result == cvt_result::error) {
+        count = static_cast<size_t>(next - first);
+        return false;
+    }
+
+    // The codecvt facet will only return noconv when the types are
+    // the same, so avoid instantiating basic_string::assign otherwise
+    if constexpr (std::is_same_v<OutCharType, InCharType>) {
+        if (result == cvt_result::noconv) {
+            out_str.assign(first, last);
+            count = static_cast<size_t>(last - first);
+            return true;
+        }
+    }
+
+    out_str.resize(outchars);
+    count = static_cast<size_t>(next - first);
+    return true;
+}
+
+// utility wrapper to adapt locale-bound facets for wstring/wbuffer convert
+template <class Facet>
+class deletable_facet final : public Facet {
+public:
+    template <class... Args>
+    deletable_facet(Args &&...args) : Facet(std::forward<Args>(args)...) {}
+
+    ~deletable_facet() override = default;
+};
+
+inline constexpr bool kAllowConversionUsingSystemLocale = false;
+
 template <class ToCharType>
 [[nodiscard]] inline std::basic_string<ToCharType> ConvertString(const std::string_view str) {
     static_assert(!std::is_same_v<ToCharType, char>, "implementation error");
 
-    if constexpr (false
-#if defined(CONFIG_HAS_AT_LEAST_CXX_26) && CONFIG_HAS_AT_LEAST_CXX_26
-                  || true
-#elif CONFIG_HAS_AT_LEAST_CXX_20 && defined(__cpp_char8_t) && __cpp_char8_t >= 201811L
-                  || std::is_same_v<ToCharType, char8_t>
+#if CONFIG_HAS_AT_LEAST_CXX_20 && defined(__cpp_char8_t) && __cpp_char8_t >= 201811L
+    if constexpr (std::is_same_v<ToCharType, char8_t>) {
+        const auto is_ascii_nonzero_char = [](const char chr) constexpr noexcept {
+            const uint32_t u32_chr = static_cast<unsigned char>(chr);
+            constexpr uint32_t kMaxAsciiCharCode = 127;
+            return u32_chr - 1 <= kMaxAsciiCharCode - 1;
+        };
+
+        if (std::all_of(str.begin(), str.end(), is_ascii_nonzero_char)) {
+            return std::basic_string<ToCharType>(reinterpret_cast<const ToCharType *>(str.data()),
+                                                 str.size());
+        }
+
+        if constexpr (kAllowConversionUsingSystemLocale) {
+            return SystemLocaleConvertBytesToString<ToCharType>(str);
+        } else {
+            throw std::runtime_error{misc::join_strings(
+                "Unsupported conversion from multibyte string type to another string type in the ",
+                __FILE__, ':', __LINE__, ':', CONFIG_CURRENT_FUNCTION_NAME)};
+        }
+    }
 #endif
-    ) {
-        return ConvertBytesToString<ToCharType>(str);
-    } else {
+
 #ifdef __clang__
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wdeprecated"
@@ -181,8 +276,31 @@ template <class ToCharType>
 #pragma warning(push)
 #pragma warning(disable : 4996)
 #endif
+
+    if constexpr (true
+#if defined(CONFIG_HAS_AT_LEAST_CXX_26) && CONFIG_HAS_AT_LEAST_CXX_26
+                  || true
+#endif
+    ) {
+        const deletable_facet<std::codecvt<ToCharType, char, std::mbstate_t>> cvt;
+        std::basic_string<ToCharType> out_str{};
+        size_t converted_bytes_count{};
+        const bool conversion_succeeded = DoStrCodecvt(str, out_str, cvt, converted_bytes_count);
+        if (likely(conversion_succeeded && converted_bytes_count == str.size())) {
+            return out_str;
+        }
+
+        const std::string_view error_str =
+            !conversion_succeeded ? "Could not convert" : "Only partially converted";
+        throw std::runtime_error{misc::join_strings(
+            error_str, " multibyte string type to another string type (total bytes converted: ",
+            converted_bytes_count, " of ", str.size(), ") at ", __FILE__, ':', __LINE__, ':',
+            CONFIG_CURRENT_FUNCTION_NAME)};
+    } else {
         return std::wstring_convert<std::codecvt_utf8_utf16<ToCharType>, ToCharType>{}.from_bytes(
             str.data(), str.data() + str.size());
+    }
+
 #ifdef __clang__
 #pragma clang diagnostic pop
 #elif defined(__GNUG__)
@@ -190,7 +308,6 @@ template <class ToCharType>
 #elif defined(_MSC_VER)
 #pragma warning(pop)
 #endif
-    }
 }
 
 template <class CharType, class T>
@@ -310,14 +427,20 @@ std::basic_string<CharType> FilesystemPathToString(const T &) = delete;
 #ifdef JOIN_STRINGS_SUPPORTS_CUSTOM_OSTRINGSTREAM
 
 template <class T, class CharType>
-concept WriteableViaOStringStream =
+concept WriteableViaBasicOStringStream =
     requires(const T &arg, std::basic_ostringstream<CharType> &oss) {
         { oss << arg };
     };
 
+template <class T>
+concept WriteableViaOStringStream = WriteableViaBasicOStringStream<T, char>;
+
 template <class T, class CharType>
-concept DirectlyConvertableToString =
+concept DirectlyConvertableToBasicString =
     std::constructible_from<std::basic_string<CharType>, const T &>;
+
+template <class T>
+concept DirectlyConvertableToString = DirectlyConvertableToBasicString<T, char>;
 
 template <class CharType, class T>
 [[nodiscard]] inline std::basic_string<CharType> ToStringOneArgViaOStringStream(const T &arg) {
@@ -370,9 +493,14 @@ ATTRIBUTE_ALWAYS_INLINE inline std::basic_string<CharType> ToStringOneArg(const 
     } else if constexpr (is_filesystem_path_v<T>) {
         return FilesystemPathToString<CharType>(arg);
 #ifdef JOIN_STRINGS_SUPPORTS_CUSTOM_OSTRINGSTREAM
-    } else if constexpr (WriteableViaOStringStream<T, CharType> &&
-                         !DirectlyConvertableToString<T, CharType>) {
+    } else if constexpr (DirectlyConvertableToBasicString<T, CharType>) {
+        return std::basic_string<CharType>{arg};
+    } else if constexpr (WriteableViaBasicOStringStream<T, CharType>) {
         return ToStringOneArgViaOStringStream<CharType>(arg);
+    } else if constexpr (DirectlyConvertableToString<T>) {
+        return ConvertString<CharType>(std::string{arg});
+    } else if constexpr (WriteableViaOStringStream<T>) {
+        return ConvertString<CharType>(ToStringOneArgViaOStringStream<char>(arg));
 #endif
     } else {
         return std::basic_string<CharType>{arg};

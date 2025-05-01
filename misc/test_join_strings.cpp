@@ -774,6 +774,78 @@ void test_to_upper() {
     ToUpperTestSuite<wchar_t>::run();
 }
 
+#if defined(JOIN_STRINGS_SUPPORTS_CUSTOM_TO_STRING) && \
+    defined(JOIN_STRINGS_SUPPORTS_CUSTOM_OSTRINGSTREAM)
+
+#define W_TO_STRING_RETURN "AbCdEfGhIjKlMnOpQrStUvWxYz~!@#$%^*()_+"
+
+namespace dummy {
+class W {};
+
+[[nodiscard]] std::string to_string(const W&) {
+    return W_TO_STRING_RETURN;
+}
+
+}  // namespace dummy
+
+#define X_TO_STRING_RETURN "0123456789ABCDEFghijklmnopqrstuvwxyz"
+
+class X {
+public:
+    [[nodiscard]] std::string to_string() const {
+        return X_TO_STRING_RETURN;
+    }
+};
+
+#define Y_OSTREAM_REPRESENTATION "abcdefGHIJKLMNOPQRSTUVWXYZ0123456789"
+
+class Y {
+public:
+    friend std::ostream& operator<<(std::ostream& out ATTRIBUTE_LIFETIME_BOUND, const Y&) {
+        return out << Y_OSTREAM_REPRESENTATION;
+    }
+};
+
+#endif
+
+template <class CharType>
+class StringConversionsTestSuite final {
+public:
+    static void run() {
+        test_conversions();
+        test_conversions_with_to_string();
+    }
+
+private:
+    static void test_conversions() {
+        enum class E {
+            kTen = 10,
+        };
+
+        const std::basic_string<CharType> res = misc::join_strings<CharType>(
+            0, 1, 2, 3, 4, 5, 6, 7, 8, 9, nullptr, E::kTen, static_cast<const void*>(nullptr));
+        assert(res == STR_LITERAL(CharType, "0123456789null10null"));
+    }
+
+    static void test_conversions_with_to_string() {
+#if defined(JOIN_STRINGS_SUPPORTS_CUSTOM_TO_STRING) && \
+    defined(JOIN_STRINGS_SUPPORTS_CUSTOM_OSTRINGSTREAM)
+        const auto res = misc::join_strings<CharType>(0, dummy::W{}, X{}, Y{}, nullptr);
+        assert(res == STR_LITERAL(CharType,
+                                  "0" W_TO_STRING_RETURN X_TO_STRING_RETURN Y_OSTREAM_REPRESENTATION
+                                  "null"));
+#endif
+    }
+};
+
+void test_conversions() {
+    // StringConversionsTestSuite<char>::run();
+    StringConversionsTestSuite<wchar_t>::run();
+    // StringConversionsTestSuite<char8_t>::run();
+    // StringConversionsTestSuite<char16_t>::run();
+    // StringConversionsTestSuite<char32_t>::run();
+}
+
 }  // namespace
 
 int main() {
@@ -785,4 +857,5 @@ int main() {
     test_trim_strings();
     test_to_lower();
     test_to_upper();
+    test_conversions();
 }
