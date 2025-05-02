@@ -23,7 +23,7 @@
 
 namespace dsu_impl {
 
-using Weight = std::int64_t;
+using weight_t = std::int64_t;
 
 // Node with rank heuristic
 struct dsu_node_t {
@@ -37,7 +37,7 @@ struct wdsu_node_t {
     wdsu_node_t* parent_{};
     std::size_t rank_{};
     std::size_t set_size_ = 1;  // node itself
-    Weight weight_{};
+    weight_t weight_{};
 };
 
 template <class node_type>
@@ -51,10 +51,6 @@ class dsu_base {
     using container = std::vector<node_type>;
 
 public:
-    using node_t = node_type;
-    using value_type = typename container::value_type;
-    using pointer = typename container::pointer;
-    using const_pointer = typename container::const_pointer;
     using size_type = typename container::size_type;
 
     using set_handle = size_type;
@@ -95,7 +91,12 @@ public:
     }
 
 protected:
-    CONSTEXPR_VECTOR dsu_base(const size_type nodes_count)
+    using node_t = node_type;
+    using value_type = node_type;
+    using pointer = node_type*;
+    using const_pointer = const node_type*;
+
+    explicit CONSTEXPR_VECTOR dsu_base(const size_type nodes_count)
         : nodes_(nodes_count), sets_size_(nodes_count) {}
 
     CONSTEXPR_VECTOR dsu_base(const dsu_base& other) = default;
@@ -135,6 +136,7 @@ protected:
         return find_root(lhs_node_index) == find_root(rhs_node_index);
     }
 
+    ATTRIBUTE_RETURNS_NONNULL
     [[nodiscard]] CONSTEXPR_VECTOR pointer find_root(const size_type node_index) noexcept {
         assert(node_index < size());
         return find_root(nodes_[node_index]);
@@ -148,17 +150,19 @@ protected:
 private:
     [[nodiscard]]
     CONSTEXPR_VECTOR set_handle get_handle_of_node_set(node_t& node) noexcept {
-        return get_set_handle_from_parent_node(find_root(node));
+        return get_set_handle_from_parent_node(*find_root(node));
     }
 
-    [[nodiscard]] CONSTEXPR_VECTOR pointer find_root(node_t& node) noexcept {
-        return find_root_and_update_children(std::addressof(node));
+    ATTRIBUTE_RETURNS_NONNULL
+    [[nodiscard]] static CONSTEXPR_VECTOR pointer find_root(node_t& node) noexcept {
+        return find_root_and_update_children(node);
     }
 
     template <class NodeType>
     ATTRIBUTE_ACCESS(read_only, 1)
-    [[nodiscard]] static constexpr NodeType* only_find_root(NodeType* const node) noexcept {
-        NodeType* current_node = node;
+    ATTRIBUTE_RETURNS_NONNULL [[nodiscard]]
+    static constexpr NodeType* only_find_root(NodeType& node) noexcept {
+        NodeType* current_node = std::addressof(node);
         assert(current_node != nullptr);
         while (!is_parent_node_of_set(*current_node)) {
             NodeType* const current_node_parent = current_node->parent_;
@@ -172,16 +176,18 @@ private:
         return current_node;
     }
 
+    ATTRIBUTE_RETURNS_NONNULL
     ATTRIBUTE_ACCESS(read_write, 1)
-    [[nodiscard]] static constexpr pointer find_root_and_update_children(pointer node) noexcept {
+    [[nodiscard]] static constexpr pointer find_root_and_update_children(node_t& node) noexcept {
         pointer const node_root = only_find_root(node);
+        assert(node_root != nullptr);
         assert(is_parent_node_of_set(*node_root));
 
-        // Now 'current_node' points to the root
-        while (node != node_root) {
-            pointer const next = node->parent_;
-            node->parent_ = node_root;
-            node = next;
+        pointer node_ptr = std::addressof(node);
+        while (node_ptr != node_root) {
+            pointer const next = node_ptr->parent_;
+            node_ptr->parent_ = node_root;
+            node_ptr = next;
         }
 
         return node_root;
@@ -195,11 +201,12 @@ private:
 
     // clang-format off
     [[nodiscard]]
-    CONSTEXPR_VECTOR set_handle get_set_handle_from_parent_node(const const_pointer parent_node_ptr) const noexcept {
+    CONSTEXPR_VECTOR set_handle get_set_handle_from_parent_node(const node_type& parent_node) const noexcept {
         // clang-format on
+        const node_type* const parent_node_ptr = std::addressof(parent_node);
         assert(std::less_equal{}(nodes_.data(), parent_node_ptr));
         assert(std::less{}(parent_node_ptr, nodes_.data() + nodes_.size()));
-        assert(is_parent_node_of_set(*parent_node_ptr));
+        assert(is_parent_node_of_set(parent_node));
         return static_cast<set_handle>(parent_node_ptr - nodes_.data());
     }
 
@@ -237,11 +244,8 @@ public:
         return *this = dsu_t(other);
     }
 
-    CONSTEXPR_VECTOR dsu_t(dsu_t&& other) noexcept : base(std::move(other)) {}
-    CONSTEXPR_VECTOR dsu_t& operator=(dsu_t&& other) noexcept ATTRIBUTE_LIFETIME_BOUND {
-        base::operator=(std::move(other));
-        return *this;
-    }
+    dsu_t(dsu_t&& other) noexcept = default;
+    dsu_t& operator=(dsu_t&& other) noexcept = default;
 
     CONSTEXPR_VECTOR void swap(dsu_t& other) noexcept {
         base::swap(other);
@@ -301,7 +305,7 @@ public:
         return weighted_dsu_t{nodes_count};
     }
 
-    using WeightsVec = std::vector<dsu_impl::Weight>;
+    using WeightsVec = std::vector<dsu_impl::weight_t>;
     // O(n)
     [[nodiscard]]
     static CONSTEXPR_VECTOR weighted_dsu_t from_weights_vec(const WeightsVec& weights) {
@@ -402,7 +406,7 @@ private:
 
     explicit CONSTEXPR_VECTOR weighted_dsu_t(const WeightsVec& weights) : base(weights.size()) {
         node_t* nodes_iter = data();
-        for (const dsu_impl::Weight weight : weights) {
+        for (const dsu_impl::weight_t weight : weights) {
             nodes_iter->weight_ = weight;
             ++nodes_iter;
         }
