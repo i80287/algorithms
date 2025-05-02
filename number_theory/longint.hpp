@@ -1361,7 +1361,7 @@ public:
         // If size() < 0, this expression will evaluate to large positive number
         const size_type size_value = static_cast<size_type>(size());
 
-        if (sizeof(T) >= sizeof(digit_t)) {
+        if constexpr (sizeof(T) >= sizeof(digit_t)) {
             static_assert(sizeof(T) % sizeof(digit_t) == 0);
             return size_value <= sizeof(T) / sizeof(digit_t);
         } else {
