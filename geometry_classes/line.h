@@ -11,11 +11,9 @@ private:
     Point end_;
 
 public:
-    Line() noexcept : start_{0, 0}, end_{0, 0} {
-    }
+    Line() noexcept : start_{0, 0}, end_{0, 0} {}
 
-    Line(const Point& start, const Point& end) noexcept : start_{start}, end_{end} {
-    }
+    Line(const Point& start, const Point& end) noexcept : start_{start}, end_{end} {}
 
     int64_t GetA() const noexcept {
         return end_.GetY() - start_.GetY();

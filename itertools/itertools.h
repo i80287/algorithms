@@ -7,8 +7,7 @@
 template <class Iterator>
 class IteratorRange {
 public:
-    constexpr IteratorRange(Iterator begin, Iterator end) noexcept : begin_(begin), end_(end) {
-    }
+    constexpr IteratorRange(Iterator begin, Iterator end) noexcept : begin_(begin), end_(end) {}
 
     constexpr Iterator begin() const noexcept {  // NOLINT
         return begin_;
@@ -24,8 +23,7 @@ private:
 
 class RangeIterator {
 public:
-    constexpr RangeIterator(int64_t value, int64_t step) noexcept : value_(value), step_(step) {
-    }
+    constexpr RangeIterator(int64_t value, int64_t step) noexcept : value_(value), step_(step) {}
 
     constexpr bool operator==(const RangeIterator& other) const noexcept {
         return value_ == other.value_;
@@ -60,8 +58,7 @@ private:
 template <class Iterator1, class Iterator2>
 class ZipIterator {
 public:
-    constexpr ZipIterator(Iterator1 iter1, Iterator2 iter2) : iter1_(iter1), iter2_(iter2) {
-    }
+    constexpr ZipIterator(Iterator1 iter1, Iterator2 iter2) : iter1_(iter1), iter2_(iter2) {}
 
     constexpr bool operator!=(const ZipIterator& other) const {
         return iter1_ != other.iter1_ && iter2_ != other.iter2_;
@@ -135,7 +132,8 @@ constexpr IteratorRange<RangeIterator> Range(int64_t start, int64_t end, int64_t
 
 template <class Container1, class Container2>
 auto Zip(const Container1& c1, const Container2& c2) {
-    return IteratorRange(ZipIterator(std::begin(c1), std::begin(c2)), ZipIterator(std::end(c1), std::end(c2)));
+    return IteratorRange(ZipIterator(std::begin(c1), std::begin(c2)),
+                         ZipIterator(std::end(c1), std::end(c2)));
 }
 
 template <class Container>

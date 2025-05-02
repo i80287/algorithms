@@ -1,21 +1,22 @@
 #ifndef HEAP_SORT_HPP
 #define HEAP_SORT_HPP 1
 
-#include <cstdint>
 #include <cstddef>
+#include <cstdint>
 #include <type_traits>
 #include <utility>
 
 template <typename T>
 #if __cplusplus >= 202002L
-requires std::is_arithmetic_v<T>
+    requires std::is_arithmetic_v<T>
 constexpr
 #endif
-static inline void heapify(T* arr, size_t length) noexcept {
-    for (size_t i = (length >> 1); i != 0; ) {
+    static inline void
+    heapify(T* arr, size_t length) noexcept {
+    for (size_t i = (length >> 1); i != 0;) {
         size_t parent_index = --i;
         T elem = arr[parent_index];
-        
+
         size_t son_index = (parent_index << 1) | 1;
         T son = arr[son_index];
         if (son_index + 1 < length && son < arr[son_index + 1]) {
@@ -25,7 +26,7 @@ static inline void heapify(T* arr, size_t length) noexcept {
         while (elem < son) {
             arr[parent_index] = son;
             arr[son_index] = elem;
-            
+
             parent_index = son_index;
             son_index = (parent_index << 1) | 1;
             if (son_index >= length) {
@@ -42,12 +43,12 @@ static inline void heapify(T* arr, size_t length) noexcept {
 
 template <typename T>
 #if __cplusplus >= 202002L
-requires std::is_arithmetic_v<T>
+    requires std::is_arithmetic_v<T>
 constexpr
 #endif
-inline void heap_sort(T* arr, size_t length) noexcept {
-    if (length <= 1)
-    {// (length & ~((size_t)1)) == 0
+    inline void
+    heap_sort(T* arr, size_t length) noexcept {
+    if (length <= 1) {  // (length & ~((size_t)1)) == 0
         return;
     }
 
@@ -63,16 +64,15 @@ inline void heap_sort(T* arr, size_t length) noexcept {
         size_t parent_index = 0;
         size_t son_index = 1;
         T son = arr[1];
-        if (i > 2 && son < arr[2])
-        {// i = current pyramid size.
+        if (i > 2 && son < arr[2]) {  // i = current pyramid size.
             son = arr[2];
             son_index = 2;
         }
 
-        while (sifting_elem < son) {            
+        while (sifting_elem < son) {
             arr[parent_index] = son;
             arr[son_index] = sifting_elem;
-            
+
             parent_index = son_index;
             son_index = (son_index << 1) | 1;
             if (son_index >= i) {
@@ -94,14 +94,15 @@ inline void heap_sort(T* arr, size_t length) noexcept {
 
 template <typename T, typename SizeType>
 #if __cplusplus >= 202002L
-requires std::is_arithmetic_v<T> && std::is_integral_v<SizeType>
+    requires std::is_arithmetic_v<T> && std::is_integral_v<SizeType>
 constexpr
 #endif
-static inline void heapify(T* arr, size_t length, SizeType* indexes) noexcept {
-    for (size_t i = (length >> 1); i != 0; ) {
+    static inline void
+    heapify(T* arr, size_t length, SizeType* indexes) noexcept {
+    for (size_t i = (length >> 1); i != 0;) {
         size_t parent_index = --i;
         T elem = arr[parent_index];
-        
+
         size_t son_index = (parent_index << 1) | 1;
         T son = arr[son_index];
         if (son_index + 1 < length && son < arr[son_index + 1]) {
@@ -113,7 +114,7 @@ static inline void heapify(T* arr, size_t length, SizeType* indexes) noexcept {
             arr[son_index] = elem;
 
             std::swap(indexes[parent_index], indexes[son_index]);
-            
+
             parent_index = son_index;
             son_index = (parent_index << 1) | 1;
             if (son_index >= length) {
@@ -130,12 +131,12 @@ static inline void heapify(T* arr, size_t length, SizeType* indexes) noexcept {
 
 template <typename T, typename SizeType>
 #if __cplusplus >= 202002L
-requires std::is_arithmetic_v<T> && std::is_integral_v<SizeType>
+    requires std::is_arithmetic_v<T> && std::is_integral_v<SizeType>
 constexpr
 #endif
-inline void heap_sort(T* arr, size_t length, SizeType* indexes) noexcept {
-    if (length <= 1)
-    {// (length & ~((size_t)1)) == 0
+    inline void
+    heap_sort(T* arr, size_t length, SizeType* indexes) noexcept {
+    if (length <= 1) {  // (length & ~((size_t)1)) == 0
         return;
     }
 
@@ -153,8 +154,7 @@ inline void heap_sort(T* arr, size_t length, SizeType* indexes) noexcept {
         size_t parent_index = 0;
         size_t son_index = 1;
         T son = arr[1];
-        if (i > 2 && son < arr[2])
-        {// i = current pyramid size.
+        if (i > 2 && son < arr[2]) {  // i = current pyramid size.
             son = arr[2];
             son_index = 2;
         }
@@ -164,7 +164,7 @@ inline void heap_sort(T* arr, size_t length, SizeType* indexes) noexcept {
             arr[son_index] = sifting_elem;
 
             std::swap(indexes[parent_index], indexes[son_index]);
-            
+
             parent_index = son_index;
             son_index = (son_index << 1) | 1;
             if (son_index >= i) {
@@ -190,7 +190,7 @@ inline void heap_sort(T* arr, size_t length, SizeType* indexes) noexcept {
 
 template <class Iterator, class Comparator>
 static inline void Heapify(Iterator begin, size_t length, Comparator comparator) {
-    for (size_t i = (length >> 1); i != 0; ) {
+    for (size_t i = (length >> 1); i != 0;) {
         size_t parent_index = --i;
 
         size_t son_index = (parent_index << 1) | 1;
@@ -207,14 +207,16 @@ static inline void Heapify(Iterator begin, size_t length, Comparator comparator)
                 break;
             }
 
-            if (son_index + 1 < length && comparator(*(begin + son_index), *(begin + son_index + 1))) {
+            if (son_index + 1 < length &&
+                comparator(*(begin + son_index), *(begin + son_index + 1))) {
                 ++son_index;
             }
         }
     }
 }
 
-template <class Iterator, class Comparator = std::less<typename std::iterator_traits<Iterator>::value_type>>
+template <class Iterator,
+          class Comparator = std::less<typename std::iterator_traits<Iterator>::value_type>>
 void heap_sort(Iterator begin, Iterator end, Comparator comparator = Comparator()) {
     size_t length = static_cast<size_t>(end - begin);
     if (length <= 1) {
@@ -252,5 +254,4 @@ void heap_sort(Iterator begin, Iterator end, Comparator comparator = Comparator(
     std::swap(*begin, *(begin + 1));
 }
 
-
-#endif // HEAP_SORT_HPP
+#endif  // HEAP_SORT_HPP

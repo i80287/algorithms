@@ -12,11 +12,9 @@ protected:
     Point end_;
 
 public:
-    Segment() noexcept : start_{0, 0}, end_{0, 0} {
-    }
+    Segment() noexcept : start_{0, 0}, end_{0, 0} {}
 
-    Segment(const Point& start, const Point& end) noexcept : start_{start}, end_{end} {
-    }
+    Segment(const Point& start, const Point& end) noexcept : start_{start}, end_{end} {}
 
     const Point& GetStart() const noexcept {
         return start_;
@@ -43,7 +41,8 @@ public:
 
     /// @brief Distance (not always projection length) from point to this segment
     /// @param point point
-    /// @return length of the shortest segment starting in point and ending in the point of this segment
+    /// @return length of the shortest segment starting in point and ending in the point of this
+    /// segment
     double NonProjectingDistance(const Point& point) const noexcept;
 
     bool IsDegenerate() const noexcept;

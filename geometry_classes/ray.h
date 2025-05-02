@@ -10,11 +10,9 @@ private:
     Point end_;
 
 public:
-    Ray() : start_{0, 0}, end_{0, 0} {
-    }
+    Ray() : start_{0, 0}, end_{0, 0} {}
 
-    Ray(const Point& first, const Point& second) : start_{first}, end_{second} {
-    }
+    Ray(const Point& first, const Point& second) : start_{first}, end_{second} {}
 
     Ray& Move(const Vector& vector) noexcept override;
 

@@ -11,11 +11,9 @@ private:
     int64_t y_coord_;
 
 public:
-    Vector() noexcept : x_coord_{0}, y_coord_{0} {
-    }
+    Vector() noexcept : x_coord_{0}, y_coord_{0} {}
 
-    Vector(int64_t x, int64_t y) noexcept : x_coord_{x}, y_coord_{y} {
-    }
+    Vector(int64_t x, int64_t y) noexcept : x_coord_{x}, y_coord_{y} {}
 
     int64_t GetX() const noexcept {
         return x_coord_;

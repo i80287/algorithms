@@ -136,12 +136,12 @@ bool Segment::CrossesSegment(const Segment& segment) const noexcept {
         int64_t right_x_border = std::min(end1_x, end2_x);
         int64_t right_y_border = std::min(end1_y, end2_y);
 
-        return left_x_border * det <= det_x && det_x <= right_x_border * det && left_y_border * det <= det_y &&
-               det_y <= right_y_border * det;
+        return left_x_border * det <= det_x && det_x <= right_x_border * det &&
+               left_y_border * det <= det_y && det_y <= right_y_border * det;
     }
 
-    return segment.ContainsPoint(start_) || segment.ContainsPoint(end_)
-        || ContainsPoint(segment.start_) || ContainsPoint(segment.end_);
+    return segment.ContainsPoint(start_) || segment.ContainsPoint(end_) ||
+           ContainsPoint(segment.start_) || ContainsPoint(segment.end_);
 }
 
 Segment* Segment::Clone() const {
