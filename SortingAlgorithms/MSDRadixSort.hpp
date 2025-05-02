@@ -22,7 +22,8 @@ inline constexpr std::size_t kAlphabetSize =
     std::numeric_limits<StringIteratorUChar<Iterator>>::max() + 1;
 
 template <class Iterator, class StringType>
-constexpr auto counting_sort_impl(const Iterator begin, const Iterator end,
+constexpr auto counting_sort_impl(const Iterator begin,
+                                  const Iterator end,
                                   const std::size_t common_prefix_length,
                                   std::vector<StringType>& tmp_buffer) noexcept {
     constexpr auto kThreshold = kAlphabetSize<Iterator>;
@@ -45,7 +46,7 @@ constexpr auto counting_sort_impl(const Iterator begin, const Iterator end,
     }
 
     for (auto iter = begin; iter != end; ++iter) {
-        std::size_t pos                = static_cast<UChar>((*iter)[common_prefix_length]);
+        std::size_t pos = static_cast<UChar>((*iter)[common_prefix_length]);
         tmp_buffer[first_index[pos]++] = std::move(*iter);
     }
 
@@ -55,7 +56,8 @@ constexpr auto counting_sort_impl(const Iterator begin, const Iterator end,
 }
 
 template <bool kSwitchToQuickSort, class Iterator, class StringType>
-constexpr void msd_radix_sort_impl(Iterator begin, Iterator end,
+constexpr void msd_radix_sort_impl(Iterator begin,
+                                   Iterator end,
                                    const std::size_t common_prefix_length,
                                    std::vector<StringType>& buffer) noexcept {
     const auto size = static_cast<std::size_t>(std::distance(begin, end));

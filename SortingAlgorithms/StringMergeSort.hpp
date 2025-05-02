@@ -29,8 +29,9 @@ struct LCPCompareResult final {
 
 template <class IteratorStringType>
 constexpr LCPCompareResult lcp_compare(const IteratorStringType& str1,
-                                       const IteratorStringType& str2, std::size_t lcp) noexcept {
-    using CharType  = typename IteratorStringType::value_type;
+                                       const IteratorStringType& str2,
+                                       std::size_t lcp) noexcept {
+    using CharType = typename IteratorStringType::value_type;
     using UCharType = std::make_unsigned_t<CharType>;
     assert(lcp <= str1.size());
     assert(lcp <= str2.size());
@@ -52,11 +53,12 @@ constexpr LCPCompareResult lcp_compare(const IteratorStringType& str1,
 }
 
 template <class Iterator, class IteratorStringType>
-constexpr void string_merge_impl(Iterator iter_left_begin, Iterator iter_right_begin,
+constexpr void string_merge_impl(Iterator iter_left_begin,
+                                 Iterator iter_right_begin,
                                  Iterator iter_right_end,
                                  std::vector<Pair<IteratorStringType>>& buffer) noexcept {
     const Iterator original_begin = iter_left_begin;
-    const Iterator iter_left_end  = iter_right_begin;
+    const Iterator iter_left_end = iter_right_begin;
     while (iter_left_begin != iter_left_end && iter_right_begin != iter_right_end) {
         if (iter_left_begin->lcp > iter_right_begin->lcp) {
             buffer.emplace_back(std::move(*iter_left_begin));
@@ -86,7 +88,8 @@ constexpr void string_merge_impl(Iterator iter_left_begin, Iterator iter_right_b
 }
 
 template <class Iterator, class IteratorStringType>
-constexpr void string_merge_sort_impl(Iterator iter_left_begin, Iterator iter_right_end,
+constexpr void string_merge_sort_impl(Iterator iter_left_begin,
+                                      Iterator iter_right_end,
                                       std::vector<Pair<IteratorStringType>>& buffer) noexcept {
     const auto size = std::distance(iter_left_begin, iter_right_end);
     if (size < 2) {
@@ -106,7 +109,7 @@ struct StringMergeSortNiebloid final {
     template <StringIterator Iterator>
     static constexpr void string_merge_sort(Iterator begin, Iterator end) {
         using IteratorStringType = std::iterator_traits<Iterator>::value_type;
-        using PairType           = detail::string_merge_sort::Pair<IteratorStringType>;
+        using PairType = detail::string_merge_sort::Pair<IteratorStringType>;
 
         const auto size = static_cast<std::size_t>(std::distance(begin, end));
         std::vector<PairType> vec;

@@ -1,15 +1,22 @@
-#include <assert.h> // assert
-#include <stdio.h>  // printf
+#include <assert.h>  // assert
+#include <stdio.h>   // printf
 
 #include "actrie.h"
 
-void run_test(const char* (*patterns_with_replacements)[2], size_t size, char input_text[], size_t input_text_size, const char expected[], bool replace_all_occurances, uint32_t test_number) {
+void run_test(const char* (*patterns_with_replacements)[2],
+              size_t size,
+              char input_text[],
+              size_t input_text_size,
+              const char expected[],
+              bool replace_all_occurances,
+              uint32_t test_number) {
     struct actrie_t t;
     actrie_t_ctor(&t);
 
     actrie_t_reserve_patterns(&t, size);
     for (size_t i = 0; i < size; i++) {
-        actrie_t_add_pattern(&t, patterns_with_replacements[i][0], patterns_with_replacements[i][1]);
+        actrie_t_add_pattern(&t, patterns_with_replacements[i][0],
+                             patterns_with_replacements[i][1]);
     }
 
     bool result = true;
@@ -30,8 +37,7 @@ void run_test(const char* (*patterns_with_replacements)[2], size_t size, char in
     input_text[input_text_size] = '\0';
     if (replace_all_occurances) {
         actrie_t_replace_all_occurances(&t, input_text);
-    }
-    else {
+    } else {
         actrie_t_replace_first_occurance(&t, input_text);
     }
     result &= (strcmp(input_text, expected) == 0);
@@ -43,116 +49,86 @@ cleanup:
 
 [[maybe_unused]] static void test0_short() {
     const char* patterns_with_replacements[][2] = {
-        { "ab", "cd" },
-        { "ba", "dc" },
-        { "aa", "cc" },
-        { "bb", "dd" },
-        { "fasb", "xfasbx" },
+        {"ab", "cd"}, {"ba", "dc"}, {"aa", "cc"}, {"bb", "dd"}, {"fasb", "xfasbx"},
     };
     const size_t size = sizeof(patterns_with_replacements) / sizeof(patterns_with_replacements[0]);
 
-    char input_text[]      = "ababcdacafaasbfasbabcc  ";
+    char input_text[] = "ababcdacafaasbfasbabcc  ";
     const char exptected[] = "cdcdcdacafccsbxfasbxcdcc";
-    const size_t input_text_size = 22; // after 'c'
+    const size_t input_text_size = 22;  // after 'c'
 
     run_test(patterns_with_replacements, size, input_text, input_text_size, exptected, true, 0);
 }
 
 [[maybe_unused]] static void test1_short() {
     const char* patterns_with_replacements[][2] = {
-        {"ab", "cd"},
-        {"ba", "dc"},
-        {"aa", "cc"},
-        {"bb", "dd"},
-        {"xfasbx", "fasb"},
+        {"ab", "cd"}, {"ba", "dc"}, {"aa", "cc"}, {"bb", "dd"}, {"xfasbx", "fasb"},
     };
     const size_t size = sizeof(patterns_with_replacements) / sizeof(patterns_with_replacements[0]);
 
-    char input_text[]      = "ababcdacafaasbxfasbxabcc";
+    char input_text[] = "ababcdacafaasbxfasbxabcc";
     const char exptected[] = "cdcdcdacafccsbfasbcdcc";
-    const size_t input_text_size = 24; // 'c'
+    const size_t input_text_size = 24;  // 'c'
 
     run_test(patterns_with_replacements, size, input_text, input_text_size, exptected, true, 1);
 }
 
 [[maybe_unused]] static void test2_short() {
     const char* patterns_with_replacements[][2] = {
-        {"LM", "0000"},
-        {"GHI", "111111"},
-        {"BCD", "2222222"},
-        {"nop", "3333"},
-        {"jk", "44444"}
-    };
+        {"LM", "0000"}, {"GHI", "111111"}, {"BCD", "2222222"}, {"nop", "3333"}, {"jk", "44444"}};
     const size_t size = sizeof(patterns_with_replacements) / sizeof(patterns_with_replacements[0]);
 
-    char input_text[]      = "ABCDEFGHIJKLMNOP             ";
+    char input_text[] = "ABCDEFGHIJKLMNOP             ";
     const char exptected[] = "A2222222EF1111114444400003333";
-    const size_t input_text_size = 16; // after 'P'
+    const size_t input_text_size = 16;  // after 'P'
 
     run_test(patterns_with_replacements, size, input_text, input_text_size, exptected, true, 2);
 }
 
 [[maybe_unused]] static void test3_short() {
     const char* patterns_with_replacements[][2] = {
-        {"AB", "111111111111111111111111"},
-        {"CD", "cd"},
-        {"EF", "ef"},
-        {"JK", "jk"},
-        {"NO", "no"}
-    };
+        {"AB", "111111111111111111111111"}, {"CD", "cd"}, {"EF", "ef"}, {"JK", "jk"}, {"NO", "no"}};
     const size_t size = sizeof(patterns_with_replacements) / sizeof(patterns_with_replacements[0]);
 
-    char input_text[]     = "ABCDEFGHIJKLMNOP                      ";
+    char input_text[] = "ABCDEFGHIJKLMNOP                      ";
     const char expected[] = "111111111111111111111111cdefGHIjkLMnoP";
-    const size_t input_text_size = 16; // after 'P'
+    const size_t input_text_size = 16;  // after 'P'
     run_test(patterns_with_replacements, size, input_text, input_text_size, expected, true, 3);
 }
 
 [[maybe_unused]] static void test4_short() {
     const char* patterns_with_replacements[][2] = {
-        {"AB", "ab"},
-        {"CD", "cd"},
-        {"EF", "ef"},
-        {"JK", "jk"},
-        {"NO", "111111111111111111111111"}
-    };
+        {"AB", "ab"}, {"CD", "cd"}, {"EF", "ef"}, {"JK", "jk"}, {"NO", "111111111111111111111111"}};
     const size_t size = sizeof(patterns_with_replacements) / sizeof(patterns_with_replacements[0]);
 
-    char input_text[]     = "ABCDEFGHIJKLMNOP                      ";
+    char input_text[] = "ABCDEFGHIJKLMNOP                      ";
     const char expected[] = "abcdefGHIjkLM111111111111111111111111P";
-    const size_t input_text_size = 16; // after 'P'
+    const size_t input_text_size = 16;  // after 'P'
     run_test(patterns_with_replacements, size, input_text, input_text_size, expected, true, 4);
 }
 
 [[maybe_unused]] static void test5_short() {
     const char* patterns_with_replacements[][2] = {
-        {"AB", "ab"},
-        {"CD", "cd"},
-        {"EF", "111111111111111111111111"},
-        {"JK", "jk"},
-        {"NO", "no"}
-    };
+        {"AB", "ab"}, {"CD", "cd"}, {"EF", "111111111111111111111111"}, {"JK", "jk"}, {"NO", "no"}};
     const size_t size = sizeof(patterns_with_replacements) / sizeof(patterns_with_replacements[0]);
 
-    char input_text[]     = "ABCDEFGHIJKLMNOP                      ";
+    char input_text[] = "ABCDEFGHIJKLMNOP                      ";
     const char expected[] = "abcd111111111111111111111111GHIjkLMnoP";
-    const size_t input_text_size = 16; // after 'P'
+    const size_t input_text_size = 16;  // after 'P'
     run_test(patterns_with_replacements, size, input_text, input_text_size, expected, true, 5);
 }
 
 [[maybe_unused]] static void test6_short() {
-    const char* patterns_with_replacements[][2] = {
-        {"kernel", "Kewnel"},
-        {"linux", "Linuwu"},
-        {"debian", "Debinyan"},
-        {"ubuntu", "Uwuntu"},
-        {"windows", "WinyandOwOws"}
-    };
+    const char* patterns_with_replacements[][2] = {{"kernel", "Kewnel"},
+                                                   {"linux", "Linuwu"},
+                                                   {"debian", "Debinyan"},
+                                                   {"ubuntu", "Uwuntu"},
+                                                   {"windows", "WinyandOwOws"}};
     const size_t size = sizeof(patterns_with_replacements) / sizeof(patterns_with_replacements[0]);
 
-    char input_text[] =     "linux kernel; debian os; ubuntu os; windows os        ";
+    char input_text[] = "linux kernel; debian os; ubuntu os; windows os        ";
     const char expected[] = "Linuwu Kewnel; Debinyan os; Uwuntu os; WinyandOwOws os";
-    const size_t input_text_size = 46; // after 's'
+    const size_t input_text_size = 46;  // after 's'
     run_test(patterns_with_replacements, size, input_text, input_text_size, expected, true, 6);
 }
 
@@ -246,9 +222,13 @@ cleanup:
     };
     const size_t size = sizeof(patterns_with_replacements) / sizeof(patterns_with_replacements[0]);
 
-    char input_text[] =     "windows freebsd rocky; neon linux; fedora; pop os; solus; amogos; void; ryzen and intel processor                             ";
-    const char expected[] = "WinyandOwOws FweeBSD Wocky Linuwu; KDE NeOwOn linuwu; Fedowa; PopOwOS os; sOwOlus; AmogOwOS; OwOid; Wyzen and Inteww Pwocessow";
-    const size_t input_text_size = 97; // after 'r'
+    char input_text[] =
+        "windows freebsd rocky; neon linux; fedora; pop os; solus; amogos; void; ryzen and intel "
+        "processor                             ";
+    const char expected[] =
+        "WinyandOwOws FweeBSD Wocky Linuwu; KDE NeOwOn linuwu; Fedowa; PopOwOS os; sOwOlus; "
+        "AmogOwOS; OwOid; Wyzen and Inteww Pwocessow";
+    const size_t input_text_size = 97;  // after 'r'
     run_test(patterns_with_replacements, size, input_text, input_text_size, expected, true, 7);
 }
 
@@ -342,35 +322,39 @@ cleanup:
     };
     const size_t size = sizeof(patterns_with_replacements) / sizeof(patterns_with_replacements[0]);
 
-    char input_text[] =     "windows freebsd rocky; neon linux; fedora; pop os; solus; amogos; void; ryzen and intel processor                             ";
-    const char expected[] = "WinyandOwOws FweeBSD Wocky Linuwu; KDE NeOwOn linuwu; Fedowa; PopOwOS os; sOwOlus; AmogOwOS; OwOid; Wyzen and Inteww Pwocessow";
-    const size_t input_text_size = 97; // after 'r'
+    char input_text[] =
+        "windows freebsd rocky; neon linux; fedora; pop os; solus; amogos; void; ryzen and intel "
+        "processor                             ";
+    const char expected[] =
+        "WinyandOwOws FweeBSD Wocky Linuwu; KDE NeOwOn linuwu; Fedowa; PopOwOS os; sOwOlus; "
+        "AmogOwOS; OwOid; Wyzen and Inteww Pwocessow";
+    const size_t input_text_size = 97;  // after 'r'
     run_test(patterns_with_replacements, size, input_text, input_text_size, expected, true, 8);
 }
 
 [[maybe_unused]] static void test9_short() {
     const char* patterns_with_replacements[][2] = {
-        { "abc", "def" },
-        { "ghi", "jkz" },
+        {"abc", "def"},
+        {"ghi", "jkz"},
     };
     const size_t size = sizeof(patterns_with_replacements) / sizeof(patterns_with_replacements[0]);
 
-    char input_text[] =     "Abghciashjdhwdjahwdjhabdabanabwc";
+    char input_text[] = "Abghciashjdhwdjahwdjhabdabanabwc";
     const char expected[] = "Abghciashjdhwdjahwdjhabdabanabwc";
-    const size_t input_text_size = 32; // after 'c'
+    const size_t input_text_size = 32;  // after 'c'
     run_test(patterns_with_replacements, size, input_text, input_text_size, expected, true, 9);
 }
 
 [[maybe_unused]] static void test10_short() {
     const char* patterns_with_replacements[][2] = {
-        { "abc", "def" },
-        { "ghi", "jkz" },
+        {"abc", "def"},
+        {"ghi", "jkz"},
     };
     const size_t size = sizeof(patterns_with_replacements) / sizeof(patterns_with_replacements[0]);
 
-    char input_text[] =     "Qghiabcabcghiabc";
+    char input_text[] = "Qghiabcabcghiabc";
     const char expected[] = "Qjkzabcabcghiabc";
-    const size_t input_text_size = 16; // after 'c'
+    const size_t input_text_size = 16;  // after 'c'
     run_test(patterns_with_replacements, size, input_text, input_text_size, expected, false, 10);
 }
 

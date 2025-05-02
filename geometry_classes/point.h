@@ -13,11 +13,11 @@ class Point : public IShape {
 private:
     int64_t x_coord_ = 0;
     int64_t y_coord_ = 0;
+
 public:
     constexpr Point() noexcept = default;
 
-    constexpr Point(int64_t x, int64_t y) noexcept : x_coord_{x}, y_coord_{y} {
-    }
+    constexpr Point(int64_t x, int64_t y) noexcept : x_coord_{x}, y_coord_{y} {}
 
     constexpr int64_t GetX() const noexcept {
         return x_coord_;

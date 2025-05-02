@@ -18,44 +18,56 @@ template <typename T, typename Comparator = std::less<T>>
 class Heap {
     static constexpr bool kUseByValue =
         std::is_standard_layout_v<T> && std::is_trivially_copyable_v<T> &&
-        std::is_trivially_copy_constructible_v<T> &&
-        std::is_trivially_copy_assignable_v<T> && std::is_nothrow_copy_assignable_v<T> &&
-        std::is_nothrow_copy_constructible_v<T>;
+        std::is_trivially_copy_constructible_v<T> && std::is_trivially_copy_assignable_v<T> &&
+        std::is_nothrow_copy_assignable_v<T> && std::is_nothrow_copy_constructible_v<T>;
 
 public:
     constexpr Heap() noexcept(noexcept(std::vector<T>{})) : heap_elements_{}, comp_{} {}
 
-    constexpr explicit Heap(const Comparator& comparator) noexcept(
-        noexcept(std::vector<T>{}))
+    constexpr explicit Heap(const Comparator& comparator) noexcept(noexcept(std::vector<T>{}))
         : heap_elements_{}, comp_{comparator} {}
 
-    constexpr void reserve(size_t size) { heap_elements_.reserve(size); }
+    constexpr void reserve(size_t size) {
+        heap_elements_.reserve(size);
+    }
 
-    constexpr size_t size() const noexcept { return heap_elements_.size(); }
+    constexpr size_t size() const noexcept {
+        return heap_elements_.size();
+    }
 
-    constexpr bool empty() const noexcept { return heap_elements_.empty(); }
+    constexpr bool empty() const noexcept {
+        return heap_elements_.empty();
+    }
 
-    constexpr T& top() noexcept { return heap_elements_.front(); }
+    constexpr T& top() noexcept {
+        return heap_elements_.front();
+    }
 
-    constexpr const T& top() const noexcept { return heap_elements_.front(); }
+    constexpr const T& top() const noexcept {
+        return heap_elements_.front();
+    }
 
-    constexpr const std::vector<T>& nodes() const noexcept { return heap_elements_; }
+    constexpr const std::vector<T>& nodes() const noexcept {
+        return heap_elements_;
+    }
 
-    constexpr std::vector<T>& nodes() noexcept { return heap_elements_; }
+    constexpr std::vector<T>& nodes() noexcept {
+        return heap_elements_;
+    }
 
     /// @brief Element is passed by value intentionally
     /// @param element
     void push(T element) {
         // push elem to the end of the heap and sift upper.
 
-        size_t elem_index   = size();
+        size_t elem_index = size();
         size_t parent_index = (elem_index - 1) >> 1;
         heap_elements_.emplace_back();
 
         while (elem_index != 0 && !Compare(heap_elements_[parent_index], element)) {
             heap_elements_[elem_index] = std::move(heap_elements_[parent_index]);
-            elem_index                 = parent_index;
-            parent_index               = (elem_index - 1) >> 1;
+            elem_index = parent_index;
+            parent_index = (elem_index - 1) >> 1;
         }
 
         heap_elements_[elem_index] = std::move(element);
@@ -64,8 +76,7 @@ public:
     void pop_top() {
         if constexpr (kUseByValue) {
             const T sifting_elem = heap_elements_.front() = heap_elements_.back();
-            for (size_t parent_index = 0, son_index = 1, len = size();
-                 son_index + 1 < len;) {
+            for (size_t parent_index = 0, son_index = 1, len = size(); son_index + 1 < len;) {
                 if (!Compare(heap_elements_[son_index], heap_elements_[son_index + 1])) {
                     son_index++;
                 }
@@ -74,9 +85,9 @@ public:
                     break;
                 }
                 heap_elements_[parent_index] = heap_elements_[son_index];
-                heap_elements_[son_index]    = sifting_elem;
-                parent_index                 = son_index;
-                son_index                    = parent_index * 2 | 1;
+                heap_elements_[son_index] = sifting_elem;
+                parent_index = son_index;
+                son_index = parent_index * 2 | 1;
             }
 
             heap_elements_.pop_back();
@@ -93,7 +104,7 @@ public:
                 }
                 std::swap(heap_elements_[parent_index], heap_elements_[son_index]);
                 parent_index = son_index;
-                son_index    = son_index * 2 | 1;
+                son_index = son_index * 2 | 1;
             }
         }
     }
@@ -121,7 +132,7 @@ protected:
         }
 
         if constexpr (kUseByValue) {
-            size_t parent_index  = index;
+            size_t parent_index = index;
             const T sifting_elem = heap_elements_[index];
             if (son_index + 1 != size() &&
                 !Compare(heap_elements_[son_index], heap_elements_[son_index + 1])) {
@@ -130,10 +141,10 @@ protected:
 
             while (!Compare(sifting_elem, heap_elements_[son_index])) {
                 heap_elements_[parent_index] = heap_elements_[son_index];
-                heap_elements_[son_index]    = sifting_elem;
+                heap_elements_[son_index] = sifting_elem;
 
                 parent_index = son_index;
-                son_index    = son_index * 2 | 1;
+                son_index = son_index * 2 | 1;
                 if (son_index >= len) {
                     return;
                 }
@@ -167,12 +178,13 @@ int main() {
 
         constexpr TestWrapper(int64_t value) noexcept : value_{value} {}
 
-        constexpr operator int64_t() const noexcept { return value_; }
+        constexpr operator int64_t() const noexcept {
+            return value_;
+        }
     };
 
     MaxHeap<TestWrapper> heap;
-    std::priority_queue<TestWrapper, std::vector<TestWrapper>, std::less<TestWrapper>>
-        correct_heap;
+    std::priority_queue<TestWrapper, std::vector<TestWrapper>, std::less<TestWrapper>> correct_heap;
     heap.reserve(16);
     for (int value : {4, 6, 42, 3, 10, 42, 2, 243, 42, 1242, 243, 23, 42}) {
         heap.push(value);
@@ -218,15 +230,14 @@ int main0(void) {
     return 0;
 }
 
-inline void heap_add_elem(
-    const int64_t elem,
-    size_t& heap_size) {  // push elem to the end of the heap and sift upper.
-    size_t elem_index   = heap_size;
+inline void heap_add_elem(const int64_t elem,
+                          size_t& heap_size) {  // push elem to the end of the heap and sift upper.
+    size_t elem_index = heap_size;
     size_t parent_index = (elem_index - 1) >> 1;
     while (elem_index != 0 && elem > heap[parent_index]) {
         heap[elem_index] = heap[parent_index];
-        elem_index       = parent_index;
-        parent_index     = (elem_index - 1) >> 1;
+        elem_index = parent_index;
+        parent_index = (elem_index - 1) >> 1;
     }
 
     heap[elem_index] = elem;
@@ -239,23 +250,23 @@ inline void heap_delete_top(size_t& heap_size) {
         return;
     }
     const int64_t sifting_elem = heap[--heap_size];
-    heap[0]                    = sifting_elem;
+    heap[0] = sifting_elem;
 
     // Back pyramide (heap) to the balance state.
     size_t parent_index = 0;
-    size_t son_index    = 1;
-    int64_t son_elem    = heap[1];
+    size_t son_index = 1;
+    int64_t son_elem = heap[1];
     if (heap_size > 2 && son_elem < heap[2]) {  // i = current pyramid size.
-        son_elem  = heap[2];
+        son_elem = heap[2];
         son_index = 2;
     }
 
     while (sifting_elem < son_elem) {
         heap[parent_index] = heap[son_index];
-        heap[son_index]    = sifting_elem;
+        heap[son_index] = sifting_elem;
 
         parent_index = son_index;
-        son_index    = (son_index << 1) + 1;
+        son_index = (son_index << 1) + 1;
         if (son_index >= heap_size) {
             break;
         }

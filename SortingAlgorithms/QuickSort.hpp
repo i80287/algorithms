@@ -111,8 +111,8 @@ constexpr Iterator select_pivot(Iterator begin, Iterator end, Comparator comp)
         __builtin_unreachable();
     }
 #endif
-    const auto qrt_iter     = begin + static_cast<std::ptrdiff_t>(length / 4);
-    const auto mid_iter     = begin + static_cast<std::ptrdiff_t>(length / 2);
+    const auto qrt_iter = begin + static_cast<std::ptrdiff_t>(length / 4);
+    const auto mid_iter = begin + static_cast<std::ptrdiff_t>(length / 2);
     const auto thr_qrt_iter = begin + static_cast<std::ptrdiff_t>((3 * length) / 4);
 
     if (comp(*qrt_iter, *mid_iter)) {
@@ -144,7 +144,7 @@ constexpr void quick_sort_impl(Iterator begin, Iterator end, Comparator comp)
     using std::swap;
 
     const Iterator selected_pivot_iter = select_pivot(begin, end, comp);
-    const Iterator new_pivot_iter      = partition(begin, end, selected_pivot_iter, comp);
+    const Iterator new_pivot_iter = partition(begin, end, selected_pivot_iter, comp);
 
     if (std::distance(begin, new_pivot_iter) > 1) {
         quick_sort_impl(begin, new_pivot_iter, comp);
@@ -196,9 +196,8 @@ struct QuickSortNiebloid final {
     }
 
     template <std::ranges::bidirectional_range Range, class Comparator = std::ranges::less>
-    constexpr void operator()(Range&& range, Comparator comp = {}) const
-        noexcept(noexcept(quick_sort(std::ranges::begin(range), std::ranges::end(range),
-                                     std::move(comp)))) {
+    constexpr void operator()(Range&& range, Comparator comp = {}) const noexcept(
+        noexcept(quick_sort(std::ranges::begin(range), std::ranges::end(range), std::move(comp)))) {
         quick_sort(std::ranges::begin(range), std::ranges::end(range), std::move(comp));
     }
 };

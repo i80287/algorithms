@@ -1,12 +1,13 @@
 #include "polygon.h"
-#include "segment.h"
 
 #include <cassert>
-#include <cmath>
 #include <climits>
+#include <cmath>
+
+#include "segment.h"
 
 #ifndef likely
-#define likely(x)   __builtin_expect(!!(x), 1)
+#define likely(x) __builtin_expect(!!(x), 1)
 #endif
 #ifndef unlikely
 #define unlikely(x) __builtin_expect(!!(x), 0)
@@ -88,15 +89,17 @@ bool Polygon::SimplePolygonContainsPoint(const Point& point) const noexcept {
             return true;
         }
 
-        bool crosses = points_long_segment
-            .CrossesSegment(edge);
+        bool crosses = points_long_segment.CrossesSegment(edge);
         count += crosses;
     }
 
     return count % 2 != 0;
 }
 
-static bool SimpleConvexPolygonContainsPointRecursive(const std::vector<Point>& vertexes, const Point& point, size_t l, size_t r) noexcept {
+static bool SimpleConvexPolygonContainsPointRecursive(const std::vector<Point>& vertexes,
+                                                      const Point& point,
+                                                      size_t l,
+                                                      size_t r) noexcept {
     assert(l <= r);
     switch (r - l) {
         case 0: {
@@ -142,20 +145,17 @@ static bool SimpleConvexPolygonContainsPointRecursive(const std::vector<Point>& 
             if (unlikely(edge.ContainsPoint(point))) {
                 return true;
             }
-            count += points_long_segment
-                    .CrossesSegment(edge);
+            count += points_long_segment.CrossesSegment(edge);
             edge = Segment(vertexes[l], vertexes[l + 1]);
             if (unlikely(edge.ContainsPoint(point))) {
                 return true;
             }
-            count += points_long_segment
-                    .CrossesSegment(edge);
+            count += points_long_segment.CrossesSegment(edge);
             edge = Segment(vertexes[l + 1], vertexes[0]);
             if (unlikely(edge.ContainsPoint(point))) {
                 return true;
             }
-            count += points_long_segment
-                    .CrossesSegment(edge);
+            count += points_long_segment.CrossesSegment(edge);
             return count % 2 != 0;
         }
     }
@@ -165,8 +165,7 @@ static bool SimpleConvexPolygonContainsPointRecursive(const std::vector<Point>& 
     Vector vec_zrp = point - vertexes[0];
     if (VectorMult(vec_zrp, vec_zrm) >= 0) {
         return SimpleConvexPolygonContainsPointRecursive(vertexes, point, l, m);
-    }
-    else {
+    } else {
         return SimpleConvexPolygonContainsPointRecursive(vertexes, point, m, r);
     }
 }
