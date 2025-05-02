@@ -126,15 +126,15 @@ static inline void actrie_thiscall actrie_t_add_pattern(struct actrie_t* this_,
     actrie_t_add_pattern_len(this_, pattern, strlen(pattern), replacer, strlen(replacer));
 }
 
-/// @brief Aho–Corasick deterministic finite-state machine is built on the ordinal trie so it can be
-/// used as ordinal trie
+/// @brief Aho–Corasick deterministic finite-state machine is built on the ordinal trie so
+///        it can be used as ordinal trie
 /// @param this_ actrie
 /// @param pattern
 /// @return
 bool actrie_thiscall actrie_t_contains_pattern(const struct actrie_t* this_, const char* pattern);
 
-/// @brief Computes compressed suffix links. This is necessary to do before find and/or replace any
-/// patterns in texts.
+/// @brief Computes compressed suffix links. This is necessary to do before find and/or replace
+///        any patterns in texts.
 /// @param this_ actrie
 /// @return
 void actrie_thiscall actrie_t_compute_links(struct actrie_t* this_);
@@ -145,8 +145,8 @@ typedef void (*FindCallback)(const char* found_word,
                              size_t word_length,
                              size_t start_index_in_original_text);
 
-/// @brief Find all occurances of any pattern (defined in this ac trie) in the given text in
-/// O(strlen(text))
+/// @brief Find all occurances of any pattern (defined in this ac trie) in the given
+///        text in O(strlen(text))
 /// @param this_ actrie
 /// @param text Text to search pattern occurances in
 /// @param find_callback Callback that is called when the next occurrence is found
@@ -155,25 +155,23 @@ void actrie_thiscall actrie_t_run_text(const struct actrie_t* this_,
                                        const char* text,
                                        FindCallback find_callback);
 
-/// @brief Replace first occurance of any pattern (defined in this ac trie) found in the given
-/// string
-///        in O(length + |replacement_length - first_occurance_length|)
+/// @brief Replace first occurance of any pattern (defined in this ac trie) found in the
+///        given string in O(length + |replacement_length - first_occurance_length|)
 /// @param c_string string where first occurance should be replaced
 /// @param length length of the string
 /// @return new length of the string (length changes if occurance is found and
-/// strlen(occurance_pattern) != strlen(replacement))
+///         strlen(occurance_pattern) != strlen(replacement))
 ///         !!! It is caller's responsobility to ensure that c_string buffer will not overflow if
 ///         length growths
 size_t actrie_thiscall actrie_t_replace_first_occurance_len(const struct actrie_t* this_,
                                                             char* c_string,
                                                             size_t length);
 
-/// @brief Replace first occurance of any pattern (defined in this ac trie) found in the given
-/// string
-///        in O(strlen(c_string) + |replacement_length - first_occurance_length|)
+/// @brief Replace first occurance of any pattern (defined in this ac trie) found in the
+///        given string in O(strlen(c_string) + |replacement_length - first_occurance_length|)
 /// @param c_string string where first occurance should be replaced
 /// @return new length of the string (length changes if occurance is found and
-/// strlen(occurance_pattern) != strlen(replacement))
+///         strlen(occurance_pattern) != strlen(replacement))
 ///         !!! It is caller's responsobility to ensure that c_string buffer will not overflow if
 ///         length growths
 static inline size_t actrie_thiscall actrie_t_replace_first_occurance(const struct actrie_t* this_,
@@ -185,8 +183,8 @@ static inline size_t actrie_thiscall actrie_t_replace_first_occurance(const stru
 ///        in O(length + sum( |replacement_length - occurance_length| for each pattern occurance) )
 /// @param c_string string where first occurance should be replaced
 /// @param length length of the string
-/// @return new length of the string (length changes if for any pattern strlen(pattern[i]) !=
-/// strlen(replacement[i]))
+/// @return new length of the string (length changes if for any pattern such that
+///         strlen(pattern[i]) != strlen(replacement[i]))
 ///         !!! It is caller's responsobility to ensure that c_string buffer will not overflow if
 ///         length growths
 size_t actrie_thiscall actrie_t_replace_all_occurances_len(const struct actrie_t* this_,
@@ -197,8 +195,8 @@ size_t actrie_thiscall actrie_t_replace_all_occurances_len(const struct actrie_t
 ///        in O(strlen(c_string) + sum( |replacement_length - occurance_length| for each pattern
 ///        occurance) )
 /// @param c_string string where first occurance should be replaced
-/// @return new length of the string (length changes if for any pattern strlen(pattern[i]) !=
-/// strlen(replacement[i]))
+/// @return new length of the string (length changes if for any pattern such that
+///         strlen(pattern[i]) != strlen(replacement[i]))
 ///         !!! It is caller's responsobility to ensure that c_string buffer will not overflow if
 ///         length growths
 static inline size_t actrie_thiscall actrie_t_replace_all_occurances(const struct actrie_t* this_,
