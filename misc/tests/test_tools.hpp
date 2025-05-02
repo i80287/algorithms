@@ -15,7 +15,7 @@
 #include <string_view>
 #include <type_traits>
 
-#include "../misc/config_macros.hpp"
+#include "../config_macros.hpp"
 
 #if defined(__cpp_lib_source_location) && __cpp_lib_source_location >= 201907L && \
     CONFIG_HAS_INCLUDE(<source_location>)
@@ -87,7 +87,7 @@ inline void log_message_impl(const char* const file_name,
 #if defined(TEST_TOOLS_HAS_SOURCE_LOCATION)
 
 ATTRIBUTE_ALWAYS_INLINE inline void log_tests_started(
-    const std::source_location src = std::source_location::current()) noexcept {
+    const std::source_location& src = std::source_location::current()) noexcept {
     int ret = std::printf("Started tests in %s\n", src.function_name());
     assert(ret > 0);
     ret = std::fflush(stdout);
@@ -95,21 +95,21 @@ ATTRIBUTE_ALWAYS_INLINE inline void log_tests_started(
 }
 
 ATTRIBUTE_ALWAYS_INLINE inline void log_location(
-    const std::source_location src = std::source_location::current()) noexcept {
+    const std::source_location& src = std::source_location::current()) noexcept {
     ::test_tools::test_tools_detail::log_location_impl(src.file_name(), src.line(),
                                                        src.function_name());
 }
 
 ATTRIBUTE_ALWAYS_INLINE inline void log_message(
-    const char* message,
-    const std::source_location src = std::source_location::current()) noexcept {
+    const char* const message,
+    const std::source_location& src = std::source_location::current()) noexcept {
     ::test_tools::test_tools_detail::log_message_impl(src.file_name(), src.line(),
                                                       src.function_name(), message);
 }
 
 ATTRIBUTE_ALWAYS_INLINE inline void log_message(
-    std::string_view message,
-    const std::source_location src = std::source_location::current()) noexcept {
+    const std::string_view message,
+    const std::source_location& src = std::source_location::current()) noexcept {
     ::test_tools::test_tools_detail::log_message_impl(src.file_name(), src.line(),
                                                       src.function_name(), message);
 }
@@ -162,7 +162,7 @@ struct FilePtr final {
     }
 
 private:
-    ATTRIBUTE_NODISCARD_WITH_MESSAGE("impl error")
+    ATTRIBUTE_NODISCARD
     ATTRIBUTE_RETURNS_NONNULL
     ATTRIBUTE_NONNULL_ALL_ARGS
     static FileHandle DoFOpenOrThrow(const char* RESTRICT_QUALIFIER const fname,
@@ -179,7 +179,7 @@ private:
     [[noreturn]]
     ATTRIBUTE_COLD ATTRIBUTE_NONNULL_ALL_ARGS static void ThrowOnFOpenFail(
         const char* RESTRICT_QUALIFIER const fname, const char* RESTRICT_QUALIFIER const mode) {
-        static constexpr std::size_t kMaxErrorMessageSize = 1024 * sizeof(char);
+        static constexpr std::size_t kMaxErrorMessageSize = 1024;
 
         const auto errno_value = errno;
         std::array<char, kMaxErrorMessageSize> buffer{};
@@ -221,11 +221,11 @@ struct EchoLogger {
     EchoLogger(EchoLogger&& /*unused*/) noexcept {
         ::test_tools::log_location();
     }
-    EchoLogger& operator=(const EchoLogger& /*unused*/) noexcept {
+    EchoLogger& operator=(const EchoLogger& /*unused*/) noexcept ATTRIBUTE_LIFETIME_BOUND {
         ::test_tools::log_location();
         return *this;
     }
-    EchoLogger& operator=(EchoLogger&& /*unused*/) noexcept {
+    EchoLogger& operator=(EchoLogger&& /*unused*/) noexcept ATTRIBUTE_LIFETIME_BOUND {
         ::test_tools::log_location();
         return *this;
     }

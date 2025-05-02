@@ -1,7 +1,13 @@
+// clang-format off
+#include "../get_typename.hpp"
+// clang-format on
+
 #include <cassert>
 #include <string>
 
-#include "get_typename.hpp"
+// clang-format off
+#include "../get_typename.hpp"
+// clang-format on
 
 enum class E {
     kValue1 = 1,

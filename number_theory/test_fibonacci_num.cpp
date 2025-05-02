@@ -1,7 +1,7 @@
 #include <cassert>
 #include <cstdint>
 
-#include "../misc/test_tools.hpp"
+#include "../misc/tests/test_tools.hpp"
 #include "fibonacci_num.hpp"
 
 // NOLINTBEGIN(cert-dcl03-c, misc-static-assert, hicpp-static-assert,

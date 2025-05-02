@@ -1,7 +1,13 @@
+// clang-format off
+#include "../enum_utils.hpp"
+// clang-format on
+
 #include <cassert>
 #include <cstdint>
 
-#include "enum_utils.hpp"
+// clang-format off
+#include "../enum_utils.hpp"
+// clang-format on
 
 #if CONFIG_HAS_AT_LEAST_CXX_17
 #ifndef GENERATE_ENUM_TO_STRING_FOR_ENUM_MEMBERS
