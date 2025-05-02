@@ -39,7 +39,7 @@ int main(void) {
     vector<int64_t> t_hashes = vector<int64_t>(t_length + 1);
     t_hashes[0] = 0;
     for (size_t i = 0; i < t_length; ++i) {
-        t_hashes[i + 1] = (t_hashes[i] * Prime+ str_t[i] - 'A' + 1) % Mod;
+        t_hashes[i + 1] = (t_hashes[i] * Prime + str_t[i] - 'A' + 1) % Mod;
     }
 
     vector<int64_t> ans;

@@ -9,11 +9,11 @@ namespace geometry {
 class Polygon : public IShape {
 protected:
     std::vector<Point> vertexes_;
+
 public:
     Polygon() noexcept = default;
 
-    explicit Polygon(const std::vector<Point>& vertexes) : vertexes_{vertexes} {
-    }
+    explicit Polygon(const std::vector<Point>& vertexes) : vertexes_{vertexes} {}
 
     Polygon& Move(const Vector& vector) noexcept override;
 
@@ -21,7 +21,8 @@ public:
     /// @return true if this polygon contains point and false otherwise
     bool ContainsPoint(const Point& point) const noexcept override;
 
-    /// @brief Works if and only if this polygon is simple (e.g. without self intersections and holes inside)
+    /// @brief Works if and only if this polygon is simple (e.g. without self intersections and
+    /// holes inside)
     ///        This method works in O(n), where n is number of vertexes
     /// @return true if this polygon contains point and false otherwise
     bool SimplePolygonContainsPoint(const Point& point) const noexcept;

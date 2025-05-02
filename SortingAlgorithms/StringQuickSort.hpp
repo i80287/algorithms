@@ -16,7 +16,8 @@ namespace string_quick_sort {
 namespace {
 
 template <class Iterator, class CompareFn>
-constexpr Iterator move_strings_to_left(Iterator begin, Iterator end,
+constexpr Iterator move_strings_to_left(Iterator begin,
+                                        Iterator end,
                                         CompareFn compare_func) noexcept {
     auto insertion_pos_iter = std::find_if_not(begin, end, compare_func);
     if (insertion_pos_iter == end) {
@@ -48,8 +49,8 @@ constexpr Iterator select_pivot_string(Iterator begin, Iterator end) noexcept {
         __builtin_unreachable();
     }
 #endif
-    const auto qrt_iter     = begin + static_cast<std::ptrdiff_t>(length / 4);
-    const auto mid_iter     = begin + static_cast<std::ptrdiff_t>(length / 2);
+    const auto qrt_iter = begin + static_cast<std::ptrdiff_t>(length / 4);
+    const auto mid_iter = begin + static_cast<std::ptrdiff_t>(length / 2);
     const auto thr_qrt_iter = begin + static_cast<std::ptrdiff_t>((3 * length) / 4);
 
     if (*qrt_iter < *mid_iter) {
@@ -78,10 +79,12 @@ struct PartitionResult final {
 };
 
 template <class Iterator>
-constexpr PartitionResult<Iterator> partition(Iterator begin, Iterator end, Iterator pivot_iter,
+constexpr PartitionResult<Iterator> partition(Iterator begin,
+                                              Iterator end,
+                                              Iterator pivot_iter,
                                               const std::size_t common_prefix_length) noexcept {
-    using StringType               = IteratorStringType<Iterator>;
-    using UCharType                = std::make_unsigned_t<typename StringType::value_type>;
+    using StringType = IteratorStringType<Iterator>;
+    using UCharType = std::make_unsigned_t<typename StringType::value_type>;
     const UCharType pivot_cmp_char = static_cast<UCharType>((*pivot_iter)[common_prefix_length]);
 
     begin = move_strings_to_left(begin, end, [=](const StringType& s) constexpr noexcept {
@@ -97,7 +100,8 @@ constexpr PartitionResult<Iterator> partition(Iterator begin, Iterator end, Iter
 }
 
 template <class Iterator>
-constexpr void string_quick_sort_impl(Iterator begin, Iterator end,
+constexpr void string_quick_sort_impl(Iterator begin,
+                                      Iterator end,
                                       const std::size_t common_prefix_length) noexcept {
     if (std::distance(begin, end) <= 1) {
         return;

@@ -1,5 +1,5 @@
-#include <cstdint>
 #include <cstddef>
+#include <cstdint>
 
 /// @brief let i := return index
 ///     if (num \in container) => (
@@ -17,10 +17,10 @@
 ///     else => (
 ///         i == size_t(-1)
 ///     )
-/// @tparam Container 
-/// @tparam T 
-/// @param container 
-/// @param value 
+/// @tparam Container
+/// @tparam T
+/// @param container
+/// @param value
 /// @return i
 template <class Container, class T>
 static size_t find_rightest(const Container& container, T value) {
@@ -54,10 +54,10 @@ static size_t find_rightest(const Container& container, T value) {
 ///     else => (
 ///         i == container.size()
 ///     )
-/// @tparam Container 
-/// @tparam T 
-/// @param container 
-/// @param value 
+/// @tparam Container
+/// @tparam T
+/// @param container
+/// @param value
 /// @return i
 template <class Container, class T>
 static size_t find_leftest(const Container& container, T value) {
@@ -80,9 +80,9 @@ static size_t find_leftest(const Container& container, T value) {
 
 int main() {
     const std::vector<int> arr = {
-        1,     3,      5,      7,      9,      123,    124,    125,
-        213,   213,    213,    213,    213,    213,    213,    213,
-        34523, 213123, 312389, 312389, 312389, 312389, 312389, 1232312};
+        1,   3,   5,   7,   9,     123,    124,    125,    213,    213,    213,    213,
+        213, 213, 213, 213, 34523, 213123, 312389, 312389, 312389, 312389, 312389, 1232312,
+    };
 
     for (size_t i = 0; i <= 7; i++) {
         assert(find_leftest(arr, arr[i]) == i);
@@ -102,7 +102,7 @@ int main() {
     assert(find_rightest(arr, 312389) == 22);
 
     assert(find_leftest(arr, 312390) == 23);
-    assert(find_rightest(arr, 312390) == 22);    
+    assert(find_rightest(arr, 312390) == 22);
 
     assert(find_rightest(arr, 1232312) == 23);
 

@@ -1,9 +1,9 @@
-#include <vector>
-#include <cstdint>
 #include <cstddef>
-#include <type_traits>
+#include <cstdint>
 #include <initializer_list>
 #include <iostream>
+#include <type_traits>
+#include <vector>
 
 /// @brief Binary Index tree (Fenwick tree) implemented for the sums
 /// on the segments (+ add on index i and assign on index i in log time)
@@ -11,6 +11,7 @@
 template <class ValueType = int64_t>
 class BITree {
     static_assert(std::is_arithmetic_v<ValueType>);
+
 public:
     explicit BITree(const std::vector<ValueType>& elements) : sums_(elements.size()) {
         RecalculateSums(elements.data());
@@ -21,11 +22,9 @@ public:
     }
 
     constexpr void RecalculateSums(auto begin_it_or_ptr) noexcept {
-        for (size_t i = 0, n = Size(); i < n; ++i)
-        {
+        for (size_t i = 0, n = Size(); i < n; ++i) {
             ValueType sum = ValueType(0);
-            for (size_t j = i & (i + 1); j <= i; ++j)
-            {
+            for (size_t j = i & (i + 1); j <= i; ++j) {
                 sum += begin_it_or_ptr[j];
             }
 
@@ -78,30 +77,25 @@ public:
     std::vector<ValueType> sums_;
 };
 
-int main()
-{
+int main() {
     BITree tree{1, 4, 2, 6, 3, 6, 3};
-    for (size_t i = 0; i < tree.Size(); ++i)
-    {
+    for (size_t i = 0; i < tree.Size(); ++i) {
         std::cout << tree[i] << ' ';
     }
     std::cout << '\n';
 
     tree.AddAt(2, 10);
-    for (size_t i = 0; i < tree.Size(); ++i)
-    {
+    for (size_t i = 0; i < tree.Size(); ++i) {
         std::cout << tree[i] << ' ';
     }
     std::cout << '\n';
 
     tree.AssignAt(2, 10);
-    for (size_t i = 0; i < tree.Size(); ++i)
-    {
+    for (size_t i = 0; i < tree.Size(); ++i) {
         std::cout << tree[i] << ' ';
     }
     std::cout << '\n';
 
-    std::cout
-        << "Sum on [3; 6]: " << tree.GetSum(3, 6) << '\n'
-        << "Prefix sum on [0; 2]: " << tree.PrefixSum(2) << '\n';
+    std::cout << "Sum on [3; 6]: " << tree.GetSum(3, 6) << '\n'
+              << "Prefix sum on [0; 2]: " << tree.PrefixSum(2) << '\n';
 }

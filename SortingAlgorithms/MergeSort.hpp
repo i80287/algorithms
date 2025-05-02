@@ -37,7 +37,7 @@ constexpr void merge_impl(
     noexcept(kIsNoexceptMergable<Iterator, Comparator>) {
     // clang-format on
     const Iterator original_begin = iter_left_begin;
-    const Iterator iter_left_end  = iter_right_begin;
+    const Iterator iter_left_end = iter_right_begin;
     while (iter_left_begin != iter_left_end && iter_right_begin != iter_right_end) {
         if (comp(*iter_left_begin, *iter_right_begin)) {
             buffer.emplace_back(std::move(*iter_left_begin));
@@ -130,7 +130,7 @@ template <class Iterator, class Comparator>
 constexpr void inplace_merge_sort_with_empty_comparator_impl(Iterator iter_left, Iterator iter_right)
     noexcept(kIsNoexceptMergable<Iterator, Comparator>) {
     // clang-format on
-    auto dist            = std::distance(iter_left, iter_right);
+    auto dist = std::distance(iter_left, iter_right);
     Iterator iter_left_2 = iter_left + dist / 2;
     if (std::distance(iter_left, iter_left_2) >= 2) {
         merge_sort_with_empty_comparator_impl<Iterator, Comparator>(iter_left, iter_left_2);
@@ -154,8 +154,8 @@ struct MergeSortNiebloid final {
     }
 
     template <std::bidirectional_iterator Iterator, class Comparator = std::ranges::less>
-    static constexpr void merge_sort(Iterator begin, Iterator end,
-                                     Comparator comp = {}) noexcept(IsNoexceptSortableImpl<Iterator, Comparator>()) {
+    static constexpr void merge_sort(Iterator begin, Iterator end, Comparator comp = {}) noexcept(
+        IsNoexceptSortableImpl<Iterator, Comparator>()) {
         using ValueType = typename std::iterator_traits<Iterator>::value_type;
 
         if constexpr (kInplaceSort) {

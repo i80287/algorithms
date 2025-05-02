@@ -1,4 +1,5 @@
 #include "circle.h"
+
 #include "line.h"
 #include "segment.h"
 
@@ -8,11 +9,9 @@ constexpr uint64_t Uabs(int64_t val) noexcept {
     return static_cast<uint64_t>(val >= 0 ? val : -val);
 }
 
-Circle::Circle() noexcept : centre_{0, 0}, radius_{0} {
-}
+Circle::Circle() noexcept : centre_{0, 0}, radius_{0} {}
 
-Circle::Circle(Point centre, uint64_t radius) noexcept : centre_{centre}, radius_{radius} {
-}
+Circle::Circle(Point centre, uint64_t radius) noexcept : centre_{centre}, radius_{radius} {}
 
 Point Circle::GetCenter() const noexcept {
     return centre_;
