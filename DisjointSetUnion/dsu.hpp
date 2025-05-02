@@ -200,7 +200,7 @@ private:
         assert(std::less_equal{}(nodes_.data(), parent_node_ptr));
         assert(std::less{}(parent_node_ptr, nodes_.data() + nodes_.size()));
         assert(is_parent_node_of_set(*parent_node_ptr));
-        return parent_node_ptr - nodes_.data();
+        return static_cast<set_handle>(parent_node_ptr - nodes_.data());
     }
 
     container nodes_;
