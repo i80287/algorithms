@@ -3617,20 +3617,23 @@ void test_masked_popcount_sum() noexcept {
         }
     }
 }
+void test_weighted_min_case(const std::initializer_list<uint32_t> values, const size_t ans_index) {
+    assert(ans_index < values.size());
+    const auto ans_offset = static_cast<ptrdiff_t>(ans_index);
 
-void test_weighted_median() {
-    using std::vector;
+    assert(weighted_min(values) == values.begin() + ans_offset);
 
-    {
-        vector<uint32_t> v{5, 4, 3, 2, 1};
-        assert(weighted_median(v) == v.begin() + 1);
-    }
-    {
-        vector<uint32_t> v{5, 2, 3, 1};
-        assert(weighted_median(v) == v.begin() + 1);
-    }
-    {
-        const vector<uint32_t> v{
+    std::vector<uint32_t> v(values);
+    assert(weighted_min(v) == v.begin() + ans_offset);
+    assert(weighted_min(v.begin(), v.end()) == v.begin() + ans_offset);
+    assert(weighted_min(v.cbegin(), v.cend()) == v.cbegin() + ans_offset);
+    assert(weighted_min(v.data(), v.data() + v.size()) == v.data() + ans_offset);
+}
+
+void test_weighted_min() {
+    test_weighted_min_case({5, 4, 3, 2, 1}, 1);
+    test_weighted_min_case(
+        {
             3499211612, 581869302,  3890346734, 3586334585, 545404204,  4161255391, 3922919429,
             949333985,  2715962298, 1323567403, 418932835,  2350294565, 1196140740, 809094426,
             2348838239, 4264392720, 4112460519, 4279768804, 4144164697, 4156218106, 676943009,
@@ -3660,11 +3663,10 @@ void test_weighted_median() {
             231714000,  1515103006, 2279758133, 2546159170, 3346497776, 1530490810, 4011545318,
             4144499009, 557942923,  663307952,  2443079012, 1696117849, 2016017442, 1663423246,
             51119001,   3122246755, 1447930741, 1668894615,
-        };
-        assert(weighted_median(v) == v.begin() + 98);
-    }
-    {
-        const vector<uint32_t> v{
+        },
+        98);
+    test_weighted_min_case(
+        {
             985960778,  2860674143, 2968742429, 2594641170, 3050160906, 1696058985, 3122376166,
             2182044559, 2094860131, 3813024814, 800699405,  530565855,  4033017831, 2932007873,
             286351694,  1262478340, 957474756,  1675384708, 4125210577, 3025675706, 2070911595,
@@ -3694,11 +3696,10 @@ void test_weighted_median() {
             381622095,  1721736905, 4133026139, 638460672,  516429888,  2801902516, 1618441419,
             1814936805, 938188480,  2537518490, 3479155686, 303590527,  368884417,  2536232817,
             4203933800, 2504593040, 956800143,  1805633868,
-        };
-        assert(weighted_median(v) == v.begin() + 90);
-    }
-    {
-        const vector<uint32_t> v{
+        },
+        90);
+    test_weighted_min_case(
+        {
             2198438985, 2698226636, 1968950470, 3315576946, 431429275,  671069548,  3819086165,
             2626023107, 2400866928, 1293181152, 742335012,  1303628936, 1069455802, 3136464212,
             559870608,  1939049197, 1645891156, 512698940,  4193197177, 4225218128, 3699758192,
@@ -3757,11 +3758,10 @@ void test_weighted_median() {
             2017705677, 1817013305, 804414100,  3589638714, 4031940838, 2568142328, 2323893758,
             4017126129, 487667137,  1958493171, 3854387515, 1458820727, 2412821961, 1877541167,
             3309883082,
-        };
-        assert(weighted_median(v) == v.begin() + 201);
-    }
-    {
-        const vector<uint32_t> v{
+        },
+        201);
+    test_weighted_min_case(
+        {
             947064119,  2463473553, 1357960775, 3290572628, 2055223605, 904611658,  3310714130,
             3094821715, 4036786951, 4234658425, 2295055999, 2882748084, 1988829139, 1175927272,
             3395829442, 2864897917, 1684171291, 2341017676, 1372347005, 1618354246, 1871625234,
@@ -3820,9 +3820,8 @@ void test_weighted_median() {
             2941716006, 3038638842, 2551449145, 358699304,  2092893096, 3462181775, 1875672339,
             261293573,  4026018009, 3318634571, 4140835783, 636444917,  2582911950, 440702711,
             4121492823,
-        };
-        assert(weighted_median(v) == v.begin() + 207);
-    }
+        },
+        207);
 }
 
 }  // namespace
@@ -3851,5 +3850,5 @@ int main() {
     test_powers_sum();
     test_arange_functions();
     test_masked_popcount_sum();
-    test_weighted_median();
+    test_weighted_min();
 }
