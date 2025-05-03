@@ -110,6 +110,9 @@ template <class T>
 inline constexpr bool is_signed_v = math_functions::detail::helper_ns::is_signed_v<T>;
 
 template <class T>
+inline constexpr bool is_arithmetic_v = math_functions::detail::helper_ns::is_arithmetic_v<T>;
+
+template <class T>
 using make_unsigned_t = typename math_functions::detail::helper_ns::make_unsigned_t<T>;
 
 template <class T>
@@ -443,6 +446,16 @@ template <class IntType>
     return math_functions::sign(a) == math_functions::sign(b);
 }
 
+#if CONFIG_COMPILER_IS_GCC_OR_ANY_CLANG
+#if CONFIG_COMPILER_ID == CONFIG_GCC_COMPILER_ID
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wfloat-equal"
+#else
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wfloat-equal"
+#endif
+#endif
+
 /// @brief Calculate n ^ p
 /// @tparam T
 /// @tparam P integral type
@@ -456,13 +469,47 @@ template <class T, class P>
 [[nodiscard]] ATTRIBUTE_CONST constexpr T bin_pow(T n, const P p) noexcept(noexcept(n *= n)) {
     math_functions::detail::check_math_int_type<P>();
 
+    if constexpr (math_functions::is_integral_v<T>) {
+        math_functions::detail::check_math_int_type<T>();
+    }
+
+    if constexpr (math_functions::is_arithmetic_v<T>) {
+        if (config::is_constant_evaluated() || config::is_gcc_constant_p(n)) {
+            if (n == 0) {
+                assert(p >= 0);
+                return p == 0 ? T{1} : T{0};
+            } else if (n == 1) {
+                return T{1};
+            } else if constexpr (!math_functions::is_unsigned_v<T>) {
+                if (n == -1) {
+                    return p % 2 == 0 ? T{1} : T{-1};
+                }
+            }
+        }
+    }
+
     T ret = math_functions::detail::bin_pow_impl(std::move(n), math_functions::uabs(p));
     if constexpr (math_functions::is_unsigned_v<P>) {
         return ret;
     } else {
-        return p >= 0 ? std::move(ret) : T{1} / std::move(ret);
+        static_assert(!math_functions::is_integral_v<T>,
+                      "use floating point types in bin_pow because type of power is signed");
+        if (p >= 0) {
+            return ret;
+        }
+
+        assert(ret != 0);
+        return T{1} / std::move(ret);
     }
 }
+
+#if CONFIG_COMPILER_IS_GCC_OR_ANY_CLANG
+#if CONFIG_COMPILER_ID == CONFIG_GCC_COMPILER_ID
+#pragma GCC diagnostic pop
+#else
+#pragma clang diagnostic pop
+#endif
+#endif
 
 /// @brief Calculate (n ^ p) % mod
 /// @tparam T unsigned integral type
@@ -3002,96 +3049,113 @@ CONSTEXPR_VECTOR std::vector<uint32_t> factorial_mod_m_arange(const size_t n, co
 
 namespace detail {
 
-// clang-format off
+template <class T>
+ATTRIBUTE_SIZED_ACCESS(read_only, 2, 3)
+ATTRIBUTE_NONNULL_ALL_ARGS ATTRIBUTE_PURE [[nodiscard]]
+constexpr size_t find_wmin_index(T weighted_sum,
+                                 const T* const RESTRICT_QUALIFIER prefsums,
+                                 const size_t prefsums_size) noexcept {
+    assert(prefsums_size > 0);
 
-template <class Iterator>
-ATTRIBUTE_NODISCARD
-ATTRIBUTE_ALWAYS_INLINE
-ATTRIBUTE_SIZED_ACCESS(read_only, 3, 4)
-constexpr Iterator find_wmedian_iter(uint64_t weighted_sum,
-                                     Iterator iter,
-                                     const uint64_t* const RESTRICT_QUALIFIER prefsums,
-                                     const size_t prefsums_size) noexcept {
-    // clang-format on
+    T min_weighted_sum = weighted_sum;
+    size_t min_weighted_sum_index = 0;
 
-    uint64_t min_weighted_sum = weighted_sum;
-    Iterator min_weighted_sum_iter = iter;
-    ++iter;
     const size_t n = prefsums_size - 1;
-    const uint64_t max_prefsum = prefsums[n];
-    for (size_t j = 1; j < n; ++iter, ++j) {
+    const T max_prefsum = prefsums[n];
+    for (size_t j = 1; j < n; ++j) {
         weighted_sum = weighted_sum + prefsums[j] - (max_prefsum - prefsums[j]);
         if (weighted_sum < min_weighted_sum) {
             min_weighted_sum = weighted_sum;
-            min_weighted_sum_iter = iter;
+            min_weighted_sum_index = j;
         }
     }
 
-    return min_weighted_sum_iter;
+    return min_weighted_sum_index;
 }
 
 // clang-format off
 
-template <class Iterator>
-ATTRIBUTE_NODISCARD
-CONSTEXPR_VECTOR Iterator wmedian_impl(const Iterator begin, const Iterator end) {
+template <class Iterator, class Sentinel>
+[[nodiscard]]
+CONSTEXPR_VECTOR Iterator wmin_impl(const Iterator begin, const Sentinel end) {
     // clang-format on
 
-    const ptrdiff_t n_signed = std::distance(begin, end);
+    using IterTraits = std::iterator_traits<Iterator>;
+    using IntType = typename IterTraits::value_type;
+    using DiffType = typename IterTraits::difference_type;
+
+    const DiffType n_signed = std::distance(begin, end);
+    assert(n_signed >= 0);
     if (unlikely(n_signed <= 0)) {
-        return end;
+        return begin;
     }
 
     const size_t n = static_cast<size_t>(n_signed);
-    std::vector<uint64_t> prefsums(n + 1);
+
+    using ComputationalType = math_functions::detail::double_bits_t<IntType>;
+    static_assert(math_functions::is_math_integral_type_v<IntType> &&
+                      math_functions::is_math_integral_type_v<ComputationalType>,
+                  "Unsupported value type in the input sequence in the weighted_min "
+                  "(try using int32_t or uint32_t if your platform doesn't have int128_t)");
+
+    std::vector<ComputationalType> prefsums(n + 1);
     size_t i = 0;
-    uint64_t weighted_sum = 0;
+    ComputationalType weighted_sum = 0;
     for (Iterator iter = begin; iter != end; ++iter, ++i) {
-        const uint32_t val = *iter;
-        prefsums[i + 1] = prefsums[i] + uint64_t{val};
-        weighted_sum += uint64_t{i} * uint64_t{val};
+        const IntType val = *iter;
+        prefsums[i + 1] = prefsums[i] + ComputationalType{val};
+        weighted_sum += static_cast<ComputationalType>(i) * ComputationalType{val};
     }
 
-    return math_functions::detail::find_wmedian_iter(weighted_sum, begin,
-                                                     std::as_const(prefsums).data(), n + 1);
+    const size_t index = math_functions::detail::find_wmin_index(
+        weighted_sum, std::as_const(prefsums).data(), n + 1);
+    Iterator iter = begin;
+    std::advance(iter, static_cast<DiffType>(index));
+    return iter;
 }
 
 }  // namespace detail
 
 #if CONFIG_HAS_CONCEPTS && defined(MATH_FUNCTIONS_HAS_RANGES)
 
-template <math_functions::integral_forward_iterator Iterator>
-    requires std::same_as<std::iter_value_t<Iterator>, uint32_t>
-[[nodiscard]] CONSTEXPR_VECTOR Iterator weighted_median(Iterator begin, Iterator end) {
-    return math_functions::detail::wmedian_impl(std::move(begin), std::move(end));
+template <math_functions::integral_forward_iterator Iterator, std::sentinel_for<Iterator> Sentinel>
+[[nodiscard]] CONSTEXPR_VECTOR Iterator weighted_min(Iterator begin, Sentinel end) {
+    return math_functions::detail::wmin_impl(std::move(begin), std::move(end));
 }
 
 // clang-format off
 
+/// @brief Let @a range be a sequence S of elements S_0, S_1, ..., S_m
+///        Then this function returns iterator to the element S_j such that
+///        \f[
+///           j = \argmin_{0 <= j <= m} ( \sum_{i = 0}^{m} (i - j) * S_i )
+///        \f]
+/// @tparam Range
+/// @param range
+/// @return
 template <std::ranges::forward_range Range>
 [[nodiscard]]
 // NOLINTNEXTLINE(cppcoreguidelines-missing-std-forward)
-CONSTEXPR_VECTOR std::ranges::borrowed_iterator_t<Range> weighted_median(Range&& range ATTRIBUTE_LIFETIME_BOUND) {
-    return math_functions::weighted_median(std::begin(range), std::end(range));
+CONSTEXPR_VECTOR std::ranges::borrowed_iterator_t<Range> weighted_min(Range&& range ATTRIBUTE_LIFETIME_BOUND) {
+    return math_functions::weighted_min(std::ranges::begin(range), std::ranges::end(range));
 }
 
 // clang-format on
 
 #else
 
-// clang-format off
-
 template <class Iterator,
-          std::enable_if_t<std::is_same_v<typename std::iterator_traits<Iterator>::value_type, uint32_t>, int> = 0>
-ATTRIBUTE_NODISCARD CONSTEXPR_VECTOR Iterator weighted_median(Iterator begin, Iterator end) {
-    return math_functions::detail::wmedian_impl(std::move(begin), std::move(end));
+          std::enable_if_t<math_functions::is_math_integral_type_v<
+                               typename std::iterator_traits<Iterator>::value_type>,
+                           int> = 0>
+ATTRIBUTE_NODISCARD CONSTEXPR_VECTOR Iterator weighted_min(Iterator begin, Iterator end) {
+    return math_functions::detail::wmin_impl(std::move(begin), std::move(end));
 }
-// clang-format on
 
 template <class Range>
 // NOLINTNEXTLINE(cppcoreguidelines-missing-std-forward)
-ATTRIBUTE_NODISCARD CONSTEXPR_VECTOR auto weighted_median(Range&& range ATTRIBUTE_LIFETIME_BOUND) {
-    return math_functions::weighted_median(std::begin(range), std::end(range));
+ATTRIBUTE_NODISCARD CONSTEXPR_VECTOR auto weighted_min(Range&& range ATTRIBUTE_LIFETIME_BOUND) {
+    return math_functions::weighted_min(std::cbegin(range), std::cend(range));
 }
 
 #endif
