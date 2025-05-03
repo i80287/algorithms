@@ -110,6 +110,9 @@ template <class T>
 inline constexpr bool is_signed_v = math_functions::detail::helper_ns::is_signed_v<T>;
 
 template <class T>
+inline constexpr bool is_arithmetic_v = math_functions::detail::helper_ns::is_arithmetic_v<T>;
+
+template <class T>
 using make_unsigned_t = typename math_functions::detail::helper_ns::make_unsigned_t<T>;
 
 template <class T>
@@ -456,11 +459,37 @@ template <class T, class P>
 [[nodiscard]] ATTRIBUTE_CONST constexpr T bin_pow(T n, const P p) noexcept(noexcept(n *= n)) {
     math_functions::detail::check_math_int_type<P>();
 
+    if constexpr (math_functions::is_integral_v<T>) {
+        math_functions::detail::check_math_int_type<T>();
+    }
+
+    if constexpr (math_functions::is_arithmetic_v<T>) {
+        if (config::is_constant_evaluated() || config::is_gcc_constant_p(n)) {
+            if (n == 0) {
+                assert(p >= 0);
+                return p == 0 ? T{1} : T{0};
+            } else if (n == 1) {
+                return T{1};
+            } else if constexpr (!math_functions::is_unsigned_v<T>) {
+                if (n == -1) {
+                    return p % 2 == 0 ? T{1} : T{-1};
+                }
+            }
+        }
+    }
+
     T ret = math_functions::detail::bin_pow_impl(std::move(n), math_functions::uabs(p));
     if constexpr (math_functions::is_unsigned_v<P>) {
         return ret;
     } else {
-        return p >= 0 ? std::move(ret) : T{1} / std::move(ret);
+        static_assert(!math_functions::is_integral_v<T>,
+                      "use floating point types in bin_pow because type of power is signed");
+        if (p >= 0) {
+            return ret;
+        }
+
+        assert(ret != 0);
+        return T{1} / std::move(ret);
     }
 }
 
