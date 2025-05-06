@@ -32,6 +32,7 @@
 #include <utility>
 #include <vector>
 
+#include "../misc/assert.hpp"
 #include "../misc/config_macros.hpp"
 
 #if CONFIG_HAS_AT_LEAST_CXX_20 && CONFIG_HAS_INCLUDE(<bit>)
@@ -1322,6 +1323,11 @@ template <class IntType>
     return math_functions::masked_popcount_sum(n, ~IntType{0});
 }
 
+ATTRIBUTE_CONST
+[[nodiscard]] constexpr bool is_correct_base_b_len_base(const uint8_t base) noexcept {
+    return 2 <= base && base <= 36;
+}
+
 namespace detail {
 
 /// @brief Realization taken from the gcc libstdc++ __to_chars_len
@@ -1330,9 +1336,12 @@ namespace detail {
 /// @param[in] base
 /// @return
 template <class T>
-[[nodiscard]]
-ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_CONST constexpr uint32_t base_b_len_impl(
-    T value, const uint8_t base = 10) noexcept {
+ATTRIBUTE_CONST [[nodiscard]]
+constexpr uint32_t base_b_len_impl(T value, const uint8_t base) noexcept {
+    static_assert(math_functions::is_unsigned_v<T>);
+
+    CONFIG_ASSUME_STATEMENT(is_correct_base_b_len_base(base));
+
     const uint32_t b = base;
     const uint32_t b2 = b * b;
     const uint32_t b3 = b2 * b;
@@ -1366,10 +1375,12 @@ ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_CONST constexpr uint32_t base_b_len_impl(
 /// @param[in] value
 /// @param[in] base
 /// @return
-template <typename T>
-[[nodiscard]] ATTRIBUTE_CONST constexpr uint32_t base_b_len(T value,
-                                                            const uint8_t base = 10) noexcept {
+template <class T>
+[[nodiscard]]
+ATTRIBUTE_CONST constexpr uint32_t base_b_len(const T value, const uint8_t base = 10) {
     math_functions::detail::check_math_int_type<T>();
+
+    THROW_IF_NOT(math_functions::detail::is_correct_base_b_len_base(base));
 
     if constexpr (math_functions::is_signed_v<T>) {
         const uint32_t is_negative = uint32_t{value < 0};
@@ -2333,6 +2344,7 @@ ATTRIBUTE_ALWAYS_INLINE
 CONSTEXPR_VECTOR
 std::vector<uint32_t> solve_congruence_modulo_m_all_roots(const T1 a, const T2 c, const uint32_t m) {
     // clang-format on
+    THROW_IF(m == 0);
     return math_functions::detail::solve_congruence_modulo_m_all_roots_impl(
         math_functions::detail::congruence_arg(a, m), math_functions::detail::congruence_arg(c, m),
         m);
@@ -2358,6 +2370,7 @@ ATTRIBUTE_CONST
 ATTRIBUTE_ALWAYS_INLINE
 constexpr uint32_t solve_congruence_modulo_m(const T1 a, const T2 c, const uint32_t m) noexcept {
     // clang-format on
+    THROW_IF(m == 0);
     return math_functions::detail::solve_congruence_modulo_m_impl(
         math_functions::detail::congruence_arg(a, m), math_functions::detail::congruence_arg(c, m),
         m);
@@ -2465,6 +2478,7 @@ template <math_functions::integral_forward_iterator Iterator, std::sentinel_for<
 CONSTEXPR_VECTOR math_functions::InverseResult inv_range_mod_m(Iterator nums_begin,
                                                                Sentinel nums_end,
                                                                const uint32_t m) {
+    THROW_IF(m == 0);
     return math_functions::detail::inv_range_mod_m_impl(std::move(nums_begin), std::move(nums_end),
                                                         m);
 }
@@ -2494,6 +2508,7 @@ CONSTEXPR_VECTOR
 math_functions::InverseResult inv_range_mod_m(Iter nums_iter_begin,
                                               Sentinel nums_iter_end,
                                               const uint32_t m) {
+    THROW_IF(m == 0);
     return math_functions::detail::inv_range_mod_m_impl(std::move(nums_iter_begin), std::move(nums_iter_end), m);
 }
 
