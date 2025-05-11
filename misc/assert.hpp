@@ -9,8 +9,9 @@ namespace misc {
 namespace detail {
 
 ATTRIBUTE_NONNULL_ALL_ARGS
-[[nodiscard]] std::runtime_error make_exception(const char* const message,
-                                                const char* const function_name) {
+ATTRIBUTE_ALWAYS_INLINE
+[[nodiscard]] inline std::runtime_error make_exception(const char* const message,
+                                                       const char* const function_name) {
     const std::string_view message_sv(message);
     const std::string_view function_name_sv(function_name);
     std::string message_str(message_sv.size() + function_name_sv.size(), '\0');
@@ -22,26 +23,17 @@ ATTRIBUTE_NONNULL_ALL_ARGS
 
 ATTRIBUTE_NONNULL_ALL_ARGS
 ATTRIBUTE_NORETURN
+ATTRIBUTE_COLD
 inline void throw_runtime_error_impl(const char* const message, const char* const function_name) {
     throw misc::detail::make_exception(message, function_name);
 }
 
 ATTRIBUTE_NONNULL_ALL_ARGS
 ATTRIBUTE_ALWAYS_INLINE
-inline void throw_if_impl(const bool expression,
-                          const char* const message,
-                          const char* const function_name) {
+constexpr void throw_if_impl(const bool expression,
+                             const char* const message,
+                             const char* const function_name) {
     if (unlikely(expression)) {
-        misc::detail::throw_runtime_error_impl(message, function_name);
-    }
-}
-
-ATTRIBUTE_NONNULL_ALL_ARGS
-ATTRIBUTE_ALWAYS_INLINE
-inline void throw_if_not_impl(const bool expression,
-                              const char* const message,
-                              const char* const function_name) {
-    if (unlikely(!expression)) {
         misc::detail::throw_runtime_error_impl(message, function_name);
     }
 }
@@ -56,10 +48,10 @@ inline void throw_if_not_impl(const bool expression,
 
 }  // namespace detail
 
-#define THROW_IF_NOT(expression) \
-    misc::detail::throw_if_not_impl(expression, THROW_IF_MESSAGE_IMPL(expression, "false"))
-
 #define THROW_IF(expression) \
-    misc::detail::throw_if_impl(expression, THROW_IF_MESSAGE_IMPL(expression, "true"))
+    misc::detail::throw_if_impl(expression, THROW_IF_MESSAGE_IMPL(expression, true))
+
+#define THROW_IF_NOT(expression) \
+    misc::detail::throw_if_impl(!(expression), THROW_IF_MESSAGE_IMPL(expression, false))
 
 }  // namespace misc
