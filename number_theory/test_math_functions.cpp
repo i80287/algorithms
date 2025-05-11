@@ -883,14 +883,11 @@ void test_general_asserts() noexcept {
     } while (false)
 
 #if defined(__cpp_constexpr) && __cpp_constexpr >= 202211L && defined(__GNUG__)
-#define LOG10_ASSERT_THAT(expr)                 \
-    do {                                        \
-        assert(expr);                           \
-        static_assert((expr), STRINGIFY(expr)); \
-    } while (false)
+#define LOG10_ASSERT_THAT(expr) ASSERT_THAT(expr)
 #else
 #define LOG10_ASSERT_THAT(expr) assert(expr)
 #endif
+
 #if defined(INTEGERS_128_BIT_HPP)
 #ifdef HAS_I128_CONSTEXPR
 #define I128_ASSERT_THAT(expr) ASSERT_THAT(expr)
@@ -1632,57 +1629,119 @@ void test_general_asserts() noexcept {
     ASSERT_THAT(nearest_greater_equal_power_of_two(uint64_t{1} << 62U) == uint64_t{1} << 62U);
     ASSERT_THAT(nearest_greater_equal_power_of_two(uint64_t{1} << 63U) == uint64_t{1} << 63U);
 
-    ASSERT_THAT(least_bit_set(0b0) == 0b0);
-    ASSERT_THAT(least_bit_set(0b1) == 0b1);
-    ASSERT_THAT(least_bit_set(0b10) == 0b10);
-    ASSERT_THAT(least_bit_set(0b100) == 0b100);
-    ASSERT_THAT(least_bit_set(0b1000) == 0b1000);
-    ASSERT_THAT(least_bit_set(0b10000) == 0b10000);
-    ASSERT_THAT(least_bit_set(0b100000) == 0b100000);
-    ASSERT_THAT(least_bit_set(0b1000000) == 0b1000000);
-    ASSERT_THAT(least_bit_set(0b10000000) == 0b10000000);
-    ASSERT_THAT(least_bit_set(0b0U) == 0b0U);
-    ASSERT_THAT(least_bit_set(0b1U) == 0b1U);
-    ASSERT_THAT(least_bit_set(0b10U) == 0b10U);
-    ASSERT_THAT(least_bit_set(0b100U) == 0b100U);
-    ASSERT_THAT(least_bit_set(0b1000U) == 0b1000U);
-    ASSERT_THAT(least_bit_set(0b10000U) == 0b10000U);
-    ASSERT_THAT(least_bit_set(0b100000U) == 0b100000U);
-    ASSERT_THAT(least_bit_set(0b1000000U) == 0b1000000U);
-    ASSERT_THAT(least_bit_set(0b10000000U) == 0b10000000U);
-    ASSERT_THAT(least_bit_set(static_cast<int8_t>(0b0)) == static_cast<int8_t>(0b0));
-    ASSERT_THAT(least_bit_set(static_cast<int8_t>(0b1)) == static_cast<int8_t>(0b1));
-    ASSERT_THAT(least_bit_set(static_cast<int8_t>(0b10)) == static_cast<int8_t>(0b10));
-    ASSERT_THAT(least_bit_set(static_cast<int8_t>(0b100)) == static_cast<int8_t>(0b100));
-    ASSERT_THAT(least_bit_set(static_cast<int8_t>(0b1000)) == static_cast<int8_t>(0b1000));
-    ASSERT_THAT(least_bit_set(static_cast<int8_t>(0b10000)) == static_cast<int8_t>(0b10000));
-    ASSERT_THAT(least_bit_set(static_cast<int8_t>(0b100000)) == static_cast<int8_t>(0b100000));
-    ASSERT_THAT(least_bit_set(static_cast<int8_t>(0b1000000)) == static_cast<int8_t>(0b1000000));
-    ASSERT_THAT(least_bit_set(static_cast<int8_t>(0b10000000)) == static_cast<int8_t>(0b10000000));
-    ASSERT_THAT(least_bit_set(uint8_t{0b0}) == uint8_t{0b0});
-    ASSERT_THAT(least_bit_set(uint8_t{0b1}) == uint8_t{0b1});
-    ASSERT_THAT(least_bit_set(uint8_t{0b10}) == uint8_t{0b10});
-    ASSERT_THAT(least_bit_set(uint8_t{0b100}) == uint8_t{0b100});
-    ASSERT_THAT(least_bit_set(uint8_t{0b1000}) == uint8_t{0b1000});
-    ASSERT_THAT(least_bit_set(uint8_t{0b10000}) == uint8_t{0b10000});
-    ASSERT_THAT(least_bit_set(uint8_t{0b100000}) == uint8_t{0b100000});
-    ASSERT_THAT(least_bit_set(uint8_t{0b1000000}) == uint8_t{0b1000000});
-    ASSERT_THAT(least_bit_set(uint8_t{0b10000000}) == uint8_t{0b10000000});
-    ASSERT_THAT(least_bit_set(0b100000000) == 0b100000000);
-    ASSERT_THAT(least_bit_set(0b1000000000) == 0b1000000000);
-    ASSERT_THAT(least_bit_set(0b10000000000) == 0b10000000000);
-    ASSERT_THAT(least_bit_set(0b100000000U) == 0b100000000U);
-    ASSERT_THAT(least_bit_set(0b1000000000U) == 0b1000000000U);
-    ASSERT_THAT(least_bit_set(0b10000000000U) == 0b10000000000U);
-    ASSERT_THAT(
-        least_bit_set(0b1000000000000000000000000000000000000000000000000000000000000000ULL) ==
-        0b1000000000000000000000000000000000000000000000000000000000000000ULL);
-    ASSERT_THAT(least_bit_set(0b110101010101010101011001) == 0b1);
-    ASSERT_THAT(least_bit_set(0b1010101011001101011100010100000LL) == 0b100000LL);
-    ASSERT_THAT(least_bit_set(0b1010111001010101101010110101001101011100110011000LL) == 0b1000LL);
-    ASSERT_THAT(least_bit_set(0b110101010101010101011001U) == 0b1U);
-    ASSERT_THAT(least_bit_set(0b1010101011001101011100010100000ULL) == 0b100000ULL);
-    ASSERT_THAT(least_bit_set(0b1010111001010101101010110101001101011100110011000ULL) == 0b1000ULL);
+    // clang-format off
+
+    ASSERT_THAT(most_significant_set_bit(0b0) == 0b0);
+    ASSERT_THAT(most_significant_set_bit(0b1) == 0b1);
+    ASSERT_THAT(most_significant_set_bit(0b10) == 0b10);
+    ASSERT_THAT(most_significant_set_bit(0b100) == 0b100);
+    ASSERT_THAT(most_significant_set_bit(0b1000) == 0b1000);
+    ASSERT_THAT(most_significant_set_bit(0b10000) == 0b10000);
+    ASSERT_THAT(most_significant_set_bit(0b100000) == 0b100000);
+    ASSERT_THAT(most_significant_set_bit(0b1000000) == 0b1000000);
+    ASSERT_THAT(most_significant_set_bit(0b10000000) == 0b10000000);
+    ASSERT_THAT(most_significant_set_bit(0b0U) == 0b0U);
+    ASSERT_THAT(most_significant_set_bit(0b1U) == 0b1U);
+    ASSERT_THAT(most_significant_set_bit(0b10U) == 0b10U);
+    ASSERT_THAT(most_significant_set_bit(0b100U) == 0b100U);
+    ASSERT_THAT(most_significant_set_bit(0b1000U) == 0b1000U);
+    ASSERT_THAT(most_significant_set_bit(0b10000U) == 0b10000U);
+    ASSERT_THAT(most_significant_set_bit(0b100000U) == 0b100000U);
+    ASSERT_THAT(most_significant_set_bit(0b1000000U) == 0b1000000U);
+    ASSERT_THAT(most_significant_set_bit(0b10000000U) == 0b10000000U);
+    ASSERT_THAT(most_significant_set_bit(static_cast<int8_t>(0b0)) == static_cast<int8_t>(0b0));
+    ASSERT_THAT(most_significant_set_bit(static_cast<int8_t>(0b1)) == static_cast<int8_t>(0b1));
+    ASSERT_THAT(most_significant_set_bit(static_cast<int8_t>(0b10)) == static_cast<int8_t>(0b10));
+    ASSERT_THAT(most_significant_set_bit(static_cast<int8_t>(0b100)) == static_cast<int8_t>(0b100));
+    ASSERT_THAT(most_significant_set_bit(static_cast<int8_t>(0b1000)) == static_cast<int8_t>(0b1000));
+    ASSERT_THAT(most_significant_set_bit(static_cast<int8_t>(0b10000)) == static_cast<int8_t>(0b10000));
+    ASSERT_THAT(most_significant_set_bit(static_cast<int8_t>(0b100000)) == static_cast<int8_t>(0b100000));
+    ASSERT_THAT(most_significant_set_bit(static_cast<int8_t>(0b1000000)) == static_cast<int8_t>(0b1000000));
+    ASSERT_THAT(most_significant_set_bit(static_cast<int8_t>(0b10000000)) == static_cast<int8_t>(0b10000000));
+    ASSERT_THAT(most_significant_set_bit(uint8_t{0b0}) == uint8_t{0b0});
+    ASSERT_THAT(most_significant_set_bit(uint8_t{0b1}) == uint8_t{0b1});
+    ASSERT_THAT(most_significant_set_bit(uint8_t{0b10}) == uint8_t{0b10});
+    ASSERT_THAT(most_significant_set_bit(uint8_t{0b100}) == uint8_t{0b100});
+    ASSERT_THAT(most_significant_set_bit(uint8_t{0b1000}) == uint8_t{0b1000});
+    ASSERT_THAT(most_significant_set_bit(uint8_t{0b10000}) == uint8_t{0b10000});
+    ASSERT_THAT(most_significant_set_bit(uint8_t{0b100000}) == uint8_t{0b100000});
+    ASSERT_THAT(most_significant_set_bit(uint8_t{0b1000000}) == uint8_t{0b1000000});
+    ASSERT_THAT(most_significant_set_bit(uint8_t{0b10000000}) == uint8_t{0b10000000});
+    ASSERT_THAT(most_significant_set_bit(1 << 7U) == 1 << 7U);
+    ASSERT_THAT(most_significant_set_bit(1 << 8U) == 1 << 8U);
+    ASSERT_THAT(most_significant_set_bit(1 << 9U) == 1 << 9U);
+    ASSERT_THAT(most_significant_set_bit(1 << 10U) == 1 << 10U);
+    ASSERT_THAT(most_significant_set_bit(1U << 7U) == 1U << 7U);
+    ASSERT_THAT(most_significant_set_bit(1U << 8U) == 1U << 8U);
+    ASSERT_THAT(most_significant_set_bit(1U << 9U) == 1U << 9U);
+    ASSERT_THAT(most_significant_set_bit(1U << 10U) == 1U << 10U);
+    ASSERT_THAT(most_significant_set_bit(static_cast<long long>(1ULL << 63U)) == static_cast<long long>(1ULL << 63U));
+    ASSERT_THAT(most_significant_set_bit(1ULL << 63U) == 1ULL << 63U);
+
+    ASSERT_THAT(most_significant_set_bit(0b110101010101010101011001) == 0b100000000000000000000000);
+    ASSERT_THAT(most_significant_set_bit(0b1010101011001101011100010100000LL) == 0b1000000000000000000000000000000LL);
+    ASSERT_THAT(most_significant_set_bit(0b1010111001010101101010110101001101011100110011000LL) == 0b1000000000000000000000000000000000000000000000000LL);
+
+    ASSERT_THAT(most_significant_set_bit(0b110101010101010101011001U) == 0b100000000000000000000000U);
+    ASSERT_THAT(most_significant_set_bit(0b1010101011001101011100010100000ULL) == 0b1000000000000000000000000000000ULL);
+    ASSERT_THAT(most_significant_set_bit(0b1010111001010101101010110101001101011100110011000ULL) == 0b1000000000000000000000000000000000000000000000000ULL);
+
+    ASSERT_THAT(least_significant_set_bit(0b0) == 0b0);
+    ASSERT_THAT(least_significant_set_bit(0b1) == 0b1);
+    ASSERT_THAT(least_significant_set_bit(0b10) == 0b10);
+    ASSERT_THAT(least_significant_set_bit(0b100) == 0b100);
+    ASSERT_THAT(least_significant_set_bit(0b1000) == 0b1000);
+    ASSERT_THAT(least_significant_set_bit(0b10000) == 0b10000);
+    ASSERT_THAT(least_significant_set_bit(0b100000) == 0b100000);
+    ASSERT_THAT(least_significant_set_bit(0b1000000) == 0b1000000);
+    ASSERT_THAT(least_significant_set_bit(0b10000000) == 0b10000000);
+    ASSERT_THAT(least_significant_set_bit(0b0U) == 0b0U);
+    ASSERT_THAT(least_significant_set_bit(0b1U) == 0b1U);
+    ASSERT_THAT(least_significant_set_bit(0b10U) == 0b10U);
+    ASSERT_THAT(least_significant_set_bit(0b100U) == 0b100U);
+    ASSERT_THAT(least_significant_set_bit(0b1000U) == 0b1000U);
+    ASSERT_THAT(least_significant_set_bit(0b10000U) == 0b10000U);
+    ASSERT_THAT(least_significant_set_bit(0b100000U) == 0b100000U);
+    ASSERT_THAT(least_significant_set_bit(0b1000000U) == 0b1000000U);
+    ASSERT_THAT(least_significant_set_bit(0b10000000U) == 0b10000000U);
+    ASSERT_THAT(least_significant_set_bit(static_cast<int8_t>(0b0)) == static_cast<int8_t>(0b0));
+    ASSERT_THAT(least_significant_set_bit(static_cast<int8_t>(0b1)) == static_cast<int8_t>(0b1));
+    ASSERT_THAT(least_significant_set_bit(static_cast<int8_t>(0b10)) == static_cast<int8_t>(0b10));
+    ASSERT_THAT(least_significant_set_bit(static_cast<int8_t>(0b100)) == static_cast<int8_t>(0b100));
+    ASSERT_THAT(least_significant_set_bit(static_cast<int8_t>(0b1000)) == static_cast<int8_t>(0b1000));
+    ASSERT_THAT(least_significant_set_bit(static_cast<int8_t>(0b10000)) == static_cast<int8_t>(0b10000));
+    ASSERT_THAT(least_significant_set_bit(static_cast<int8_t>(0b100000)) == static_cast<int8_t>(0b100000));
+    ASSERT_THAT(least_significant_set_bit(static_cast<int8_t>(0b1000000)) == static_cast<int8_t>(0b1000000));
+    ASSERT_THAT(least_significant_set_bit(static_cast<int8_t>(0b10000000)) == static_cast<int8_t>(0b10000000));
+    ASSERT_THAT(least_significant_set_bit(uint8_t{0b0}) == uint8_t{0b0});
+    ASSERT_THAT(least_significant_set_bit(uint8_t{0b1}) == uint8_t{0b1});
+    ASSERT_THAT(least_significant_set_bit(uint8_t{0b10}) == uint8_t{0b10});
+    ASSERT_THAT(least_significant_set_bit(uint8_t{0b100}) == uint8_t{0b100});
+    ASSERT_THAT(least_significant_set_bit(uint8_t{0b1000}) == uint8_t{0b1000});
+    ASSERT_THAT(least_significant_set_bit(uint8_t{0b10000}) == uint8_t{0b10000});
+    ASSERT_THAT(least_significant_set_bit(uint8_t{0b100000}) == uint8_t{0b100000});
+    ASSERT_THAT(least_significant_set_bit(uint8_t{0b1000000}) == uint8_t{0b1000000});
+    ASSERT_THAT(least_significant_set_bit(uint8_t{0b10000000}) == uint8_t{0b10000000});
+    ASSERT_THAT(least_significant_set_bit(1 << 7U) == 1 << 7U);
+    ASSERT_THAT(least_significant_set_bit(1 << 8U) == 1 << 8U);
+    ASSERT_THAT(least_significant_set_bit(1 << 9U) == 1 << 9U);
+    ASSERT_THAT(least_significant_set_bit(1 << 10U) == 1 << 10U);
+    ASSERT_THAT(least_significant_set_bit(1U << 7U) == 1U << 7U);
+    ASSERT_THAT(least_significant_set_bit(1U << 8U) == 1U << 8U);
+    ASSERT_THAT(least_significant_set_bit(1U << 9U) == 1U << 9U);
+    ASSERT_THAT(least_significant_set_bit(1U << 10U) == 1U << 10U);
+    ASSERT_THAT(least_significant_set_bit(static_cast<long long>(1ULL << 63U)) == static_cast<long long>(1ULL << 63U));
+    ASSERT_THAT(least_significant_set_bit(1ULL << 63U) == 1ULL << 63U);
+
+    ASSERT_THAT(least_significant_set_bit(0b110101010101010101011001) == 0b1);
+    ASSERT_THAT(least_significant_set_bit(0b1010101011001101011100010100000LL) == 0b100000LL);
+    ASSERT_THAT(least_significant_set_bit(0b1010111001010101101010110101001101011100110011000LL) == 0b1000LL);
+
+    ASSERT_THAT(least_significant_set_bit(0b110101010101010101011001U) == 0b1U);
+    ASSERT_THAT(least_significant_set_bit(0b1010101011001101011100010100000ULL) == 0b100000ULL);
+    ASSERT_THAT(least_significant_set_bit(0b1010111001010101101010110101001101011100110011000ULL) == 0b1000ULL);
+
+    // clang-format on
 
     ASSERT_THAT(log2_floor(uint32_t{0}) == static_cast<uint32_t>(-1));
     ASSERT_THAT(log2_floor(uint32_t{1}) == 0);
@@ -1698,7 +1757,7 @@ void test_general_asserts() noexcept {
     ASSERT_THAT(log2_floor(uint32_t{127}) == 6);
     ASSERT_THAT(log2_floor(uint32_t{128}) == 7);
     ASSERT_THAT(log2_floor(uint32_t{129}) == 7);
-    ASSERT_THAT(log2_floor(static_cast<uint32_t>(-1)) == 31);
+    ASSERT_THAT(log2_floor(std::numeric_limits<uint32_t>::max()) == 31);
 
     ASSERT_THAT(log2_ceil(uint32_t{0}) == static_cast<uint32_t>(-1));
     ASSERT_THAT(log2_ceil(uint32_t{1}) == 0);
@@ -1714,7 +1773,7 @@ void test_general_asserts() noexcept {
     ASSERT_THAT(log2_ceil(uint32_t{127}) == 7);
     ASSERT_THAT(log2_ceil(uint32_t{128}) == 7);
     ASSERT_THAT(log2_ceil(uint32_t{129}) == 8);
-    ASSERT_THAT(log2_ceil(static_cast<uint32_t>(-1)) == 32);
+    ASSERT_THAT(log2_ceil(std::numeric_limits<uint32_t>::max()) == 32);
 
     LOG10_ASSERT_THAT(log10_floor(uint32_t{0}) == static_cast<uint32_t>(-1));
     LOG10_ASSERT_THAT(log10_floor(uint32_t{1}) == 0);
@@ -1729,7 +1788,7 @@ void test_general_asserts() noexcept {
     LOG10_ASSERT_THAT(log10_floor(uint32_t{4294967294U}) == 9);
     LOG10_ASSERT_THAT(log10_floor(static_cast<uint32_t>(1e8)) == 8);
     LOG10_ASSERT_THAT(log10_floor(static_cast<uint32_t>(1e9)) == 9);
-    LOG10_ASSERT_THAT(log10_floor(static_cast<uint32_t>(-1)) == 9);
+    LOG10_ASSERT_THAT(log10_floor(std::numeric_limits<uint32_t>::max()) == 9);
 
     LOG10_ASSERT_THAT(log10_floor(uint64_t{0}) == static_cast<uint32_t>(-1));
     LOG10_ASSERT_THAT(log10_floor(uint64_t{1}) == 0);
@@ -1743,7 +1802,7 @@ void test_general_asserts() noexcept {
     LOG10_ASSERT_THAT(log10_floor(static_cast<uint64_t>(1e9)) == 9);
     LOG10_ASSERT_THAT(log10_floor(static_cast<uint64_t>(1e18)) == 18);
     LOG10_ASSERT_THAT(log10_floor(static_cast<uint64_t>(1e19)) == 19);
-    LOG10_ASSERT_THAT(log10_floor(static_cast<uint64_t>(-1)) == 19);
+    LOG10_ASSERT_THAT(log10_floor(std::numeric_limits<uint64_t>::max()) == 19);
 
     LOG10_ASSERT_THAT(base_10_len(uint32_t{0}) == 1);
     LOG10_ASSERT_THAT(base_10_len(uint32_t{1}) == 1);
@@ -1758,7 +1817,7 @@ void test_general_asserts() noexcept {
     LOG10_ASSERT_THAT(base_10_len(uint32_t{4294967294U}) == 10);
     LOG10_ASSERT_THAT(base_10_len(static_cast<uint32_t>(1e8)) == 9);
     LOG10_ASSERT_THAT(base_10_len(static_cast<uint32_t>(1e9)) == 10);
-    LOG10_ASSERT_THAT(base_10_len(static_cast<uint32_t>(-1)) == 10);
+    LOG10_ASSERT_THAT(base_10_len(std::numeric_limits<uint32_t>::max()) == 10);
 
     LOG10_ASSERT_THAT(base_10_len(uint64_t{0}) == 1);
     LOG10_ASSERT_THAT(base_10_len(uint64_t{1}) == 1);
@@ -1775,7 +1834,7 @@ void test_general_asserts() noexcept {
     LOG10_ASSERT_THAT(base_10_len(static_cast<uint64_t>(1e9)) == 10);
     LOG10_ASSERT_THAT(base_10_len(static_cast<uint64_t>(1e18)) == 19);
     LOG10_ASSERT_THAT(base_10_len(static_cast<uint64_t>(1e19)) == 20);
-    LOG10_ASSERT_THAT(base_10_len(static_cast<uint64_t>(-1)) == 20);
+    LOG10_ASSERT_THAT(base_10_len(std::numeric_limits<uint64_t>::max()) == 20);
 
     ASSERT_THAT(base_b_len(0U) == 1);
     ASSERT_THAT(base_b_len(1U) == 1);
@@ -1803,7 +1862,8 @@ void test_general_asserts() noexcept {
     ASSERT_THAT(base_b_len(-99) == 3);
     ASSERT_THAT(base_b_len(-100) == 4);
     ASSERT_THAT(base_b_len(-101) == 4);
-    ASSERT_THAT(base_b_len(static_cast<int32_t>(uint32_t{1} << 31U)) == 11);
+    ASSERT_THAT(base_b_len(std::numeric_limits<int32_t>::max()) == 10);
+    ASSERT_THAT(base_b_len(std::numeric_limits<int32_t>::min()) == 11);
 
     ASSERT_THAT(base_b_len(0ULL) == 1);
     ASSERT_THAT(base_b_len(1ULL) == 1);
@@ -1813,7 +1873,7 @@ void test_general_asserts() noexcept {
     ASSERT_THAT(base_b_len(99ULL) == 2);
     ASSERT_THAT(base_b_len(100ULL) == 3);
     ASSERT_THAT(base_b_len(101ULL) == 3);
-    ASSERT_THAT(base_b_len(static_cast<uint64_t>(-1)) == 20);
+    ASSERT_THAT(base_b_len(std::numeric_limits<uint64_t>::max()) == 20);
 
     ASSERT_THAT(base_b_len(0LL) == 1);
     ASSERT_THAT(base_b_len(1LL) == 1);
@@ -1831,6 +1891,7 @@ void test_general_asserts() noexcept {
     ASSERT_THAT(base_b_len(-99LL) == 3);
     ASSERT_THAT(base_b_len(-100LL) == 4);
     ASSERT_THAT(base_b_len(-101LL) == 4);
+    ASSERT_THAT(base_b_len(std::numeric_limits<int64_t>::max()) == 19);
     ASSERT_THAT(base_b_len(std::numeric_limits<int64_t>::min()) == 20);
 
     I128_ASSERT_THAT(base_b_len(uint128_t{0}) == 1);
@@ -1859,6 +1920,7 @@ void test_general_asserts() noexcept {
     I128_ASSERT_THAT(base_b_len(-int128_t{99}) == 3);
     I128_ASSERT_THAT(base_b_len(-int128_t{100}) == 4);
     I128_ASSERT_THAT(base_b_len(-int128_t{101}) == 4);
+    I128_ASSERT_THAT(base_b_len(static_cast<int128_t>(static_cast<uint128_t>(-1) / 2)) == 39);
     I128_ASSERT_THAT(base_b_len(static_cast<int128_t>(uint128_t{1} << 127U)) == 40);
 
     I128_ASSERT_THAT(math_functions::gcd(uint128_t{1}, uint128_t{1}) == 1);
@@ -2061,29 +2123,60 @@ void test_general_asserts() noexcept {
     ASSERT_THAT(next_even(0ULL) == 2);
     ASSERT_THAT(next_even(1ULL) == 2);
     ASSERT_THAT(next_even(2ULL) == 4);
+#ifdef INTEGERS_128_BIT_HPP
     I128_ASSERT_THAT(next_even(uint128_t{0}) == 2);
     I128_ASSERT_THAT(next_even(uint128_t{1}) == 2);
     I128_ASSERT_THAT(next_even(uint128_t{2}) == 4);
+#endif
 
     constexpr auto kMaxU32 = std::numeric_limits<uint32_t>::max();
+    constexpr auto kMaxU64 = std::numeric_limits<uint64_t>::max();
+#ifdef INTEGERS_128_BIT_HPP
+    constexpr auto kMaxU128 = static_cast<uint128_t>(-1);
+#endif
+
     ASSERT_THAT(next_even(kMaxU32 - 3) == kMaxU32 - 1);
     ASSERT_THAT(next_even(kMaxU32 - 2) == kMaxU32 - 1);
     ASSERT_THAT(next_even(kMaxU32 - 1) == 0);
     ASSERT_THAT(next_even(kMaxU32) == 0);
-
-    constexpr auto kMaxU64 = std::numeric_limits<uint64_t>::max();
     ASSERT_THAT(next_even(kMaxU64 - 3) == kMaxU64 - 1);
     ASSERT_THAT(next_even(kMaxU64 - 2) == kMaxU64 - 1);
     ASSERT_THAT(next_even(kMaxU64 - 1) == 0);
     ASSERT_THAT(next_even(kMaxU64 - 0) == 0);
-
 #ifdef INTEGERS_128_BIT_HPP
-    constexpr auto kMaxU128 = static_cast<uint128_t>(-1);
     I128_ASSERT_THAT(next_even(kMaxU128 - 3) == kMaxU128 - 1);
     I128_ASSERT_THAT(next_even(kMaxU128 - 2) == kMaxU128 - 1);
     I128_ASSERT_THAT(next_even(kMaxU128 - 1) == 0);
     I128_ASSERT_THAT(next_even(kMaxU128 - 0) == 0);
 #endif
+
+    ASSERT_THAT(next_odd(0U) == 1);
+    ASSERT_THAT(next_odd(1U) == 3);
+    ASSERT_THAT(next_odd(2U) == 3);
+    ASSERT_THAT(next_odd(0UL) == 1);
+    ASSERT_THAT(next_odd(1UL) == 3);
+    ASSERT_THAT(next_odd(2UL) == 3);
+    ASSERT_THAT(next_odd(0ULL) == 1);
+    ASSERT_THAT(next_odd(1ULL) == 3);
+    ASSERT_THAT(next_odd(2ULL) == 3);
+#ifdef INTEGERS_128_BIT_HPP
+    I128_ASSERT_THAT(next_odd(uint128_t{0}) == 1);
+    I128_ASSERT_THAT(next_odd(uint128_t{1}) == 3);
+    I128_ASSERT_THAT(next_odd(uint128_t{2}) == 3);
+#endif
+
+    ASSERT_THAT(next_odd(kMaxU32 - 3) == kMaxU32 - 2);
+    ASSERT_THAT(next_odd(kMaxU32 - 2) == kMaxU32);
+    ASSERT_THAT(next_odd(kMaxU32 - 1) == kMaxU32);
+    ASSERT_THAT(next_odd(kMaxU32 + 1) == 1);
+    ASSERT_THAT(next_odd(kMaxU64 - 3) == kMaxU64 - 2);
+    ASSERT_THAT(next_odd(kMaxU64 - 2) == kMaxU64);
+    ASSERT_THAT(next_odd(kMaxU64 - 1) == kMaxU64);
+    ASSERT_THAT(next_odd(kMaxU64 + 1) == 1);
+    ASSERT_THAT(next_odd(kMaxU128 - 3) == kMaxU128 - 2);
+    ASSERT_THAT(next_odd(kMaxU128 - 2) == kMaxU128);
+    ASSERT_THAT(next_odd(kMaxU128 - 1) == kMaxU128);
+    ASSERT_THAT(next_odd(kMaxU128 + 1) == 1);
 
     ASSERT_THAT(solve_binary_congruence_modulo_m(24U, 1U << 24U, 43284U) == 1);
     ASSERT_THAT(solve_binary_congruence_modulo_m(24U, 1U << 24U, 39483924U) == 1);
