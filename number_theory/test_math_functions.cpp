@@ -3687,8 +3687,8 @@ void test_arange_functions() {
 void test_masked_popcount_sum() noexcept {
     log_tests_started();
 
-    auto check_n_k = [](uint32_t n, uint32_t k) noexcept {
-        uint32_t correct_sum = 0;
+    const auto check_n_k = [](const uint32_t n, const uint32_t k) constexpr noexcept {
+        uint64_t correct_sum = 0;
         for (uint32_t i = 0; i <= n; i++) {
 #if CONFIG_HAS_AT_LEAST_CXX_20
             const int popcnt = std::popcount(i & k);
@@ -3697,7 +3697,7 @@ void test_masked_popcount_sum() noexcept {
 #endif
             correct_sum += static_cast<std::uint32_t>(popcnt);
         }
-        const uint32_t fast_calc_sum = masked_popcount_sum(n, k);
+        const uint64_t fast_calc_sum = masked_popcount_sum(n, k);
         assert(correct_sum == fast_calc_sum);
     };
     constexpr uint32_t K = 5000;

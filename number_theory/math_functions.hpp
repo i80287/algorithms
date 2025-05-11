@@ -181,7 +181,7 @@ struct double_bits<uint32_t> {
     using type = uint64_t;
 };
 
-#if defined(INTEGERS_128_BIT_HPP)
+#ifdef INTEGERS_128_BIT_HPP
 
 template <>
 struct double_bits<int64_t> {
@@ -197,6 +197,12 @@ struct double_bits<uint64_t> {
 
 template <class T>
 using double_bits_t = typename double_bits<T>::type;
+
+template <class T>
+using try_double_bits_t =
+    std::conditional_t<std::is_void_v<math_functions::detail::double_bits_t<T>>,
+                       T,
+                       math_functions::detail::double_bits_t<T>>;
 
 template <class T>
 ATTRIBUTE_ALWAYS_INLINE constexpr void check_math_int_type() noexcept {
@@ -1304,33 +1310,36 @@ ATTRIBUTE_CONST constexpr IntType least_significant_set_bit(const IntType n) noe
 /// @param n
 /// @param k
 /// @return
-template <class IntType>
+template <class T>
 #if CONFIG_HAS_CONCEPTS
-    requires math_functions::unsigned_integral<IntType> && (sizeof(IntType) >= sizeof(unsigned))
+    requires math_functions::unsigned_integral<T>
 #endif
-[[nodiscard]]
-ATTRIBUTE_CONST constexpr IntType masked_popcount_sum(const IntType n, const IntType k) noexcept {
-    math_functions::detail::check_math_unsigned_int_type<IntType>();
+ATTRIBUTE_CONST [[nodiscard]]
+constexpr math_functions::detail::try_double_bits_t<T> masked_popcount_sum(const T n,
+                                                                           const T k) noexcept {
+    math_functions::detail::check_math_unsigned_int_type<T>();
 
-    // math_functions::countl_zero(n);
+    math_functions::detail::try_double_bits_t<T> popcount_sum = 0;
+    if (n == 0 || k == 0) {
+        return popcount_sum;
+    }
 
-    IntType popcount_sum = 0;
-    for (uint32_t j = 0; j < sizeof(IntType) * CHAR_BIT; j++) {
-        const bool k_has_jth_bit = (k & (IntType{1} << j)) != 0;
+    const uint32_t max_feasible_bit_position =
+        std::min(math_functions::most_significant_set_bit_position(n),
+                 math_functions::most_significant_set_bit_position(k));
+
+    for (uint32_t j = 0; j <= max_feasible_bit_position; j++) {
+        const bool k_has_jth_bit = (k & (T{1} << j)) != 0;
         if (!k_has_jth_bit) {
             continue;
         }
 
-        if ((n >> j) == 0) {
-            break;
-        }
-
-        const bool n_has_jth_bit = (n & (IntType{1} << j)) != 0;
-        const IntType number_of_full_blocks_with_j_bit_set = (n >> j) / 2;
-        const IntType nums_from_last_possibly_nonfull_block =
-            n_has_jth_bit ? n - (((n >> j) << j) - 1) : IntType{0};
-        const IntType number_of_nums_with_j_bit_set_from_blocks =
-            number_of_full_blocks_with_j_bit_set << j;
+        const bool n_has_jth_bit = (n & (T{1} << j)) != 0;
+        const T number_of_full_blocks_with_j_bit_set = (n >> j) / 2;
+        const T nums_from_last_possibly_nonfull_block =
+            n_has_jth_bit ? n - (((n >> j) << j) - 1) : T{0};
+        const T number_of_nums_with_j_bit_set_from_blocks = number_of_full_blocks_with_j_bit_set
+                                                            << j;
         popcount_sum +=
             number_of_nums_with_j_bit_set_from_blocks + nums_from_last_possibly_nonfull_block;
     }
