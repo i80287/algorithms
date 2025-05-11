@@ -161,20 +161,48 @@ constexpr std::size_t kMaxStringLengthI128 = 40;
 
 namespace int128_traits {
 
+namespace detail {
+
 template <class T>
-struct is_integral {
-    static constexpr bool value = std::is_integral_v<T>;
-};
+struct is_integral_helper : public std::is_integral<T> {};
 
 template <>
-struct is_integral<uint128_t> {
-    static constexpr bool value = true;
-};
+struct is_integral_helper<uint128_t> : public std::true_type {};
 
 template <>
-struct is_integral<int128_t> {
-    static constexpr bool value = true;
-};
+struct is_integral_helper<int128_t> : public std::true_type {};
+
+template <class T>
+struct is_signed_helper : public std::is_signed<T> {};
+
+template <>
+struct is_signed_helper<uint128_t> : public std::false_type {};
+
+template <>
+struct is_signed_helper<int128_t> : public std::true_type {};
+
+template <class T>
+struct is_unsigned_helper : public std::is_unsigned<T> {};
+
+template <>
+struct is_unsigned_helper<uint128_t> : public std::true_type {};
+
+template <>
+struct is_unsigned_helper<int128_t> : public std::false_type {};
+
+template <class T>
+struct is_arithmetic_helper : public std::is_arithmetic<T> {};
+
+template <>
+struct is_arithmetic_helper<uint128_t> : public std::true_type {};
+
+template <>
+struct is_arithmetic_helper<int128_t> : public std::true_type {};
+
+}  // namespace detail
+
+template <class T>
+struct is_integral : public ::int128_traits::detail::is_integral_helper<std::remove_cv_t<T>> {};
 
 template <class T>
 struct make_unsigned {
@@ -187,8 +215,38 @@ struct make_unsigned<uint128_t> {
 };
 
 template <>
+struct make_unsigned<const uint128_t> {
+    using type = const uint128_t;
+};
+
+template <>
+struct make_unsigned<volatile uint128_t> {
+    using type = volatile uint128_t;
+};
+
+template <>
+struct make_unsigned<const volatile uint128_t> {
+    using type = const volatile uint128_t;
+};
+
+template <>
 struct make_unsigned<int128_t> {
     using type = uint128_t;
+};
+
+template <>
+struct make_unsigned<const int128_t> {
+    using type = const uint128_t;
+};
+
+template <>
+struct make_unsigned<volatile int128_t> {
+    using type = volatile uint128_t;
+};
+
+template <>
+struct make_unsigned<const volatile int128_t> {
+    using type = const volatile uint128_t;
 };
 
 template <class T>
@@ -202,54 +260,48 @@ struct make_signed<uint128_t> {
 };
 
 template <>
+struct make_signed<const uint128_t> {
+    using type = const int128_t;
+};
+
+template <>
+struct make_signed<volatile uint128_t> {
+    using type = volatile int128_t;
+};
+
+template <>
+struct make_signed<const volatile uint128_t> {
+    using type = const volatile int128_t;
+};
+
+template <>
 struct make_signed<int128_t> {
     using type = int128_t;
 };
 
-template <class T>
-struct is_unsigned {
-    static constexpr bool value = std::is_unsigned_v<T>;
+template <>
+struct make_signed<const int128_t> {
+    using type = const int128_t;
 };
 
 template <>
-struct is_unsigned<uint128_t> {
-    static constexpr bool value = true;
+struct make_signed<volatile int128_t> {
+    using type = volatile int128_t;
 };
 
 template <>
-struct is_unsigned<int128_t> {
-    static constexpr bool value = false;
-};
-
-template <class T>
-struct is_signed {
-    static constexpr bool value = std::is_signed_v<T>;
-};
-
-template <>
-struct is_signed<uint128_t> {
-    static constexpr bool value = false;
-};
-
-template <>
-struct is_signed<int128_t> {
-    static constexpr bool value = true;
+struct make_signed<const volatile int128_t> {
+    using type = const volatile int128_t;
 };
 
 template <class T>
-struct is_arithmetic {
-    static constexpr bool value = std::is_arithmetic_v<T>;
-};
+struct is_unsigned : public ::int128_traits::detail::is_unsigned_helper<std::remove_cv_t<T>> {};
 
-template <>
-struct is_arithmetic<uint128_t> {
-    static constexpr bool value = true;
-};
+template <class T>
+struct is_signed : public ::int128_traits::detail::is_signed_helper<std::remove_cv_t<T>> {};
 
-template <>
-struct is_arithmetic<int128_t> {
-    static constexpr bool value = true;
-};
+template <class T>
+struct is_arithmetic : public ::int128_traits::detail::is_arithmetic_helper<std::remove_cv_t<T>> {};
 
 template <class T>
 inline constexpr bool is_integral_v = ::int128_traits::is_integral<T>::value;
@@ -388,7 +440,7 @@ struct std::formatter<uint128_t, CharT> {  // NOLINT(cert-dcl58-cpp)
 
     template <class FmtContext>
     typename FmtContext::iterator format(const uint128_t n, FmtContext& ctx) const {
-        std::string s = to_string(n);
+        std::string s = ::to_string(n);
         return std::copy(s.begin(), s.end(), ctx.out());
     }
 };
@@ -402,7 +454,7 @@ struct std::formatter<int128_t, CharT> {  // NOLINT(cert-dcl58-cpp)
 
     template <class FmtContext>
     typename FmtContext::iterator format(const int128_t n, FmtContext& ctx) const {
-        std::string s = to_string(n);
+        std::string s = ::to_string(n);
         return std::copy(s.begin(), s.end(), ctx.out());
     }
 };

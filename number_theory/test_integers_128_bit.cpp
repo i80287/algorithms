@@ -7,6 +7,7 @@
 #include <limits>
 #include <sstream>
 #include <string>
+#include <string_view>
 #include <type_traits>
 
 #include "../misc/config_macros.hpp"
@@ -17,12 +18,40 @@ namespace {
 using std::int64_t;
 using std::uint64_t;
 
+// test traits for the uint128_t
+
 static_assert(int128_traits::is_arithmetic_v<uint128_t>);
 static_assert(int128_traits::is_integral_v<uint128_t>);
 static_assert(int128_traits::is_unsigned_v<uint128_t>);
 static_assert(!int128_traits::is_signed_v<uint128_t>);
 static_assert(std::is_same_v<int128_traits::make_unsigned_t<uint128_t>, uint128_t>);
 static_assert(std::is_same_v<int128_traits::make_signed_t<uint128_t>, int128_t>);
+
+static_assert(int128_traits::is_arithmetic_v<const uint128_t>);
+static_assert(int128_traits::is_integral_v<const uint128_t>);
+static_assert(int128_traits::is_unsigned_v<const uint128_t>);
+static_assert(!int128_traits::is_signed_v<const uint128_t>);
+static_assert(std::is_same_v<int128_traits::make_unsigned_t<const uint128_t>, const uint128_t>);
+static_assert(std::is_same_v<int128_traits::make_signed_t<const uint128_t>, const int128_t>);
+
+static_assert(int128_traits::is_arithmetic_v<volatile uint128_t>);
+static_assert(int128_traits::is_integral_v<volatile uint128_t>);
+static_assert(int128_traits::is_unsigned_v<volatile uint128_t>);
+static_assert(!int128_traits::is_signed_v<volatile uint128_t>);
+static_assert(
+    std::is_same_v<int128_traits::make_unsigned_t<volatile uint128_t>, volatile uint128_t>);
+static_assert(std::is_same_v<int128_traits::make_signed_t<volatile uint128_t>, volatile int128_t>);
+
+static_assert(int128_traits::is_arithmetic_v<const volatile uint128_t>);
+static_assert(int128_traits::is_integral_v<const volatile uint128_t>);
+static_assert(int128_traits::is_unsigned_v<const volatile uint128_t>);
+static_assert(!int128_traits::is_signed_v<const volatile uint128_t>);
+static_assert(std::is_same_v<int128_traits::make_unsigned_t<const volatile uint128_t>,
+                             const volatile uint128_t>);
+static_assert(std::is_same_v<int128_traits::make_signed_t<const volatile uint128_t>,
+                             const volatile int128_t>);
+
+// test traits for the int128_t
 
 static_assert(int128_traits::is_arithmetic_v<int128_t>);
 static_assert(int128_traits::is_integral_v<int128_t>);
@@ -31,6 +60,32 @@ static_assert(int128_traits::is_signed_v<int128_t>);
 static_assert(std::is_same_v<int128_traits::make_unsigned_t<int128_t>, uint128_t>);
 static_assert(std::is_same_v<int128_traits::make_signed_t<int128_t>, int128_t>);
 
+static_assert(int128_traits::is_arithmetic_v<const int128_t>);
+static_assert(int128_traits::is_integral_v<const int128_t>);
+static_assert(!int128_traits::is_unsigned_v<const int128_t>);
+static_assert(int128_traits::is_signed_v<const int128_t>);
+static_assert(std::is_same_v<int128_traits::make_unsigned_t<const int128_t>, const uint128_t>);
+static_assert(std::is_same_v<int128_traits::make_signed_t<const int128_t>, const int128_t>);
+
+static_assert(int128_traits::is_arithmetic_v<volatile int128_t>);
+static_assert(int128_traits::is_integral_v<volatile int128_t>);
+static_assert(!int128_traits::is_unsigned_v<volatile int128_t>);
+static_assert(int128_traits::is_signed_v<volatile int128_t>);
+static_assert(
+    std::is_same_v<int128_traits::make_unsigned_t<volatile int128_t>, volatile uint128_t>);
+static_assert(std::is_same_v<int128_traits::make_signed_t<volatile int128_t>, volatile int128_t>);
+
+static_assert(int128_traits::is_arithmetic_v<const volatile int128_t>);
+static_assert(int128_traits::is_integral_v<const volatile int128_t>);
+static_assert(!int128_traits::is_unsigned_v<const volatile int128_t>);
+static_assert(int128_traits::is_signed_v<const volatile int128_t>);
+static_assert(std::is_same_v<int128_traits::make_unsigned_t<const volatile int128_t>,
+                             const volatile uint128_t>);
+static_assert(
+    std::is_same_v<int128_traits::make_signed_t<const volatile int128_t>, const volatile int128_t>);
+
+// test traits for the uint64_t
+
 static_assert(int128_traits::is_arithmetic_v<uint64_t>);
 static_assert(int128_traits::is_integral_v<uint64_t>);
 static_assert(int128_traits::is_unsigned_v<uint64_t>);
@@ -38,12 +93,60 @@ static_assert(!int128_traits::is_signed_v<uint64_t>);
 static_assert(std::is_same_v<int128_traits::make_unsigned_t<uint64_t>, uint64_t>);
 static_assert(std::is_same_v<int128_traits::make_signed_t<uint64_t>, int64_t>);
 
+static_assert(int128_traits::is_arithmetic_v<const uint64_t>);
+static_assert(int128_traits::is_integral_v<const uint64_t>);
+static_assert(int128_traits::is_unsigned_v<const uint64_t>);
+static_assert(!int128_traits::is_signed_v<const uint64_t>);
+static_assert(std::is_same_v<int128_traits::make_unsigned_t<const uint64_t>, const uint64_t>);
+static_assert(std::is_same_v<int128_traits::make_signed_t<const uint64_t>, const int64_t>);
+
+static_assert(int128_traits::is_arithmetic_v<volatile uint64_t>);
+static_assert(int128_traits::is_integral_v<volatile uint64_t>);
+static_assert(int128_traits::is_unsigned_v<volatile uint64_t>);
+static_assert(!int128_traits::is_signed_v<volatile uint64_t>);
+static_assert(std::is_same_v<int128_traits::make_unsigned_t<volatile uint64_t>, volatile uint64_t>);
+static_assert(std::is_same_v<int128_traits::make_signed_t<volatile uint64_t>, volatile int64_t>);
+
+static_assert(int128_traits::is_arithmetic_v<const volatile uint64_t>);
+static_assert(int128_traits::is_integral_v<const volatile uint64_t>);
+static_assert(int128_traits::is_unsigned_v<const volatile uint64_t>);
+static_assert(!int128_traits::is_signed_v<const volatile uint64_t>);
+static_assert(std::is_same_v<int128_traits::make_unsigned_t<const volatile uint64_t>,
+                             const volatile uint64_t>);
+static_assert(
+    std::is_same_v<int128_traits::make_signed_t<const volatile uint64_t>, const volatile int64_t>);
+
+// test traits for the int64_t
+
 static_assert(int128_traits::is_arithmetic_v<int64_t>);
 static_assert(int128_traits::is_integral_v<int64_t>);
 static_assert(!int128_traits::is_unsigned_v<int64_t>);
 static_assert(int128_traits::is_signed_v<int64_t>);
 static_assert(std::is_same_v<int128_traits::make_unsigned_t<int64_t>, uint64_t>);
 static_assert(std::is_same_v<int128_traits::make_signed_t<int64_t>, int64_t>);
+
+static_assert(int128_traits::is_arithmetic_v<volatile int64_t>);
+static_assert(int128_traits::is_integral_v<volatile int64_t>);
+static_assert(!int128_traits::is_unsigned_v<volatile int64_t>);
+static_assert(int128_traits::is_signed_v<volatile int64_t>);
+static_assert(std::is_same_v<int128_traits::make_unsigned_t<volatile int64_t>, volatile uint64_t>);
+static_assert(std::is_same_v<int128_traits::make_signed_t<volatile int64_t>, volatile int64_t>);
+
+static_assert(int128_traits::is_arithmetic_v<const int64_t>);
+static_assert(int128_traits::is_integral_v<const int64_t>);
+static_assert(!int128_traits::is_unsigned_v<const int64_t>);
+static_assert(int128_traits::is_signed_v<const int64_t>);
+static_assert(std::is_same_v<int128_traits::make_unsigned_t<const int64_t>, const uint64_t>);
+static_assert(std::is_same_v<int128_traits::make_signed_t<const int64_t>, const int64_t>);
+
+static_assert(int128_traits::is_arithmetic_v<const volatile int64_t>);
+static_assert(int128_traits::is_integral_v<const volatile int64_t>);
+static_assert(!int128_traits::is_unsigned_v<const volatile int64_t>);
+static_assert(int128_traits::is_signed_v<const volatile int64_t>);
+static_assert(std::is_same_v<int128_traits::make_unsigned_t<const volatile int64_t>,
+                             const volatile uint64_t>);
+static_assert(
+    std::is_same_v<int128_traits::make_signed_t<const volatile int64_t>, const volatile int64_t>);
 
 #if CONFIG_HAS_CONCEPTS
 
@@ -66,10 +169,10 @@ template <class T>
         return false;
     }
 
-    return []() {
+    return [value]() {
         std::ostringstream oss;
         oss << value;
-        return std::move(oss).str()
+        return std::move(oss).str();
     }() == expected_str;
 }
 
@@ -105,6 +208,10 @@ void test_int128_to_string() {
                                            "170141183460469231731687303715884105727"));
     assert(test_int128_to_string_test_case(static_cast<int128_t>(uint128_t{1} << 127U),
                                            "-170141183460469231731687303715884105728"));
+    constexpr int128_t kBigPrime = int128_t{55141608584989336ULL} * 10000 + 1159;
+    constexpr std::string_view kBigPrimeStr = "551416085849893361159";
+    assert(test_int128_to_string_test_case(static_cast<int128_t>(kBigPrime), kBigPrimeStr));
+    assert(test_int128_to_string_test_case(static_cast<uint128_t>(kBigPrime), kBigPrimeStr));
 }
 
 }  // namespace
