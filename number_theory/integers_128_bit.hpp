@@ -73,7 +73,7 @@ typedef std::_Signed128 int128_t;
 #endif
 
 /**
- * Macro defined if current [u]int128_t supports constexpr
+ * This macro is defined if current [u]int128_t supports constexpr
  * operations.
  */
 #if (CONFIG_HAS_AT_LEAST_CXX_17 && CONFIG_COMPILER_IS_GCC_OR_ANY_CLANG) || \
@@ -82,8 +82,8 @@ typedef std::_Signed128 int128_t;
 #endif
 
 /**
- * Macro defined to `constexpr` if current [u]int128_t supports constexpr
- * operations. Defined to empty otherwise.
+ * This macro is defined to `constexpr` if current [u]int128_t supports constexpr
+ * operations. Defined to `inline` otherwise.
  */
 #if defined(HAS_I128_CONSTEXPR)
 #define I128_CONSTEXPR constexpr
@@ -95,7 +95,7 @@ typedef std::_Signed128 int128_t;
 // NOLINTBEGIN(cppcoreguidelines-avoid-c-arrays, hicpp-avoid-c-arrays, modernize-avoid-c-arrays)
 // clang-format on
 
-namespace format_impl_uint128_t {
+namespace int128_detail {
 
 // NOLINTBEGIN(cppcoreguidelines-avoid-magic-numbers)
 
@@ -117,7 +117,7 @@ constexpr std::size_t kMaxStringLengthI128 = 40;
 
 // NOLINTEND(cppcoreguidelines-avoid-magic-numbers)
 
-/// @brief Realization taken from the gcc libstdc++ __to_chars_10_impl
+/// @brief Realization is taken from the gcc libstdc++ __to_chars_10_impl
 /// @param number
 /// @param buffer_ptr
 /// @return
@@ -157,24 +157,52 @@ constexpr std::size_t kMaxStringLengthI128 = 40;
     return (static_cast<uint128_t>(number) ^ t) - t;
 }
 
-}  // namespace format_impl_uint128_t
+}  // namespace int128_detail
 
 namespace int128_traits {
 
+namespace detail {
+
 template <class T>
-struct is_integral {
-    static constexpr bool value = std::is_integral_v<T>;
-};
+struct is_integral_helper : public std::is_integral<T> {};
 
 template <>
-struct is_integral<uint128_t> {
-    static constexpr bool value = true;
-};
+struct is_integral_helper<uint128_t> : public std::true_type {};
 
 template <>
-struct is_integral<int128_t> {
-    static constexpr bool value = true;
-};
+struct is_integral_helper<int128_t> : public std::true_type {};
+
+template <class T>
+struct is_signed_helper : public std::is_signed<T> {};
+
+template <>
+struct is_signed_helper<uint128_t> : public std::false_type {};
+
+template <>
+struct is_signed_helper<int128_t> : public std::true_type {};
+
+template <class T>
+struct is_unsigned_helper : public std::is_unsigned<T> {};
+
+template <>
+struct is_unsigned_helper<uint128_t> : public std::true_type {};
+
+template <>
+struct is_unsigned_helper<int128_t> : public std::false_type {};
+
+template <class T>
+struct is_arithmetic_helper : public std::is_arithmetic<T> {};
+
+template <>
+struct is_arithmetic_helper<uint128_t> : public std::true_type {};
+
+template <>
+struct is_arithmetic_helper<int128_t> : public std::true_type {};
+
+}  // namespace detail
+
+template <class T>
+struct is_integral : public ::int128_traits::detail::is_integral_helper<std::remove_cv_t<T>> {};
 
 template <class T>
 struct make_unsigned {
@@ -187,8 +215,38 @@ struct make_unsigned<uint128_t> {
 };
 
 template <>
+struct make_unsigned<const uint128_t> {
+    using type = const uint128_t;
+};
+
+template <>
+struct make_unsigned<volatile uint128_t> {
+    using type = volatile uint128_t;
+};
+
+template <>
+struct make_unsigned<const volatile uint128_t> {
+    using type = const volatile uint128_t;
+};
+
+template <>
 struct make_unsigned<int128_t> {
     using type = uint128_t;
+};
+
+template <>
+struct make_unsigned<const int128_t> {
+    using type = const uint128_t;
+};
+
+template <>
+struct make_unsigned<volatile int128_t> {
+    using type = volatile uint128_t;
+};
+
+template <>
+struct make_unsigned<const volatile int128_t> {
+    using type = const volatile uint128_t;
 };
 
 template <class T>
@@ -202,54 +260,48 @@ struct make_signed<uint128_t> {
 };
 
 template <>
+struct make_signed<const uint128_t> {
+    using type = const int128_t;
+};
+
+template <>
+struct make_signed<volatile uint128_t> {
+    using type = volatile int128_t;
+};
+
+template <>
+struct make_signed<const volatile uint128_t> {
+    using type = const volatile int128_t;
+};
+
+template <>
 struct make_signed<int128_t> {
     using type = int128_t;
 };
 
-template <class T>
-struct is_unsigned {
-    static constexpr bool value = std::is_unsigned_v<T>;
+template <>
+struct make_signed<const int128_t> {
+    using type = const int128_t;
 };
 
 template <>
-struct is_unsigned<uint128_t> {
-    static constexpr bool value = true;
+struct make_signed<volatile int128_t> {
+    using type = volatile int128_t;
 };
 
 template <>
-struct is_unsigned<int128_t> {
-    static constexpr bool value = false;
-};
-
-template <class T>
-struct is_signed {
-    static constexpr bool value = std::is_signed_v<T>;
-};
-
-template <>
-struct is_signed<uint128_t> {
-    static constexpr bool value = false;
-};
-
-template <>
-struct is_signed<int128_t> {
-    static constexpr bool value = true;
+struct make_signed<const volatile int128_t> {
+    using type = const volatile int128_t;
 };
 
 template <class T>
-struct is_arithmetic {
-    static constexpr bool value = std::is_arithmetic_v<T>;
-};
+struct is_unsigned : public ::int128_traits::detail::is_unsigned_helper<std::remove_cv_t<T>> {};
 
-template <>
-struct is_arithmetic<uint128_t> {
-    static constexpr bool value = true;
-};
+template <class T>
+struct is_signed : public ::int128_traits::detail::is_signed_helper<std::remove_cv_t<T>> {};
 
-template <>
-struct is_arithmetic<int128_t> {
-    static constexpr bool value = true;
-};
+template <class T>
+struct is_arithmetic : public ::int128_traits::detail::is_arithmetic_helper<std::remove_cv_t<T>> {};
 
 template <class T>
 inline constexpr bool is_integral_v = ::int128_traits::is_integral<T>::value;
@@ -286,104 +338,90 @@ concept unsigned_integral =
 
 }  // namespace int128_traits
 
-inline std::ostream& operator<<(std::ostream& out, const uint128_t number) {
-    // + 1 for '\0'
-    constexpr auto buffer_size = format_impl_uint128_t::kMaxStringLengthU128 + 1;
+inline std::ostream& operator<<(std::ostream& out ATTRIBUTE_LIFETIME_BOUND,
+                                const uint128_t number) {
+    constexpr auto kBufferSize = int128_detail::kMaxStringLengthU128;
 
-    char digits[buffer_size];
-    digits[buffer_size - 1] = '\0';
-    const char* ptr =
-        format_impl_uint128_t::uint128_t_format_fill_chars_buffer(number, &digits[buffer_size - 1]);
-    const auto length = static_cast<std::size_t>(&digits[buffer_size - 1] - ptr);
+    char digits[kBufferSize];
+    char* const buffer_end_ptr = digits + kBufferSize;
+    const char* const ptr =
+        int128_detail::uint128_t_format_fill_chars_buffer(number, buffer_end_ptr);
+    const auto length = static_cast<std::size_t>(buffer_end_ptr - ptr);
     return out << std::string_view(ptr, length);
 }
 
-inline std::ostream& operator<<(std::ostream& out, const int128_t number) {
-    // + 1 for '\0'
-    constexpr auto buffer_size = format_impl_uint128_t::kMaxStringLengthI128 + 1;
-    char digits[buffer_size];
-    digits[buffer_size - 1] = '\0';
+inline std::ostream& operator<<(std::ostream& out ATTRIBUTE_LIFETIME_BOUND, const int128_t number) {
+    constexpr auto kBufferSize = int128_detail::kMaxStringLengthI128;
+    char digits[kBufferSize];
 
-    const uint128_t number_abs = format_impl_uint128_t::uabs128(number);
+    const uint128_t number_abs = int128_detail::uabs128(number);
 
-    char* ptr = format_impl_uint128_t::uint128_t_format_fill_chars_buffer(number_abs,
-                                                                          &digits[buffer_size - 1]);
+    char* const buffer_end_ptr = digits + kBufferSize;
+    char* ptr = int128_detail::uint128_t_format_fill_chars_buffer(number_abs, buffer_end_ptr);
     if (number < 0) {
         *--ptr = '-';
     }
-    const auto length = static_cast<std::size_t>(&digits[buffer_size - 1] - ptr);
-    if (length > buffer_size) {
-        CONFIG_UNREACHABLE();
-    }
-
+    const auto length = static_cast<std::size_t>(buffer_end_ptr - ptr);
+    CONFIG_ASSUME_STATEMENT(length <= kBufferSize);
     return out << std::string_view(ptr, length);
 }
 
 ATTRIBUTE_NONNULL(2)
-inline int fprint_u128(const uint128_t number, std::FILE* const filestream) noexcept {
+inline int fprint_u128(const uint128_t number, std::FILE* const filestream) {
     // + 1 for '\0'
-    constexpr auto buffer_size = format_impl_uint128_t::kMaxStringLengthU128 + 1;
-    char digits[buffer_size];
-    digits[buffer_size - 1] = '\0';
+    constexpr auto kBufferSize = int128_detail::kMaxStringLengthU128 + 1;
+    char digits[kBufferSize];
+    digits[kBufferSize - 1] = '\0';
     const char* const ptr =
-        format_impl_uint128_t::uint128_t_format_fill_chars_buffer(number, &digits[buffer_size - 1]);
+        int128_detail::uint128_t_format_fill_chars_buffer(number, &digits[kBufferSize - 1]);
     return std::fputs(ptr, filestream);
 }
 
-inline int print_u128(uint128_t number) noexcept {
+inline int print_u128(const uint128_t number) {
     return ::fprint_u128(number, stdout);
 }
 
 ATTRIBUTE_NONNULL(2)
-inline int fprint_u128_newline(const uint128_t number, std::FILE* const filestream) noexcept {
-    // + 1 for '\0', + 1 for '\n'
-    constexpr auto buffer_size = format_impl_uint128_t::kMaxStringLengthU128 + 1 + 1;
-    char digits[buffer_size];
-    digits[buffer_size - 2] = '\n';
-    digits[buffer_size - 1] = '\0';
+inline int fprint_u128_newline(const uint128_t number, std::FILE* const filestream) {
+    // + 1 for '\n', + 1 for '\0'
+    constexpr auto kBufferSize = int128_detail::kMaxStringLengthU128 + 1 + 1;
+    char digits[kBufferSize];
+    digits[kBufferSize - 2] = '\n';
+    digits[kBufferSize - 1] = '\0';
     const char* const ptr =
-        format_impl_uint128_t::uint128_t_format_fill_chars_buffer(number, &digits[buffer_size - 2]);
+        int128_detail::uint128_t_format_fill_chars_buffer(number, &digits[kBufferSize - 2]);
     return std::fputs(ptr, filestream);
 }
 
-inline int print_u128_newline(const uint128_t number) noexcept {
+inline int print_u128_newline(const uint128_t number) {
     return ::fprint_u128_newline(number, stdout);
 }
 
 [[nodiscard]] inline std::string to_string(const uint128_t number) {
-    // + 1 for '\0'
-    constexpr auto buffer_size = format_impl_uint128_t::kMaxStringLengthU128 + 1;
-    char digits[buffer_size];
-    digits[buffer_size - 1] = '\0';
+    constexpr auto kBufferSize = int128_detail::kMaxStringLengthU128;
+    char digits[kBufferSize];
 
+    char* const buffer_end_ptr = digits + kBufferSize;
     const char* const ptr =
-        format_impl_uint128_t::uint128_t_format_fill_chars_buffer(number, &digits[buffer_size - 1]);
-    const auto length = static_cast<std::size_t>(&digits[buffer_size - 1] - ptr);
-    if (length > buffer_size) {
-        CONFIG_UNREACHABLE();
-    }
-
+        int128_detail::uint128_t_format_fill_chars_buffer(number, buffer_end_ptr);
+    const auto length = static_cast<std::size_t>(buffer_end_ptr - ptr);
+    CONFIG_ASSUME_STATEMENT(length <= kBufferSize);
     return std::string(ptr, length);
 }
 
 [[nodiscard]] inline std::string to_string(const int128_t number) {
-    // + 1 for '\0'
-    constexpr auto buffer_size = format_impl_uint128_t::kMaxStringLengthI128 + 1;
-    char digits[buffer_size];
-    digits[buffer_size - 1] = '\0';
+    constexpr auto kBufferSize = int128_detail::kMaxStringLengthI128;
+    char digits[kBufferSize];
 
-    const uint128_t number_abs = format_impl_uint128_t::uabs128(number);
+    const uint128_t number_abs = int128_detail::uabs128(number);
 
-    char* ptr = format_impl_uint128_t::uint128_t_format_fill_chars_buffer(number_abs,
-                                                                          &digits[buffer_size - 1]);
+    char* const buffer_end_ptr = digits + kBufferSize;
+    char* ptr = int128_detail::uint128_t_format_fill_chars_buffer(number_abs, buffer_end_ptr);
     if (number < 0) {
         *--ptr = '-';
     }
-    const auto length = static_cast<std::size_t>(&digits[buffer_size - 1] - ptr);
-    if (length > buffer_size) {
-        CONFIG_UNREACHABLE();
-    }
-
+    const auto length = static_cast<std::size_t>(buffer_end_ptr - ptr);
+    CONFIG_ASSUME_STATEMENT(length <= kBufferSize);
     return std::string(ptr, length);
 }
 
