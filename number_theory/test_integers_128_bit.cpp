@@ -1,12 +1,16 @@
+// clang-format off
+#include "integers_128_bit.hpp"
+// clang-format on
+
 #include <cassert>
 #include <cstdint>
 #include <limits>
+#include <sstream>
 #include <string>
 #include <type_traits>
 
 #include "../misc/config_macros.hpp"
 #include "../misc/tests/test_tools.hpp"
-#include "integers_128_bit.hpp"
 
 namespace {
 
@@ -53,35 +57,54 @@ static_assert(!int128_traits::signed_integral<uint128_t>);
 
 #endif
 
+template <class T>
+[[nodiscard]] bool test_int128_to_string_test_case(const T value,
+                                                   const std::string_view expected_str) {
+    static_assert(std::is_same_v<T, int128_t> || std::is_same_v<T, uint128_t>);
+
+    if (to_string(value) != expected_str) {
+        return false;
+    }
+
+    return []() {
+        std::ostringstream oss;
+        oss << value;
+        return std::move(oss).str()
+    }() == expected_str;
+}
+
 void test_int128_to_string() {
     test_tools::log_tests_started();
+
     constexpr uint32_t k = 20000;
     for (uint64_t n = 0; n <= k; n++) {
-        assert(to_string(uint128_t{n}) == std::to_string(n));
-        assert(to_string(int128_t{n}) == std::to_string(n));
+        assert(test_int128_to_string_test_case(uint128_t{n}, std::to_string(n)));
+        assert(test_int128_to_string_test_case(int128_t{n}, std::to_string(n)));
     }
 
     for (int64_t n = -int64_t{k}; n <= 0; n++) {
-        assert(to_string(int128_t{n}) == std::to_string(n));
+        assert(test_int128_to_string_test_case(int128_t{n}, std::to_string(n)));
     }
 
     for (uint64_t n = std::numeric_limits<uint64_t>::max();
          n >= std::numeric_limits<uint64_t>::max() - k; n--) {
-        assert(to_string(uint128_t{n}) == std::to_string(n));
-        assert(to_string(int128_t{n}) == std::to_string(n));
+        assert(test_int128_to_string_test_case(uint128_t{n}, std::to_string(n)));
+        assert(test_int128_to_string_test_case(int128_t{n}, std::to_string(n)));
     }
 
     for (int64_t n = std::numeric_limits<int64_t>::min();
          n <= std::numeric_limits<int64_t>::min() + int64_t{k}; n++) {
-        assert(to_string(int128_t{n}) == std::to_string(n));
+        assert(test_int128_to_string_test_case(int128_t{n}, std::to_string(n)));
     }
 
-    assert(to_string(static_cast<uint128_t>(-1)) == "340282366920938463463374607431768211455");
-    assert(to_string(uint128_t{1} << 127U) == "170141183460469231731687303715884105728");
-    assert(to_string(static_cast<int128_t>((uint128_t{1} << 127U) - 1)) ==
-           "170141183460469231731687303715884105727");
-    assert(to_string(static_cast<int128_t>(uint128_t{1} << 127U)) ==
-           "-170141183460469231731687303715884105728");
+    assert(test_int128_to_string_test_case(static_cast<uint128_t>(-1),
+                                           "340282366920938463463374607431768211455"));
+    assert(test_int128_to_string_test_case(uint128_t{1} << 127U,
+                                           "170141183460469231731687303715884105728"));
+    assert(test_int128_to_string_test_case(static_cast<int128_t>((uint128_t{1} << 127U) - 1),
+                                           "170141183460469231731687303715884105727"));
+    assert(test_int128_to_string_test_case(static_cast<int128_t>(uint128_t{1} << 127U),
+                                           "-170141183460469231731687303715884105728"));
 }
 
 }  // namespace
