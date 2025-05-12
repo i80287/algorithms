@@ -60,9 +60,9 @@ constexpr bool is_filesystem_path_v = false;
 
 #endif
 
-template <bool UseWChar, class T>
+template <class CharType, class T>
 [[nodiscard]]
-ATTRIBUTE_ALWAYS_INLINE inline auto ArithmeticToStringImpl(const T arg) {
+ATTRIBUTE_ALWAYS_INLINE inline std::basic_string<CharType> ArithmeticToStringImpl(const T arg) {
     static_assert(std::is_arithmetic_v<T>, "implementation error");
 
     if constexpr (std::is_integral_v<T>) {
@@ -72,7 +72,7 @@ ATTRIBUTE_ALWAYS_INLINE inline auto ArithmeticToStringImpl(const T arg) {
 
                 if (arg >= std::numeric_limits<CompressedIntType>::min() &&
                     arg <= std::numeric_limits<CompressedIntType>::max()) {
-                    return join_strings_detail::ArithmeticToStringImpl<UseWChar>(
+                    return join_strings_detail::ArithmeticToStringImpl<CharType>(
                         static_cast<CompressedIntType>(arg));
                 }
             }
@@ -86,7 +86,7 @@ ATTRIBUTE_ALWAYS_INLINE inline auto ArithmeticToStringImpl(const T arg) {
             ? static_cast<std::conditional_t<std::is_unsigned_v<T>, unsigned, int>>(arg)
             : arg;
 
-    if constexpr (UseWChar) {
+    if constexpr (std::is_same_v<CharType, wchar_t>) {
         return std::to_wstring(extended_arg);
     } else {
         return std::to_string(extended_arg);
@@ -266,8 +266,9 @@ ATTRIBUTE_ALWAYS_INLINE inline std::basic_string<CharType> ArithmeticToString(co
     static_assert(!is_char_v<T>, "implementation error");
     static_assert(std::is_arithmetic_v<T>, "implementation error");
 
-    const auto str = ArithmeticToStringImpl<std::is_same_v<CharType, wchar_t>>(arg);
-    if constexpr (std::is_same_v<CharType, char> || std::is_same_v<CharType, wchar_t>) {
+    using FmtChar = std::conditional_t<std::is_same_v<CharType, wchar_t>, wchar_t, char>;
+    std::basic_string<FmtChar> str = ArithmeticToStringImpl<FmtChar>(arg);
+    if constexpr (std::is_same_v<FmtChar, CharType>) {
         return str;
     } else {
         return ConvertBytesTo<CharType>(str);
@@ -280,14 +281,14 @@ ATTRIBUTE_ALWAYS_INLINE inline std::basic_string<CharType> EnumToString(const T 
     static_assert(std::is_enum_v<T>, "implementation error");
 
     if constexpr (std::is_error_code_enum_v<T>) {
-        const std::string str = std::make_error_code(arg).message();
+        std::string str = std::make_error_code(arg).message();
         if constexpr (std::is_same_v<CharType, char>) {
             return str;
         } else {
             return ConvertBytesTo<CharType>(str);
         }
     } else if constexpr (std::is_error_condition_enum_v<T>) {
-        const std::string str = std::make_error_condition(arg).message();
+        std::string str = std::make_error_condition(arg).message();
         if constexpr (std::is_same_v<CharType, char>) {
             return str;
         } else {
@@ -420,7 +421,7 @@ ATTRIBUTE_ALWAYS_INLINE inline std::basic_string<CharType> ToStringOneArg(const 
     } else if constexpr (requires(const T &test_arg) {
                              { to_string(test_arg) } -> std::same_as<std::string>;
                          }) {
-        const std::string str = to_string(arg);
+        std::string str = to_string(arg);
         if constexpr (std::is_same_v<CharType, char>) {
             return str;
         } else {
@@ -429,7 +430,7 @@ ATTRIBUTE_ALWAYS_INLINE inline std::basic_string<CharType> ToStringOneArg(const 
     } else if constexpr (requires(const T &test_arg) {
                              { test_arg.to_string() } -> std::same_as<std::string>;
                          }) {
-        const std::string str = arg.to_string();
+        std::string str = arg.to_string();
         if constexpr (std::is_same_v<CharType, char>) {
             return str;
         } else {
@@ -695,7 +696,7 @@ using string_char_t = typename string_char_selector<StringType>::type;
 
 [[noreturn]] ATTRIBUTE_COLD inline void ThrowOnStringsTotalSizeOverflow() {
     constexpr const char kMessage[] =
-        "join_strings_collection(): total strings length exceded max size_t value";
+        "join_strings_collection(): total strings length exceeded max size_t value";
     throw std::length_error{kMessage};
 }
 
