@@ -1,13 +1,17 @@
+// clang-format off
+#include "bitmatrix.hpp"
+// clang-format on
+
 #include <algorithm>
 #include <bitset>
 #include <cassert>
 #include <cstddef>
 #include <cstdint>
 #include <random>
+#include <sstream>
 
 #include "../misc/config_macros.hpp"
 #include "../misc/tests/test_tools.hpp"
-#include "bitmatrix.hpp"
 
 // clang-format off
 // NOLINTBEGIN(cert-dcl03-c, misc-static-assert, hicpp-static-assert, cppcoreguidelines-avoid-magic-numbers)
@@ -506,7 +510,42 @@ CONSTEXPR_IF_AT_LEAST_CXX_20 bool test_transpose_64x64() noexcept {
 // clang-format on
 
 template <std::size_t Size, class WordType>
-void test_for_size() noexcept {
+void test_to_string_conversions() {
+    test_tools::log_tests_started();
+
+    using matrix_t = square_bitmatrix<Size, WordType>;
+
+    std::string allones_matrix_str_repr = []() {
+        std::string str;
+        str.reserve((Size + 1) * Size);
+        for (size_t i = 0; i < Size; i++) {
+            str.append(Size, '1');
+            if (i + 1 < Size) {
+                str.push_back('\n');
+            }
+        }
+
+        return str;
+    }();
+
+    assert([]() {
+        std::ostringstream ostr;
+        ostr << matrix_t::allones();
+        return std::move(ostr).str();
+    }() == allones_matrix_str_repr);
+
+    std::string allzeros_matrix_str_repr = std::move(allones_matrix_str_repr);
+    std::replace(allzeros_matrix_str_repr.begin(), allzeros_matrix_str_repr.end(), '1', '0');
+
+    assert([]() {
+        std::ostringstream ostr;
+        ostr << matrix_t::allzeros();
+        return std::move(ostr).str();
+    }() == allzeros_matrix_str_repr);
+}
+
+template <std::size_t Size, class WordType>
+void test_math_operations() {
     test_tools::log_tests_started();
 
     using matrix_t = square_bitmatrix<Size, WordType>;
@@ -595,8 +634,8 @@ void test_for_size() noexcept {
     test_identity_matrix(identity);
     identity = identity * identity;
     test_identity_matrix(identity);
-    identity.transpose();
-    identity.transpose();
+    identity.transpose_inplace();
+    identity.transpose_inplace();
     test_identity_matrix(identity);
     identity.reset();
     test_zero_matrix(identity);
@@ -609,7 +648,7 @@ void test_for_size() noexcept {
     test_zero_matrix(zero_matrix);
     zero_matrix = zero_matrix * zero_matrix;
     test_zero_matrix(zero_matrix);
-    zero_matrix.transpose();
+    zero_matrix.transpose_inplace();
     test_zero_matrix(zero_matrix);
     zero_matrix.reset();
     test_zero_matrix(zero_matrix);
@@ -620,12 +659,20 @@ void test_for_size() noexcept {
 
     auto ones_matrix = matrix_t::allones();
     test_ones_matrix(ones_matrix);
-    ones_matrix.transpose();
+    ones_matrix.transpose_inplace();
     test_ones_matrix(ones_matrix);
     ones_matrix *= matrix_t::identity();
     test_ones_matrix(ones_matrix);
     ones_matrix.reset();
     test_zero_matrix(ones_matrix);
+}
+
+template <std::size_t Size, class WordType>
+void test_for_size() {
+    test_tools::log_tests_started();
+
+    test_math_operations<Size, WordType>();
+    test_to_string_conversions<Size, WordType>();
 }
 
 template <class WordType>
