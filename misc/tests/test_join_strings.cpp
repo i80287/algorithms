@@ -328,6 +328,8 @@ void test_custom_ostringstream() {
 
 #endif
 
+#ifndef __MINGW32__
+
 template <class CharType>
 class Int128TestSuite final {
 public:
@@ -350,6 +352,8 @@ void test_int128() {
     Int128TestSuite<char32_t>::run();
 }
 
+#endif
+
 }  // namespace join_strings_test
 
 void test_join_strings() {
@@ -359,7 +363,9 @@ void test_join_strings() {
 #ifdef JOIN_STRINGS_SUPPORTS_CUSTOM_OSTRINGSTREAM
     join_strings_test::test_custom_ostringstream();
 #endif
+#ifndef __MINGW32__
     join_strings_test::test_int128();
+#endif
 }
 
 #ifdef JOIN_STRINGS_SUPPORTS_JOIN_STRINGS_COLLECTION

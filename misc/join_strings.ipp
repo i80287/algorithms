@@ -439,14 +439,11 @@ ATTRIBUTE_ALWAYS_INLINE inline std::basic_string<CharType> ToStringOneArg(const 
         }
     } else
 #endif
+        if constexpr (std::is_scalar_v<T>
 #ifdef INTEGERS_128_BIT_HPP
-        if constexpr (std::is_same_v<T, int128_t> || std::is_same_v<T, uint128_t>) {
-        return ToStringScalarArg<CharType>(arg);
-    } else
-#else
-    static_assert(false);
+                      || std::is_same_v<T, int128_t> || std::is_same_v<T, uint128_t>
 #endif
-        if constexpr (std::is_scalar_v<T>) {
+        ) {
         return ToStringScalarArg<CharType>(arg);
     } else if constexpr (is_filesystem_path_v<T>) {
         return FilesystemPathToString<CharType>(arg);

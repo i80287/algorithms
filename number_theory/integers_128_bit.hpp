@@ -171,7 +171,7 @@ I128_CONSTEXPR char* uint128_t_format_fill_chars_buffer(
 template <class T, size_t BufferSize>
 [[nodiscard]]
 I128_CONSTEXPR std::pair<char*, size_t> fill_buffer(
-    const T number, char (&buffer)[BufferSize] ATTRIBUTE_LIFETIME_BOUND) noexcept {
+    const T number, char (&buffer ATTRIBUTE_LIFETIME_BOUND)[BufferSize]) noexcept {
     char* const buffer_end_ptr = buffer + BufferSize;
 
     char* ptr = int128_traits::detail::uint128_t_format_fill_chars_buffer(
