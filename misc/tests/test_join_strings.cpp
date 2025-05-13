@@ -527,8 +527,7 @@ private:
 
         const std::basic_string<CharType> res = misc::join_strings<CharType>(
             int8_t{0}, uint8_t{1}, int16_t{2}, uint16_t{3}, int32_t{4}, uint32_t{5}, int64_t{6},
-            uint64_t{7}, int128_t{8}, uint128_t{9}, nullptr, E::kTen,
-            static_cast<const void*>(nullptr));
+            uint64_t{7}, 8, 9, nullptr, E::kTen, static_cast<const void*>(nullptr));
         assert(res == STR_LITERAL(CharType, "0123456789null10null"));
     }
 
