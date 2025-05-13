@@ -60,73 +60,69 @@ private:
         assert(misc::join_strings(STR_LITERAL(CharType, "ab"), STR_LITERAL(CharType, "cde"),
                                   STR_LITERAL(CharType, "fghi"), STR_LITERAL(CharType, "jklmn")) ==
                STR_LITERAL(CharType, "abcdefghijklmn"));
-        assert(misc::join_strings(
-                   STR_LITERAL(CharType, "ab"), uint128_t{1}, STR_LITERAL(CharType, "cde"),
-                   int16_t{2}, STR_LITERAL(CharType, "fghi"), int128_t{3},
-                   STR_LITERAL(CharType, "jklmn")) == STR_LITERAL(CharType, "ab1cde2fghi3jklmn"));
-
-        assert(misc::join_strings(s1, uint128_t{1}, STR_LITERAL(CharType, ""), s2, int16_t{2},
-                                  STR_LITERAL(CharType, ""), s3, STR_LITERAL(CharType, ""),
-                                  int128_t{3}, s4) == STR_LITERAL(CharType, "ab1cde2fghi3jklmn"));
-        assert(misc::join_strings(s2, uint128_t{1}, STR_LITERAL(CharType, ""), s3, int16_t{2},
-                                  STR_LITERAL(CharType, ""), s4, STR_LITERAL(CharType, ""),
-                                  int128_t{3}, s1) == STR_LITERAL(CharType, "cde1fghi2jklmn3ab"));
-        assert(misc::join_strings(s3, uint128_t{1}, STR_LITERAL(CharType, ""), s4, int16_t{2},
-                                  STR_LITERAL(CharType, ""), s1, STR_LITERAL(CharType, ""),
-                                  int128_t{3}, s2) == STR_LITERAL(CharType, "fghi1jklmn2ab3cde"));
-        assert(misc::join_strings(s4, uint128_t{1}, STR_LITERAL(CharType, ""), s1, int16_t{2},
-                                  STR_LITERAL(CharType, ""), s2, STR_LITERAL(CharType, ""),
-                                  int128_t{3}, s3) == STR_LITERAL(CharType, "jklmn1ab2cde3fghi"));
-
-        assert(misc::join_strings(0U, s1, STR_LITERAL(CharType, ""), uint128_t{1}, s2,
-                                  STR_LITERAL(CharType, ""), int16_t{2}, STR_LITERAL(CharType, ""),
-                                  s3, int128_t{3},
-                                  s4) == STR_LITERAL(CharType, "0ab1cde2fghi3jklmn"));
-        assert(misc::join_strings(0U, s2, STR_LITERAL(CharType, ""), uint128_t{1}, s3,
-                                  STR_LITERAL(CharType, ""), int16_t{2}, STR_LITERAL(CharType, ""),
-                                  s4, int128_t{3},
-                                  s1) == STR_LITERAL(CharType, "0cde1fghi2jklmn3ab"));
-        assert(misc::join_strings(0U, s3, STR_LITERAL(CharType, ""), uint128_t{1}, s4,
-                                  STR_LITERAL(CharType, ""), int16_t{2}, STR_LITERAL(CharType, ""),
-                                  s1, int128_t{3},
-                                  s2) == STR_LITERAL(CharType, "0fghi1jklmn2ab3cde"));
-        assert(misc::join_strings(0U, s4, STR_LITERAL(CharType, ""), uint128_t{1}, s1,
-                                  STR_LITERAL(CharType, ""), int16_t{2}, STR_LITERAL(CharType, ""),
-                                  s2, int128_t{3},
-                                  s3) == STR_LITERAL(CharType, "0jklmn1ab2cde3fghi"));
-
-        assert(misc::join_strings(s1, uint128_t{1}, s2, int16_t{2}, s3, int128_t{3}, s4) ==
+        assert(misc::join_strings(STR_LITERAL(CharType, "ab"), int8_t{1},
+                                  STR_LITERAL(CharType, "cde"), 2, STR_LITERAL(CharType, "fghi"),
+                                  uint16_t{3}, STR_LITERAL(CharType, "jklmn")) ==
                STR_LITERAL(CharType, "ab1cde2fghi3jklmn"));
-        assert(misc::join_strings(s2, uint128_t{1}, s3, int16_t{2}, s4, int128_t{3}, s1) ==
+
+        assert(misc::join_strings(s1, int8_t{1}, STR_LITERAL(CharType, ""), s2, 2,
+                                  STR_LITERAL(CharType, ""), s3, STR_LITERAL(CharType, ""),
+                                  uint16_t{3}, s4) == STR_LITERAL(CharType, "ab1cde2fghi3jklmn"));
+        assert(misc::join_strings(s2, int8_t{1}, STR_LITERAL(CharType, ""), s3, 2,
+                                  STR_LITERAL(CharType, ""), s4, STR_LITERAL(CharType, ""),
+                                  uint16_t{3}, s1) == STR_LITERAL(CharType, "cde1fghi2jklmn3ab"));
+        assert(misc::join_strings(s3, int8_t{1}, STR_LITERAL(CharType, ""), s4, 2,
+                                  STR_LITERAL(CharType, ""), s1, STR_LITERAL(CharType, ""),
+                                  uint16_t{3}, s2) == STR_LITERAL(CharType, "fghi1jklmn2ab3cde"));
+        assert(misc::join_strings(s4, int8_t{1}, STR_LITERAL(CharType, ""), s1, 2,
+                                  STR_LITERAL(CharType, ""), s2, STR_LITERAL(CharType, ""),
+                                  uint16_t{3}, s3) == STR_LITERAL(CharType, "jklmn1ab2cde3fghi"));
+
+        assert(misc::join_strings(0ULL, s1, STR_LITERAL(CharType, ""), int8_t{1}, s2,
+                                  STR_LITERAL(CharType, ""), 2, STR_LITERAL(CharType, ""), s3,
+                                  uint16_t{3}, s4) == STR_LITERAL(CharType, "0ab1cde2fghi3jklmn"));
+        assert(misc::join_strings(0ULL, s2, STR_LITERAL(CharType, ""), int8_t{1}, s3,
+                                  STR_LITERAL(CharType, ""), 2, STR_LITERAL(CharType, ""), s4,
+                                  uint16_t{3}, s1) == STR_LITERAL(CharType, "0cde1fghi2jklmn3ab"));
+        assert(misc::join_strings(0ULL, s3, STR_LITERAL(CharType, ""), int8_t{1}, s4,
+                                  STR_LITERAL(CharType, ""), 2, STR_LITERAL(CharType, ""), s1,
+                                  uint16_t{3}, s2) == STR_LITERAL(CharType, "0fghi1jklmn2ab3cde"));
+        assert(misc::join_strings(0ULL, s4, STR_LITERAL(CharType, ""), int8_t{1}, s1,
+                                  STR_LITERAL(CharType, ""), 2, STR_LITERAL(CharType, ""), s2,
+                                  uint16_t{3}, s3) == STR_LITERAL(CharType, "0jklmn1ab2cde3fghi"));
+
+        assert(misc::join_strings(s1, int8_t{1}, s2, 2, s3, uint16_t{3}, s4) ==
+               STR_LITERAL(CharType, "ab1cde2fghi3jklmn"));
+        assert(misc::join_strings(s2, int8_t{1}, s3, 2, s4, uint16_t{3}, s1) ==
                STR_LITERAL(CharType, "cde1fghi2jklmn3ab"));
-        assert(misc::join_strings(s3, uint128_t{1}, s4, int16_t{2}, s1, int128_t{3}, s2) ==
+        assert(misc::join_strings(s3, int8_t{1}, s4, 2, s1, uint16_t{3}, s2) ==
                STR_LITERAL(CharType, "fghi1jklmn2ab3cde"));
-        assert(misc::join_strings(s4, uint128_t{1}, s1, int16_t{2}, s2, int128_t{3}, s3) ==
+        assert(misc::join_strings(s4, int8_t{1}, s1, 2, s2, uint16_t{3}, s3) ==
                STR_LITERAL(CharType, "jklmn1ab2cde3fghi"));
 
-        assert(misc::join_strings(0U, s1, uint128_t{1}, s2, int16_t{2}, s3, int128_t{3}, s4) ==
+        assert(misc::join_strings(0ULL, s1, int8_t{1}, s2, 2, s3, uint16_t{3}, s4) ==
                STR_LITERAL(CharType, "0ab1cde2fghi3jklmn"));
-        assert(misc::join_strings(0U, s2, uint128_t{1}, s3, int16_t{2}, s4, int128_t{3}, s1) ==
+        assert(misc::join_strings(0ULL, s2, int8_t{1}, s3, 2, s4, uint16_t{3}, s1) ==
                STR_LITERAL(CharType, "0cde1fghi2jklmn3ab"));
-        assert(misc::join_strings(0U, s3, uint128_t{1}, s4, int16_t{2}, s1, int128_t{3}, s2) ==
+        assert(misc::join_strings(0ULL, s3, int8_t{1}, s4, 2, s1, uint16_t{3}, s2) ==
                STR_LITERAL(CharType, "0fghi1jklmn2ab3cde"));
-        assert(misc::join_strings(0U, s4, uint128_t{1}, s1, int16_t{2}, s2, int128_t{3}, s3) ==
+        assert(misc::join_strings(0ULL, s4, int8_t{1}, s1, 2, s2, uint16_t{3}, s3) ==
                STR_LITERAL(CharType, "0jklmn1ab2cde3fghi"));
     }
 
     static void test_without_chars() {
         test_tools::log_tests_started();
 
-        assert(misc::join_strings<CharType>(1L) == STR_LITERAL(CharType, "1"));
-        assert(misc::join_strings<CharType>(1L, int128_t{2}) == STR_LITERAL(CharType, "12"));
-        assert(misc::join_strings<CharType>(1L, int128_t{2}, 3UL) == STR_LITERAL(CharType, "123"));
-        assert(misc::join_strings<CharType>(1L, int128_t{2}, 3UL, int8_t{4}) ==
+        assert(misc::join_strings<CharType>(uint8_t{1}) == STR_LITERAL(CharType, "1"));
+        assert(misc::join_strings<CharType>(uint8_t{1}, 2UL) == STR_LITERAL(CharType, "12"));
+        assert(misc::join_strings<CharType>(uint8_t{1}, 2UL, 3L) == STR_LITERAL(CharType, "123"));
+        assert(misc::join_strings<CharType>(uint8_t{1}, 2UL, 3L, 4) ==
                STR_LITERAL(CharType, "1234"));
-        assert(misc::join_strings<CharType>(1L, int128_t{2}, 3UL, int8_t{4}, uint128_t{5}) ==
+        assert(misc::join_strings<CharType>(uint8_t{1}, 2UL, 3L, 4, 5ULL) ==
                STR_LITERAL(CharType, "12345"));
-        assert(misc::join_strings<CharType>(1L, static_cast<const void*>(nullptr), int128_t{2}, 3UL,
-                                            nullptr, int8_t{4}, uint128_t{5}) ==
-               STR_LITERAL(CharType, "1null23null45"));
+        assert(misc::join_strings<CharType>(uint8_t{1}, static_cast<const void*>(nullptr), 2UL, 3L,
+                                            nullptr, 4,
+                                            5ULL) == STR_LITERAL(CharType, "1null23null45"));
     }
 
     static void test_with_filesystem_path() {
@@ -332,6 +328,28 @@ void test_custom_ostringstream() {
 
 #endif
 
+template <class CharType>
+class Int128TestSuite final {
+public:
+    static void run() {
+        constexpr int128_t kNum = int128_t{551416085849} * 1'000'000'000 + 893361159;
+        assert(
+            misc::join_strings<CharType>(-kNum, 9999999999999999999ull,
+                                         static_cast<uint128_t>(kNum)) ==
+            STR_LITERAL(CharType, "-551416085849893361159999999999999999999551416085849893361159"));
+    }
+};
+
+void test_int128() {
+    Int128TestSuite<char>::run();
+    Int128TestSuite<wchar_t>::run();
+#if CONFIG_HAS_AT_LEAST_CXX_20 && defined(__cpp_char8_t) && __cpp_char8_t >= 201811L
+    Int128TestSuite<char8_t>::run();
+#endif
+    Int128TestSuite<char16_t>::run();
+    Int128TestSuite<char32_t>::run();
+}
+
 }  // namespace join_strings_test
 
 void test_join_strings() {
@@ -341,6 +359,7 @@ void test_join_strings() {
 #ifdef JOIN_STRINGS_SUPPORTS_CUSTOM_OSTRINGSTREAM
     join_strings_test::test_custom_ostringstream();
 #endif
+    join_strings_test::test_int128();
 }
 
 #ifdef JOIN_STRINGS_SUPPORTS_JOIN_STRINGS_COLLECTION
@@ -501,7 +520,9 @@ private:
         };
 
         const std::basic_string<CharType> res = misc::join_strings<CharType>(
-            0, 1, 2, 3, 4, 5, 6, 7, 8, 9, nullptr, E::kTen, static_cast<const void*>(nullptr));
+            int8_t{0}, uint8_t{1}, int16_t{2}, uint16_t{3}, int32_t{4}, uint32_t{5}, int64_t{6},
+            uint64_t{7}, int128_t{8}, uint128_t{9}, nullptr, E::kTen,
+            static_cast<const void*>(nullptr));
         assert(res == STR_LITERAL(CharType, "0123456789null10null"));
     }
 
@@ -517,11 +538,13 @@ private:
 };
 
 void test_conversions() {
-    // StringConversionsTestSuite<char>::run();
+    StringConversionsTestSuite<char>::run();
     StringConversionsTestSuite<wchar_t>::run();
-    // StringConversionsTestSuite<char8_t>::run();
-    // StringConversionsTestSuite<char16_t>::run();
-    // StringConversionsTestSuite<char32_t>::run();
+#if CONFIG_HAS_AT_LEAST_CXX_20 && defined(__cpp_char8_t) && __cpp_char8_t >= 201811L
+    StringConversionsTestSuite<char8_t>::run();
+#endif
+    StringConversionsTestSuite<char16_t>::run();
+    StringConversionsTestSuite<char32_t>::run();
 }
 
 }  // namespace

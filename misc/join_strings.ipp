@@ -42,6 +42,10 @@
 #include "config_macros.hpp"
 #include "string_traits.hpp"
 
+#if CONFIG_HAS_INCLUDE("../number_theory/integers_128_bit.hpp")
+#include "../number_theory/integers_128_bit.hpp"
+#endif
+
 namespace misc {
 
 using std::size_t;
@@ -63,8 +67,6 @@ constexpr bool is_filesystem_path_v = false;
 template <class CharType, class T>
 [[nodiscard]]
 ATTRIBUTE_ALWAYS_INLINE inline std::basic_string<CharType> ArithmeticToStringImpl(const T arg) {
-    static_assert(std::is_arithmetic_v<T>, "implementation error");
-
     if constexpr (std::is_integral_v<T>) {
         if (config::is_constant_evaluated() || config::is_gcc_constant_p(arg)) {
             if constexpr (sizeof(T) > sizeof(int)) {
@@ -80,11 +82,11 @@ ATTRIBUTE_ALWAYS_INLINE inline std::basic_string<CharType> ArithmeticToStringImp
     }
 
     constexpr bool kShortIntegralType = std::is_integral_v<T> && sizeof(T) < sizeof(int);
+    using ToStringableType =
+        std::conditional_t<kShortIntegralType,
+                           std::conditional_t<std::is_unsigned_v<T>, unsigned, int>, T>;
 
-    const auto extended_arg =
-        kShortIntegralType
-            ? static_cast<std::conditional_t<std::is_unsigned_v<T>, unsigned, int>>(arg)
-            : arg;
+    const ToStringableType extended_arg = static_cast<ToStringableType>(arg);
 
     using namespace std;
     if constexpr (std::is_same_v<CharType, wchar_t>) {
@@ -264,7 +266,6 @@ template <class CharType, class T>
 ATTRIBUTE_ALWAYS_INLINE inline std::basic_string<CharType> ArithmeticToString(const T arg) {
     static_assert(is_char_v<CharType>, "implementation error");
     static_assert(!is_char_v<T>, "implementation error");
-    static_assert(std::is_arithmetic_v<T>, "implementation error");
 
     using FmtChar = std::conditional_t<std::is_same_v<CharType, wchar_t>, wchar_t, char>;
     std::basic_string<FmtChar> str = ArithmeticToStringImpl<FmtChar>(arg);
@@ -341,16 +342,16 @@ template <class CharType, class T>
 [[nodiscard]]
 ATTRIBUTE_ALWAYS_INLINE inline std::basic_string<CharType> ToStringScalarArg(const T arg) {
     static_assert(is_char_v<CharType>, "implementation error");
-    static_assert(std::is_scalar_v<T>, "implementation error");
 
     if constexpr (std::is_enum_v<T>) {
         return EnumToString<CharType>(arg);
     } else if constexpr (std::is_same_v<T, CharType>) {
         return std::basic_string<CharType>(size_t{1}, arg);
-    } else if constexpr (std::is_arithmetic_v<T>) {
-        return ArithmeticToString<CharType>(arg);
-    } else {
+    } else if constexpr (std::is_pointer_v<T> || std::is_member_pointer_v<T> ||
+                         std::is_null_pointer_v<T>) {
         return PointerTypeToString<CharType>(arg);
+    } else {
+        return ArithmeticToString<CharType>(arg);
     }
 }
 
@@ -437,6 +438,13 @@ ATTRIBUTE_ALWAYS_INLINE inline std::basic_string<CharType> ToStringOneArg(const 
             return ConvertBytesTo<CharType>(str);
         }
     } else
+#endif
+#ifdef INTEGERS_128_BIT_HPP
+        if constexpr (std::is_same_v<T, int128_t> || std::is_same_v<T, uint128_t>) {
+        return ToStringScalarArg<CharType>(arg);
+    } else
+#else
+    static_assert(false);
 #endif
         if constexpr (std::is_scalar_v<T>) {
         return ToStringScalarArg<CharType>(arg);
