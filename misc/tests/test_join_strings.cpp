@@ -335,10 +335,10 @@ class Int128TestSuite final {
 public:
     static void run() {
         constexpr int128_t kNum = int128_t{551416085849} * 1'000'000'000 + 893361159;
-        assert(
-            misc::join_strings<CharType>(-kNum, 9999999999999999999ull,
-                                         static_cast<uint128_t>(kNum)) ==
-            STR_LITERAL(CharType, "-551416085849893361159999999999999999999551416085849893361159"));
+        assert(misc::join_strings<CharType>(-kNum, 9999999999999999999ull,
+                                            static_cast<uint128_t>(kNum)) ==
+               STR_LITERAL(CharType,
+                           "-5514160858498933611599999999999999999999551416085849893361159"));
     }
 };
 
