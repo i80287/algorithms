@@ -49,10 +49,10 @@ template <class HintCharType = char, class... Args>
 #ifdef JOIN_STRINGS_SUPPORTS_JOIN_STRINGS_COLLECTION
 
 template <misc::CharOrStringLike Sep, std::ranges::forward_range Container>
-[[nodiscard]] auto join_strings_collection(const Sep &sep, const Container &strings);
+[[nodiscard]] inline auto join_strings_collection(const Sep &sep, const Container &strings);
 
 template <std::ranges::forward_range Container>
-[[nodiscard]] auto join_strings_collection(const Container &strings);
+[[nodiscard]] inline auto join_strings_collection(const Container &strings);
 
 #endif
 

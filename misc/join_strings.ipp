@@ -86,10 +86,11 @@ ATTRIBUTE_ALWAYS_INLINE inline std::basic_string<CharType> ArithmeticToStringImp
             ? static_cast<std::conditional_t<std::is_unsigned_v<T>, unsigned, int>>(arg)
             : arg;
 
+    using namespace std;
     if constexpr (std::is_same_v<CharType, wchar_t>) {
-        return std::to_wstring(extended_arg);
+        return to_wstring(extended_arg);
     } else {
-        return std::to_string(extended_arg);
+        return to_string(extended_arg);
     }
 }
 
@@ -100,7 +101,6 @@ class deletable_facet final : public Facet {
 
 public:
     using Base::Base;
-    using Base::operator=;
 
     ~deletable_facet() = default;
 };
@@ -861,7 +861,7 @@ template <misc::Char T, std::ranges::forward_range Container>
 }  // namespace join_strings_detail
 
 template <misc::CharOrStringLike Sep, std::ranges::forward_range Container>
-auto join_strings_collection(const Sep &sep, const Container &strings) {
+inline auto join_strings_collection(const Sep &sep, const Container &strings) {
     using StringType = std::ranges::range_value_t<Container>;
 
     static_assert(misc::is_basic_string_v<StringType> || misc::is_basic_string_view_v<StringType>,
@@ -886,7 +886,7 @@ auto join_strings_collection(const Sep &sep, const Container &strings) {
 }
 
 template <std::ranges::forward_range Container>
-auto join_strings_collection(const Container &strings) {
+inline auto join_strings_collection(const Container &strings) {
     using StringType = std::ranges::range_value_t<Container>;
 
     static_assert(misc::is_basic_string_v<StringType> || misc::is_basic_string_view_v<StringType>,
