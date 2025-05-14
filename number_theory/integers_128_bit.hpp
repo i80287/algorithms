@@ -95,33 +95,50 @@ typedef std::_Signed128 int128_t;
 // NOLINTBEGIN(cppcoreguidelines-avoid-c-arrays, hicpp-avoid-c-arrays, modernize-avoid-c-arrays)
 // clang-format on
 
-namespace int128_detail {
+namespace int128_traits {
+
+namespace detail {
+
+using std::size_t;
 
 // NOLINTBEGIN(cppcoreguidelines-avoid-magic-numbers)
 
 #if CONFIG_HAS_AT_LEAST_CXX_20
 
 // 340282366920938463463374607431768211455 == 2^128 - 1
-inline constexpr std::size_t kMaxStringLengthU128 =
+inline constexpr size_t kMaxStringLengthU128 =
     std::char_traits<char>::length("340282366920938463463374607431768211455");
 static_assert(kMaxStringLengthU128 == 39, "impl error");
 //  170141183460469231731687303715884105727 ==  2^127 - 1
 // -170141183460469231731687303715884105728 == -2^127
-inline constexpr std::size_t kMaxStringLengthI128 =
+inline constexpr size_t kMaxStringLengthI128 =
     std::char_traits<char>::length("-170141183460469231731687303715884105728");
 static_assert(kMaxStringLengthI128 == 40, "impl error");
 #else
-constexpr std::size_t kMaxStringLengthU128 = 39;
-constexpr std::size_t kMaxStringLengthI128 = 40;
+constexpr size_t kMaxStringLengthU128 = 39;
+constexpr size_t kMaxStringLengthI128 = 40;
 #endif
 
 // NOLINTEND(cppcoreguidelines-avoid-magic-numbers)
+
+[[nodiscard]] ATTRIBUTE_CONST I128_CONSTEXPR uint128_t uabs128(const int128_t number) noexcept {
+    // NOLINTNEXTLINE(hicpp-signed-bitwise)
+    const uint128_t t = static_cast<uint128_t>(number >> 127U);
+    return (static_cast<uint128_t>(number) ^ t) - t;
+}
+
+[[nodiscard]] ATTRIBUTE_CONST I128_CONSTEXPR uint128_t uabs128(const uint128_t number) noexcept {
+    return number;
+}
 
 /// @brief Realization is taken from the gcc libstdc++ __to_chars_10_impl
 /// @param number
 /// @param buffer_ptr
 /// @return
-[[nodiscard]] I128_CONSTEXPR char* uint128_t_format_fill_chars_buffer(
+ATTRIBUTE_NONNULL_ALL_ARGS
+ATTRIBUTE_RETURNS_NONNULL
+[[nodiscard]]
+I128_CONSTEXPR char* uint128_t_format_fill_chars_buffer(
     uint128_t number, char* buffer_ptr ATTRIBUTE_LIFETIME_BOUND) noexcept {
     constexpr std::uint8_t remainders[201] =
         "0001020304050607080910111213141516171819"
@@ -130,18 +147,18 @@ constexpr std::size_t kMaxStringLengthI128 = 40;
         "6061626364656667686970717273747576777879"
         "8081828384858687888990919293949596979899";
 
-    constexpr uint32_t kBase1 = 10;
-    constexpr uint32_t kBase2 = kBase1 * kBase1;
+    constexpr std::uint32_t kBase1 = 10;
+    constexpr std::uint32_t kBase2 = kBase1 * kBase1;
 
     while (number >= kBase2) {
-        const auto remainder_index = static_cast<std::size_t>(number % kBase2) * 2;
+        const auto remainder_index = static_cast<size_t>(number % kBase2) * 2;
         number /= kBase2;
         *--buffer_ptr = static_cast<char>(remainders[remainder_index + 1]);
         *--buffer_ptr = static_cast<char>(remainders[remainder_index]);
     }
 
     if (number >= kBase1) {
-        const auto remainder_index = static_cast<std::size_t>(number) * 2;
+        const auto remainder_index = static_cast<size_t>(number) * 2;
         *--buffer_ptr = static_cast<char>(remainders[remainder_index + 1]);
         *--buffer_ptr = static_cast<char>(remainders[remainder_index]);
     } else {
@@ -151,17 +168,29 @@ constexpr std::size_t kMaxStringLengthI128 = 40;
     return buffer_ptr;
 }
 
-[[nodiscard]] ATTRIBUTE_CONST I128_CONSTEXPR uint128_t uabs128(const int128_t number) noexcept {
-    // NOLINTNEXTLINE(hicpp-signed-bitwise)
-    const uint128_t t = static_cast<uint128_t>(number >> 127U);
-    return (static_cast<uint128_t>(number) ^ t) - t;
+template <class T, size_t BufferSize>
+[[nodiscard]]
+I128_CONSTEXPR std::pair<char*, size_t> fill_buffer(
+    const T number, char (&buffer ATTRIBUTE_LIFETIME_BOUND)[BufferSize]) noexcept {
+    char* const buffer_end_ptr = buffer + BufferSize;
+
+    char* ptr = int128_traits::detail::uint128_t_format_fill_chars_buffer(
+        int128_traits::detail::uabs128(number), buffer_end_ptr);
+    if constexpr (std::is_same_v<T, int128_t>) {
+        if (number < 0) {
+            *--ptr = '-';
+        }
+    }
+
+    const auto length = static_cast<size_t>(buffer_end_ptr - ptr);
+    if constexpr (std::is_same_v<T, int128_t>) {
+        CONFIG_ASSUME_STATEMENT(2 <= length);
+    } else {
+        CONFIG_ASSUME_STATEMENT(1 <= length);
+    }
+    CONFIG_ASSUME_STATEMENT(length <= BufferSize);
+    return {ptr, length};
 }
-
-}  // namespace int128_detail
-
-namespace int128_traits {
-
-namespace detail {
 
 template <class T>
 struct is_integral_helper : public std::is_integral<T> {};
@@ -340,89 +369,39 @@ concept unsigned_integral =
 
 inline std::ostream& operator<<(std::ostream& out ATTRIBUTE_LIFETIME_BOUND,
                                 const uint128_t number) {
-    constexpr auto kBufferSize = int128_detail::kMaxStringLengthU128;
-
-    char digits[kBufferSize];
-    char* const buffer_end_ptr = digits + kBufferSize;
-    const char* const ptr =
-        int128_detail::uint128_t_format_fill_chars_buffer(number, buffer_end_ptr);
-    const auto length = static_cast<std::size_t>(buffer_end_ptr - ptr);
+    char digits[int128_traits::detail::kMaxStringLengthU128];
+    const auto [ptr, length] = int128_traits::detail::fill_buffer(number, digits);
     return out << std::string_view(ptr, length);
 }
 
 inline std::ostream& operator<<(std::ostream& out ATTRIBUTE_LIFETIME_BOUND, const int128_t number) {
-    constexpr auto kBufferSize = int128_detail::kMaxStringLengthI128;
-    char digits[kBufferSize];
-
-    const uint128_t number_abs = int128_detail::uabs128(number);
-
-    char* const buffer_end_ptr = digits + kBufferSize;
-    char* ptr = int128_detail::uint128_t_format_fill_chars_buffer(number_abs, buffer_end_ptr);
-    if (number < 0) {
-        *--ptr = '-';
-    }
-    const auto length = static_cast<std::size_t>(buffer_end_ptr - ptr);
-    CONFIG_ASSUME_STATEMENT(length <= kBufferSize);
+    char digits[int128_traits::detail::kMaxStringLengthI128];
+    const auto [ptr, length] = int128_traits::detail::fill_buffer(number, digits);
     return out << std::string_view(ptr, length);
 }
 
-ATTRIBUTE_NONNULL(2)
-inline int fprint_u128(const uint128_t number, std::FILE* const filestream) {
-    // + 1 for '\0'
-    constexpr auto kBufferSize = int128_detail::kMaxStringLengthU128 + 1;
-    char digits[kBufferSize];
-    digits[kBufferSize - 1] = '\0';
-    const char* const ptr =
-        int128_detail::uint128_t_format_fill_chars_buffer(number, &digits[kBufferSize - 1]);
-    return std::fputs(ptr, filestream);
-}
-
-inline int print_u128(const uint128_t number) {
-    return ::fprint_u128(number, stdout);
-}
-
-ATTRIBUTE_NONNULL(2)
-inline int fprint_u128_newline(const uint128_t number, std::FILE* const filestream) {
-    // + 1 for '\n', + 1 for '\0'
-    constexpr auto kBufferSize = int128_detail::kMaxStringLengthU128 + 1 + 1;
-    char digits[kBufferSize];
-    digits[kBufferSize - 2] = '\n';
-    digits[kBufferSize - 1] = '\0';
-    const char* const ptr =
-        int128_detail::uint128_t_format_fill_chars_buffer(number, &digits[kBufferSize - 2]);
-    return std::fputs(ptr, filestream);
-}
-
-inline int print_u128_newline(const uint128_t number) {
-    return ::fprint_u128_newline(number, stdout);
-}
-
 [[nodiscard]] inline std::string to_string(const uint128_t number) {
-    constexpr auto kBufferSize = int128_detail::kMaxStringLengthU128;
-    char digits[kBufferSize];
-
-    char* const buffer_end_ptr = digits + kBufferSize;
-    const char* const ptr =
-        int128_detail::uint128_t_format_fill_chars_buffer(number, buffer_end_ptr);
-    const auto length = static_cast<std::size_t>(buffer_end_ptr - ptr);
-    CONFIG_ASSUME_STATEMENT(length <= kBufferSize);
+    char digits[int128_traits::detail::kMaxStringLengthU128];
+    const auto [ptr, length] = int128_traits::detail::fill_buffer(number, digits);
     return std::string(ptr, length);
 }
 
 [[nodiscard]] inline std::string to_string(const int128_t number) {
-    constexpr auto kBufferSize = int128_detail::kMaxStringLengthI128;
-    char digits[kBufferSize];
-
-    const uint128_t number_abs = int128_detail::uabs128(number);
-
-    char* const buffer_end_ptr = digits + kBufferSize;
-    char* ptr = int128_detail::uint128_t_format_fill_chars_buffer(number_abs, buffer_end_ptr);
-    if (number < 0) {
-        *--ptr = '-';
-    }
-    const auto length = static_cast<std::size_t>(buffer_end_ptr - ptr);
-    CONFIG_ASSUME_STATEMENT(length <= kBufferSize);
+    char digits[int128_traits::detail::kMaxStringLengthI128];
+    const auto [ptr, length] = int128_traits::detail::fill_buffer(number, digits);
     return std::string(ptr, length);
+}
+
+[[nodiscard]] inline std::wstring to_wstring(const uint128_t number) {
+    char digits[int128_traits::detail::kMaxStringLengthU128];
+    const auto [ptr, length] = int128_traits::detail::fill_buffer(number, digits);
+    return std::wstring(ptr, ptr + length);
+}
+
+[[nodiscard]] inline std::wstring to_wstring(const int128_t number) {
+    char digits[int128_traits::detail::kMaxStringLengthI128];
+    const auto [ptr, length] = int128_traits::detail::fill_buffer(number, digits);
+    return std::wstring(ptr, ptr + length);
 }
 
 // clang-format off
