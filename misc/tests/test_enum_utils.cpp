@@ -174,17 +174,29 @@ GENERATE_ENUM_FLAG_BIT_OPERATIONS(EnumClass2)
 
 #ifdef GENERATE_ENUM_TO_STRING_FOR_ENUM_MEMBERS
 
-#define GENERATE_ENUM_TO_STRING_ASSERTS(enum_type)              \
-    static_assert(to_string_view(enum_type::zero) == "zero");   \
-    static_assert(to_string_view(enum_type::one) == "one");     \
-    static_assert(to_string_view(enum_type::two) == "two");     \
-    static_assert(to_string_view(enum_type::four) == "four");   \
-    static_assert(to_string_view(enum_type::eight) == "eight"); \
-    assert(to_string(enum_type::zero) == "zero");               \
-    assert(to_string(enum_type::one) == "one");                 \
-    assert(to_string(enum_type::two) == "two");                 \
-    assert(to_string(enum_type::four) == "four");               \
-    assert(to_string(enum_type::eight) == "eight")
+#define GENERATE_ENUM_TO_STRING_ASSERTS(enum_type, namespace)                                 \
+    static_assert(namespace to_string_view(enum_type::zero) == "zero");                       \
+    static_assert(namespace to_string_view(enum_type::one) == "one");                         \
+    static_assert(namespace to_string_view(enum_type::two) == "two");                         \
+    static_assert(namespace to_string_view(enum_type::four) == "four");                       \
+    static_assert(namespace to_string_view(enum_type::eight) == "eight");                     \
+    assert(namespace to_string(enum_type::zero) == "zero");                                   \
+    assert(namespace to_string(enum_type::one) == "one");                                     \
+    assert(namespace to_string(enum_type::two) == "two");                                     \
+    assert(namespace to_string(enum_type::four) == "four");                                   \
+    assert(namespace to_string(enum_type::eight) == "eight");                                 \
+    static_assert(namespace try_from_string<enum_type>("zero").value() == enum_type::zero);   \
+    static_assert(namespace try_from_string<enum_type>("one").value() == enum_type::one);     \
+    static_assert(namespace try_from_string<enum_type>("two").value() == enum_type::two);     \
+    static_assert(namespace try_from_string<enum_type>("four").value() == enum_type::four);   \
+    static_assert(namespace try_from_string<enum_type>("eight").value() == enum_type::eight); \
+    static_assert(!namespace try_from_string<enum_type>("seven").has_value());                \
+    assert(namespace try_from_string<enum_type>("zero").value() == enum_type::zero);          \
+    assert(namespace try_from_string<enum_type>("one").value() == enum_type::one);            \
+    assert(namespace try_from_string<enum_type>("two").value() == enum_type::two);            \
+    assert(namespace try_from_string<enum_type>("four").value() == enum_type::four);          \
+    assert(namespace try_from_string<enum_type>("eight").value() == enum_type::eight);        \
+    assert(!namespace try_from_string<enum_type>("seven").has_value())
 
 #endif
 
@@ -199,7 +211,7 @@ int main() {
     GENERATE_ENUM_FLAG_BIT_OPERATIONS_ASSERTS(CStyleEnum);
     GENERATE_ENUM_TO_INTEGER_ASSERTS(CStyleEnum);
 #ifdef GENERATE_ENUM_TO_STRING_FOR_ENUM_MEMBERS
-    GENERATE_ENUM_TO_STRING_ASSERTS(CStyleEnum);
+    GENERATE_ENUM_TO_STRING_ASSERTS(CStyleEnum, some::);
 #endif
 
     using some::EnumClass1;
@@ -207,13 +219,13 @@ int main() {
     GENERATE_ENUM_FLAG_BIT_OPERATIONS_ASSERTS(EnumClass1);
     GENERATE_ENUM_TO_INTEGER_ASSERTS(EnumClass1);
 #ifdef GENERATE_ENUM_TO_STRING_FOR_ENUM_MEMBERS
-    GENERATE_ENUM_TO_STRING_ASSERTS(EnumClass1);
+    GENERATE_ENUM_TO_STRING_ASSERTS(EnumClass1, some::);
 #endif
 
     GENERATE_ENUM_FLAG_BIT_OPERATIONS_ASSERTS(EnumClass2);
     GENERATE_ENUM_TO_INTEGER_ASSERTS(EnumClass2);
 #ifdef GENERATE_ENUM_TO_STRING_FOR_ENUM_MEMBERS
-    GENERATE_ENUM_TO_STRING_ASSERTS(EnumClass2);
+    GENERATE_ENUM_TO_STRING_ASSERTS(EnumClass2, ::);
 #endif
 
     return 0;
