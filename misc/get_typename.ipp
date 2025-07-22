@@ -51,10 +51,10 @@ using std::string_view;
                 break;
             }
             case '}': {
-                if (opened_round_brackets == 0) {
+                if (opened_curly_brackets == 0) {
                     return i;
                 }
-                opened_round_brackets--;
+                opened_curly_brackets--;
                 break;
             }
             case '[': {
@@ -98,7 +98,9 @@ using std::string_view;
     return s.size();
 }
 
-#define ASSERT_IN_CONSTEXPR(expr) static_cast<void>(0 / static_cast<int>(static_cast<bool>(expr)))
+constexpr void constexpr_assert(const bool value) noexcept {
+    static_cast<void>(0 / static_cast<int>(value));
+}
 
 [[nodiscard]] constexpr string_view extract_typename_impl(const string_view function_name) {
     const auto is_space = [](const char c) constexpr noexcept {
@@ -120,14 +122,14 @@ using std::string_view;
 #if CONFIG_COMPILER_IS_GCC_OR_ANY_CLANG
     constexpr string_view type_prefix = "T = ";
     const size_t prefix_start_pos = function_name.find(type_prefix);
-    ASSERT_IN_CONSTEXPR(prefix_start_pos != string_view::npos);
+    constexpr_assert(prefix_start_pos != string_view::npos);
     size_t typename_start_pos = prefix_start_pos + type_prefix.size();
 #elif CONFIG_COMPILER_IS_MSVC
     constexpr string_view type_prefix = "get_typename_impl<";
     const size_t prefix_start_pos = function_name.find(type_prefix);
-    ASSERT_IN_CONSTEXPR(prefix_start_pos != string_view::npos);
+    constexpr_assert(prefix_start_pos != string_view::npos);
     size_t typename_start_pos = prefix_start_pos + type_prefix.size();
-    ASSERT_IN_CONSTEXPR(typename_start_pos < function_name.size());
+    constexpr_assert(typename_start_pos < function_name.size());
     string_view piece = function_name.substr(typename_start_pos);
     constexpr string_view kKeywords[] = {
         "class",
@@ -161,15 +163,15 @@ using std::string_view;
 #error Unsupported compiler
 #endif
 
-    ASSERT_IN_CONSTEXPR(typename_start_pos < function_name.size());
+    constexpr_assert(typename_start_pos < function_name.size());
     while (is_space(function_name[typename_start_pos])) {
         typename_start_pos++;
     }
-    ASSERT_IN_CONSTEXPR(typename_start_pos < function_name.size());
+    constexpr_assert(typename_start_pos < function_name.size());
     const size_t typename_end_pos =
         typename_start_pos + get_typename_end_pos_impl(function_name.substr(typename_start_pos));
-    ASSERT_IN_CONSTEXPR(typename_end_pos < function_name.size());
-    ASSERT_IN_CONSTEXPR(typename_start_pos < typename_end_pos);
+    constexpr_assert(typename_end_pos < function_name.size());
+    constexpr_assert(typename_start_pos < typename_end_pos);
     return function_name.substr(typename_start_pos, typename_end_pos - typename_start_pos);
 }
 
@@ -196,19 +198,20 @@ template <class T>
 #endif
 
     const size_t prefix_start_pos = function_name.find(prefix);
-    ASSERT_IN_CONSTEXPR(prefix_start_pos != string_view::npos);
+    constexpr_assert(prefix_start_pos != string_view::npos);
     size_t value_start_pos = prefix_start_pos + prefix.size();
-    ASSERT_IN_CONSTEXPR(value_start_pos < function_name.size());
+    constexpr_assert(value_start_pos < function_name.size());
     const size_t value_end_pos =
         value_start_pos + get_typename_end_pos_impl(function_name.substr(value_start_pos));
-    ASSERT_IN_CONSTEXPR(value_start_pos < value_end_pos);
-    ASSERT_IN_CONSTEXPR(value_end_pos < function_name.size());
+    constexpr_assert(value_start_pos < value_end_pos);
+    constexpr_assert(value_end_pos < function_name.size());
     string_view full_name = function_name.substr(value_start_pos, value_end_pos - value_start_pos);
     constexpr string_view kScopeResolutionOperator = "::";
-    if (const size_t scope_res_operator_pos = full_name.rfind(kScopeResolutionOperator);
-        scope_res_operator_pos != string_view::npos) {
+    const size_t scope_res_operator_pos = full_name.rfind(kScopeResolutionOperator);
+    if (scope_res_operator_pos != string_view::npos) {
         full_name = full_name.substr(scope_res_operator_pos + kScopeResolutionOperator.size());
     }
+
     return full_name;
 }
 
@@ -223,12 +226,25 @@ template <auto EnumValue, class EnumType>
     return ::misc::detail::extract_enum_value_name_impl(function_name);
 }
 
-#undef ASSERT_IN_CONSTEXPR
+[[nodiscard]] constexpr string_view unqualify_typename(const string_view type_name) noexcept {
+    constexpr string_view kTemplateBeginning = "<";
+    constexpr string_view kResolutionOperator = "::";
+
+    const string_view possible_namespace_location =
+        type_name.substr(0, type_name.find(kTemplateBeginning));
+    const size_t resolution_operator_begin_pos =
+        possible_namespace_location.rfind(kResolutionOperator);
+    if (resolution_operator_begin_pos == string_view::npos) {
+        return type_name;
+    }
+
+    return type_name.substr(resolution_operator_begin_pos + kResolutionOperator.size());
+}
 
 }  // namespace detail
 
 template <class T>
-constexpr std::string_view get_typename() {
+constexpr std::string_view get_qualified_typename() {
     constexpr std::string_view kTypename = ::misc::detail::get_typename_impl<T>();
     return kTypename;
 }
@@ -241,6 +257,11 @@ constexpr std::string_view get_enum_value_name() {
     constexpr std::string_view kEnumValueName =
         ::misc::detail::get_enum_value_name_impl<EnumValue, EnumType>();
     return kEnumValueName;
+}
+
+template <class T>
+constexpr std::string_view get_unqualified_typename() {
+    return detail::unqualify_typename(get_qualified_typename<T>());
 }
 
 }  // namespace misc

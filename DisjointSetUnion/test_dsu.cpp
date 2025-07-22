@@ -405,7 +405,7 @@ void test_random_with_check() {
 
 template <class DsuType>
 void test_dsu() {
-    constexpr std::string_view tname = misc::get_typename<DsuType>();
+    constexpr std::string_view tname = misc::get_qualified_typename<DsuType>();
     std::cout << "Started testing type \"" << tname << "\"\n";
 
     test_manual<DsuType>();
