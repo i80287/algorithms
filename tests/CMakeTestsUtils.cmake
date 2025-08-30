@@ -267,8 +267,12 @@ function(configure_gcc_or_clang_gcc_options)
         if(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 16.0.0)
             set(LOCAL_FN_TEST_CXX_COMPILE_OPTIONS
                 ${LOCAL_FN_TEST_CXX_COMPILE_OPTIONS}
-                -Wincompatible-function-pointer-types-strict
-                -Wunsafe-buffer-usage)
+                -Wincompatible-function-pointer-types-strict)
+        endif()
+        if(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 17.0.0)
+            set(LOCAL_FN_TEST_CXX_COMPILE_OPTIONS
+                ${LOCAL_FN_TEST_CXX_COMPILE_OPTIONS}
+                -Wincompatible-function-pointer-types-strict)
         endif()
         if(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 18.1.0)
             set(LOCAL_FN_TEST_CXX_COMPILE_OPTIONS

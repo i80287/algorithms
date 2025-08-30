@@ -54,6 +54,7 @@ typedef std::_Signed128 int128_t;
 #ifndef INTEGERS_128_BIT_HPP
 #define INTEGERS_128_BIT_HPP
 
+#include <array>
 #include <cstddef>
 #include <cstdint>
 #include <cstdio>
@@ -137,8 +138,7 @@ constexpr size_t kMaxStringLengthI128 = 40;
 /// @return
 ATTRIBUTE_NONNULL_ALL_ARGS
 ATTRIBUTE_RETURNS_NONNULL
-[[nodiscard]]
-I128_CONSTEXPR char* uint128_t_format_fill_chars_buffer(
+[[nodiscard]] I128_CONSTEXPR char* uint128_t_format_fill_chars_buffer(
     uint128_t number, char* buffer_ptr ATTRIBUTE_LIFETIME_BOUND) noexcept {
     constexpr std::uint8_t remainders[201] =
         "0001020304050607080910111213141516171819"
@@ -168,11 +168,34 @@ I128_CONSTEXPR char* uint128_t_format_fill_chars_buffer(
     return buffer_ptr;
 }
 
-template <class T, size_t BufferSize>
+struct FillBufferResult final {
+    const char* written_str_begin;
+    std::size_t written_str_size;
+
+    [[nodiscard]] std::string to_string() const {
+        return std::string{as_string_view()};
+    }
+
+    [[nodiscard]] std::wstring to_wstring() const {
+        return std::wstring(written_str_begin, written_str_begin + written_str_size);
+    }
+
+    [[nodiscard]] constexpr std::string_view as_string_view() const noexcept {
+        return std::string_view{written_str_begin, written_str_size};
+    }
+};
+
+template <typename T>
+using ArrayBufferForFormatting =
+    std::conditional_t<std::is_same_v<T, uint128_t>,
+                       std::array<char, int128_traits::detail::kMaxStringLengthU128>,
+                       std::array<char, int128_traits::detail::kMaxStringLengthI128>>;
+
+template <typename T>
 [[nodiscard]]
-I128_CONSTEXPR std::pair<char*, size_t> fill_buffer(
-    const T number, char (&buffer ATTRIBUTE_LIFETIME_BOUND)[BufferSize]) noexcept {
-    char* const buffer_end_ptr = buffer + BufferSize;
+I128_CONSTEXPR FillBufferResult
+fill_buffer(const T number, ArrayBufferForFormatting<T>& buffer ATTRIBUTE_LIFETIME_BOUND) noexcept {
+    char* const buffer_end_ptr = buffer.data() + buffer.size();
 
     char* ptr = int128_traits::detail::uint128_t_format_fill_chars_buffer(
         int128_traits::detail::uabs128(number), buffer_end_ptr);
@@ -188,7 +211,8 @@ I128_CONSTEXPR std::pair<char*, size_t> fill_buffer(
     } else {
         CONFIG_ASSUME_STATEMENT(1 <= length);
     }
-    CONFIG_ASSUME_STATEMENT(length <= BufferSize);
+    const size_t buffer_size = buffer.size();
+    CONFIG_ASSUME_STATEMENT(length <= buffer_size);
     return {ptr, length};
 }
 
@@ -369,39 +393,33 @@ concept unsigned_integral =
 
 inline std::ostream& operator<<(std::ostream& out ATTRIBUTE_LIFETIME_BOUND,
                                 const uint128_t number) {
-    char digits[int128_traits::detail::kMaxStringLengthU128];
-    const auto [ptr, length] = int128_traits::detail::fill_buffer(number, digits);
-    return out << std::string_view(ptr, length);
+    int128_traits::detail::ArrayBufferForFormatting<uint128_t> digits{};
+    return out << int128_traits::detail::fill_buffer(number, digits).as_string_view();
 }
 
 inline std::ostream& operator<<(std::ostream& out ATTRIBUTE_LIFETIME_BOUND, const int128_t number) {
-    char digits[int128_traits::detail::kMaxStringLengthI128];
-    const auto [ptr, length] = int128_traits::detail::fill_buffer(number, digits);
-    return out << std::string_view(ptr, length);
+    int128_traits::detail::ArrayBufferForFormatting<int128_t> digits{};
+    return out << int128_traits::detail::fill_buffer(number, digits).as_string_view();
 }
 
 [[nodiscard]] inline std::string to_string(const uint128_t number) {
-    char digits[int128_traits::detail::kMaxStringLengthU128];
-    const auto [ptr, length] = int128_traits::detail::fill_buffer(number, digits);
-    return std::string(ptr, length);
+    int128_traits::detail::ArrayBufferForFormatting<uint128_t> digits{};
+    return int128_traits::detail::fill_buffer(number, digits).to_string();
 }
 
 [[nodiscard]] inline std::string to_string(const int128_t number) {
-    char digits[int128_traits::detail::kMaxStringLengthI128];
-    const auto [ptr, length] = int128_traits::detail::fill_buffer(number, digits);
-    return std::string(ptr, length);
+    int128_traits::detail::ArrayBufferForFormatting<int128_t> digits{};
+    return int128_traits::detail::fill_buffer(number, digits).to_string();
 }
 
 [[nodiscard]] inline std::wstring to_wstring(const uint128_t number) {
-    char digits[int128_traits::detail::kMaxStringLengthU128];
-    const auto [ptr, length] = int128_traits::detail::fill_buffer(number, digits);
-    return std::wstring(ptr, ptr + length);
+    int128_traits::detail::ArrayBufferForFormatting<uint128_t> digits{};
+    return int128_traits::detail::fill_buffer(number, digits).to_wstring();
 }
 
 [[nodiscard]] inline std::wstring to_wstring(const int128_t number) {
-    char digits[int128_traits::detail::kMaxStringLengthI128];
-    const auto [ptr, length] = int128_traits::detail::fill_buffer(number, digits);
-    return std::wstring(ptr, ptr + length);
+    int128_traits::detail::ArrayBufferForFormatting<int128_t> digits{};
+    return int128_traits::detail::fill_buffer(number, digits).to_wstring();
 }
 
 // clang-format off

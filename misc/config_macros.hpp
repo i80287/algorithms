@@ -692,13 +692,6 @@
 #define ATTRIBUTE_GSL_OWNER(...)
 #endif
 
-#if CONFIG_CLANG_AT_LEAST(17, 0) && \
-    CONFIG_HELPER_HAS_CPP_STYLE_ATTRIBUTE(clang::unsafe_buffer_usage)
-#define ATTRIBUTE_UNSAFE_BUFFER_USAGE [[clang::unsafe_buffer_usage]]
-#else
-#define ATTRIBUTE_UNSAFE_BUFFER_USAGE
-#endif
-
 #if CONFIG_CLANG_AT_LEAST(19, 0) && CONFIG_HELPER_HAS_CPP_STYLE_ATTRIBUTE(clang::nonblocking)
 #define ATTRIBUTE_NONBLOCKING_FUNCTION          [[clang::nonblocking]]
 #define ATTRIBUTE_NONBLOCKING_FUNCTION_IF(expr) [[clang::nonblocking(expr)]]
