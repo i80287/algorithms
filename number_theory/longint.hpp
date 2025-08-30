@@ -2411,15 +2411,28 @@ private:
     };
 
     static void check_dec_str(std::string_view str) {
-        constexpr auto is_digit = [](const std::uint32_t chr) constexpr noexcept {
-            return chr - '0' <= '9' - '0';
+        constexpr auto is_digit = [](const char chr) constexpr noexcept {
+            const std::uint32_t widen{static_cast<unsigned char>(chr)};
+            return widen - '0' <= '9' - '0';
         };
         if (!str.empty() && str.front() == '-') {
             str.remove_prefix(1);
         }
-        if (unlikely(str.empty() || !std::all_of(str.cbegin(), str.cend(), is_digit))) {
+        if (unlikely(str.empty() || !all_of(str, is_digit))) {
             throw_on_invalid_dec_str(LONGINT_FILE_LOCATION(), str);
         }
+    }
+
+    template <typename P>
+    [[nodiscard]] static bool all_of(const std::string_view str, P pred) noexcept(
+        std::is_nothrow_invocable_r_v<bool, P, char>) {
+        static_assert(std::is_invocable_r_v<bool, P, char>);
+        bool ret = true;
+        for (const char c : str) {
+            ret &= pred(c);
+        }
+
+        return ret;
     }
 
     ATTRIBUTE_COLD
