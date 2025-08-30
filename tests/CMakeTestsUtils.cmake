@@ -280,14 +280,10 @@ function(configure_gcc_or_clang_gcc_options)
                 ${LOCAL_FN_TEST_CXX_COMPILE_OPTIONS}
                 -Wfunction-effects)
         endif()
-        if(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 20.0.0)
-            set(LOCAL_FN_TEST_CXX_COMPILE_OPTIONS
-                ${LOCAL_FN_TEST_CXX_COMPILE_OPTIONS}
-                -Wshift-bool)
-        endif()
         if(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 21.0.0)
             set(LOCAL_FN_TEST_CXX_COMPILE_OPTIONS
                 ${LOCAL_FN_TEST_CXX_COMPILE_OPTIONS}
+                -Wshift-bool
                 -Wnrvo
                 -Wunique-object-duplication)
         endif()
