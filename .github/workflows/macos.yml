@@ -22,6 +22,7 @@ jobs:
       run: |
         brew update
 
+        brew uninstall cmake
         brew install gcc libtool make ninja cmake
         # > GNU "make" has been installed as "gmake".
         # > If you need to use it as "make", you can add a "gnubin" directory
