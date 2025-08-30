@@ -385,7 +385,7 @@ concept signed_integral =
 
 template <class T>
 concept unsigned_integral =
-    std::unsigned_integral<T> || (int128_traits::integral<T> && !int128_traits::signed_integral<T>);
+    std::unsigned_integral<T> || (int128_traits::integral<T> && int128_traits::is_unsigned_v<T>);
 
 #endif
 

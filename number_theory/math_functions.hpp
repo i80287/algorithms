@@ -204,27 +204,39 @@ using try_double_bits_t =
                        T,
                        math_functions::detail::double_bits_t<T>>;
 
+template <typename T>
+inline constexpr bool is_trivial_arithmetic_v =
+    std::is_arithmetic_v<T>
+#if defined(INTEGERS_128_BIT_HPP) && INT128_IS_BUILTIN_TYPE
+    || std::is_same_v<T, int128_t> || std::is_same_v<T, uint128_t>
+#endif
+    ;
+
 template <class T>
-ATTRIBUTE_ALWAYS_INLINE constexpr void check_math_int_type() noexcept {
+ATTRIBUTE_ALWAYS_INLINE constexpr void check_math_int_type() noexcept
+    ATTRIBUTE_NONBLOCKING_FUNCTION {
     static_assert(math_functions::is_math_integral_type_v<T>,
                   "integral type that is not a bool nor a char is expected");
 }
 
 template <class T>
-ATTRIBUTE_ALWAYS_INLINE constexpr void check_math_unsigned_int_type() noexcept {
+ATTRIBUTE_ALWAYS_INLINE constexpr void check_math_unsigned_int_type() noexcept
+    ATTRIBUTE_NONBLOCKING_FUNCTION {
     math_functions::detail::check_math_int_type<T>();
     static_assert(math_functions::is_unsigned_v<T>, "unsigned integral type is expected");
 }
 
 template <class IntType>
-ATTRIBUTE_NODISCARD ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_CONST constexpr auto to_uint_at_least_32(
-    const IntType n) noexcept {
+ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_CONST [[nodiscard]]
+constexpr auto to_uint_at_least_32(const IntType n) noexcept ATTRIBUTE_NONBLOCKING_FUNCTION {
     using UIntType = math_functions::make_unsigned_t<IntType>;
     using UIntTypeAtLeastUInt32 = std::common_type_t<UIntType, uint32_t>;
     return UIntTypeAtLeastUInt32{static_cast<UIntType>(n)};
 }
 
-ATTRIBUTE_NODISCARD ATTRIBUTE_CONST constexpr uint32_t isqrt_u32(uint32_t n) noexcept {
+ATTRIBUTE_CONST
+[[nodiscard]]
+constexpr uint32_t isqrt_u32(uint32_t n) noexcept ATTRIBUTE_NONBLOCKING_FUNCTION {
     /**
      * In the runtime `sqrt` is used (but not for the msvc prior to the c++20).
      *
@@ -257,7 +269,9 @@ ATTRIBUTE_NODISCARD ATTRIBUTE_CONST constexpr uint32_t isqrt_u32(uint32_t n) noe
 #endif
 }
 
-ATTRIBUTE_NODISCARD ATTRIBUTE_CONST constexpr uint32_t isqrt_u64(const uint64_t n) noexcept {
+ATTRIBUTE_CONST
+[[nodiscard]]
+constexpr uint32_t isqrt_u64(const uint64_t n) noexcept ATTRIBUTE_NONBLOCKING_FUNCTION {
     /**
      * In the runtime `sqrtl` is used (but not for the msvc prior to the c++20).
      */
@@ -292,8 +306,14 @@ ATTRIBUTE_NODISCARD ATTRIBUTE_CONST constexpr uint32_t isqrt_u64(const uint64_t 
 #endif
 }
 
+#if defined(INTEGERS_128_BIT_HPP)
+
 /// @note  See Hackers Delight Chapter 11.
-ATTRIBUTE_NODISCARD ATTRIBUTE_CONST I128_CONSTEXPR uint64_t isqrt_u128(const uint128_t n) noexcept {
+ATTRIBUTE_CONST
+[[nodiscard]]
+I128_CONSTEXPR uint64_t
+isqrt_u128(const uint128_t n) noexcept(detail::is_trivial_arithmetic_v<uint128_t>)
+    ATTRIBUTE_NONBLOCKING_FUNCTION_IF(detail::is_trivial_arithmetic_v<uint128_t>) {
     uint64_t l = 0;
     const uint128_t r_approx = (n >> 6U) + 16U;
     uint64_t r = r_approx > std::numeric_limits<uint64_t>::max()
@@ -311,8 +331,12 @@ ATTRIBUTE_NODISCARD ATTRIBUTE_CONST I128_CONSTEXPR uint64_t isqrt_u128(const uin
     return l;
 }
 
+#endif
+
 /// @note  See Hackers Delight Chapter 11, section 11-2.
-ATTRIBUTE_NODISCARD ATTRIBUTE_CONST constexpr uint32_t icbrt_u32(uint32_t n) noexcept {
+ATTRIBUTE_CONST
+[[nodiscard]]
+constexpr uint32_t icbrt_u32(uint32_t n) noexcept ATTRIBUTE_NONBLOCKING_FUNCTION {
     /**
      * cbrt and cbrtl are not used here because according
      * to the Quick Bench results they are:
@@ -346,7 +370,9 @@ ATTRIBUTE_NODISCARD ATTRIBUTE_CONST constexpr uint32_t icbrt_u32(uint32_t n) noe
 }
 
 /// @note  See Hackers Delight Chapter Chapter 11, ex. 2.
-ATTRIBUTE_NODISCARD ATTRIBUTE_CONST constexpr uint32_t icbrt_u64(uint64_t n) noexcept {
+ATTRIBUTE_CONST
+[[nodiscard]]
+constexpr uint32_t icbrt_u64(uint64_t n) noexcept ATTRIBUTE_NONBLOCKING_FUNCTION {
     uint64_t y = 0;
     if (n >= 0x1000000000000000ULL) {
         if (n >= 0x8000000000000000ULL) {
@@ -373,20 +399,29 @@ ATTRIBUTE_NODISCARD ATTRIBUTE_CONST constexpr uint32_t icbrt_u64(uint64_t n) noe
 }
 
 template <class T>
-ATTRIBUTE_NODISCARD ATTRIBUTE_CONST constexpr uint32_t max_ifrrt() noexcept {
-    constexpr uint32_t ifrrt_of_one_plus_max_T = []() constexpr noexcept {
-        constexpr auto kNumBits = CHAR_BIT * sizeof(T);
-        if constexpr (kNumBits == 128) {
-            return 0;
-        } else {
-            return 1u << (kNumBits / 4);
-        }
-    }();
-    return ifrrt_of_one_plus_max_T - 1u;
+ATTRIBUTE_CONST [[nodiscard]]
+constexpr uint32_t max_ifrrt() noexcept ATTRIBUTE_NONBLOCKING_FUNCTION {
+    if constexpr (detail::is_trivial_arithmetic_v<T>) {
+        constexpr uint32_t ifrrt_of_one_plus_max_T = []() constexpr noexcept {
+            constexpr auto kNumBits = CHAR_BIT * sizeof(T);
+            if constexpr (kNumBits == 128) {
+                return 0;
+            } else {
+                return 1u << (kNumBits / 4);
+            }
+        }();
+        return ifrrt_of_one_plus_max_T - 1u;
+    } else {
+        return std::numeric_limits<uint32_t>::max();
+    }
 }
 
 template <class T, class P>
-[[nodiscard]] ATTRIBUTE_CONST constexpr T bin_pow_impl(T n, P p) noexcept(noexcept(n *= n)) {
+ATTRIBUTE_CONST [[nodiscard]]
+constexpr T bin_pow_impl(T n, P p) noexcept(detail::is_trivial_arithmetic_v<T>)
+    ATTRIBUTE_NONBLOCKING_FUNCTION_IF(detail::is_trivial_arithmetic_v<T>) {
+    math_functions::detail::check_math_int_type<P>();
+
     T res(1);
     while (true) {
         if (p % 2 != 0) {
@@ -403,7 +438,8 @@ template <class T, class P>
 }  // namespace detail
 
 template <class IntType>
-[[nodiscard]] ATTRIBUTE_CONST constexpr int32_t sign(const IntType n) noexcept {
+ATTRIBUTE_CONST [[nodiscard]]
+constexpr int32_t sign(const IntType n) noexcept ATTRIBUTE_NONBLOCKING_FUNCTION {
     math_functions::detail::check_math_int_type<IntType>();
 
     if constexpr (math_functions::is_signed_v<IntType>) {
@@ -421,7 +457,8 @@ template <class IntType>
 }
 
 template <class IntType>
-[[nodiscard]] ATTRIBUTE_CONST constexpr auto uabs(const IntType n) noexcept {
+ATTRIBUTE_CONST [[nodiscard]]
+constexpr auto uabs(const IntType n) noexcept ATTRIBUTE_NONBLOCKING_FUNCTION {
     math_functions::detail::check_math_int_type<IntType>();
 
     if constexpr (math_functions::is_signed_v<IntType>) {
@@ -452,7 +489,8 @@ template <class IntType>
 /// @param[in] b
 /// @return
 template <class IntType>
-[[nodiscard]] ATTRIBUTE_CONST constexpr bool same_sign(const IntType a, const IntType b) noexcept {
+ATTRIBUTE_CONST [[nodiscard]]
+constexpr bool same_sign(const IntType a, const IntType b) noexcept ATTRIBUTE_NONBLOCKING_FUNCTION {
     math_functions::detail::check_math_int_type<IntType>();
 
     return math_functions::sign(a) == math_functions::sign(b);
@@ -478,7 +516,8 @@ template <class T, class P>
 #if CONFIG_COMPILER_SUPPORTS_CONCEPTS
     requires math_functions::detail::InplaceMultipliable<T>
 #endif
-[[nodiscard]] ATTRIBUTE_CONST constexpr T bin_pow(T n, const P p) noexcept(noexcept(n *= n)) {
+ATTRIBUTE_ALWAYS_INLINE [[nodiscard]]
+constexpr T bin_pow(T n, const P p) ATTRIBUTE_NONBLOCKING_FUNCTION {
     math_functions::detail::check_math_int_type<P>();
 
     if constexpr (math_functions::is_integral_v<T>) {
@@ -505,7 +544,8 @@ template <class T, class P>
         return ret;
     } else {
         static_assert(!math_functions::is_integral_v<T>,
-                      "use floating point types in bin_pow because type of power is signed");
+                      "use floating point types in bin_pow because type of power is signed and "
+                      "power may be < 0");
         if (p >= 0) {
             return ret;
         }
@@ -530,7 +570,8 @@ template <class T, class P>
 /// @param[in] mod
 /// @return (n ^ p) % mod
 template <class T>
-[[nodiscard]] ATTRIBUTE_CONST constexpr T bin_pow_mod(T n, uint64_t p, const T mod) noexcept {
+ATTRIBUTE_CONST [[nodiscard]]
+constexpr T bin_pow_mod(T n, uint64_t p, const T mod) noexcept ATTRIBUTE_NONBLOCKING_FUNCTION {
     math_functions::detail::check_math_unsigned_int_type<T>();
 
     using Q = math_functions::detail::double_bits_t<T>;
@@ -564,7 +605,8 @@ template <class T>
 
 ATTRIBUTE_ALWAYS_INLINE
 ATTRIBUTE_CONST
-[[nodiscard]] constexpr uint8_t isqrt(const uint8_t n) noexcept {
+[[nodiscard]]
+constexpr uint8_t isqrt(const uint8_t n) noexcept ATTRIBUTE_NONBLOCKING_FUNCTION {
     const uint32_t ret = math_functions::detail::isqrt_u32(n);
     CONFIG_ASSUME_STATEMENT(ret < (1U << 4U));
     CONFIG_ASSUME_STATEMENT(ret * ret <= n);
@@ -573,7 +615,8 @@ ATTRIBUTE_CONST
 
 ATTRIBUTE_ALWAYS_INLINE
 ATTRIBUTE_CONST
-[[nodiscard]] constexpr uint8_t isqrt(const uint16_t n) noexcept {
+[[nodiscard]]
+constexpr uint8_t isqrt(const uint16_t n) noexcept ATTRIBUTE_NONBLOCKING_FUNCTION {
     const uint32_t ret = math_functions::detail::isqrt_u32(n);
     CONFIG_ASSUME_STATEMENT(ret < (1U << 8U));
     CONFIG_ASSUME_STATEMENT(ret * ret <= n);
@@ -582,7 +625,8 @@ ATTRIBUTE_CONST
 
 ATTRIBUTE_ALWAYS_INLINE
 ATTRIBUTE_CONST
-[[nodiscard]] constexpr uint16_t isqrt(const uint32_t n) noexcept {
+[[nodiscard]]
+constexpr uint16_t isqrt(const uint32_t n) noexcept ATTRIBUTE_NONBLOCKING_FUNCTION {
     const uint32_t ret = math_functions::detail::isqrt_u32(n);
     CONFIG_ASSUME_STATEMENT(ret < (1U << 16U));
     CONFIG_ASSUME_STATEMENT(ret * ret <= n);
@@ -591,7 +635,8 @@ ATTRIBUTE_CONST
 
 ATTRIBUTE_ALWAYS_INLINE
 ATTRIBUTE_CONST
-[[nodiscard]] constexpr uint32_t isqrt(const uint64_t n) noexcept {
+[[nodiscard]]
+constexpr uint32_t isqrt(const uint64_t n) noexcept ATTRIBUTE_NONBLOCKING_FUNCTION {
     const uint32_t ret = math_functions::detail::isqrt_u64(n);
     CONFIG_ASSUME_STATEMENT(uint64_t{ret} * uint64_t{ret} <= n);
     return ret;
@@ -601,7 +646,8 @@ ATTRIBUTE_CONST
 
 ATTRIBUTE_ALWAYS_INLINE
 ATTRIBUTE_CONST
-[[nodiscard]] I128_CONSTEXPR uint64_t isqrt(const uint128_t n) noexcept {
+[[nodiscard]]
+I128_CONSTEXPR uint64_t isqrt(const uint128_t n) noexcept ATTRIBUTE_NONBLOCKING_FUNCTION {
     const uint64_t ret = math_functions::detail::isqrt_u128(n);
 #if CONFIG_COMPILER_IS_GCC_OR_ANY_CLANG
     CONFIG_ASSUME_STATEMENT(uint128_t{ret} * uint128_t{ret} <= n);
@@ -616,7 +662,8 @@ ATTRIBUTE_CONST
 /// @return ⌊n^(1/3)⌋
 ATTRIBUTE_ALWAYS_INLINE
 ATTRIBUTE_CONST
-[[nodiscard]] constexpr uint32_t icbrt(const uint32_t n) noexcept {
+[[nodiscard]]
+constexpr uint32_t icbrt(const uint32_t n) noexcept ATTRIBUTE_NONBLOCKING_FUNCTION {
     const uint32_t ret = math_functions::detail::icbrt_u32(n);
 
     // 1625^3 = 4291015625 < 2^32 - 1 = 4294967295 < 4298942376 = 1626^3
@@ -637,7 +684,8 @@ ATTRIBUTE_CONST
 /// @return ⌊n^(1/3)⌋
 ATTRIBUTE_ALWAYS_INLINE
 ATTRIBUTE_CONST
-[[nodiscard]] constexpr uint32_t icbrt(const uint64_t n) noexcept {
+[[nodiscard]]
+constexpr uint32_t icbrt(const uint64_t n) noexcept ATTRIBUTE_NONBLOCKING_FUNCTION {
     const uint32_t ret = math_functions::detail::icbrt_u64(n);
 
     // clang-format off
@@ -655,8 +703,9 @@ ATTRIBUTE_CONST
 /// @return ⌊n^0.25⌋
 template <class T>
 ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_CONST [[nodiscard]]
-constexpr auto ifrrt(const T n) noexcept
-    -> decltype(math_functions::isqrt(math_functions::isqrt(n))) {
+constexpr auto ifrrt(const T n) noexcept(detail::is_trivial_arithmetic_v<T>)
+    ATTRIBUTE_NONBLOCKING_FUNCTION_IF(detail::is_trivial_arithmetic_v<T>)
+        -> decltype(math_functions::isqrt(math_functions::isqrt(n))) {
     math_functions::detail::check_math_unsigned_int_type<T>();
 
     const auto ret = math_functions::isqrt(math_functions::isqrt(n));
@@ -684,8 +733,10 @@ using IsPerfectSquareResultRetType = IsPerfectSquareResult<decltype(math_functio
 /// @param[in] n
 /// @return {sqrt(n), true} if @a `n` is perfect square and {0, false} otherwise.
 template <class T>
-[[nodiscard]]
-ATTRIBUTE_CONST constexpr IsPerfectSquareResultRetType<T> is_perfect_square(const T n) noexcept {
+ATTRIBUTE_CONST [[nodiscard]]
+constexpr IsPerfectSquareResultRetType<T> is_perfect_square(const T n) noexcept(
+    detail::is_trivial_arithmetic_v<T>)
+    ATTRIBUTE_NONBLOCKING_FUNCTION_IF(detail::is_trivial_arithmetic_v<T>) {
     math_functions::detail::check_math_unsigned_int_type<T>();
 
     // clang-format off
@@ -736,7 +787,9 @@ ATTRIBUTE_CONST constexpr IsPerfectSquareResultRetType<T> is_perfect_square(cons
 /// @brief This function reverses bits of the @a `b`
 /// @param[in] b
 /// @return 8-bit number whose bits are reversed bits of the @a `b`.
-[[nodiscard]] ATTRIBUTE_CONST constexpr uint8_t bit_reverse(const uint8_t b) noexcept {
+ATTRIBUTE_CONST
+[[nodiscard]]
+constexpr uint8_t bit_reverse(const uint8_t b) noexcept ATTRIBUTE_NONBLOCKING_FUNCTION {
     // See https://graphics.stanford.edu/~seander/bithacks.html#RoundUpPowerOf2
     return static_cast<uint8_t>(((b * 0x80200802ULL) & 0x0884422110ULL) * 0x0101010101ULL >> 32U);
 }
@@ -744,7 +797,9 @@ ATTRIBUTE_CONST constexpr IsPerfectSquareResultRetType<T> is_perfect_square(cons
 /// @brief This function reverses bits of the @a `n`
 /// @param[in] b
 /// @return 32-bit number whose bits are reversed bits of the @a `n`.
-[[nodiscard]] ATTRIBUTE_CONST constexpr uint32_t bit_reverse(uint32_t n) noexcept {
+ATTRIBUTE_CONST
+[[nodiscard]]
+constexpr uint32_t bit_reverse(uint32_t n) noexcept ATTRIBUTE_NONBLOCKING_FUNCTION {
     // clang-format off
     /**
      * See Hackers Delight 7.1
@@ -762,7 +817,9 @@ ATTRIBUTE_CONST constexpr IsPerfectSquareResultRetType<T> is_perfect_square(cons
 /// @brief This function reverses bits of the @a `n`
 /// @param[in] b
 /// @return 64-bit number whose bits are reversed bits of the @a `n`.
-[[nodiscard]] ATTRIBUTE_CONST constexpr uint64_t bit_reverse(uint64_t n) noexcept {
+ATTRIBUTE_CONST
+[[nodiscard]]
+constexpr uint64_t bit_reverse(uint64_t n) noexcept ATTRIBUTE_NONBLOCKING_FUNCTION {
     // clang-format off
     /**
      * See Knuth's algorithm in Hackers Delight 7.4
@@ -786,7 +843,9 @@ ATTRIBUTE_CONST constexpr IsPerfectSquareResultRetType<T> is_perfect_square(cons
 /// @brief This function reverses bits of the @a `n`
 /// @param[in] b
 /// @return 128-bit number whose bits are reversed bits of the @a `n`.
-[[nodiscard]] ATTRIBUTE_CONST I128_CONSTEXPR uint128_t bit_reverse(uint128_t n) noexcept {
+ATTRIBUTE_CONST
+[[nodiscard]]
+I128_CONSTEXPR uint128_t bit_reverse(uint128_t n) noexcept ATTRIBUTE_NONBLOCKING_FUNCTION {
     uint128_t m = ~uint128_t{0};
     for (uint32_t s = sizeof(uint128_t) * CHAR_BIT; s >>= 1U;) {
         m ^= m << s;
@@ -814,7 +873,8 @@ ATTRIBUTE_ALWAYS_INLINE constexpr void visit_all_submasks(const uint64_t mask, F
 }
 
 template <class IntType>
-[[nodiscard]] ATTRIBUTE_CONST constexpr bool is_power_of_two(const IntType n) noexcept {
+ATTRIBUTE_CONST [[nodiscard]]
+constexpr bool is_power_of_two(const IntType n) noexcept ATTRIBUTE_NONBLOCKING_FUNCTION {
     math_functions::detail::check_math_int_type<IntType>();
 
     if constexpr (math_functions::is_signed_v<IntType>) {
@@ -828,7 +888,9 @@ template <class IntType>
 
 namespace detail {
 
-[[nodiscard]] ATTRIBUTE_CONST inline uint32_t log2_floor_software(uint64_t n) {
+ATTRIBUTE_CONST
+[[nodiscard]]
+inline uint32_t log2_floor_software(uint64_t n) ATTRIBUTE_NONBLOCKING_FUNCTION {
     static const std::array<uint64_t, 6> t = {
         0xFFFFFFFF00000000ULL, 0x00000000FFFF0000ULL, 0x000000000000FF00ULL,
         0x00000000000000F0ULL, 0x000000000000000CULL, 0x0000000000000002ULL,
@@ -847,7 +909,9 @@ namespace detail {
     return y;
 }
 
-[[nodiscard]] ATTRIBUTE_CONST inline uint32_t log2_ceil_software(uint64_t n) {
+ATTRIBUTE_CONST
+[[nodiscard]]
+inline uint32_t log2_ceil_software(uint64_t n) ATTRIBUTE_NONBLOCKING_FUNCTION {
     return math_functions::detail::log2_floor_software(n) + ((n & (n - 1)) != 0);
 }
 
@@ -856,7 +920,9 @@ namespace detail {
  *  Note that by convention, input value 0 returns 0 since log(0) is
  * undefined.
  */
-ATTRIBUTE_NODISCARD ATTRIBUTE_CONST inline uint32_t de_bruijn_log2(uint32_t value) {
+ATTRIBUTE_CONST
+[[nodiscard]]
+inline uint32_t de_bruijn_log2(uint32_t value) ATTRIBUTE_NONBLOCKING_FUNCTION {
     // See
     // https://graphics.stanford.edu/~seander/bithacks.html#RoundUpPowerOf2
 
@@ -877,7 +943,9 @@ ATTRIBUTE_NODISCARD ATTRIBUTE_CONST inline uint32_t de_bruijn_log2(uint32_t valu
     return MultiplyDeBruijnBitPosition[((value * 0x07C4ACDDU) >> 27U)];
 }
 
-ATTRIBUTE_NODISCARD ATTRIBUTE_CONST constexpr uint32_t lz_count_32_software(uint32_t n) noexcept {
+ATTRIBUTE_CONST
+[[nodiscard]]
+constexpr uint32_t lz_count_32_software(uint32_t n) noexcept ATTRIBUTE_NONBLOCKING_FUNCTION {
     /**
      * See Hackers Delight Chapter 5
      */
@@ -906,7 +974,9 @@ ATTRIBUTE_NODISCARD ATTRIBUTE_CONST constexpr uint32_t lz_count_32_software(uint
     return m;
 }
 
-ATTRIBUTE_NODISCARD ATTRIBUTE_CONST constexpr uint32_t lz_count_64_software(uint64_t n) noexcept {
+ATTRIBUTE_CONST
+[[nodiscard]]
+constexpr uint32_t lz_count_64_software(uint64_t n) noexcept ATTRIBUTE_NONBLOCKING_FUNCTION {
     /**
      * See Hackers Delight Chapter 5
      */
@@ -939,7 +1009,9 @@ ATTRIBUTE_NODISCARD ATTRIBUTE_CONST constexpr uint32_t lz_count_64_software(uint
     return m;
 }
 
-ATTRIBUTE_NODISCARD ATTRIBUTE_CONST constexpr uint32_t tz_count_32_software(uint32_t n) noexcept {
+ATTRIBUTE_CONST
+[[nodiscard]]
+constexpr uint32_t tz_count_32_software(uint32_t n) noexcept ATTRIBUTE_NONBLOCKING_FUNCTION {
     /**
      * See Hackers Delight Chapter 5
      */
@@ -968,7 +1040,9 @@ ATTRIBUTE_NODISCARD ATTRIBUTE_CONST constexpr uint32_t tz_count_32_software(uint
     return m;
 }
 
-ATTRIBUTE_NODISCARD ATTRIBUTE_CONST constexpr uint32_t tz_count_64_software(uint64_t n) noexcept {
+ATTRIBUTE_CONST
+[[nodiscard]]
+constexpr uint32_t tz_count_64_software(uint64_t n) noexcept ATTRIBUTE_NONBLOCKING_FUNCTION {
     uint32_t m = 0U;
     for (n = ~n & (n - 1); n != 0U; n >>= 1U) {
         m++;
@@ -977,7 +1051,9 @@ ATTRIBUTE_NODISCARD ATTRIBUTE_CONST constexpr uint32_t tz_count_64_software(uint
     return m;
 }
 
-ATTRIBUTE_NODISCARD ATTRIBUTE_CONST constexpr uint32_t pop_count_32_software(uint32_t n) noexcept {
+ATTRIBUTE_CONST
+[[nodiscard]]
+constexpr uint32_t pop_count_32_software(uint32_t n) noexcept ATTRIBUTE_NONBLOCKING_FUNCTION {
     /**
      * See Hackers Delight Chapter 5.
      */
@@ -990,7 +1066,9 @@ ATTRIBUTE_NODISCARD ATTRIBUTE_CONST constexpr uint32_t pop_count_32_software(uin
     return n;
 }
 
-ATTRIBUTE_NODISCARD ATTRIBUTE_CONST constexpr uint64_t pop_count_64_software(uint64_t n) noexcept {
+ATTRIBUTE_CONST
+[[nodiscard]]
+constexpr uint64_t pop_count_64_software(uint64_t n) noexcept ATTRIBUTE_NONBLOCKING_FUNCTION {
     /**
      * See Hackers Delight Chapter 5.
      */
@@ -1006,7 +1084,9 @@ ATTRIBUTE_NODISCARD ATTRIBUTE_CONST constexpr uint64_t pop_count_64_software(uin
 
 }  // namespace detail
 
-[[nodiscard]] ATTRIBUTE_CONST constexpr int32_t diff_popcount(uint32_t x, uint32_t y) noexcept {
+ATTRIBUTE_CONST
+[[nodiscard]]
+constexpr int32_t diff_popcount(uint32_t x, uint32_t y) noexcept ATTRIBUTE_NONBLOCKING_FUNCTION {
     /**
      * See Hackers Delight Chapter 5.
      */
@@ -1022,8 +1102,10 @@ ATTRIBUTE_NODISCARD ATTRIBUTE_CONST constexpr uint64_t pop_count_64_software(uin
     return static_cast<int32_t>(x & 0x0000007FU) - 32;
 }
 
-[[nodiscard]] ATTRIBUTE_CONST constexpr int32_t compare_popcount(const uint32_t x,
-                                                                 const uint32_t y) noexcept {
+ATTRIBUTE_CONST
+[[nodiscard]]
+constexpr int32_t compare_popcount(const uint32_t x,
+                                   const uint32_t y) noexcept ATTRIBUTE_NONBLOCKING_FUNCTION {
     /**
      * See Hackers Delight Chapter 5.
      */
@@ -1048,8 +1130,8 @@ template <typename T>
 #if CONFIG_HAS_CONCEPTS
     requires math_functions::unsigned_integral<T>
 #endif
-[[nodiscard]]
-ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_CONST constexpr int32_t countr_zero(const T n) noexcept {
+ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_CONST [[nodiscard]]
+constexpr int32_t countr_zero(const T n) noexcept ATTRIBUTE_NONBLOCKING_FUNCTION {
     static_assert(math_functions::is_unsigned_v<T>, "Unsigned integral type expected");
 
     if (unlikely(n == 0)) {
@@ -1109,8 +1191,8 @@ template <typename T>
 #if CONFIG_HAS_CONCEPTS
     requires math_functions::unsigned_integral<T>
 #endif
-[[nodiscard]]
-ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_CONST constexpr int32_t countl_zero(const T n) noexcept {
+ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_CONST [[nodiscard]]
+constexpr int32_t countl_zero(const T n) noexcept ATTRIBUTE_NONBLOCKING_FUNCTION {
     static_assert(math_functions::is_unsigned_v<T>, "Unsigned integral type expected");
 
     if (unlikely(n == 0)) {
@@ -1167,8 +1249,8 @@ template <class T>
 #if CONFIG_HAS_CONCEPTS
     requires math_functions::unsigned_integral<T>
 #endif
-[[nodiscard]]
-ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_CONST constexpr int32_t popcount(const T n) noexcept {
+ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_CONST [[nodiscard]]
+constexpr int32_t popcount(const T n) noexcept ATTRIBUTE_NONBLOCKING_FUNCTION {
     static_assert(math_functions::is_unsigned_v<T>, "Unsigned integral type expected");
 
 #if defined(INTEGERS_128_BIT_HPP)
@@ -1226,8 +1308,10 @@ ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_CONST constexpr int32_t popcount(const T n) no
 ///        0 -> 0
 /// @param[in] x
 /// @return
+ATTRIBUTE_CONST
 [[nodiscard]]
-ATTRIBUTE_CONST constexpr uint32_t next_n_bits_permutation(const uint32_t x) noexcept {
+constexpr uint32_t next_n_bits_permutation(const uint32_t x) noexcept
+    ATTRIBUTE_NONBLOCKING_FUNCTION {
     // See
     // https://graphics.stanford.edu/~seander/bithacks.html#RoundUpPowerOf2
 
@@ -1241,8 +1325,9 @@ ATTRIBUTE_CONST constexpr uint32_t next_n_bits_permutation(const uint32_t x) noe
 }
 
 template <class UIntType>
-[[nodiscard]]
-ATTRIBUTE_CONST constexpr auto nearest_greater_equal_power_of_two(const UIntType n) noexcept {
+ATTRIBUTE_CONST [[nodiscard]]
+constexpr auto nearest_greater_equal_power_of_two(const UIntType n) noexcept
+    ATTRIBUTE_NONBLOCKING_FUNCTION {
     static_assert(math_functions::is_unsigned_v<UIntType> && sizeof(UIntType) >= sizeof(unsigned),
                   "unsigned integral type (at least unsigned int) is expected");
 
@@ -1257,8 +1342,9 @@ ATTRIBUTE_CONST constexpr auto nearest_greater_equal_power_of_two(const UIntType
 }
 
 template <class UIntType>
-[[nodiscard]]
-ATTRIBUTE_CONST constexpr auto nearest_greater_power_of_two(const UIntType n) noexcept {
+ATTRIBUTE_CONST [[nodiscard]]
+constexpr auto nearest_greater_power_of_two(const UIntType n) noexcept
+    ATTRIBUTE_NONBLOCKING_FUNCTION {
     static_assert(math_functions::is_unsigned_v<UIntType> && sizeof(UIntType) >= sizeof(unsigned),
                   "unsigned integral type (at least unsigned int) is expected");
 
@@ -1272,8 +1358,9 @@ ATTRIBUTE_CONST constexpr auto nearest_greater_power_of_two(const UIntType n) no
 }
 
 template <class IntType>
-[[nodiscard]]
-ATTRIBUTE_CONST constexpr uint32_t most_significant_set_bit_position(const IntType n) noexcept {
+ATTRIBUTE_CONST [[nodiscard]]
+constexpr uint32_t most_significant_set_bit_position(const IntType n) noexcept
+    ATTRIBUTE_NONBLOCKING_FUNCTION {
     math_functions::detail::check_math_int_type<IntType>();
 
     const auto unsigned_n = math_functions::detail::to_uint_at_least_32(n);
@@ -1282,8 +1369,9 @@ ATTRIBUTE_CONST constexpr uint32_t most_significant_set_bit_position(const IntTy
 }
 
 template <class IntType>
-[[nodiscard]]
-ATTRIBUTE_CONST constexpr IntType most_significant_set_bit(const IntType n) noexcept {
+ATTRIBUTE_CONST [[nodiscard]]
+constexpr IntType most_significant_set_bit(const IntType n) noexcept
+    ATTRIBUTE_NONBLOCKING_FUNCTION {
     using UIntType = math_functions::make_unsigned_t<IntType>;
     return static_cast<IntType>(
         n == 0 ? 0 : UIntType{1} << math_functions::most_significant_set_bit_position(n));
@@ -1296,8 +1384,9 @@ ATTRIBUTE_CONST constexpr IntType most_significant_set_bit(const IntType n) noex
 /// @param[in] n
 /// @return
 template <class IntType>
-[[nodiscard]]
-ATTRIBUTE_CONST constexpr IntType least_significant_set_bit(const IntType n) noexcept {
+ATTRIBUTE_CONST [[nodiscard]]
+constexpr IntType least_significant_set_bit(const IntType n) noexcept
+    ATTRIBUTE_NONBLOCKING_FUNCTION {
     math_functions::detail::check_math_int_type<IntType>();
 
     const auto unsigned_n = math_functions::detail::to_uint_at_least_32(n);
@@ -1315,8 +1404,9 @@ template <class T>
     requires math_functions::unsigned_integral<T>
 #endif
 ATTRIBUTE_CONST [[nodiscard]]
-constexpr math_functions::detail::try_double_bits_t<T> masked_popcount_sum(const T n,
-                                                                           const T k) noexcept {
+constexpr math_functions::detail::try_double_bits_t<T> masked_popcount_sum(
+    const T n, const T k) noexcept(detail::is_trivial_arithmetic_v<T>)
+    ATTRIBUTE_NONBLOCKING_FUNCTION_IF(detail::is_trivial_arithmetic_v<T>) {
     math_functions::detail::check_math_unsigned_int_type<T>();
 
     math_functions::detail::try_double_bits_t<T> popcount_sum = 0;
@@ -1354,12 +1444,15 @@ constexpr math_functions::detail::try_double_bits_t<T> masked_popcount_sum(const
 /// @param k
 /// @return
 template <class IntType>
-[[nodiscard]] ATTRIBUTE_CONST constexpr IntType popcount_sum(const IntType n) noexcept {
+ATTRIBUTE_CONST [[nodiscard]] constexpr IntType popcount_sum(const IntType n) noexcept
+    ATTRIBUTE_NONBLOCKING_FUNCTION {
     return math_functions::masked_popcount_sum(n, ~IntType{0});
 }
 
 ATTRIBUTE_CONST
-[[nodiscard]] constexpr bool is_correct_base_b_len_base(const uint8_t base) noexcept {
+[[nodiscard]]
+constexpr bool is_correct_base_b_len_base(const uint8_t base) noexcept
+    ATTRIBUTE_NONBLOCKING_FUNCTION {
     return 2 <= base && base <= 36;
 }
 
@@ -1372,7 +1465,8 @@ namespace detail {
 /// @return
 template <class T>
 ATTRIBUTE_CONST [[nodiscard]]
-constexpr uint32_t base_b_len_impl(T value, const uint8_t base) noexcept {
+constexpr uint32_t base_b_len_impl(T value,
+                                   const uint8_t base) noexcept ATTRIBUTE_NONBLOCKING_FUNCTION {
     static_assert(math_functions::is_unsigned_v<T>);
 
     CONFIG_ASSUME_STATEMENT(is_correct_base_b_len_base(base));
@@ -1411,8 +1505,9 @@ constexpr uint32_t base_b_len_impl(T value, const uint8_t base) noexcept {
 /// @param[in] base
 /// @return
 template <class T>
-[[nodiscard]]
-ATTRIBUTE_ALWAYS_INLINE constexpr uint32_t base_b_len(const T value, const uint8_t base = 10) {
+ATTRIBUTE_ALWAYS_INLINE [[nodiscard]]
+constexpr uint32_t base_b_len(const T value,
+                              const uint8_t base = 10) ATTRIBUTE_NONBLOCKING_FUNCTION {
     math_functions::detail::check_math_int_type<T>();
 
     THROW_IF_NOT(math_functions::is_correct_base_b_len_base(base));
@@ -1434,22 +1529,31 @@ template <class UIntType>
 #if CONFIG_HAS_CONCEPTS
     requires math_functions::unsigned_integral<UIntType>
 #endif
-[[nodiscard]]
-ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_CONST constexpr uint32_t log2_floor(const UIntType n) noexcept {
-    static_assert(math_functions::is_unsigned_v<UIntType> && sizeof(UIntType) >= sizeof(unsigned),
-                  "unsigned integral type (at least unsigned int) is expected");
+ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_CONST [[nodiscard]]
+constexpr uint32_t log2_floor(const UIntType n) noexcept ATTRIBUTE_NONBLOCKING_FUNCTION {
+    math_functions::detail::check_math_unsigned_int_type<UIntType>();
 
+    const uint32_t log2_value = [n]() {
 #if defined(INTEGERS_128_BIT_HPP)
-    if constexpr (std::is_same_v<UIntType, uint128_t>) {
-        const auto hi = static_cast<uint64_t>(n >> 64U);
-        return hi != 0 ? (127 - static_cast<uint32_t>(math_functions::countl_zero(hi)))
-                       : (math_functions::log2_floor(static_cast<uint64_t>(n)));
-    } else
+        if constexpr (std::is_same_v<UIntType, uint128_t>) {
+            const auto hi = static_cast<uint64_t>(n >> 64U);
+            return hi != 0 ? (127 - static_cast<uint32_t>(math_functions::countl_zero(hi)))
+                           : (math_functions::log2_floor(static_cast<uint64_t>(n)));
+        } else
 #endif
-    {
-        return uint32_t{sizeof(n) * CHAR_BIT - 1} -
-               static_cast<uint32_t>(math_functions::countl_zero(n));
+        {
+            return uint32_t{sizeof(n) * CHAR_BIT - 1} -
+                   static_cast<uint32_t>(math_functions::countl_zero(n));
+        }
+    }();
+
+    if (n != 0) {
+        CONFIG_ASSUME_STATEMENT(log2_value < n);
+    } else {
+        CONFIG_ASSUME_STATEMENT(log2_value == static_cast<uint32_t>(-1));
     }
+
+    return log2_value;
 }
 
 /// @brief For n > 0 returns ⌈log_2(n)⌉. For n = 0 returns (uint32_t)-1
@@ -1460,8 +1564,8 @@ template <class UIntType>
 #if CONFIG_HAS_CONCEPTS
     requires math_functions::unsigned_integral<UIntType>
 #endif
-[[nodiscard]]
-ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_CONST constexpr uint32_t log2_ceil(const UIntType n) noexcept {
+ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_CONST [[nodiscard]]
+constexpr uint32_t log2_ceil(const UIntType n) noexcept ATTRIBUTE_NONBLOCKING_FUNCTION {
     return math_functions::log2_floor(n) + uint32_t{(n & (n - 1)) != 0};
 }
 
@@ -1469,8 +1573,8 @@ template <class UIntType>
 #if CONFIG_HAS_CONCEPTS
     requires math_functions::unsigned_integral<UIntType>
 #endif
-[[nodiscard]]
-ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_CONST constexpr uint32_t base_2_len(const UIntType n) noexcept {
+ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_CONST [[nodiscard]]
+constexpr uint32_t base_2_len(const UIntType n) noexcept ATTRIBUTE_NONBLOCKING_FUNCTION {
     // " | 1" operation does not affect answer for all
     //  numbers except n = 0. For n = 0 answer is 1.
     return math_functions::log2_floor(n | 1) + 1;
@@ -1517,7 +1621,9 @@ inline constexpr const uint64_t log10_u64_table[20] = {
 /// @brief For n > 0 returns ⌊log_10(n)⌋. For n = 0 returns (uint32_t)-1
 /// @param[in] n
 /// @return
-[[nodiscard]] ATTRIBUTE_CONST constexpr uint32_t log10_floor(const uint32_t n) noexcept {
+ATTRIBUTE_CONST
+[[nodiscard]]
+constexpr uint32_t log10_floor(const uint32_t n) noexcept ATTRIBUTE_NONBLOCKING_FUNCTION {
     /**
      * See Hackers Delight 11-4
      */
@@ -1533,7 +1639,9 @@ inline constexpr const uint64_t log10_u64_table[20] = {
 /// (uint32_t)-1
 /// @param[in] n
 /// @return
-[[nodiscard]] ATTRIBUTE_CONST constexpr uint32_t log10_floor(const uint64_t n) noexcept {
+ATTRIBUTE_CONST
+[[nodiscard]]
+constexpr uint32_t log10_floor(const uint64_t n) noexcept ATTRIBUTE_NONBLOCKING_FUNCTION {
     /**
      * See Hackers Delight 11-4
      */
@@ -1544,17 +1652,21 @@ inline constexpr const uint64_t log10_u64_table[20] = {
     // NOLINTNEXTLINE(hicpp-signed-bitwise)
     CONFIG_ASSUME_STATEMENT((-19 >> 6U) <= approx_log10 && approx_log10 <= ((19 * 63) >> 6U));
 
-    const uint32_t adjustment =
+    const uint64_t adjustment =
         (detail::log10_u64_table[static_cast<uint32_t>(approx_log10 + 1)] - n) >> 63U;
     return static_cast<uint32_t>(approx_log10 + static_cast<int32_t>(adjustment));
 }
 
-[[nodiscard]] ATTRIBUTE_CONST constexpr uint32_t base_10_len(const uint32_t n) noexcept {
+ATTRIBUTE_CONST
+[[nodiscard]]
+constexpr uint32_t base_10_len(const uint32_t n) noexcept ATTRIBUTE_NONBLOCKING_FUNCTION {
     // or `n` with 1 so that base_10_len(0) = 1
     return math_functions::log10_floor(n | 1U) + 1;
 }
 
-[[nodiscard]] ATTRIBUTE_CONST constexpr uint32_t base_10_len(const uint64_t n) noexcept {
+ATTRIBUTE_CONST
+[[nodiscard]]
+constexpr uint32_t base_10_len(const uint64_t n) noexcept ATTRIBUTE_NONBLOCKING_FUNCTION {
     // or `n` with 1 so that base_10_len(0) = 1
     return math_functions::log10_floor(n | 1U) + 1;
 }
@@ -1574,8 +1686,9 @@ template <class UIntType>
 #if CONFIG_HAS_CONCEPTS
     requires math_functions::unsigned_integral<UIntType>
 #endif
-[[nodiscard]]
-ATTRIBUTE_CONST constexpr ExtractPow2Result<UIntType> extract_pow2(const UIntType n) noexcept {
+ATTRIBUTE_CONST [[nodiscard]]
+constexpr ExtractPow2Result<UIntType> extract_pow2(const UIntType n) noexcept
+    ATTRIBUTE_NONBLOCKING_FUNCTION {
     math_functions::detail::check_math_unsigned_int_type<UIntType>();
 
     const auto power = static_cast<uint32_t>(math_functions::countr_zero(n));
@@ -1588,20 +1701,24 @@ ATTRIBUTE_CONST constexpr ExtractPow2Result<UIntType> extract_pow2(const UIntTyp
 /// @param y y
 /// @param z z
 /// @return median of x, y and z
-[[nodiscard]] ATTRIBUTE_CONST constexpr bool bool_median(const bool x,
-                                                         const bool y,
-                                                         const bool z) noexcept {
+ATTRIBUTE_CONST
+[[nodiscard]]
+constexpr bool bool_median(const bool x,
+                           const bool y,
+                           const bool z) noexcept ATTRIBUTE_NONBLOCKING_FUNCTION {
     return (x || y) && (y || z) && (x || z);
 }
 
 template <class T>
-[[nodiscard]] ATTRIBUTE_CONST constexpr T next_even(const T n) noexcept {
+ATTRIBUTE_CONST [[nodiscard]]
+constexpr T next_even(const T n) noexcept ATTRIBUTE_NONBLOCKING_FUNCTION {
     math_functions::detail::check_math_unsigned_int_type<T>();
     return n + 2 - n % 2;
 }
 
 template <class T>
-[[nodiscard]] ATTRIBUTE_CONST constexpr T next_odd(const T n) noexcept {
+ATTRIBUTE_CONST [[nodiscard]]
+constexpr T next_odd(const T n) noexcept ATTRIBUTE_NONBLOCKING_FUNCTION {
     math_functions::detail::check_math_unsigned_int_type<T>();
     return n + 1 + n % 2;
 }
@@ -1644,10 +1761,11 @@ template <class FloatType>
 #if CONFIG_HAS_CONCEPTS
     requires std::floating_point<FloatType>
 #endif
-[[nodiscard]]
-ATTRIBUTE_CONST SumSinCos<FloatType> sum_of_sines_and_cosines(const FloatType alpha,
-                                                              const FloatType beta,
-                                                              const uint32_t n) noexcept {
+ATTRIBUTE_CONST [[nodiscard]]
+SumSinCos<FloatType> sum_of_sines_and_cosines(const FloatType alpha,
+                                              const FloatType beta,
+                                              const uint32_t n) noexcept
+    ATTRIBUTE_NONBLOCKING_FUNCTION {
     static_assert(std::is_floating_point_v<FloatType>, "Invalid type in sum_of_sines_and_cosines");
 
     const FloatType nf = static_cast<FloatType>(n);
@@ -1691,8 +1809,10 @@ namespace detail {
 ///         number of different prime divisors of @a `n`.
 /// @param[in] n
 /// @return
-ATTRIBUTE_NODISCARD
-ATTRIBUTE_CONST constexpr uint32_t max_number_of_unique_prime_divisors(const uint32_t n) noexcept {
+ATTRIBUTE_CONST
+[[nodiscard]]
+constexpr uint32_t max_number_of_unique_prime_divisors(const uint32_t n) noexcept
+    ATTRIBUTE_NONBLOCKING_FUNCTION {
     constexpr uint32_t kBoundary1 = 2;
     constexpr uint32_t kBoundary2 = kBoundary1 * 3;
     constexpr uint32_t kBoundary3 = kBoundary2 * 5;
@@ -1796,8 +1916,10 @@ struct [[nodiscard]] PrimeFactor final {
     using IntType = NumericType;
 
     ATTRIBUTE_ALWAYS_INLINE
-    constexpr PrimeFactor(const IntType prime_factor, const uint32_t prime_factor_power) noexcept
-        : factor(prime_factor), factor_power(prime_factor_power) {}
+    constexpr PrimeFactor(const IntType prime_factor,
+                          const uint32_t prime_factor_power) noexcept ATTRIBUTE_NONBLOCKING_FUNCTION
+        : factor(prime_factor)
+        , factor_power(prime_factor_power) {}
 
     IntType factor;
     uint32_t factor_power;
@@ -1955,14 +2077,16 @@ public:
     ATTRIBUTE_PURE
     [[nodiscard]]
     constexpr const NumbersContainer& least_prime_factors() const noexcept
-        ATTRIBUTE_LIFETIME_BOUND {
+        ATTRIBUTE_NONBLOCKING_FUNCTION ATTRIBUTE_LIFETIME_BOUND {
         return least_prime_factor_;
     }
 
     [[nodiscard]] CONSTEXPR_VECTOR bool is_prime(const uint32_t n) const noexcept {
         return least_prime_factor_[n] == n && n >= 2;
     }
-    [[nodiscard]] CONSTEXPR_VECTOR size_t max_checkable_number() const noexcept {
+
+    [[nodiscard]]
+    CONSTEXPR_VECTOR size_t max_checkable_number() const noexcept ATTRIBUTE_NONBLOCKING_FUNCTION {
         return least_prime_factor_.size() - 1;
     }
 
@@ -1991,17 +2115,19 @@ public:
     }
 
     [[nodiscard]]
-    CONSTEXPR_VECTOR uint32_t number_of_unique_prime_factors(const uint32_t n) const noexcept {
+    CONSTEXPR_VECTOR uint32_t
+    number_of_unique_prime_factors(const uint32_t n) const noexcept ATTRIBUTE_NONBLOCKING_FUNCTION {
         return math_functions::Factorizer::number_of_unique_prime_factors_impl(
             least_prime_factor_.data(), n);
     }
 
 private:
-    ATTRIBUTE_NODISCARD
     ATTRIBUTE_PURE
     ATTRIBUTE_ACCESS(read_only, 1)
+    [[nodiscard]]
     static constexpr uint32_t number_of_unique_prime_factors_impl(
-        const uint32_t* const RESTRICT_QUALIFIER least_prime_factor, uint32_t n) noexcept {
+        const uint32_t* const RESTRICT_QUALIFIER least_prime_factor,
+        uint32_t n) noexcept ATTRIBUTE_NONBLOCKING_FUNCTION {
         uint32_t unique_pfs_count = 0;
         uint32_t last_pf = 0;
         if (n % 2 == 0) {
@@ -2058,6 +2184,12 @@ private:
 #if defined(__cpp_lib_constexpr_bitset) &&    \
     (__cpp_lib_constexpr_bitset >= 202207L || \
      (CONFIG_HAS_AT_LEAST_CXX_23 && __cpp_lib_constexpr_bitset >= 202202L))
+#define PRIMES_SIEVE_INITIALIZED_IN_COMPILE_TIME 1
+#else
+#define PRIMES_SIEVE_INITIALIZED_IN_COMPILE_TIME 0
+#endif
+
+#if PRIMES_SIEVE_INITIALIZED_IN_COMPILE_TIME
 #define CONSTEXPR_BITSET_OPS constexpr
 #if defined(__cpp_constexpr) && __cpp_constexpr >= 202211L
 #define CONSTEXPR_FIXED_PRIMES_SIEVE constexpr
@@ -2079,7 +2211,12 @@ using PrimesSet = std::bitset<size_t{N} + 1>;
 /// @tparam N exclusive upper bound
 /// @return bitset, such that bitset[n] == true \iff n is prime
 template <uint32_t N>
-[[nodiscard]] CONSTEXPR_FIXED_PRIMES_SIEVE const PrimesSet<N>& fixed_primes_sieve() noexcept {
+#if PRIMES_SIEVE_INITIALIZED_IN_COMPILE_TIME
+ATTRIBUTE_CONST
+#endif
+    [[nodiscard]]
+    CONSTEXPR_FIXED_PRIMES_SIEVE const PrimesSet<N>& fixed_primes_sieve() noexcept
+    ATTRIBUTE_NONBLOCKING_FUNCTION_IF(PRIMES_SIEVE_INITIALIZED_IN_COMPILE_TIME) {
     static CONSTEXPR_PRIMES_SIEVE const PrimesSet<N> primes_bs =
         []() CONSTEXPR_BITSET_OPS noexcept {
             PrimesSet<N> primes{};
@@ -2114,6 +2251,7 @@ template <uint32_t N>
 #undef CONSTEXPR_PRIMES_SIEVE
 #undef CONSTEXPR_FIXED_PRIMES_SIEVE
 #undef CONSTEXPR_BITSET_OPS
+#undef PRIMES_SIEVE_INITIALIZED_IN_COMPILE_TIME
 
 template <class UIntType>
 struct [[nodiscard]] ExtEuclidAlgoRet {
@@ -2134,17 +2272,19 @@ struct [[nodiscard]] ExtEuclidAlgoRet {
 /// @param a a value
 /// @param b b value
 /// @return {u, v, gcd(a, b)}
-template <typename IntType>
-[[nodiscard]] ATTRIBUTE_CONST constexpr auto extended_euclid_algorithm(const IntType a,
-                                                                       const IntType b) noexcept {
-    math_functions::detail::check_math_int_type<IntType>();
+template <typename T>
+ATTRIBUTE_CONST [[nodiscard]]
+constexpr auto extended_euclid_algorithm(const T a,
+                                         const T b) noexcept(detail::is_trivial_arithmetic_v<T>)
+    ATTRIBUTE_NONBLOCKING_FUNCTION_IF(detail::is_trivial_arithmetic_v<T>) {
+    math_functions::detail::check_math_int_type<T>();
 
     int64_t u_previous = a != 0;
     int64_t u_current = 0;
     int64_t v_previous = 0;
     int64_t v_current = 1;
 
-    using CompIntType = std::conditional_t<sizeof(IntType) >= sizeof(int), IntType, int64_t>;
+    using CompIntType = std::conditional_t<sizeof(T) >= sizeof(int), T, int64_t>;
 
     CompIntType r_previous = a;
     CompIntType r_current = b;
@@ -2190,12 +2330,11 @@ struct HelperRetType {
     uint32_t m_ = 0;                      // m / d
 };
 
-ATTRIBUTE_NODISCARD
 ATTRIBUTE_CONST
 ATTRIBUTE_ALWAYS_INLINE
-constexpr HelperRetType congruence_helper(const uint32_t a,
-                                          const uint32_t c,
-                                          const uint32_t m) noexcept {
+[[nodiscard]]
+constexpr HelperRetType congruence_helper(
+    const uint32_t a, const uint32_t c, const uint32_t m) noexcept ATTRIBUTE_NONBLOCKING_FUNCTION {
     const uint32_t d = std::gcd(a, m);
     if (m == 0 || c % d != 0) {
         return {};
@@ -2224,11 +2363,10 @@ constexpr HelperRetType congruence_helper(const uint32_t a,
     return {x0, d, m_};
 }
 
-ATTRIBUTE_NODISCARD
-CONSTEXPR_VECTOR
-std::vector<uint32_t> solve_congruence_modulo_m_all_roots_impl(const uint32_t a,
-                                                               const uint32_t c,
-                                                               const uint32_t m) {
+[[nodiscard]]
+CONSTEXPR_VECTOR std::vector<uint32_t> solve_congruence_modulo_m_all_roots_impl(const uint32_t a,
+                                                                                const uint32_t c,
+                                                                                const uint32_t m) {
     const auto [x0, d, m_] = math_functions::detail::congruence_helper(a, c, m);
     std::vector<uint32_t> solutions(d);
     auto x = x0;
@@ -2240,17 +2378,17 @@ std::vector<uint32_t> solve_congruence_modulo_m_all_roots_impl(const uint32_t a,
     return solutions;
 }
 
-ATTRIBUTE_NODISCARD
 ATTRIBUTE_CONST
-constexpr uint32_t solve_congruence_modulo_m_impl(const uint32_t a,
-                                                  const uint32_t c,
-                                                  const uint32_t m) noexcept {
+[[nodiscard]]
+constexpr uint32_t solve_congruence_modulo_m_impl(
+    const uint32_t a, const uint32_t c, const uint32_t m) noexcept ATTRIBUTE_NONBLOCKING_FUNCTION {
     return math_functions::detail::congruence_helper(a, c, m).x0;
 }
 
 template <class T>
-ATTRIBUTE_NODISCARD ATTRIBUTE_CONST ATTRIBUTE_ALWAYS_INLINE constexpr uint32_t congruence_arg(
-    const T x, ATTRIBUTE_MAYBE_UNUSED const uint32_t m) noexcept {
+ATTRIBUTE_CONST ATTRIBUTE_ALWAYS_INLINE [[nodiscard]]
+constexpr uint32_t congruence_arg(const T x, ATTRIBUTE_MAYBE_UNUSED const uint32_t m) noexcept
+    ATTRIBUTE_NONBLOCKING_FUNCTION {
     math_functions::detail::check_math_int_type<T>();
 
     if constexpr (math_functions::is_unsigned_v<T>) {
@@ -2289,8 +2427,8 @@ ATTRIBUTE_NODISCARD ATTRIBUTE_CONST ATTRIBUTE_ALWAYS_INLINE constexpr uint32_t c
 ///          x_{0} < m / gcd(a, m), x_{i + 1} = x_{i} + m / gcd(a, m).
 ///         Otherwise, return empty vector.
 template <class T1, class T2>
-[[nodiscard]]
 ATTRIBUTE_ALWAYS_INLINE
+[[nodiscard]]
 CONSTEXPR_VECTOR
 std::vector<uint32_t> solve_congruence_modulo_m_all_roots(const T1 a, const T2 c, const uint32_t m) {
     // clang-format on
@@ -2315,10 +2453,10 @@ std::vector<uint32_t> solve_congruence_modulo_m_all_roots(const T1 a, const T2 c
 /// @return If roots exist, return root x such that 0 <= x < m / gcd(a, m).
 ///         Otherwise, return math_functions::kNoCongruenceSolution
 template <class T1, class T2>
-[[nodiscard]]
 ATTRIBUTE_CONST
 ATTRIBUTE_ALWAYS_INLINE
-constexpr uint32_t solve_congruence_modulo_m(const T1 a, const T2 c, const uint32_t m) noexcept {
+[[nodiscard]]
+constexpr uint32_t solve_congruence_modulo_m(const T1 a, const T2 c, const uint32_t m) noexcept ATTRIBUTE_NONBLOCKING_FUNCTION {
     // clang-format on
     THROW_IF(m == 0);
     return math_functions::detail::solve_congruence_modulo_m_impl(
@@ -2331,13 +2469,15 @@ constexpr uint32_t solve_congruence_modulo_m(const T1 a, const T2 c, const uint3
 /// @brief Solves modulus congruence a * x ≡ 1 (mod m) (e.g. a^{-1} mod m)
 /// @note a^{-1} mod m exists <=> gcd(a, m) == 1.
 ///       Works in O(log(min(a, m))
-/// @tparam IntType
+/// @tparam T
 /// @param a
 /// @param m
 /// @return
-template <math_functions::math_integral_type IntType>
-[[nodiscard]]
-ATTRIBUTE_CONST constexpr uint32_t inv_mod_m(const IntType a, const uint32_t m) noexcept {
+template <math_functions::math_integral_type T>
+ATTRIBUTE_CONST [[nodiscard]]
+constexpr uint32_t inv_mod_m(const T a,
+                             const uint32_t m) noexcept(detail::is_trivial_arithmetic_v<T>)
+    ATTRIBUTE_NONBLOCKING_FUNCTION_IF(detail::is_trivial_arithmetic_v<T>) {
     return math_functions::solve_congruence_modulo_m(a, uint32_t{1}, m);
 }
 
@@ -2346,13 +2486,14 @@ ATTRIBUTE_CONST constexpr uint32_t inv_mod_m(const IntType a, const uint32_t m) 
 /// @brief Solves modulus congruence a * x ≡ 1 (mod m) (e.g. a^{-1} mod m)
 /// @note a^{-1} mod m exists <=> gcd(a, m) == 1.
 ///       Works in O(log(min(a, m))
-/// @tparam IntType
+/// @tparam T
 /// @param a
 /// @param m
 /// @return
-template <class IntType, std::enable_if_t<math_functions::is_integral_v<IntType>, int> = 0>
-[[nodiscard]]
-ATTRIBUTE_CONST constexpr uint32_t inv_mod_m(IntType a, uint32_t m) noexcept {
+template <class T, std::enable_if_t<math_functions::is_integral_v<T>, int> = 0>
+ATTRIBUTE_CONST [[nodiscard]]
+constexpr uint32_t inv_mod_m(const T a, uint32_t m) noexcept(detail::is_trivial_arithmetic_v<T>)
+    ATTRIBUTE_NONBLOCKING_FUNCTION_IF(detail::is_trivial_arithmetic_v<T>) {
     return math_functions::solve_congruence_modulo_m(a, uint32_t{1}, m);
 }
 
@@ -2368,7 +2509,7 @@ namespace detail {
 // clang-format off
 
 template <class Iter, class IterSentinel>
-ATTRIBUTE_NODISCARD
+[[nodiscard]]
 CONSTEXPR_VECTOR
 math_functions::InverseResult inv_range_mod_m_impl(Iter nums_begin, const IterSentinel nums_end, const uint32_t m) {
     // clang-format on
@@ -2453,7 +2594,7 @@ CONSTEXPR_VECTOR math_functions::InverseResult inv_range_mod_m(const Range& nums
 template <class Iter,
           class Sentinel,
           std::enable_if_t<math_functions::is_math_integral_type_v<typename std::iterator_traits<Iter>::value_type>, int> = 0>
-ATTRIBUTE_NODISCARD
+[[nodiscard]]
 CONSTEXPR_VECTOR
 math_functions::InverseResult inv_range_mod_m(Iter nums_iter_begin,
                                               Sentinel nums_iter_end,
@@ -2471,7 +2612,7 @@ template <class Range,
                              typename std::iterator_traits<decltype(std::end(std::declval<const Range&>()))>::value_type
                            >,
                            int> = 0>
-ATTRIBUTE_NODISCARD
+[[nodiscard]]
 CONSTEXPR_VECTOR math_functions::InverseResult inv_range_mod_m(const Range& nums, const uint32_t m) {
     return math_functions::inv_range_mod_m(std::begin(nums), std::end(nums), m);
 }
@@ -2488,10 +2629,10 @@ CONSTEXPR_VECTOR math_functions::InverseResult inv_range_mod_m(const Range& nums
 /// @param c
 /// @param m
 /// @return
+ATTRIBUTE_CONST
 [[nodiscard]]
-ATTRIBUTE_CONST constexpr uint32_t solve_binary_congruence_modulo_m(const uint32_t k,
-                                                                    const uint32_t c,
-                                                                    const uint32_t m) noexcept {
+constexpr uint32_t solve_binary_congruence_modulo_m(
+    const uint32_t k, const uint32_t c, const uint32_t m) noexcept ATTRIBUTE_NONBLOCKING_FUNCTION {
     if (unlikely(m == 0)) {
         return math_functions::kNoCongruenceSolution;
     }
@@ -2562,9 +2703,10 @@ ATTRIBUTE_CONST constexpr uint32_t solve_binary_congruence_modulo_m(const uint32
 /// @param n
 /// @param k
 /// @return q if k > 1 and std::numeric_limits<uint32_t>::max() otherwise
+ATTRIBUTE_CONST
 [[nodiscard]]
-ATTRIBUTE_CONST constexpr uint32_t solve_factorial_congruence(const uint32_t n,
-                                                              const uint32_t k) noexcept {
+constexpr uint32_t solve_factorial_congruence(const uint32_t n, const uint32_t k) noexcept
+    ATTRIBUTE_NONBLOCKING_FUNCTION {
     /*
      * let k  = p_1^a_1 * p_2^a_2 * ... * p_m^a_m
      * let n! = p_1^b_1 * p_2^b_2 * ...
@@ -2614,7 +2756,9 @@ ATTRIBUTE_CONST constexpr uint32_t solve_factorial_congruence(const uint32_t n,
     return ans;
 }
 
-[[nodiscard]] ATTRIBUTE_CONST constexpr bool is_perfect_number(const uint32_t n) noexcept {
+ATTRIBUTE_CONST
+[[nodiscard]]
+constexpr bool is_perfect_number(const uint32_t n) noexcept ATTRIBUTE_NONBLOCKING_FUNCTION {
     switch (n) {
         case 6:
         case 28:
@@ -2629,7 +2773,9 @@ ATTRIBUTE_CONST constexpr uint32_t solve_factorial_congruence(const uint32_t n,
     }
 }
 
-[[nodiscard]] ATTRIBUTE_CONST constexpr bool is_perfect_number(const uint64_t n) noexcept {
+ATTRIBUTE_CONST
+[[nodiscard]]
+constexpr bool is_perfect_number(const uint64_t n) noexcept ATTRIBUTE_NONBLOCKING_FUNCTION {
     // See https://en.wikipedia.org/wiki/List_of_Mersenne_primes_and_perfect_numbers
 #if defined(MATH_FUNCTIONS_HPP_ENABLE_TARGET_OPTIONS)
     const auto [q, pm1] = extract_pow2(n);
@@ -2702,7 +2848,10 @@ ATTRIBUTE_CONST constexpr uint32_t solve_factorial_congruence(const uint32_t n,
 
 #if defined(INTEGERS_128_BIT_HPP)
 
-[[nodiscard]] ATTRIBUTE_CONST I128_CONSTEXPR bool is_perfect_number(const uint128_t n) noexcept {
+[[nodiscard]]
+I128_CONSTEXPR bool is_perfect_number(const uint128_t n) noexcept(
+    detail::is_trivial_arithmetic_v<uint128_t>)
+    ATTRIBUTE_NONBLOCKING_FUNCTION_IF(detail::is_trivial_arithmetic_v<uint128_t>) {
     return n > std::numeric_limits<uint64_t>::max()
                ? n == (((uint128_t{1} << 61U) - 1) << (61U - 1U))
                : math_functions::is_perfect_number(static_cast<uint64_t>(n));
@@ -2713,8 +2862,10 @@ ATTRIBUTE_CONST constexpr uint32_t solve_factorial_congruence(const uint32_t n,
 namespace detail {
 
 template <uint32_t M, class T>
-ATTRIBUTE_NODISCARD ATTRIBUTE_CONST ATTRIBUTE_ALWAYS_INLINE constexpr T unrolled_pow(
-    [[maybe_unused]] const uint32_t n) noexcept {
+ATTRIBUTE_CONST ATTRIBUTE_ALWAYS_INLINE [[nodiscard]]
+constexpr T unrolled_pow([[maybe_unused]] const uint32_t n) noexcept(
+    detail::is_trivial_arithmetic_v<T>)
+    ATTRIBUTE_NONBLOCKING_FUNCTION_IF(detail::is_trivial_arithmetic_v<T>) {
     if constexpr (M == 0) {
         return 1;
     } else if constexpr (M == 1) {
@@ -2732,7 +2883,9 @@ ATTRIBUTE_NODISCARD ATTRIBUTE_CONST ATTRIBUTE_ALWAYS_INLINE constexpr T unrolled
 }
 
 template <uint32_t N, uint32_t K, class T>
-ATTRIBUTE_NODISCARD ATTRIBUTE_CONST ATTRIBUTE_ALWAYS_INLINE constexpr T unrolled_cnk() noexcept {
+ATTRIBUTE_CONST ATTRIBUTE_ALWAYS_INLINE [[nodiscard]]
+constexpr T unrolled_cnk() noexcept(detail::is_trivial_arithmetic_v<T>)
+    ATTRIBUTE_NONBLOCKING_FUNCTION_IF(detail::is_trivial_arithmetic_v<T>) {
     if constexpr (K > N) {
         return 0;
     } else {
@@ -2756,11 +2909,14 @@ ATTRIBUTE_NODISCARD ATTRIBUTE_CONST ATTRIBUTE_ALWAYS_INLINE constexpr T unrolled
 }
 
 template <uint32_t M, class T>
-ATTRIBUTE_NODISCARD ATTRIBUTE_CONST constexpr T powers_sum(const uint32_t n) noexcept;
+ATTRIBUTE_CONST [[nodiscard]]
+constexpr T powers_sum(const uint32_t n) noexcept(detail::is_trivial_arithmetic_v<T>)
+    ATTRIBUTE_NONBLOCKING_FUNCTION_IF(detail::is_trivial_arithmetic_v<T>);
 
 template <uint32_t M, uint32_t I, class T>
-ATTRIBUTE_NODISCARD ATTRIBUTE_CONST ATTRIBUTE_ALWAYS_INLINE constexpr T helper(
-    const uint32_t n) noexcept {
+ATTRIBUTE_CONST ATTRIBUTE_ALWAYS_INLINE [[nodiscard]]
+constexpr T helper(const uint32_t n) noexcept(detail::is_trivial_arithmetic_v<T>)
+    ATTRIBUTE_NONBLOCKING_FUNCTION_IF(detail::is_trivial_arithmetic_v<T>) {
     static_assert(I <= M + 1);
     const auto res = math_functions::detail::unrolled_cnk<M + 1, I, T>() *
                      math_functions::detail::powers_sum<M + 1 - I, T>(n);
@@ -2772,7 +2928,8 @@ ATTRIBUTE_NODISCARD ATTRIBUTE_CONST ATTRIBUTE_ALWAYS_INLINE constexpr T helper(
 }
 
 template <uint32_t M, class T>
-ATTRIBUTE_NODISCARD ATTRIBUTE_CONST constexpr T powers_sum(const uint32_t n) noexcept {
+constexpr T powers_sum(const uint32_t n) noexcept(detail::is_trivial_arithmetic_v<T>)
+    ATTRIBUTE_NONBLOCKING_FUNCTION_IF(detail::is_trivial_arithmetic_v<T>) {
     static_assert(sizeof(T) >= sizeof(uint64_t));
     static_assert(M + 1 > M);
 
@@ -2853,7 +3010,8 @@ inline constexpr double kE =
 /// @param n
 /// @return
 template <uint32_t M>
-[[nodiscard]] ATTRIBUTE_CONST constexpr uint64_t powers_sum_u64(const uint32_t n) noexcept {
+ATTRIBUTE_CONST [[nodiscard]]
+constexpr uint64_t powers_sum_u64(const uint32_t n) noexcept ATTRIBUTE_NONBLOCKING_FUNCTION {
     return math_functions::detail::powers_sum<M, uint64_t>(n);
 }
 
@@ -2864,7 +3022,10 @@ template <uint32_t M>
 /// @param n
 /// @return
 template <uint32_t M>
-[[nodiscard]] ATTRIBUTE_CONST constexpr uint128_t powers_sum_u128(const uint32_t n) noexcept {
+ATTRIBUTE_CONST [[nodiscard]]
+constexpr uint128_t powers_sum_u128(const uint32_t n) noexcept(
+    detail::is_trivial_arithmetic_v<uint128_t>)
+    ATTRIBUTE_NONBLOCKING_FUNCTION_IF(detail::is_trivial_arithmetic_v<uint128_t>) {
     return math_functions::detail::powers_sum<M, uint128_t>(n);
 }
 
@@ -2873,7 +3034,9 @@ template <uint32_t M>
 namespace detail {
 
 template <class T>
-ATTRIBUTE_NODISCARD ATTRIBUTE_CONST constexpr size_t arange_size(T begin, T end, T step) noexcept {
+ATTRIBUTE_CONST [[nodiscard]]
+constexpr size_t arange_size(T begin, T end, T step) noexcept(detail::is_trivial_arithmetic_v<T>)
+    ATTRIBUTE_NONBLOCKING_FUNCTION_IF(detail::is_trivial_arithmetic_v<T>) {
     if (unlikely(step == 0)) {
         return 0;
     }
@@ -3018,9 +3181,11 @@ namespace detail {
 template <class T>
 ATTRIBUTE_SIZED_ACCESS(read_only, 2, 3)
 ATTRIBUTE_NONNULL_ALL_ARGS ATTRIBUTE_PURE [[nodiscard]]
-constexpr size_t find_wmin_index(T weighted_sum,
-                                 const T* const RESTRICT_QUALIFIER prefsums,
-                                 const size_t prefsums_size) noexcept {
+constexpr size_t
+    find_wmin_index(T weighted_sum,
+                    const T* const RESTRICT_QUALIFIER prefsums,
+                    const size_t prefsums_size) noexcept(detail::is_trivial_arithmetic_v<T>)
+        ATTRIBUTE_NONBLOCKING_FUNCTION_IF(detail::is_trivial_arithmetic_v<T>) {
     assert(prefsums_size > 0);
 
     T min_weighted_sum = weighted_sum;
@@ -3115,13 +3280,13 @@ template <class Iterator,
           std::enable_if_t<math_functions::is_math_integral_type_v<
                                typename std::iterator_traits<Iterator>::value_type>,
                            int> = 0>
-ATTRIBUTE_NODISCARD CONSTEXPR_VECTOR Iterator weighted_min(Iterator begin, Iterator end) {
+[[nodiscard]] CONSTEXPR_VECTOR Iterator weighted_min(Iterator begin, Iterator end) {
     return math_functions::detail::wmin_impl(std::move(begin), std::move(end));
 }
 
 template <class Range>
 // NOLINTNEXTLINE(cppcoreguidelines-missing-std-forward)
-ATTRIBUTE_NODISCARD CONSTEXPR_VECTOR auto weighted_min(Range&& range ATTRIBUTE_LIFETIME_BOUND) {
+[[nodiscard]] CONSTEXPR_VECTOR auto weighted_min(Range&& range ATTRIBUTE_LIFETIME_BOUND) {
     return math_functions::weighted_min(std::cbegin(range), std::cend(range));
 }
 
@@ -3133,9 +3298,11 @@ ATTRIBUTE_NODISCARD CONSTEXPR_VECTOR auto weighted_min(Range&& range ATTRIBUTE_L
 
 namespace detail {
 
-ATTRIBUTE_NODISCARD
 ATTRIBUTE_CONST
-I128_CONSTEXPR uint128_t gcd(uint128_t a, uint128_t b) noexcept {
+[[nodiscard]]
+I128_CONSTEXPR uint128_t gcd(uint128_t a,
+                             uint128_t b) noexcept(detail::is_trivial_arithmetic_v<uint128_t>)
+    ATTRIBUTE_NONBLOCKING_FUNCTION_IF(detail::is_trivial_arithmetic_v<uint128_t>) {
     if (unlikely(a == 0)) {
         return b;
     }
@@ -3165,34 +3332,42 @@ I128_CONSTEXPR uint128_t gcd(uint128_t a, uint128_t b) noexcept {
     }
 }
 
-ATTRIBUTE_NODISCARD
 ATTRIBUTE_ALWAYS_INLINE
 ATTRIBUTE_CONST
-I128_CONSTEXPR uint128_t gcd(const uint128_t a, const int128_t b) noexcept {
+[[nodiscard]]
+I128_CONSTEXPR uint128_t gcd(const uint128_t a,
+                             const int128_t b) noexcept(detail::is_trivial_arithmetic_v<uint128_t>)
+    ATTRIBUTE_NONBLOCKING_FUNCTION_IF(detail::is_trivial_arithmetic_v<uint128_t>) {
     return math_functions::detail::gcd(a, math_functions::uabs(b));
 }
 
-ATTRIBUTE_NODISCARD
 ATTRIBUTE_ALWAYS_INLINE
 ATTRIBUTE_CONST
-I128_CONSTEXPR uint128_t gcd(const int128_t a, const uint128_t b) noexcept {
+[[nodiscard]]
+I128_CONSTEXPR uint128_t gcd(const int128_t a,
+                             const uint128_t b) noexcept(detail::is_trivial_arithmetic_v<uint128_t>)
+    ATTRIBUTE_NONBLOCKING_FUNCTION_IF(detail::is_trivial_arithmetic_v<uint128_t>) {
     return math_functions::detail::gcd(math_functions::uabs(a), b);
 }
 
-ATTRIBUTE_NODISCARD
 ATTRIBUTE_ALWAYS_INLINE
 ATTRIBUTE_CONST
-I128_CONSTEXPR int128_t gcd(const int128_t a, const int128_t b) noexcept {
+[[nodiscard]]
+I128_CONSTEXPR int128_t gcd(const int128_t a,
+                            const int128_t b) noexcept(detail::is_trivial_arithmetic_v<uint128_t>)
+    ATTRIBUTE_NONBLOCKING_FUNCTION_IF(detail::is_trivial_arithmetic_v<uint128_t>) {
     const int128_t value =
         static_cast<int128_t>(math_functions::detail::gcd(math_functions::uabs(a), b));
     CONFIG_ASSUME_STATEMENT(value >= 0);
     return value;
 }
 
-ATTRIBUTE_NODISCARD
 ATTRIBUTE_ALWAYS_INLINE
 ATTRIBUTE_CONST
-I128_CONSTEXPR uint128_t gcd(const uint128_t a, const uint64_t b) noexcept {
+[[nodiscard]]
+I128_CONSTEXPR uint128_t gcd(const uint128_t a,
+                             const uint64_t b) noexcept(detail::is_trivial_arithmetic_v<uint128_t>)
+    ATTRIBUTE_NONBLOCKING_FUNCTION_IF(detail::is_trivial_arithmetic_v<uint128_t>) {
     if ((config::is_constant_evaluated() && a <= std::numeric_limits<uint64_t>::max()) ||
         (config::is_gcc_constant_p(a <= std::numeric_limits<uint64_t>::max()) &&
          a <= std::numeric_limits<uint64_t>::max()) ||
@@ -3207,31 +3382,39 @@ I128_CONSTEXPR uint128_t gcd(const uint128_t a, const uint64_t b) noexcept {
     return std::gcd(static_cast<uint64_t>(a % b), b);
 }
 
-ATTRIBUTE_NODISCARD
 ATTRIBUTE_ALWAYS_INLINE
 ATTRIBUTE_CONST
-I128_CONSTEXPR uint128_t gcd(const uint64_t a, const uint128_t b) noexcept {
+[[nodiscard]]
+I128_CONSTEXPR uint128_t gcd(const uint64_t a,
+                             const uint128_t b) noexcept(detail::is_trivial_arithmetic_v<uint128_t>)
+    ATTRIBUTE_NONBLOCKING_FUNCTION_IF(detail::is_trivial_arithmetic_v<uint128_t>) {
     return math_functions::detail::gcd(b, a);
 }
 
-ATTRIBUTE_NODISCARD
 ATTRIBUTE_ALWAYS_INLINE
 ATTRIBUTE_CONST
-I128_CONSTEXPR uint128_t gcd(const uint128_t a, const int64_t b) noexcept {
+[[nodiscard]]
+I128_CONSTEXPR uint128_t gcd(const uint128_t a,
+                             const int64_t b) noexcept(detail::is_trivial_arithmetic_v<uint128_t>)
+    ATTRIBUTE_NONBLOCKING_FUNCTION_IF(detail::is_trivial_arithmetic_v<uint128_t>) {
     return math_functions::detail::gcd(a, math_functions::uabs(b));
 }
 
-ATTRIBUTE_NODISCARD
 ATTRIBUTE_ALWAYS_INLINE
 ATTRIBUTE_CONST
-I128_CONSTEXPR uint128_t gcd(const int64_t a, const uint128_t b) noexcept {
+[[nodiscard]]
+I128_CONSTEXPR uint128_t gcd(const int64_t a,
+                             const uint128_t b) noexcept(detail::is_trivial_arithmetic_v<uint128_t>)
+    ATTRIBUTE_NONBLOCKING_FUNCTION_IF(detail::is_trivial_arithmetic_v<uint128_t>) {
     return math_functions::detail::gcd(b, a);
 }
 
-ATTRIBUTE_NODISCARD
 ATTRIBUTE_ALWAYS_INLINE
 ATTRIBUTE_CONST
-I128_CONSTEXPR int128_t gcd(const uint64_t a, const int128_t b) noexcept {
+[[nodiscard]]
+I128_CONSTEXPR int128_t gcd(const uint64_t a,
+                            const int128_t b) noexcept(detail::is_trivial_arithmetic_v<uint128_t>)
+    ATTRIBUTE_NONBLOCKING_FUNCTION_IF(detail::is_trivial_arithmetic_v<uint128_t>) {
     const int128_t value =
         static_cast<int128_t>(math_functions::detail::gcd(a, math_functions::uabs(b)));
     CONFIG_ASSUME_STATEMENT(value >= 0);
@@ -3239,24 +3422,30 @@ I128_CONSTEXPR int128_t gcd(const uint64_t a, const int128_t b) noexcept {
     return value;
 }
 
-ATTRIBUTE_NODISCARD
 ATTRIBUTE_ALWAYS_INLINE
 ATTRIBUTE_CONST
-I128_CONSTEXPR int128_t gcd(const int128_t a, const uint64_t b) noexcept {
+[[nodiscard]]
+I128_CONSTEXPR int128_t gcd(const int128_t a,
+                            const uint64_t b) noexcept(detail::is_trivial_arithmetic_v<uint128_t>)
+    ATTRIBUTE_NONBLOCKING_FUNCTION_IF(detail::is_trivial_arithmetic_v<uint128_t>) {
     return math_functions::detail::gcd(b, a);
 }
 
-ATTRIBUTE_NODISCARD
 ATTRIBUTE_ALWAYS_INLINE
 ATTRIBUTE_CONST
-I128_CONSTEXPR int128_t gcd(const int128_t a, const int64_t b) noexcept {
+[[nodiscard]]
+I128_CONSTEXPR int128_t gcd(const int128_t a,
+                            const int64_t b) noexcept(detail::is_trivial_arithmetic_v<uint128_t>)
+    ATTRIBUTE_NONBLOCKING_FUNCTION_IF(detail::is_trivial_arithmetic_v<uint128_t>) {
     return math_functions::detail::gcd(a, math_functions::uabs(b));
 }
 
-ATTRIBUTE_NODISCARD
 ATTRIBUTE_ALWAYS_INLINE
 ATTRIBUTE_CONST
-I128_CONSTEXPR int128_t gcd(const int64_t a, const int128_t b) noexcept {
+[[nodiscard]]
+I128_CONSTEXPR int128_t gcd(const int64_t a,
+                            const int128_t b) noexcept(detail::is_trivial_arithmetic_v<uint128_t>)
+    ATTRIBUTE_NONBLOCKING_FUNCTION_IF(detail::is_trivial_arithmetic_v<uint128_t>) {
     return math_functions::detail::gcd(b, a);
 }
 
@@ -3270,9 +3459,12 @@ I128_CONSTEXPR int128_t gcd(const int64_t a, const int128_t b) noexcept {
 /// @param[in] b
 /// @return gcd(a, b)
 template <class M, class N>
-[[nodiscard]]
-ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_CONST constexpr std::common_type_t<M, N> gcd(const M m,
-                                                                               const N n) noexcept {
+ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_CONST [[nodiscard]]
+constexpr std::common_type_t<M, N> gcd(const M m,
+                                       const N n) noexcept(detail::is_trivial_arithmetic_v<M> &&
+                                                           detail::is_trivial_arithmetic_v<N>)
+    ATTRIBUTE_NONBLOCKING_FUNCTION_IF(
+        detail::is_trivial_arithmetic_v<M>&& detail::is_trivial_arithmetic_v<N>) {
     static_assert(math_functions::is_integral_v<M> && math_functions::is_integral_v<N>,
                   "math_functions::gcd arguments must be integers");
 
