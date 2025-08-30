@@ -1320,7 +1320,7 @@ constexpr math_functions::detail::try_double_bits_t<T> masked_popcount_sum(const
     math_functions::detail::check_math_unsigned_int_type<T>();
 
     math_functions::detail::try_double_bits_t<T> popcount_sum = 0;
-    if (n == 0 || k == 0) {
+    if (unlikely(n == 0 || k == 0)) {
         return popcount_sum;
     }
 
@@ -1412,8 +1412,7 @@ constexpr uint32_t base_b_len_impl(T value, const uint8_t base) noexcept {
 /// @return
 template <class T>
 [[nodiscard]]
-ATTRIBUTE_CONST ATTRIBUTE_ALWAYS_INLINE constexpr uint32_t base_b_len(const T value,
-                                                                      const uint8_t base = 10) {
+ATTRIBUTE_ALWAYS_INLINE constexpr uint32_t base_b_len(const T value, const uint8_t base = 10) {
     math_functions::detail::check_math_int_type<T>();
 
     THROW_IF_NOT(math_functions::is_correct_base_b_len_base(base));
@@ -1479,52 +1478,39 @@ ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_CONST constexpr uint32_t base_2_len(const UInt
 
 namespace detail {
 
-ATTRIBUTE_CONST
-[[nodiscard]]
-constexpr uint32_t log10_floor_compile_time_impl(const uint32_t n) noexcept {
-    constexpr std::array<uint8_t, 33> table1 = {
-        10, 9, 9, 8, 8, 8, 7, 7, 7, 6, 6, 6, 6, 5, 5, 5, 4,
-        4,  4, 3, 3, 3, 3, 2, 2, 2, 1, 1, 1, 0, 0, 0, 0,
-    };
-    constexpr std::array<uint32_t, 11> table2 = {
-        1U, 10U, 100U, 1000U, 10000U, 100000U, 1000000U, 10000000U, 100000000U, 1000000000U, 0U,
-    };
-    uint32_t digits = table1[static_cast<uint32_t>(math_functions::countl_zero(n))];
-    digits -= ((n - table2[digits]) >> 31U);
-    return digits;
-}
+// NOLINTNEXTLINE(cppcoreguidelines-avoid-c-arrays, hicpp-avoid-c-arrays, modernize-avoid-c-arrays)
+inline constexpr const uint8_t log10_u32_table_1[33] = {
+    10, 9, 9, 8, 8, 8, 7, 7, 7, 6, 6, 6, 6, 5, 5, 5, 4,
+    4,  4, 3, 3, 3, 3, 2, 2, 2, 1, 1, 1, 0, 0, 0, 0,
+};
+// NOLINTNEXTLINE(cppcoreguidelines-avoid-c-arrays, hicpp-avoid-c-arrays, modernize-avoid-c-arrays)
+inline constexpr const uint32_t log10_u32_table_2[11] = {
+    1U, 10U, 100U, 1000U, 10000U, 100000U, 1000000U, 10000000U, 100000000U, 1000000000U, 0U,
+};
 
-ATTRIBUTE_CONST
-[[nodiscard]]
-inline uint32_t log10_floor_runtime_impl(const uint32_t n) noexcept {
-#if defined(__cpp_constexpr) && __cpp_constexpr >= 202211L && defined(__GNUG__)
-    constexpr
-#elif defined(__cpp_constinit) && __cpp_constinit >= 201907L
-    constinit
-#endif
-        // clang-format off
-        // NOLINTNEXTLINE(cppcoreguidelines-avoid-c-arrays, hicpp-avoid-c-arrays, modernize-avoid-c-arrays)
-        static const uint8_t table1[33] = {
-            // clang-format on
-            10, 9, 9, 8, 8, 8, 7, 7, 7, 6, 6, 6, 6, 5, 5, 5, 4,
-            4,  4, 3, 3, 3, 3, 2, 2, 2, 1, 1, 1, 0, 0, 0, 0,
-        };
-#if defined(__cpp_constexpr) && __cpp_constexpr >= 202211L && defined(__GNUG__)
-    constexpr
-#elif defined(__cpp_constinit) && __cpp_constinit >= 201907L
-    constinit
-#endif
-        // clang-format off
-        // NOLINTNEXTLINE(cppcoreguidelines-avoid-c-arrays, hicpp-avoid-c-arrays, modernize-avoid-c-arrays)
-        static const uint32_t table2[11] = {
-            // clang-format on
-            1U, 10U, 100U, 1000U, 10000U, 100000U, 1000000U, 10000000U, 100000000U, 1000000000U, 0U,
-        };
-
-    uint32_t digits = table1[math_functions::countl_zero(n)];
-    digits -= ((n - table2[digits]) >> 31U);
-    return digits;
-}
+// NOLINTNEXTLINE(cppcoreguidelines-avoid-c-arrays, hicpp-avoid-c-arrays, modernize-avoid-c-arrays)
+inline constexpr const uint64_t log10_u64_table[20] = {
+    0ULL,
+    9ULL,
+    99ULL,
+    999ULL,
+    9999ULL,
+    99999ULL,
+    999999ULL,
+    9999999ULL,
+    99999999ULL,
+    999999999ULL,
+    9999999999ULL,
+    99999999999ULL,
+    999999999999ULL,
+    9999999999999ULL,
+    99999999999999ULL,
+    999999999999999ULL,
+    9999999999999999ULL,
+    99999999999999999ULL,
+    999999999999999999ULL,
+    9999999999999999999ULL,
+};
 
 }  // namespace detail
 
@@ -1536,91 +1522,12 @@ inline uint32_t log10_floor_runtime_impl(const uint32_t n) noexcept {
      * See Hackers Delight 11-4
      */
 
-#if CONFIG_HAS_AT_LEAST_CXX_20 || \
-    (CONFIG_HAS_AT_LEAST_CXX_17 && (defined(__clang__) || CONFIG_GNUC_AT_LEAST(10, 0)))
-    if (::config::is_constant_evaluated() || ::config::is_gcc_constant_p(n)) {
-#endif
-        return math_functions::detail::log10_floor_compile_time_impl(n);
-#if CONFIG_HAS_AT_LEAST_CXX_20 || \
-    (CONFIG_HAS_AT_LEAST_CXX_17 && (defined(__clang__) || CONFIG_GNUC_AT_LEAST(10, 0)))
-    }
-    return math_functions::detail::log10_floor_runtime_impl(n);
-
-#endif
+    static_assert(math_functions::countl_zero(uint32_t{0}) == 32, "countl_zero detail error");
+    const auto leading_zeros_count = static_cast<uint32_t>(math_functions::countl_zero(n));
+    uint32_t digits = detail::log10_u32_table_1[leading_zeros_count];
+    digits -= ((n - detail::log10_u32_table_2[digits]) >> 31U);
+    return digits;
 }
-
-namespace detail {
-
-ATTRIBUTE_CONST
-[[nodiscard]]
-constexpr uint32_t log10_floor_compile_time_impl(const uint64_t n,
-                                                 const int32_t approx_log10) noexcept {
-    constexpr std::array<uint64_t, 20> table2 = {
-        0ULL,
-        9ULL,
-        99ULL,
-        999ULL,
-        9999ULL,
-        99999ULL,
-        999999ULL,
-        9999999ULL,
-        99999999ULL,
-        999999999ULL,
-        9999999999ULL,
-        99999999999ULL,
-        999999999999ULL,
-        9999999999999ULL,
-        99999999999999ULL,
-        999999999999999ULL,
-        9999999999999999ULL,
-        99999999999999999ULL,
-        999999999999999999ULL,
-        9999999999999999999ULL,
-    };
-    const int32_t adjustment =
-        static_cast<int32_t>((table2[static_cast<uint32_t>(approx_log10 + 1)] - n) >> 63U);
-    return static_cast<uint32_t>(approx_log10 + adjustment);
-}
-
-ATTRIBUTE_CONST
-[[nodiscard]]
-inline uint32_t log10_floor_runtime_impl(const uint64_t n, const int32_t approx_log10) noexcept {
-#if defined(__cpp_constexpr) && __cpp_constexpr >= 202211L && defined(__GNUG__)
-    constexpr
-#elif defined(__cpp_constinit) && __cpp_constinit >= 201907L
-    constinit
-#endif
-        // clang-format off
-        // NOLINTNEXTLINE(cppcoreguidelines-avoid-c-arrays, hicpp-avoid-c-arrays, modernize-avoid-c-arrays)
-        static const uint64_t table2[20] = {
-            // clang-format on
-            0ULL,
-            9ULL,
-            99ULL,
-            999ULL,
-            9999ULL,
-            99999ULL,
-            999999ULL,
-            9999999ULL,
-            99999999ULL,
-            999999999ULL,
-            9999999999ULL,
-            99999999999ULL,
-            999999999999ULL,
-            9999999999999ULL,
-            99999999999999ULL,
-            999999999999999ULL,
-            9999999999999999ULL,
-            99999999999999999ULL,
-            999999999999999999ULL,
-            9999999999999999999ULL,
-        };
-    const int32_t adjustment =
-        static_cast<int32_t>((table2[static_cast<uint32_t>(approx_log10 + 1)] - n) >> 63U);
-    return static_cast<uint32_t>(approx_log10 + adjustment);
-}
-
-}  // namespace detail
 
 /// @brief For @a `n` > 0 returns ⌊log_10(n)⌋. For @a `n` = 0 returns
 /// (uint32_t)-1
@@ -1637,17 +1544,9 @@ inline uint32_t log10_floor_runtime_impl(const uint64_t n, const int32_t approx_
     // NOLINTNEXTLINE(hicpp-signed-bitwise)
     CONFIG_ASSUME_STATEMENT((-19 >> 6U) <= approx_log10 && approx_log10 <= ((19 * 63) >> 6U));
 
-#if CONFIG_HAS_AT_LEAST_CXX_20 || \
-    (CONFIG_HAS_AT_LEAST_CXX_17 && (defined(__clang__) || CONFIG_GNUC_AT_LEAST(10, 0)))
-    if (::config::is_constant_evaluated() || ::config::is_gcc_constant_p(n)) {
-#endif
-        return math_functions::detail::log10_floor_compile_time_impl(n, approx_log10);
-#if CONFIG_HAS_AT_LEAST_CXX_20 || \
-    (CONFIG_HAS_AT_LEAST_CXX_17 && (defined(__clang__) || CONFIG_GNUC_AT_LEAST(10, 0)))
-    }
-
-    return math_functions::detail::log10_floor_runtime_impl(n, approx_log10);
-#endif
+    const uint32_t adjustment =
+        (detail::log10_u64_table[static_cast<uint32_t>(approx_log10 + 1)] - n) >> 63U;
+    return static_cast<uint32_t>(approx_log10 + static_cast<int32_t>(adjustment));
 }
 
 [[nodiscard]] ATTRIBUTE_CONST constexpr uint32_t base_10_len(const uint32_t n) noexcept {
@@ -1689,18 +1588,20 @@ ATTRIBUTE_CONST constexpr ExtractPow2Result<UIntType> extract_pow2(const UIntTyp
 /// @param y y
 /// @param z z
 /// @return median of x, y and z
-[[nodiscard]] ATTRIBUTE_CONST constexpr bool bool_median(bool x, bool y, bool z) noexcept {
+[[nodiscard]] ATTRIBUTE_CONST constexpr bool bool_median(const bool x,
+                                                         const bool y,
+                                                         const bool z) noexcept {
     return (x || y) && (y || z) && (x || z);
 }
 
 template <class T>
-[[nodiscard]] ATTRIBUTE_CONST constexpr T next_even(T n) noexcept {
+[[nodiscard]] ATTRIBUTE_CONST constexpr T next_even(const T n) noexcept {
     math_functions::detail::check_math_unsigned_int_type<T>();
     return n + 2 - n % 2;
 }
 
 template <class T>
-[[nodiscard]] ATTRIBUTE_CONST constexpr T next_odd(T n) noexcept {
+[[nodiscard]] ATTRIBUTE_CONST constexpr T next_odd(const T n) noexcept {
     math_functions::detail::check_math_unsigned_int_type<T>();
     return n + 1 + n % 2;
 }
@@ -2018,9 +1919,10 @@ template <class IntType>
 }
 
 /// @brief https://cp-algorithms.com/algebra/prime-sieve-linear.html
-class [[nodiscard]] Factorizer final {
+class [[nodiscard]] ATTRIBUTE_GSL_OWNER(std::vector<uint32_t>) Factorizer final {
 public:
     using PrimeFactors = std::vector<PrimeFactor<uint32_t>>;
+    using NumbersContainer = std::vector<uint32_t>;
 
     explicit CONSTEXPR_VECTOR Factorizer(const uint32_t n)
         : primes_{}, least_prime_factor_(size_t{n} + 1) {
@@ -2046,13 +1948,14 @@ public:
 
     ATTRIBUTE_PURE
     [[nodiscard]]
-    constexpr const auto& sorted_primes() const noexcept ATTRIBUTE_LIFETIME_BOUND {
+    constexpr const NumbersContainer& sorted_primes() const noexcept ATTRIBUTE_LIFETIME_BOUND {
         return primes_;
     }
 
     ATTRIBUTE_PURE
     [[nodiscard]]
-    constexpr const auto& least_prime_factors() const noexcept ATTRIBUTE_LIFETIME_BOUND {
+    constexpr const NumbersContainer& least_prime_factors() const noexcept
+        ATTRIBUTE_LIFETIME_BOUND {
         return least_prime_factor_;
     }
 
@@ -2121,14 +2024,14 @@ private:
         return unique_pfs_count;
     }
 
-    std::vector<uint32_t> primes_;
-    std::vector<uint32_t> least_prime_factor_;
+    NumbersContainer primes_;
+    NumbersContainer least_prime_factor_;
 };
 
 /// @brief Find all prime numbers in [2; n]
 /// @param n inclusive upper bound
 /// @return vector, such that vector[n] == true \iff n is prime
-[[nodiscard]] CONSTEXPR_VECTOR auto dynamic_primes_sieve(const uint32_t n) {
+[[nodiscard]] CONSTEXPR_VECTOR std::vector<bool> dynamic_primes_sieve(const uint32_t n) {
     std::vector<bool> primes(size_t{n} + 1, true);
     primes[0] = false;
     if (likely(n > 0)) {
@@ -2152,8 +2055,9 @@ private:
 }
 
 // https://en.cppreference.com/w/cpp/feature_test
-#if defined(__cpp_lib_constexpr_bitset) && \
-    (__cpp_lib_constexpr_bitset >= 202207L || CONFIG_HAS_AT_LEAST_CXX_23)
+#if defined(__cpp_lib_constexpr_bitset) &&    \
+    (__cpp_lib_constexpr_bitset >= 202207L || \
+     (CONFIG_HAS_AT_LEAST_CXX_23 && __cpp_lib_constexpr_bitset >= 202202L))
 #define CONSTEXPR_BITSET_OPS constexpr
 #if defined(__cpp_constexpr) && __cpp_constexpr >= 202211L
 #define CONSTEXPR_FIXED_PRIMES_SIEVE constexpr
@@ -2168,38 +2072,41 @@ private:
 #define CONSTEXPR_PRIMES_SIEVE
 #endif
 
+template <uint32_t N>
+using PrimesSet = std::bitset<size_t{N} + 1>;
+
 /// @brief Find all prime numbers in [2; N]
 /// @tparam N exclusive upper bound
 /// @return bitset, such that bitset[n] == true \iff n is prime
 template <uint32_t N>
-[[nodiscard]] CONSTEXPR_FIXED_PRIMES_SIEVE const auto& fixed_primes_sieve() noexcept {
-    using PrimesSet = std::bitset<size_t{N} + 1>;
-
-    static CONSTEXPR_PRIMES_SIEVE const PrimesSet primes_bs = []() CONSTEXPR_BITSET_OPS noexcept {
-        PrimesSet primes{};
-        primes.set();
-        primes[0] = false;
-        if CONSTEXPR_BITSET_OPS (primes.size() > 1) {
-            primes[1] = false;
-            constexpr uint32_t root = math_functions::isqrt(N);
-            if constexpr (constexpr uint32_t i = 2; i <= root) {
-                // NOLINTNEXTLINE(bugprone-implicit-widening-of-multiplication-result)
-                for (size_t j = i * i; j <= N; j += i) {
-                    primes[j] = false;
-                }
-            }
-            for (uint32_t i = 3; i <= root; i += 2) {
-                if (primes[i]) {
-                    static_assert(root < std::numeric_limits<uint16_t>::max(), "isqrt impl error");
+[[nodiscard]] CONSTEXPR_FIXED_PRIMES_SIEVE const PrimesSet<N>& fixed_primes_sieve() noexcept {
+    static CONSTEXPR_PRIMES_SIEVE const PrimesSet<N> primes_bs =
+        []() CONSTEXPR_BITSET_OPS noexcept {
+            PrimesSet<N> primes{};
+            primes.set();
+            primes[0] = false;
+            if CONSTEXPR_BITSET_OPS (primes.size() > 1) {
+                primes[1] = false;
+                constexpr uint32_t root = math_functions::isqrt(N);
+                if constexpr (constexpr uint32_t i = 2; i <= root) {
                     // NOLINTNEXTLINE(bugprone-implicit-widening-of-multiplication-result)
                     for (size_t j = i * i; j <= N; j += i) {
                         primes[j] = false;
                     }
                 }
+                for (uint32_t i = 3; i <= root; i += 2) {
+                    if (primes[i]) {
+                        static_assert(root < std::numeric_limits<uint16_t>::max(),
+                                      "isqrt impl error");
+                        // NOLINTNEXTLINE(bugprone-implicit-widening-of-multiplication-result)
+                        for (size_t j = i * i; j <= N; j += i) {
+                            primes[j] = false;
+                        }
+                    }
+                }
             }
-        }
-        return primes;
-    }();
+            return primes;
+        }();
 
     return primes_bs;
 }
@@ -2931,11 +2838,12 @@ ATTRIBUTE_NODISCARD ATTRIBUTE_CONST constexpr T powers_sum(const uint32_t n) noe
     }
 }
 
+inline constexpr double kE =
 #ifdef MATH_FUNCTIONS_HAS_NUMBERS
-inline constexpr double kE = std::numbers::e_v<double>;
+    std::numbers::e_v<double>;
 #else
-// M_E constant might not be defined
-constexpr double kE = static_cast<double>(2.71828182845904523536L);
+    // M_E constant might not be defined
+    static_cast<double>(2.71828182845904523536L);
 #endif
 
 }  // namespace detail
@@ -3192,6 +3100,7 @@ template <math_functions::integral_forward_iterator Iterator, std::sentinel_for<
 /// @param range
 /// @return
 template <std::ranges::forward_range Range>
+    requires std::ranges::borrowed_range<Range>
 [[nodiscard]]
 // NOLINTNEXTLINE(cppcoreguidelines-missing-std-forward)
 CONSTEXPR_VECTOR std::ranges::borrowed_iterator_t<Range> weighted_min(Range&& range ATTRIBUTE_LIFETIME_BOUND) {
