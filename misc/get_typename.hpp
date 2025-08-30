@@ -2,16 +2,18 @@
 
 #include <string_view>
 
+#include "config_macros.hpp"
+
 namespace misc {
 
 template <class T>
-[[nodiscard]] constexpr std::string_view get_qualified_typename();
+[[nodiscard]] constexpr std::string_view get_qualified_typename() ATTRIBUTE_NONBLOCKING_FUNCTION;
 
 template <class T>
-[[nodiscard]] constexpr std::string_view get_unqualified_typename();
+[[nodiscard]] constexpr std::string_view get_unqualified_typename() ATTRIBUTE_NONBLOCKING_FUNCTION;
 
 template <auto EnumValue>
-[[nodiscard]] constexpr std::string_view get_enum_value_name();
+[[nodiscard]] constexpr std::string_view get_enum_value_name() ATTRIBUTE_NONBLOCKING_FUNCTION;
 
 }  // namespace misc
 

@@ -19,6 +19,7 @@
 #include <vector>
 
 #include "../misc/config_macros.hpp"
+#include "../misc/join_strings.hpp"
 #include "fft.hpp"
 #if CONFIG_HAS_INCLUDE("integers_128_bit.hpp")
 #include "integers_128_bit.hpp"
@@ -461,7 +462,10 @@ public:
 
     longint() = default;
 
-    longint(const longint& other) : nums_(nullptr), size_(0), capacity_(0) {
+    longint(const longint& other) ATTRIBUTE_ALLOCATING_FUNCTION
+        : nums_(nullptr)
+        , size_(0)
+        , capacity_(0) {
         if (other.capacity_ > 0) {
             nums_ = allocate_uninitialized(other.capacity_);
             size_ = other.size_;
@@ -470,12 +474,15 @@ public:
         }
     }
 
-    longint& operator=(const longint& other) ATTRIBUTE_LIFETIME_BOUND {
+    longint& operator=(const longint& other) ATTRIBUTE_ALLOCATING_FUNCTION
+        ATTRIBUTE_LIFETIME_BOUND {
         return *this = longint{other};
     }
 
-    constexpr longint(longint&& other) noexcept
-        : nums_(other.nums_), size_(other.size_), capacity_(other.capacity_) {
+    constexpr longint(longint&& other) noexcept ATTRIBUTE_NONBLOCKING_FUNCTION
+        : nums_(other.nums_)
+        , size_(other.size_)
+        , capacity_(other.capacity_) {
         other.nums_ = nullptr;
         other.size_ = 0;
         other.capacity_ = 0;
@@ -485,7 +492,8 @@ public:
     constexpr
 #endif
         longint&
-        operator=(longint&& other) noexcept ATTRIBUTE_LIFETIME_BOUND {
+        operator=(longint&& other) noexcept
+        ATTRIBUTE_LIFETIME_BOUND ATTRIBUTE_NONBLOCKING_FUNCTION {
         this->swap(other);
         return *this;
     }
@@ -494,7 +502,7 @@ public:
     constexpr
 #endif
         void
-        swap(longint& other) noexcept {
+        swap(longint& other) noexcept ATTRIBUTE_NONBLOCKING_FUNCTION {
         std::swap(nums_, other.nums_);
         std::swap(size_, other.size_);
         std::swap(capacity_, other.capacity_);
@@ -503,38 +511,39 @@ public:
     constexpr
 #endif
         friend void
-        swap(longint& lhs, longint& rhs) noexcept {
+        swap(longint& lhs, longint& rhs) noexcept ATTRIBUTE_NONBLOCKING_FUNCTION {
         lhs.swap(rhs);
     }
 
-    /* implicit */ longint(const uint32_t n) {
+    /* implicit */ longint(const uint32_t n) ATTRIBUTE_ALLOCATING_FUNCTION {
         this->allocate_default_capacity_32();
         this->assign_u32_unchecked(n);
     }
-    /* implicit */ longint(const int32_t n) {
+    /* implicit */ longint(const int32_t n) ATTRIBUTE_ALLOCATING_FUNCTION {
         this->allocate_default_capacity_32();
         this->assign_i32_unchecked(n);
     }
-    /* implicit */ longint(const uint64_t n) {
+    /* implicit */ longint(const uint64_t n) ATTRIBUTE_ALLOCATING_FUNCTION {
         this->allocate_default_capacity_64();
         this->assign_u64_unchecked(n);
     }
-    /* implicit */ longint(const int64_t n) {
+    /* implicit */ longint(const int64_t n) ATTRIBUTE_ALLOCATING_FUNCTION {
         this->allocate_default_capacity_64();
         this->assign_i64_unchecked(n);
     }
 #if defined(INTEGERS_128_BIT_HPP)
-    /* implicit */ longint(const uint128_t n) {
+    /* implicit */ longint(const uint128_t n) ATTRIBUTE_ALLOCATING_FUNCTION {
         this->allocate_default_capacity_128();
         this->assign_u128_unchecked(n);
     }
-    /* implicit */ longint(const int128_t n) {
+    /* implicit */ longint(const int128_t n) ATTRIBUTE_ALLOCATING_FUNCTION {
         this->allocate_default_capacity_128();
         this->assign_i128_unchecked(n);
     }
 #endif
 
-    [[nodiscard]] static longint from_string(const std::string_view s) {
+    [[nodiscard]] static longint from_string(const std::string_view s)
+        ATTRIBUTE_ALLOCATING_FUNCTION {
         longint ret;
         ret.set_string(s);
         return ret;
@@ -804,7 +813,8 @@ public:
         return nums_[pos];
     }
 
-    longint& operator*=(const longint& other) ATTRIBUTE_LIFETIME_BOUND {
+    longint& operator*=(const longint& other)
+        ATTRIBUTE_LIFETIME_BOUND ATTRIBUTE_ALLOCATING_FUNCTION {
         size_type k = usize();
         size_type m = other.usize();
         const digit_t* k_ptr = nums_;
@@ -1351,8 +1361,9 @@ public:
     }
 
     void set_string(const std::string_view s) {
+        check_dec_str(s);
         // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
-        this->set_str_impl(reinterpret_cast<const unsigned char*>(s.data()), s.size());
+        this->set_dec_str_impl(reinterpret_cast<const unsigned char*>(s.data()), s.size());
     }
 
     template <class T>
@@ -2408,8 +2419,27 @@ private:
         }
     };
 
+    static void check_dec_str(const std::string_view str) ATTRIBUTE_ALLOCATING_FUNCTION {
+        constexpr auto is_digit = [](const std::uint32_t chr) constexpr noexcept {
+            return chr - '0' <= '9' - '0';
+        };
+        if (unlikely(!std::all_of(str.cbegin(), str.cend(), is_digit))) {
+            throw_on_invalid_dec_str(LONGINT_FILE_LOCATION(), str);
+        }
+    }
+
+    ATTRIBUTE_COLD
+    [[noreturn]] static void throw_on_invalid_dec_str(const char* const file_location,
+                                                      const char* const function_name,
+                                                      const std::string_view str)
+        ATTRIBUTE_ALLOCATING_FUNCTION {
+        throw std::invalid_argument{misc::join_strings(
+            "Can't convert string '", str, "' to longint at ", file_location, function_name)};
+    }
+
     ATTRIBUTE_SIZED_ACCESS(read_only, 2, 3)
-    inline void set_str_impl(const unsigned char* str, const std::size_t str_size);
+    inline void set_dec_str_impl(const unsigned char* str,
+                                 const std::size_t str_size) ATTRIBUTE_ALLOCATING_FUNCTION;
 
     [[nodiscard]]
     ATTRIBUTE_PURE constexpr int64_t mod_by_power_of_2_ge_2_impl(const uint32_t n) const noexcept {
@@ -2636,19 +2666,20 @@ private:
     }
 
     ATTRIBUTE_ALWAYS_INLINE
-    constexpr void set_ssize_from_size(const size_type size) noexcept {
+    constexpr void set_ssize_from_size(const size_type size) noexcept
+        ATTRIBUTE_NONBLOCKING_FUNCTION {
         this->set_ssize_from_size_and_sign(size, /* sign = */ size_);
     }
 
     ATTRIBUTE_ALWAYS_INLINE
-    constexpr void set_ssize_from_size_and_sign(const size_type size,
-                                                const ssize_type sign) noexcept {
+    constexpr void set_ssize_from_size_and_sign(
+        const size_type size, const ssize_type sign) noexcept ATTRIBUTE_NONBLOCKING_FUNCTION {
         static_assert(sizeof(ssize_type) == sizeof(size_type));
         LONGINT_ASSERT_ASSUME(size <= max_size());
         size_ = static_cast<ssize_type>(sign >= 0 ? size : -size);
     }
 
-    constexpr void pop_leading_zeros() noexcept {
+    constexpr void pop_leading_zeros() noexcept ATTRIBUTE_NONBLOCKING_FUNCTION {
         auto usize_value = usize();
         while (usize_value > 0 && nums_[usize_value - 1] == 0) {
             usize_value--;
@@ -2657,7 +2688,7 @@ private:
         set_ssize_from_size(usize_value);
     }
 
-    void reserveUninitializedWithoutCopy(const size_type capacity) {
+    void reserveUninitializedWithoutCopy(const size_type capacity) ATTRIBUTE_ALLOCATING_FUNCTION {
         size_ = 0;
         if (capacity > capacity_) {
             deallocate(nums_, capacity_);
@@ -2668,7 +2699,8 @@ private:
         }
     }
 
-    [[nodiscard]] static std::vector<Decimal> create_initial_conv_bin_base_pows() {
+    [[nodiscard]] static std::vector<Decimal> create_initial_conv_bin_base_pows()
+        ATTRIBUTE_ALLOCATING_FUNCTION {
         std::vector<Decimal> pows;
         pows.emplace_back(longint::kNumsBase);
         return pows;
@@ -2687,7 +2719,8 @@ private:
                                           const size_type conv_len,
                                           const longint& conv_base_pow,
                                           digit_t mult_add_buffer[],
-                                          fft::complex fft_poly_buffer[]) {
+                                          fft::complex fft_poly_buffer[])
+        ATTRIBUTE_ALLOCATING_FUNCTION {
         LONGINT_ASSERT_ASSUME(0 < conv_base_pow.size_);
         const size_type m_size = conv_base_pow.usize();
         const digit_t* const m_ptr = conv_base_pow.nums_;
@@ -2705,7 +2738,8 @@ private:
                                                const digit_t m_ptr[],
                                                const size_type m_size,
                                                digit_t mult_add_buffer[],
-                                               fft::complex fft_poly_buffer[]) {
+                                               fft::complex fft_poly_buffer[])
+        ATTRIBUTE_ALLOCATING_FUNCTION {
         const size_type half_conv_len = conv_len / 2;
         LONGINT_ASSERT_ASSUME(0 < m_size);
         LONGINT_ASSERT_ASSUME(m_size <= half_conv_len);
@@ -2747,7 +2781,8 @@ private:
 
     ATTRIBUTE_SIZED_ACCESS(read_only, 1, 2)
     [[nodiscard]]
-    static Decimal convert_bin_base_impl(const digit_t nums[], const size_type size) {
+    static Decimal convert_bin_base_impl(const digit_t nums[],
+                                         const size_type size) ATTRIBUTE_ALLOCATING_FUNCTION {
         CONFIG_ASSUME_STATEMENT(math_functions::is_power_of_two(size));
         switch (size) {
             case 0:
@@ -2775,12 +2810,14 @@ private:
     ATTRIBUTE_ALWAYS_INLINE
     ATTRIBUTE_SIZED_ACCESS(read_only, 1, 2)
     [[nodiscard]]
-    static Decimal convert_bin_base(const digit_t nums[], const size_type size) {
+    static Decimal convert_bin_base(const digit_t nums[],
+                                    const size_type size) ATTRIBUTE_ALLOCATING_FUNCTION {
         LONGINT_ASSERT_ASSUME(math_functions::is_power_of_two(size));
         return convert_bin_base_impl(nums, size);
     }
 
-    static void ensure_bin_base_pows_capacity(const std::size_t pows_size) {
+    static void ensure_bin_base_pows_capacity(const std::size_t pows_size)
+        ATTRIBUTE_ALLOCATING_FUNCTION {
         std::size_t i = conv_bin_base_pows.size();
         if (i >= pows_size) {
             return;
@@ -2793,7 +2830,7 @@ private:
         } while (++i != pows_size);
     }
 
-    ATTRIBUTE_NOINLINE ATTRIBUTE_COLD void grow_capacity() {
+    ATTRIBUTE_NOINLINE void grow_capacity() ATTRIBUTE_ALLOCATING_FUNCTION {
         const size_type current_capacity = capacity();
         static_assert(max_size() * 2 > max_size());
         const size_type new_capacity = (current_capacity * 2) | (current_capacity == 0);
@@ -2802,7 +2839,7 @@ private:
     }
 
     ATTRIBUTE_NODISCARD_WITH_MESSAGE("impl error")
-    size_type set_size_at_least(size_type new_size) {
+    size_type set_size_at_least(size_type new_size) ATTRIBUTE_ALLOCATING_FUNCTION {
         size_type cur_size = usize();
         if (new_size <= cur_size) {
             return cur_size;
@@ -2814,22 +2851,22 @@ private:
         return new_size;
     }
 
-    void allocate_default_capacity_32() {
+    void allocate_default_capacity_32() ATTRIBUTE_ALLOCATING_FUNCTION {
         nums_ = allocate_uninitialized(kDefaultLINumsCapacity32);
         capacity_ = kDefaultLINumsCapacity32;
     }
-    void ensure_default_capacity_op_asgn_32() {
+    void ensure_default_capacity_op_asgn_32() ATTRIBUTE_ALLOCATING_FUNCTION {
         if (capacity_ < kDefaultLINumsCapacity32) {
             deallocate(nums_, capacity_);
             allocate_default_capacity_32();
         }
     }
-    constexpr void assign_u32_unchecked(const uint32_t n) noexcept {
+    constexpr void assign_u32_unchecked(const uint32_t n) noexcept ATTRIBUTE_NONBLOCKING_FUNCTION {
         static_assert(kDigitBits >= 32);
         size_ = n != 0;
         nums_[0] = n;
     }
-    constexpr void assign_i32_unchecked(const int32_t n) noexcept {
+    constexpr void assign_i32_unchecked(const int32_t n) noexcept ATTRIBUTE_NONBLOCKING_FUNCTION {
         static_assert(kDigitBits >= 32);
         size_ = math_functions::sign(n);
         nums_[0] = math_functions::uabs(n);
@@ -2844,7 +2881,7 @@ private:
             allocate_default_capacity_64();
         }
     }
-    constexpr void assign_u64_unchecked(uint64_t n) noexcept {
+    constexpr void assign_u64_unchecked(uint64_t n) noexcept ATTRIBUTE_NONBLOCKING_FUNCTION {
         static_assert(kDigitBits == 32);
         size_ = n != 0;
         nums_[0] = static_cast<uint32_t>(n);
@@ -2858,11 +2895,11 @@ private:
         size_ *= sgn;
     }
 #if defined(INTEGERS_128_BIT_HPP)
-    void allocate_default_capacity_128() {
+    void allocate_default_capacity_128() ATTRIBUTE_ALLOCATING_FUNCTION {
         nums_ = allocate_uninitialized(kDefaultLINumsCapacity128);
         capacity_ = kDefaultLINumsCapacity128;
     }
-    void ensure_default_capacity_op_asgn_128() {
+    void ensure_default_capacity_op_asgn_128() ATTRIBUTE_ALLOCATING_FUNCTION {
         if (capacity_ < kDefaultLINumsCapacity128) {
             deallocate(nums_, capacity_);
             allocate_default_capacity_128();
@@ -3029,7 +3066,7 @@ private:
         }
     }
 
-    static digit_t* allocate_uninitialized(const size_type nums) {
+    static digit_t* allocate_uninitialized(const size_type nums) ATTRIBUTE_ALLOCATING_FUNCTION {
 #if defined(HAS_CUSTOM_LONGINT_ALLOCATOR)
         if constexpr (kUseCustomLongIntAllocator) {
             return static_cast<digit_t*>(
@@ -3169,16 +3206,14 @@ private:
 
 }  // namespace longint_detail
 
-inline void longint::set_str_impl(const unsigned char* str, const std::size_t str_size) {
+inline void longint::set_dec_str_impl(const unsigned char* const str,
+                                      const std::size_t str_size) ATTRIBUTE_ALLOCATING_FUNCTION {
     const unsigned char* str_iter = str;
     const unsigned char* const str_end = str + str_size;
 
     std::int32_t sgn = 1;
-    constexpr auto is_digit = [](const std::uint32_t chr) constexpr noexcept {
-        return chr - '0' <= '9' - '0';
-    };
-    while (str_iter != str_end && !is_digit(*str_iter)) {
-        sgn = *str_iter == '-' ? -1 : 1;
+    if (str_iter != str_end && *str_iter == '-') {
+        sgn = -1;
         ++str_iter;
     }
 
@@ -3246,7 +3281,7 @@ inline void longint::set_str_impl(const unsigned char* str, const std::size_t st
         } while (str_iter != str_end);
     }
 
-    static_assert(max_size() * 2 > max_size());
+    static_assert(max_size() * 4 > max_size());
     std::size_t m = aligned_str_conv_digits_size * 2;
     if (m > kFFTPrecisionBorder) {
         m *= 2;

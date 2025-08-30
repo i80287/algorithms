@@ -66,7 +66,7 @@ namespace detail {
 }  // namespace detail
 
 template <class CharType>
-inline bool is_whitespace(const CharType c) noexcept {
+inline bool is_whitespace(const CharType c) noexcept ATTRIBUTE_NONBLOCKING_FUNCTION {
     if constexpr (std::is_same_v<CharType, char>) {
         return static_cast<bool>(std::isspace(static_cast<unsigned char>(c)));
     } else if constexpr (std::is_same_v<CharType, wchar_t>) {
@@ -80,7 +80,7 @@ inline bool is_whitespace(const CharType c) noexcept {
 }
 
 template <class CharType>
-inline bool is_alpha(const CharType c) noexcept {
+inline bool is_alpha(const CharType c) noexcept ATTRIBUTE_NONBLOCKING_FUNCTION {
     if constexpr (std::is_same_v<CharType, char>) {
         return static_cast<bool>(std::isalpha(static_cast<unsigned char>(c)));
     } else {
@@ -91,7 +91,7 @@ inline bool is_alpha(const CharType c) noexcept {
 }
 
 template <class CharType>
-inline bool is_alpha_digit(const CharType c) noexcept {
+inline bool is_alpha_digit(const CharType c) noexcept ATTRIBUTE_NONBLOCKING_FUNCTION {
     if constexpr (std::is_same_v<CharType, char>) {
         return static_cast<bool>(std::isalnum(static_cast<unsigned char>(c)));
     } else {
@@ -102,7 +102,7 @@ inline bool is_alpha_digit(const CharType c) noexcept {
 }
 
 template <class CharType>
-inline bool is_digit(const CharType c) noexcept {
+inline bool is_digit(const CharType c) noexcept ATTRIBUTE_NONBLOCKING_FUNCTION {
     if constexpr (std::is_same_v<CharType, char>) {
         return static_cast<bool>(std::isdigit(static_cast<unsigned char>(c)));
     } else {
@@ -113,7 +113,7 @@ inline bool is_digit(const CharType c) noexcept {
 }
 
 template <class CharType>
-inline bool is_hex_digit(const CharType c) noexcept {
+inline bool is_hex_digit(const CharType c) noexcept ATTRIBUTE_NONBLOCKING_FUNCTION {
     if constexpr (std::is_same_v<CharType, char>) {
         return static_cast<bool>(std::isxdigit(static_cast<unsigned char>(c)));
     } else {
@@ -126,7 +126,7 @@ inline bool is_hex_digit(const CharType c) noexcept {
 namespace detail {
 
 template <class CharType>
-[[nodiscard]] CharType to_lower(const CharType c) noexcept {
+[[nodiscard]] CharType to_lower(const CharType c) noexcept ATTRIBUTE_NONBLOCKING_FUNCTION {
     if constexpr (std::is_same_v<CharType, char>) {
         return static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
     } else {
@@ -137,7 +137,7 @@ template <class CharType>
 }
 
 template <class CharType>
-[[nodiscard]] CharType to_upper(const CharType c) noexcept {
+[[nodiscard]] CharType to_upper(const CharType c) noexcept ATTRIBUTE_NONBLOCKING_FUNCTION {
     if constexpr (std::is_same_v<CharType, char>) {
         return static_cast<char>(std::toupper(static_cast<unsigned char>(c)));
     } else {
@@ -151,16 +151,12 @@ template <class CharType>
 template <class CharType, class Predicate>
 [[nodiscard]]
 ATTRIBUTE_ALWAYS_INLINE
-constexpr std::basic_string_view<CharType> trim_if(std::basic_string_view<CharType> str, const Predicate pred)
-    noexcept(std::is_nothrow_invocable_v<Predicate, CharType>)
+constexpr std::basic_string_view<CharType> trim_if(std::basic_string_view<CharType> str, Predicate pred)
+    noexcept(std::is_nothrow_invocable_r_v<bool, Predicate, CharType>)
 {
     // clang-format on
     static_assert(std::is_invocable_r_v<bool, Predicate, CharType>,
                   "predicate should accept CharType and return bool");
-
-#if CONFIG_HAS_CONCEPTS
-    static_assert(std::predicate<Predicate, CharType>);
-#endif
 
     while (!str.empty() && pred(str.front())) {
         str.remove_prefix(1);
@@ -175,7 +171,8 @@ constexpr std::basic_string_view<CharType> trim_if(std::basic_string_view<CharTy
 template <class CharType>
 [[nodiscard]]
 constexpr std::basic_string_view<CharType> TrimChar(const std::basic_string_view<CharType> str,
-                                                    const CharType trim_char) noexcept {
+                                                    const CharType trim_char) noexcept
+    ATTRIBUTE_NONBLOCKING_FUNCTION {
     return detail::trim_if(
         str, [trim_char](const CharType c) constexpr noexcept -> bool { return c == trim_char; });
 }
@@ -184,7 +181,7 @@ constexpr std::basic_string_view<CharType> TrimChar(const std::basic_string_view
 template <class CharType>
 [[nodiscard]]
 std::basic_string_view<CharType> TrimCharsImpl(const std::basic_string_view<CharType> str,
-                                               const std::basic_string_view<CharType> trim_chars) noexcept {
+                                               const std::basic_string_view<CharType> trim_chars) {
     // clang-format on
     using UType = std::make_unsigned_t<CharType>;
     static constexpr size_t kMaxUTypeValue = static_cast<size_t>(std::numeric_limits<UType>::max());
@@ -219,7 +216,7 @@ template <class CharType>
 [[nodiscard]]
 ATTRIBUTE_ALWAYS_INLINE
 inline std::basic_string_view<CharType> TrimChars(const std::basic_string_view<CharType> str,
-                                                  const std::basic_string_view<CharType> trim_chars) noexcept {
+                                                  const std::basic_string_view<CharType> trim_chars) {
     // clang-format on
     const size_t trim_size = trim_chars.size();
     if (config::is_constant_evaluated() || config::is_gcc_constant_p(trim_size)) {
@@ -237,7 +234,8 @@ inline std::basic_string_view<CharType> TrimChars(const std::basic_string_view<C
 }  // namespace detail
 
 template <class StrType, class TrimStrType>
-inline auto trim(const StrType &str, const TrimStrType &trim_chars) noexcept {
+inline auto trim(const StrType &str,
+                 const TrimStrType &trim_chars) noexcept(std::is_base_of_v<trim_tag, TrimStrType>) {
     if constexpr (std::is_base_of_v<trim_tag, TrimStrType>) {
         using CharType = misc::string_detail::determine_char_t<StrType>;
         static_assert(misc::is_char_v<CharType>, "string is expected in the trim with tag");
@@ -271,7 +269,8 @@ inline auto trim(const StrType &str, const TrimStrType &trim_chars) noexcept {
 }
 
 template <class CharType>
-inline bool is_whitespace(const std::basic_string_view<CharType> str) noexcept {
+inline bool is_whitespace(const std::basic_string_view<CharType> str) noexcept
+    ATTRIBUTE_NONBLOCKING_FUNCTION {
     for (const CharType c : str) {
         if (!misc::is_whitespace(c)) {
             return false;
@@ -282,24 +281,27 @@ inline bool is_whitespace(const std::basic_string_view<CharType> str) noexcept {
 }
 
 template <class CharType>
-inline bool is_whitespace(const std::basic_string<CharType> &str) noexcept {
+inline bool is_whitespace(const std::basic_string<CharType> &str) noexcept
+    ATTRIBUTE_NONBLOCKING_FUNCTION {
     return misc::is_whitespace(std::basic_string_view<CharType>{str});
 }
 
 template <class CharType>
-inline bool is_whitespace(const CharType *const str) noexcept {
+inline bool is_whitespace(const CharType *const str) noexcept ATTRIBUTE_NONBLOCKING_FUNCTION {
     return misc::is_whitespace(std::basic_string_view<CharType>{str});
 }
 
 template <class CharType>
-inline void to_lower_inplace(CharType *const str, const size_t n) noexcept {
+inline void to_lower_inplace(CharType *const str,
+                             const size_t n) noexcept ATTRIBUTE_NONBLOCKING_FUNCTION {
     for (size_t i = 0; i < n; i++) {
         str[i] = detail::to_lower(str[i]);
     }
 }
 
 template <class CharType>
-inline void to_lower_inplace(std::basic_string<CharType> &str) noexcept {
+inline void to_lower_inplace(std::basic_string<CharType> &str) noexcept
+    ATTRIBUTE_NONBLOCKING_FUNCTION {
     misc::to_lower_inplace(str.data(), str.size());
 }
 
@@ -321,14 +323,16 @@ inline std::basic_string<CharType> to_lower(const CharType *const str) {
 }
 
 template <class CharType>
-inline void to_upper_inplace(CharType *const str, const size_t n) noexcept {
+inline void to_upper_inplace(CharType *const str,
+                             const size_t n) noexcept ATTRIBUTE_NONBLOCKING_FUNCTION {
     for (size_t i = 0; i < n; i++) {
         str[i] = detail::to_upper(str[i]);
     }
 }
 
 template <class CharType>
-inline void to_upper_inplace(std::basic_string<CharType> &str) noexcept {
+inline void to_upper_inplace(std::basic_string<CharType> &str) noexcept
+    ATTRIBUTE_NONBLOCKING_FUNCTION {
     misc::to_upper_inplace(str.data(), str.size());
 }
 

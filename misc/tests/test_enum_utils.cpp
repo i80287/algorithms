@@ -27,6 +27,8 @@ enum CStyleEnum {
 
 GENERATE_ENUM_FLAG_BIT_OPERATIONS(CStyleEnum)
 
+GENERATE_ENUM_PLUS_MINUS_OPERATIONS(CStyleEnum)
+
 GENERATE_ENUM_TO_INTEGER(CStyleEnum)
 
 #ifdef GENERATE_ENUM_TO_STRING_FOR_ENUM_MEMBERS
@@ -49,6 +51,8 @@ enum struct EnumClass1 : std::uint32_t {
 };
 
 GENERATE_ENUM_FLAG_BIT_OPERATIONS(EnumClass1)
+
+GENERATE_ENUM_PLUS_MINUS_OPERATIONS(EnumClass1)
 
 GENERATE_ENUM_TO_INTEGER(EnumClass1)
 
@@ -87,6 +91,8 @@ GENERATE_ENUM_TO_STRING_FOR_ENUM_MEMBERS(EnumClass2,
 #endif
 
 GENERATE_ENUM_FLAG_BIT_OPERATIONS(EnumClass2)
+
+GENERATE_ENUM_PLUS_MINUS_OPERATIONS(EnumClass2)
 
 #define GENERATE_ENUM_FLAG_BIT_OPERATIONS_ASSERTS(enum_type)                           \
     static_assert((enum_type::zero | enum_type::one) == enum_type::one, "");           \
