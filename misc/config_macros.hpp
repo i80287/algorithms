@@ -407,7 +407,7 @@
         }                               \
     } while (0)
 #endif
-#elif CONFIG_COMPILER_IS_MSVC
+#elif CONFIG_MSVC_AT_LEAST(19, 20)
 #define CONFIG_ASSUME_STATEMENT(expr) __assume(expr)
 #else
 #if defined(__cpp_lib_unreachable) && __cpp_lib_unreachable >= 202202L
@@ -690,6 +690,41 @@
 #define ATTRIBUTE_GSL_OWNER(...) [[gsl::Owner(__VA_ARGS__)]]
 #else
 #define ATTRIBUTE_GSL_OWNER(...)
+#endif
+
+#if CONFIG_CLANG_AT_LEAST(17, 0) && \
+    CONFIG_HELPER_HAS_CPP_STYLE_ATTRIBUTE(clang::unsafe_buffer_usage)
+#define ATTRIBUTE_UNSAFE_BUFFER_USAGE [[clang::unsafe_buffer_usage]]
+#else
+#define ATTRIBUTE_UNSAFE_BUFFER_USAGE
+#endif
+
+#if CONFIG_CLANG_AT_LEAST(19, 0) && CONFIG_HELPER_HAS_CPP_STYLE_ATTRIBUTE(clang::nonblocking)
+#define ATTRIBUTE_NONBLOCKING_FUNCTION          [[clang::nonblocking]]
+#define ATTRIBUTE_NONBLOCKING_FUNCTION_IF(expr) [[clang::nonblocking(expr)]]
+#else
+#define ATTRIBUTE_NONBLOCKING_FUNCTION
+#define ATTRIBUTE_NONBLOCKING_FUNCTION_IF(expr)
+#endif
+
+#if CONFIG_CLANG_AT_LEAST(19, 0) && CONFIG_HELPER_HAS_CPP_STYLE_ATTRIBUTE(clang::nonallocating)
+#define ATTRIBUTE_NONALLOCATING_FUNCTION          [[clang::nonallocating]]
+#define ATTRIBUTE_NONALLOCATING_FUNCTION_IF(expr) [[clang::nonallocating(expr)]]
+#else
+#define ATTRIBUTE_NONALLOCATING_FUNCTION
+#define ATTRIBUTE_NONALLOCATING_FUNCTION_IF(expr)
+#endif
+
+#if CONFIG_CLANG_AT_LEAST(19, 0) && CONFIG_HELPER_HAS_CPP_STYLE_ATTRIBUTE(clang::blocking)
+#define ATTRIBUTE_BLOCKING_FUNCTION [[clang::blocking]]
+#else
+#define ATTRIBUTE_BLOCKING_FUNCTION
+#endif
+
+#if CONFIG_CLANG_AT_LEAST(19, 0) && CONFIG_HELPER_HAS_CPP_STYLE_ATTRIBUTE(clang::allocating)
+#define ATTRIBUTE_ALLOCATING_FUNCTION [[clang::allocating]]
+#else
+#define ATTRIBUTE_ALLOCATING_FUNCTION
 #endif
 
 #if CONFIG_CLANG_AT_LEAST(20, 1) && \

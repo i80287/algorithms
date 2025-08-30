@@ -267,7 +267,8 @@ function(configure_gcc_or_clang_gcc_options)
         if(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 16.0.0)
             set(LOCAL_FN_TEST_CXX_COMPILE_OPTIONS
                 ${LOCAL_FN_TEST_CXX_COMPILE_OPTIONS}
-                -Wincompatible-function-pointer-types-strict)
+                -Wincompatible-function-pointer-types-strict
+                -Wunsafe-buffer-usage)
         endif()
         if(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 18.1.0)
             set(LOCAL_FN_TEST_CXX_COMPILE_OPTIONS
@@ -278,6 +279,22 @@ function(configure_gcc_or_clang_gcc_options)
             set(LOCAL_FN_TEST_CXX_COMPILE_OPTIONS
                 ${LOCAL_FN_TEST_CXX_COMPILE_OPTIONS}
                 -Wfunction-effects)
+        endif()
+        if(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 20.0.0)
+            set(LOCAL_FN_TEST_CXX_COMPILE_OPTIONS
+                ${LOCAL_FN_TEST_CXX_COMPILE_OPTIONS}
+                -Wshift-bool)
+        endif()
+        if(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 21.0.0)
+            set(LOCAL_FN_TEST_CXX_COMPILE_OPTIONS
+                ${LOCAL_FN_TEST_CXX_COMPILE_OPTIONS}
+                -Wnrvo
+                -Wunique-object-duplication)
+        endif()
+        if(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 22.0.0)
+            set(LOCAL_FN_TEST_CXX_COMPILE_OPTIONS
+                ${LOCAL_FN_TEST_CXX_COMPILE_OPTIONS}
+                -Wfunction-effect-redeclarations)
         endif()
         set(LOCAL_FN_TEST_COMPILE_DEFINITIONS
             ${LOCAL_FN_TEST_COMPILE_DEFINITIONS}
