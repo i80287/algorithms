@@ -715,9 +715,9 @@
 #endif
 
 #if CONFIG_CLANG_AT_LEAST(19, 0) && CONFIG_HELPER_HAS_CPP_STYLE_ATTRIBUTE(clang::allocating)
-#define[[clang::allocating]]
+#define ATTRIBUTE_ALLOCATING_FUNCTION [[clang::allocating]]
 #else
-#define
+#define ATTRIBUTE_ALLOCATING_FUNCTION
 #endif
 
 #if CONFIG_CLANG_AT_LEAST(20, 1) && \
