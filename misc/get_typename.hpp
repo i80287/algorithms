@@ -7,13 +7,13 @@
 namespace misc {
 
 template <class T>
-[[nodiscard]] constexpr std::string_view get_qualified_typename() ATTRIBUTE_NONBLOCKING_FUNCTION;
+[[nodiscard]] constexpr std::string_view get_qualified_typename();
 
 template <class T>
-[[nodiscard]] constexpr std::string_view get_unqualified_typename() ATTRIBUTE_NONBLOCKING_FUNCTION;
+[[nodiscard]] constexpr std::string_view get_unqualified_typename();
 
 template <auto EnumValue>
-[[nodiscard]] constexpr std::string_view get_enum_value_name() ATTRIBUTE_NONBLOCKING_FUNCTION;
+[[nodiscard]] constexpr std::string_view get_enum_value_name();
 
 }  // namespace misc
 

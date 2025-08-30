@@ -19,7 +19,7 @@ template <typename Uint>
     requires int128_traits::is_unsigned_v<Uint>
 #endif
 ATTRIBUTE_CONST [[nodiscard]]
-constexpr std::int32_t kronecker_symbol_ui(Uint a, Uint n) noexcept ATTRIBUTE_NONBLOCKING_FUNCTION {
+constexpr std::int32_t kronecker_symbol_ui(Uint a, Uint n) noexcept {
     std::int32_t t = 1;
 
     if (n % 2 == 0) {
@@ -109,7 +109,7 @@ template <typename Sint>
     requires int128_traits::is_signed_v<Sint>
 #endif
 ATTRIBUTE_CONST [[nodiscard]]
-constexpr std::int32_t kronecker_symbol_si(Sint a, Sint n) noexcept ATTRIBUTE_NONBLOCKING_FUNCTION {
+constexpr std::int32_t kronecker_symbol_si(Sint a, Sint n) noexcept {
     const bool carry = n < 0 && a < 0;
     using Uint = typename int128_traits::make_unsigned_t<Sint>;
     Uint n_u = ::math_functions::uabs(n);
@@ -202,8 +202,7 @@ template <class Sint, class Uint>
     requires int128_traits::is_signed_v<Sint> && int128_traits::is_unsigned_v<Uint>
 #endif
 ATTRIBUTE_CONST [[nodiscard]]
-constexpr std::int32_t kronecker_symbol_si_ui(Sint a,
-                                              Uint n) noexcept ATTRIBUTE_NONBLOCKING_FUNCTION {
+constexpr std::int32_t kronecker_symbol_si_ui(Sint a, Uint n) noexcept {
     std::int32_t t = 1;
 
     if (n % 2 == 0) {
@@ -302,8 +301,7 @@ constexpr std::int32_t kronecker_symbol_si_ui(Sint a,
 /// @return Kronecker symbol of (a/n) (-1, 0 or 1)
 template <typename IntegerT1, typename IntegerT2>
 ATTRIBUTE_CONST ATTRIBUTE_ALWAYS_INLINE [[nodiscard]]
-constexpr std::int32_t kronecker_symbol(const IntegerT1 a,
-                                        const IntegerT2 n) noexcept ATTRIBUTE_NONBLOCKING_FUNCTION {
+constexpr std::int32_t kronecker_symbol(const IntegerT1 a, const IntegerT2 n) noexcept {
 #if CONFIG_HAS_AT_LEAST_CXX_20
     using T1 = std::remove_cvref_t<IntegerT1>;
     using T2 = std::remove_cvref_t<IntegerT2>;

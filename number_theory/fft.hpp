@@ -40,7 +40,7 @@ ATTRIBUTE_SIZED_ACCESS(read_write, 2, 3)
 ATTRIBUTE_NONNULL_ALL_ARGS
 inline void forward_backward_fft(complex* RESTRICT_QUALIFIER p1,
                                  complex* RESTRICT_QUALIFIER p2,
-                                 size_t n) ATTRIBUTE_ALLOCATING_FUNCTION;
+                                 size_t n);
 
 #ifdef FFT_HAS_SPAN
 
@@ -53,8 +53,7 @@ inline void forward_backward_fft(complex* RESTRICT_QUALIFIER p1,
 ///         the internal computations failed
 /// @param poly1
 /// @param poly2
-inline void forward_backward_fft(std::span<complex> poly1,
-                                 std::span<complex> poly2) ATTRIBUTE_ALLOCATING_FUNCTION;
+inline void forward_backward_fft(std::span<complex> poly1, std::span<complex> poly2);
 
 #endif
 
@@ -75,8 +74,7 @@ private:
     };
 
     ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_CONST [[nodiscard]]
-    static constexpr bool is_valid_polynomial_size(const size_t n) noexcept
-        ATTRIBUTE_NONBLOCKING_FUNCTION {
+    static constexpr bool is_valid_polynomial_size(const size_t n) noexcept {
         return n > 0 && (n & (n - 1)) == 0;
     }
 
@@ -99,8 +97,8 @@ private:
 
     template <bool IsBackwardFFT = false /* Forward of backward FFT */>
     ATTRIBUTE_SIZED_ACCESS(read_write, 1, 2)
-    ATTRIBUTE_NONNULL(1) static void forward_or_backward_fft(
-        complex* const p, const size_t k) noexcept ATTRIBUTE_NONBLOCKING_FUNCTION {
+    ATTRIBUTE_NONNULL(1) static void forward_or_backward_fft(complex* const p,
+                                                             const size_t k) noexcept {
         CONFIG_ASSUME_STATEMENT(is_valid_polynomial_size(k));
 
         for (std::size_t i = 1, k_reversed_i = 0; i < k; i++) {
@@ -154,12 +152,11 @@ private:
         }
     }
 
-    static void ensure_roots_capacity(const size_t n) ATTRIBUTE_ALLOCATING_FUNCTION {
+    static void ensure_roots_capacity(const size_t n) {
         ensure_roots_capacity_impl(n, fft_roots);
     }
 
-    static void ensure_roots_capacity_impl(const size_t n, std::vector<complex>& roots)
-        ATTRIBUTE_ALLOCATING_FUNCTION {
+    static void ensure_roots_capacity_impl(const size_t n, std::vector<complex>& roots) {
         CONFIG_ASSUME_STATEMENT(is_valid_polynomial_size(n));
 
         size_t current_len = roots.size();
@@ -195,11 +192,11 @@ private:
 
     friend inline void fft::forward_backward_fft(complex* RESTRICT_QUALIFIER p1,
                                                  complex* RESTRICT_QUALIFIER p2,
-                                                 size_t n) ATTRIBUTE_ALLOCATING_FUNCTION;
+                                                 size_t n);
 
 #ifdef FFT_HAS_SPAN
-    friend inline void fft::forward_backward_fft(std::span<complex> poly1, std::span<complex> poly2)
-        ATTRIBUTE_ALLOCATING_FUNCTION;
+    friend inline void fft::forward_backward_fft(std::span<complex> poly1,
+                                                 std::span<complex> poly2);
 #endif
 };
 
@@ -207,7 +204,7 @@ private:
 
 inline void forward_backward_fft(complex* const RESTRICT_QUALIFIER p1,
                                  complex* const RESTRICT_QUALIFIER p2,
-                                 const size_t n) ATTRIBUTE_ALLOCATING_FUNCTION {
+                                 const size_t n) {
     if (unlikely(n == 0)) {
         return;
     }
@@ -257,8 +254,7 @@ inline void forward_backward_fft(complex* const RESTRICT_QUALIFIER p1,
 
 #ifdef FFT_HAS_SPAN
 
-inline void forward_backward_fft(const std::span<complex> poly1,
-                                 const std::span<complex> poly2) ATTRIBUTE_ALLOCATING_FUNCTION {
+inline void forward_backward_fft(const std::span<complex> poly1, const std::span<complex> poly2) {
     THROW_IF(poly1.size() != poly2.size());
 
     if (unlikely(poly1.empty())) {

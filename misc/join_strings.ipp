@@ -66,8 +66,7 @@ constexpr bool is_filesystem_path_v = false;
 
 template <class CharType, class T>
 ATTRIBUTE_ALWAYS_INLINE [[nodiscard]]
-inline std::basic_string<CharType> ArithmeticToStringImpl(const T arg)
-    ATTRIBUTE_ALLOCATING_FUNCTION {
+inline std::basic_string<CharType> ArithmeticToStringImpl(const T arg) {
     if constexpr (std::is_integral_v<T>) {
         if (config::is_constant_evaluated() || config::is_gcc_constant_p(arg)) {
             if constexpr (sizeof(T) > sizeof(int)) {
@@ -125,7 +124,7 @@ template <typename OutCharType, typename InCharType, class CodecvtState = std::m
 bool DoStrCodecvt(const std::basic_string_view<InCharType> in_str,
                   std::basic_string<OutCharType> &out_str,
                   const std::codecvt<OutCharType, InCharType, CodecvtState> &cvt,
-                  size_t &count) ATTRIBUTE_ALLOCATING_FUNCTION {
+                  size_t &count) {
     const InCharType *const first = in_str.data();
     const InCharType *const last = first + in_str.size();
 
@@ -189,8 +188,7 @@ inline void ThrowOnFailedConversionToNotUTF8(bool conversion_succeeded,
 
 template <class ToCharType>
 [[nodiscard]]
-inline std::basic_string<ToCharType> ConvertBytesToNotUTF8(const std::string_view str)
-    ATTRIBUTE_ALLOCATING_FUNCTION {
+inline std::basic_string<ToCharType> ConvertBytesToNotUTF8(const std::string_view str) {
     static_assert(!std::is_same_v<ToCharType, char>);
 
     if constexpr (false
@@ -231,8 +229,7 @@ inline void ThrowOnFailedConversionToUTF8(const char *file,
                                           uint32_t line,
                                           const char *function_name);
 
-[[nodiscard]] inline std::u8string ConvertBytesToUTF8(const std::string_view bytes)
-    ATTRIBUTE_ALLOCATING_FUNCTION {
+[[nodiscard]] inline std::u8string ConvertBytesToUTF8(const std::string_view bytes) {
     const auto is_ascii_nonzero_char = [](const char chr) constexpr noexcept {
         const uint32_t u32_chr = static_cast<unsigned char>(chr);
         constexpr uint32_t kMinChar = 1;
@@ -253,8 +250,7 @@ inline void ThrowOnFailedConversionToUTF8(const char *file,
 #endif
 
 template <class ToCharType>
-[[nodiscard]] inline std::basic_string<ToCharType> ConvertBytesTo(const std::string_view str)
-    ATTRIBUTE_ALLOCATING_FUNCTION {
+[[nodiscard]] inline std::basic_string<ToCharType> ConvertBytesTo(const std::string_view str) {
 #if CONFIG_HAS_AT_LEAST_CXX_20 && defined(__cpp_char8_t) && __cpp_char8_t >= 201811L
     if constexpr (std::is_same_v<ToCharType, char8_t>) {
         return ConvertBytesToUTF8(str);
@@ -267,8 +263,7 @@ template <class ToCharType>
 
 template <class CharType, class T>
 [[nodiscard]]
-ATTRIBUTE_ALWAYS_INLINE inline std::basic_string<CharType> ArithmeticToString(const T arg)
-    ATTRIBUTE_ALLOCATING_FUNCTION {
+ATTRIBUTE_ALWAYS_INLINE inline std::basic_string<CharType> ArithmeticToString(const T arg) {
     static_assert(is_char_v<CharType>, "implementation error");
     static_assert(!is_char_v<T>, "implementation error");
 
@@ -283,8 +278,7 @@ ATTRIBUTE_ALWAYS_INLINE inline std::basic_string<CharType> ArithmeticToString(co
 
 template <class CharType, class T>
 [[nodiscard]]
-ATTRIBUTE_ALWAYS_INLINE inline std::basic_string<CharType> EnumToString(const T arg)
-    ATTRIBUTE_ALLOCATING_FUNCTION {
+ATTRIBUTE_ALWAYS_INLINE inline std::basic_string<CharType> EnumToString(const T arg) {
     static_assert(std::is_enum_v<T>, "implementation error");
 
     if constexpr (std::is_error_code_enum_v<T>) {
@@ -308,8 +302,7 @@ ATTRIBUTE_ALWAYS_INLINE inline std::basic_string<CharType> EnumToString(const T 
 
 template <class CharType>
 [[nodiscard]]
-ATTRIBUTE_ALWAYS_INLINE inline std::basic_string<CharType> NullPtrToString()
-    ATTRIBUTE_ALLOCATING_FUNCTION {
+ATTRIBUTE_ALWAYS_INLINE inline std::basic_string<CharType> NullPtrToString() {
     if constexpr (std::is_same_v<CharType, char>) {
         return "null";
     } else if constexpr (std::is_same_v<CharType, wchar_t>) {
@@ -330,8 +323,7 @@ ATTRIBUTE_ALWAYS_INLINE inline std::basic_string<CharType> NullPtrToString()
 
 template <class CharType, class T>
 [[nodiscard]]
-ATTRIBUTE_ALWAYS_INLINE inline std::basic_string<CharType> PointerTypeToString(const T arg)
-    ATTRIBUTE_ALLOCATING_FUNCTION {
+ATTRIBUTE_ALWAYS_INLINE inline std::basic_string<CharType> PointerTypeToString(const T arg) {
     static_assert(is_char_v<CharType>, "implementation error");
     static_assert(std::is_pointer_v<T> || std::is_member_pointer_v<T> || std::is_null_pointer_v<T>,
                   "implementation error");
@@ -348,8 +340,7 @@ ATTRIBUTE_ALWAYS_INLINE inline std::basic_string<CharType> PointerTypeToString(c
 
 template <class CharType, class T>
 [[nodiscard]]
-ATTRIBUTE_ALWAYS_INLINE inline std::basic_string<CharType> ToStringScalarArg(const T arg)
-    ATTRIBUTE_ALLOCATING_FUNCTION {
+ATTRIBUTE_ALWAYS_INLINE inline std::basic_string<CharType> ToStringScalarArg(const T arg) {
     static_assert(is_char_v<CharType>, "implementation error");
 
     if constexpr (std::is_enum_v<T>) {
@@ -370,7 +361,7 @@ ATTRIBUTE_ALWAYS_INLINE inline std::basic_string<CharType> ToStringScalarArg(con
 template <class CharType>
 [[nodiscard]]
 ATTRIBUTE_ALWAYS_INLINE
-inline std::basic_string<CharType> FilesystemPathToString(const std::filesystem::path &path) ATTRIBUTE_ALLOCATING_FUNCTION {
+inline std::basic_string<CharType> FilesystemPathToString(const std::filesystem::path &path)  {
     // clang-format on
 
     static_assert(is_char_v<CharType>, "implementation error");
@@ -403,8 +394,7 @@ template <class T>
 concept DirectlyConvertableToString = DirectlyConvertableToBasicString<T, char>;
 
 template <class CharType, class T>
-[[nodiscard]] inline std::basic_string<CharType> ToStringOneArgViaOStringStream(const T &arg)
-    ATTRIBUTE_ALLOCATING_FUNCTION {
+[[nodiscard]] inline std::basic_string<CharType> ToStringOneArgViaOStringStream(const T &arg) {
     std::basic_ostringstream<CharType> oss;
     // not std::ignore because user defined operator<< may return void
     static_cast<void>(oss << arg);
@@ -415,7 +405,7 @@ template <class CharType, class T>
 
 template <class CharType, class T>
 ATTRIBUTE_ALWAYS_INLINE [[nodiscard]]
-inline std::basic_string<CharType> ToStringOneArg(const T &arg) ATTRIBUTE_ALLOCATING_FUNCTION {
+inline std::basic_string<CharType> ToStringOneArg(const T &arg) {
     static_assert(is_char_v<CharType>, "implementation error");
 
 #ifdef JOIN_STRINGS_SUPPORTS_CUSTOM_TO_STRING
@@ -477,18 +467,17 @@ inline std::basic_string<CharType> ToStringOneArg(const T &arg) ATTRIBUTE_ALLOCA
 template <class CharType, class... Args>
 [[nodiscard]]
 ATTRIBUTE_ALWAYS_INLINE
-constexpr size_t CalculateStringArgsSize(CharType chr, Args... args) noexcept ATTRIBUTE_NONBLOCKING_FUNCTION;
+constexpr size_t CalculateStringArgsSize(CharType chr, Args... args) noexcept;
 
 template <class CharType, class... Args>
 [[nodiscard]]
 ATTRIBUTE_ALWAYS_INLINE
-constexpr size_t CalculateStringArgsSize(std::basic_string_view<CharType> s, Args... args) noexcept ATTRIBUTE_NONBLOCKING_FUNCTION;
+constexpr size_t CalculateStringArgsSize(std::basic_string_view<CharType> s, Args... args) noexcept;
 
 // clang-format on
 
 template <class CharType, class... Args>
-constexpr size_t CalculateStringArgsSize(CharType /*chr*/,
-                                         Args... args) noexcept ATTRIBUTE_NONBLOCKING_FUNCTION {
+constexpr size_t CalculateStringArgsSize(CharType /*chr*/, Args... args) noexcept {
     size_t size = 1;
     if constexpr (sizeof...(args) > 0) {
         const size_t other_args_size =
@@ -506,7 +495,7 @@ constexpr size_t CalculateStringArgsSize(CharType /*chr*/,
 
 template <class CharType, class... Args>
 constexpr size_t CalculateStringArgsSize(const std::basic_string_view<CharType> s,
-                                         Args... args) noexcept ATTRIBUTE_NONBLOCKING_FUNCTION {
+                                         Args... args) noexcept {
     size_t size = s.size();
     if constexpr (sizeof...(args) > 0) {
         const size_t other_args_size =
@@ -527,20 +516,20 @@ template <class CharType, class... Args>
 ATTRIBUTE_NONNULL_ALL_ARGS
 ATTRIBUTE_ACCESS(write_only, 1)
 ATTRIBUTE_ALWAYS_INLINE
-constexpr void WriteStringsInplace(CharType* result, CharType c, Args... args) noexcept ATTRIBUTE_NONBLOCKING_FUNCTION;
+constexpr void WriteStringsInplace(CharType* result, CharType c, Args... args) noexcept;
 
 template <class CharType, class... Args>
 ATTRIBUTE_NONNULL_ALL_ARGS
 ATTRIBUTE_ACCESS(write_only, 1)
 ATTRIBUTE_ALWAYS_INLINE
-constexpr void WriteStringsInplace(CharType* result, std::basic_string_view<CharType> s, Args... args) noexcept ATTRIBUTE_NONBLOCKING_FUNCTION;
+constexpr void WriteStringsInplace(CharType* result, std::basic_string_view<CharType> s, Args... args) noexcept;
 
 // clang-format on
 
 template <class CharType, class... Args>
 constexpr void WriteStringsInplace(CharType *const result,
                                    const CharType c,
-                                   Args... args) noexcept ATTRIBUTE_NONBLOCKING_FUNCTION {
+                                   Args... args) noexcept {
     *result = c;
     if constexpr (sizeof...(args) > 0) {
         join_strings_detail::WriteStringsInplace<CharType>(result + 1, args...);
@@ -550,7 +539,7 @@ constexpr void WriteStringsInplace(CharType *const result,
 template <class CharType, class... Args>
 constexpr void WriteStringsInplace(CharType *const result,
                                    const std::basic_string_view<CharType> s,
-                                   Args... args) noexcept ATTRIBUTE_NONBLOCKING_FUNCTION {
+                                   Args... args) noexcept {
     std::char_traits<CharType>::copy(result, s.data(), s.size());
     if constexpr (sizeof...(args) > 0) {
         join_strings_detail::WriteStringsInplace<CharType>(result + s.size(), args...);
@@ -563,15 +552,14 @@ template <class CharType, class... Args>
 ATTRIBUTE_NONNULL_ALL_ARGS
 ATTRIBUTE_SIZED_ACCESS(write_only, 1, 2)
 ATTRIBUTE_ALWAYS_INLINE
-constexpr void WriteStringToBuffer(CharType* const buffer, size_t /*buffer_size*/, Args... args) noexcept ATTRIBUTE_NONBLOCKING_FUNCTION {
+constexpr void WriteStringToBuffer(CharType* const buffer, size_t /*buffer_size*/, Args... args) noexcept  {
     join_strings_detail::WriteStringsInplace<CharType>(buffer, args...);
 }
 
 // clang-format on
 
 template <class CharType, class... Args>
-[[nodiscard]] inline std::basic_string<CharType> JoinStringsImpl(Args... args)
-    ATTRIBUTE_ALLOCATING_FUNCTION {
+[[nodiscard]] inline std::basic_string<CharType> JoinStringsImpl(Args... args) {
     if constexpr (sizeof...(args) >= 2) {
         const size_t size = CalculateStringArgsSize<CharType>(args...);
         std::basic_string<CharType> result(size, CharType{});
@@ -587,18 +575,18 @@ template <class CharType, class... Args>
 template <class CharType, size_t I, class... Args>
 [[nodiscard]]
 ATTRIBUTE_ALWAYS_INLINE
-inline std::basic_string<CharType> JoinStringsConvArgsToStrViewImpl(std::basic_string_view<CharType> str, const Args&... args) ATTRIBUTE_ALLOCATING_FUNCTION;
+inline std::basic_string<CharType> JoinStringsConvArgsToStrViewImpl(std::basic_string_view<CharType> str, const Args&... args) ;
 
 template <class CharType, size_t I, class T, class... Args>
 [[nodiscard]]
 ATTRIBUTE_ALWAYS_INLINE
-inline std::enable_if_t<!is_string_like_v<T>, std::basic_string<CharType>> JoinStringsConvArgsToStrViewImpl(const T& value, const Args&... args) ATTRIBUTE_ALLOCATING_FUNCTION;
+inline std::enable_if_t<!is_string_like_v<T>, std::basic_string<CharType>> JoinStringsConvArgsToStrViewImpl(const T& value, const Args&... args) ;
 
 // clang-format on
 
 template <class CharType, size_t I, class... Args>
 inline std::basic_string<CharType> JoinStringsConvArgsToStrViewImpl(
-    const std::basic_string_view<CharType> str, const Args &...args) ATTRIBUTE_ALLOCATING_FUNCTION {
+    const std::basic_string_view<CharType> str, const Args &...args) {
     if constexpr (I == 1 + sizeof...(args)) {
         return join_strings_detail::JoinStringsImpl<CharType>(str, args...);
     } else {
@@ -608,8 +596,7 @@ inline std::basic_string<CharType> JoinStringsConvArgsToStrViewImpl(
 
 template <class CharType, size_t I, class T, class... Args>
 inline std::enable_if_t<!is_string_like_v<T>, std::basic_string<CharType>>
-JoinStringsConvArgsToStrViewImpl(const T &value,
-                                 const Args &...args) ATTRIBUTE_ALLOCATING_FUNCTION {
+JoinStringsConvArgsToStrViewImpl(const T &value, const Args &...args) {
     if constexpr (std::is_same_v<T, CharType>) {
         if constexpr (I == 1 + sizeof...(args)) {
             return join_strings_detail::JoinStringsImpl<CharType>(value, args...);
@@ -628,7 +615,7 @@ JoinStringsConvArgsToStrViewImpl(const T &value,
 // clang-format off
 
 template <class HintCharType, class... Args>
-inline auto join_strings(const Args&... args) ATTRIBUTE_ALLOCATING_FUNCTION {
+inline auto join_strings(const Args&... args)  {
     static_assert(sizeof...(args) >= 1, "Empty input is explicitly prohibited");
 
     static_assert(misc::is_char_v<HintCharType>, "Hint type should be char, wchar_t, char8_t, char16_t or char32_t");
@@ -792,8 +779,7 @@ template <misc::Char T, std::ranges::forward_range Container>
 }
 
 template <misc::Char T, std::ranges::forward_range Container>
-[[nodiscard]] std::basic_string<T> JoinStringsCollectionWithEmptySep(const Container &strings)
-    ATTRIBUTE_ALLOCATING_FUNCTION {
+[[nodiscard]] std::basic_string<T> JoinStringsCollectionWithEmptySep(const Container &strings) {
     const size_t total_size = join_strings_detail::StringsTotalSize(strings);
     std::basic_string<T> result(total_size, '\0');
     T *write_ptr = result.data();
@@ -810,7 +796,7 @@ template <misc::Char T, std::ranges::forward_range Container>
 [[nodiscard]] std::basic_string<T> JoinStringsCollectionByChar(
     const T sep,
     const Container &strings
-) ATTRIBUTE_ALLOCATING_FUNCTION {
+)  {
     // clang-format on
     const size_t total_size = join_strings_detail::StringsTotalSizeWithCharSep(strings);
     std::basic_string<T> result(total_size, '\0');
@@ -833,7 +819,7 @@ template <misc::Char T, std::ranges::forward_range Container>
 [[nodiscard]] std::basic_string<T> JoinStringsCollectionBySvAtLeast2(
     const std::basic_string_view<T> sep,
     const Container &strings
-) ATTRIBUTE_ALLOCATING_FUNCTION {
+)  {
     // clang-format on
     const size_t total_size = join_strings_detail::StringsTotalSizeWithAtLeast2SvSep(sep, strings);
     std::basic_string<T> result(total_size, '\0');
@@ -865,8 +851,8 @@ template <misc::Char T, std::ranges::forward_range Container>
 }
 
 template <misc::Char T, std::ranges::forward_range Container>
-[[nodiscard]] std::basic_string<T> JoinStringsCollectionBySv(
-    const std::basic_string_view<T> sep, const Container &strings) ATTRIBUTE_ALLOCATING_FUNCTION {
+[[nodiscard]] std::basic_string<T> JoinStringsCollectionBySv(const std::basic_string_view<T> sep,
+                                                             const Container &strings) {
     switch (sep.size()) {
         case 0: {
             return join_strings_detail::JoinStringsCollectionWithEmptySep<T, Container>(strings);
@@ -884,8 +870,7 @@ template <misc::Char T, std::ranges::forward_range Container>
 }  // namespace join_strings_detail
 
 template <misc::CharOrStringLike Sep, std::ranges::forward_range Container>
-inline auto join_strings_collection(const Sep &sep,
-                                    const Container &strings) ATTRIBUTE_ALLOCATING_FUNCTION {
+inline auto join_strings_collection(const Sep &sep, const Container &strings) {
     using StringType = std::ranges::range_value_t<Container>;
 
     static_assert(misc::is_basic_string_v<StringType> || misc::is_basic_string_view_v<StringType>,
@@ -910,7 +895,7 @@ inline auto join_strings_collection(const Sep &sep,
 }
 
 template <std::ranges::forward_range Container>
-inline auto join_strings_collection(const Container &strings) ATTRIBUTE_ALLOCATING_FUNCTION {
+inline auto join_strings_collection(const Container &strings) {
     using StringType = std::ranges::range_value_t<Container>;
 
     static_assert(misc::is_basic_string_v<StringType> || misc::is_basic_string_view_v<StringType>,

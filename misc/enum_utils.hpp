@@ -50,169 +50,122 @@
     ATTRIBUTE_ALWAYS_INLINE                                                                                  \
     ATTRIBUTE_CONST                                                                                          \
     ATTRIBUTE_NODISCARD                                                                                      \
-    constexpr IntegerType to_integer(const enum_type value)                                                  \
-        CONFIG_NOEXCEPT_FUNCTION                                                                             \
-        ATTRIBUTE_NONBLOCKING_FUNCTION                                                                       \
+    constexpr IntegerType to_integer(const enum_type value) CONFIG_NOEXCEPT_FUNCTION                         \
     {                                                                                                        \
         return static_cast<IntegerType>(static_cast<HELPER_ENUM_UTILS_UNDERLYING_TYPE__(enum_type)>(value)); \
     }
 
-#define GENERATE_ENUM_FLAG_BIT_OPERATIONS(enum_type)                                         \
-    HELPER_ENUM_UTILS_CHECK_ENUM__(enum_type);                                               \
-    ATTRIBUTE_ALWAYS_INLINE                                                                  \
-    ATTRIBUTE_CONST                                                                          \
-    ATTRIBUTE_NODISCARD                                                                      \
-    constexpr enum_type operator~(const enum_type value)                                     \
-        CONFIG_NOEXCEPT_FUNCTION                                                             \
-        ATTRIBUTE_NONBLOCKING_FUNCTION                                                       \
-    {                                                                                        \
-        typedef HELPER_ENUM_UTILS_UNDERLYING_TYPE__(enum_type) enum_int_type__;              \
-        return static_cast<enum_type>(~static_cast<enum_int_type__>(value));                 \
-    }                                                                                        \
-    ATTRIBUTE_ALWAYS_INLINE                                                                  \
-    ATTRIBUTE_CONST                                                                          \
-    ATTRIBUTE_NODISCARD                                                                      \
-    constexpr enum_type operator|(const enum_type lhs, const enum_type rhs)                  \
-        CONFIG_NOEXCEPT_FUNCTION                                                             \
-        ATTRIBUTE_NONBLOCKING_FUNCTION                                                       \
-    {                                                                                        \
-        typedef HELPER_ENUM_UTILS_UNDERLYING_TYPE__(enum_type) enum_int_type__;              \
-        return static_cast<enum_type>(static_cast<enum_int_type__>(lhs) |                    \
-                                      static_cast<enum_int_type__>(rhs));                    \
-    }                                                                                        \
-    ATTRIBUTE_ALWAYS_INLINE                                                                  \
-    ATTRIBUTE_CONST                                                                          \
-    ATTRIBUTE_NODISCARD                                                                      \
-    constexpr enum_type operator&(const enum_type lhs, const enum_type rhs)                  \
-        CONFIG_NOEXCEPT_FUNCTION                                                             \
-        ATTRIBUTE_NONBLOCKING_FUNCTION                                                       \
-    {                                                                                        \
-        typedef HELPER_ENUM_UTILS_UNDERLYING_TYPE__(enum_type) enum_int_type__;              \
-        return static_cast<enum_type>(static_cast<enum_int_type__>(lhs) &                    \
-                                      static_cast<enum_int_type__>(rhs));                    \
-    }                                                                                        \
-    ATTRIBUTE_ALWAYS_INLINE                                                                  \
-    ATTRIBUTE_CONST                                                                          \
-    ATTRIBUTE_NODISCARD                                                                      \
-    constexpr enum_type operator^(const enum_type lhs, const enum_type rhs)                  \
-        CONFIG_NOEXCEPT_FUNCTION                                                             \
-        ATTRIBUTE_NONBLOCKING_FUNCTION                                                       \
-    {                                                                                        \
-        typedef HELPER_ENUM_UTILS_UNDERLYING_TYPE__(enum_type) enum_int_type__;              \
-        return static_cast<enum_type>(static_cast<enum_int_type__>(lhs) ^                    \
-                                      static_cast<enum_int_type__>(rhs));                    \
-    }                                                                                        \
-    ATTRIBUTE_ALWAYS_INLINE                                                                  \
-    ATTRIBUTE_NODISCARD                                                                      \
-    HELPER_ENUM_FLAG_INLINE_BIN_OP_CONSTEXPR__                                               \
-    enum_type& operator|=(enum_type& lhs ATTRIBUTE_LIFETIME_BOUND, const enum_type rhs)      \
-        CONFIG_NOEXCEPT_FUNCTION                                                             \
-        ATTRIBUTE_NONBLOCKING_FUNCTION                                                       \
-    {                                                                                        \
-        return lhs = lhs | rhs;                                                              \
-    }                                                                                        \
-    ATTRIBUTE_ALWAYS_INLINE                                                                  \
-    ATTRIBUTE_NODISCARD                                                                      \
-    HELPER_ENUM_FLAG_INLINE_BIN_OP_CONSTEXPR__                                               \
-    enum_type& operator&=(enum_type& lhs ATTRIBUTE_LIFETIME_BOUND, const enum_type rhs)      \
-        CONFIG_NOEXCEPT_FUNCTION                                                             \
-        ATTRIBUTE_NONBLOCKING_FUNCTION                                                       \
-    {                                                                                        \
-        return lhs = lhs & rhs;                                                              \
-    }                                                                                        \
-    ATTRIBUTE_ALWAYS_INLINE                                                                  \
-    ATTRIBUTE_NODISCARD                                                                      \
-    HELPER_ENUM_FLAG_INLINE_BIN_OP_CONSTEXPR__                                               \
-    enum_type& operator^=(enum_type& lhs ATTRIBUTE_LIFETIME_BOUND, const enum_type rhs)      \
-        CONFIG_NOEXCEPT_FUNCTION                                                             \
-        ATTRIBUTE_NONBLOCKING_FUNCTION                                                       \
-    {                                                                                        \
-        return lhs = lhs ^ rhs;                                                              \
-    }                                                                                        \
-    template <typename IntType>                                                              \
-    ATTRIBUTE_ALWAYS_INLINE                                                                  \
-    ATTRIBUTE_CONST                                                                          \
-    ATTRIBUTE_NODISCARD                                                                      \
-    constexpr enum_type operator<<(const enum_type lhs, const IntType rhs_shift)             \
-        CONFIG_NOEXCEPT_FUNCTION                                                             \
-        ATTRIBUTE_NONBLOCKING_FUNCTION                                                       \
-    {                                                                                        \
-        typedef HELPER_ENUM_UTILS_UNDERLYING_TYPE__(enum_type) enum_int_type__;              \
-        return static_cast<enum_type>(static_cast<enum_int_type__>(lhs) << rhs_shift);       \
-    }                                                                                        \
-    template <typename IntType>                                                              \
-    ATTRIBUTE_ALWAYS_INLINE                                                                  \
-    ATTRIBUTE_CONST                                                                          \
-    ATTRIBUTE_NODISCARD                                                                      \
-    constexpr enum_type operator>>(const enum_type lhs, const IntType rhs_shift)             \
-        CONFIG_NOEXCEPT_FUNCTION                                                             \
-        ATTRIBUTE_NONBLOCKING_FUNCTION                                                       \
-    {                                                                                        \
-        typedef HELPER_ENUM_UTILS_UNDERLYING_TYPE__(enum_type) enum_int_type__;              \
-        return static_cast<enum_type>(static_cast<enum_int_type__>(lhs) >> rhs_shift);       \
-    }                                                                                        \
-    template <typename IntType>                                                              \
-    ATTRIBUTE_ALWAYS_INLINE                                                                  \
-    ATTRIBUTE_NODISCARD                                                                      \
-    HELPER_ENUM_FLAG_INLINE_BIN_OP_CONSTEXPR__                                               \
-    enum_type& operator<<=(enum_type& lhs ATTRIBUTE_LIFETIME_BOUND, const IntType rhs_shift) \
-        CONFIG_NOEXCEPT_FUNCTION                                                             \
-        ATTRIBUTE_NONBLOCKING_FUNCTION                                                       \
-    {                                                                                        \
-        return lhs = lhs << rhs_shift;                                                       \
-    }                                                                                        \
-    template <typename IntType>                                                              \
-    ATTRIBUTE_ALWAYS_INLINE                                                                  \
-    ATTRIBUTE_NODISCARD                                                                      \
-    HELPER_ENUM_FLAG_INLINE_BIN_OP_CONSTEXPR__                                               \
-    enum_type& operator>>=(enum_type& lhs ATTRIBUTE_LIFETIME_BOUND, const IntType rhs_shift) \
-        CONFIG_NOEXCEPT_FUNCTION                                                             \
-        ATTRIBUTE_NONBLOCKING_FUNCTION                                                       \
-    {                                                                                        \
-        return lhs = lhs >> rhs_shift;                                                       \
+#define GENERATE_ENUM_FLAG_BIT_OPERATIONS(enum_type)                                                                    \
+    HELPER_ENUM_UTILS_CHECK_ENUM__(enum_type);                                                                          \
+    ATTRIBUTE_ALWAYS_INLINE                                                                                             \
+    ATTRIBUTE_CONST                                                                                                     \
+    ATTRIBUTE_NODISCARD                                                                                                 \
+    constexpr enum_type operator~(const enum_type value) CONFIG_NOEXCEPT_FUNCTION {                                     \
+        typedef HELPER_ENUM_UTILS_UNDERLYING_TYPE__(enum_type) enum_int_type__;                                         \
+        return static_cast<enum_type>(~static_cast<enum_int_type__>(value));                                            \
+    }                                                                                                                   \
+    ATTRIBUTE_ALWAYS_INLINE                                                                                             \
+    ATTRIBUTE_CONST                                                                                                     \
+    ATTRIBUTE_NODISCARD                                                                                                 \
+    constexpr enum_type operator|(const enum_type lhs, const enum_type rhs) CONFIG_NOEXCEPT_FUNCTION {                  \
+        typedef HELPER_ENUM_UTILS_UNDERLYING_TYPE__(enum_type) enum_int_type__;                                         \
+        return static_cast<enum_type>(static_cast<enum_int_type__>(lhs) |                                               \
+                                      static_cast<enum_int_type__>(rhs));                                               \
+    }                                                                                                                   \
+    ATTRIBUTE_ALWAYS_INLINE                                                                                             \
+    ATTRIBUTE_CONST                                                                                                     \
+    ATTRIBUTE_NODISCARD                                                                                                 \
+    constexpr enum_type operator&(const enum_type lhs, const enum_type rhs) CONFIG_NOEXCEPT_FUNCTION {                  \
+        typedef HELPER_ENUM_UTILS_UNDERLYING_TYPE__(enum_type) enum_int_type__;                                         \
+        return static_cast<enum_type>(static_cast<enum_int_type__>(lhs) &                                               \
+                                      static_cast<enum_int_type__>(rhs));                                               \
+    }                                                                                                                   \
+    ATTRIBUTE_ALWAYS_INLINE                                                                                             \
+    ATTRIBUTE_CONST                                                                                                     \
+    ATTRIBUTE_NODISCARD                                                                                                 \
+    constexpr enum_type operator^(const enum_type lhs, const enum_type rhs) CONFIG_NOEXCEPT_FUNCTION {                  \
+        typedef HELPER_ENUM_UTILS_UNDERLYING_TYPE__(enum_type) enum_int_type__;                                         \
+        return static_cast<enum_type>(static_cast<enum_int_type__>(lhs) ^                                               \
+                                      static_cast<enum_int_type__>(rhs));                                               \
+    }                                                                                                                   \
+    ATTRIBUTE_ALWAYS_INLINE                                                                                             \
+    ATTRIBUTE_NODISCARD                                                                                                 \
+    HELPER_ENUM_FLAG_INLINE_BIN_OP_CONSTEXPR__                                                                          \
+    enum_type& operator|=(enum_type& lhs ATTRIBUTE_LIFETIME_BOUND, const enum_type rhs) CONFIG_NOEXCEPT_FUNCTION {      \
+        return lhs = lhs | rhs;                                                                                         \
+    }                                                                                                                   \
+    ATTRIBUTE_ALWAYS_INLINE                                                                                             \
+    ATTRIBUTE_NODISCARD                                                                                                 \
+    HELPER_ENUM_FLAG_INLINE_BIN_OP_CONSTEXPR__                                                                          \
+    enum_type& operator&=(enum_type& lhs ATTRIBUTE_LIFETIME_BOUND, const enum_type rhs) CONFIG_NOEXCEPT_FUNCTION {      \
+        return lhs = lhs & rhs;                                                                                         \
+    }                                                                                                                   \
+    ATTRIBUTE_ALWAYS_INLINE                                                                                             \
+    ATTRIBUTE_NODISCARD                                                                                                 \
+    HELPER_ENUM_FLAG_INLINE_BIN_OP_CONSTEXPR__                                                                          \
+    enum_type& operator^=(enum_type& lhs ATTRIBUTE_LIFETIME_BOUND, const enum_type rhs) CONFIG_NOEXCEPT_FUNCTION {      \
+        return lhs = lhs ^ rhs;                                                                                         \
+    }                                                                                                                   \
+    template <typename IntType>                                                                                         \
+    ATTRIBUTE_ALWAYS_INLINE                                                                                             \
+    ATTRIBUTE_CONST                                                                                                     \
+    ATTRIBUTE_NODISCARD                                                                                                 \
+    constexpr enum_type operator<<(const enum_type lhs, const IntType rhs_shift) CONFIG_NOEXCEPT_FUNCTION {             \
+        typedef HELPER_ENUM_UTILS_UNDERLYING_TYPE__(enum_type) enum_int_type__;                                         \
+        return static_cast<enum_type>(static_cast<enum_int_type__>(lhs) << rhs_shift);                                  \
+    }                                                                                                                   \
+    template <typename IntType>                                                                                         \
+    ATTRIBUTE_ALWAYS_INLINE                                                                                             \
+    ATTRIBUTE_CONST                                                                                                     \
+    ATTRIBUTE_NODISCARD                                                                                                 \
+    constexpr enum_type operator>>(const enum_type lhs, const IntType rhs_shift) CONFIG_NOEXCEPT_FUNCTION {             \
+        typedef HELPER_ENUM_UTILS_UNDERLYING_TYPE__(enum_type) enum_int_type__;                                         \
+        return static_cast<enum_type>(static_cast<enum_int_type__>(lhs) >> rhs_shift);                                  \
+    }                                                                                                                   \
+    template <typename IntType>                                                                                         \
+    ATTRIBUTE_ALWAYS_INLINE                                                                                             \
+    ATTRIBUTE_NODISCARD                                                                                                 \
+    HELPER_ENUM_FLAG_INLINE_BIN_OP_CONSTEXPR__                                                                          \
+    enum_type& operator<<=(enum_type& lhs ATTRIBUTE_LIFETIME_BOUND, const IntType rhs_shift) CONFIG_NOEXCEPT_FUNCTION { \
+        return lhs = lhs << rhs_shift;                                                                                  \
+    }                                                                                                                   \
+    template <typename IntType>                                                                                         \
+    ATTRIBUTE_ALWAYS_INLINE                                                                                             \
+    ATTRIBUTE_NODISCARD                                                                                                 \
+    HELPER_ENUM_FLAG_INLINE_BIN_OP_CONSTEXPR__                                                                          \
+    enum_type& operator>>=(enum_type& lhs ATTRIBUTE_LIFETIME_BOUND, const IntType rhs_shift) CONFIG_NOEXCEPT_FUNCTION { \
+        return lhs = lhs >> rhs_shift;                                                                                  \
     }
 
-#define GENERATE_ENUM_PLUS_MINUS_OPERATIONS(enum_type)                                  \
-    HELPER_ENUM_UTILS_CHECK_ENUM__(enum_type);                                          \
-    ATTRIBUTE_ALWAYS_INLINE                                                             \
-    ATTRIBUTE_CONST                                                                     \
-    ATTRIBUTE_NODISCARD                                                                 \
-    constexpr enum_type operator+(const enum_type lhs, const enum_type rhs)             \
-        CONFIG_NOEXCEPT_FUNCTION                                                        \
-        ATTRIBUTE_NONBLOCKING_FUNCTION                                                  \
-    {                                                                                   \
-        typedef HELPER_ENUM_UTILS_UNDERLYING_TYPE__(enum_type) enum_int_type__;         \
-        return static_cast<enum_type>(static_cast<enum_int_type__>(lhs) +               \
-                                      static_cast<enum_int_type__>(rhs));               \
-    }                                                                                   \
-    ATTRIBUTE_ALWAYS_INLINE                                                             \
-    ATTRIBUTE_NODISCARD                                                                 \
-    HELPER_ENUM_FLAG_INLINE_BIN_OP_CONSTEXPR__                                          \
-    enum_type& operator+=(enum_type& lhs ATTRIBUTE_LIFETIME_BOUND, const enum_type rhs) \
-        CONFIG_NOEXCEPT_FUNCTION                                                        \
-        ATTRIBUTE_NONBLOCKING_FUNCTION                                                  \
-    {                                                                                   \
-        return lhs = lhs + rhs;                                                         \
-    }                                                                                   \
-    ATTRIBUTE_ALWAYS_INLINE                                                             \
-    ATTRIBUTE_CONST                                                                     \
-    ATTRIBUTE_NODISCARD                                                                 \
-    constexpr enum_type operator-(const enum_type lhs, const enum_type rhs)             \
-        CONFIG_NOEXCEPT_FUNCTION                                                        \
-        ATTRIBUTE_NONBLOCKING_FUNCTION                                                  \
-    {                                                                                   \
-        typedef HELPER_ENUM_UTILS_UNDERLYING_TYPE__(enum_type) enum_int_type__;         \
-        return static_cast<enum_type>(static_cast<enum_int_type__>(lhs) -               \
-                                      static_cast<enum_int_type__>(rhs));               \
-    }                                                                                   \
-    ATTRIBUTE_ALWAYS_INLINE                                                             \
-    ATTRIBUTE_NODISCARD                                                                 \
-    HELPER_ENUM_FLAG_INLINE_BIN_OP_CONSTEXPR__                                          \
-    enum_type& operator-=(enum_type& lhs ATTRIBUTE_LIFETIME_BOUND, const enum_type rhs) \
-        CONFIG_NOEXCEPT_FUNCTION                                                        \
-        ATTRIBUTE_NONBLOCKING_FUNCTION                                                  \
-    {                                                                                   \
-        return lhs = lhs - rhs;                                                         \
+#define GENERATE_ENUM_PLUS_MINUS_OPERATIONS(enum_type)                                                             \
+    HELPER_ENUM_UTILS_CHECK_ENUM__(enum_type);                                                                     \
+    ATTRIBUTE_ALWAYS_INLINE                                                                                        \
+    ATTRIBUTE_CONST                                                                                                \
+    ATTRIBUTE_NODISCARD                                                                                            \
+    constexpr enum_type operator+(const enum_type lhs, const enum_type rhs) CONFIG_NOEXCEPT_FUNCTION {             \
+        typedef HELPER_ENUM_UTILS_UNDERLYING_TYPE__(enum_type) enum_int_type__;                                    \
+        return static_cast<enum_type>(static_cast<enum_int_type__>(lhs) +                                          \
+                                      static_cast<enum_int_type__>(rhs));                                          \
+    }                                                                                                              \
+    ATTRIBUTE_ALWAYS_INLINE                                                                                        \
+    ATTRIBUTE_CONST                                                                                                \
+    ATTRIBUTE_NODISCARD                                                                                            \
+    constexpr enum_type operator-(const enum_type lhs, const enum_type rhs) CONFIG_NOEXCEPT_FUNCTION {             \
+        typedef HELPER_ENUM_UTILS_UNDERLYING_TYPE__(enum_type) enum_int_type__;                                    \
+        return static_cast<enum_type>(static_cast<enum_int_type__>(lhs) -                                          \
+                                      static_cast<enum_int_type__>(rhs));                                          \
+    }                                                                                                              \
+    ATTRIBUTE_ALWAYS_INLINE                                                                                        \
+    ATTRIBUTE_NODISCARD                                                                                            \
+    HELPER_ENUM_FLAG_INLINE_BIN_OP_CONSTEXPR__                                                                     \
+    enum_type& operator+=(enum_type& lhs ATTRIBUTE_LIFETIME_BOUND, const enum_type rhs) CONFIG_NOEXCEPT_FUNCTION { \
+        return lhs = lhs + rhs;                                                                                    \
+    }                                                                                                              \
+    ATTRIBUTE_ALWAYS_INLINE                                                                                        \
+    ATTRIBUTE_NODISCARD                                                                                            \
+    HELPER_ENUM_FLAG_INLINE_BIN_OP_CONSTEXPR__                                                                     \
+    enum_type& operator-=(enum_type& lhs ATTRIBUTE_LIFETIME_BOUND, const enum_type rhs) CONFIG_NOEXCEPT_FUNCTION { \
+        return lhs = lhs - rhs;                                                                                    \
     }
 
 // clang-format on
@@ -232,7 +185,7 @@ template <class EnumType, EnumType EnumerationValue, EnumType... EnumerationValu
 [[nodiscard]]
 ATTRIBUTE_CONST
 ATTRIBUTE_ALWAYS_INLINE
-constexpr std::string_view enum_value_to_string_view_impl(const EnumType value) noexcept ATTRIBUTE_NONBLOCKING_FUNCTION {
+constexpr std::string_view enum_value_to_string_view_impl(const EnumType value) noexcept  {
     // clang-format on
     if (value == EnumerationValue) {
         return misc::get_enum_value_name<EnumerationValue>();
@@ -246,8 +199,7 @@ constexpr std::string_view enum_value_to_string_view_impl(const EnumType value) 
 
 template <class EnumType, EnumType... EnumerationValues>
 ATTRIBUTE_CONST [[nodiscard]]
-constexpr std::string_view enum_value_to_string_view(const EnumType value) noexcept
-    ATTRIBUTE_NONBLOCKING_FUNCTION {
+constexpr std::string_view enum_value_to_string_view(const EnumType value) noexcept {
     static_assert(sizeof...(EnumerationValues) > 0, "At least one enum enumeration is expected");
     return enum_utils_detail::enum_value_to_string_view_impl<EnumType, EnumerationValues...>(value);
 }
@@ -273,8 +225,7 @@ template <class EnumType, EnumType... EnumerationValues>
 
 template <class EnumType, EnumType EnumerationValue, EnumType... EnumerationValues>
 ATTRIBUTE_CONST ATTRIBUTE_ALWAYS_INLINE [[nodiscard]]
-constexpr std::optional<EnumType> try_from_string_impl(const std::string_view s) noexcept
-    ATTRIBUTE_NONBLOCKING_FUNCTION {
+constexpr std::optional<EnumType> try_from_string_impl(const std::string_view s) noexcept {
     if (s == misc::get_enum_value_name<EnumerationValue>()) {
         return EnumerationValue;
     } else if constexpr (sizeof...(EnumerationValues) > 0) {
@@ -286,8 +237,7 @@ constexpr std::optional<EnumType> try_from_string_impl(const std::string_view s)
 
 template <class EnumType, EnumType... EnumerationValues>
 ATTRIBUTE_CONST [[nodiscard]]
-constexpr std::optional<EnumType> try_from_string(const std::string_view s) noexcept
-    ATTRIBUTE_NONBLOCKING_FUNCTION {
+constexpr std::optional<EnumType> try_from_string(const std::string_view s) noexcept {
     static_assert(sizeof...(EnumerationValues) > 0, "At least one enum enumeration is expected");
     return enum_utils_detail::try_from_string_impl<EnumType, EnumerationValues...>(s);
 }
@@ -296,46 +246,41 @@ constexpr std::optional<EnumType> try_from_string(const std::string_view s) noex
 
 // clang-format off
 
-#define GENERATE_ENUM_TO_STRING_FOR_ENUM_MEMBERS(enum_type, ...)                                                       \
-    HELPER_ENUM_UTILS_CHECK_ENUM__(enum_type);                                                                         \
-    static_assert(                                                                                                     \
-        enum_utils_detail::all_unique<enum_type, __VA_ARGS__>(),                                                       \
-        "enum members passed to the GENERATE_ENUM_TO_STRING_FOR_ENUM_MEMBERS should be unique");                       \
-                                                                                                                       \
-    ATTRIBUTE_CONST [[nodiscard]]                                                                                      \
-    constexpr std::string_view to_string_view(const enum_type value) noexcept ATTRIBUTE_NONBLOCKING_FUNCTION           \
-    {                                                                                                                  \
-        return enum_utils_detail::enum_value_to_string_view<enum_type, __VA_ARGS__>(value);                            \
-    }                                                                                                                  \
-                                                                                                                       \
-    [[nodiscard]] inline std::string to_string(const enum_type value) {                                                \
-        return std::string{to_string_view(value)};                                                                     \
-    }                                                                                                                  \
-                                                                                                                       \
-    template <class EnumType>                                                                                          \
-    ATTRIBUTE_CONST [[nodiscard]]                                                                                      \
-    constexpr std::optional<EnumType> try_from_string(const std::string_view) noexcept ATTRIBUTE_NONBLOCKING_FUNCTION; \
-                                                                                                                       \
-                                                                                                                       \
-    template <>                                                                                                        \
-    ATTRIBUTE_CONST [[nodiscard]]                                                                                      \
-    constexpr std::optional<enum_type> try_from_string<enum_type>(const std::string_view s)                            \
-        noexcept ATTRIBUTE_NONBLOCKING_FUNCTION                                                                        \
-    {                                                                                                                  \
-        return enum_utils_detail::try_from_string<enum_type, __VA_ARGS__>(s);                                          \
-    }                                                                                                                  \
-                                                                                                                       \
-    [[nodiscard]]                                                                                                      \
-    constexpr bool try_from_string(const std::string_view s, enum_type& value)                                         \
-        noexcept ATTRIBUTE_NONBLOCKING_FUNCTION                                                                        \
-    {                                                                                                                  \
-        const std::optional<enum_type> opt_value = try_from_string<enum_type>(s);                                      \
-        if (likely(opt_value.has_value())) {                                                                           \
-            value = *opt_value;                                                                                        \
-            return true;                                                                                               \
-        }                                                                                                              \
-                                                                                                                       \
-        return false;                                                                                                  \
+#define GENERATE_ENUM_TO_STRING_FOR_ENUM_MEMBERS(enum_type, ...)                                       \
+    HELPER_ENUM_UTILS_CHECK_ENUM__(enum_type);                                                         \
+    static_assert(                                                                                     \
+        enum_utils_detail::all_unique<enum_type, __VA_ARGS__>(),                                       \
+        "enum members passed to the GENERATE_ENUM_TO_STRING_FOR_ENUM_MEMBERS should be unique");       \
+                                                                                                       \
+    ATTRIBUTE_CONST [[nodiscard]]                                                                      \
+    constexpr std::string_view to_string_view(const enum_type value) noexcept {                        \
+        return enum_utils_detail::enum_value_to_string_view<enum_type, __VA_ARGS__>(value);            \
+    }                                                                                                  \
+                                                                                                       \
+    [[nodiscard]] inline std::string to_string(const enum_type value) {                                \
+        return std::string{to_string_view(value)};                                                     \
+    }                                                                                                  \
+                                                                                                       \
+    template <class EnumType>                                                                          \
+    ATTRIBUTE_CONST [[nodiscard]]                                                                      \
+    constexpr std::optional<EnumType> try_from_string(const std::string_view) noexcept;                \
+                                                                                                       \
+                                                                                                       \
+    template <>                                                                                        \
+    ATTRIBUTE_CONST [[nodiscard]]                                                                      \
+    constexpr std::optional<enum_type> try_from_string<enum_type>(const std::string_view s) noexcept { \
+        return enum_utils_detail::try_from_string<enum_type, __VA_ARGS__>(s);                          \
+    }                                                                                                  \
+                                                                                                       \
+    [[nodiscard]]                                                                                      \
+    constexpr bool try_from_string(const std::string_view s, enum_type& value) noexcept {              \
+        const std::optional<enum_type> opt_value = try_from_string<enum_type>(s);                      \
+        if (likely(opt_value.has_value())) {                                                           \
+            value = *opt_value;                                                                        \
+            return true;                                                                               \
+        }                                                                                              \
+                                                                                                       \
+        return false;                                                                                  \
     }
 
 // clang-format on

@@ -17,8 +17,7 @@ namespace detail {
 
 ATTRIBUTE_ACCESS(read_write, 1)
 ATTRIBUTE_ACCESS(read_only, 2)
-constexpr void matrix_mul(uint64_t (&m1)[2][2],
-                          const uint64_t (&m2)[2][2]) noexcept ATTRIBUTE_NONBLOCKING_FUNCTION {
+constexpr void matrix_mul(uint64_t (&m1)[2][2], const uint64_t (&m2)[2][2]) noexcept {
     const uint64_t tmp[2][2] = {
         {m1[0][0] * m2[0][0] + m1[0][1] * m2[1][0], m1[0][0] * m2[0][1] + m1[0][1] * m2[1][1]},
         {m1[1][0] * m2[0][0] + m1[1][1] * m2[1][0], m1[1][0] * m2[0][1] + m1[1][1] * m2[1][1]},
@@ -44,8 +43,7 @@ struct fibs_pair {
 /// @param n
 /// @return (F_{n - 1}, F_n)
 [[nodiscard]]
-ATTRIBUTE_CONST constexpr fibs_pair fibonacci_nums(uint32_t n) noexcept
-    ATTRIBUTE_NONBLOCKING_FUNCTION {
+ATTRIBUTE_CONST constexpr fibs_pair fibonacci_nums(uint32_t n) noexcept {
     uint64_t p[2][2] = {
         {0, 1},
         {1, 1},
@@ -76,8 +74,7 @@ ATTRIBUTE_CONST constexpr fibs_pair fibonacci_nums(uint32_t n) noexcept
 /// @param n
 /// @return F_n
 [[nodiscard]]
-ATTRIBUTE_CONST constexpr uint64_t nth_fibonacci_num(const uint32_t n) noexcept
-    ATTRIBUTE_NONBLOCKING_FUNCTION {
+ATTRIBUTE_CONST constexpr uint64_t nth_fibonacci_num(const uint32_t n) noexcept {
     return fibonacci_nums(n).fib_n;
 }
 
@@ -102,8 +99,7 @@ namespace detail {
 
 ATTRIBUTE_ACCESS(read_write, 1)
 ATTRIBUTE_ACCESS(read_only, 2)
-I128_CONSTEXPR void matrix_mul(uint128_t (&m1)[2][2], const uint128_t (&m2)[2][2]) noexcept
-    ATTRIBUTE_NONBLOCKING_FUNCTION_IF(INT128_IS_BUILTIN_TYPE) {
+I128_CONSTEXPR void matrix_mul(uint128_t (&m1)[2][2], const uint128_t (&m2)[2][2]) noexcept {
     const uint128_t tmp[2][2] = {
         {m1[0][0] * m2[0][0] + m1[0][1] * m2[1][0], m1[0][0] * m2[0][1] + m1[0][1] * m2[1][1]},
         {m1[1][0] * m2[0][0] + m1[1][1] * m2[1][0], m1[1][0] * m2[0][1] + m1[1][1] * m2[1][1]},
@@ -130,8 +126,7 @@ struct fibs_pair_u128 {
 /// @return (F_{n - 1}, F_n)
 ATTRIBUTE_CONST
 [[nodiscard]]
-I128_CONSTEXPR fibs_pair_u128 fibonacci_nums_u128(uint32_t n) noexcept
-    ATTRIBUTE_NONBLOCKING_FUNCTION_IF(INT128_IS_BUILTIN_TYPE) {
+I128_CONSTEXPR fibs_pair_u128 fibonacci_nums_u128(uint32_t n) noexcept {
     uint128_t p[2][2] = {
         {0, 1},
         {1, 1},
@@ -163,8 +158,7 @@ I128_CONSTEXPR fibs_pair_u128 fibonacci_nums_u128(uint32_t n) noexcept
 /// @return F_n
 ATTRIBUTE_CONST
 [[nodiscard]]
-I128_CONSTEXPR uint128_t nth_fibonacci_num_u128(const uint32_t n) noexcept
-    ATTRIBUTE_NONBLOCKING_FUNCTION_IF(INT128_IS_BUILTIN_TYPE) {
+I128_CONSTEXPR uint128_t nth_fibonacci_num_u128(const uint32_t n) noexcept {
     return fibonacci_nums_u128(n).fib_n;
 }
 
