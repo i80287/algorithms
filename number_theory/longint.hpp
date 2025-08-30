@@ -2410,11 +2410,14 @@ private:
         }
     };
 
-    static void check_dec_str(const std::string_view str) {
+    static void check_dec_str(std::string_view str) {
         constexpr auto is_digit = [](const std::uint32_t chr) constexpr noexcept {
             return chr - '0' <= '9' - '0';
         };
-        if (unlikely(!std::all_of(str.cbegin(), str.cend(), is_digit))) {
+        if (!str.empty() && str.front() == '-') {
+            str.remove_prefix(1);
+        }
+        if (unlikely(str.empty() || !std::all_of(str.cbegin(), str.cend(), is_digit))) {
             throw_on_invalid_dec_str(LONGINT_FILE_LOCATION(), str);
         }
     }
