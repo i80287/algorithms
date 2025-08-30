@@ -884,7 +884,7 @@ namespace detail {
 
 ATTRIBUTE_CONST
 [[nodiscard]]
-inline uint32_t log2_floor_software(uint64_t n) {
+inline uint32_t log2_floor_software(uint64_t n) noexcept {
     static const std::array<uint64_t, 6> t = {
         0xFFFFFFFF00000000ULL, 0x00000000FFFF0000ULL, 0x000000000000FF00ULL,
         0x00000000000000F0ULL, 0x000000000000000CULL, 0x0000000000000002ULL,
@@ -905,7 +905,7 @@ inline uint32_t log2_floor_software(uint64_t n) {
 
 ATTRIBUTE_CONST
 [[nodiscard]]
-inline uint32_t log2_ceil_software(uint64_t n) {
+inline uint32_t log2_ceil_software(uint64_t n) noexcept {
     return math_functions::detail::log2_floor_software(n) + ((n & (n - 1)) != 0);
 }
 
@@ -916,7 +916,7 @@ inline uint32_t log2_ceil_software(uint64_t n) {
  */
 ATTRIBUTE_CONST
 [[nodiscard]]
-inline uint32_t de_bruijn_log2(uint32_t value) {
+inline uint32_t de_bruijn_log2(uint32_t value) noexcept {
     // See
     // https://graphics.stanford.edu/~seander/bithacks.html#RoundUpPowerOf2
 
