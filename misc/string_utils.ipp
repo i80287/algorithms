@@ -242,17 +242,16 @@ inline auto trim(const StrType &str,
         const std::basic_string_view<CharType> str_sv{str};
 
         if constexpr (std::is_same_v<TrimStrType, whitespace_tag>) {
-            return detail::trim_if(str_sv, [](const CharType c) constexpr noexcept {
-                return misc::is_whitespace<CharType>(c);
-            });
+            return detail::trim_if(
+                str_sv, [](const CharType c) noexcept { return misc::is_whitespace<CharType>(c); });
         } else if constexpr (std::is_same_v<TrimStrType, alpha_tag>) {
-            return detail::trim_if(str_sv, misc::is_alpha<CharType>);
+            return detail::trim_if(str_sv, &misc::is_alpha<CharType>);
         } else if constexpr (std::is_same_v<TrimStrType, digit_tag>) {
-            return detail::trim_if(str_sv, misc::is_digit<CharType>);
+            return detail::trim_if(str_sv, &misc::is_digit<CharType>);
         } else if constexpr (std::is_same_v<TrimStrType, alpha_digit_tag>) {
-            return detail::trim_if(str_sv, misc::is_alpha_digit<CharType>);
+            return detail::trim_if(str_sv, &misc::is_alpha_digit<CharType>);
         } else if constexpr (std::is_same_v<TrimStrType, hex_digit_tag>) {
-            return detail::trim_if(str_sv, misc::is_hex_digit<CharType>);
+            return detail::trim_if(str_sv, &misc::is_hex_digit<CharType>);
         } else {
             static_assert([]() constexpr { return false; }, "implementation error");
             return str;

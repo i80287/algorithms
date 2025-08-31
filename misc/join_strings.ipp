@@ -361,7 +361,7 @@ ATTRIBUTE_ALWAYS_INLINE inline std::basic_string<CharType> ToStringScalarArg(con
 template <class CharType>
 [[nodiscard]]
 ATTRIBUTE_ALWAYS_INLINE
-inline std::basic_string<CharType> FilesystemPathToString(const std::filesystem::path &path)  {
+inline std::basic_string<CharType> FilesystemPathToString(const std::filesystem::path &path) {
     // clang-format on
 
     static_assert(is_char_v<CharType>, "implementation error");
@@ -552,7 +552,7 @@ template <class CharType, class... Args>
 ATTRIBUTE_NONNULL_ALL_ARGS
 ATTRIBUTE_SIZED_ACCESS(write_only, 1, 2)
 ATTRIBUTE_ALWAYS_INLINE
-constexpr void WriteStringToBuffer(CharType* const buffer, size_t /*buffer_size*/, Args... args) noexcept  {
+constexpr void WriteStringToBuffer(CharType* const buffer, size_t /*buffer_size*/, Args... args) noexcept {
     join_strings_detail::WriteStringsInplace<CharType>(buffer, args...);
 }
 
@@ -615,7 +615,7 @@ JoinStringsConvArgsToStrViewImpl(const T &value, const Args &...args) {
 // clang-format off
 
 template <class HintCharType, class... Args>
-inline auto join_strings(const Args&... args)  {
+inline auto join_strings(const Args&... args) {
     static_assert(sizeof...(args) >= 1, "Empty input is explicitly prohibited");
 
     static_assert(misc::is_char_v<HintCharType>, "Hint type should be char, wchar_t, char8_t, char16_t or char32_t");
@@ -791,13 +791,9 @@ template <misc::Char T, std::ranges::forward_range Container>
     return result;
 }
 
-// clang-format off
 template <misc::Char T, std::ranges::forward_range Container>
-[[nodiscard]] std::basic_string<T> JoinStringsCollectionByChar(
-    const T sep,
-    const Container &strings
-)  {
-    // clang-format on
+[[nodiscard]] std::basic_string<T> JoinStringsCollectionByChar(const T sep,
+                                                               const Container &strings) {
     const size_t total_size = join_strings_detail::StringsTotalSizeWithCharSep(strings);
     std::basic_string<T> result(total_size, '\0');
     T *write_ptr = result.data();
@@ -819,7 +815,7 @@ template <misc::Char T, std::ranges::forward_range Container>
 [[nodiscard]] std::basic_string<T> JoinStringsCollectionBySvAtLeast2(
     const std::basic_string_view<T> sep,
     const Container &strings
-)  {
+) {
     // clang-format on
     const size_t total_size = join_strings_detail::StringsTotalSizeWithAtLeast2SvSep(sep, strings);
     std::basic_string<T> result(total_size, '\0');

@@ -2,8 +2,6 @@
 
 #include <string_view>
 
-#include "config_macros.hpp"
-
 namespace misc {
 
 template <class T>

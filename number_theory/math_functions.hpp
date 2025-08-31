@@ -2428,7 +2428,7 @@ template <class T1, class T2>
 ATTRIBUTE_CONST
 ATTRIBUTE_ALWAYS_INLINE
 [[nodiscard]]
-constexpr uint32_t solve_congruence_modulo_m(const T1 a, const T2 c, const uint32_t m) noexcept  {
+constexpr uint32_t solve_congruence_modulo_m(const T1 a, const T2 c, const uint32_t m) noexcept {
     // clang-format on
     THROW_IF(m == 0);
     return math_functions::detail::solve_congruence_modulo_m_impl(

@@ -1,10 +1,7 @@
 #include <array>
 #include <cassert>
-#include <cmath>
 #include <cstdint>
-#include <cstring>
 #include <initializer_list>
-#include <iostream>
 #include <type_traits>
 #include <valarray>
 #include <vector>
@@ -13,11 +10,8 @@
 #include <bit>
 #endif
 
-using std::int32_t;
-using std::int64_t;
 using std::size_t;
 using std::uint32_t;
-using std::uint64_t;
 
 enum class UpdateOperation {
     add,
@@ -35,7 +29,7 @@ enum class GetOperation {
 namespace segtrees {
 
 template <typename T>
-constexpr T bin_pow(T n, uint32_t p) noexcept {
+[[nodiscard]] constexpr T bin_pow(T n, uint32_t p) noexcept {
     T res = 1;
     while (true) {
         if (p % 2 != 0) {
@@ -49,18 +43,14 @@ constexpr T bin_pow(T n, uint32_t p) noexcept {
     }
 }
 
+[[nodiscard]] constexpr size_t tree_size(const uint32_t n) noexcept {
 #if __cplusplus >= 202002L
-constexpr
-#endif
-    inline std::size_t
-    tree_size(uint32_t n) noexcept {
-#if __cplusplus >= 202002L
-    const uint32_t lz_count = uint32_t(std::countl_zero(n | 1));
+    const uint32_t lz_count = static_cast<uint32_t>(std::countl_zero(n | 1));
 #else
-    const uint32_t lz_count = uint32_t(__builtin_clz(n | 1));
+    const uint32_t lz_count = static_cast<uint32_t>(__builtin_clz(n | 1));
 #endif
-    const uint32_t is_two_pow = uint32_t((n & (n - 1)) == 0);
-    return std::size_t(1ull) << (32 - lz_count - is_two_pow + 1);
+    const uint32_t is_two_pow = static_cast<uint32_t>((n & (n - 1)) == 0);
+    return size_t{1ull} << (32 - lz_count - is_two_pow + 1);
 }
 
 template <typename value_t, GetOperation get_op>
@@ -69,31 +59,35 @@ class [[nodiscard]] MinMaxSegTreeAdd {
 
 public:
     explicit MinMaxSegTreeAdd(const std::vector<value_t>& data)
-        : MinMaxSegTreeAdd(data.data(), uint32_t(data.size())) {}
-    template <std::size_t N>
-    explicit MinMaxSegTreeAdd(const std::array<value_t, N>& data)
-        : MinMaxSegTreeAdd(data.data(), uint32_t(data.size())) {}
-    template <std::size_t N>
-    explicit MinMaxSegTreeAdd(const value_t (&data)[N])
-        : MinMaxSegTreeAdd(std::data(data), uint32_t(std::size(data))) {}
-    explicit MinMaxSegTreeAdd(std::initializer_list<value_t> data)
-        : MinMaxSegTreeAdd(std::data(data), uint32_t(std::size(data))) {}
+        : MinMaxSegTreeAdd(data.data(), static_cast<uint32_t>(data.size())) {}
 
-    MinMaxSegTreeAdd(const value_t* data, uint32_t n) : nodes_(tree_size(n)), n_{n} {
+    template <size_t N>
+    explicit MinMaxSegTreeAdd(const std::array<value_t, N>& data)
+        : MinMaxSegTreeAdd(data.data(), static_cast<uint32_t>(data.size())) {}
+
+    template <size_t N>
+    explicit MinMaxSegTreeAdd(const value_t (&data)[N])
+        : MinMaxSegTreeAdd(std::data(data), static_cast<uint32_t>(std::size(data))) {}
+
+    explicit MinMaxSegTreeAdd(const std::initializer_list<value_t> data)
+        : MinMaxSegTreeAdd(std::data(data), static_cast<uint32_t>(std::size(data))) {}
+
+    explicit MinMaxSegTreeAdd(const value_t* const data, const uint32_t n)
+        : nodes_(tree_size(n)), n_(n) {
         assert(data != nullptr);
         assert(n > 0);
         this->BuildRecImpl(data, 0, 0, n - 1);
     }
 
-    void update(uint32_t l, uint32_t r, value_t upd_value) noexcept {
+    void update(const uint32_t l, const uint32_t r, const value_t upd_value) noexcept {
         assert(l <= r && r < n_);
         query_l_ = l;
         query_r_ = r;
-        value_   = upd_value;
+        value_ = upd_value;
         this->UpdateRecImpl(0, 0, n_ - 1);
     }
 
-    [[nodiscard]] value_t get(uint32_t l, uint32_t r) noexcept {
+    [[nodiscard]] value_t get(const uint32_t l, const uint32_t r) noexcept {
         assert(l <= r && r < n_);
         return this->GetRecImpl(0, 0, n_ - 1, l, r);
     }
@@ -106,15 +100,17 @@ private:
         value_t promise = kNoPromise;
     };
 
-    void BuildRecImpl(const value_t* data, size_t node_index, uint32_t node_l,
-                      uint32_t node_r) noexcept {
+    void BuildRecImpl(const value_t* const data,
+                      const size_t node_index,
+                      const uint32_t node_l,
+                      const uint32_t node_r) noexcept {
         assert(node_index < nodes_.size() && node_l <= node_r && node_r < n_);
         if (node_l == node_r) {
             nodes_[node_index].value = data[node_l];
             return;
         }
 
-        uint32_t node_m        = (node_l + node_r) / 2;
+        uint32_t node_m = (node_l + node_r) / 2;
         size_t left_node_index = node_index * 2 | 1;
         this->BuildRecImpl(data, left_node_index, node_l, node_m);
         size_t right_node_index = left_node_index + 1;
@@ -129,7 +125,7 @@ private:
         }
     }
 
-    void UpdateRecImpl(size_t node_index, size_t node_l, size_t node_r) noexcept {
+    void UpdateRecImpl(const size_t node_index, const size_t node_l, const size_t node_r) noexcept {
         assert(node_index < nodes_.size() && node_l <= node_r && node_r < n_);
         if (query_l_ <= node_l && node_r <= query_r_) {
             nodes_[node_index].promise += value_;
@@ -142,12 +138,12 @@ private:
 
         size_t node_m = (node_l + node_r) / 2;
         this->PushImpl(node_index);
-        size_t left_node_index  = node_index * 2 | 1;
+        size_t left_node_index = node_index * 2 | 1;
         size_t right_node_index = left_node_index + 1;
         assert(right_node_index < nodes_.size());
         this->UpdateRecImpl(left_node_index, node_l, node_m);
         this->UpdateRecImpl(right_node_index, node_m + 1, node_r);
-        const Node& left_node  = nodes_[left_node_index];
+        const Node& left_node = nodes_[left_node_index];
         const Node& right_node = nodes_[right_node_index];
         if constexpr (get_op == GetOperation::max) {
             nodes_[node_index].value = std::max(left_node.value + left_node.promise,
@@ -158,14 +154,14 @@ private:
         }
     }
 
-    void PushImpl(size_t node_index) noexcept {
+    void PushImpl(const size_t node_index) noexcept {
         assert(node_index < nodes_.size());
-        size_t left_node_index  = node_index * 2 | 1;
+        size_t left_node_index = node_index * 2 | 1;
         size_t right_node_index = left_node_index + 1;
         assert(right_node_index < nodes_.size());
         value_t this_promise = nodes_[node_index].promise;
         if (this_promise == 0) {
-            // Not very rare case btw
+            // Not a very rare case btw
             return;
         }
         nodes_[node_index].value += this_promise;
@@ -174,8 +170,11 @@ private:
         nodes_[node_index].promise = 0;
     }
 
-    value_t GetRecImpl(size_t node_index, uint32_t node_l, uint32_t node_r, uint32_t query_l,
-                       uint32_t query_r) noexcept {
+    [[nodiscard]] value_t GetRecImpl(const size_t node_index,
+                                     const uint32_t node_l,
+                                     const uint32_t node_r,
+                                     const uint32_t query_l,
+                                     const uint32_t query_r) noexcept {
         assert(node_index < nodes_.size());
         if (query_l == node_l && node_r == query_r) {
             const Node& node = nodes_[node_index];
@@ -184,7 +183,7 @@ private:
 
         uint32_t node_middle = (node_l + node_r) / 2;
         this->PushImpl(node_index);
-        size_t left_son  = node_index * 2 | 1;
+        size_t left_son = node_index * 2 | 1;
         size_t right_son = left_son + 1;
         if (query_r <= node_middle) {
             return this->GetRecImpl(left_son, node_l, node_middle, query_l, query_r);
@@ -218,41 +217,42 @@ class [[nodiscard]] MinMaxSegTreeMult {
 
 public:
     explicit MinMaxSegTreeMult(const std::vector<value_t>& data)
-        : MinMaxSegTreeMult(data.data(), uint32_t(data.size())) {}
-    template <std::size_t N>
-    explicit MinMaxSegTreeMult(const std::array<value_t, N>& data)
-        : MinMaxSegTreeMult(data.data(), uint32_t(data.size())) {}
-    template <std::size_t N>
-    explicit MinMaxSegTreeMult(const value_t (&data)[N])
-        : MinMaxSegTreeMult(std::data(data), uint32_t(std::size(data))) {}
-    explicit MinMaxSegTreeMult(std::initializer_list<value_t> data)
-        : MinMaxSegTreeMult(std::data(data), uint32_t(std::size(data))) {}
+        : MinMaxSegTreeMult(data.data(), static_cast<uint32_t>(data.size())) {}
 
-    MinMaxSegTreeMult(const value_t* data, uint32_t n) : nodes_(tree_size(n)), n_{n} {
+    template <size_t N>
+    explicit MinMaxSegTreeMult(const std::array<value_t, N>& data)
+        : MinMaxSegTreeMult(data.data(), static_cast<uint32_t>(data.size())) {}
+
+    template <size_t N>
+    explicit MinMaxSegTreeMult(const value_t (&data)[N])
+        : MinMaxSegTreeMult(std::data(data), static_cast<uint32_t>(std::size(data))) {}
+
+    explicit MinMaxSegTreeMult(const std::initializer_list<value_t> data)
+        : MinMaxSegTreeMult(std::data(data), static_cast<uint32_t>(std::size(data))) {}
+
+    explicit MinMaxSegTreeMult(const value_t* const data, const uint32_t n)
+        : nodes_(tree_size(n)), n_(n) {
+        static_assert(!std::is_integral_v<value_t>,
+                      "Warning: min / max segment tree with "
+                      "multiplication on update should not be used with "
+                      "integral type because of the type overflow\n"
+                      "If you are sure of what you are doing, "
+                      "remove this assert ");
+
         assert(data != nullptr);
         assert(n > 0);
         this->BuildRecImpl(data, 0, 0, n - 1);
-        if constexpr (std::is_integral_v<value_t>) {
-            std::cerr << "[>>>] Warning: min / max segment tree with "
-                         "multiplication on update should not be used with "
-                         "integral type because of the type overflow\n"
-                         "[>>>] If you are sure of what you are doing, "
-                         "remove this message in file "
-                      << __FILE__ << " on line " << __LINE__ << "\n[>>>] " << __FILE__ << ':'
-                      << __LINE__ << "\n\n";
-            std::cerr.flush();
-        }
     }
 
-    void update(uint32_t l, uint32_t r, value_t upd_value) noexcept {
+    void update(const uint32_t l, const uint32_t r, const value_t upd_value) noexcept {
         assert(l <= r && r < n_);
         query_l_ = l;
         query_r_ = r;
-        value_   = upd_value;
+        value_ = upd_value;
         this->UpdateRecImpl(0, 0, n_ - 1);
     }
 
-    [[nodiscard]] value_t get(uint32_t l, uint32_t r) noexcept {
+    [[nodiscard]] value_t get(const uint32_t l, const uint32_t r) noexcept {
         assert(l <= r && r < n_);
         return this->GetRecImpl(0, 0, n_ - 1, l, r);
     }
@@ -266,27 +266,31 @@ private:
         value_t promise = kNoPromise;
     };
 
-    void BuildRecImpl(const value_t* data, size_t node_index, uint32_t node_l,
-                      uint32_t node_r) noexcept {
+    void BuildRecImpl(const value_t* const data,
+                      const size_t node_index,
+                      const uint32_t node_l,
+                      const uint32_t node_r) noexcept {
         assert(node_index < nodes_.size() && node_l <= node_r && node_r < n_);
         if (node_l == node_r) {
             nodes_[node_index].max_value = nodes_[node_index].min_value = data[node_l];
             return;
         }
 
-        uint32_t node_m        = (node_l + node_r) / 2;
+        uint32_t node_m = (node_l + node_r) / 2;
         size_t left_node_index = node_index * 2 | 1;
         this->BuildRecImpl(data, left_node_index, node_l, node_m);
         size_t right_node_index = left_node_index + 1;
         this->BuildRecImpl(data, right_node_index, node_m + 1, node_r);
         assert(right_node_index < nodes_.size());
-        const Node& left_node        = nodes_[left_node_index];
-        const Node& right_node       = nodes_[right_node_index];
+        const Node& left_node = nodes_[left_node_index];
+        const Node& right_node = nodes_[right_node_index];
         nodes_[node_index].min_value = std::min(left_node.min_value, right_node.min_value);
         nodes_[node_index].max_value = std::max(left_node.max_value, right_node.max_value);
     }
 
-    void UpdateRecImpl(size_t node_index, uint32_t node_l, uint32_t node_r) noexcept {
+    void UpdateRecImpl(const size_t node_index,
+                       const uint32_t node_l,
+                       const uint32_t node_r) noexcept {
         assert(node_index < nodes_.size());
         if (query_l_ <= node_l && node_r <= query_r_) {
             nodes_[node_index].promise *= value_;
@@ -303,9 +307,9 @@ private:
         this->UpdateRecImpl(left_node_index, node_l, node_m);
         size_t right_node_index = left_node_index + 1;
         this->UpdateRecImpl(right_node_index, node_m + 1, node_r);
-        const Node& left_node      = nodes_[left_node_index];
-        const Node& right_node     = nodes_[right_node_index];
-        value_t left_node_promise  = left_node.promise;
+        const Node& left_node = nodes_[left_node_index];
+        const Node& right_node = nodes_[right_node_index];
+        value_t left_node_promise = left_node.promise;
         value_t right_node_promise = right_node.promise;
         nodes_[node_index].min_value =
             std::min((left_node_promise >= 0 ? left_node.min_value : left_node.max_value) *
@@ -319,9 +323,9 @@ private:
                          right_node_promise);
     }
 
-    void PushImpl(size_t node_index) noexcept {
+    void PushImpl(const size_t node_index) noexcept {
         assert(node_index < nodes_.size());
-        Node& node           = nodes_[node_index];
+        Node& node = nodes_[node_index];
         value_t this_promise = node.promise;
         if (this_promise == kNoPromise) {
             return;
@@ -332,23 +336,26 @@ private:
             node.min_value *= this_promise;
         } else {
             value_t new_min_value = node.max_value * this_promise;
-            node.max_value        = node.min_value * this_promise;
-            node.min_value        = new_min_value;
+            node.max_value = node.min_value * this_promise;
+            node.min_value = new_min_value;
         }
-        node.promise           = kNoPromise;
+        node.promise = kNoPromise;
         size_t left_node_index = node_index * 2 | 1;
         nodes_[left_node_index].promise *= this_promise;
         size_t right_node_index = left_node_index + 1;
         nodes_[right_node_index].promise *= this_promise;
     }
 
-    value_t GetRecImpl(size_t node_index, uint32_t node_l, uint32_t node_r, uint32_t query_l,
-                       uint32_t query_r) noexcept {
+    [[nodiscard]] value_t GetRecImpl(const size_t node_index,
+                                     const uint32_t node_l,
+                                     const uint32_t node_r,
+                                     const uint32_t query_l,
+                                     const uint32_t query_r) noexcept {
         assert(node_index < nodes_.size());
         if (query_l == node_l && node_r == query_r) {
             const Node& node = nodes_[node_index];
-            value_t t1       = node.min_value * node.promise;
-            value_t t2       = node.max_value * node.promise;
+            value_t t1 = node.min_value * node.promise;
+            value_t t2 = node.max_value * node.promise;
             if constexpr (get_op == GetOperation::max) {
                 return std::max(t1, t2);
             } else {
@@ -358,7 +365,7 @@ private:
 
         uint32_t node_middle = (node_l + node_r) / 2;
         this->PushImpl(node_index);
-        size_t left_son  = node_index * 2 | 1;
+        size_t left_son = node_index * 2 | 1;
         size_t right_son = left_son + 1;
         if (query_r <= node_middle) {
             return this->GetRecImpl(left_son, node_l, node_middle, query_l, query_r);
@@ -393,31 +400,35 @@ private:
 
 public:
     explicit MinMaxSegTreeSetEqual(const std::vector<value_t>& data)
-        : MinMaxSegTreeSetEqual(data.data(), uint32_t(data.size())) {}
-    template <std::size_t N>
-    explicit MinMaxSegTreeSetEqual(const std::array<value_t, N>& data)
-        : MinMaxSegTreeSetEqual(data.data(), uint32_t(data.size())) {}
-    template <std::size_t N>
-    explicit MinMaxSegTreeSetEqual(const value_t (&data)[N])
-        : MinMaxSegTreeSetEqual(std::data(data), uint32_t(std::size(data))) {}
-    explicit MinMaxSegTreeSetEqual(std::initializer_list<value_t> data)
-        : MinMaxSegTreeSetEqual(std::data(data), uint32_t(std::size(data))) {}
+        : MinMaxSegTreeSetEqual(data.data(), static_cast<uint32_t>(data.size())) {}
 
-    MinMaxSegTreeSetEqual(const value_t* data, uint32_t n) : nodes_(tree_size(n)), n_{n} {
+    template <size_t N>
+    explicit MinMaxSegTreeSetEqual(const std::array<value_t, N>& data)
+        : MinMaxSegTreeSetEqual(data.data(), static_cast<uint32_t>(data.size())) {}
+
+    template <size_t N>
+    explicit MinMaxSegTreeSetEqual(const value_t (&data)[N])
+        : MinMaxSegTreeSetEqual(std::data(data), static_cast<uint32_t>(std::size(data))) {}
+
+    explicit MinMaxSegTreeSetEqual(const std::initializer_list<value_t> data)
+        : MinMaxSegTreeSetEqual(std::data(data), static_cast<uint32_t>(std::size(data))) {}
+
+    explicit MinMaxSegTreeSetEqual(const value_t* const data, const uint32_t n)
+        : nodes_(tree_size(n)), n_(n) {
         assert(data != nullptr);
         assert(n > 0);
         this->BuildRecImpl(data, 0, 0, n - 1);
     }
 
-    void update(uint32_t l, uint32_t r, value_t upd_value) noexcept {
+    void update(const uint32_t l, const uint32_t r, const value_t upd_value) noexcept {
         assert(l <= r && r < n_);
         query_l_ = l;
         query_r_ = r;
-        value_   = upd_value;
+        value_ = upd_value;
         this->UpdateRecImpl(0, 0, n_ - 1);
     }
 
-    [[nodiscard]] value_t get(uint32_t l, uint32_t r) noexcept {
+    [[nodiscard]] value_t get(const uint32_t l, const uint32_t r) noexcept {
         assert(l <= r && r < n_);
         return this->GetRecImpl(0, 0, n_ - 1, l, r);
     }
@@ -429,8 +440,10 @@ private:
         bool has_promise = false;
     };
 
-    void BuildRecImpl(const value_t* data, size_t node_index, uint32_t node_l,
-                      uint32_t node_r) noexcept {
+    void BuildRecImpl(const value_t* const data,
+                      const size_t node_index,
+                      const uint32_t node_l,
+                      const uint32_t node_r) noexcept {
         assert(node_index < nodes_.size() && node_l <= node_r && node_r < n_);
 
         if (node_l == node_r) {
@@ -451,9 +464,11 @@ private:
         }
     }
 
-    void UpdateRecImpl(size_t node_index, uint32_t node_l, uint32_t node_r) noexcept {
+    void UpdateRecImpl(const size_t node_index,
+                       const uint32_t node_l,
+                       const uint32_t node_r) noexcept {
         if (query_l_ <= node_l && node_r <= query_r_) {
-            nodes_[node_index].promise     = value_;
+            nodes_[node_index].promise = value_;
             nodes_[node_index].has_promise = true;
             return;
         }
@@ -464,7 +479,7 @@ private:
 
         uint32_t node_m = (node_l + node_r) / 2;
         this->PushImpl(node_index);
-        size_t left_node  = node_index * 2 | 1;
+        size_t left_node = node_index * 2 | 1;
         size_t right_node = left_node + 1;
         this->UpdateRecImpl(left_node, node_l, node_m);
         this->UpdateRecImpl(right_node, node_m + 1, node_r);
@@ -482,25 +497,28 @@ private:
         }
     }
 
-    void PushImpl(size_t node_index) noexcept {
+    void PushImpl(const size_t node_index) noexcept {
         assert(node_index < nodes_.size());
         if (!nodes_[node_index].has_promise) {
             return;
         }
 
-        value_t this_promise           = nodes_[node_index].promise;
-        size_t left_node               = node_index * 2 | 1;
-        size_t right_node              = left_node + 1;
-        nodes_[node_index].value       = this_promise;
+        value_t this_promise = nodes_[node_index].promise;
+        size_t left_node = node_index * 2 | 1;
+        size_t right_node = left_node + 1;
+        nodes_[node_index].value = this_promise;
         nodes_[node_index].has_promise = false;
-        nodes_[left_node].promise      = this_promise;
-        nodes_[left_node].has_promise  = true;
-        nodes_[right_node].promise     = this_promise;
+        nodes_[left_node].promise = this_promise;
+        nodes_[left_node].has_promise = true;
+        nodes_[right_node].promise = this_promise;
         nodes_[right_node].has_promise = true;
     }
 
-    value_t GetRecImpl(size_t node_index, uint32_t node_l, uint32_t node_r, uint32_t query_l,
-                       uint32_t query_r) noexcept {
+    [[nodiscard]] value_t GetRecImpl(const size_t node_index,
+                                     const uint32_t node_l,
+                                     const uint32_t node_r,
+                                     const uint32_t query_l,
+                                     const uint32_t query_r) noexcept {
         assert(node_index < nodes_.size());
         if (query_l == node_l && node_r == query_r) {
             return nodes_[node_index].has_promise ? nodes_[node_index].promise
@@ -509,7 +527,7 @@ private:
 
         uint32_t node_middle = (node_l + node_r) / 2;
         this->PushImpl(node_index);
-        size_t left_son  = node_index * 2 | 1;
+        size_t left_son = node_index * 2 | 1;
         size_t right_son = left_son + 1;
         if (query_r <= node_middle) {
             return this->GetRecImpl(left_son, node_l, node_middle, query_l, query_r);
@@ -541,31 +559,35 @@ template <typename value_t>
 class [[nodiscard]] SumSegTreeSetEqual {
 public:
     explicit SumSegTreeSetEqual(const std::vector<value_t>& data)
-        : SumSegTreeSetEqual(data.data(), uint32_t(data.size())) {}
-    template <std::size_t N>
-    explicit SumSegTreeSetEqual(const std::array<value_t, N>& data)
-        : SumSegTreeSetEqual(data.data(), uint32_t(data.size())) {}
-    template <std::size_t N>
-    explicit SumSegTreeSetEqual(const value_t (&data)[N])
-        : SumSegTreeSetEqual(std::data(data), uint32_t(std::size(data))) {}
-    explicit SumSegTreeSetEqual(std::initializer_list<value_t> data)
-        : SumSegTreeSetEqual(std::data(data), uint32_t(std::size(data))) {}
+        : SumSegTreeSetEqual(data.data(), static_cast<uint32_t>(data.size())) {}
 
-    SumSegTreeSetEqual(const value_t* data, uint32_t n) : nodes_(tree_size(n)), n_{n} {
+    template <size_t N>
+    explicit SumSegTreeSetEqual(const std::array<value_t, N>& data)
+        : SumSegTreeSetEqual(data.data(), static_cast<uint32_t>(data.size())) {}
+
+    template <size_t N>
+    explicit SumSegTreeSetEqual(const value_t (&data)[N])
+        : SumSegTreeSetEqual(std::data(data), static_cast<uint32_t>(std::size(data))) {}
+
+    explicit SumSegTreeSetEqual(const std::initializer_list<value_t> data)
+        : SumSegTreeSetEqual(std::data(data), static_cast<uint32_t>(std::size(data))) {}
+
+    explicit SumSegTreeSetEqual(const value_t* const data, const uint32_t n)
+        : nodes_(tree_size(n)), n_(n) {
         assert(data != nullptr);
         assert(n > 0);
         this->BuildRecImpl(data, 0, 0, n - 1);
     }
 
-    void update(uint32_t l, uint32_t r, value_t upd_value) noexcept {
+    void update(const uint32_t l, const uint32_t r, const value_t upd_value) noexcept {
         assert(l <= r && r < n_);
         query_l_ = l;
         query_r_ = r;
-        value_   = upd_value;
+        value_ = upd_value;
         this->UpdateRecImpl(0, 0, n_ - 1);
     }
 
-    [[nodiscard]] value_t get(uint32_t l, uint32_t r) noexcept {
+    [[nodiscard]] value_t get(const uint32_t l, const uint32_t r) noexcept {
         assert(l <= r && r < n_);
         return this->GetRecImpl(0, 0, n_ - 1, l, r);
     }
@@ -577,8 +599,10 @@ private:
         bool has_promise = false;
     };
 
-    void BuildRecImpl(const value_t* data, size_t node_index, uint32_t node_l,
-                      uint32_t node_r) noexcept {
+    void BuildRecImpl(const value_t* const data,
+                      const size_t node_index,
+                      const uint32_t node_l,
+                      const uint32_t node_r) noexcept {
         assert(node_index < nodes_.size() && node_l <= node_r && node_r < n_);
         if (node_l == node_r) {
             nodes_[node_index].value = data[node_l];
@@ -594,10 +618,12 @@ private:
         nodes_[node_index].value = nodes_[left_son].value + nodes_[right_son].value;
     }
 
-    void UpdateRecImpl(size_t node_index, uint32_t node_l, uint32_t node_r) noexcept {
+    void UpdateRecImpl(const size_t node_index,
+                       const uint32_t node_l,
+                       const uint32_t node_r) noexcept {
         assert(node_index < nodes_.size() && node_l <= node_r && node_r < n_);
         if (query_l_ <= node_l && node_r <= query_r_) {
-            nodes_[node_index].promise     = value_;
+            nodes_[node_index].promise = value_;
             nodes_[node_index].has_promise = true;
             return;
         }
@@ -608,25 +634,25 @@ private:
 
         uint32_t node_m = (node_l + node_r) / 2;
         this->PushImpl(node_index, node_l, node_r);
-        size_t left_node_index  = node_index * 2 | 1;
+        size_t left_node_index = node_index * 2 | 1;
         size_t right_node_index = left_node_index + 1;
         this->UpdateRecImpl(left_node_index, node_l, node_m);
         this->UpdateRecImpl(right_node_index, node_m + 1, node_r);
         assert(right_node_index < nodes_.size());
-        const Node& left_node    = nodes_[left_node_index];
-        const Node& right_node   = nodes_[right_node_index];
-        value_t left_value       = left_node.has_promise
-                                       ? (left_node.promise * static_cast<value_t>(node_m - node_l + 1))
-                                       : left_node.value;
-        value_t right_value      = right_node.has_promise
-                                       ? (right_node.promise * static_cast<value_t>(node_r - node_m))
-                                       : right_node.value;
+        const Node& left_node = nodes_[left_node_index];
+        const Node& right_node = nodes_[right_node_index];
+        value_t left_value = left_node.has_promise
+                                 ? (left_node.promise * static_cast<value_t>(node_m - node_l + 1))
+                                 : left_node.value;
+        value_t right_value = right_node.has_promise
+                                  ? (right_node.promise * static_cast<value_t>(node_r - node_m))
+                                  : right_node.value;
         nodes_[node_index].value = left_value + right_value;
     }
 
-    void PushImpl(size_t node_index, uint32_t node_l, uint32_t node_r) noexcept {
+    void PushImpl(const size_t node_index, const uint32_t node_l, const uint32_t node_r) noexcept {
         assert(node_index < nodes_.size());
-        size_t left_node  = node_index * 2 | 1;
+        size_t left_node = node_index * 2 | 1;
         size_t right_node = left_node + 1;
         assert(right_node < nodes_.size());
         Node& node = nodes_[node_index];
@@ -634,17 +660,20 @@ private:
             return;
         }
 
-        value_t this_promise           = node.promise;
-        node.value                     = this_promise * static_cast<value_t>(node_r - node_l + 1);
-        node.has_promise               = false;
-        nodes_[left_node].promise      = this_promise;
-        nodes_[left_node].has_promise  = true;
-        nodes_[right_node].promise     = this_promise;
+        value_t this_promise = node.promise;
+        node.value = this_promise * static_cast<value_t>(node_r - node_l + 1);
+        node.has_promise = false;
+        nodes_[left_node].promise = this_promise;
+        nodes_[left_node].has_promise = true;
+        nodes_[right_node].promise = this_promise;
         nodes_[right_node].has_promise = true;
     }
 
-    value_t GetRecImpl(size_t node_index, uint32_t node_l, uint32_t node_r, uint32_t query_l,
-                       uint32_t query_r) noexcept {
+    [[nodiscard]] value_t GetRecImpl(const size_t node_index,
+                                     const uint32_t node_l,
+                                     const uint32_t node_r,
+                                     const uint32_t query_l,
+                                     const uint32_t query_r) noexcept {
         assert(node_index < nodes_.size());
         if (query_l == node_l && node_r == query_r) {
             const Node& node = nodes_[node_index];
@@ -654,7 +683,7 @@ private:
 
         uint32_t node_middle = (node_l + node_r) / 2;
         this->PushImpl(node_index, node_l, node_r);
-        size_t left_son  = node_index * 2 | 1;
+        size_t left_son = node_index * 2 | 1;
         size_t right_son = left_son + 1;
         if (query_r <= node_middle) {
             return this->GetRecImpl(left_son, node_l, node_middle, query_l, query_r);
@@ -682,24 +711,30 @@ template <typename value_t>
 class [[nodiscard]] ProdSegTreeSetEqual {
 public:
     explicit ProdSegTreeSetEqual(const std::vector<value_t>& data)
-        : ProdSegTreeSetEqual(data.data(), uint32_t(data.size())) {}
-    template <std::size_t N>
-    explicit ProdSegTreeSetEqual(const std::array<value_t, N>& data)
-        : ProdSegTreeSetEqual(data.data(), uint32_t(data.size())) {}
-    template <std::size_t N>
-    explicit ProdSegTreeSetEqual(const value_t (&data)[N])
-        : ProdSegTreeSetEqual(std::data(data), uint32_t(std::size(data))) {}
-    explicit ProdSegTreeSetEqual(std::initializer_list<value_t> data)
-        : ProdSegTreeSetEqual(std::data(data), uint32_t(std::size(data))) {}
+        : ProdSegTreeSetEqual(data.data(), static_cast<uint32_t>(data.size())) {}
 
-    ProdSegTreeSetEqual(const value_t* data, uint32_t n) : nodes_(tree_size(n)), n_{n} {
+    template <size_t N>
+    explicit ProdSegTreeSetEqual(const std::array<value_t, N>& data)
+        : ProdSegTreeSetEqual(data.data(), static_cast<uint32_t>(data.size())) {}
+
+    template <size_t N>
+    explicit ProdSegTreeSetEqual(const value_t (&data)[N])
+        : ProdSegTreeSetEqual(std::data(data), static_cast<uint32_t>(std::size(data))) {}
+
+    explicit ProdSegTreeSetEqual(const std::initializer_list<value_t> data)
+        : ProdSegTreeSetEqual(std::data(data), static_cast<uint32_t>(std::size(data))) {}
+
+    explicit ProdSegTreeSetEqual(const value_t* const data, const uint32_t n)
+        : nodes_(tree_size(n)), n_(n) {
         assert(data != nullptr);
         assert(n > 0);
         this->BuildRecImpl(data, 0, 0, n - 1);
     }
 
-    void BuildRecImpl(const value_t* data, size_t node_index, uint32_t node_l,
-                      uint32_t node_r) noexcept {
+    void BuildRecImpl(const value_t* const data,
+                      const size_t node_index,
+                      const uint32_t node_l,
+                      const uint32_t node_r) noexcept {
         assert(node_index < nodes_.size() && node_l <= node_r && node_r < n_);
         if (node_l == node_r) {
             nodes_[node_index].value = data[node_l];
@@ -715,15 +750,15 @@ public:
         nodes_[node_index].value = nodes_[left_son].value * nodes_[right_son].value;
     }
 
-    void update(uint32_t l, uint32_t r, value_t upd_value) noexcept {
+    void update(const uint32_t l, const uint32_t r, const value_t upd_value) noexcept {
         assert(l <= r && r < n_);
         query_l_ = l;
         query_r_ = r;
-        value_   = upd_value;
+        value_ = upd_value;
         this->UpdateRecImpl(0, 0, n_ - 1);
     }
 
-    [[nodiscard]] value_t get(uint32_t l, uint32_t r) noexcept {
+    [[nodiscard]] value_t get(const uint32_t l, const uint32_t r) noexcept {
         assert(l <= r && r < n_);
         return this->GetRecImpl(0, 0, n_ - 1, l, r);
     }
@@ -737,12 +772,14 @@ private:
         bool has_cached_promise_x_count = false;
     };
 
-    void UpdateRecImpl(size_t node_index, uint32_t node_l, uint32_t node_r) noexcept {
+    void UpdateRecImpl(const size_t node_index,
+                       const uint32_t node_l,
+                       const uint32_t node_r) noexcept {
         assert(node_index < nodes_.size() && node_l <= node_r && node_r < n_);
         if (query_l_ <= node_l && node_r <= query_r_) {
-            Node& node                      = nodes_[node_index];
-            node.promise                    = value_;
-            node.has_promise                = true;
+            Node& node = nodes_[node_index];
+            node.promise = value_;
+            node.has_promise = true;
             node.has_cached_promise_x_count = false;
             return;
         }
@@ -753,16 +790,17 @@ private:
 
         uint32_t node_m = (node_l + node_r) / 2;
         this->PushImpl(node_index, node_l, node_r);
-        size_t left_node_index  = node_index * 2 | 1;
+        size_t left_node_index = node_index * 2 | 1;
         size_t right_node_index = left_node_index + 1;
         this->UpdateRecImpl(left_node_index, node_l, node_m);
         this->UpdateRecImpl(right_node_index, node_m + 1, node_r);
         assert(right_node_index < nodes_.size());
-        Node& left_node  = nodes_[left_node_index];
+        Node& left_node = nodes_[left_node_index];
         Node& right_node = nodes_[right_node_index];
         value_t left_value;
-        //  = left_node.has_promise ? (left_node.promise * (node_m - node_l +
-        //  1)) : left_node.value;
+        // clang-format off
+        //  = left_node.has_promise ? (left_node.promise * (node_m - node_l + 1)) : left_node.value;
+        // clang-format on
         if (left_node.has_promise) {
             if (!left_node.has_cached_promise_x_count) {
                 left_node.cached_promise_x_count = bin_pow(left_node.promise, node_m - node_l + 1);
@@ -785,9 +823,9 @@ private:
         nodes_[node_index].value = left_value * right_value;
     }
 
-    void PushImpl(size_t node_index, uint32_t node_l, uint32_t node_r) noexcept {
+    void PushImpl(const size_t node_index, const uint32_t node_l, const uint32_t node_r) noexcept {
         assert(node_index < nodes_.size());
-        size_t left_node_index  = node_index * 2 | 1;
+        size_t left_node_index = node_index * 2 | 1;
         size_t right_node_index = left_node_index + 1;
         assert(right_node_index < nodes_.size());
         Node& node = nodes_[node_index];
@@ -795,30 +833,33 @@ private:
             return;
         }
 
-        Node& left_node      = nodes_[left_node_index];
-        Node& right_node     = nodes_[right_node_index];
+        Node& left_node = nodes_[left_node_index];
+        Node& right_node = nodes_[right_node_index];
         value_t this_promise = node.promise;
-        node.value           = node.has_cached_promise_x_count ? node.cached_promise_x_count
-                                                               : bin_pow(this_promise, node_r - node_l + 1);
-        node.has_promise     = false;
-        node.has_cached_promise_x_count       = false;
-        left_node.promise                     = this_promise;
-        left_node.has_promise                 = true;
-        left_node.has_cached_promise_x_count  = false;
-        right_node.promise                    = this_promise;
-        right_node.has_promise                = true;
+        node.value = node.has_cached_promise_x_count ? node.cached_promise_x_count
+                                                     : bin_pow(this_promise, node_r - node_l + 1);
+        node.has_promise = false;
+        node.has_cached_promise_x_count = false;
+        left_node.promise = this_promise;
+        left_node.has_promise = true;
+        left_node.has_cached_promise_x_count = false;
+        right_node.promise = this_promise;
+        right_node.has_promise = true;
         right_node.has_cached_promise_x_count = false;
     }
 
-    value_t GetRecImpl(size_t node_index, uint32_t node_l, uint32_t node_r, uint32_t query_l,
-                       uint32_t query_r) noexcept {
+    [[nodiscard]] value_t GetRecImpl(const size_t node_index,
+                                     const uint32_t node_l,
+                                     const uint32_t node_r,
+                                     const uint32_t query_l,
+                                     const uint32_t query_r) noexcept {
         assert(node_index < nodes_.size());
         if (query_l == node_l && node_r == query_r) {
             Node& node = nodes_[node_index];
             if (node.has_promise) {
                 if (!node.has_cached_promise_x_count) {
                     node.has_cached_promise_x_count = true;
-                    node.cached_promise_x_count     = bin_pow(node.promise, node_r - node_l + 1);
+                    node.cached_promise_x_count = bin_pow(node.promise, node_r - node_l + 1);
                 }
                 return node.cached_promise_x_count;
             } else {
@@ -828,7 +869,7 @@ private:
 
         uint32_t node_middle = (node_l + node_r) / 2;
         this->PushImpl(node_index, node_l, node_r);
-        size_t left_son  = node_index * 2 | 1;
+        size_t left_son = node_index * 2 | 1;
         size_t right_son = left_son + 1;
         if (query_r <= node_middle) {
             return this->GetRecImpl(left_son, node_l, node_middle, query_l, query_r);
@@ -856,31 +897,35 @@ template <typename value_t>
 class [[nodiscard]] SumSegTreeMult {
 public:
     explicit SumSegTreeMult(const std::vector<value_t>& data)
-        : SumSegTreeMult(data.data(), uint32_t(data.size())) {}
-    template <std::size_t N>
-    explicit SumSegTreeMult(const std::array<value_t, N>& data)
-        : SumSegTreeMult(data.data(), uint32_t(data.size())) {}
-    template <std::size_t N>
-    explicit SumSegTreeMult(const value_t (&data)[N])
-        : SumSegTreeMult(std::data(data), uint32_t(std::size(data))) {}
-    explicit SumSegTreeMult(std::initializer_list<value_t> data)
-        : SumSegTreeMult(std::data(data), uint32_t(std::size(data))) {}
+        : SumSegTreeMult(data.data(), static_cast<uint32_t>(data.size())) {}
 
-    SumSegTreeMult(const value_t* data, uint32_t n) : nodes_(tree_size(n)), n_{n} {
+    template <size_t N>
+    explicit SumSegTreeMult(const std::array<value_t, N>& data)
+        : SumSegTreeMult(data.data(), static_cast<uint32_t>(data.size())) {}
+
+    template <size_t N>
+    explicit SumSegTreeMult(const value_t (&data)[N])
+        : SumSegTreeMult(std::data(data), static_cast<uint32_t>(std::size(data))) {}
+
+    explicit SumSegTreeMult(const std::initializer_list<value_t> data)
+        : SumSegTreeMult(std::data(data), static_cast<uint32_t>(std::size(data))) {}
+
+    explicit SumSegTreeMult(const value_t* const data, const uint32_t n)
+        : nodes_(tree_size(n)), n_(n) {
         assert(data != nullptr);
         assert(n > 0);
         this->BuildRecImpl(data, 0, 0, n - 1);
     }
 
-    void update(uint32_t l, uint32_t r, value_t upd_value) noexcept {
+    void update(const uint32_t l, const uint32_t r, const value_t upd_value) noexcept {
         assert(l <= r && r < n_);
         query_l_ = l;
         query_r_ = r;
-        value_   = upd_value;
+        value_ = upd_value;
         this->UpdateRecImpl(0, 0, n_ - 1);
     }
 
-    [[nodiscard]] value_t get(uint32_t l, uint32_t r) noexcept {
+    [[nodiscard]] value_t get(const uint32_t l, const uint32_t r) noexcept {
         assert(l <= r && r < n_);
         return this->GetRecImpl(0, 0, n_ - 1, l, r);
     }
@@ -893,8 +938,10 @@ private:
         value_t promise = kNoPromise;
     };
 
-    void BuildRecImpl(const value_t* data, size_t node_index, uint32_t node_l,
-                      uint32_t node_r) noexcept {
+    void BuildRecImpl(const value_t* const data,
+                      const size_t node_index,
+                      const uint32_t node_l,
+                      const uint32_t node_r) noexcept {
         assert(node_index < nodes_.size() && node_l <= node_r && node_r < n_);
         if (node_l == node_r) {
             nodes_[node_index].value = data[node_l];
@@ -910,7 +957,9 @@ private:
         nodes_[node_index].value = nodes_[left_son].value + nodes_[right_son].value;
     }
 
-    void UpdateRecImpl(size_t node_index, uint32_t node_l, uint32_t node_r) noexcept {
+    void UpdateRecImpl(const size_t node_index,
+                       const uint32_t node_l,
+                       const uint32_t node_r) noexcept {
         assert(node_index < nodes_.size() && node_l <= node_r && node_r < n_);
         if (query_l_ <= node_l && node_r <= query_r_) {
             nodes_[node_index].promise *= value_;
@@ -923,7 +972,7 @@ private:
 
         uint32_t node_m = (node_l + node_r) / 2;
         this->PushImpl(node_index);
-        size_t left_node  = node_index * 2 | 1;
+        size_t left_node = node_index * 2 | 1;
         size_t right_node = left_node + 1;
         this->UpdateRecImpl(left_node, node_l, node_m);
         this->UpdateRecImpl(right_node, node_m + 1, node_r);
@@ -932,14 +981,14 @@ private:
                                    nodes_[right_node].value * nodes_[right_node].promise;
     }
 
-    void PushImpl(size_t node_index) noexcept {
+    void PushImpl(const size_t node_index) noexcept {
         assert(node_index < nodes_.size());
         value_t this_promise = nodes_[node_index].promise;
         if (this_promise == kNoPromise) {
             return;
         }
 
-        size_t left_node  = node_index * 2 | 1;
+        size_t left_node = node_index * 2 | 1;
         size_t right_node = left_node + 1;
         assert(right_node < nodes_.size());
         nodes_[node_index].value *= this_promise;
@@ -948,8 +997,11 @@ private:
         nodes_[node_index].promise = kNoPromise;
     }
 
-    value_t GetRecImpl(size_t node_index, uint32_t node_l, uint32_t node_r, uint32_t query_l,
-                       uint32_t query_r) noexcept {
+    [[nodiscard]] value_t GetRecImpl(const size_t node_index,
+                                     const uint32_t node_l,
+                                     const uint32_t node_r,
+                                     const uint32_t query_l,
+                                     const uint32_t query_r) noexcept {
         assert(node_index < nodes_.size());
         if (query_l == node_l && node_r == query_r) {
             return nodes_[node_index].value * nodes_[node_index].promise;
@@ -957,7 +1009,7 @@ private:
 
         uint32_t node_middle = (node_l + node_r) / 2;
         this->PushImpl(node_index);
-        size_t left_son  = node_index * 2 | 1;
+        size_t left_son = node_index * 2 | 1;
         size_t right_son = left_son + 1;
         if (query_r <= node_middle) {
             return this->GetRecImpl(left_son, node_l, node_middle, query_l, query_r);
@@ -985,31 +1037,35 @@ template <typename value_t>
 class [[nodiscard]] SumSegTreeAdd {
 public:
     explicit SumSegTreeAdd(const std::vector<value_t>& data)
-        : SumSegTreeAdd(data.data(), uint32_t(data.size())) {}
-    template <std::size_t N>
-    explicit SumSegTreeAdd(const std::array<value_t, N>& data)
-        : SumSegTreeAdd(data.data(), uint32_t(data.size())) {}
-    template <std::size_t N>
-    explicit SumSegTreeAdd(const value_t (&data)[N])
-        : SumSegTreeAdd(std::data(data), uint32_t(std::size(data))) {}
-    explicit SumSegTreeAdd(std::initializer_list<value_t> data)
-        : SumSegTreeAdd(std::data(data), uint32_t(std::size(data))) {}
+        : SumSegTreeAdd(data.data(), static_cast<uint32_t>(data.size())) {}
 
-    SumSegTreeAdd(const value_t* data, uint32_t n) : nodes_(tree_size(n)), n_{n} {
+    template <size_t N>
+    explicit SumSegTreeAdd(const std::array<value_t, N>& data)
+        : SumSegTreeAdd(data.data(), static_cast<uint32_t>(data.size())) {}
+
+    template <size_t N>
+    explicit SumSegTreeAdd(const value_t (&data)[N])
+        : SumSegTreeAdd(std::data(data), static_cast<uint32_t>(std::size(data))) {}
+
+    explicit SumSegTreeAdd(const std::initializer_list<value_t> data)
+        : SumSegTreeAdd(std::data(data), static_cast<uint32_t>(std::size(data))) {}
+
+    explicit SumSegTreeAdd(const value_t* const data, const uint32_t n)
+        : nodes_(tree_size(n)), n_(n) {
         assert(data != nullptr);
         assert(n > 0);
         this->BuildRecImpl(data, 0, 0, n - 1);
     }
 
-    void update(uint32_t l, uint32_t r, value_t upd_value) noexcept {
+    void update(const uint32_t l, const uint32_t r, const value_t upd_value) noexcept {
         assert(l <= r && r < n_);
         query_l_ = l;
         query_r_ = r;
-        value_   = upd_value;
+        value_ = upd_value;
         this->UpdateRecImpl(0, 0, n_ - 1);
     }
 
-    [[nodiscard]] value_t get(uint32_t l, uint32_t r) {
+    [[nodiscard]] value_t get(const uint32_t l, const uint32_t r) {
         assert(l <= r && r < n_);
         return this->GetRecImpl(0, 0, n_ - 1, l, r);
     }
@@ -1022,8 +1078,10 @@ private:
         value_t promise = kNoPromise;
     };
 
-    void BuildRecImpl(const value_t* data, size_t node_index, uint32_t node_l,
-                      uint32_t node_r) noexcept {
+    void BuildRecImpl(const value_t* const data,
+                      const size_t node_index,
+                      const uint32_t node_l,
+                      const uint32_t node_r) noexcept {
         assert(node_index < nodes_.size() && node_l <= node_r && node_r < n_);
         if (node_l == node_r) {
             nodes_[node_index].value = data[node_l];
@@ -1039,7 +1097,9 @@ private:
         nodes_[node_index].value = nodes_[left_son].value + nodes_[right_son].value;
     }
 
-    void UpdateRecImpl(size_t node_index, uint32_t node_l, uint32_t node_r) noexcept {
+    void UpdateRecImpl(const size_t node_index,
+                       const uint32_t node_l,
+                       const uint32_t node_r) noexcept {
         assert(node_index < nodes_.size() && node_l <= node_r && node_r < n_);
         if (query_l_ <= node_l && node_r <= query_r_) {
             nodes_[node_index].promise += value_;
@@ -1052,21 +1112,21 @@ private:
 
         uint32_t node_m = (node_l + node_r) / 2;
         this->PushImpl(node_index, node_l, node_r);
-        size_t left_node_index  = node_index * 2 | 1;
+        size_t left_node_index = node_index * 2 | 1;
         size_t right_node_index = left_node_index + 1;
         this->UpdateRecImpl(left_node_index, node_l, node_m);
         this->UpdateRecImpl(right_node_index, node_m + 1, node_r);
         assert(right_node_index < nodes_.size());
-        const Node& left_node    = nodes_[left_node_index];
-        const Node& right_node   = nodes_[right_node_index];
+        const Node& left_node = nodes_[left_node_index];
+        const Node& right_node = nodes_[right_node_index];
         nodes_[node_index].value = left_node.value +
                                    left_node.promise * value_t(node_m - node_l + 1) +
                                    right_node.value + right_node.promise * value_t(node_r - node_m);
     }
 
-    void PushImpl(size_t node_index, uint32_t node_l, uint32_t node_r) noexcept {
+    void PushImpl(const size_t node_index, const uint32_t node_l, const uint32_t node_r) noexcept {
         assert(node_index < nodes_.size());
-        size_t left_node  = node_index * 2 | 1;
+        size_t left_node = node_index * 2 | 1;
         size_t right_node = left_node + 1;
         assert(right_node < nodes_.size());
         value_t this_promise = nodes_[node_index].promise;
@@ -1079,8 +1139,11 @@ private:
         nodes_[node_index].promise = kNoPromise;
     }
 
-    value_t GetRecImpl(size_t node_index, uint32_t node_l, uint32_t node_r, uint32_t query_l,
-                       uint32_t query_r) noexcept {
+    [[nodiscard]] value_t GetRecImpl(const size_t node_index,
+                                     const uint32_t node_l,
+                                     const uint32_t node_r,
+                                     const uint32_t query_l,
+                                     const uint32_t query_r) noexcept {
         assert(node_index < nodes_.size());
         if (query_l == node_l && node_r == query_r) {
             const Node& node = nodes_[node_index];
@@ -1089,7 +1152,7 @@ private:
 
         uint32_t node_middle = (node_l + node_r) / 2;
         this->PushImpl(node_index, node_l, node_r);
-        size_t left_son  = node_index * 2 | 1;
+        size_t left_son = node_index * 2 | 1;
         size_t right_son = left_son + 1;
         if (query_r <= node_middle) {
             return this->GetRecImpl(left_son, node_l, node_middle, query_l, query_r);
@@ -1117,31 +1180,35 @@ template <typename value_t>
 class [[nodiscard]] ProdSegTreeMult {
 public:
     explicit ProdSegTreeMult(const std::vector<value_t>& data)
-        : ProdSegTreeMult(data.data(), uint32_t(data.size())) {}
-    template <std::size_t N>
-    explicit ProdSegTreeMult(const std::array<value_t, N>& data)
-        : ProdSegTreeMult(data.data(), uint32_t(data.size())) {}
-    template <std::size_t N>
-    explicit ProdSegTreeMult(const value_t (&data)[N])
-        : ProdSegTreeMult(std::data(data), uint32_t(std::size(data))) {}
-    explicit ProdSegTreeMult(std::initializer_list<value_t> data)
-        : ProdSegTreeMult(std::data(data), uint32_t(std::size(data))) {}
+        : ProdSegTreeMult(data.data(), static_cast<uint32_t>(data.size())) {}
 
-    ProdSegTreeMult(const value_t* data, uint32_t n) : nodes_(tree_size(n)), n_{n} {
+    template <size_t N>
+    explicit ProdSegTreeMult(const std::array<value_t, N>& data)
+        : ProdSegTreeMult(data.data(), static_cast<uint32_t>(data.size())) {}
+
+    template <size_t N>
+    explicit ProdSegTreeMult(const value_t (&data)[N])
+        : ProdSegTreeMult(std::data(data), static_cast<uint32_t>(std::size(data))) {}
+
+    explicit ProdSegTreeMult(const std::initializer_list<value_t> data)
+        : ProdSegTreeMult(std::data(data), static_cast<uint32_t>(std::size(data))) {}
+
+    explicit ProdSegTreeMult(const value_t* const data, const uint32_t n)
+        : nodes_(tree_size(n)), n_(n) {
         assert(data != nullptr);
         assert(n > 0);
         this->BuildRecImpl(data, 0, 0, n - 1);
     }
 
-    void update(uint32_t l, uint32_t r, value_t upd_value) noexcept {
+    void update(const uint32_t l, const uint32_t r, const value_t upd_value) noexcept {
         assert(l <= r && r < n_);
         query_l_ = l;
         query_r_ = r;
-        value_   = upd_value;
+        value_ = upd_value;
         this->UpdateRecImpl(0, 0, n_ - 1);
     }
 
-    [[nodiscard]] value_t get(uint32_t l, uint32_t r) noexcept {
+    [[nodiscard]] value_t get(const uint32_t l, const uint32_t r) noexcept {
         assert(l <= r && r < n_);
         return this->GetRecImpl(0, 0, n_ - 1, l, r);
     }
@@ -1151,13 +1218,15 @@ private:
 
     struct Node {
         value_t value{};
-        value_t promise                 = kNoPromise;
-        value_t cached_promise_x_count  = kNoPromise * 1;
+        value_t promise = kNoPromise;
+        value_t cached_promise_x_count = kNoPromise * 1;
         bool has_cached_promise_x_count = true;
     };
 
-    void BuildRecImpl(const value_t* data, size_t node_index, uint32_t node_l,
-                      uint32_t node_r) noexcept {
+    void BuildRecImpl(const value_t* const data,
+                      const size_t node_index,
+                      const uint32_t node_l,
+                      const uint32_t node_r) noexcept {
         assert(node_index < nodes_.size() && node_l <= node_r && node_r < n_);
         Node& node = nodes_[node_index];
         if (node_l == node_r) {
@@ -1174,7 +1243,9 @@ private:
         node.value = nodes_[left_son].value * nodes_[right_son].value;
     }
 
-    void UpdateRecImpl(size_t node_index, uint32_t node_l, uint32_t node_r) noexcept {
+    void UpdateRecImpl(const size_t node_index,
+                       const uint32_t node_l,
+                       const uint32_t node_r) noexcept {
         assert(node_index < nodes_.size() && node_l <= node_r && node_r < n_);
         if (query_l_ <= node_l && node_r <= query_r_) {
             Node& node = nodes_[node_index];
@@ -1189,31 +1260,31 @@ private:
 
         uint32_t node_m = (node_l + node_r) / 2;
         this->PushImpl(node_index, node_l, node_r);
-        size_t left_node_index  = node_index * 2 | 1;
+        size_t left_node_index = node_index * 2 | 1;
         size_t right_node_index = left_node_index + 1;
         this->UpdateRecImpl(left_node_index, node_l, node_m);
         this->UpdateRecImpl(right_node_index, node_m + 1, node_r);
         assert(right_node_index < nodes_.size());
         Node& left_node = nodes_[left_node_index];
         if (!left_node.has_cached_promise_x_count) {
-            left_node.cached_promise_x_count     = bin_pow(left_node.promise, node_m - node_l + 1);
+            left_node.cached_promise_x_count = bin_pow(left_node.promise, node_m - node_l + 1);
             left_node.has_cached_promise_x_count = true;
         }
         Node& right_node = nodes_[right_node_index];
         if (!right_node.has_cached_promise_x_count) {
-            right_node.cached_promise_x_count     = bin_pow(right_node.promise, node_r - node_m);
+            right_node.cached_promise_x_count = bin_pow(right_node.promise, node_r - node_m);
             right_node.has_cached_promise_x_count = true;
         }
         nodes_[node_index].value = left_node.value * left_node.cached_promise_x_count *
                                    right_node.value * right_node.cached_promise_x_count;
     }
 
-    void PushImpl(size_t node_index, uint32_t node_l, uint32_t node_r) noexcept {
+    void PushImpl(const size_t node_index, const uint32_t node_l, const uint32_t node_r) noexcept {
         assert(node_index < nodes_.size());
-        size_t left_node_index  = node_index * 2 | 1;
+        size_t left_node_index = node_index * 2 | 1;
         size_t right_node_index = left_node_index + 1;
         assert(right_node_index < nodes_.size());
-        Node& node           = nodes_[node_index];
+        Node& node = nodes_[node_index];
         value_t this_promise = node.promise;
         if (this_promise == kNoPromise) {
             return;
@@ -1221,8 +1292,8 @@ private:
 
         node.value *= node.has_cached_promise_x_count ? node.cached_promise_x_count
                                                       : bin_pow(this_promise, node_r - node_l + 1);
-        node.promise                    = kNoPromise;
-        node.cached_promise_x_count     = kNoPromise * 1;
+        node.promise = kNoPromise;
+        node.cached_promise_x_count = kNoPromise * 1;
         node.has_cached_promise_x_count = true;
 
         nodes_[left_node_index].promise *= this_promise;
@@ -1231,13 +1302,16 @@ private:
         nodes_[right_node_index].has_cached_promise_x_count = false;
     }
 
-    value_t GetRecImpl(size_t node_index, uint32_t node_l, uint32_t node_r, uint32_t query_l,
-                       uint32_t query_r) noexcept {
+    [[nodiscard]] value_t GetRecImpl(const size_t node_index,
+                                     const uint32_t node_l,
+                                     const uint32_t node_r,
+                                     const uint32_t query_l,
+                                     const uint32_t query_r) noexcept {
         assert(node_index < nodes_.size());
         if (query_l == node_l && node_r == query_r) {
             Node& node = nodes_[node_index];
             if (!node.has_cached_promise_x_count) {
-                node.cached_promise_x_count     = bin_pow(node.promise, node_r - node_l + 1);
+                node.cached_promise_x_count = bin_pow(node.promise, node_r - node_l + 1);
                 node.has_cached_promise_x_count = true;
             }
             return node.value * node.cached_promise_x_count;
@@ -1245,7 +1319,7 @@ private:
 
         uint32_t node_middle = (node_l + node_r) / 2;
         this->PushImpl(node_index, node_l, node_r);
-        size_t left_son  = node_index * 2 | 1;
+        size_t left_son = node_index * 2 | 1;
         size_t right_son = left_son + 1;
         if (query_r <= node_middle) {
             return this->GetRecImpl(left_son, node_l, node_middle, query_l, query_r);
@@ -1331,7 +1405,7 @@ struct SegTreeHelper<value_t, GetOperation::product, UpdateOperation::multiply> 
 
 }  // namespace segtrees
 
-template <UpdateOperation upd_op, GetOperation get_op, typename value_t = int64_t>
+template <UpdateOperation upd_op, GetOperation get_op, typename value_t = std::int64_t>
 #if __cplusplus >= 202002L
     requires(sizeof(value_t) >= sizeof(int))
 #endif
