@@ -575,12 +575,12 @@ template <class CharType, class... Args>
 template <class CharType, size_t I, class... Args>
 [[nodiscard]]
 ATTRIBUTE_ALWAYS_INLINE
-inline std::basic_string<CharType> JoinStringsConvArgsToStrViewImpl(std::basic_string_view<CharType> str, const Args&... args) ;
+inline std::basic_string<CharType> JoinStringsConvArgsToStrViewImpl(std::basic_string_view<CharType> str, const Args&... args);
 
 template <class CharType, size_t I, class T, class... Args>
 [[nodiscard]]
 ATTRIBUTE_ALWAYS_INLINE
-inline std::enable_if_t<!is_string_like_v<T>, std::basic_string<CharType>> JoinStringsConvArgsToStrViewImpl(const T& value, const Args&... args) ;
+inline std::enable_if_t<!is_string_like_v<T>, std::basic_string<CharType>> JoinStringsConvArgsToStrViewImpl(const T& value, const Args&... args);
 
 // clang-format on
 

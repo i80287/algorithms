@@ -85,19 +85,18 @@ void FillData(std::array<value_t, n>& values,
               std::array<uint32_t, q>& l_int,
               std::array<uint32_t, q>& r_int) {
     std::mt19937 rnd;
-    for (value_t& a_i : values) {
+    const auto generate_random_value = [&rnd]() {
         if constexpr (std::is_integral_v<value_t>) {
-            a_i = static_cast<value_t>(static_cast<int32_t>(rnd())) % value_t{64};
+            return static_cast<value_t>(static_cast<int32_t>(rnd())) % value_t{64};
         } else {
-            a_i = static_cast<value_t>(static_cast<int32_t>(rnd()));
+            return static_cast<value_t>(static_cast<int32_t>(rnd()));
         }
+    };
+    for (value_t& a_i : values) {
+        a_i = generate_random_value();
     }
     for (value_t& a_i : update_values) {
-        if constexpr (std::is_integral_v<value_t>) {
-            a_i = static_cast<value_t>(static_cast<int32_t>(rnd())) % value_t{64};
-        } else {
-            a_i = static_cast<value_t>(static_cast<int32_t>(rnd()));
-        }
+        a_i = generate_random_value();
     }
     for (size_t i = 0; i < q; i++) {
         const auto x = static_cast<uint32_t>(rnd() % n);
