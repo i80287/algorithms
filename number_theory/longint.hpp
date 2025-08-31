@@ -2440,7 +2440,7 @@ private:
                                                       const char* const function_name,
                                                       const std::string_view str) {
         throw std::invalid_argument{misc::join_strings(
-            "Can't convert string '", str, "' to longint at ", file_location, function_name)};
+            "Can't convert string '", str, "' to longint at ", file_location, ' ', function_name)};
     }
 
     ATTRIBUTE_SIZED_ACCESS(read_only, 2, 3)

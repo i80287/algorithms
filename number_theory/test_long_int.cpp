@@ -1214,14 +1214,15 @@ void TestSetString() {
         AssertInvariants(n);
     }
 
+    static constexpr size_t kMaxNinesInUInt128 = 38;
     uint128_t c = 0;
     std::string s;
-    s.reserve(39);
-    for (size_t i = 0; i < 39; i++) {
-        n.set_string(s);
-        assert(n == c);
+    s.reserve(kMaxNinesInUInt128);
+    for (size_t nines_count = 1; nines_count <= kMaxNinesInUInt128; nines_count++) {
         s.push_back('9');
         c = c * 10 + 9;
+        n.set_string(s);
+        assert(n == c);
     }
 
     // 2^256 - 1
