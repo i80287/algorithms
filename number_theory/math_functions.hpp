@@ -274,8 +274,8 @@ constexpr uint32_t isqrt_u64(const uint64_t n) noexcept {
      * In the runtime `sqrtl` is used (but not for the msvc prior to the c++20).
      */
 #if defined(__GNUG__) || defined(__clang__) || CONFIG_HAS_AT_LEAST_CXX_20
-    if (sizeof(long double) < 16 || config::is_constant_evaluated() ||
-        config::is_gcc_constant_p(n)) {
+    if (config::is_constant_evaluated() || config::is_gcc_constant_p(n) ||
+        sizeof(long double) < 16) {
 #endif
         /**
          * See Hackers Delight Chapter 11.
