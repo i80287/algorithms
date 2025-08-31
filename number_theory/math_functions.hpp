@@ -513,7 +513,7 @@ template <class T, class P>
     requires math_functions::detail::InplaceMultipliable<T>
 #endif
 ATTRIBUTE_ALWAYS_INLINE [[nodiscard]]
-constexpr T bin_pow(T n, const P p) {
+constexpr T bin_pow(T n, const P p) noexcept(detail::is_trivial_arithmetic_v<T>) {
     math_functions::detail::check_math_int_type<P>();
 
     if constexpr (math_functions::is_integral_v<T>) {
