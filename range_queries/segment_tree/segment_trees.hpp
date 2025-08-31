@@ -27,7 +27,7 @@ using std::size_t;
 using std::uint32_t;
 
 template <typename T>
-[[nodiscard]] constexpr T bin_pow(const T n, const uint32_t p) noexcept {
+[[nodiscard]] ATTRIBUTE_CONST constexpr T bin_pow(const T n, const uint32_t p) noexcept {
     return math_functions::bin_pow(n, p);
 }
 
