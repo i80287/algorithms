@@ -1,3 +1,4 @@
+#pragma once
 #include <cstdint>
 #include <stdexcept>
 #include <string>
@@ -38,12 +39,12 @@ constexpr void throw_if_impl(const bool expression,
     }
 }
 
-#define PP_EVAL_IMPL(arg)            arg
-#define STRINGIFY_IMPL_2(expression) #expression
-#define STRINGIFY_IMPL_1(expression) STRINGIFY_IMPL_2(expression)
-#define THROW_IF_MESSAGE_IMPL(expression, bool_value)                 \
-    "Expression \"" #expression "\" evaluated to " #bool_value        \
-    " at " PP_EVAL_IMPL(__FILE__) ":" STRINGIFY_IMPL_1(__LINE__) ":", \
+#define MISC_PP_EVAL_IMPL(arg)               arg
+#define MISC_PP_STRINGIFY_IMPL_2(expression) #expression
+#define MISC_PP_STRINGIFY_IMPL_1(expression) MISC_PP_STRINGIFY_IMPL_2(expression)
+#define THROW_IF_MESSAGE_IMPL(expression, bool_value)                              \
+    "Expression \"" #expression "\" evaluated to " #bool_value                     \
+    " at " MISC_PP_EVAL_IMPL(__FILE__) ":" MISC_PP_STRINGIFY_IMPL_1(__LINE__) " ", \
         CONFIG_CURRENT_FUNCTION_NAME
 
 }  // namespace detail

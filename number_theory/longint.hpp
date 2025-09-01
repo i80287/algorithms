@@ -19,6 +19,7 @@
 #include <vector>
 
 #include "../misc/config_macros.hpp"
+#include "../misc/join_strings.hpp"
 #include "fft.hpp"
 #if CONFIG_HAS_INCLUDE("integers_128_bit.hpp")
 #include "integers_128_bit.hpp"
@@ -1351,8 +1352,9 @@ public:
     }
 
     void set_string(const std::string_view s) {
+        check_dec_str(s);
         // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
-        this->set_str_impl(reinterpret_cast<const unsigned char*>(s.data()), s.size());
+        this->set_dec_str_impl(reinterpret_cast<const unsigned char*>(s.data()), s.size());
     }
 
     template <class T>
@@ -2408,8 +2410,41 @@ private:
         }
     };
 
+    static void check_dec_str(std::string_view str) {
+        constexpr auto is_digit = [](const char chr) constexpr noexcept {
+            const std::uint32_t widen{static_cast<unsigned char>(chr)};
+            return widen - '0' <= '9' - '0';
+        };
+        if (!str.empty() && str.front() == '-') {
+            str.remove_prefix(1);
+        }
+        if (unlikely(str.empty() || !all_of(str, is_digit))) {
+            throw_on_invalid_dec_str(LONGINT_FILE_LOCATION(), str);
+        }
+    }
+
+    template <typename P>
+    [[nodiscard]] static bool all_of(const std::string_view str, P pred) noexcept(
+        std::is_nothrow_invocable_r_v<bool, P, char>) {
+        static_assert(std::is_invocable_r_v<bool, P, char>);
+        bool ret = true;
+        for (const char c : str) {
+            ret &= pred(c);
+        }
+
+        return ret;
+    }
+
+    ATTRIBUTE_COLD
+    [[noreturn]] static void throw_on_invalid_dec_str(const char* const file_location,
+                                                      const char* const function_name,
+                                                      const std::string_view str) {
+        throw std::invalid_argument{misc::join_strings(
+            "Can't convert string '", str, "' to longint at ", file_location, ' ', function_name)};
+    }
+
     ATTRIBUTE_SIZED_ACCESS(read_only, 2, 3)
-    inline void set_str_impl(const unsigned char* str, const std::size_t str_size);
+    inline void set_dec_str_impl(const unsigned char* str, const std::size_t str_size);
 
     [[nodiscard]]
     ATTRIBUTE_PURE constexpr int64_t mod_by_power_of_2_ge_2_impl(const uint32_t n) const noexcept {
@@ -2793,7 +2828,7 @@ private:
         } while (++i != pows_size);
     }
 
-    ATTRIBUTE_NOINLINE ATTRIBUTE_COLD void grow_capacity() {
+    ATTRIBUTE_NOINLINE void grow_capacity() {
         const size_type current_capacity = capacity();
         static_assert(max_size() * 2 > max_size());
         const size_type new_capacity = (current_capacity * 2) | (current_capacity == 0);
@@ -3169,16 +3204,13 @@ private:
 
 }  // namespace longint_detail
 
-inline void longint::set_str_impl(const unsigned char* str, const std::size_t str_size) {
+inline void longint::set_dec_str_impl(const unsigned char* const str, const std::size_t str_size) {
     const unsigned char* str_iter = str;
     const unsigned char* const str_end = str + str_size;
 
     std::int32_t sgn = 1;
-    constexpr auto is_digit = [](const std::uint32_t chr) constexpr noexcept {
-        return chr - '0' <= '9' - '0';
-    };
-    while (str_iter != str_end && !is_digit(*str_iter)) {
-        sgn = *str_iter == '-' ? -1 : 1;
+    if (str_iter != str_end && *str_iter == '-') {
+        sgn = -1;
         ++str_iter;
     }
 
@@ -3246,7 +3278,7 @@ inline void longint::set_str_impl(const unsigned char* str, const std::size_t st
         } while (str_iter != str_end);
     }
 
-    static_assert(max_size() * 2 > max_size());
+    static_assert(max_size() * 4 > max_size());
     std::size_t m = aligned_str_conv_digits_size * 2;
     if (m > kFFTPrecisionBorder) {
         m *= 2;

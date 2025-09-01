@@ -1743,6 +1743,38 @@ void test_general_asserts() noexcept {
 
     // clang-format on
 
+    ASSERT_THAT(log2_floor(uint16_t{0}) == static_cast<uint32_t>(-1));
+    ASSERT_THAT(log2_floor(uint16_t{1}) == 0);
+    ASSERT_THAT(log2_floor(uint16_t{2}) == 1);
+    ASSERT_THAT(log2_floor(uint16_t{4}) == 2);
+    ASSERT_THAT(log2_floor(uint16_t{8}) == 3);
+    ASSERT_THAT(log2_floor(uint16_t{9}) == 3);
+    ASSERT_THAT(log2_floor(uint16_t{10}) == 3);
+    ASSERT_THAT(log2_floor(uint16_t{15}) == 3);
+    ASSERT_THAT(log2_floor(uint16_t{16}) == 4);
+    ASSERT_THAT(log2_floor(uint16_t{99}) == 6);
+    ASSERT_THAT(log2_floor(uint16_t{100}) == 6);
+    ASSERT_THAT(log2_floor(uint16_t{127}) == 6);
+    ASSERT_THAT(log2_floor(uint16_t{128}) == 7);
+    ASSERT_THAT(log2_floor(uint16_t{129}) == 7);
+    ASSERT_THAT(log2_floor(std::numeric_limits<uint16_t>::max()) == 15);
+
+    ASSERT_THAT(log2_ceil(uint16_t{0}) == static_cast<uint32_t>(-1));
+    ASSERT_THAT(log2_ceil(uint16_t{1}) == 0);
+    ASSERT_THAT(log2_ceil(uint16_t{2}) == 1);
+    ASSERT_THAT(log2_ceil(uint16_t{4}) == 2);
+    ASSERT_THAT(log2_ceil(uint16_t{8}) == 3);
+    ASSERT_THAT(log2_ceil(uint16_t{9}) == 4);
+    ASSERT_THAT(log2_ceil(uint16_t{10}) == 4);
+    ASSERT_THAT(log2_ceil(uint16_t{15}) == 4);
+    ASSERT_THAT(log2_ceil(uint16_t{16}) == 4);
+    ASSERT_THAT(log2_ceil(uint16_t{99}) == 7);
+    ASSERT_THAT(log2_ceil(uint16_t{100}) == 7);
+    ASSERT_THAT(log2_ceil(uint16_t{127}) == 7);
+    ASSERT_THAT(log2_ceil(uint16_t{128}) == 7);
+    ASSERT_THAT(log2_ceil(uint16_t{129}) == 8);
+    ASSERT_THAT(log2_ceil(std::numeric_limits<uint16_t>::max()) == 16);
+
     ASSERT_THAT(log2_floor(uint32_t{0}) == static_cast<uint32_t>(-1));
     ASSERT_THAT(log2_floor(uint32_t{1}) == 0);
     ASSERT_THAT(log2_floor(uint32_t{2}) == 1);

@@ -65,8 +65,8 @@ constexpr bool is_filesystem_path_v = false;
 #endif
 
 template <class CharType, class T>
-[[nodiscard]]
-ATTRIBUTE_ALWAYS_INLINE inline std::basic_string<CharType> ArithmeticToStringImpl(const T arg) {
+ATTRIBUTE_ALWAYS_INLINE [[nodiscard]]
+inline std::basic_string<CharType> ArithmeticToStringImpl(const T arg) {
     if constexpr (std::is_integral_v<T>) {
         if (config::is_constant_evaluated() || config::is_gcc_constant_p(arg)) {
             if constexpr (sizeof(T) > sizeof(int)) {
@@ -404,8 +404,8 @@ template <class CharType, class T>
 #endif
 
 template <class CharType, class T>
-[[nodiscard]]
-ATTRIBUTE_ALWAYS_INLINE inline std::basic_string<CharType> ToStringOneArg(const T &arg) {
+ATTRIBUTE_ALWAYS_INLINE [[nodiscard]]
+inline std::basic_string<CharType> ToStringOneArg(const T &arg) {
     static_assert(is_char_v<CharType>, "implementation error");
 
 #ifdef JOIN_STRINGS_SUPPORTS_CUSTOM_TO_STRING

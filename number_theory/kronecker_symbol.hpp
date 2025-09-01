@@ -18,7 +18,8 @@ template <typename Uint>
 #if CONFIG_HAS_AT_LEAST_CXX_20
     requires int128_traits::is_unsigned_v<Uint>
 #endif
-ATTRIBUTE_CONST constexpr std::int32_t kronecker_symbol_ui(Uint a, Uint n) noexcept {
+ATTRIBUTE_CONST [[nodiscard]]
+constexpr std::int32_t kronecker_symbol_ui(Uint a, Uint n) noexcept {
     std::int32_t t = 1;
 
     if (n % 2 == 0) {
@@ -28,7 +29,7 @@ ATTRIBUTE_CONST constexpr std::int32_t kronecker_symbol_ui(Uint a, Uint n) noexc
             return a == 1;
         }
 
-        auto [q, p] = ::math_functions::extract_pow2(n);
+        const auto [q, p] = ::math_functions::extract_pow2(n);
         CONFIG_ASSUME_STATEMENT(q % 2 == 1);
         n = q;
 
@@ -36,26 +37,30 @@ ATTRIBUTE_CONST constexpr std::int32_t kronecker_symbol_ui(Uint a, Uint n) noexc
             case 0:
             case 2:
             case 4:
-            case 6:
+            case 6: {
                 // a % 2 == 0
                 // t = 0, but we return t or 0 so we can return 0 right here
                 return 0;
+            }
             case 3:
-            case 5:
+            case 5: {
                 // a === +-3 (mod 8)
                 // t = (-1) ^ p
                 t -= static_cast<std::int32_t>((p % 2) * 2);
                 CONFIG_ASSUME_STATEMENT(t == -1 || t == 1);
                 break;
+            }
             case 1:
-            case 7:
+            case 7: {
                 // a === +-1 (mod 8)
                 // t = 1
                 break;
-            default:
+            }
+            default: {
                 // for the static analysers
                 std::abort();
                 break;
+            }
         }
     }
 
@@ -69,17 +74,19 @@ ATTRIBUTE_CONST constexpr std::int32_t kronecker_symbol_ui(Uint a, Uint n) noexc
     while (a != 0) {
         // step 2
         if (a % 2 == 0) {
-            auto [a_odd_part, a_exp] = ::math_functions::extract_pow2(a);
+            const auto [a_odd_part, a_exp] = ::math_functions::extract_pow2(a);
             a = a_odd_part;
             r = n % 8;
             CONFIG_ASSUME_STATEMENT(r <= 7);
             switch (r) {
                 case 3:
-                case 5:
+                case 5: {
                     t = a_exp % 2 == 0 ? t : -t;
                     break;
-                default:
+                }
+                default: {
                     break;
+                }
             }
         }
 
@@ -101,7 +108,8 @@ template <typename Sint>
 #if CONFIG_HAS_AT_LEAST_CXX_20
     requires int128_traits::is_signed_v<Sint>
 #endif
-ATTRIBUTE_CONST constexpr std::int32_t kronecker_symbol_si(Sint a, Sint n) noexcept {
+ATTRIBUTE_CONST [[nodiscard]]
+constexpr std::int32_t kronecker_symbol_si(Sint a, Sint n) noexcept {
     const bool carry = n < 0 && a < 0;
     using Uint = typename int128_traits::make_unsigned_t<Sint>;
     Uint n_u = ::math_functions::uabs(n);
@@ -114,7 +122,7 @@ ATTRIBUTE_CONST constexpr std::int32_t kronecker_symbol_si(Sint a, Sint n) noexc
             return a == 1 || a == -1;
         }
 
-        auto [q, p] = ::math_functions::extract_pow2(n_u);
+        const auto [q, p] = ::math_functions::extract_pow2(n_u);
         CONFIG_ASSUME_STATEMENT(q % 2 == 1);
         n_u = q;
 
@@ -122,26 +130,30 @@ ATTRIBUTE_CONST constexpr std::int32_t kronecker_symbol_si(Sint a, Sint n) noexc
             case 0:
             case 2:
             case 4:
-            case 6:
+            case 6: {
                 // a % 2 == 0
                 // t = 0, but we return t or 0 so we can return 0 right here
                 return 0;
+            }
             case 3:
-            case 5:
+            case 5: {
                 // a === +-3 (mod 8)
                 // t = (-1) ^ p
                 t -= static_cast<std::int32_t>((p % 2) * 2);
                 CONFIG_ASSUME_STATEMENT(t == -1 || t == 1);
                 break;
+            }
             case 1:
-            case 7:
+            case 7: {
                 // a === +-1 (mod 8)
                 // t = 1
                 break;
-            default:
+            }
+            default: {
                 // for the static analysers
                 std::abort();
                 break;
+            }
         }
     }
 
@@ -155,17 +167,19 @@ ATTRIBUTE_CONST constexpr std::int32_t kronecker_symbol_si(Sint a, Sint n) noexc
     while (a_u != 0) {
         // step 2
         if (a_u % 2 == 0) {
-            auto [a_u_odd_part, a_u_exp] = ::math_functions::extract_pow2(a_u);
+            const auto [a_u_odd_part, a_u_exp] = ::math_functions::extract_pow2(a_u);
             a_u = a_u_odd_part;
             r = n_u % 8;
             CONFIG_ASSUME_STATEMENT(r <= 7);
             switch (r) {
                 case 3:
-                case 5:
+                case 5: {
                     t = a_u_exp % 2 == 0 ? t : -t;
                     break;
-                default:
+                }
+                default: {
                     break;
+                }
             }
         }
 
@@ -187,7 +201,8 @@ template <class Sint, class Uint>
 #if CONFIG_HAS_AT_LEAST_CXX_20
     requires int128_traits::is_signed_v<Sint> && int128_traits::is_unsigned_v<Uint>
 #endif
-ATTRIBUTE_CONST constexpr int32_t kronecker_symbol_si_ui(Sint a, Uint n) noexcept {
+ATTRIBUTE_CONST [[nodiscard]]
+constexpr std::int32_t kronecker_symbol_si_ui(Sint a, Uint n) noexcept {
     std::int32_t t = 1;
 
     if (n % 2 == 0) {
@@ -197,7 +212,7 @@ ATTRIBUTE_CONST constexpr int32_t kronecker_symbol_si_ui(Sint a, Uint n) noexcep
             return a == 1 || a == -1;
         }
 
-        auto [q, p] = ::math_functions::extract_pow2(n);
+        const auto [q, p] = ::math_functions::extract_pow2(n);
         CONFIG_ASSUME_STATEMENT(q % 2 == 1);
         n = q;
 
@@ -205,26 +220,30 @@ ATTRIBUTE_CONST constexpr int32_t kronecker_symbol_si_ui(Sint a, Uint n) noexcep
             case 0:
             case 2:
             case 4:
-            case 6:
+            case 6: {
                 // a % 2 == 0
                 // t = 0, but we return t or 0 so we can return 0 right here
                 return 0;
+            }
             case 3:
-            case 5:
+            case 5: {
                 // a === +-3 (mod 8)
                 // t = (-1) ^ p
                 t -= static_cast<std::int32_t>((p % 2) * 2);
                 CONFIG_ASSUME_STATEMENT(t == -1 || t == 1);
                 break;
+            }
             case 1:
-            case 7:
+            case 7: {
                 // a === +-1 (mod 8)
                 // t = 1
                 break;
-            default:
+            }
+            default: {
                 // for the static analysers
                 std::abort();
                 break;
+            }
         }
     }
 
@@ -239,16 +258,18 @@ ATTRIBUTE_CONST constexpr int32_t kronecker_symbol_si_ui(Sint a, Uint n) noexcep
     while (a_u != 0) {
         // step 2
         if (a_u % 2 == 0) {
-            auto [a_u_odd_part, a_u_exp] = ::math_functions::extract_pow2(a_u);
+            const auto [a_u_odd_part, a_u_exp] = ::math_functions::extract_pow2(a_u);
             a_u = a_u_odd_part;
             r = n % 8;
             switch (r) {
                 case 3:
-                case 5:
+                case 5: {
                     t = a_u_exp % 2 == 0 ? t : -t;
                     break;
-                default:
+                }
+                default: {
                     break;
+                }
             }
         }
 
@@ -279,8 +300,8 @@ ATTRIBUTE_CONST constexpr int32_t kronecker_symbol_si_ui(Sint a, Uint n) noexcep
 /// @param n
 /// @return Kronecker symbol of (a/n) (-1, 0 or 1)
 template <typename IntegerT1, typename IntegerT2>
-ATTRIBUTE_CONST ATTRIBUTE_ALWAYS_INLINE constexpr int32_t kronecker_symbol(IntegerT1 a,
-                                                                           IntegerT2 n) noexcept {
+ATTRIBUTE_CONST ATTRIBUTE_ALWAYS_INLINE [[nodiscard]]
+constexpr std::int32_t kronecker_symbol(const IntegerT1 a, const IntegerT2 n) noexcept {
 #if CONFIG_HAS_AT_LEAST_CXX_20
     using T1 = std::remove_cvref_t<IntegerT1>;
     using T2 = std::remove_cvref_t<IntegerT2>;

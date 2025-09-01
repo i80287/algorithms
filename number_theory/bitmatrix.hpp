@@ -393,7 +393,9 @@ public:
     // initializers like {0b00, 0b10, ...} (like in the std::array)
     matrix_type data_{};
 
-    [[nodiscard]] ATTRIBUTE_CONST static CONSTEXPR_BITSET_OPS square_bitmatrix identity() noexcept {
+    ATTRIBUTE_CONST
+    [[nodiscard]]
+    static CONSTEXPR_BITSET_OPS square_bitmatrix identity() noexcept {
         if constexpr (N <= kAlignmentBits) {
             if constexpr (kAlignmentBits == 64) {
                 return {
@@ -493,10 +495,14 @@ public:
             return create_identity_matrix_impl();
         }
     }
-    [[nodiscard]] ATTRIBUTE_CONST static constexpr square_bitmatrix allzeros() noexcept {
+    ATTRIBUTE_CONST
+    [[nodiscard]]
+    static constexpr square_bitmatrix allzeros() noexcept {
         return square_bitmatrix{};
     }
-    [[nodiscard]] ATTRIBUTE_CONST static CONSTEXPR_BITSET_OPS square_bitmatrix allones() noexcept {
+    ATTRIBUTE_CONST
+    [[nodiscard]]
+    static CONSTEXPR_BITSET_OPS square_bitmatrix allones() noexcept {
         square_bitmatrix m{};
         for (row_type& row : m) {
             row.set();
@@ -864,7 +870,9 @@ private:
 
     template <class F>
     ATTRIBUTE_ALWAYS_INLINE
-    static constexpr void for_each_row_set_bit_impl(const row_type& row, F fn) noexcept(is_noexcept_index_fn<F>()) {
+    static constexpr void for_each_row_set_bit_impl(const row_type& row, F fn)
+            noexcept(is_noexcept_index_fn<F>())
+    {
         if constexpr (kUseSGIExtension) {
             for (size_type j = row._Find_first(); j < N; j = row._Find_next(j)) {
                 fn(j);

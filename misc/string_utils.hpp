@@ -2,6 +2,7 @@
 
 #include <string>
 #include <string_view>
+#include <type_traits>
 
 #include "config_macros.hpp"
 #include "string_traits.hpp"
@@ -36,19 +37,22 @@ struct alpha_digit_tag final : trim_tag {};
 struct hex_digit_tag final : trim_tag {};
 
 template <class StrType, class TrimStrType = whitespace_tag>
-[[nodiscard]]
-ATTRIBUTE_ALWAYS_INLINE inline auto trim(const StrType &str ATTRIBUTE_LIFETIME_BOUND,
-                                         const TrimStrType &trim_chars = {}) noexcept;
-
-template <class CharType>
-[[nodiscard]] inline bool is_whitespace(const std::basic_string_view<CharType> str) noexcept;
-
-template <class CharType>
-[[nodiscard]] inline bool is_whitespace(const std::basic_string<CharType> &str) noexcept;
+ATTRIBUTE_ALWAYS_INLINE [[nodiscard]]
+inline auto trim(
+    const StrType &str ATTRIBUTE_LIFETIME_BOUND,
+    const TrimStrType &trim_chars = {}) noexcept(std::is_base_of_v<trim_tag, TrimStrType>);
 
 template <class CharType>
 [[nodiscard]]
-ATTRIBUTE_NONNULL_ALL_ARGS inline bool is_whitespace(const CharType *const str) noexcept;
+inline bool is_whitespace(const std::basic_string_view<CharType> str) noexcept;
+
+template <class CharType>
+[[nodiscard]]
+inline bool is_whitespace(const std::basic_string<CharType> &str) noexcept;
+
+template <class CharType>
+ATTRIBUTE_NONNULL_ALL_ARGS [[nodiscard]]
+inline bool is_whitespace(const CharType *const str) noexcept;
 
 template <class CharType>
 ATTRIBUTE_SIZED_ACCESS(read_write, 1, 2)
@@ -82,8 +86,8 @@ template <class CharType>
 [[nodiscard]] inline std::basic_string<CharType> to_upper(const std::basic_string<CharType> &str);
 
 template <class CharType>
-[[nodiscard]]
-ATTRIBUTE_NONNULL_ALL_ARGS inline std::basic_string<CharType> to_upper(const CharType *const str);
+ATTRIBUTE_NONNULL_ALL_ARGS [[nodiscard]]
+inline std::basic_string<CharType> to_upper(const CharType *const str);
 
 }  // namespace misc
 

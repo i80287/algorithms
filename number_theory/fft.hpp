@@ -9,6 +9,7 @@
 #include <utility>
 #include <vector>
 
+#include "../misc/assert.hpp"
 #include "../misc/config_macros.hpp"
 
 #if defined(__cpp_lib_math_constants) && __cpp_lib_math_constants >= 201907L && \
@@ -58,50 +59,6 @@ inline void forward_backward_fft(std::span<complex> poly1, std::span<complex> po
 
 namespace detail {
 
-ATTRIBUTE_NORETURN
-ATTRIBUTE_COLD
-ATTRIBUTE_NONNULL_ALL_ARGS
-inline void throw_impl(const char* const message, const char* const function_name) {
-    throw std::runtime_error{std::string{message} + function_name};
-}
-
-ATTRIBUTE_NONNULL_ALL_ARGS
-ATTRIBUTE_ALWAYS_INLINE
-inline void throw_if_not_impl(const bool expr,
-                              const char* const message,
-                              const char* const function_name) {
-    if (unlikely(!expr)) {
-        throw_impl(message, function_name);
-    }
-}
-
-#define THROW_IF_NOT2(expr, expr_str, file_name_str, line_int, function_name)                   \
-    fft::detail::throw_if_not_impl(expr,                                                        \
-                                   "Expression \"" expr_str                                     \
-                                   "\" evaluated to false at " file_name_str ":" #line_int ":", \
-                                   function_name)
-
-#define THROW_IF_NOT1(expr, expr_str, file_name_str, line_int, function_name) \
-    THROW_IF_NOT2(expr, expr_str, file_name_str, line_int, function_name)
-
-#define THROW_IF_NOT(expr) \
-    THROW_IF_NOT1(expr, #expr, __FILE__, __LINE__, CONFIG_CURRENT_FUNCTION_NAME)
-
-template <class T>
-ATTRIBUTE_CONST [[nodiscard]]
-inline bool are_distinct_non_empty_ranges(const T* const array_1_begin,
-                                          const T* const array_2_begin,
-                                          const size_t n) noexcept {
-    const auto array_1_begin_int = reinterpret_cast<uintptr_t>(array_1_begin);
-    const auto array_2_begin_int = reinterpret_cast<uintptr_t>(array_2_begin);
-    const auto array_1_end_int = array_1_begin_int + n * sizeof(T);
-    const auto array_2_end_int = array_2_begin_int + n * sizeof(T);
-
-    return array_1_begin_int != 0 && array_2_begin_int != 0 &&
-           array_1_begin_int < array_1_end_int && array_2_begin_int < array_2_end_int &&
-           ((array_1_end_int <= array_2_begin_int) ^ (array_2_end_int <= array_1_begin_int));
-}
-
 struct private_impl final {
 private:
     /*
@@ -116,18 +73,33 @@ private:
         complex{1, 0},
     };
 
-#define CHECK_POLYNOMIAL_SIZE(n) THROW_IF_NOT(n > 0 && (n & (n - 1)) == 0)
+    ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_CONST [[nodiscard]]
+    static constexpr bool is_valid_polynomial_size(const size_t n) noexcept {
+        return n > 0 && (n & (n - 1)) == 0;
+    }
 
-    ATTRIBUTE_ALWAYS_INLINE
-    static void assume_polynomial_size_is_checked(const size_t n) noexcept {
-        CONFIG_ASSUME_STATEMENT(n > 0 && (n & (n - 1)) == 0);
+    template <typename T>
+    ATTRIBUTE_CONST [[nodiscard]]
+    static bool are_distinct_non_empty_ranges(const T* const array_1_begin,
+                                              const T* const array_2_begin,
+                                              const size_t n) noexcept {
+        const auto array_1_begin_int = reinterpret_cast<uintptr_t>(array_1_begin);
+        const auto array_2_begin_int = reinterpret_cast<uintptr_t>(array_2_begin);
+        const auto array_1_end_int = array_1_begin_int + n * sizeof(T);
+        const auto array_2_end_int = array_2_begin_int + n * sizeof(T);
+
+        const bool range_1_is_valid = array_1_begin_int != 0 && array_1_begin_int < array_1_end_int;
+        const bool range_2_is_valid = array_2_begin_int != 0 && array_2_begin_int < array_2_end_int;
+
+        return range_1_is_valid && range_2_is_valid &&
+               ((array_1_end_int <= array_2_begin_int) ^ (array_2_end_int <= array_1_begin_int));
     }
 
     template <bool IsBackwardFFT = false /* Forward of backward FFT */>
     ATTRIBUTE_SIZED_ACCESS(read_write, 1, 2)
     ATTRIBUTE_NONNULL(1) static void forward_or_backward_fft(complex* const p,
                                                              const size_t k) noexcept {
-        assume_polynomial_size_is_checked(k);
+        CONFIG_ASSUME_STATEMENT(is_valid_polynomial_size(k));
 
         for (std::size_t i = 1, k_reversed_i = 0; i < k; i++) {
             // 'Increase' k_reversed_i by one
@@ -185,7 +157,7 @@ private:
     }
 
     static void ensure_roots_capacity_impl(const size_t n, std::vector<complex>& roots) {
-        assume_polynomial_size_is_checked(n);
+        CONFIG_ASSUME_STATEMENT(is_valid_polynomial_size(n));
 
         size_t current_len = roots.size();
         assert(current_len >= 2 && (current_len & (current_len - 1)) == 0);
@@ -218,14 +190,27 @@ private:
         assert(current_len == n);
     }
 
-    friend inline void fft::forward_backward_fft(complex* p1, complex* p2, size_t n);
+    friend inline void fft::forward_backward_fft(complex* RESTRICT_QUALIFIER p1,
+                                                 complex* RESTRICT_QUALIFIER p2,
+                                                 size_t n);
+
+#ifdef FFT_HAS_SPAN
+    friend inline void fft::forward_backward_fft(std::span<complex> poly1,
+                                                 std::span<complex> poly2);
+#endif
 };
 
 }  // namespace detail
 
-inline void forward_backward_fft(complex* const p1, complex* const p2, const size_t n) {
-    CHECK_POLYNOMIAL_SIZE(n);
-    THROW_IF_NOT(fft::detail::are_distinct_non_empty_ranges(p1, p2, n));
+inline void forward_backward_fft(complex* const RESTRICT_QUALIFIER p1,
+                                 complex* const RESTRICT_QUALIFIER p2,
+                                 const size_t n) {
+    if (unlikely(n == 0)) {
+        return;
+    }
+
+    THROW_IF_NOT(fft::detail::private_impl::is_valid_polynomial_size(n));
+    THROW_IF_NOT(fft::detail::private_impl::are_distinct_non_empty_ranges(p1, p2, n));
 
     fft::detail::private_impl::ensure_roots_capacity(n);
     fft::detail::private_impl::forward_or_backward_fft</*IsBackwardFFT = */ false>(p1, n);
@@ -269,10 +254,15 @@ inline void forward_backward_fft(complex* const p1, complex* const p2, const siz
 
 #ifdef FFT_HAS_SPAN
 
-inline void forward_backward_fft(std::span<complex> poly1, std::span<complex> poly2) {
-    THROW_IF_NOT(poly1.size() == poly2.size());
+inline void forward_backward_fft(const std::span<complex> poly1, const std::span<complex> poly2) {
+    THROW_IF(poly1.size() != poly2.size());
 
-    const bool allocate_memory = std::equal_to{}(poly1.data(), poly2.data());
+    if (unlikely(poly1.empty())) {
+        return;
+    }
+
+    const bool allocate_memory = !fft::detail::private_impl::are_distinct_non_empty_ranges(
+        poly1.data(), poly2.data(), poly2.size());
 
     using TemporaryStorage = std::vector<complex>;
     TemporaryStorage poly1_storage = [&]() {
@@ -291,9 +281,5 @@ inline void forward_backward_fft(std::span<complex> poly1, std::span<complex> po
 
 }  // namespace fft
 
-#undef CHECK_POLYNOMIAL_SIZE
-#undef THROW_IF_NOT
-#undef THROW_IF_NOT1
-#undef THROW_IF_NOT2
 #undef FFT_HAS_SPAN
 #undef FFT_HAS_NUMBERS

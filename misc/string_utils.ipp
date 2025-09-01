@@ -151,16 +151,12 @@ template <class CharType>
 template <class CharType, class Predicate>
 [[nodiscard]]
 ATTRIBUTE_ALWAYS_INLINE
-constexpr std::basic_string_view<CharType> trim_if(std::basic_string_view<CharType> str, const Predicate pred)
-    noexcept(std::is_nothrow_invocable_v<Predicate, CharType>)
+constexpr std::basic_string_view<CharType> trim_if(std::basic_string_view<CharType> str, Predicate pred)
+    noexcept(std::is_nothrow_invocable_r_v<bool, Predicate, CharType>)
 {
     // clang-format on
     static_assert(std::is_invocable_r_v<bool, Predicate, CharType>,
                   "predicate should accept CharType and return bool");
-
-#if CONFIG_HAS_CONCEPTS
-    static_assert(std::predicate<Predicate, CharType>);
-#endif
 
     while (!str.empty() && pred(str.front())) {
         str.remove_prefix(1);
@@ -184,7 +180,7 @@ constexpr std::basic_string_view<CharType> TrimChar(const std::basic_string_view
 template <class CharType>
 [[nodiscard]]
 std::basic_string_view<CharType> TrimCharsImpl(const std::basic_string_view<CharType> str,
-                                               const std::basic_string_view<CharType> trim_chars) noexcept {
+                                               const std::basic_string_view<CharType> trim_chars) {
     // clang-format on
     using UType = std::make_unsigned_t<CharType>;
     static constexpr size_t kMaxUTypeValue = static_cast<size_t>(std::numeric_limits<UType>::max());
@@ -219,7 +215,7 @@ template <class CharType>
 [[nodiscard]]
 ATTRIBUTE_ALWAYS_INLINE
 inline std::basic_string_view<CharType> TrimChars(const std::basic_string_view<CharType> str,
-                                                  const std::basic_string_view<CharType> trim_chars) noexcept {
+                                                  const std::basic_string_view<CharType> trim_chars) {
     // clang-format on
     const size_t trim_size = trim_chars.size();
     if (config::is_constant_evaluated() || config::is_gcc_constant_p(trim_size)) {
@@ -237,7 +233,8 @@ inline std::basic_string_view<CharType> TrimChars(const std::basic_string_view<C
 }  // namespace detail
 
 template <class StrType, class TrimStrType>
-inline auto trim(const StrType &str, const TrimStrType &trim_chars) noexcept {
+inline auto trim(const StrType &str,
+                 const TrimStrType &trim_chars) noexcept(std::is_base_of_v<trim_tag, TrimStrType>) {
     if constexpr (std::is_base_of_v<trim_tag, TrimStrType>) {
         using CharType = misc::string_detail::determine_char_t<StrType>;
         static_assert(misc::is_char_v<CharType>, "string is expected in the trim with tag");
@@ -245,17 +242,16 @@ inline auto trim(const StrType &str, const TrimStrType &trim_chars) noexcept {
         const std::basic_string_view<CharType> str_sv{str};
 
         if constexpr (std::is_same_v<TrimStrType, whitespace_tag>) {
-            return detail::trim_if(str_sv, [](const CharType c) constexpr noexcept {
-                return misc::is_whitespace<CharType>(c);
-            });
+            return detail::trim_if(
+                str_sv, [](const CharType c) noexcept { return misc::is_whitespace<CharType>(c); });
         } else if constexpr (std::is_same_v<TrimStrType, alpha_tag>) {
-            return detail::trim_if(str_sv, misc::is_alpha<CharType>);
+            return detail::trim_if(str_sv, &misc::is_alpha<CharType>);
         } else if constexpr (std::is_same_v<TrimStrType, digit_tag>) {
-            return detail::trim_if(str_sv, misc::is_digit<CharType>);
+            return detail::trim_if(str_sv, &misc::is_digit<CharType>);
         } else if constexpr (std::is_same_v<TrimStrType, alpha_digit_tag>) {
-            return detail::trim_if(str_sv, misc::is_alpha_digit<CharType>);
+            return detail::trim_if(str_sv, &misc::is_alpha_digit<CharType>);
         } else if constexpr (std::is_same_v<TrimStrType, hex_digit_tag>) {
-            return detail::trim_if(str_sv, misc::is_hex_digit<CharType>);
+            return detail::trim_if(str_sv, &misc::is_hex_digit<CharType>);
         } else {
             static_assert([]() constexpr { return false; }, "implementation error");
             return str;
