@@ -200,6 +200,23 @@ void test_int128_to_string() {
         assert(test_int128_to_string_test_case(int128_t{n}, std::to_string(n)));
     }
 
+    // GCC 14 false positive:
+    // allocation of the 4611686018427387904 bytes via the operator new at:
+    // clang-format off
+    //  std::__new_allocator<char>::allocate(size_type, const void*)                      at /usr/include/c++/14/bits/new_allocator.h:151:55
+    //  std::allocator<char>::allocate(size_type)                                         at /usr/include/c++/14/bits/allocator.h:196:40
+    //  std::allocator_traits<std::allocator<char>>::allocate(allocator_type&, size_type) at /usr/include/c++/14/bits/alloc_traits.h:478:28
+    //  std::string::_S_allocate(std::allocator<char>&, size_type)                        at /usr/include/c++/14/bits/basic_string.h:131:39
+    //  std::string::_M_create(size_type&, size_type)                                     at /usr/include/c++/14/bits/basic_string.tcc:159:25
+    //  std::string::_M_mutate(size_type, size_type, const char*, size_type)              at /usr/include/c++/14/bits/basic_string.tcc:332:30
+    //  std::string::_M_replace(size_type, size_type, const char*, size_type)             at /usr/include/c++/14/bits/basic_string.tcc:548:17
+    //  std::string::assign(char*, char*)                                                 at /usr/include/c++/14/bits/basic_string.h:1739:25
+    // clang-format on
+#if CONFIG_GNUC_AT_LEAST(14, 0) && !CONFIG_COMPILER_IS_ANY_CLANG
+#pragma GCC diagnostic push
+#pragma GCC diagnostic warning "-Wno-alloc-size-larger-than"
+#endif
+
     assert(test_int128_to_string_test_case(static_cast<uint128_t>(-1),
                                            "340282366920938463463374607431768211455"));
     assert(test_int128_to_string_test_case(uint128_t{1} << 127U,
@@ -212,6 +229,10 @@ void test_int128_to_string() {
     constexpr std::string_view kBigPrimeStr = "551416085849893361159";
     assert(test_int128_to_string_test_case(static_cast<int128_t>(kBigPrime), kBigPrimeStr));
     assert(test_int128_to_string_test_case(static_cast<uint128_t>(kBigPrime), kBigPrimeStr));
+
+#if CONFIG_GNUC_AT_LEAST(14, 0) && !CONFIG_COMPILER_IS_ANY_CLANG
+#pragma GCC diagnostic pop
+#endif
 }
 
 }  // namespace

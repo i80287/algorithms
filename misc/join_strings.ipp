@@ -96,16 +96,22 @@ inline std::basic_string<CharType> ArithmeticToStringImpl(const T arg) {
     }
 }
 
-// utility wrapper to adapt locale-bound facets
-template <class Facet>
-class deletable_facet final : public Facet {
-    using Base = Facet;
+#define JSTR_STRINGIFY_IMPL(expr) #expr
+#define JSTR_STRINGIFY(expr)      JSTR_STRINGIFY_IMPL(expr)
+#define JSTR_FILE_LOCATION_STR()  __FILE__ ":" JSTR_STRINGIFY(__LINE__)
 
-public:
-    using Base::Base;
+ATTRIBUTE_COLD
+[[noreturn]]
+inline void ThrowOnNegativeMaxLengthDuringConversionToNotUTF8(int32_t max_char_conv_len,
+                                                              std::string_view file_location,
+                                                              std::string_view function_name);
 
-    ~deletable_facet() = default;
-};
+ATTRIBUTE_COLD
+[[noreturn]]
+inline void ThrowOnTooLongStringDuringConversionToNotUTF8(size_t input_str_size,
+                                                          size_t max_char_conv_len,
+                                                          std::string_view file_location,
+                                                          std::string_view function_name);
 
 #if CONFIG_COMPILER_IS_ANY_CLANG
 #pragma clang diagnostic push
@@ -137,11 +143,12 @@ bool DoStrCodecvt(const std::basic_string_view<InCharType> in_str,
     size_t outchars = 0;
     const InCharType *next = first;
     const int maxlen_signed = cvt.max_length() + 1;
+    // __do_str_codecvt doesn't check it but this function does just in case
     if (unlikely(maxlen_signed <= 0)) {
-        // __do_str_codecvt doesn't check it but this function does just in case
-        throw std::runtime_error{"codecvt::max_length() returned negative value"};
+        ThrowOnNegativeMaxLengthDuringConversionToNotUTF8(maxlen_signed, JSTR_FILE_LOCATION_STR(),
+                                                          CONFIG_CURRENT_FUNCTION_NAME);
     }
-    const auto maxlen = static_cast<unsigned>(maxlen_signed);
+    const auto maxlen = size_t{static_cast<unsigned>(maxlen_signed)};
 
     using std::codecvt_base;
 
@@ -156,10 +163,9 @@ bool DoStrCodecvt(const std::basic_string_view<InCharType> in_str,
         size_t out_str_new_conv_max_size = 0;
         overflowed |= __builtin_add_overflow(out_str.size(), max_bytes_to_convert,
                                              &out_str_new_conv_max_size);
-        if (overflowed) [[unlikely]] {
-            throw std::runtime_error{misc::join_strings(
-                "DoStrCodecvt(): size of the converted string is too large. Input string size: ",
-                in_str.size(), ", max size of the converted character: ", maxlen)};
+        if (unlikely(overflowed)) {
+            ThrowOnTooLongStringDuringConversionToNotUTF8(
+                in_str.size(), maxlen, JSTR_FILE_LOCATION_STR(), CONFIG_CURRENT_FUNCTION_NAME);
         }
 #else
         const size_t max_bytes_to_convert = bytes_to_convert * maxlen;
@@ -193,10 +199,6 @@ bool DoStrCodecvt(const std::basic_string_view<InCharType> in_str,
     return true;
 }
 
-#define JSTR_STRINGIFY_IMPL(expr) #expr
-#define JSTR_STRINGIFY(expr)      JSTR_STRINGIFY_IMPL(expr)
-#define JSTR_FILE_LOCATION_STR()  __FILE__ ":" JSTR_STRINGIFY(__LINE__)
-
 ATTRIBUTE_COLD
 [[noreturn]]
 inline void ThrowOnFailedConversionToNotUTF8(bool conversion_succeeded,
@@ -204,6 +206,18 @@ inline void ThrowOnFailedConversionToNotUTF8(bool conversion_succeeded,
                                              size_t string_size,
                                              std::string_view file_location,
                                              std::string_view function_name);
+
+// utility wrapper to adapt locale-bound facets
+template <class Facet>
+class deletable_facet final : public Facet {
+private:
+    using Base = Facet;
+
+public:
+    using Base::Base;
+
+    ~deletable_facet() = default;
+};
 
 template <class ToCharType>
 [[nodiscard]]
@@ -678,6 +692,27 @@ inline auto join_strings(const Args&... args) {
 // clang-format on
 
 namespace join_strings_detail {
+
+inline void ThrowOnNegativeMaxLengthDuringConversionToNotUTF8(
+    const int32_t max_char_conv_len,
+    const std::string_view file_location,
+    const std::string_view function_name) {
+    throw std::runtime_error{misc::join_strings("codecvt::max_length() returned negative value ",
+                                                max_char_conv_len, " at ", file_location, ' ',
+                                                function_name)};
+}
+
+inline void ThrowOnTooLongStringDuringConversionToNotUTF8(const size_t input_str_size,
+                                                          const size_t max_char_conv_len,
+                                                          const std::string_view file_location,
+                                                          const std::string_view function_name
+
+) {
+    throw std::runtime_error{misc::join_strings(
+        "DoStrCodecvt(): size of the converted string is too large. Input string size: ",
+        input_str_size, ", max size of the converted character: ", max_char_conv_len, " at ",
+        file_location, ' ', function_name)};
+}
 
 inline void ThrowOnFailedConversionToNotUTF8(const bool conversion_succeeded,
                                              const size_t converted_bytes_count,
