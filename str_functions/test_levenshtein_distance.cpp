@@ -88,7 +88,8 @@ constexpr bool verify() {
 }
 
 int main() {
-#if CONFIG_HAS_AT_LEAST_CXX_20 && !defined(_GLIBCXX_DEBUG) && !defined(_GLIBCXX_ASSERTIONS)
+#if CONFIG_HAS_AT_LEAST_CXX_20 && !defined(_GLIBCXX_DEBUG) && !defined(_GLIBCXX_ASSERTIONS) && \
+    !CONFIG_HAS_UNDEFINED_BEHAVIOR_SANITIZER()
     static_assert(verify(), "");
 #endif
     assert(verify());

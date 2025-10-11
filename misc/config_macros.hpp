@@ -214,6 +214,17 @@
 #define CONFIG_HAS_INCLUDE(include_string) 0
 #endif
 
+#if defined(__has_feature)
+#define CONFIG_HAS_FEATURE(feature) __has_feature(feature)
+#else
+#define CONFIG_HAS_FEATURE(feature) 0
+#endif
+
+#define CONFIG_HAS_ADDRESS_SANITIZER()            CONFIG_HAS_FEATURE(address_sanitizer)
+#define CONFIG_HAS_THREAD_SANITIZER()             CONFIG_HAS_FEATURE(thread_sanitizer)
+#define CONFIG_HAS_MEMORY_SANITIZER()             CONFIG_HAS_FEATURE(memory_sanitizer)
+#define CONFIG_HAS_UNDEFINED_BEHAVIOR_SANITIZER() CONFIG_HAS_FEATURE(undefined_behavior_sanitizer)
+
 #if CONFIG_HAS_INCLUDE(<version>)
 #include <version>
 #elif CONFIG_HAS_INCLUDE(<ciso646>)
