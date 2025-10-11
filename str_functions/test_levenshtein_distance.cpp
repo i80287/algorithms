@@ -7,6 +7,8 @@
 #include "../misc/config_macros.hpp"
 #include "levenshtein_distance.hpp"
 
+namespace {
+
 constexpr bool verify() {
     using str_tools::levenshtein_distance;
 
@@ -87,9 +89,12 @@ constexpr bool verify() {
     return true;
 }
 
+}  // namespace
+
 int main() {
 #if CONFIG_HAS_AT_LEAST_CXX_20 && !defined(_GLIBCXX_DEBUG) && !defined(_GLIBCXX_ASSERTIONS) && \
-    !CONFIG_HAS_UNDEFINED_BEHAVIOR_SANITIZER()
+    !CONFIG_HAS_UNDEFINED_BEHAVIOR_SANITIZER() &&                                              \
+    (!CONFIG_COMPILER_IS_GCC || CONFIG_GNUC_AT_LEAST(13, 0))
     static_assert(verify(), "");
 #endif
     assert(verify());
