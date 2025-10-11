@@ -21,4 +21,6 @@ for force_disable_checks in ON OFF; do
         echo "Starting $test_executable"
         wine "$test_executable"
     done
+
+    leave_test
 done

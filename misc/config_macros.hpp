@@ -832,6 +832,15 @@
 #define CONFIG_CLANG_NULLABLE_QUALIFIER
 #endif
 
+#if CONFIG_HAS_AT_LEAST_CXX_20 && !defined(_GLIBCXX_DEBUG) && !defined(_GLIBCXX_ASSERTIONS) && \
+    (CONFIG_HAS_AT_LEAST_CXX_23 || !CONFIG_HAS_UNDEFINED_BEHAVIOR_SANITIZER()) &&              \
+    (!CONFIG_COMPILER_IS_GCC || CONFIG_GNUC_AT_LEAST(13, 0)) &&                                \
+    (!CONFIG_COMPILER_IS_ANY_CLANG || CONFIG_CLANG_AT_LEAST(18, 0))
+#define CONFIG_VECTOR_SUPPORTS_CONSTEXPR_OPERATIONS 1
+#else
+#define CONFIG_VECTOR_SUPPORTS_CONSTEXPR_OPERATIONS 0
+#endif
+
 // Copypasted from LLVM's int_endianness.h
 
 /* ===-- int_endianness.h - configuration header for compiler-rt ------------===

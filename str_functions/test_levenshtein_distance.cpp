@@ -92,9 +92,7 @@ constexpr bool verify() {
 }  // namespace
 
 int main() {
-#if CONFIG_HAS_AT_LEAST_CXX_20 && !defined(_GLIBCXX_DEBUG) && !defined(_GLIBCXX_ASSERTIONS) && \
-    !CONFIG_HAS_UNDEFINED_BEHAVIOR_SANITIZER() &&                                              \
-    (!CONFIG_COMPILER_IS_GCC || CONFIG_GNUC_AT_LEAST(13, 0))
+#if CONFIG_VECTOR_SUPPORTS_CONSTEXPR_OPERATIONS
     static_assert(verify(), "");
 #endif
     assert(verify());

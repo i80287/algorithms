@@ -1900,13 +1900,8 @@ struct [[nodiscard]] PrimeFactor final {
     uint32_t factor_power;
 };
 
-#if CONFIG_HAS_AT_LEAST_CXX_20 && !defined(_GLIBCXX_DEBUG) && !defined(_GLIBCXX_ASSERTIONS) && \
-    ((CONFIG_COMPILER_ID != CONFIG_CLANG_COMPILER_ID &&                                        \
-      CONFIG_COMPILER_ID != CONFIG_CLANG_CL_COMPILER_ID) ||                                    \
-     CONFIG_CLANG_AT_LEAST(15, 0)) &&                                                          \
-    (CONFIG_COMPILER_ID != CONFIG_GCC_COMPILER_ID || CONFIG_GNUC_AT_LEAST(12, 0))
+#if CONFIG_VECTOR_SUPPORTS_CONSTEXPR_OPERATIONS
 #define CONSTEXPR_VECTOR constexpr
-#define HAS_CONSTEXPR_VECTOR
 #else
 #define CONSTEXPR_VECTOR inline
 #endif
@@ -1990,7 +1985,7 @@ template <class IntType>
 
     math_functions::visit_prime_factors(
         n, [&prime_factors_vector](math_functions::PrimeFactor<UnsignedIntType> pf)
-#ifdef HAS_CONSTEXPR_VECTOR
+#if CONFIG_VECTOR_SUPPORTS_CONSTEXPR_OPERATIONS
                constexpr
 #endif
         noexcept(kReservePlaceForFactors) { prime_factors_vector.push_back(std::move(pf)); });
@@ -3428,9 +3423,6 @@ constexpr std::common_type_t<M, N> gcd(const M m,
 
 }  // namespace math_functions
 
-#ifdef HAS_CONSTEXPR_VECTOR
-#undef HAS_CONSTEXPR_VECTOR
-#endif
 #undef CONSTEXPR_VECTOR
 
 #ifdef MATH_FUNCTIONS_HAS_NUMBERS

@@ -10,7 +10,9 @@
 #include <string>
 #include <vector>
 
-#if __cplusplus >= 202002L && !defined(_GLIBCXX_DEBUG) && !defined(_GLIBCXX_ASSERTIONS)
+#include "../misc/config_macros.hpp"
+
+#if CONFIG_VECTOR_SUPPORTS_CONSTEXPR_OPERATIONS
 #define CONSTEXPR_VECTOR constexpr
 #else
 #define CONSTEXPR_VECTOR inline
