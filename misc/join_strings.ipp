@@ -96,16 +96,22 @@ inline std::basic_string<CharType> ArithmeticToStringImpl(const T arg) {
     }
 }
 
-// utility wrapper to adapt locale-bound facets
-template <class Facet>
-class deletable_facet final : public Facet {
-    using Base = Facet;
+#define JSTR_STRINGIFY_IMPL(expr) #expr
+#define JSTR_STRINGIFY(expr)      JSTR_STRINGIFY_IMPL(expr)
+#define JSTR_FILE_LOCATION_STR()  __FILE__ ":" JSTR_STRINGIFY(__LINE__)
 
-public:
-    using Base::Base;
+ATTRIBUTE_COLD
+[[noreturn]]
+inline void ThrowOnNegativeMaxLengthDuringConversionToNotUTF8(int32_t max_char_conv_len,
+                                                              std::string_view file_location,
+                                                              std::string_view function_name);
 
-    ~deletable_facet() = default;
-};
+ATTRIBUTE_COLD
+[[noreturn]]
+inline void ThrowOnTooLongStringDuringConversionToNotUTF8(size_t input_str_size,
+                                                          size_t max_char_conv_len,
+                                                          std::string_view file_location,
+                                                          std::string_view function_name);
 
 #if CONFIG_COMPILER_IS_ANY_CLANG
 #pragma clang diagnostic push
@@ -137,18 +143,35 @@ bool DoStrCodecvt(const std::basic_string_view<InCharType> in_str,
     size_t outchars = 0;
     const InCharType *next = first;
     const int maxlen_signed = cvt.max_length() + 1;
+    // __do_str_codecvt doesn't check it but this function does just in case
     if (unlikely(maxlen_signed <= 0)) {
-        // __do_str_codecvt doesn't check it but this function does just in case
-        throw std::runtime_error{"codecvt::max_length() returned negative value"};
+        ThrowOnNegativeMaxLengthDuringConversionToNotUTF8(maxlen_signed, JSTR_FILE_LOCATION_STR(),
+                                                          CONFIG_CURRENT_FUNCTION_NAME);
     }
-    const size_t maxlen = static_cast<unsigned>(maxlen_signed);
+    const auto maxlen = size_t{static_cast<unsigned>(maxlen_signed)};
 
     using std::codecvt_base;
 
     CodecvtState state{};
     codecvt_base::result result;
     do {
-        out_str.resize(out_str.size() + static_cast<size_t>(last - next) * maxlen);
+        const auto bytes_to_convert = static_cast<size_t>(last - next);
+#if CONFIG_COMPILER_IS_GCC_OR_ANY_CLANG
+        size_t max_bytes_to_convert = 0;
+        bool overflowed = false;
+        overflowed |= __builtin_mul_overflow(bytes_to_convert, maxlen, &max_bytes_to_convert);
+        size_t out_str_new_conv_max_size = 0;
+        overflowed |= __builtin_add_overflow(out_str.size(), max_bytes_to_convert,
+                                             &out_str_new_conv_max_size);
+        if (unlikely(overflowed)) {
+            ThrowOnTooLongStringDuringConversionToNotUTF8(
+                in_str.size(), maxlen, JSTR_FILE_LOCATION_STR(), CONFIG_CURRENT_FUNCTION_NAME);
+        }
+#else
+        const size_t max_bytes_to_convert = bytes_to_convert * maxlen;
+        const size_t out_str_new_conv_max_size = out_str.size() + max_bytes_to_convert;
+#endif
+        out_str.resize(out_str_new_conv_max_size);
         OutCharType *outnext = &out_str.front() + outchars;
         OutCharType *const outlast = &out_str.back() + 1;
         result = cvt.in(state, next, last, next, outnext, outlast, outnext);
@@ -176,15 +199,25 @@ bool DoStrCodecvt(const std::basic_string_view<InCharType> in_str,
     return true;
 }
 
-ATTRIBUTE_NONNULL_ALL_ARGS
 ATTRIBUTE_COLD
 [[noreturn]]
 inline void ThrowOnFailedConversionToNotUTF8(bool conversion_succeeded,
                                              size_t converted_bytes_count,
                                              size_t string_size,
-                                             const char *file,
-                                             uint32_t line,
-                                             const char *function_name);
+                                             std::string_view file_location,
+                                             std::string_view function_name);
+
+// utility wrapper to adapt locale-bound facets
+template <class Facet>
+class deletable_facet final : public Facet {
+private:
+    using Base = Facet;
+
+public:
+    using Base::Base;
+
+    ~deletable_facet() = default;
+};
 
 template <class ToCharType>
 [[nodiscard]]
@@ -205,7 +238,8 @@ inline std::basic_string<ToCharType> ConvertBytesToNotUTF8(const std::string_vie
         }
 
         join_strings_detail::ThrowOnFailedConversionToNotUTF8(
-            converted_bytes_count, str.size(), __FILE__, __LINE__, CONFIG_CURRENT_FUNCTION_NAME);
+            conversion_succeeded, converted_bytes_count, str.size(), JSTR_FILE_LOCATION_STR(),
+            CONFIG_CURRENT_FUNCTION_NAME);
     } else {
         return std::wstring_convert<std::codecvt_utf8_utf16<ToCharType>, ToCharType>{}.from_bytes(
             str.data(), str.data() + str.size());
@@ -222,12 +256,10 @@ inline std::basic_string<ToCharType> ConvertBytesToNotUTF8(const std::string_vie
 
 #if CONFIG_HAS_AT_LEAST_CXX_20 && defined(__cpp_char8_t) && __cpp_char8_t >= 201811L
 
-ATTRIBUTE_NONNULL_ALL_ARGS
 ATTRIBUTE_COLD
 [[noreturn]]
-inline void ThrowOnFailedConversionToUTF8(const char *file,
-                                          uint32_t line,
-                                          const char *function_name);
+inline void ThrowOnFailedConversionToUTF8(std::string_view file_location,
+                                          std::string_view function_name);
 
 [[nodiscard]] inline std::u8string ConvertBytesToUTF8(const std::string_view bytes) {
     const auto is_ascii_nonzero_char = [](const char chr) constexpr noexcept {
@@ -243,7 +275,7 @@ inline void ThrowOnFailedConversionToUTF8(const char *file,
         return std::u8string(reinterpret_cast<const char8_t *>(bytes.data()), bytes.size());
     }
 
-    join_strings_detail::ThrowOnFailedConversionToUTF8(__FILE__, __LINE__,
+    join_strings_detail::ThrowOnFailedConversionToUTF8(JSTR_FILE_LOCATION_STR(),
                                                        CONFIG_CURRENT_FUNCTION_NAME);
 }
 
@@ -434,6 +466,24 @@ inline std::basic_string<CharType> ToStringOneArg(const T &arg) {
         std::string str = arg.to_string();
         if constexpr (std::is_same_v<CharType, char>) {
             return str;
+        } else {
+            return ConvertBytesTo<CharType>(str);
+        }
+    } else if constexpr (requires(const T &test_arg) {
+                             { to_string_view(test_arg) } -> std::same_as<std::string_view>;
+                         }) {
+        const std::string_view str = to_string_view(arg);
+        if constexpr (std::is_same_v<CharType, char>) {
+            return std::string{str};
+        } else {
+            return ConvertBytesTo<CharType>(str);
+        }
+    } else if constexpr (requires(const T &test_arg) {
+                             { test_arg.to_string_view() } -> std::same_as<std::string_view>;
+                         }) {
+        const std::string_view str = arg.to_string_view();
+        if constexpr (std::is_same_v<CharType, char>) {
+            return std::string{str};
         } else {
             return ConvertBytesTo<CharType>(str);
         }
@@ -643,34 +693,59 @@ inline auto join_strings(const Args&... args) {
 
 namespace join_strings_detail {
 
+inline void ThrowOnNegativeMaxLengthDuringConversionToNotUTF8(
+    const int32_t max_char_conv_len,
+    const std::string_view file_location,
+    const std::string_view function_name) {
+    throw std::runtime_error{misc::join_strings("codecvt::max_length() returned negative value ",
+                                                max_char_conv_len, " at ", file_location, ' ',
+                                                function_name)};
+}
+
+inline void ThrowOnTooLongStringDuringConversionToNotUTF8(const size_t input_str_size,
+                                                          const size_t max_char_conv_len,
+                                                          const std::string_view file_location,
+                                                          const std::string_view function_name
+
+) {
+    throw std::runtime_error{misc::join_strings(
+        "DoStrCodecvt(): size of the converted string is too large. Input string size: ",
+        input_str_size, ", max size of the converted character: ", max_char_conv_len, " at ",
+        file_location, ' ', function_name)};
+}
+
 inline void ThrowOnFailedConversionToNotUTF8(const bool conversion_succeeded,
                                              const size_t converted_bytes_count,
                                              const size_t string_size,
-                                             const char *const file,
-                                             const uint32_t line,
-                                             const char *const function_name) {
+                                             const std::string_view file_location,
+                                             const std::string_view function_name) {
     using namespace std::string_view_literals;
 
     const std::string_view error_str =
         !conversion_succeeded ? "Could not convert"sv : "Only partially converted"sv;
     throw std::runtime_error{misc::join_strings(
         error_str, " multibyte string type to another string type (total bytes converted: "sv,
-        converted_bytes_count, " of "sv, string_size, ") at "sv, file, ':', line, ':',
+        converted_bytes_count, " of "sv, string_size, ") at "sv, file_location, ' ',
         function_name)};
 }
 
 #if CONFIG_HAS_AT_LEAST_CXX_20 && defined(__cpp_char8_t) && __cpp_char8_t >= 201811L
 
-inline void ThrowOnFailedConversionToUTF8(const char *const file,
-                                          const uint32_t line,
-                                          const char *const function_name) {
+inline void ThrowOnFailedConversionToUTF8(const std::string_view file_location,
+                                          const std::string_view function_name) {
+    using namespace std::string_view_literals;
+
     throw std::runtime_error{
         misc::join_strings("Unsupported conversion from multibyte string type to utf-8 string type "
-                           "(only ascii to utf-8 is supported) in the ",
-                           file, ':', line, ':', function_name)};
+                           "(only ascii to utf-8 is supported) at "sv,
+                           file_location, ':', function_name)};
 }
 
 #endif
+
+#undef JSTR_FILE_LOCATION_STR
+#undef JSTR_STRINGIFY
+#undef JSTR_STRINGIFY_IMPL
 
 }  // namespace join_strings_detail
 
