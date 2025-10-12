@@ -25,10 +25,79 @@
 
 namespace misc {
 using std::size_t;
+using std::uint32_t;
 
 namespace detail {
 
-[[nodiscard]] constexpr bool IsWhitespaceUTF32(const char32_t c) noexcept {
+template <typename CharType>
+ATTRIBUTE_ALWAYS_INLINE constexpr void assert_type_is_char_or_wchar() noexcept {
+    static_assert(std::is_same_v<CharType, char> || std::is_same_v<CharType, wchar_t>,
+                  "char types other than char and wchar_t are not supported");
+}
+
+template <typename CharType>
+[[nodiscard]] ATTRIBUTE_CONST constexpr uint32_t char_to_uint(const CharType c) noexcept {
+    return uint32_t{static_cast<std::make_unsigned_t<CharType>>(c)};
+}
+
+template <typename CharType = char>
+[[nodiscard]] ATTRIBUTE_CONST constexpr char uint_to_char(const uint32_t char_value) noexcept {
+    return static_cast<CharType>(char_value);
+}
+
+template <typename CharType>
+[[nodiscard]] ATTRIBUTE_CONST constexpr auto char_to_c_uint(const CharType c) noexcept {
+    const auto uc = static_cast<std::make_unsigned_t<CharType>>(c);
+    if constexpr (std::is_same_v<CharType, char>) {
+        return static_cast<int>(static_cast<unsigned char>(c));
+    } else if constexpr (std::is_same_v<CharType, wchar_t>) {
+        return static_cast<wint_t>(uc);
+    } else {
+        return uc;
+    }
+}
+
+[[nodiscard]] ATTRIBUTE_CONST constexpr bool is_char_between(const char value,
+                                                             const char min,
+                                                             const char max) noexcept {
+    return detail::char_to_uint(value) - detail::char_to_uint(min) <=
+           detail::char_to_uint(max) - detail::char_to_uint(min);
+}
+
+using alpha_digit_table_type =
+    std::array<bool, static_cast<size_t>(std::numeric_limits<char>::max()) + 1>;
+
+inline constexpr alpha_digit_table_type kAlphaDigitTable = []() constexpr {
+    alpha_digit_table_type table{};
+    for (size_t c = '0'; c <= '9'; c++) {
+        table[c] = true;
+    }
+    for (size_t c = 'a'; c <= 'z'; c++) {
+        table[c] = true;
+    }
+    for (size_t c = 'A'; c <= 'Z'; c++) {
+        table[c] = true;
+    }
+
+    return table;
+}();
+
+inline constexpr alpha_digit_table_type kHexDigitTable = []() constexpr {
+    alpha_digit_table_type table{};
+    for (size_t c = '0'; c <= '9'; c++) {
+        table[c] = true;
+    }
+    for (size_t c = 'a'; c <= 'f'; c++) {
+        table[c] = true;
+    }
+    for (size_t c = 'A'; c <= 'F'; c++) {
+        table[c] = true;
+    }
+
+    return table;
+}();
+
+[[nodiscard]] ATTRIBUTE_CONST constexpr bool is_whitespace_utf32(const char32_t c) noexcept {
     switch (c) {
         case U'\u0009':
         case U'\u000A':
@@ -67,93 +136,311 @@ namespace detail {
 
 template <class CharType>
 inline bool is_whitespace(const CharType c) noexcept {
+    detail::assert_type_is_char_or_wchar<CharType>();
     if constexpr (std::is_same_v<CharType, char>) {
-        return static_cast<bool>(std::isspace(static_cast<unsigned char>(c)));
-    } else if constexpr (std::is_same_v<CharType, wchar_t>) {
-        return static_cast<bool>(std::iswspace(static_cast<wint_t>(c)));
+        return static_cast<bool>(std::isspace(detail::char_to_c_uint(c)));
     } else {
-        static_assert(
-            std::is_same_v<CharType, char16_t> || std::is_same_v<CharType, char32_t>,
-            "char types other than char, wchar_t, char16_t and char32_t are not supported");
-        return detail::IsWhitespaceUTF32(static_cast<char32_t>(c));
+        return static_cast<bool>(std::iswspace(detail::char_to_c_uint(c)));
     }
 }
 
 template <class CharType>
 inline bool is_alpha(const CharType c) noexcept {
+    detail::assert_type_is_char_or_wchar<CharType>();
     if constexpr (std::is_same_v<CharType, char>) {
-        return static_cast<bool>(std::isalpha(static_cast<unsigned char>(c)));
+        return static_cast<bool>(std::isalpha(detail::char_to_c_uint(c)));
     } else {
-        static_assert(std::is_same_v<CharType, wchar_t>,
-                      "char types other than char and wchar_t are not supported");
-        return static_cast<bool>(std::iswalpha(static_cast<wint_t>(c)));
+        return static_cast<bool>(std::iswalpha(detail::char_to_c_uint(c)));
     }
 }
 
 template <class CharType>
 inline bool is_alpha_digit(const CharType c) noexcept {
+    detail::assert_type_is_char_or_wchar<CharType>();
     if constexpr (std::is_same_v<CharType, char>) {
-        return static_cast<bool>(std::isalnum(static_cast<unsigned char>(c)));
+        return static_cast<bool>(std::isalnum(detail::char_to_c_uint(c)));
     } else {
-        static_assert(std::is_same_v<CharType, wchar_t>,
-                      "char types other than char and wchar_t are not supported");
-        return static_cast<bool>(std::iswalnum(static_cast<wint_t>(c)));
+        return static_cast<bool>(std::iswalnum(detail::char_to_c_uint(c)));
     }
 }
 
 template <class CharType>
 inline bool is_digit(const CharType c) noexcept {
+    detail::assert_type_is_char_or_wchar<CharType>();
     if constexpr (std::is_same_v<CharType, char>) {
-        return static_cast<bool>(std::isdigit(static_cast<unsigned char>(c)));
+        return static_cast<bool>(std::isdigit(detail::char_to_c_uint(c)));
     } else {
-        static_assert(std::is_same_v<CharType, wchar_t>,
-                      "char types other than char and wchar_t are not supported");
-        return static_cast<bool>(std::iswdigit(static_cast<wint_t>(c)));
+        return static_cast<bool>(std::iswdigit(detail::char_to_c_uint(c)));
     }
 }
 
 template <class CharType>
 inline bool is_hex_digit(const CharType c) noexcept {
+    detail::assert_type_is_char_or_wchar<CharType>();
     if constexpr (std::is_same_v<CharType, char>) {
-        return static_cast<bool>(std::isxdigit(static_cast<unsigned char>(c)));
+        return static_cast<bool>(std::isxdigit(detail::char_to_c_uint(c)));
     } else {
-        static_assert(std::is_same_v<CharType, wchar_t>,
-                      "char types other than char and wchar_t are not supported");
-        return static_cast<bool>(std::iswxdigit(static_cast<wint_t>(c)));
+        return static_cast<bool>(std::iswxdigit(detail::char_to_c_uint(c)));
     }
 }
+
+template <class CharType>
+inline bool is_upper(const CharType c) noexcept {
+    detail::assert_type_is_char_or_wchar<CharType>();
+    if constexpr (std::is_same_v<CharType, char>) {
+        return static_cast<bool>(std::isupper(detail::char_to_c_uint(c)));
+    } else {
+        return static_cast<bool>(std::iswupper(detail::char_to_c_uint(c)));
+    }
+}
+
+template <class CharType>
+inline bool is_lower(const CharType c) noexcept {
+    detail::assert_type_is_char_or_wchar<CharType>();
+    if constexpr (std::is_same_v<CharType, char>) {
+        return static_cast<bool>(std::islower(detail::char_to_c_uint(c)));
+    } else {
+        return static_cast<bool>(std::iswlower(detail::char_to_c_uint(c)));
+    }
+}
+
+template <class CharType>
+inline CharType to_upper(const CharType c) noexcept {
+    detail::assert_type_is_char_or_wchar<CharType>();
+    if constexpr (std::is_same_v<CharType, char>) {
+        return static_cast<CharType>(std::toupper(detail::char_to_c_uint(c)));
+    } else {
+        return static_cast<CharType>(std::towupper(detail::char_to_c_uint(c)));
+    }
+}
+
+template <class CharType>
+inline CharType to_lower(const CharType c) noexcept {
+    detail::assert_type_is_char_or_wchar<CharType>();
+    if constexpr (std::is_same_v<CharType, char>) {
+        return static_cast<CharType>(std::tolower(detail::char_to_c_uint(c)));
+    } else {
+        return static_cast<CharType>(std::towlower(detail::char_to_c_uint(c)));
+    }
+}
+
+template <class CharType>
+inline bool is_whitespace(const std::basic_string_view<CharType> str) noexcept {
+    for (const CharType c : str) {
+        if (!misc::is_whitespace(c)) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+template <class CharType>
+inline bool is_whitespace(const std::basic_string<CharType> &str) noexcept {
+    return misc::is_whitespace(std::basic_string_view<CharType>{str});
+}
+
+template <class CharType>
+inline bool is_whitespace(const CharType *const str) noexcept {
+    return misc::is_whitespace(std::basic_string_view<CharType>{str});
+}
+
+template <class CharType>
+inline void to_lower_inplace(CharType *const str, const size_t n) noexcept {
+    for (size_t i = 0; i < n; i++) {
+        str[i] = misc::to_lower(str[i]);
+    }
+}
+
+template <class CharType>
+inline void to_lower_inplace(std::basic_string<CharType> &str) noexcept {
+    misc::to_lower_inplace(str.data(), str.size());
+}
+
+template <class CharType>
+inline std::basic_string<CharType> to_lower(const std::basic_string_view<CharType> str) {
+    std::basic_string<CharType> ret(str);
+    misc::to_lower_inplace(ret);
+    return ret;
+}
+
+template <class CharType>
+inline std::basic_string<CharType> to_lower(const std::basic_string<CharType> &str) {
+    return misc::to_lower(std::basic_string_view<CharType>{str});
+}
+
+template <class CharType>
+inline std::basic_string<CharType> to_lower(const CharType *const str) {
+    return misc::to_lower(std::basic_string_view<CharType>{str});
+}
+
+template <class CharType>
+inline void to_upper_inplace(CharType *const str, const size_t n) noexcept {
+    for (size_t i = 0; i < n; i++) {
+        str[i] = misc::to_upper(str[i]);
+    }
+}
+
+template <class CharType>
+inline void to_upper_inplace(std::basic_string<CharType> &str) noexcept {
+    misc::to_upper_inplace(str.data(), str.size());
+}
+
+template <class CharType>
+inline std::basic_string<CharType> to_upper(const std::basic_string_view<CharType> str) {
+    std::basic_string<CharType> ret(str);
+    misc::to_upper_inplace(ret);
+    return ret;
+}
+
+template <class CharType>
+inline std::basic_string<CharType> to_upper(const std::basic_string<CharType> &str) {
+    return misc::to_upper(std::basic_string_view<CharType>{str});
+}
+
+template <class CharType>
+inline std::basic_string<CharType> to_upper(const CharType *const str) {
+    return misc::to_upper(std::basic_string_view<CharType>{str});
+}
+
+namespace locale_indep {
+
+constexpr bool is_whitespace(const char c) noexcept {
+    switch (detail::char_to_uint(c)) {
+        case '\t':
+        case '\n':
+        case '\v':
+        case '\f':
+        case '\r':
+        case ' ': {
+            return true;
+        }
+        default: {
+            return false;
+        }
+    }
+}
+
+constexpr bool is_whitespace(char16_t c) noexcept {
+    return locale_indep::is_whitespace(static_cast<char32_t>(c));
+}
+
+constexpr bool is_whitespace(char32_t c) noexcept {
+    return detail::is_whitespace_utf32(c);
+}
+
+constexpr bool is_alpha(const char c) noexcept {
+    return detail::is_char_between(c, 'A', 'Z') | detail::is_char_between(c, 'a', 'z');
+}
+
+constexpr bool is_alpha_digit(const char c) noexcept {
+    return detail::kAlphaDigitTable[detail::char_to_uint(c)];
+}
+
+constexpr bool is_digit(const char c) noexcept {
+    return detail::is_char_between(c, '0', '9');
+}
+
+constexpr bool is_hex_digit(const char c) noexcept {
+    return detail::kHexDigitTable[detail::char_to_uint(c)];
+}
+
+constexpr bool is_upper(const char c) noexcept {
+    return detail::is_char_between(c, 'A', 'Z');
+}
+
+constexpr bool is_lower(const char c) noexcept {
+    return detail::is_char_between(c, 'a', 'z');
+}
+
+constexpr char to_upper(const char c) noexcept {
+    return detail::uint_to_char(detail::char_to_uint(c) -
+                                (locale_indep::is_lower(c) * uint32_t{'a' - 'A'}));
+}
+
+constexpr char to_lower(const char c) noexcept {
+    return detail::uint_to_char(detail::char_to_uint(c) +
+                                (locale_indep::is_upper(c) * uint32_t{'a' - 'A'}));
+}
+
+constexpr bool is_whitespace(const std::string_view str) noexcept {
+    for (const char c : str) {
+        if (!misc::locale_indep::is_whitespace(c)) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+inline bool is_whitespace(const std::string &str) noexcept {
+    return misc::locale_indep::is_whitespace(std::string_view{str});
+}
+
+constexpr bool is_whitespace(const char *const str) noexcept {
+    return misc::locale_indep::is_whitespace(std::string_view{str});
+}
+
+inline void to_lower_inplace(char *const str, size_t n) noexcept {
+    for (size_t i = 0; i < n; i++) {
+        str[i] = misc::locale_indep::to_lower(str[i]);
+    }
+}
+
+inline void to_lower_inplace(std::string &str) noexcept {
+    misc::locale_indep::to_lower_inplace(str.data(), str.size());
+}
+
+inline std::string to_lower(const std::string_view str) {
+    std::string ret(str);
+    misc::locale_indep::to_lower_inplace(ret);
+    return ret;
+}
+
+inline std::string to_lower(const std::string &str) {
+    return misc::locale_indep::to_lower(std::string_view{str});
+}
+
+inline std::string to_lower(const char *const str) {
+    return misc::locale_indep::to_lower(std::string_view{str});
+}
+
+inline void to_upper_inplace(char *const str, size_t n) noexcept {
+    for (size_t i = 0; i < n; i++) {
+        str[i] = misc::locale_indep::to_upper(str[i]);
+    }
+}
+
+inline void to_upper_inplace(std::string &str) noexcept {
+    misc::locale_indep::to_upper_inplace(str.data(), str.size());
+}
+
+inline std::string to_upper(const std::string_view str) {
+    std::string ret(str);
+    misc::locale_indep::to_upper_inplace(ret);
+    return ret;
+}
+
+inline std::string to_upper(const std::string &str) {
+    return misc::locale_indep::to_upper(std::string_view{str});
+}
+
+inline std::string to_upper(const char *const str) {
+    return misc::locale_indep::to_upper(std::string_view{str});
+}
+
+}  // namespace locale_indep
 
 namespace detail {
-
-template <class CharType>
-[[nodiscard]] CharType to_lower(const CharType c) noexcept {
-    if constexpr (std::is_same_v<CharType, char>) {
-        return static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
-    } else {
-        static_assert(std::is_same_v<CharType, wchar_t>,
-                      "char types other than char and wchar_t are not supported");
-        return static_cast<CharType>(std::towlower(static_cast<wint_t>(c)));
-    }
-}
-
-template <class CharType>
-[[nodiscard]] CharType to_upper(const CharType c) noexcept {
-    if constexpr (std::is_same_v<CharType, char>) {
-        return static_cast<char>(std::toupper(static_cast<unsigned char>(c)));
-    } else {
-        static_assert(std::is_same_v<CharType, wchar_t>,
-                      "char types other than char and wchar_t are not supported");
-        return static_cast<CharType>(std::towupper(static_cast<wint_t>(c)));
-    }
-}
 
 // clang-format off
 template <class CharType, class Predicate>
 [[nodiscard]]
 ATTRIBUTE_ALWAYS_INLINE
-constexpr std::basic_string_view<CharType> trim_if(std::basic_string_view<CharType> str, Predicate pred)
-    noexcept(std::is_nothrow_invocable_r_v<bool, Predicate, CharType>)
-{
+constexpr std::basic_string_view<CharType> trim_if(
+    std::basic_string_view<CharType> str ATTRIBUTE_LIFETIME_BOUND,
+    Predicate pred
+) noexcept(std::is_nothrow_invocable_r_v<bool, Predicate, CharType>) {
     // clang-format on
     static_assert(std::is_invocable_r_v<bool, Predicate, CharType>,
                   "predicate should accept CharType and return bool");
@@ -168,10 +455,14 @@ constexpr std::basic_string_view<CharType> trim_if(std::basic_string_view<CharTy
     return str;
 }
 
+// clang-format off
 template <class CharType>
 [[nodiscard]]
-constexpr std::basic_string_view<CharType> TrimChar(const std::basic_string_view<CharType> str,
-                                                    const CharType trim_char) noexcept {
+constexpr std::basic_string_view<CharType> TrimChar(
+    const std::basic_string_view<CharType> str ATTRIBUTE_LIFETIME_BOUND,
+    const CharType trim_char
+) noexcept {
+    // clang-format on
     return detail::trim_if(
         str, [trim_char](const CharType c) constexpr noexcept -> bool { return c == trim_char; });
 }
@@ -230,14 +521,20 @@ inline std::basic_string_view<CharType> TrimChars(const std::basic_string_view<C
 
     return detail::TrimCharsImpl<CharType>(str, trim_chars);
 }
+
 }  // namespace detail
 
 template <class StrType, class TrimStrType>
 inline auto trim(const StrType &str,
                  const TrimStrType &trim_chars) noexcept(std::is_base_of_v<trim_tag, TrimStrType>) {
-    if constexpr (std::is_base_of_v<trim_tag, TrimStrType>) {
+    if constexpr (std::is_base_of_v<misc::trim_tag, TrimStrType>) {
         using CharType = misc::string_detail::determine_char_t<StrType>;
         static_assert(misc::is_char_v<CharType>, "string is expected in the trim with tag");
+
+        if constexpr (std::is_base_of_v<misc::locale_indep::trim_tag, TrimStrType>) {
+            static_assert(std::is_same_v<CharType, char>,
+                          "Only char type is supported for locale independent trimming");
+        }
 
         const std::basic_string_view<CharType> str_sv{str};
 
@@ -252,8 +549,19 @@ inline auto trim(const StrType &str,
             return detail::trim_if(str_sv, &misc::is_alpha_digit<CharType>);
         } else if constexpr (std::is_same_v<TrimStrType, hex_digit_tag>) {
             return detail::trim_if(str_sv, &misc::is_hex_digit<CharType>);
+        } else if constexpr (std::is_same_v<TrimStrType, locale_indep::whitespace_tag>) {
+            return detail::trim_if(
+                str_sv, [](const char c) noexcept { return misc::locale_indep::is_whitespace(c); });
+        } else if constexpr (std::is_same_v<TrimStrType, locale_indep::alpha_tag>) {
+            return detail::trim_if(str_sv, &misc::locale_indep::is_alpha);
+        } else if constexpr (std::is_same_v<TrimStrType, locale_indep::digit_tag>) {
+            return detail::trim_if(str_sv, &misc::locale_indep::is_digit);
+        } else if constexpr (std::is_same_v<TrimStrType, locale_indep::alpha_digit_tag>) {
+            return detail::trim_if(str_sv, &misc::locale_indep::is_alpha_digit);
+        } else if constexpr (std::is_same_v<TrimStrType, locale_indep::hex_digit_tag>) {
+            return detail::trim_if(str_sv, &misc::locale_indep::is_hex_digit);
         } else {
-            static_assert([]() constexpr { return false; }, "implementation error");
+            static_assert([]() constexpr { return false; }(), "implementation error");
             return str;
         }
     } else {
@@ -261,88 +569,13 @@ inline auto trim(const StrType &str,
         static_assert(misc::is_char_v<CharType>,
                       "strings with the same char type are expected in the trim");
 
-        return detail::TrimChars(std::basic_string_view<CharType>{str},
-                                 std::basic_string_view<CharType>{trim_chars});
-    }
-}
-
-template <class CharType>
-inline bool is_whitespace(const std::basic_string_view<CharType> str) noexcept {
-    for (const CharType c : str) {
-        if (!misc::is_whitespace(c)) {
-            return false;
+        if constexpr (misc::is_char_v<TrimStrType>) {
+            return detail::TrimChar<CharType>(str, trim_chars);
+        } else {
+            return detail::TrimChars(std::basic_string_view<CharType>{str},
+                                     std::basic_string_view<CharType>{trim_chars});
         }
     }
-
-    return true;
-}
-
-template <class CharType>
-inline bool is_whitespace(const std::basic_string<CharType> &str) noexcept {
-    return misc::is_whitespace(std::basic_string_view<CharType>{str});
-}
-
-template <class CharType>
-inline bool is_whitespace(const CharType *const str) noexcept {
-    return misc::is_whitespace(std::basic_string_view<CharType>{str});
-}
-
-template <class CharType>
-inline void to_lower_inplace(CharType *const str, const size_t n) noexcept {
-    for (size_t i = 0; i < n; i++) {
-        str[i] = detail::to_lower(str[i]);
-    }
-}
-
-template <class CharType>
-inline void to_lower_inplace(std::basic_string<CharType> &str) noexcept {
-    misc::to_lower_inplace(str.data(), str.size());
-}
-
-template <class CharType>
-inline std::basic_string<CharType> to_lower(const std::basic_string_view<CharType> str) {
-    std::basic_string<CharType> ret{str};
-    misc::to_lower_inplace(ret);
-    return ret;
-}
-
-template <class CharType>
-inline std::basic_string<CharType> to_lower(const std::basic_string<CharType> &str) {
-    return misc::to_lower(std::basic_string_view<CharType>{str});
-}
-
-template <class CharType>
-inline std::basic_string<CharType> to_lower(const CharType *const str) {
-    return misc::to_lower(std::basic_string_view<CharType>{str});
-}
-
-template <class CharType>
-inline void to_upper_inplace(CharType *const str, const size_t n) noexcept {
-    for (size_t i = 0; i < n; i++) {
-        str[i] = detail::to_upper(str[i]);
-    }
-}
-
-template <class CharType>
-inline void to_upper_inplace(std::basic_string<CharType> &str) noexcept {
-    misc::to_upper_inplace(str.data(), str.size());
-}
-
-template <class CharType>
-inline std::basic_string<CharType> to_upper(const std::basic_string_view<CharType> str) {
-    std::basic_string<CharType> ret{str};
-    misc::to_upper_inplace(ret);
-    return ret;
-}
-
-template <class CharType>
-inline std::basic_string<CharType> to_upper(const std::basic_string<CharType> &str) {
-    return misc::to_upper(std::basic_string_view<CharType>{str});
-}
-
-template <class CharType>
-inline std::basic_string<CharType> to_upper(const CharType *const str) {
-    return misc::to_upper(std::basic_string_view<CharType>{str});
 }
 
 }  // namespace misc
