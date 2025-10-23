@@ -13,8 +13,8 @@
 
 namespace {
 
-template <class CharType>
-class IsWhiteSpaceTestSuite final {
+template <class CharType, class IsWhiteSpaceProvider>
+class IsWhiteSpaceTestSuite final : public IsWhiteSpaceProvider {
 public:
     static void run() {
         test_whitespace_chars();
@@ -23,48 +23,64 @@ public:
     }
 
 private:
+    using IsWhiteSpaceProvider::is_whitespace;
+
     static void test_whitespace_chars() {
         test_tools::log_tests_started();
 
-        assert(misc::is_whitespace(STR_LITERAL(CharType, ' ')));
-        assert(misc::is_whitespace(STR_LITERAL(CharType, '\t')));
-        assert(misc::is_whitespace(STR_LITERAL(CharType, '\v')));
-        assert(misc::is_whitespace(STR_LITERAL(CharType, '\f')));
-        assert(misc::is_whitespace(STR_LITERAL(CharType, '\r')));
-        assert(misc::is_whitespace(STR_LITERAL(CharType, '\n')));
+        assert(is_whitespace(STR_LITERAL(CharType, ' ')));
+        assert(is_whitespace(STR_LITERAL(CharType, '\t')));
+        assert(is_whitespace(STR_LITERAL(CharType, '\v')));
+        assert(is_whitespace(STR_LITERAL(CharType, '\f')));
+        assert(is_whitespace(STR_LITERAL(CharType, '\r')));
+        assert(is_whitespace(STR_LITERAL(CharType, '\n')));
     }
 
     static void test_non_whitespace_chars() {
         test_tools::log_tests_started();
 
-        assert(!misc::is_whitespace(STR_LITERAL(CharType, 'a')));
-        assert(!misc::is_whitespace(STR_LITERAL(CharType, 'z')));
-        assert(!misc::is_whitespace(STR_LITERAL(CharType, '0')));
-        assert(!misc::is_whitespace(STR_LITERAL(CharType, '9')));
+        assert(!is_whitespace(STR_LITERAL(CharType, 'a')));
+        assert(!is_whitespace(STR_LITERAL(CharType, 'z')));
+        assert(!is_whitespace(STR_LITERAL(CharType, '0')));
+        assert(!is_whitespace(STR_LITERAL(CharType, '9')));
     }
 
     static void test_whitespace_strings() {
         test_tools::log_tests_started();
 
-        assert(misc::is_whitespace(STR_LITERAL(CharType, "")));
-        assert(misc::is_whitespace(STR_LITERAL(CharType, "        ")));
-        assert(misc::is_whitespace(STR_LITERAL(CharType, " \t\v\f\r\n")));
-        assert(!misc::is_whitespace(STR_LITERAL(CharType, " \t\v\f\r\nq")));
-        assert(!misc::is_whitespace(STR_LITERAL(CharType, " \t\v\fq\r\n")));
-        assert(!misc::is_whitespace(STR_LITERAL(CharType, "q \t\v\f\r\n")));
+        assert(is_whitespace(STR_LITERAL(CharType, "")));
+        assert(is_whitespace(STR_LITERAL(CharType, "        ")));
+        assert(is_whitespace(STR_LITERAL(CharType, " \t\v\f\r\n")));
+        assert(!is_whitespace(STR_LITERAL(CharType, " \t\v\f\r\nq")));
+        assert(!is_whitespace(STR_LITERAL(CharType, " \t\v\fq\r\n")));
+        assert(!is_whitespace(STR_LITERAL(CharType, "q \t\v\f\r\n")));
 
+        assert(is_whitespace(std::basic_string<CharType>{STR_LITERAL(CharType, " \t\v\f\r\n")}));
         assert(
-            misc::is_whitespace(std::basic_string<CharType>{STR_LITERAL(CharType, " \t\v\f\r\n")}));
-        assert(misc::is_whitespace(
-            std::basic_string_view<CharType>{STR_LITERAL(CharType, " \t\v\f\r\n")}));
+            is_whitespace(std::basic_string_view<CharType>{STR_LITERAL(CharType, " \t\v\f\r\n")}));
+    }
+};
+
+class IsWhiteSpaceProvider {
+public:
+    template <typename... Args>
+    [[nodiscard]] static bool is_whitespace(Args&&... args) {
+        return misc::is_whitespace(args...);
+    }
+};
+
+class IsWhiteSpaceLocaleIndependentProvider {
+public:
+    template <typename... Args>
+    [[nodiscard]] static bool is_whitespace(Args&&... args) {
+        return misc::locale_indep::is_whitespace(args...);
     }
 };
 
 void test_is_white_space() {
-    IsWhiteSpaceTestSuite<char>::run();
-    IsWhiteSpaceTestSuite<wchar_t>::run();
-    IsWhiteSpaceTestSuite<char16_t>::run();
-    IsWhiteSpaceTestSuite<char32_t>::run();
+    IsWhiteSpaceTestSuite<char, IsWhiteSpaceProvider>::run();
+    IsWhiteSpaceTestSuite<wchar_t, IsWhiteSpaceProvider>::run();
+    IsWhiteSpaceTestSuite<char, IsWhiteSpaceLocaleIndependentProvider>::run();
 }
 
 template <class CharType>
@@ -235,8 +251,8 @@ void test_trim_strings() {
     TrimTestSuite<wchar_t>::run();
 }
 
-template <class CharType>
-class ToLowerTestSuite final {
+template <class CharType, class ToLowerProvider>
+class ToLowerTestSuite final : public ToLowerProvider {
 public:
     static void run() {
         test_empty();
@@ -244,37 +260,56 @@ public:
     }
 
 private:
+    using ToLowerProvider::to_lower;
+
     static void test_empty() {
         test_tools::log_tests_started();
 
-        assert(misc::to_lower(STR_LITERAL(CharType, "")) == STR_LITERAL(CharType, ""));
+        assert(to_lower(STR_LITERAL(CharType, "")) == STR_LITERAL(CharType, ""));
     }
 
     static void test_non_empty_strings() {
         test_tools::log_tests_started();
 
-        assert(misc::to_lower(STR_LITERAL(CharType, "abcdef")) == STR_LITERAL(CharType, "abcdef"));
-        assert(misc::to_lower(STR_LITERAL(CharType, "Abcdef")) == STR_LITERAL(CharType, "abcdef"));
-        assert(misc::to_lower(STR_LITERAL(CharType, "abcdeF")) == STR_LITERAL(CharType, "abcdef"));
-        assert(misc::to_lower(STR_LITERAL(CharType, " ABCDEF012345689 ")) ==
+        assert(to_lower(STR_LITERAL(CharType, "abcdef")) == STR_LITERAL(CharType, "abcdef"));
+        assert(to_lower(STR_LITERAL(CharType, "Abcdef")) == STR_LITERAL(CharType, "abcdef"));
+        assert(to_lower(STR_LITERAL(CharType, "abcdeF")) == STR_LITERAL(CharType, "abcdef"));
+        assert(to_lower(STR_LITERAL(CharType, " ABCDEF012345689 ")) ==
                STR_LITERAL(CharType, " abcdef012345689 "));
-        assert(misc::to_lower(STR_LITERAL(CharType, " AbCdEf012345689 ")) ==
+        assert(to_lower(STR_LITERAL(CharType, " AbCdEf012345689 ")) ==
                STR_LITERAL(CharType, " abcdef012345689 "));
 
-        assert(misc::to_lower(std::basic_string<CharType>{STR_LITERAL(CharType, "AbCdEf")}) ==
+        assert(to_lower(std::basic_string<CharType>{STR_LITERAL(CharType, "AbCdEf")}) ==
                STR_LITERAL(CharType, "abcdef"));
-        assert(misc::to_lower(std::basic_string_view<CharType>{STR_LITERAL(CharType, "AbCdEf")}) ==
+        assert(to_lower(std::basic_string_view<CharType>{STR_LITERAL(CharType, "AbCdEf")}) ==
                STR_LITERAL(CharType, "abcdef"));
+    }
+};
+
+class ToLowerProvider {
+public:
+    template <typename... Args>
+    [[nodiscard]] static auto to_lower(Args&&... args) {
+        return misc::to_lower(args...);
+    }
+};
+
+class ToLowerLocaleIndependentProvider {
+public:
+    template <typename... Args>
+    [[nodiscard]] static auto to_lower(Args&&... args) {
+        return misc::locale_indep::to_lower(args...);
     }
 };
 
 void test_to_lower() {
-    ToLowerTestSuite<char>::run();
-    ToLowerTestSuite<wchar_t>::run();
+    ToLowerTestSuite<char, ToLowerProvider>::run();
+    ToLowerTestSuite<wchar_t, ToLowerProvider>::run();
+    ToLowerTestSuite<char, ToLowerLocaleIndependentProvider>::run();
 }
 
-template <class CharType>
-class ToUpperTestSuite final {
+template <class CharType, class ToUpperProvider>
+class ToUpperTestSuite final : public ToUpperProvider {
 public:
     static void run() {
         test_empty();
@@ -282,33 +317,52 @@ public:
     }
 
 private:
+    using ToUpperProvider::to_upper;
+
     static void test_empty() {
         test_tools::log_tests_started();
 
-        assert(misc::to_upper(STR_LITERAL(CharType, "")) == STR_LITERAL(CharType, ""));
+        assert(to_upper(STR_LITERAL(CharType, "")) == STR_LITERAL(CharType, ""));
     }
 
     static void test_non_empty_strings() {
         test_tools::log_tests_started();
 
-        assert(misc::to_upper(STR_LITERAL(CharType, "abcdef")) == STR_LITERAL(CharType, "ABCDEF"));
-        assert(misc::to_upper(STR_LITERAL(CharType, "Abcdef")) == STR_LITERAL(CharType, "ABCDEF"));
-        assert(misc::to_upper(STR_LITERAL(CharType, "abcdeF")) == STR_LITERAL(CharType, "ABCDEF"));
-        assert(misc::to_upper(STR_LITERAL(CharType, " ABCDEF012345689 ")) ==
+        assert(to_upper(STR_LITERAL(CharType, "abcdef")) == STR_LITERAL(CharType, "ABCDEF"));
+        assert(to_upper(STR_LITERAL(CharType, "Abcdef")) == STR_LITERAL(CharType, "ABCDEF"));
+        assert(to_upper(STR_LITERAL(CharType, "abcdeF")) == STR_LITERAL(CharType, "ABCDEF"));
+        assert(to_upper(STR_LITERAL(CharType, " ABCDEF012345689 ")) ==
                STR_LITERAL(CharType, " ABCDEF012345689 "));
-        assert(misc::to_upper(STR_LITERAL(CharType, " AbCdEf012345689 ")) ==
+        assert(to_upper(STR_LITERAL(CharType, " AbCdEf012345689 ")) ==
                STR_LITERAL(CharType, " ABCDEF012345689 "));
 
-        assert(misc::to_upper(std::basic_string<CharType>{STR_LITERAL(CharType, "AbCdEf")}) ==
+        assert(to_upper(std::basic_string<CharType>{STR_LITERAL(CharType, "AbCdEf")}) ==
                STR_LITERAL(CharType, "ABCDEF"));
-        assert(misc::to_upper(std::basic_string_view<CharType>{STR_LITERAL(CharType, "AbCdEf")}) ==
+        assert(to_upper(std::basic_string_view<CharType>{STR_LITERAL(CharType, "AbCdEf")}) ==
                STR_LITERAL(CharType, "ABCDEF"));
     }
 };
 
+class ToUpperProvider {
+public:
+    template <typename... Args>
+    [[nodiscard]] static auto to_upper(Args&&... args) {
+        return misc::to_upper(args...);
+    }
+};
+
+class ToUpperLocaleIndependentProvider {
+public:
+    template <typename... Args>
+    [[nodiscard]] static auto to_upper(Args&&... args) {
+        return misc::locale_indep::to_upper(args...);
+    }
+};
+
 void test_to_upper() {
-    ToUpperTestSuite<char>::run();
-    ToUpperTestSuite<wchar_t>::run();
+    ToUpperTestSuite<char, ToUpperProvider>::run();
+    ToUpperTestSuite<wchar_t, ToUpperProvider>::run();
+    ToUpperTestSuite<char, ToUpperLocaleIndependentProvider>::run();
 }
 
 }  // namespace

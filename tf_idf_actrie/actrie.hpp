@@ -664,7 +664,17 @@ protected:
         std::vector<size_type> bfs_queue(nodes.size(), kInvalidIndex);
         size_type queue_head = 0;
         size_type queue_tail = 0;
+
+        // bfs_queue is not empty since bfs_queue.size() == nodes.size(), which is > 0 since
+        // nodes.at(kRootNodeIndex) didn't fail
+#if CONFIG_GNUC_AT_LEAST(6, 1) || CONFIG_CLANG_AT_LEAST(3, 0)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wnull-dereference"
+#endif
         bfs_queue[queue_tail++] = kRootNodeIndex;
+#if CONFIG_GNUC_AT_LEAST(6, 1) || CONFIG_CLANG_AT_LEAST(3, 0)
+#pragma GCC diagnostic pop
+#endif
         do {
             const size_type node_index = bfs_queue[queue_head++];
             assert(node_index != kInvalidIndex);

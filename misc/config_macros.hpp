@@ -214,6 +214,17 @@
 #define CONFIG_HAS_INCLUDE(include_string) 0
 #endif
 
+#if defined(__has_feature)
+#define CONFIG_HAS_FEATURE(feature) __has_feature(feature)
+#else
+#define CONFIG_HAS_FEATURE(feature) 0
+#endif
+
+#define CONFIG_HAS_ADDRESS_SANITIZER()            CONFIG_HAS_FEATURE(address_sanitizer)
+#define CONFIG_HAS_THREAD_SANITIZER()             CONFIG_HAS_FEATURE(thread_sanitizer)
+#define CONFIG_HAS_MEMORY_SANITIZER()             CONFIG_HAS_FEATURE(memory_sanitizer)
+#define CONFIG_HAS_UNDEFINED_BEHAVIOR_SANITIZER() CONFIG_HAS_FEATURE(undefined_behavior_sanitizer)
+
 #if CONFIG_HAS_INCLUDE(<version>)
 #include <version>
 #elif CONFIG_HAS_INCLUDE(<ciso646>)
@@ -819,6 +830,15 @@
 #else
 #define CONFIG_CLANG_NONNULL_QUALIFIER
 #define CONFIG_CLANG_NULLABLE_QUALIFIER
+#endif
+
+#if CONFIG_HAS_AT_LEAST_CXX_20 && !defined(_GLIBCXX_DEBUG) && !defined(_GLIBCXX_ASSERTIONS) && \
+    (CONFIG_HAS_AT_LEAST_CXX_23 || !CONFIG_HAS_UNDEFINED_BEHAVIOR_SANITIZER()) &&              \
+    (!CONFIG_COMPILER_IS_GCC || CONFIG_GNUC_AT_LEAST(13, 0)) &&                                \
+    (!CONFIG_COMPILER_IS_ANY_CLANG || CONFIG_CLANG_AT_LEAST(18, 0))
+#define CONFIG_VECTOR_SUPPORTS_CONSTEXPR_OPERATIONS 1
+#else
+#define CONFIG_VECTOR_SUPPORTS_CONSTEXPR_OPERATIONS 0
 #endif
 
 // Copypasted from LLVM's int_endianness.h

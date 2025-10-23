@@ -15,7 +15,7 @@
 #include <concepts>
 #endif
 
-#if CONFIG_HAS_AT_LEAST_CXX_20 && !defined(_GLIBCXX_DEBUG) && !defined(_GLIBCXX_ASSERTIONS)
+#if CONFIG_VECTOR_SUPPORTS_CONSTEXPR_OPERATIONS
 #define CONSTEXPR_VECTOR constexpr
 #else
 #define CONSTEXPR_VECTOR inline

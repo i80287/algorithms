@@ -6,10 +6,12 @@ cmake_build_dir=cmake-build-dir
 
 OLDIFS=$IFS
 IFS=','
-for cc_and_cxx in clang,clang++ \
-    gcc,g++ \
+for cc_and_cxx in \
+    clang-18,clang++-18 clang-19,clang++-19 clang-20,clang++-20 \
+    gcc-13,g++-13 gcc-14,g++-14 \
     i686-w64-mingw32-gcc-posix,i686-w64-mingw32-g++-posix \
-    x86_64-w64-mingw32-gcc-posix,x86_64-w64-mingw32-g++-posix; do
+    x86_64-w64-mingw32-gcc-posix,x86_64-w64-mingw32-g++-posix \
+; do
     if [ -d "$cmake_build_dir" ]; then rm -r "$cmake_build_dir"; fi
     mkdir -p "$cmake_build_dir"
     set -- $cc_and_cxx
