@@ -35,7 +35,7 @@ int main(void) {
         "aaaaaabacccccccbbdddddddaaabaaaaaaaaaabacccccccbbdddddddaaabaaaaaaaaaa"
         "bacccccccbbdddddddaaabaaaaaaaaaabacccccccbbdddddddaaabaaaaaaaaaabacccc"
         "cccbbdddddddaaabaaaaaaaaaabacccccccbbddddddd";
-    const uint8_t c = (uint8_t)(atoi("97"));
+    const uint8_t c = (uint8_t)atoi("97");
     const size_t arr_len = sizeof(arr) - 1;
     for (size_t slice_len = 0; slice_len < arr_len; slice_len++) {
         for (size_t slice_start = 0; slice_start + slice_len <= arr_len; slice_start++) {

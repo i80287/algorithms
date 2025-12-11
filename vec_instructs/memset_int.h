@@ -28,12 +28,13 @@ EXTERN_WITH_C_LINKAGE_BEGIN
 #endif
 #endif
 
-#define MEMSET_INT_FUNC_ATTRIBUTES ATTRIBUTE_NOTHROW ATTRIBUTE_SIZED_ACCESS(write_only, 1, 3)
+#define MEMSET_INT_FUNC_ATTRIBUTES \
+    ATTRIBUTE_NONBLOCKING_FUNCTION ATTRIBUTE_NOTHROW ATTRIBUTE_SIZED_ACCESS(write_only, 1, 3)
 
 MEMSET_INT_FUNC_ATTRIBUTES
 ATTRIBUTE_TARGET("avx")
 static inline void memset_int_avx(int32_t* dst,
-                                  int32_t value,
+                                  const int32_t value,
                                   size_t size) CONFIG_NOEXCEPT_FUNCTION {
     uint32_t* aligned_4_address = (uint32_t*)dst;
     __m256i* aligned_32_address = (__m256i*)(((uintptr_t)aligned_4_address + 31) & ~(uintptr_t)31);
@@ -44,7 +45,7 @@ static inline void memset_int_avx(int32_t* dst,
         offset = size;
     }
     size -= offset;
-    while (offset--) {
+    while (offset-- > 0) {
         *aligned_4_address = uvalue_32;
         ++aligned_4_address;
     }
@@ -75,7 +76,7 @@ static inline void memset_int_avx(int32_t* dst,
             CONFIG_UNREACHABLE();
             break;
     }
-    if (size % 2) {
+    if (size % 2 != 0) {
         aligned_4_address = (uint32_t*)aligned_8_address;
         *aligned_4_address = uvalue_32;
     }
@@ -138,7 +139,7 @@ __attribute__((no_sanitize_address, no_sanitize_thread, no_sanitize_undefined))
 #endif
 static inline void (*resolve_memset_int(void))(int32_t*, int32_t, size_t) CONFIG_NOEXCEPT_FUNCTION {
     __builtin_cpu_init();
-    return __builtin_cpu_supports("avx") ? memset_int_avx : memset_int_default;
+    return __builtin_cpu_supports("avx") ? &memset_int_avx : &memset_int_default;
 }
 
 #if defined(__clang__) && defined(__cplusplus) && !CONFIG_HAS_AT_LEAST_CXX_17
