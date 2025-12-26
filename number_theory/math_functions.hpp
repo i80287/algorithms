@@ -86,7 +86,7 @@ using std::uint64_t;
 
 namespace detail {
 
-#if defined(INTEGERS_128_BIT_HPP)
+#if defined(HAS_INT128_TYPEDEF)
 namespace helper_ns = int128_traits;
 #else
 namespace helper_ns = std;
@@ -181,7 +181,7 @@ struct double_bits<uint32_t> {
     using type = uint64_t;
 };
 
-#ifdef INTEGERS_128_BIT_HPP
+#ifdef HAS_INT128_TYPEDEF
 
 template <>
 struct double_bits<int64_t> {
@@ -207,7 +207,7 @@ using try_double_bits_t =
 template <typename T>
 inline constexpr bool is_trivial_arithmetic_v =
     std::is_arithmetic_v<T>
-#if defined(INTEGERS_128_BIT_HPP) && INT128_IS_BUILTIN_TYPE
+#if defined(HAS_INT128_TYPEDEF) && INT128_IS_BUILTIN_TYPE
     || std::is_same_v<T, int128_t> || std::is_same_v<T, uint128_t>
 #endif
     ;
@@ -304,7 +304,7 @@ constexpr uint32_t isqrt_u64(const uint64_t n) noexcept {
 #endif
 }
 
-#if defined(INTEGERS_128_BIT_HPP)
+#if defined(HAS_INT128_TYPEDEF)
 
 /// @note  See Hackers Delight Chapter 11.
 ATTRIBUTE_CONST
@@ -439,7 +439,7 @@ constexpr int32_t sign(const IntType n) noexcept {
     math_functions::detail::check_math_int_type<IntType>();
 
     if constexpr (math_functions::is_signed_v<IntType>) {
-#if defined(INTEGERS_128_BIT_HPP)
+#if defined(HAS_INT128_TYPEDEF)
         if constexpr (std::is_same_v<IntType, int128_t>) {
             const uint32_t sign_bit = static_cast<uint32_t>(static_cast<uint128_t>(n) >> 127U);
             return static_cast<int32_t>(n != 0) - static_cast<int32_t>(2 * sign_bit);
@@ -460,7 +460,7 @@ constexpr auto uabs(const IntType n) noexcept {
     if constexpr (math_functions::is_signed_v<IntType>) {
         using UIntType = math_functions::make_unsigned_t<IntType>;
 
-#if defined(INTEGERS_128_BIT_HPP)
+#if defined(HAS_INT128_TYPEDEF)
         if constexpr (std::is_same_v<IntType, int128_t>) {
             const uint128_t t = static_cast<uint128_t>(n >> 127U);
             return (static_cast<uint128_t>(n) ^ t) - t;
@@ -638,7 +638,7 @@ constexpr uint32_t isqrt(const uint64_t n) noexcept {
     return ret;
 }
 
-#if defined(INTEGERS_128_BIT_HPP)
+#if defined(HAS_INT128_TYPEDEF)
 
 ATTRIBUTE_ALWAYS_INLINE
 ATTRIBUTE_CONST
@@ -832,7 +832,7 @@ constexpr uint64_t bit_reverse(uint64_t n) noexcept {
     return n;
 }
 
-#if defined(INTEGERS_128_BIT_HPP)
+#if defined(HAS_INT128_TYPEDEF)
 
 /// @brief This function reverses bits of the @a `n`
 /// @param[in] b
@@ -1131,7 +1131,7 @@ constexpr int32_t countr_zero(const T n) noexcept {
         return sizeof(n) * CHAR_BIT;
     }
 
-#ifdef INTEGERS_128_BIT_HPP
+#ifdef HAS_INT128_TYPEDEF
     if constexpr (std::is_same_v<T, uint128_t>) {
         const uint64_t low = static_cast<uint64_t>(n);
         if (low != 0) {
@@ -1192,7 +1192,7 @@ constexpr int32_t countl_zero(const T n) noexcept {
         return sizeof(n) * CHAR_BIT;
     }
 
-#if defined(INTEGERS_128_BIT_HPP)
+#if defined(HAS_INT128_TYPEDEF)
     if constexpr (std::is_same_v<T, uint128_t>) {
         const uint64_t high = static_cast<uint64_t>(n >> 64U);
         if (high != 0) {
@@ -1246,7 +1246,7 @@ ATTRIBUTE_ALWAYS_INLINE ATTRIBUTE_CONST [[nodiscard]]
 constexpr int32_t popcount(const T n) noexcept {
     static_assert(math_functions::is_unsigned_v<T>, "Unsigned integral type expected");
 
-#if defined(INTEGERS_128_BIT_HPP)
+#if defined(HAS_INT128_TYPEDEF)
     if constexpr (std::is_same_v<T, uint128_t>) {
         // Reason: cppcheck can not deduce that n is uint128_t here
         // cppcheck-suppress [shiftTooManyBits]
@@ -1516,7 +1516,7 @@ constexpr uint32_t log2_floor(const UIntType n) noexcept {
     math_functions::detail::check_math_unsigned_int_type<UIntType>();
 
     const uint32_t log2_value = [n]() {
-#if defined(INTEGERS_128_BIT_HPP)
+#if defined(HAS_INT128_TYPEDEF)
         if constexpr (std::is_same_v<UIntType, uint128_t>) {
             const auto hi = static_cast<uint64_t>(n >> 64U);
             return hi != 0 ? (127 - static_cast<uint32_t>(math_functions::countl_zero(hi)))
@@ -2811,7 +2811,7 @@ constexpr bool is_perfect_number(const uint64_t n) noexcept {
 #endif
 }
 
-#if defined(INTEGERS_128_BIT_HPP)
+#if defined(HAS_INT128_TYPEDEF)
 
 [[nodiscard]]
 I128_CONSTEXPR bool is_perfect_number(const uint128_t n) noexcept(
@@ -2974,7 +2974,7 @@ constexpr uint64_t powers_sum_u64(const uint32_t n) noexcept {
     return math_functions::detail::powers_sum<M, uint64_t>(n);
 }
 
-#if defined(INTEGERS_128_BIT_HPP)
+#if defined(HAS_INT128_TYPEDEF)
 
 /// @brief Return 1^M + 2^M + ... + n^M
 /// @tparam M
@@ -3010,7 +3010,7 @@ constexpr size_t arange_size(T begin, T end, T step) noexcept(detail::is_trivial
         approx_size = std::max(approx_size, T{0});
     }
 
-#if defined(INTEGERS_128_BIT_HPP)
+#if defined(HAS_INT128_TYPEDEF)
     if constexpr (std::is_same_v<T, int128_t> || std::is_same_v<T, uint128_t>) {
         constexpr auto kUsizeMax = std::numeric_limits<size_t>::max();
         return approx_size <= kUsizeMax ? static_cast<size_t>(approx_size) : kUsizeMax;
@@ -3250,7 +3250,7 @@ template <class Range>
 
 // NOLINTEND(cppcoreguidelines-avoid-magic-numbers)
 
-#ifdef INTEGERS_128_BIT_HPP
+#ifdef HAS_INT128_TYPEDEF
 
 namespace detail {
 
@@ -3395,7 +3395,7 @@ I128_CONSTEXPR int128_t gcd(const int64_t a,
 
 }  // namespace detail
 
-#endif  // INTEGERS_128_BIT_HPP
+#endif  // HAS_INT128_TYPEDEF
 
 /// @brief Computes greaters common divisor of @a `a` and @a `b`
 ///         using Stein's algorithm (binary gcd). Here gcd(0, 0) = 0.
@@ -3410,11 +3410,11 @@ constexpr std::common_type_t<M, N> gcd(const M m,
     static_assert(math_functions::is_integral_v<M> && math_functions::is_integral_v<N>,
                   "math_functions::gcd arguments must be integers");
 
-#if defined(INTEGERS_128_BIT_HPP)
+#if defined(HAS_INT128_TYPEDEF)
     if constexpr (sizeof(M) <= sizeof(uint64_t) && sizeof(N) <= sizeof(uint64_t)) {
 #endif
         return std::gcd(m, n);
-#if defined(INTEGERS_128_BIT_HPP)
+#if defined(HAS_INT128_TYPEDEF)
     } else {
         return math_functions::detail::gcd(m, n);
     }

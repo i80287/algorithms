@@ -1855,7 +1855,7 @@ void TestDivMod() {
     TestDivModImpl<int32_t, 4000>();
     TestDivModImpl<uint64_t, 4000>();
     TestDivModImpl<int64_t, 4000>();
-#if defined(INTEGERS_128_BIT_HPP) && (defined(__GNUG__) || defined(__clang__))
+#if defined(HAS_INT128_TYPEDEF) && (defined(__GNUG__) || defined(__clang__))
     TestDivModImpl<uint128_t, 4000>();
     TestDivModImpl<int128_t, 4000>();
 #endif
