@@ -34,7 +34,10 @@ jobs:
 
     - name: Run tests
       run: |
-        cd ./tests && chmod +x run_gcc_tests.sh && ./run_gcc_tests.sh
+        set -e
+        cd ./tests
+        chmod +x run_gcc_tests.sh
+        ./run_gcc_tests.sh
 
   ubuntu-cmake-clang:
     name: test-clang-on-ubuntu-${{ matrix.ubuntu_version }}
@@ -59,7 +62,10 @@ jobs:
 
     - name: Run tests
       run: |
-        cd ./tests && chmod +x run_clang_tests.sh && ./run_clang_tests.sh
+        set -e
+        cd ./tests
+        chmod +x run_clang_tests.sh
+        ./run_clang_tests.sh
 
   ubuntu-cmake-gcc-mingw-w64-i686-posix:
     name: test-gcc-mingw-w64-i686-posix-on-ubuntu-${{ matrix.ubuntu_version }}
@@ -89,7 +95,10 @@ jobs:
 
     - name: Run tests
       run: |
-        cd ./tests && chmod +x run_gcc_mingw_32_tests.sh && ./run_gcc_mingw_32_tests.sh
+        set -e
+        cd ./tests
+        chmod +x run_gcc_mingw_32_tests.sh
+        ./run_gcc_mingw_32_tests.sh
 
   ubuntu-cmake-gcc-mingw-w64-x86_64-posix:
     name: test-gcc-mingw-w64-x86_64-posix-on-ubuntu-${{ matrix.ubuntu_version }}
@@ -119,4 +128,7 @@ jobs:
 
     - name: Run tests
       run: |
-        cd ./tests && chmod +x run_gcc_mingw_64_tests.sh && ./run_gcc_mingw_64_tests.sh
+        set -e
+        cd ./tests
+        chmod +x run_gcc_mingw_64_tests.sh
+        ./run_gcc_mingw_64_tests.sh
