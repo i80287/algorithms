@@ -35,8 +35,10 @@ jobs:
 
     - name: Run tests
       run: |
+        set -e
         cd ./tests
-        chmod +x run_gcc_tests.sh && ./run_gcc_tests.sh
+        chmod +x run_gcc_tests.sh
+        ./run_gcc_tests.sh
 
   fedora-cmake-clang:
     name: test-fedora-clang
@@ -62,4 +64,7 @@ jobs:
 
     - name: Run tests
       run: |
-        cd ./tests && chmod +x run_clang_tests.sh && ./run_clang_tests.sh
+        set -e
+        cd ./tests
+        chmod +x run_clang_tests.sh
+        ./run_clang_tests.sh
