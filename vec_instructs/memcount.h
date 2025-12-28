@@ -18,9 +18,9 @@ EXTERN_WITH_C_LINKAGE_END
 
 EXTERN_WITH_C_LINKAGE_BEGIN
 
-#define MEMCOUNT_ATTRIBUTES                                                                           \
-    ATTRIBUTE_NONBLOCKING_FUNCTION ATTRIBUTE_PURE ATTRIBUTE_NOTHROW ATTRIBUTE_NODISCARD_WITH_MESSAGE( \
-        "return value of the memcount should not be ommited")                                         \
+#define MEMCOUNT_ATTRIBUTES                                            \
+    ATTRIBUTE_PURE ATTRIBUTE_NOTHROW ATTRIBUTE_NODISCARD_WITH_MESSAGE( \
+        "return value of the memcount should not be ommited")          \
         ATTRIBUTE_SIZED_ACCESS(read_only, 1, 3)
 
 ATTRIBUTE_TARGET("popcnt,avx,avx2")
