@@ -450,38 +450,34 @@ inline std::basic_string<CharType> ToStringOneArg(const T &arg) {
     } else if constexpr (requires(const T &test_arg) {
                              { to_string(test_arg) } -> std::same_as<std::string>;
                          }) {
-        std::string str = to_string(arg);
         if constexpr (std::is_same_v<CharType, char>) {
-            return str;
+            return to_string(arg);
         } else {
-            return ConvertBytesTo<CharType>(str);
+            return ConvertBytesTo<CharType>(to_string(arg));
         }
     } else if constexpr (requires(const T &test_arg) {
                              { test_arg.to_string() } -> std::same_as<std::string>;
                          }) {
-        std::string str = arg.to_string();
         if constexpr (std::is_same_v<CharType, char>) {
-            return str;
+            return arg.to_string();
         } else {
-            return ConvertBytesTo<CharType>(str);
+            return ConvertBytesTo<CharType>(arg.to_string());
         }
     } else if constexpr (requires(const T &test_arg) {
                              { to_string_view(test_arg) } -> std::same_as<std::string_view>;
                          }) {
-        const std::string_view str = to_string_view(arg);
         if constexpr (std::is_same_v<CharType, char>) {
-            return std::string{str};
+            return std::string{to_string_view(arg)};
         } else {
-            return ConvertBytesTo<CharType>(str);
+            return ConvertBytesTo<CharType>(to_string_view(arg));
         }
     } else if constexpr (requires(const T &test_arg) {
                              { test_arg.to_string_view() } -> std::same_as<std::string_view>;
                          }) {
-        const std::string_view str = arg.to_string_view();
         if constexpr (std::is_same_v<CharType, char>) {
-            return std::string{str};
+            return std::string{arg.to_string_view()};
         } else {
-            return ConvertBytesTo<CharType>(str);
+            return ConvertBytesTo<CharType>(arg.to_string_view());
         }
     } else
 #endif
