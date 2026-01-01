@@ -1336,18 +1336,25 @@ void test_general_asserts() noexcept {
     I128_ASSERT_THAT(math_functions::uabs(int128_t{-4}) == 4);
     I128_ASSERT_THAT(math_functions::uabs(int128_t{4}) == 4);
     I128_ASSERT_THAT(math_functions::uabs(uint128_t{4}) == 4);
-    I128_ASSERT_THAT(math_functions::uabs(-int128_t{18446744073709551615ULL}) == 18446744073709551615ULL);
-    I128_ASSERT_THAT(math_functions::uabs(int128_t{18446744073709551615ULL}) == 18446744073709551615ULL);
-    I128_ASSERT_THAT(math_functions::uabs(uint128_t{18446744073709551615ULL}) == 18446744073709551615ULL);
-    I128_ASSERT_THAT(math_functions::uabs(-static_cast<int128_t>(uint128_t{1} << 126U)) == uint128_t{1} << 126U);
-    I128_ASSERT_THAT(math_functions::uabs(static_cast<int128_t>(uint128_t{1} << 126U)) == uint128_t{1} << 126U);
+    I128_ASSERT_THAT(math_functions::uabs(-int128_t{18446744073709551615ULL}) ==
+                     18446744073709551615ULL);
+    I128_ASSERT_THAT(math_functions::uabs(int128_t{18446744073709551615ULL}) ==
+                     18446744073709551615ULL);
+    I128_ASSERT_THAT(math_functions::uabs(uint128_t{18446744073709551615ULL}) ==
+                     18446744073709551615ULL);
+    I128_ASSERT_THAT(math_functions::uabs(-static_cast<int128_t>(uint128_t{1} << 126U)) ==
+                     uint128_t{1} << 126U);
+    I128_ASSERT_THAT(math_functions::uabs(static_cast<int128_t>(uint128_t{1} << 126U)) ==
+                     uint128_t{1} << 126U);
     I128_ASSERT_THAT(math_functions::uabs(uint128_t{1} << 126U) == uint128_t{1} << 126U);
     I128_ASSERT_THAT(math_functions::uabs(static_cast<int128_t>(-((uint128_t{1} << 127U) - 1))) ==
                      (uint128_t{1} << 127U) - 1);
     I128_ASSERT_THAT(math_functions::uabs(static_cast<int128_t>((uint128_t{1} << 127U) - 1)) ==
                      (uint128_t{1} << 127U) - 1);
-    I128_ASSERT_THAT(math_functions::uabs((uint128_t{1} << 127U) - 1) == (uint128_t{1} << 127U) - 1);
-    I128_ASSERT_THAT(math_functions::uabs(static_cast<int128_t>(-(uint128_t{1} << 127U))) == uint128_t{1} << 127U);
+    I128_ASSERT_THAT(math_functions::uabs((uint128_t{1} << 127U) - 1) ==
+                     (uint128_t{1} << 127U) - 1);
+    I128_ASSERT_THAT(math_functions::uabs(static_cast<int128_t>(-(uint128_t{1} << 127U))) ==
+                     uint128_t{1} << 127U);
     I128_ASSERT_THAT(math_functions::uabs(-(uint128_t{1} << 127U)) == uint128_t{1} << 127U);
 
 #if CONFIG_HAS_AT_LEAST_CXX_20

@@ -2162,8 +2162,13 @@ struct [[nodiscard]] TestImplResult {
 };
 
 template <class KeyType>
-[[nodiscard]] TestImplResult<KeyType> CheckRBTreeNodeInvariants(
-    const typename RBTree<KeyType>::node_type& node) {
+[[nodiscard]]
+TestImplResult<KeyType> CheckRBTreeNodeInvariants(const typename RBTree<KeyType>::node_type& node) {
+#if CONFIG_CLANG_AT_LEAST(21, 0)
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wnrvo"
+#endif
+
     std::int32_t height_l = 0;
     std::int32_t height_r = 0;
 
@@ -2310,6 +2315,9 @@ template <class KeyType>
         .min_key = min_l,
         .max_key = max_r,
     };
+#if CONFIG_CLANG_AT_LEAST(21, 0)
+#pragma clang diagnostic pop
+#endif
 }
 
 template <class KeyType, class ComparatorType>

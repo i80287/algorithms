@@ -298,7 +298,8 @@ ATTRIBUTE_ALWAYS_INLINE inline std::basic_string<CharType> ArithmeticToString(co
     static_assert(!is_char_v<T>, "implementation error");
 
     using FmtChar = std::conditional_t<std::is_same_v<CharType, wchar_t>, wchar_t, char>;
-    // For some reasons clang can't use nrvo if ArithmeticToStringImpl<FmtChar>(arg) called before `if constexpr`
+    // For some reasons clang can't use nrvo if ArithmeticToStringImpl<FmtChar>(arg) called before
+    // `if constexpr`
     if constexpr (std::is_same_v<FmtChar, CharType>) {
         return ArithmeticToStringImpl<FmtChar>(arg);
     } else {

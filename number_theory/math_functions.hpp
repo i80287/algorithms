@@ -1972,8 +1972,7 @@ constexpr void visit_prime_factors(const IntType n, F visitor) noexcept(
 ///          sorted by prime_div.
 template <class IntType>
 [[nodiscard]] CONSTEXPR_VECTOR auto prime_factors_as_vector(const IntType n)
-    -> std::vector<math_functions::PrimeFactor<math_functions::make_unsigned_t<IntType>>>
-{
+    -> std::vector<math_functions::PrimeFactor<math_functions::make_unsigned_t<IntType>>> {
     math_functions::detail::check_math_int_type<IntType>();
 
     using UnsignedIntType = math_functions::make_unsigned_t<IntType>;
@@ -1997,8 +1996,7 @@ template <class IntType>
 
 template <class IntType>
 [[nodiscard]] inline auto prime_factors_as_map(const IntType n)
-    -> std::map<math_functions::make_unsigned_t<IntType>, uint32_t>
-{
+    -> std::map<math_functions::make_unsigned_t<IntType>, uint32_t> {
     math_functions::detail::check_math_int_type<IntType>();
 
     using UnsignedIntType = math_functions::make_unsigned_t<IntType>;
@@ -2189,31 +2187,30 @@ ATTRIBUTE_CONST
     CONSTEXPR_FIXED_PRIMES_SIEVE const PrimesSet<N>& fixed_primes_sieve() noexcept {
     static CONSTEXPR_PRIMES_SIEVE const PrimesSet<N> primes_bs =
         []() CONSTEXPR_BITSET_OPS noexcept -> PrimesSet<N> {
-            PrimesSet<N> primes{};
-            primes.set();
-            primes[0] = false;
-            if CONSTEXPR_BITSET_OPS (primes.size() > 1) {
-                primes[1] = false;
-                constexpr uint32_t root = math_functions::isqrt(N);
-                if constexpr (constexpr uint32_t i = 2; i <= root) {
+        PrimesSet<N> primes{};
+        primes.set();
+        primes[0] = false;
+        if CONSTEXPR_BITSET_OPS (primes.size() > 1) {
+            primes[1] = false;
+            constexpr uint32_t root = math_functions::isqrt(N);
+            if constexpr (constexpr uint32_t i = 2; i <= root) {
+                // NOLINTNEXTLINE(bugprone-implicit-widening-of-multiplication-result)
+                for (size_t j = i * i; j <= N; j += i) {
+                    primes[j] = false;
+                }
+            }
+            for (uint32_t i = 3; i <= root; i += 2) {
+                if (primes[i]) {
+                    static_assert(root < std::numeric_limits<uint16_t>::max(), "isqrt impl error");
                     // NOLINTNEXTLINE(bugprone-implicit-widening-of-multiplication-result)
                     for (size_t j = i * i; j <= N; j += i) {
                         primes[j] = false;
                     }
                 }
-                for (uint32_t i = 3; i <= root; i += 2) {
-                    if (primes[i]) {
-                        static_assert(root < std::numeric_limits<uint16_t>::max(),
-                                      "isqrt impl error");
-                        // NOLINTNEXTLINE(bugprone-implicit-widening-of-multiplication-result)
-                        for (size_t j = i * i; j <= N; j += i) {
-                            primes[j] = false;
-                        }
-                    }
-                }
             }
-            return primes;
-        }();
+        }
+        return primes;
+    }();
 
     return primes_bs;
 }
