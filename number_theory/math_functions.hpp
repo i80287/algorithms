@@ -1971,12 +1971,14 @@ constexpr void visit_prime_factors(const IntType n, F visitor) noexcept(
 /// @return vector of pairs { prime_div : power_of_prime_div },
 ///          sorted by prime_div.
 template <class IntType>
-[[nodiscard]] CONSTEXPR_VECTOR auto prime_factors_as_vector(const IntType n) {
+[[nodiscard]] CONSTEXPR_VECTOR auto prime_factors_as_vector(const IntType n)
+    -> std::vector<math_functions::PrimeFactor<math_functions::make_unsigned_t<IntType>>>
+{
     math_functions::detail::check_math_int_type<IntType>();
 
     using UnsignedIntType = math_functions::make_unsigned_t<IntType>;
-
     std::vector<math_functions::PrimeFactor<UnsignedIntType>> prime_factors_vector;
+
     constexpr bool kReservePlaceForFactors = std::is_same_v<UnsignedIntType, uint32_t>;
     if constexpr (kReservePlaceForFactors) {
         prime_factors_vector.reserve(
@@ -1994,11 +1996,12 @@ template <class IntType>
 }
 
 template <class IntType>
-[[nodiscard]] inline auto prime_factors_as_map(const IntType n) {
+[[nodiscard]] inline auto prime_factors_as_map(const IntType n)
+    -> std::map<math_functions::make_unsigned_t<IntType>, uint32_t>
+{
     math_functions::detail::check_math_int_type<IntType>();
 
-    using UnsignedIntType = typename math_functions::make_unsigned_t<IntType>;
-
+    using UnsignedIntType = math_functions::make_unsigned_t<IntType>;
     std::map<UnsignedIntType, uint32_t> prime_factors_map;
 
     math_functions::visit_prime_factors(
@@ -2185,7 +2188,7 @@ ATTRIBUTE_CONST
     [[nodiscard]]
     CONSTEXPR_FIXED_PRIMES_SIEVE const PrimesSet<N>& fixed_primes_sieve() noexcept {
     static CONSTEXPR_PRIMES_SIEVE const PrimesSet<N> primes_bs =
-        []() CONSTEXPR_BITSET_OPS noexcept {
+        []() CONSTEXPR_BITSET_OPS noexcept -> PrimesSet<N> {
             PrimesSet<N> primes{};
             primes.set();
             primes[0] = false;
