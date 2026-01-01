@@ -515,7 +515,7 @@ void test_to_string_conversions() {
 
     using matrix_t = square_bitmatrix<Size, WordType>;
 
-    std::string allones_matrix_str_repr = []() {
+    std::string allones_matrix_str_repr = []() -> std::string {
         std::string str;
         str.reserve((Size + 1) * Size);
         for (size_t i = 0; i < Size; i++) {
