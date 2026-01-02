@@ -5,6 +5,18 @@
 #include "config_macros.hpp"
 #include "string_traits.hpp"
 
+#if !CONFIG_HAS_AT_LEAST_CXX_20
+#error "Compiler with c++20 support is required"
+#endif
+
+#if !CONFIG_COMPILER_SUPPORTS_CONCEPTS
+#error "Compiler with concepts support is required"
+#endif
+
+#if !CONFIG_HAS_CONCEPTS
+#error "<concepts> header is required"
+#endif
+
 namespace misc {
 
 /// @brief Join arguments @a args (converting to string if necessary)

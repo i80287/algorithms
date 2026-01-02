@@ -195,10 +195,9 @@ public:
 };
 
 template <misc::Char ToCharType>
+    requires(!std::is_same_v<ToCharType, char>)
 [[nodiscard]]
 inline std::basic_string<ToCharType> ConvertBytesToNotUTF8(const std::string_view str) {
-    static_assert(!std::is_same_v<ToCharType, char>);
-
     if constexpr (false
 #if defined(CONFIG_HAS_AT_LEAST_CXX_26) && CONFIG_HAS_AT_LEAST_CXX_26
                   || true
@@ -276,10 +275,9 @@ ATTRIBUTE_ALWAYS_INLINE inline std::basic_string<CharType> ArithmeticToString(co
 }
 
 template <misc::Char CharType, class T>
+    requires std::is_enum_v<T>
 [[nodiscard]]
 ATTRIBUTE_ALWAYS_INLINE inline std::basic_string<CharType> EnumToString(const T arg) {
-    static_assert(std::is_enum_v<T>, "implementation error");
-
     if constexpr (std::is_error_code_enum_v<T>) {
         if constexpr (std::is_same_v<CharType, char>) {
             return std::make_error_condition(arg).message();
@@ -390,8 +388,6 @@ template <misc::Char CharType, class T>
 template <misc::Char CharType, class T>
 ATTRIBUTE_ALWAYS_INLINE [[nodiscard]]
 inline std::basic_string<CharType> ToStringOneArg(const T &arg) {
-    static_assert(is_char_v<CharType>, "implementation error");
-
     if constexpr (requires(const T &test_arg) {
                       {
                           to_basic_string<CharType>(test_arg)
@@ -613,8 +609,6 @@ template <misc::Char HintCharType, class... Args>
 inline auto join_strings(const Args&... args) {
     static_assert(sizeof...(args) >= 1, "Empty input is explicitly prohibited");
 
-    static_assert(misc::is_char_v<HintCharType>, "Hint type should be char, wchar_t, char8_t, char16_t or char32_t");
-
     using DeducedCharType = misc::string_detail::determine_char_t<Args...>;
 
     using CharType = std::conditional_t<misc::is_char_v<DeducedCharType>, DeducedCharType, HintCharType>;
@@ -687,10 +681,6 @@ inline void ThrowOnFailedConversionToUTF8(const std::string_view file_location,
 #undef JSTR_FILE_LOCATION_STR
 #undef JSTR_STRINGIFY
 #undef JSTR_STRINGIFY_IMPL
-
-}  // namespace join_strings_detail
-
-namespace join_strings_detail {
 
 template <class StringType,
           bool has_value_type =
@@ -894,7 +884,7 @@ inline auto join_strings_collection(const Sep &sep, const Container &strings) {
                       "char type of the separator and char type of the strings should be the same");
         return join_strings_detail::JoinStringsCollectionByChar<CharType, Container>(sep, strings);
     } else {
-        using SepCharType = typename join_strings_detail::string_char_t<Sep>;
+        using SepCharType = join_strings_detail::string_char_t<Sep>;
 
         static_assert(std::is_same_v<SepCharType, CharType>,
                       "char type of the separator and char type of the strings should be the same");
