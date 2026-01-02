@@ -445,7 +445,12 @@
     } while (0)
 #endif
 #else
-#define CONFIG_ASSUME_STATEMENT(expr)
+#define CONFIG_ASSUME_STATEMENT(expr) \
+    do {                              \
+        if (0) {                      \
+            (expr);                   \
+        }                             \
+    } while (0)
 #endif
 #endif
 
