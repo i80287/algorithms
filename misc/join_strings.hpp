@@ -1,31 +1,9 @@
 #pragma once
 
-#include "config_macros.hpp"
-
-#if CONFIG_HAS_AT_LEAST_CXX_17 && defined(__cpp_lib_filesystem) && \
-    __cpp_lib_filesystem >= 201703L && CONFIG_HAS_INCLUDE(<filesystem>)
-
-#define JOIN_STRINGS_SUPPORTS_FILESYSTEM_PATH
-
-#endif
-
-#if CONFIG_HAS_CONCEPTS
-
-#define JOIN_STRINGS_SUPPORTS_CUSTOM_TO_STRING
-#define JOIN_STRINGS_SUPPORTS_CUSTOM_OSTRINGSTREAM
-
-#endif
-
-#if CONFIG_HAS_CONCEPTS && defined(__cpp_lib_ranges) && __cpp_lib_ranges >= 201911L && \
-    CONFIG_HAS_INCLUDE(<ranges>)
-
-#define JOIN_STRINGS_SUPPORTS_JOIN_STRINGS_COLLECTION
-
 #include <ranges>
 
+#include "config_macros.hpp"
 #include "string_traits.hpp"
-
-#endif
 
 namespace misc {
 
@@ -43,18 +21,15 @@ namespace misc {
 /// @return joined args as a string of type std::basic_string<CharType>
 ///         where CharType is deducted from the @a Args... or HintCharType
 ///         if @a Args... is pack of types without associated char type
-template <class HintCharType = char, class... Args>
+template <misc::Char HintCharType = char, class... Args>
 [[nodiscard]] ATTRIBUTE_ALWAYS_INLINE inline auto join_strings(const Args &...args);
 
-#ifdef JOIN_STRINGS_SUPPORTS_JOIN_STRINGS_COLLECTION
-
 template <misc::CharOrStringLike Sep, std::ranges::forward_range Container>
-[[nodiscard]] inline auto join_strings_collection(const Sep &sep, const Container &strings);
+[[nodiscard]] ATTRIBUTE_ALWAYS_INLINE inline auto join_strings_collection(const Sep &sep,
+                                                                          const Container &strings);
 
 template <std::ranges::forward_range Container>
-[[nodiscard]] inline auto join_strings_collection(const Container &strings);
-
-#endif
+[[nodiscard]] ATTRIBUTE_ALWAYS_INLINE inline auto join_strings_collection(const Container &strings);
 
 }  // namespace misc
 
