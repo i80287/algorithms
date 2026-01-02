@@ -67,16 +67,14 @@ constexpr bool is_filesystem_path_v = false;
 template <class CharType, class T>
 ATTRIBUTE_ALWAYS_INLINE [[nodiscard]]
 inline std::basic_string<CharType> ArithmeticToStringImpl(const T arg) {
-    if constexpr (std::is_integral_v<T>) {
+    if constexpr (std::is_integral_v<T> && sizeof(T) > sizeof(int)) {
         if (config::is_constant_evaluated() || config::is_gcc_constant_p(arg)) {
-            if constexpr (sizeof(T) > sizeof(int)) {
-                using CompressedIntType = std::conditional_t<std::is_unsigned_v<T>, unsigned, int>;
+            using CompressedIntType = std::conditional_t<std::is_unsigned_v<T>, unsigned, int>;
 
-                if (arg >= std::numeric_limits<CompressedIntType>::min() &&
-                    arg <= std::numeric_limits<CompressedIntType>::max()) {
-                    return join_strings_detail::ArithmeticToStringImpl<CharType>(
-                        static_cast<CompressedIntType>(arg));
-                }
+            if (arg >= std::numeric_limits<CompressedIntType>::min() &&
+                arg <= std::numeric_limits<CompressedIntType>::max()) {
+                return join_strings_detail::ArithmeticToStringImpl<CharType>(
+                    static_cast<CompressedIntType>(arg));
             }
         }
     }
@@ -300,11 +298,12 @@ ATTRIBUTE_ALWAYS_INLINE inline std::basic_string<CharType> ArithmeticToString(co
     static_assert(!is_char_v<T>, "implementation error");
 
     using FmtChar = std::conditional_t<std::is_same_v<CharType, wchar_t>, wchar_t, char>;
-    std::basic_string<FmtChar> str = ArithmeticToStringImpl<FmtChar>(arg);
+    // For some reasons clang can't use nrvo if ArithmeticToStringImpl<FmtChar>(arg) called before
+    // `if constexpr`
     if constexpr (std::is_same_v<FmtChar, CharType>) {
-        return str;
+        return ArithmeticToStringImpl<FmtChar>(arg);
     } else {
-        return ConvertBytesTo<CharType>(str);
+        return ConvertBytesTo<CharType>(ArithmeticToStringImpl<FmtChar>(arg));
     }
 }
 
@@ -314,18 +313,16 @@ ATTRIBUTE_ALWAYS_INLINE inline std::basic_string<CharType> EnumToString(const T 
     static_assert(std::is_enum_v<T>, "implementation error");
 
     if constexpr (std::is_error_code_enum_v<T>) {
-        std::string str = std::make_error_code(arg).message();
         if constexpr (std::is_same_v<CharType, char>) {
-            return str;
+            return std::make_error_condition(arg).message();
         } else {
-            return ConvertBytesTo<CharType>(str);
+            return ConvertBytesTo<CharType>(std::make_error_condition(arg).message());
         }
     } else if constexpr (std::is_error_condition_enum_v<T>) {
-        std::string str = std::make_error_condition(arg).message();
         if constexpr (std::is_same_v<CharType, char>) {
-            return str;
+            return std::make_error_condition(arg).message();
         } else {
-            return ConvertBytesTo<CharType>(str);
+            return ConvertBytesTo<CharType>(std::make_error_condition(arg).message());
         }
     } else {
         return ArithmeticToString<CharType>(static_cast<std::underlying_type_t<T>>(arg));
@@ -454,38 +451,34 @@ inline std::basic_string<CharType> ToStringOneArg(const T &arg) {
     } else if constexpr (requires(const T &test_arg) {
                              { to_string(test_arg) } -> std::same_as<std::string>;
                          }) {
-        std::string str = to_string(arg);
         if constexpr (std::is_same_v<CharType, char>) {
-            return str;
+            return to_string(arg);
         } else {
-            return ConvertBytesTo<CharType>(str);
+            return ConvertBytesTo<CharType>(to_string(arg));
         }
     } else if constexpr (requires(const T &test_arg) {
                              { test_arg.to_string() } -> std::same_as<std::string>;
                          }) {
-        std::string str = arg.to_string();
         if constexpr (std::is_same_v<CharType, char>) {
-            return str;
+            return arg.to_string();
         } else {
-            return ConvertBytesTo<CharType>(str);
+            return ConvertBytesTo<CharType>(arg.to_string());
         }
     } else if constexpr (requires(const T &test_arg) {
                              { to_string_view(test_arg) } -> std::same_as<std::string_view>;
                          }) {
-        const std::string_view str = to_string_view(arg);
         if constexpr (std::is_same_v<CharType, char>) {
-            return std::string{str};
+            return std::string{to_string_view(arg)};
         } else {
-            return ConvertBytesTo<CharType>(str);
+            return ConvertBytesTo<CharType>(to_string_view(arg));
         }
     } else if constexpr (requires(const T &test_arg) {
                              { test_arg.to_string_view() } -> std::same_as<std::string_view>;
                          }) {
-        const std::string_view str = arg.to_string_view();
         if constexpr (std::is_same_v<CharType, char>) {
-            return std::string{str};
+            return std::string{arg.to_string_view()};
         } else {
-            return ConvertBytesTo<CharType>(str);
+            return ConvertBytesTo<CharType>(arg.to_string_view());
         }
     } else
 #endif
