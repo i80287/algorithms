@@ -82,8 +82,10 @@ constexpr char* format_uint_to_buffer(U number, char* buffer_ptr ATTRIBUTE_LIFET
 }
 
 struct FillResult {
+    using size_type = std::uint8_t;
+
     const char* data;
-    std::uint8_t size;
+    size_type size;
 };
 
 }  // namespace detail
@@ -92,6 +94,9 @@ template <typename T, typename UT = std::make_unsigned_t<T>>
 class Formatter {
 private:
     static constexpr std::size_t kBufferCapacity = detail::MaxStrLength<T>();
+
+    // kBufferCapacity <= std::numeric_limits<detail::FillResult::size_type>::max() without including <limits>
+    static_assert(kBufferCapacity == static_cast<detail::FillResult::size_type>(kBufferCapacity), "");
 
     using storage_type = std::array<char, kBufferCapacity>;
 
@@ -110,18 +115,21 @@ private:
 
         const UT unum = Formatter::uabs(number);
         using ExtUT = std::conditional_t<sizeof(UT) < sizeof(unsigned), unsigned, UT>;
-        char* ptr = detail::format_uint_to_buffer(ExtUT{unum}, buffer_end_ptr);
+        char* fmt_ptr = detail::format_uint_to_buffer(ExtUT{unum}, buffer_end_ptr);
         if constexpr (detail::kIsSignedInt<T>) {
             if (number < 0) {
-                *--ptr = '-';
+                *--fmt_ptr = '-';
             }
         }
 
-        const auto length = static_cast<std::size_t>(buffer_end_ptr - ptr);
-        CONFIG_ASSUME_STATEMENT(1 <= length);
+        const char* const buffer_begin_ptr = buffer.data();
+        CONFIG_ASSUME_STATEMENT(buffer_begin_ptr <= fmt_ptr);
+        CONFIG_ASSUME_STATEMENT(fmt_ptr < buffer_end_ptr);
+        const auto length = static_cast<std::size_t>(buffer_end_ptr - fmt_ptr);
         const std::size_t buffer_size = buffer.size();
+        CONFIG_ASSUME_STATEMENT(1 <= length);
         CONFIG_ASSUME_STATEMENT(length <= buffer_size);
-        return {ptr, static_cast<std::uint8_t>(length)};
+        return {fmt_ptr, static_cast<detail::FillResult::size_type>(length)};
     }
 
 public:
@@ -141,7 +149,8 @@ public:
     }
 
     ATTRIBUTE_PURE [[nodiscard]] constexpr std::size_t size() const noexcept {
-        const std::size_t fmt_size = fill_result_.size;
+        const detail::FillResult::size_type fmt_size = fill_result_.size;
+        CONFIG_ASSUME_STATEMENT(1 <= fmt_size);
         CONFIG_ASSUME_STATEMENT(fmt_size <= buffer_capacity());
         return fmt_size;
     }
