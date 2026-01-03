@@ -103,8 +103,7 @@ inline constexpr size_t kMaxStringLengthI128 =
     std::char_traits<char>::length("-170141183460469231731687303715884105728");
 
 template <typename T>
-inline constexpr size_t kFormatterSize =
-    std::is_same_v<T, uint128_t> ? kMaxStringLengthU128 : kMaxStringLengthI128;
+inline constexpr size_t kFormatterSize = std::is_same_v<T, uint128_t> ? kMaxStringLengthU128 : kMaxStringLengthI128;
 
 [[nodiscard]] ATTRIBUTE_CONST I128_CONSTEXPR uint128_t uabs128(const int128_t number) noexcept {
     constexpr auto kShift = CHAR_BIT * sizeof(number) - 1;
@@ -126,8 +125,8 @@ namespace detail {
 /// @return
 ATTRIBUTE_NONNULL_ALL_ARGS
 ATTRIBUTE_RETURNS_NONNULL
-[[nodiscard]] I128_CONSTEXPR char* format_uint128_to_buffer(
-    uint128_t number, char* buffer_ptr ATTRIBUTE_LIFETIME_BOUND) noexcept;
+[[nodiscard]] I128_CONSTEXPR char* format_uint128_to_buffer(uint128_t number,
+                                                            char* buffer_ptr ATTRIBUTE_LIFETIME_BOUND) noexcept;
 
 }  // namespace detail
 
@@ -137,12 +136,11 @@ private:
     using storage_type = std::array<char, kFormatterSize<T>>;
 
     [[nodiscard]]
-    I128_CONSTEXPR static std::string_view fill_buffer(
-        const T number, storage_type& buffer ATTRIBUTE_LIFETIME_BOUND) noexcept {
+    I128_CONSTEXPR static std::string_view fill_buffer(const T number,
+                                                       storage_type& buffer ATTRIBUTE_LIFETIME_BOUND) noexcept {
         char* const buffer_end_ptr = buffer.data() + buffer.size();
 
-        char* ptr = int128_traits::detail::format_uint128_to_buffer(int128_traits::uabs128(number),
-                                                                    buffer_end_ptr);
+        char* ptr = int128_traits::detail::format_uint128_to_buffer(int128_traits::uabs128(number), buffer_end_ptr);
         if constexpr (std::is_same_v<T, int128_t>) {
             if (number < 0) {
                 *--ptr = '-';
@@ -370,8 +368,7 @@ template <class T>
 concept integral = std::integral<T> || int128_traits::is_integral_v<T>;
 
 template <class T>
-concept signed_integral =
-    std::signed_integral<T> || (int128_traits::integral<T> && int128_traits::is_signed_v<T>);
+concept signed_integral = std::signed_integral<T> || (int128_traits::integral<T> && int128_traits::is_signed_v<T>);
 
 template <class T>
 concept unsigned_integral =
@@ -381,8 +378,7 @@ concept unsigned_integral =
 
 }  // namespace int128_traits
 
-inline std::ostream& operator<<(std::ostream& out ATTRIBUTE_LIFETIME_BOUND,
-                                const uint128_t number) {
+inline std::ostream& operator<<(std::ostream& out ATTRIBUTE_LIFETIME_BOUND, const uint128_t number) {
     return out << int128_traits::Formatter{number}.as_string_view();
 }
 

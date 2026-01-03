@@ -106,8 +106,7 @@ private:
             size_t right_keys_size = keys_size_ - pos;
             if (right_keys_size) {
                 memmove(&keys_[pos + 1], &keys_[pos], right_keys_size * sizeof(int32_t));
-                memmove(&child_indexes_[pos + 2], &child_indexes_[pos + 1],
-                        right_keys_size * sizeof(uint32_t));
+                memmove(&child_indexes_[pos + 2], &child_indexes_[pos + 1], right_keys_size * sizeof(uint32_t));
             }
 
             keys_[pos] = key;
@@ -127,8 +126,7 @@ private:
             size_t new_node_size = keys_capacity - (middle_key_index + 1);
             assert(((keys_capacity + 1) / 2) - 1 <= new_node_size && new_node_size < keys_capacity);
 
-            memcpy(&new_brother->keys_[0], &keys_[middle_key_index + 1],
-                   new_node_size * sizeof(int32_t));
+            memcpy(&new_brother->keys_[0], &keys_[middle_key_index + 1], new_node_size * sizeof(int32_t));
             new_brother->keys_size_ = new_node_size;
             keys_size_ = middle_key_index;
             memcpy(&new_brother->child_indexes_[0], &child_indexes_[middle_key_index + 1],
@@ -208,8 +206,8 @@ void BTree::insert(int32_t key) {
         }
 
         uint32_t jostle_node_index = add_new_node();
-        key = nodes_[current_node_index].split_into(&nodes_[jostle_node_index], jostle_node_index,
-                                                    pos, key, child_index, keys_capacity_);
+        key = nodes_[current_node_index].split_into(&nodes_[jostle_node_index], jostle_node_index, pos, key,
+                                                    child_index, keys_capacity_);
         child_index = jostle_node_index;
         if (__builtin_expect(prev_node_index_stack_index != size_t(-1), 1)) {
             current_node_index = prev_node_index_stack[prev_node_index_stack_index--];

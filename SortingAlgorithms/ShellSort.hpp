@@ -17,8 +17,7 @@ constexpr void shell_sort(Iterator begin, size_t size) {
             size_t temp_index = i;
             size_t diff = i - l;
 
-            if constexpr (std::is_arithmetic_v<
-                              typename std::iterator_traits<Iterator>::value_type>) {
+            if constexpr (std::is_arithmetic_v<typename std::iterator_traits<Iterator>::value_type>) {
                 const auto temp_shifting_item = *(begin + i);
                 while (*(begin + diff) > *(begin + temp_index)) {
                     *(begin + temp_index) = *(begin + diff);

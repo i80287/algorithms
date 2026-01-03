@@ -96,8 +96,7 @@ protected:
     using pointer = node_type*;
     using const_pointer = const node_type*;
 
-    explicit CONSTEXPR_VECTOR dsu_base(const size_type nodes_count)
-        : nodes_(nodes_count), sets_size_(nodes_count) {}
+    explicit CONSTEXPR_VECTOR dsu_base(const size_type nodes_count) : nodes_(nodes_count), sets_size_(nodes_count) {}
 
     CONSTEXPR_VECTOR dsu_base(const dsu_base& other) = default;
     CONSTEXPR_VECTOR dsu_base& operator=(const dsu_base& other) = default;
@@ -125,8 +124,7 @@ protected:
     ATTRIBUTE_REINITIALIZES
     CONSTEXPR_VECTOR
     void reset() noexcept(std::is_nothrow_default_constructible_v<value_type> &&
-                          std::is_nothrow_copy_assignable_v<value_type> &&
-                          std::is_nothrow_destructible_v<value_type>) {
+                          std::is_nothrow_copy_assignable_v<value_type> && std::is_nothrow_destructible_v<value_type>) {
         std::fill_n(data(), size(), value_type{});
         sets_size_ = size();
     }
@@ -235,9 +233,7 @@ public:
         for (size_type i = 0; i < other.size(); ++i) {
             const node_t* other_i_node_parent = other_first_node[i].parent_;
             this_first_node[i].parent_ =
-                other_i_node_parent != nullptr
-                    ? this_first_node + (other_i_node_parent - other_first_node)
-                    : nullptr;
+                other_i_node_parent != nullptr ? this_first_node + (other_i_node_parent - other_first_node) : nullptr;
         }
     }
     CONSTEXPR_VECTOR dsu_t& operator=(const dsu_t& other) ATTRIBUTE_LIFETIME_BOUND {
@@ -255,15 +251,13 @@ public:
     }
 
     // O(log*(n))
-    [[nodiscard]] CONSTEXPR_VECTOR bool equal(const size_type node_x_index,
-                                              const size_type node_y_index) noexcept {
+    [[nodiscard]] CONSTEXPR_VECTOR bool equal(const size_type node_x_index, const size_type node_y_index) noexcept {
         assert(node_x_index < size() && node_y_index < size());
         return base::are_nodes_equal(node_x_index, node_y_index);
     }
 
     // O(log*(n))
-    CONSTEXPR_VECTOR void unite(const size_type node_x_index,
-                                const size_type node_y_index) noexcept {
+    CONSTEXPR_VECTOR void unite(const size_type node_x_index, const size_type node_y_index) noexcept {
         assert(node_x_index < size() && node_y_index < size());
         node_t* node_x_root_ptr = base::find_root(node_x_index);
         node_t* node_y_root_ptr = base::find_root(node_y_index);
@@ -320,20 +314,16 @@ public:
         for (size_type i = 0; i < other.size(); ++i) {
             const node_t* other_i_node_parent = other_first_node[i].parent_;
             this_first_node[i].parent_ =
-                other_i_node_parent != nullptr
-                    ? this_first_node + (other_i_node_parent - other_first_node)
-                    : nullptr;
+                other_i_node_parent != nullptr ? this_first_node + (other_i_node_parent - other_first_node) : nullptr;
         }
     }
     // O(n)
-    CONSTEXPR_VECTOR weighted_dsu_t& operator=(const weighted_dsu_t& other)
-        ATTRIBUTE_LIFETIME_BOUND {
+    CONSTEXPR_VECTOR weighted_dsu_t& operator=(const weighted_dsu_t& other) ATTRIBUTE_LIFETIME_BOUND {
         return *this = weighted_dsu_t(other);
     }
 
     CONSTEXPR_VECTOR weighted_dsu_t(weighted_dsu_t&& other) noexcept : base(std::move(other)) {}
-    CONSTEXPR_VECTOR weighted_dsu_t& operator=(weighted_dsu_t&& other) noexcept
-        ATTRIBUTE_LIFETIME_BOUND {
+    CONSTEXPR_VECTOR weighted_dsu_t& operator=(weighted_dsu_t&& other) noexcept ATTRIBUTE_LIFETIME_BOUND {
         base::operator=(std::move(other));
         return *this;
     }
@@ -346,15 +336,13 @@ public:
     }
 
     // O(log*(n))
-    [[nodiscard]] CONSTEXPR_VECTOR bool equal(const size_type node_x_index,
-                                              const size_type node_y_index) noexcept {
+    [[nodiscard]] CONSTEXPR_VECTOR bool equal(const size_type node_x_index, const size_type node_y_index) noexcept {
         assert(node_x_index < size() && node_y_index < size());
         return base::are_nodes_equal(node_x_index, node_y_index);
     }
 
     // O(log*(n))
-    CONSTEXPR_VECTOR void unite(const size_type node_x_index,
-                                const size_type node_y_index) noexcept {
+    CONSTEXPR_VECTOR void unite(const size_type node_x_index, const size_type node_y_index) noexcept {
         assert(node_x_index < size() && node_y_index < size());
         node_t* node_x_root_ptr = base::find_root(node_x_index);
         node_t* node_y_root_ptr = base::find_root(node_y_index);
@@ -388,15 +376,13 @@ public:
     }
 
     // O(log*(n))
-    CONSTEXPR_VECTOR void add_weight_in_set(const size_type node_index,
-                                            const int64_t delta) noexcept {
+    CONSTEXPR_VECTOR void add_weight_in_set(const size_type node_index, const int64_t delta) noexcept {
         assert(node_index < size());
         base::find_root(node_index)->weight_ += delta;
     }
 
     // O(log*(n))
-    CONSTEXPR_VECTOR void set_weight_in_set(const size_type node_index,
-                                            const int64_t weight) noexcept {
+    CONSTEXPR_VECTOR void set_weight_in_set(const size_type node_index, const int64_t weight) noexcept {
         assert(node_index < size());
         base::find_root(node_index)->weight_ = weight;
     }

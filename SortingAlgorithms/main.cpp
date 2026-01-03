@@ -104,8 +104,7 @@ int main() {
         const uint64_t qsort_time_res = measure_tools::MeasureSort(
             array.get(), buffer_for_sorting.get(), length, [](T* buffer, size_t len) noexcept {
                 qsort(
-                    buffer, len, sizeof(T),
-                    +[](const void* first, const void* second) constexpr noexcept {
+                    buffer, len, sizeof(T), +[](const void* first, const void* second) constexpr noexcept {
                         T a = *static_cast<const T*>(first);
                         T b = *static_cast<const T*>(second);
                         return int(a > b) - int(a < b);
@@ -114,22 +113,18 @@ int main() {
         const uint64_t std_algo_sort_time_res = measure_tools::MeasureSort(
             array.get(), buffer_for_sorting.get(), length,
             [](T* buffer, size_t len) constexpr noexcept { std::sort(&buffer[0], &buffer[len]); });
-        const uint64_t inplace_heap_sort_time_res = measure_tools::MeasureSort(
-            array.get(), buffer_for_sorting.get(), length,
-            [](T* buffer, size_t len) constexpr noexcept { heap_sort(&buffer[0], len); });
-        const uint64_t shell_sort_time_res =
+        const uint64_t inplace_heap_sort_time_res =
             measure_tools::MeasureSort(array.get(), buffer_for_sorting.get(), length,
-                                       [](T* buffer, size_t len) constexpr noexcept {
-                                           algorithms::shell_sort(&buffer[0], len);
-                                       });
-        const uint64_t merge_sort_time_res = measure_tools::MeasureSort(
+                                       [](T* buffer, size_t len) constexpr noexcept { heap_sort(&buffer[0], len); });
+        const uint64_t shell_sort_time_res = measure_tools::MeasureSort(
             array.get(), buffer_for_sorting.get(), length,
-            [](T* buffer, size_t len) { std::stable_sort(&buffer[0], &buffer[len]); });
-        const uint64_t quick_sort_time_res =
+            [](T* buffer, size_t len) constexpr noexcept { algorithms::shell_sort(&buffer[0], len); });
+        const uint64_t merge_sort_time_res =
             measure_tools::MeasureSort(array.get(), buffer_for_sorting.get(), length,
-                                       [](T* buffer, size_t len) constexpr noexcept {
-                                           algorithms::quick_sort(&buffer[0], &buffer[len]);
-                                       });
+                                       [](T* buffer, size_t len) { std::stable_sort(&buffer[0], &buffer[len]); });
+        const uint64_t quick_sort_time_res = measure_tools::MeasureSort(
+            array.get(), buffer_for_sorting.get(), length,
+            [](T* buffer, size_t len) constexpr noexcept { algorithms::quick_sort(&buffer[0], &buffer[len]); });
 
         // clang-format off
         printf(

@@ -12,8 +12,7 @@
 #include "../misc/assert.hpp"
 #include "../misc/config_macros.hpp"
 
-#if defined(__cpp_lib_math_constants) && __cpp_lib_math_constants >= 201907L && \
-    CONFIG_HAS_INCLUDE(<numbers>)
+#if defined(__cpp_lib_math_constants) && __cpp_lib_math_constants >= 201907L && CONFIG_HAS_INCLUDE(<numbers>)
 #include <numbers>
 #define FFT_HAS_NUMBERS
 #endif
@@ -38,9 +37,7 @@ using std::size_t;
 ATTRIBUTE_SIZED_ACCESS(read_write, 1, 3)
 ATTRIBUTE_SIZED_ACCESS(read_write, 2, 3)
 ATTRIBUTE_NONNULL_ALL_ARGS
-inline void forward_backward_fft(complex* RESTRICT_QUALIFIER p1,
-                                 complex* RESTRICT_QUALIFIER p2,
-                                 size_t n);
+inline void forward_backward_fft(complex* RESTRICT_QUALIFIER p1, complex* RESTRICT_QUALIFIER p2, size_t n);
 
 #ifdef FFT_HAS_SPAN
 
@@ -97,8 +94,7 @@ private:
 
     template <bool IsBackwardFFT = false /* Forward of backward FFT */>
     ATTRIBUTE_SIZED_ACCESS(read_write, 1, 2)
-    ATTRIBUTE_NONNULL(1) static void forward_or_backward_fft(complex* const p,
-                                                             const size_t k) noexcept {
+    ATTRIBUTE_NONNULL(1) static void forward_or_backward_fft(complex* const p, const size_t k) noexcept {
         CONFIG_ASSUME_STATEMENT(is_valid_polynomial_size(k));
 
         for (std::size_t i = 1, k_reversed_i = 0; i < k; i++) {
@@ -127,8 +123,8 @@ private:
         for (std::size_t step = 2; step < k; step *= 2) {
             for (std::size_t block_start = 0; block_start < k;) {
                 const std::size_t block_end = block_start + step;
-                for (std::size_t pos_in_block = block_start, point_index = step;
-                     pos_in_block < block_end; pos_in_block++, point_index++) {
+                for (std::size_t pos_in_block = block_start, point_index = step; pos_in_block < block_end;
+                     pos_in_block++, point_index++) {
                     const complex p0_i = p[pos_in_block];
                     complex w_j_p1_i{};
                     if constexpr (IsBackwardFFT) {
@@ -167,8 +163,7 @@ private:
         }
 
         roots.reserve(n);
-        const auto add_point = [roots_data = roots.data(), &current_len,
-                                &roots](const size_t i) noexcept {
+        const auto add_point = [roots_data = roots.data(), &current_len, &roots](const size_t i) noexcept {
 #ifdef FFT_HAS_NUMBERS
             constexpr f64 kPi = std::numbers::pi_v<f64>;
 #else
@@ -176,8 +171,7 @@ private:
 #endif
             roots.emplace_back(roots_data[i]);
             // double phi = 2 * kPi * (2 * i - current_len + 1) / (2 * current_len);
-            const f64 phi =
-                kPi * static_cast<f64>(2 * i - current_len + 1) / static_cast<f64>(current_len);
+            const f64 phi = kPi * static_cast<f64>(2 * i - current_len + 1) / static_cast<f64>(current_len);
             roots.emplace_back(std::cos(phi), std::sin(phi));
         };
         do {
@@ -195,8 +189,7 @@ private:
                                                  size_t n);
 
 #ifdef FFT_HAS_SPAN
-    friend inline void fft::forward_backward_fft(std::span<complex> poly1,
-                                                 std::span<complex> poly2);
+    friend inline void fft::forward_backward_fft(std::span<complex> poly1, std::span<complex> poly2);
 #endif
 };
 
@@ -261,8 +254,8 @@ inline void forward_backward_fft(const std::span<complex> poly1, const std::span
         return;
     }
 
-    const bool allocate_memory = !fft::detail::private_impl::are_distinct_non_empty_ranges(
-        poly1.data(), poly2.data(), poly2.size());
+    const bool allocate_memory =
+        !fft::detail::private_impl::are_distinct_non_empty_ranges(poly1.data(), poly2.data(), poly2.size());
 
     using TemporaryStorage = std::vector<complex>;
     TemporaryStorage poly1_storage = [&]() {
@@ -273,8 +266,7 @@ inline void forward_backward_fft(const std::span<complex> poly1, const std::span
         }
     }();
 
-    forward_backward_fft(allocate_memory ? poly1_storage.data() : poly1.data(), poly2.data(),
-                         poly1.size());
+    forward_backward_fft(allocate_memory ? poly1_storage.data() : poly1.data(), poly2.data(), poly1.size());
 }
 
 #endif

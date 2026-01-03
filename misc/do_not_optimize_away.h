@@ -55,8 +55,7 @@ ATTRIBUTE_ALWAYS_INLINE static inline void do_not_optimize_away(T expr) noexcept
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wattributes"
 #endif
-ATTRIBUTE_NOINLINE static inline void sink_char_ptr(
-    ATTRIBUTE_MAYBE_UNUSED char const volatile* ptr) {}
+ATTRIBUTE_NOINLINE static inline void sink_char_ptr(ATTRIBUTE_MAYBE_UNUSED char const volatile* ptr) {}
 #if defined(__GNUC__)
 #pragma GCC diagnostic pop
 #endif

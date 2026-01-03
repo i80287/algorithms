@@ -46,8 +46,7 @@ public:
         return *this = SquareMatrix(other);
     }
     CXX20_CONSTEXPR SquareMatrix(SquareMatrix&& other) noexcept
-        : data_(std::exchange(other.data_, nullptr))
-        , side_size_(std::exchange(other.side_size_, side_type{})) {}
+        : data_(std::exchange(other.data_, nullptr)), side_size_(std::exchange(other.side_size_, side_type{})) {}
     CXX20_CONSTEXPR SquareMatrix& operator=(SquareMatrix&& other) noexcept {
         this->swap(other);
         return *this;
@@ -134,8 +133,7 @@ public:
         return reverse_iterator{begin()};
     }
     [[nodiscard]]
-    ATTRIBUTE_PURE constexpr const_reverse_iterator rbegin() const noexcept
-        ATTRIBUTE_LIFETIME_BOUND {
+    ATTRIBUTE_PURE constexpr const_reverse_iterator rbegin() const noexcept ATTRIBUTE_LIFETIME_BOUND {
         return const_reverse_iterator{end()};
     }
     [[nodiscard]]
@@ -143,13 +141,11 @@ public:
         return const_reverse_iterator{begin()};
     }
     [[nodiscard]]
-    ATTRIBUTE_PURE constexpr const_reverse_iterator crbegin() const noexcept
-        ATTRIBUTE_LIFETIME_BOUND {
+    ATTRIBUTE_PURE constexpr const_reverse_iterator crbegin() const noexcept ATTRIBUTE_LIFETIME_BOUND {
         return rbegin();
     }
     [[nodiscard]]
-    ATTRIBUTE_PURE constexpr const_reverse_iterator crend() const noexcept
-        ATTRIBUTE_LIFETIME_BOUND {
+    ATTRIBUTE_PURE constexpr const_reverse_iterator crend() const noexcept ATTRIBUTE_LIFETIME_BOUND {
         return rend();
     }
 
@@ -162,8 +158,7 @@ public:
         return data_ + i * cols();
     }
     [[nodiscard]]
-    ATTRIBUTE_PURE reference operator()(size_type i, size_type j) noexcept
-        ATTRIBUTE_LIFETIME_BOUND {
+    ATTRIBUTE_PURE reference operator()(size_type i, size_type j) noexcept ATTRIBUTE_LIFETIME_BOUND {
         return data_[i * cols() + j];
     }
     [[nodiscard]]
@@ -174,9 +169,8 @@ public:
 private:
     [[nodiscard]]
     static CXX20_CONSTEXPR allocator_type get_allocator() noexcept {
-        static_assert(
-            sizeof(allocator_type) <= 1 && std::is_nothrow_default_constructible_v<allocator_type>,
-            "impl error: stateless allocator is expected");
+        static_assert(sizeof(allocator_type) <= 1 && std::is_nothrow_default_constructible_v<allocator_type>,
+                      "impl error: stateless allocator is expected");
         return allocator_type{};
     }
     [[nodiscard]]
@@ -208,8 +202,7 @@ public:
 
     static_assert(std::is_unsigned_v<int_type>, "impl error");
     // NOLINTNEXTLINE(misc-redundant-expression)
-    static_assert(Mod == kNoMod || Mod <= std::numeric_limits<int_type>::max(),
-                  "Too big Mod value");
+    static_assert(Mod == kNoMod || Mod <= std::numeric_limits<int_type>::max(), "Too big Mod value");
 
     explicit CNKCounter(const max_precalc_type max_cashed_n) : c_n_k_table_(max_cashed_n + 1) {
         for (size_type n = 0; n <= max_cashed_n; ++n) {

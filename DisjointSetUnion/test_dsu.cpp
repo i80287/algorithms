@@ -46,8 +46,7 @@ public:
         if (c1 != c2) {
             sets_count--;
             std::replace_if(
-                colors.begin(), colors.end(),
-                [c2](const color_t c) constexpr noexcept { return c == c2; }, c1);
+                colors.begin(), colors.end(), [c2](const color_t c) constexpr noexcept { return c == c2; }, c1);
         }
     }
 
@@ -55,9 +54,9 @@ public:
     constexpr std::size_t get_size_of_node_set(const std::size_t node_index) const noexcept {
         assert(node_index < size());
         const color_t node_color = colors[node_index];
-        return static_cast<std::size_t>(std::count_if(
-            colors.cbegin(), colors.cend(),
-            [node_color](const color_t c) constexpr noexcept { return c == node_color; }));
+        return static_cast<std::size_t>(
+            std::count_if(colors.cbegin(), colors.cend(),
+                          [node_color](const color_t c) constexpr noexcept { return c == node_color; }));
     }
 
     [[nodiscard]] constexpr std::size_t get_sets_count() const noexcept {
@@ -220,11 +219,9 @@ void test_manual() {
     assert(tree.get_handle_of_node_set(38) == tree.get_handle_of_node_set(39));
     {
         const std::unordered_map grouped_nodes = tree.group_nodes_by_set();
-        assert((grouped_nodes.at(tree.get_handle_of_node_set(0)) ==
-                std::vector<std::size_t>{0, 1, 2, 3}));
+        assert((grouped_nodes.at(tree.get_handle_of_node_set(0)) == std::vector<std::size_t>{0, 1, 2, 3}));
 
-        assert((grouped_nodes.at(tree.get_handle_of_node_set(34)) ==
-                std::vector<std::size_t>{34, 35, 36, 37, 38, 39}));
+        assert((grouped_nodes.at(tree.get_handle_of_node_set(34)) == std::vector<std::size_t>{34, 35, 36, 37, 38, 39}));
     }
 
     for (size_t i = 1; i < N; i++) {

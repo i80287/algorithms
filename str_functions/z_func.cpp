@@ -39,8 +39,7 @@ void find_z_func(string_view text, string_view substr) {
     for (size_t i = 0; it != end; ++it, ++i) {
         if (*it == substr.size()) {
             size_t end_index = i + substr.size() - 1;
-            cout << "Substring " << text.substr(i, substr.size()) << " from " << i << " to "
-                 << end_index << '\n';
+            cout << "Substring " << text.substr(i, substr.size()) << " from " << i << " to " << end_index << '\n';
         }
     }
 }

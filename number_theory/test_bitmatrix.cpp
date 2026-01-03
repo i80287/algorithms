@@ -591,10 +591,8 @@ void test_math_operations() {
             n.for_each_set_bit([&counter](auto, auto) noexcept { counter++; });
             assert(counter == Size);
             for (size_t row_index = 0; row_index < Size; row_index++) {
-                n.for_each_set_bit_in_row(row_index,
-                                          [row_index](const size_t column_index) noexcept {
-                                              assert(row_index == column_index);
-                                          });
+                n.for_each_set_bit_in_row(
+                    row_index, [row_index](const size_t column_index) noexcept { assert(row_index == column_index); });
             }
         }
     };

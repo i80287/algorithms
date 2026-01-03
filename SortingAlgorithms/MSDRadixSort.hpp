@@ -18,8 +18,7 @@ namespace msd_radix_sort {
 namespace {
 
 template <StringIterator Iterator>
-inline constexpr std::size_t kAlphabetSize =
-    std::numeric_limits<StringIteratorUChar<Iterator>>::max() + 1;
+inline constexpr std::size_t kAlphabetSize = std::numeric_limits<StringIteratorUChar<Iterator>>::max() + 1;
 
 template <class Iterator, class StringType>
 constexpr auto counting_sort_impl(const Iterator begin,
@@ -69,13 +68,11 @@ constexpr void msd_radix_sort_impl(Iterator begin,
     }
 
     begin = detail::string_quick_sort::move_strings_to_left(
-        begin, end, [=](const IteratorStringType<Iterator>& s) constexpr noexcept {
-            return s.size() == common_prefix_length;
-        });
+        begin, end,
+        [=](const IteratorStringType<Iterator>& s) constexpr noexcept { return s.size() == common_prefix_length; });
 
     auto indexes = counting_sort_impl(begin, end, common_prefix_length, buffer);
-#if defined(__GNUC__) && __GNUC__ >= 13 && defined(__cpp_lib_ranges_zip) && \
-    __cpp_lib_ranges_zip >= 202110L
+#if defined(__GNUC__) && __GNUC__ >= 13 && defined(__cpp_lib_ranges_zip) && __cpp_lib_ranges_zip >= 202110L
     for (auto [i1, i2] : std::views::pairwise(indexes)) {
 #else
     for (std::size_t i = 1; i < indexes.size(); i++) {
@@ -83,8 +80,7 @@ constexpr void msd_radix_sort_impl(Iterator begin,
         auto i2 = indexes[i];
 #endif
         if (i2 - i1 >= 2) {
-            msd_radix_sort_impl<kSwitchToQuickSort>(begin + i1, begin + i2,
-                                                    common_prefix_length + 1, buffer);
+            msd_radix_sort_impl<kSwitchToQuickSort>(begin + i1, begin + i2, common_prefix_length + 1, buffer);
         }
     }
 }
@@ -97,8 +93,7 @@ template <bool kSwitchToQuickSort>
 struct MSDRadixSortNiebloid final {
     template <StringIterator Iterator>
     static constexpr void msd_radix_sort(Iterator begin, Iterator end) {
-        std::vector<IteratorStringType<Iterator>> buffer(
-            static_cast<std::size_t>(std::distance(begin, end)));
+        std::vector<IteratorStringType<Iterator>> buffer(static_cast<std::size_t>(std::distance(begin, end)));
         detail::msd_radix_sort::msd_radix_sort_impl<kSwitchToQuickSort>(begin, end, 0, buffer);
     }
 

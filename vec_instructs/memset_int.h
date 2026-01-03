@@ -28,19 +28,15 @@ EXTERN_WITH_C_LINKAGE_BEGIN
 #endif
 #endif
 
-#define MEMSET_INT_FUNC_ATTRIBUTES \
-    ATTRIBUTE_NOTHROW ATTRIBUTE_SIZED_ACCESS(write_only, 1, 3)
+#define MEMSET_INT_FUNC_ATTRIBUTES ATTRIBUTE_NOTHROW ATTRIBUTE_SIZED_ACCESS(write_only, 1, 3)
 
 MEMSET_INT_FUNC_ATTRIBUTES
 ATTRIBUTE_TARGET("avx")
-static inline void memset_int_avx(int32_t* dst,
-                                  const int32_t value,
-                                  size_t size) CONFIG_NOEXCEPT_FUNCTION {
+static inline void memset_int_avx(int32_t* dst, const int32_t value, size_t size) CONFIG_NOEXCEPT_FUNCTION {
     uint32_t* aligned_4_address = (uint32_t*)dst;
     __m256i* aligned_32_address = (__m256i*)(((uintptr_t)aligned_4_address + 31) & ~(uintptr_t)31);
     const uint32_t uvalue_32 = (uint32_t)value;
-    uintptr_t offset =
-        ((uintptr_t)aligned_32_address - (uintptr_t)aligned_4_address) / sizeof(uint32_t);
+    uintptr_t offset = ((uintptr_t)aligned_32_address - (uintptr_t)aligned_4_address) / sizeof(uint32_t);
     if (unlikely(offset > size)) {
         offset = size;
     }
@@ -83,9 +79,7 @@ static inline void memset_int_avx(int32_t* dst,
 }
 
 MEMSET_INT_FUNC_ATTRIBUTES
-static inline void memset_int_default(int32_t* dst,
-                                      int32_t value,
-                                      size_t size) CONFIG_NOEXCEPT_FUNCTION {
+static inline void memset_int_default(int32_t* dst, int32_t value, size_t size) CONFIG_NOEXCEPT_FUNCTION {
     while (size >= 4) {
         dst[0] = value;
         dst[1] = value;
@@ -175,8 +169,7 @@ void (*memset_int)(int32_t* dst, int32_t value, size_t size) = NULL;
 // clang-format on
 
 ATTRIBUTE_NOTHROW
-__attribute__((constructor)) static inline void memset_int_initializer(void)
-    CONFIG_NOEXCEPT_FUNCTION {
+__attribute__((constructor)) static inline void memset_int_initializer(void) CONFIG_NOEXCEPT_FUNCTION {
     __builtin_cpu_init();
     memset_int = resolve_memset_int();
 }

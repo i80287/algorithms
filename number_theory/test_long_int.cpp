@@ -60,19 +60,7 @@ constexpr std::array<int64_t, 26> numbersI64 = {
 };
 
 constexpr std::array<uint64_t, 13> numbersU64 = {
-    0,
-    1,
-    2,
-    4,
-    8,
-    9,
-    10,
-    11,
-    2147483648,
-    4294967295,
-    4294967296,
-    9223372036854775808ULL,
-    18446744073709551615ULL,
+    0, 1, 2, 4, 8, 9, 10, 11, 2147483648, 4294967295, 4294967296, 9223372036854775808ULL, 18446744073709551615ULL,
 };
 
 constexpr std::array<uint128_t, 14> numbersU128 = {
@@ -286,10 +274,8 @@ void TestOperatorEqualsInt() {
     n = static_cast<uint128_t>(-1);
     assert(n.sign() == 1);
     assert(n.size() == 4);
-    assert(n[0] == std::numeric_limits<uint32_t>::max() &&
-           n[1] == std::numeric_limits<uint32_t>::max() &&
-           n[2] == std::numeric_limits<uint32_t>::max() &&
-           n[3] == std::numeric_limits<uint32_t>::max());
+    assert(n[0] == std::numeric_limits<uint32_t>::max() && n[1] == std::numeric_limits<uint32_t>::max() &&
+           n[2] == std::numeric_limits<uint32_t>::max() && n[3] == std::numeric_limits<uint32_t>::max());
     AssertInvariants(n);
 
     for (uint64_t i = std::numeric_limits<uint64_t>::max() - K; i != 0; i++) {
@@ -757,8 +743,7 @@ void TestLongIntMult() {
         n1 *= n1;
         auto end = chrono::high_resolution_clock::now();
         std::printf("Multiplied %zu digit numbers in %" PRIu64 " microseconds\n", k,
-                    static_cast<uint64_t>(
-                        chrono::duration_cast<chrono::microseconds>(end - start).count()));
+                    static_cast<uint64_t>(chrono::duration_cast<chrono::microseconds>(end - start).count()));
     }
     std::string ans(2 * k, '\0');
     std::char_traits<char>::assign(ans.data(), k - 1, '9');
@@ -1138,8 +1123,7 @@ void TestLongIntAddAndSub() {
         }
     }
 
-    const auto kStartPos1 =
-        std::numeric_limits<uint64_t>::max() - std::numeric_limits<uint32_t>::max();
+    const auto kStartPos1 = std::numeric_limits<uint64_t>::max() - std::numeric_limits<uint32_t>::max();
     for (uint64_t i = kStartPos1 - K; i != kStartPos1; i++) {
         for (uint32_t j = std::numeric_limits<uint32_t>::max() - K; j != 0; j++) {
             n = i;
@@ -1515,8 +1499,7 @@ void TestBitShifts() {
     for (uint64_t i = 0; i < k; i++) {
         test_compile_time_bit_shifts(i);
     }
-    for (uint64_t i = std::numeric_limits<uint32_t>::max() - k; static_cast<uint32_t>(i) != 0;
-         i++) {
+    for (uint64_t i = std::numeric_limits<uint32_t>::max() - k; static_cast<uint32_t>(i) != 0; i++) {
         test_compile_time_bit_shifts(i);
     }
     for (uint64_t i = std::numeric_limits<uint64_t>::max() - k; i != 0; i++) {
@@ -1555,8 +1538,7 @@ void TestDecimal() {
             d1 += d1;
         }
 
-        assert(d1.digits_.size() == 3 && d1.digits_[0] == 0 && d1.digits_[1] == 0 &&
-               d1.digits_[2] == (1U << k));
+        assert(d1.digits_.size() == 3 && d1.digits_[0] == 0 && d1.digits_[1] == 0 && d1.digits_[2] == (1U << k));
 
         d1 += d1;
         assert(d1.digits_.size() == 4 && d1.digits_[0] == 0 && d1.digits_[1] == 0 &&
@@ -1568,8 +1550,7 @@ void TestDecimal() {
         d1 = uint32_t{999'999'999};
         d2 = uint64_t{999'999'999'999'999'999ULL};
         d1 += d2;
-        assert(d1.digits_.size() == 3 && d1.digits_[0] == 999999998 && d1.digits_[1] == 0 &&
-               d1.digits_[2] == 1);
+        assert(d1.digits_.size() == 3 && d1.digits_[0] == 999999998 && d1.digits_[1] == 0 && d1.digits_[2] == 1);
     }
 
     for (uint32_t i = 0; i <= kC; i++) {
@@ -1623,14 +1604,13 @@ void TestDecimal() {
 
         d1 *= d1;
         assert(d1.digits_.size() == 5);
-        assert(d1.digits_[0] == 768211456 && d1.digits_[1] == 374607431 &&
-               d1.digits_[2] == 938463463 && d1.digits_[3] == 282366920 && d1.digits_[4] == 340);
+        assert(d1.digits_[0] == 768211456 && d1.digits_[1] == 374607431 && d1.digits_[2] == 938463463 &&
+               d1.digits_[3] == 282366920 && d1.digits_[4] == 340);
 
         d1 *= d1;
         assert(d1.digits_.size() == 9);
-        assert(d1.digits_[0] == 129639936 && d1.digits_[1] == 584007913 &&
-               d1.digits_[2] == 564039457 && d1.digits_[3] == 984665640 &&
-               d1.digits_[4] == 907853269 && d1.digits_[5] == 985008687 &&
+        assert(d1.digits_[0] == 129639936 && d1.digits_[1] == 584007913 && d1.digits_[2] == 564039457 &&
+               d1.digits_[3] == 984665640 && d1.digits_[4] == 907853269 && d1.digits_[5] == 985008687 &&
                d1.digits_[6] == 195423570 && d1.digits_[7] == 89237316 && d1.digits_[8] == 115792);
     }
 
@@ -1679,14 +1659,13 @@ void TestDecimal() {
 
         d1.square_this_to(d1);
         assert(d1.digits_.size() == 5);
-        assert(d1.digits_[0] == 768211456 && d1.digits_[1] == 374607431 &&
-               d1.digits_[2] == 938463463 && d1.digits_[3] == 282366920 && d1.digits_[4] == 340);
+        assert(d1.digits_[0] == 768211456 && d1.digits_[1] == 374607431 && d1.digits_[2] == 938463463 &&
+               d1.digits_[3] == 282366920 && d1.digits_[4] == 340);
 
         d1.square_this_to(d1);
         assert(d1.digits_.size() == 9);
-        assert(d1.digits_[0] == 129639936 && d1.digits_[1] == 584007913 &&
-               d1.digits_[2] == 564039457 && d1.digits_[3] == 984665640 &&
-               d1.digits_[4] == 907853269 && d1.digits_[5] == 985008687 &&
+        assert(d1.digits_[0] == 129639936 && d1.digits_[1] == 584007913 && d1.digits_[2] == 564039457 &&
+               d1.digits_[3] == 984665640 && d1.digits_[4] == 907853269 && d1.digits_[5] == 985008687 &&
                d1.digits_[6] == 195423570 && d1.digits_[7] == 89237316 && d1.digits_[8] == 115792);
     }
     {
@@ -1698,44 +1677,36 @@ void TestDecimal() {
         assert(d2.digits_[0] == 687423462 && d2.digits_[1] == 3457132);
         d1 *= d2;
         assert(d1.digits_.size() == 4);
-        assert(d1.digits_[0] == 431004108 && d1.digits_[1] == 644565471 &&
-               d1.digits_[2] == 442679614 && d1.digits_[3] == 8047673);
+        assert(d1.digits_[0] == 431004108 && d1.digits_[1] == 644565471 && d1.digits_[2] == 442679614 &&
+               d1.digits_[3] == 8047673);
         d2 *= d1;
         assert(d2.digits_.size() == 6);
-        assert(d2.digits_[0] == 57581896 && d2.digits_[1] == 950661194 &&
-               d2.digits_[2] == 173172305 && d2.digits_[3] == 400547675 &&
-               d2.digits_[4] == 874916397 && d2.digits_[5] == 27821);
+        assert(d2.digits_[0] == 57581896 && d2.digits_[1] == 950661194 && d2.digits_[2] == 173172305 &&
+               d2.digits_[3] == 400547675 && d2.digits_[4] == 874916397 && d2.digits_[5] == 27821);
         d1 *= d2;
         assert(d1.digits_.size() == 10);
-        assert(d1.digits_[0] == 722428768 && d1.digits_[1] == 871316001 &&
-               d1.digits_[2] == 60383639 && d1.digits_[3] == 98648366 &&
-               d1.digits_[4] == 319440946 && d1.digits_[5] == 443692592 &&
-               d1.digits_[6] == 814170539 && d1.digits_[7] == 245484337 &&
-               d1.digits_[8] == 901363890 && d1.digits_[9] == 223);
+        assert(d1.digits_[0] == 722428768 && d1.digits_[1] == 871316001 && d1.digits_[2] == 60383639 &&
+               d1.digits_[3] == 98648366 && d1.digits_[4] == 319440946 && d1.digits_[5] == 443692592 &&
+               d1.digits_[6] == 814170539 && d1.digits_[7] == 245484337 && d1.digits_[8] == 901363890 &&
+               d1.digits_[9] == 223);
         d2 *= d1;
         assert(d2.digits_.size() == 15);
-        assert(d2.digits_[0] == 186384128 && d2.digits_[1] == 561145706 &&
-               d2.digits_[2] == 972792000 && d2.digits_[3] == 910361576 &&
-               d2.digits_[4] == 370236792 && d2.digits_[5] == 997380172 &&
-               d2.digits_[6] == 43626094 && d2.digits_[7] == 876538938 &&
-               d2.digits_[8] == 838915001 && d2.digits_[9] == 684544134 &&
-               d2.digits_[10] == 17528903 && d2.digits_[11] == 739182228 &&
-               d2.digits_[12] == 542415704 && d2.digits_[13] == 739765187 &&
-               d2.digits_[14] == 6229355);
+        assert(d2.digits_[0] == 186384128 && d2.digits_[1] == 561145706 && d2.digits_[2] == 972792000 &&
+               d2.digits_[3] == 910361576 && d2.digits_[4] == 370236792 && d2.digits_[5] == 997380172 &&
+               d2.digits_[6] == 43626094 && d2.digits_[7] == 876538938 && d2.digits_[8] == 838915001 &&
+               d2.digits_[9] == 684544134 && d2.digits_[10] == 17528903 && d2.digits_[11] == 739182228 &&
+               d2.digits_[12] == 542415704 && d2.digits_[13] == 739765187 && d2.digits_[14] == 6229355);
         d1 *= d2;
         assert(d1.digits_.size() == 25);
-        assert(d1.digits_[0] == 965794304 && d1.digits_[1] == 247551591 &&
-               d1.digits_[2] == 78766772 && d1.digits_[3] == 645012061 &&
-               d1.digits_[4] == 37370453 && d1.digits_[5] == 199399473 &&
-               d1.digits_[6] == 955897041 && d1.digits_[7] == 383886055 &&
-               d1.digits_[8] == 974981602 && d1.digits_[9] == 715857053 &&
-               d1.digits_[10] == 229116146 && d1.digits_[11] == 809476023 &&
-               d1.digits_[12] == 335690899 && d1.digits_[13] == 145665659 &&
-               d1.digits_[14] == 275922259 && d1.digits_[15] == 152282064 &&
-               d1.digits_[16] == 693008292 && d1.digits_[17] == 705711793 &&
-               d1.digits_[18] == 145665030 && d1.digits_[19] == 501479354 &&
-               d1.digits_[20] == 980999440 && d1.digits_[21] == 357298675 &&
-               d1.digits_[22] == 290954608 && d1.digits_[23] == 394761246 && d1.digits_[24] == 1);
+        assert(d1.digits_[0] == 965794304 && d1.digits_[1] == 247551591 && d1.digits_[2] == 78766772 &&
+               d1.digits_[3] == 645012061 && d1.digits_[4] == 37370453 && d1.digits_[5] == 199399473 &&
+               d1.digits_[6] == 955897041 && d1.digits_[7] == 383886055 && d1.digits_[8] == 974981602 &&
+               d1.digits_[9] == 715857053 && d1.digits_[10] == 229116146 && d1.digits_[11] == 809476023 &&
+               d1.digits_[12] == 335690899 && d1.digits_[13] == 145665659 && d1.digits_[14] == 275922259 &&
+               d1.digits_[15] == 152282064 && d1.digits_[16] == 693008292 && d1.digits_[17] == 705711793 &&
+               d1.digits_[18] == 145665030 && d1.digits_[19] == 501479354 && d1.digits_[20] == 980999440 &&
+               d1.digits_[21] == 357298675 && d1.digits_[22] == 290954608 && d1.digits_[23] == 394761246 &&
+               d1.digits_[24] == 1);
     }
 }
 
@@ -1813,8 +1784,7 @@ void TestDivModImpl() {
         }
     }();
 
-    auto test_i_j = [n = longint{}, m = longint{}, li_rem = longint{}](const T i,
-                                                                       const T j) mutable {
+    auto test_i_j = [n = longint{}, m = longint{}, li_rem = longint{}](const T i, const T j) mutable {
         if constexpr (std::is_same_v<T, uint32_t>) {
             n = i;
             assert(n.mod(j) == i % j);

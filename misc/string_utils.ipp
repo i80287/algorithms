@@ -64,8 +64,7 @@ template <typename CharType>
            detail::char_to_uint(max) - detail::char_to_uint(min);
 }
 
-using alpha_digit_table_type =
-    std::array<bool, static_cast<size_t>(std::numeric_limits<char>::max()) + 1>;
+using alpha_digit_table_type = std::array<bool, static_cast<size_t>(std::numeric_limits<char>::max()) + 1>;
 
 inline constexpr alpha_digit_table_type kAlphaDigitTable = []() constexpr {
     alpha_digit_table_type table{};
@@ -354,13 +353,11 @@ constexpr bool is_lower(const char c) noexcept {
 }
 
 constexpr char to_upper(const char c) noexcept {
-    return detail::uint_to_char(detail::char_to_uint(c) -
-                                (locale_indep::is_lower(c) * uint32_t{'a' - 'A'}));
+    return detail::uint_to_char(detail::char_to_uint(c) - (locale_indep::is_lower(c) * uint32_t{'a' - 'A'}));
 }
 
 constexpr char to_lower(const char c) noexcept {
-    return detail::uint_to_char(detail::char_to_uint(c) +
-                                (locale_indep::is_upper(c) * uint32_t{'a' - 'A'}));
+    return detail::uint_to_char(detail::char_to_uint(c) + (locale_indep::is_upper(c) * uint32_t{'a' - 'A'}));
 }
 
 constexpr bool is_whitespace(const std::string_view str) noexcept {
@@ -442,8 +439,7 @@ constexpr std::basic_string_view<CharType> trim_if(
     Predicate pred
 ) noexcept(std::is_nothrow_invocable_r_v<bool, Predicate, CharType>) {
     // clang-format on
-    static_assert(std::is_invocable_r_v<bool, Predicate, CharType>,
-                  "predicate should accept CharType and return bool");
+    static_assert(std::is_invocable_r_v<bool, Predicate, CharType>, "predicate should accept CharType and return bool");
 
     while (!str.empty() && pred(str.front())) {
         str.remove_prefix(1);
@@ -463,8 +459,7 @@ constexpr std::basic_string_view<CharType> TrimChar(
     const CharType trim_char
 ) noexcept {
     // clang-format on
-    return detail::trim_if(
-        str, [trim_char](const CharType c) constexpr noexcept -> bool { return c == trim_char; });
+    return detail::trim_if(str, [trim_char](const CharType c) constexpr noexcept -> bool { return c == trim_char; });
 }
 
 // clang-format off
@@ -475,11 +470,9 @@ std::basic_string_view<CharType> TrimCharsImpl(const std::basic_string_view<Char
     // clang-format on
     using UType = std::make_unsigned_t<CharType>;
     static constexpr size_t kMaxUTypeValue = static_cast<size_t>(std::numeric_limits<UType>::max());
-    static constexpr bool kUseArrayMap =
-        kMaxUTypeValue <= std::numeric_limits<std::uint16_t>::max();
+    static constexpr bool kUseArrayMap = kMaxUTypeValue <= std::numeric_limits<std::uint16_t>::max();
 
-    using MapType = std::conditional_t<kUseArrayMap, std::array<bool, kMaxUTypeValue + 1>,
-                                       std::unordered_set<UType>>;
+    using MapType = std::conditional_t<kUseArrayMap, std::array<bool, kMaxUTypeValue + 1>, std::unordered_set<UType>>;
     MapType trim_chars_map{};
     for (const CharType c : trim_chars) {
         const auto key = static_cast<UType>(c);
@@ -490,15 +483,14 @@ std::basic_string_view<CharType> TrimCharsImpl(const std::basic_string_view<Char
         }
     }
 
-    return detail::trim_if(
-        str, [&trim_chars_map = std::as_const(trim_chars_map)](const CharType c) noexcept -> bool {
-            const auto key = static_cast<UType>(c);
-            if constexpr (kUseArrayMap) {
-                return trim_chars_map[key];
-            } else {
-                return trim_chars_map.find(key) != trim_chars_map.end();
-            }
-        });
+    return detail::trim_if(str, [&trim_chars_map = std::as_const(trim_chars_map)](const CharType c) noexcept -> bool {
+        const auto key = static_cast<UType>(c);
+        if constexpr (kUseArrayMap) {
+            return trim_chars_map[key];
+        } else {
+            return trim_chars_map.find(key) != trim_chars_map.end();
+        }
+    });
 }
 
 // clang-format off
@@ -525,8 +517,7 @@ inline std::basic_string_view<CharType> TrimChars(const std::basic_string_view<C
 }  // namespace detail
 
 template <class StrType, class TrimStrType>
-inline auto trim(const StrType &str,
-                 const TrimStrType &trim_chars) noexcept(std::is_base_of_v<trim_tag, TrimStrType>) {
+inline auto trim(const StrType &str, const TrimStrType &trim_chars) noexcept(std::is_base_of_v<trim_tag, TrimStrType>) {
     if constexpr (std::is_base_of_v<misc::trim_tag, TrimStrType>) {
         using CharType = misc::string_detail::determine_char_t<StrType>;
         static_assert(misc::is_char_v<CharType>, "string is expected in the trim with tag");
@@ -539,8 +530,7 @@ inline auto trim(const StrType &str,
         const std::basic_string_view<CharType> str_sv{str};
 
         if constexpr (std::is_same_v<TrimStrType, whitespace_tag>) {
-            return detail::trim_if(
-                str_sv, [](const CharType c) noexcept { return misc::is_whitespace<CharType>(c); });
+            return detail::trim_if(str_sv, [](const CharType c) noexcept { return misc::is_whitespace<CharType>(c); });
         } else if constexpr (std::is_same_v<TrimStrType, alpha_tag>) {
             return detail::trim_if(str_sv, &misc::is_alpha<CharType>);
         } else if constexpr (std::is_same_v<TrimStrType, digit_tag>) {
@@ -550,8 +540,7 @@ inline auto trim(const StrType &str,
         } else if constexpr (std::is_same_v<TrimStrType, hex_digit_tag>) {
             return detail::trim_if(str_sv, &misc::is_hex_digit<CharType>);
         } else if constexpr (std::is_same_v<TrimStrType, locale_indep::whitespace_tag>) {
-            return detail::trim_if(
-                str_sv, [](const char c) noexcept { return misc::locale_indep::is_whitespace(c); });
+            return detail::trim_if(str_sv, [](const char c) noexcept { return misc::locale_indep::is_whitespace(c); });
         } else if constexpr (std::is_same_v<TrimStrType, locale_indep::alpha_tag>) {
             return detail::trim_if(str_sv, &misc::locale_indep::is_alpha);
         } else if constexpr (std::is_same_v<TrimStrType, locale_indep::digit_tag>) {
@@ -566,8 +555,7 @@ inline auto trim(const StrType &str,
         }
     } else {
         using CharType = misc::string_detail::determine_char_t<StrType, TrimStrType>;
-        static_assert(misc::is_char_v<CharType>,
-                      "strings with the same char type are expected in the trim");
+        static_assert(misc::is_char_v<CharType>, "strings with the same char type are expected in the trim");
 
         if constexpr (misc::is_char_v<TrimStrType>) {
             return detail::TrimChar<CharType>(str, trim_chars);

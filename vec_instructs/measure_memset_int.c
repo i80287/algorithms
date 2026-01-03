@@ -26,8 +26,7 @@ uint64_t measure_memset(int32_t* const buffer, const int32_t value) {
         clock_gettime(CLOCK_REALTIME, &start);
         memset(buffer, value, kBufferSize * sizeof(int32_t));
         clock_gettime(CLOCK_REALTIME, &end);
-        avg_time += (uint64_t)(end.tv_sec - start.tv_sec) * 1000000000 +
-                    (uint32_t)(end.tv_nsec - start.tv_nsec);
+        avg_time += (uint64_t)(end.tv_sec - start.tv_sec) * 1000000000 + (uint32_t)(end.tv_nsec - start.tv_nsec);
     }
 
     return avg_time / kTests;
@@ -44,8 +43,7 @@ uint64_t measure_memset_int(int32_t* const buffer, const int32_t value) {
         clock_gettime(CLOCK_REALTIME, &start);
         memset_int(buffer, value, kBufferSize);
         clock_gettime(CLOCK_REALTIME, &end);
-        avg_time += (uint64_t)(end.tv_sec - start.tv_sec) * 1000000000u +
-                    (uint32_t)(end.tv_nsec - start.tv_nsec);
+        avg_time += (uint64_t)(end.tv_sec - start.tv_sec) * 1000000000u + (uint32_t)(end.tv_nsec - start.tv_nsec);
     }
 
     return avg_time / kTests;

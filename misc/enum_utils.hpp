@@ -33,18 +33,15 @@
 
 #if CONFIG_HAS_AT_LEAST_CXX_17
 
-#define HELPER_ENUM_UTILS_CHECK_ENUM__(enum_type) \
-    static_assert(std::is_enum_v<enum_type>, "Enum type is expected")
+#define HELPER_ENUM_UTILS_CHECK_ENUM__(enum_type) static_assert(std::is_enum_v<enum_type>, "Enum type is expected")
 
 #define HELPER_ENUM_UTILS_UNDERLYING_TYPE__(enum_type) std::underlying_type_t<enum_type>
 
 #else
 
-#define HELPER_ENUM_UTILS_CHECK_ENUM__(enum_type) \
-    static_assert(std::is_enum<enum_type>::value, "Enum type is expected")
+#define HELPER_ENUM_UTILS_CHECK_ENUM__(enum_type) static_assert(std::is_enum<enum_type>::value, "Enum type is expected")
 
-#define HELPER_ENUM_UTILS_UNDERLYING_TYPE__(enum_type) \
-    typename std::underlying_type<enum_type>::type
+#define HELPER_ENUM_UTILS_UNDERLYING_TYPE__(enum_type) typename std::underlying_type<enum_type>::type
 
 #endif
 
@@ -197,8 +194,7 @@ constexpr std::string_view enum_value_to_string_view_impl(const EnumType value) 
     if (value == EnumerationValue) {
         return misc::get_enum_value_name<EnumerationValue>();
     } else if constexpr (sizeof...(EnumerationValues) > 0) {
-        return enum_utils_detail::enum_value_to_string_view_impl<EnumType, EnumerationValues...>(
-            value);
+        return enum_utils_detail::enum_value_to_string_view_impl<EnumType, EnumerationValues...>(value);
     } else {
         return "";
     }

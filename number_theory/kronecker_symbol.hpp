@@ -319,8 +319,8 @@ constexpr std::int32_t kronecker_symbol(const IntegerT1 a, const IntegerT2 n) no
         if constexpr (int128_traits::is_unsigned_v<T2>) {
             return ::math_functions::detail::kronecker_symbol_ui<T1>(a, static_cast<T1>(n));
         } else {
-            return ::math_functions::detail::kronecker_symbol_ui<T1>(
-                a, n >= 0 ? static_cast<T1>(n) : -static_cast<T1>(n));
+            return ::math_functions::detail::kronecker_symbol_ui<T1>(a,
+                                                                     n >= 0 ? static_cast<T1>(n) : -static_cast<T1>(n));
         }
     } else {
         if constexpr (int128_traits::is_unsigned_v<T2>) {

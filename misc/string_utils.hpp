@@ -175,9 +175,8 @@ struct hex_digit_tag final : trim_tag {};
 
 template <class StrType, class TrimStrType = whitespace_tag>
 ATTRIBUTE_ALWAYS_INLINE [[nodiscard]]
-inline auto trim(
-    const StrType &str ATTRIBUTE_LIFETIME_BOUND,
-    const TrimStrType &trim_chars = {}) noexcept(std::is_base_of_v<trim_tag, TrimStrType>);
+inline auto trim(const StrType &str ATTRIBUTE_LIFETIME_BOUND,
+                 const TrimStrType &trim_chars = {}) noexcept(std::is_base_of_v<trim_tag, TrimStrType>);
 
 }  // namespace misc
 

@@ -50,16 +50,14 @@ inline std::basic_string<CharType> ArithmeticToStringImpl(const T arg) {
 
             if (arg >= std::numeric_limits<CompressedIntType>::min() &&
                 arg <= std::numeric_limits<CompressedIntType>::max()) {
-                return join_strings_detail::ArithmeticToStringImpl<CharType>(
-                    static_cast<CompressedIntType>(arg));
+                return join_strings_detail::ArithmeticToStringImpl<CharType>(static_cast<CompressedIntType>(arg));
             }
         }
     }
 
     constexpr bool kShortIntegralType = std::is_integral_v<T> && sizeof(T) < sizeof(int);
     using ToStringableType =
-        std::conditional_t<kShortIntegralType,
-                           std::conditional_t<std::is_unsigned_v<T>, unsigned, int>, T>;
+        std::conditional_t<kShortIntegralType, std::conditional_t<std::is_unsigned_v<T>, unsigned, int>, T>;
 
     const ToStringableType extended_arg = static_cast<ToStringableType>(arg);
 
@@ -136,11 +134,10 @@ bool DoStrCodecvt(const std::basic_string_view<InCharType> in_str,
         bool overflowed = false;
         overflowed |= __builtin_mul_overflow(bytes_to_convert, maxlen, &max_bytes_to_convert);
         size_t out_str_new_conv_max_size = 0;
-        overflowed |= __builtin_add_overflow(out_str.size(), max_bytes_to_convert,
-                                             &out_str_new_conv_max_size);
+        overflowed |= __builtin_add_overflow(out_str.size(), max_bytes_to_convert, &out_str_new_conv_max_size);
         if (unlikely(overflowed)) {
-            ThrowOnTooLongStringDuringConversionToNotUTF8(
-                in_str.size(), maxlen, JSTR_FILE_LOCATION_STR(), CONFIG_CURRENT_FUNCTION_NAME);
+            ThrowOnTooLongStringDuringConversionToNotUTF8(in_str.size(), maxlen, JSTR_FILE_LOCATION_STR(),
+                                                          CONFIG_CURRENT_FUNCTION_NAME);
         }
 #else
         const size_t max_bytes_to_convert = bytes_to_convert * maxlen;
@@ -211,9 +208,8 @@ inline std::basic_string<ToCharType> ConvertBytesToNotUTF8(const std::string_vie
             return out_str;
         }
 
-        join_strings_detail::ThrowOnFailedConversionToNotUTF8(
-            conversion_succeeded, converted_bytes_count, str.size(), JSTR_FILE_LOCATION_STR(),
-            CONFIG_CURRENT_FUNCTION_NAME);
+        join_strings_detail::ThrowOnFailedConversionToNotUTF8(conversion_succeeded, converted_bytes_count, str.size(),
+                                                              JSTR_FILE_LOCATION_STR(), CONFIG_CURRENT_FUNCTION_NAME);
     } else {
         return std::wstring_convert<std::codecvt_utf8_utf16<ToCharType>, ToCharType>{}.from_bytes(
             str.data(), str.data() + str.size());
@@ -230,8 +226,7 @@ inline std::basic_string<ToCharType> ConvertBytesToNotUTF8(const std::string_vie
 
 ATTRIBUTE_COLD
 [[noreturn]]
-inline void ThrowOnFailedConversionToUTF8(std::string_view file_location,
-                                          std::string_view function_name);
+inline void ThrowOnFailedConversionToUTF8(std::string_view file_location, std::string_view function_name);
 
 [[nodiscard]] inline std::u8string ConvertBytesToUTF8(const std::string_view bytes) {
     const auto is_ascii_nonzero_char = [](const char chr) constexpr noexcept {
@@ -247,8 +242,7 @@ inline void ThrowOnFailedConversionToUTF8(std::string_view file_location,
         return std::u8string(reinterpret_cast<const char8_t *>(bytes.data()), bytes.size());
     }
 
-    join_strings_detail::ThrowOnFailedConversionToUTF8(JSTR_FILE_LOCATION_STR(),
-                                                       CONFIG_CURRENT_FUNCTION_NAME);
+    join_strings_detail::ThrowOnFailedConversionToUTF8(JSTR_FILE_LOCATION_STR(), CONFIG_CURRENT_FUNCTION_NAME);
 }
 
 template <misc::Char ToCharType>
@@ -309,10 +303,8 @@ ATTRIBUTE_ALWAYS_INLINE inline std::basic_string<CharType> EnumToString(const T 
     } else                                                     \
         static_assert([]() { return false; }())
 
-#define JS_PP_STR_LITERAL(CharType, StrLiteral)                   \
-    []<class = CharType>() constexpr noexcept -> decltype(auto) { \
-        JS_PP_RETURN_STR_LITERAL(CharType, StrLiteral);           \
-    }()
+#define JS_PP_STR_LITERAL(CharType, StrLiteral) \
+    []<class = CharType>() constexpr noexcept -> decltype(auto) { JS_PP_RETURN_STR_LITERAL(CharType, StrLiteral); }()
 
 template <misc::Char CharType>
 [[nodiscard]]
@@ -344,8 +336,7 @@ ATTRIBUTE_ALWAYS_INLINE inline std::basic_string<CharType> ToStringScalarArg(con
         return EnumToString<CharType>(arg);
     } else if constexpr (std::is_same_v<T, CharType>) {
         return std::basic_string<CharType>(size_t{1}, arg);
-    } else if constexpr (std::is_pointer_v<T> || std::is_member_pointer_v<T> ||
-                         std::is_null_pointer_v<T>) {
+    } else if constexpr (std::is_pointer_v<T> || std::is_member_pointer_v<T> || std::is_null_pointer_v<T>) {
         return PointerTypeToString<CharType>(arg);
     } else {
         return ArithmeticToString<CharType>(arg);
@@ -362,17 +353,15 @@ inline std::basic_string<CharType> FilesystemPathToString(const std::filesystem:
 }
 
 template <class T, class CharType>
-concept WriteableViaBasicOStringStream =
-    requires(const T &arg, std::basic_ostringstream<CharType> &oss) {
-        { oss << arg };
-    };
+concept WriteableViaBasicOStringStream = requires(const T &arg, std::basic_ostringstream<CharType> &oss) {
+    { oss << arg };
+};
 
 template <class T>
 concept WriteableViaOStringStream = WriteableViaBasicOStringStream<T, char>;
 
 template <class T, class CharType>
-concept DirectlyConvertableToBasicString =
-    std::constructible_from<std::basic_string<CharType>, const T &>;
+concept DirectlyConvertableToBasicString = std::constructible_from<std::basic_string<CharType>, const T &>;
 
 template <class T>
 concept DirectlyConvertableToString = DirectlyConvertableToBasicString<T, char>;
@@ -389,9 +378,7 @@ template <misc::Char CharType, class T>
 ATTRIBUTE_ALWAYS_INLINE [[nodiscard]]
 inline std::basic_string<CharType> ToStringOneArg(const T &arg) {
     if constexpr (requires(const T &test_arg) {
-                      {
-                          to_basic_string<CharType>(test_arg)
-                      } -> std::same_as<std::basic_string<CharType>>;
+                      { to_basic_string<CharType>(test_arg) } -> std::same_as<std::basic_string<CharType>>;
                   }) {
         return to_basic_string<CharType>(arg);
     } else if constexpr (requires(const T &test_arg) {
@@ -469,8 +456,7 @@ template <misc::Char CharType, class... Args>
 constexpr size_t CalculateStringArgsSize(CharType /*chr*/, Args... args) noexcept {
     size_t size = 1;
     if constexpr (sizeof...(args) > 0) {
-        const size_t other_args_size =
-            join_strings_detail::CalculateStringArgsSize<CharType>(args...);
+        const size_t other_args_size = join_strings_detail::CalculateStringArgsSize<CharType>(args...);
         const bool will_overflow = other_args_size == std::numeric_limits<size_t>::max();
         if (unlikely(will_overflow)) {
             return other_args_size;
@@ -483,12 +469,10 @@ constexpr size_t CalculateStringArgsSize(CharType /*chr*/, Args... args) noexcep
 }
 
 template <misc::Char CharType, class... Args>
-constexpr size_t CalculateStringArgsSize(const std::basic_string_view<CharType> s,
-                                         Args... args) noexcept {
+constexpr size_t CalculateStringArgsSize(const std::basic_string_view<CharType> s, Args... args) noexcept {
     size_t size = s.size();
     if constexpr (sizeof...(args) > 0) {
-        const size_t other_args_size =
-            join_strings_detail::CalculateStringArgsSize<CharType>(args...);
+        const size_t other_args_size = join_strings_detail::CalculateStringArgsSize<CharType>(args...);
         size += other_args_size;
         const bool overflow_occured = size < other_args_size;
         if (unlikely(overflow_occured)) {
@@ -516,9 +500,7 @@ constexpr void WriteStringsInplace(CharType* result, std::basic_string_view<Char
 // clang-format on
 
 template <misc::Char CharType, class... Args>
-constexpr void WriteStringsInplace(CharType *const result,
-                                   const CharType c,
-                                   Args... args) noexcept {
+constexpr void WriteStringsInplace(CharType *const result, const CharType c, Args... args) noexcept {
     *result = c;
     if constexpr (sizeof...(args) > 0) {
         join_strings_detail::WriteStringsInplace<CharType>(result + 1, args...);
@@ -575,8 +557,8 @@ inline std::basic_string<CharType> JoinStringsConvArgsToStrViewImpl(const T& val
 // clang-format on
 
 template <misc::Char CharType, size_t I, class... Args>
-inline std::basic_string<CharType> JoinStringsConvArgsToStrViewImpl(
-    const std::basic_string_view<CharType> str, const Args &...args) {
+inline std::basic_string<CharType> JoinStringsConvArgsToStrViewImpl(const std::basic_string_view<CharType> str,
+                                                                    const Args &...args) {
     if constexpr (I == 1 + sizeof...(args)) {
         return join_strings_detail::JoinStringsImpl<CharType>(str, args...);
     } else {
@@ -586,14 +568,12 @@ inline std::basic_string<CharType> JoinStringsConvArgsToStrViewImpl(
 
 template <misc::Char CharType, size_t I, class T, class... Args>
     requires(!is_string_like_v<T>)
-inline std::basic_string<CharType> JoinStringsConvArgsToStrViewImpl(const T &value,
-                                                                    const Args &...args) {
+inline std::basic_string<CharType> JoinStringsConvArgsToStrViewImpl(const T &value, const Args &...args) {
     if constexpr (std::is_same_v<T, CharType>) {
         if constexpr (I == 1 + sizeof...(args)) {
             return join_strings_detail::JoinStringsImpl<CharType>(value, args...);
         } else {
-            return join_strings_detail::JoinStringsConvArgsToStrViewImpl<CharType, I + 1>(args...,
-                                                                                          value);
+            return join_strings_detail::JoinStringsConvArgsToStrViewImpl<CharType, I + 1>(args..., value);
         }
     } else {
         static_assert(I < 1 + sizeof...(args));
@@ -632,13 +612,11 @@ inline auto join_strings(const Args&... args) {
 
 namespace join_strings_detail {
 
-inline void ThrowOnNegativeMaxLengthDuringConversionToNotUTF8(
-    const int32_t max_char_conv_len,
-    const std::string_view file_location,
-    const std::string_view function_name) {
-    throw std::runtime_error{misc::join_strings("codecvt::max_length() returned negative value ",
-                                                max_char_conv_len, " at ", file_location, ' ',
-                                                function_name)};
+inline void ThrowOnNegativeMaxLengthDuringConversionToNotUTF8(const int32_t max_char_conv_len,
+                                                              const std::string_view file_location,
+                                                              const std::string_view function_name) {
+    throw std::runtime_error{misc::join_strings("codecvt::max_length() returned negative value ", max_char_conv_len,
+                                                " at ", file_location, ' ', function_name)};
 }
 
 inline void ThrowOnTooLongStringDuringConversionToNotUTF8(const size_t input_str_size,
@@ -648,9 +626,8 @@ inline void ThrowOnTooLongStringDuringConversionToNotUTF8(const size_t input_str
 
 ) {
     throw std::runtime_error{misc::join_strings(
-        "DoStrCodecvt(): size of the converted string is too large. Input string size: ",
-        input_str_size, ", max size of the converted character: ", max_char_conv_len, " at ",
-        file_location, ' ', function_name)};
+        "DoStrCodecvt(): size of the converted string is too large. Input string size: ", input_str_size,
+        ", max size of the converted character: ", max_char_conv_len, " at ", file_location, ' ', function_name)};
 }
 
 inline void ThrowOnFailedConversionToNotUTF8(const bool conversion_succeeded,
@@ -660,16 +637,13 @@ inline void ThrowOnFailedConversionToNotUTF8(const bool conversion_succeeded,
                                              const std::string_view function_name) {
     using namespace std::string_view_literals;
 
-    const std::string_view error_str =
-        !conversion_succeeded ? "Could not convert"sv : "Only partially converted"sv;
-    throw std::runtime_error{misc::join_strings(
-        error_str, " multibyte string type to another string type (total bytes converted: "sv,
-        converted_bytes_count, " of "sv, string_size, ") at "sv, file_location, ' ',
-        function_name)};
+    const std::string_view error_str = !conversion_succeeded ? "Could not convert"sv : "Only partially converted"sv;
+    throw std::runtime_error{
+        misc::join_strings(error_str, " multibyte string type to another string type (total bytes converted: "sv,
+                           converted_bytes_count, " of "sv, string_size, ") at "sv, file_location, ' ', function_name)};
 }
 
-inline void ThrowOnFailedConversionToUTF8(const std::string_view file_location,
-                                          const std::string_view function_name) {
+inline void ThrowOnFailedConversionToUTF8(const std::string_view file_location, const std::string_view function_name) {
     using namespace std::string_view_literals;
 
     throw std::runtime_error{
@@ -683,8 +657,7 @@ inline void ThrowOnFailedConversionToUTF8(const std::string_view file_location,
 #undef JSTR_STRINGIFY_IMPL
 
 template <class StringType,
-          bool has_value_type =
-              misc::is_basic_string_v<StringType> || misc::is_basic_string_view_v<StringType>,
+          bool has_value_type = misc::is_basic_string_v<StringType> || misc::is_basic_string_view_v<StringType>,
           bool is_c_str = misc::is_c_str_v<StringType> || misc::is_c_str_arr_v<StringType>>
 struct string_char_selector {
     using type = void;
@@ -704,8 +677,7 @@ template <class StringType>
 using string_char_t = typename string_char_selector<StringType>::type;
 
 [[noreturn]] ATTRIBUTE_COLD inline void ThrowOnStringsTotalSizeOverflow() {
-    constexpr const char kMessage[] =
-        "join_strings_range(): total strings length exceeded max size_t value";
+    constexpr const char kMessage[] = "join_strings_range(): total strings length exceeded max size_t value";
     throw std::length_error{kMessage};
 }
 
@@ -765,8 +737,7 @@ template <misc::Char T, std::ranges::forward_range Container>
     const size_t container_size = strings.size();
     const size_t sep_size = sep.size();
     CONFIG_ASSUME_STATEMENT(sep_size >= 2);
-    const size_t seps_total_size =
-        container_size == 0 ? size_t{0} : sep_size * (container_size - 1);
+    const size_t seps_total_size = container_size == 0 ? size_t{0} : sep_size * (container_size - 1);
     const size_t total_size_with_seps = strings_total_size + seps_total_size;
 
     const bool strings_size_overflow = strings_total_size == kSizeOnOverflow;
@@ -850,8 +821,7 @@ template <misc::Char T, std::ranges::forward_range Container>
 }
 
 template <misc::Char T, std::ranges::forward_range Container>
-[[nodiscard]] std::basic_string<T> JoinStringsRangeBySv(const std::basic_string_view<T> sep,
-                                                        const Container &strings) {
+[[nodiscard]] std::basic_string<T> JoinStringsRangeBySv(const std::basic_string_view<T> sep, const Container &strings) {
     switch (sep.size()) {
         case 0: {
             return join_strings_detail::JoinStringsRangeWithEmptySep<T, Container>(strings);
@@ -887,8 +857,8 @@ inline auto join_strings_range(const Sep &sep, const Container &strings) {
         static_assert(std::is_same_v<SepCharType, CharType>,
                       "char type of the separator and char type of the strings should be the same");
 
-        return join_strings_detail::JoinStringsRangeBySv<CharType, Container>(
-            std::basic_string_view<CharType>{sep}, strings);
+        return join_strings_detail::JoinStringsRangeBySv<CharType, Container>(std::basic_string_view<CharType>{sep},
+                                                                              strings);
     }
 }
 
@@ -901,8 +871,7 @@ inline auto join_strings_range(const Container &strings) {
                   "std::basic_string_view");
 
     using CharType = typename StringType::value_type;
-    static_assert(misc::is_char_v<CharType>,
-                  "join_strings_range expects a range of strings (with correct char type)");
+    static_assert(misc::is_char_v<CharType>, "join_strings_range expects a range of strings (with correct char type)");
 
     return join_strings_detail::JoinStringsRangeWithEmptySep<CharType, Container>(strings);
 }

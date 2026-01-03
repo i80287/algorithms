@@ -20,10 +20,8 @@ inline constexpr bool kIsNothrowComparable =
 
 template <class Iterator, class Comparator>
 inline constexpr bool kIsNoexceptMergable =
-    noexcept(
-        std::is_nothrow_move_assignable_v<typename std::iterator_traits<Iterator>::value_type>) &&
-    noexcept(std::is_nothrow_move_constructible_v<
-             typename std::iterator_traits<Iterator>::value_type>) &&
+    noexcept(std::is_nothrow_move_assignable_v<typename std::iterator_traits<Iterator>::value_type>) &&
+    noexcept(std::is_nothrow_move_constructible_v<typename std::iterator_traits<Iterator>::value_type>) &&
     kIsNothrowComparable<Iterator, Comparator>;
 
 // clang-format off
@@ -86,10 +84,8 @@ constexpr void merge_sort_with_empty_comparator_impl(
         return;
     }
     Iterator iter_right_begin = iter_left_begin + size / 2;
-    merge_sort_with_empty_comparator_impl<Iterator, Comparator>(iter_left_begin, iter_right_begin,
-                                                                buffer);
-    merge_sort_with_empty_comparator_impl<Iterator, Comparator>(iter_right_begin, iter_right_end,
-                                                                buffer);
+    merge_sort_with_empty_comparator_impl<Iterator, Comparator>(iter_left_begin, iter_right_begin, buffer);
+    merge_sort_with_empty_comparator_impl<Iterator, Comparator>(iter_right_begin, iter_right_end, buffer);
     merge_impl(iter_left_begin, iter_right_begin, iter_right_end, Comparator{}, buffer);
 }
 
@@ -154,15 +150,14 @@ struct MergeSortNiebloid final {
     }
 
     template <std::bidirectional_iterator Iterator, class Comparator = std::ranges::less>
-    static constexpr void merge_sort(Iterator begin, Iterator end, Comparator comp = {}) noexcept(
-        IsNoexceptSortableImpl<Iterator, Comparator>()) {
+    static constexpr void merge_sort(Iterator begin,
+                                     Iterator end,
+                                     Comparator comp = {}) noexcept(IsNoexceptSortableImpl<Iterator, Comparator>()) {
         using ValueType = typename std::iterator_traits<Iterator>::value_type;
 
         if constexpr (kInplaceSort) {
             if (detail::kOptimizeOutComparator<Comparator, ValueType>) {
-                detail::merge_sort::inplace_merge_sort_with_empty_comparator_impl<Iterator,
-                                                                                  Comparator>(begin,
-                                                                                              end);
+                detail::merge_sort::inplace_merge_sort_with_empty_comparator_impl<Iterator, Comparator>(begin, end);
             } else {
                 detail::merge_sort::inplace_merge_sort_impl(begin, end, std::move(comp));
             }
@@ -175,8 +170,7 @@ struct MergeSortNiebloid final {
             std::vector<ValueType> buffer;
             buffer.reserve(size);
             if constexpr (detail::kOptimizeOutComparator<Comparator, ValueType>) {
-                detail::merge_sort::merge_sort_with_empty_comparator_impl<Iterator, Comparator>(
-                    begin, end, buffer);
+                detail::merge_sort::merge_sort_with_empty_comparator_impl<Iterator, Comparator>(begin, end, buffer);
             } else {
                 detail::merge_sort::merge_sort_impl(begin, end, std::move(comp), buffer);
             }
@@ -184,8 +178,9 @@ struct MergeSortNiebloid final {
     }
 
     template <StringsRange Range, class Comparator = std::ranges::less>
-    static constexpr void merge_sort(Range&& range, Comparator comp = {}) noexcept(
-        merge_sort(std::ranges::begin(range), std::ranges::end(range), std::move(comp))) {
+    static constexpr void merge_sort(Range&& range, Comparator comp = {}) noexcept(merge_sort(std::ranges::begin(range),
+                                                                                              std::ranges::end(range),
+                                                                                              std::move(comp))) {
         merge_sort(std::ranges::begin(range), std::ranges::end(range), std::move(comp));
     }
 

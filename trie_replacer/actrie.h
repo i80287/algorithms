@@ -22,8 +22,7 @@ enum actrie_constants {
 
 static_assert(IS_FIND_IGNORECASE_MODE_ON == true || IS_FIND_IGNORECASE_MODE_ON == false,
               "IS_FIND_IGNORECASE_MODE_ON must be bool");
-static_assert(ALPHABET_START <= 'a' && 'z' <= ALPHABET_END,
-              "Symbols [a; z] must be in the alphabet");
+static_assert(ALPHABET_START <= 'a' && 'z' <= ALPHABET_END, "Symbols [a; z] must be in the alphabet");
 static_assert(ALPHABET_START > '\0' && ALPHABET_END <= CHAR_MAX);
 
 #if defined(__thiscall)
@@ -109,11 +108,8 @@ void actrie_thiscall actrie_t_reserve_patterns(struct actrie_t* this_, size_t pa
 /// @param replacer c string representing a replacer for the pattern
 /// @param replacer_size length of the replacer
 /// @return
-void actrie_thiscall actrie_t_add_pattern_len(struct actrie_t* this_,
-                                              const char* pattern,
-                                              size_t pattern_size,
-                                              const char* replacer,
-                                              size_t replacer_size);
+void actrie_thiscall actrie_t_add_pattern_len(
+    struct actrie_t* this_, const char* pattern, size_t pattern_size, const char* replacer, size_t replacer_size);
 
 /// @brief Adds pattern to the trie in O(strlen(pattern))
 /// @param this_ actrie
@@ -141,9 +137,7 @@ void actrie_thiscall actrie_t_compute_links(struct actrie_t* this_);
 
 /// @brief Callback that is called when the next occurrence is found in the
 ///        actrie_t_run_text(const struct actrie_t*, const char*, FindCallback)
-typedef void (*FindCallback)(const char* found_word,
-                             size_t word_length,
-                             size_t start_index_in_original_text);
+typedef void (*FindCallback)(const char* found_word, size_t word_length, size_t start_index_in_original_text);
 
 /// @brief Find all occurances of any pattern (defined in this ac trie) in the given
 ///        text in O(strlen(text))
@@ -151,9 +145,7 @@ typedef void (*FindCallback)(const char* found_word,
 /// @param text Text to search pattern occurances in
 /// @param find_callback Callback that is called when the next occurrence is found
 /// @return
-void actrie_thiscall actrie_t_run_text(const struct actrie_t* this_,
-                                       const char* text,
-                                       FindCallback find_callback);
+void actrie_thiscall actrie_t_run_text(const struct actrie_t* this_, const char* text, FindCallback find_callback);
 
 /// @brief Replace first occurance of any pattern (defined in this ac trie) found in the
 ///        given string in O(length + |replacement_length - first_occurance_length|)
@@ -174,8 +166,7 @@ size_t actrie_thiscall actrie_t_replace_first_occurance_len(const struct actrie_
 ///         strlen(occurance_pattern) != strlen(replacement))
 ///         !!! It is caller's responsobility to ensure that c_string buffer will not overflow if
 ///         length growths
-static inline size_t actrie_thiscall actrie_t_replace_first_occurance(const struct actrie_t* this_,
-                                                                      char* c_string) {
+static inline size_t actrie_thiscall actrie_t_replace_first_occurance(const struct actrie_t* this_, char* c_string) {
     return actrie_t_replace_first_occurance_len(this_, c_string, strlen(c_string));
 }
 
@@ -187,9 +178,7 @@ static inline size_t actrie_thiscall actrie_t_replace_first_occurance(const stru
 ///         strlen(pattern[i]) != strlen(replacement[i]))
 ///         !!! It is caller's responsobility to ensure that c_string buffer will not overflow if
 ///         length growths
-size_t actrie_thiscall actrie_t_replace_all_occurances_len(const struct actrie_t* this_,
-                                                           char* c_string,
-                                                           size_t length);
+size_t actrie_thiscall actrie_t_replace_all_occurances_len(const struct actrie_t* this_, char* c_string, size_t length);
 
 /// @brief Replace all occurances of any pattern (defined in this ac trie) found in the given string
 ///        in O(strlen(c_string) + sum( |replacement_length - occurance_length| for each pattern
@@ -199,8 +188,7 @@ size_t actrie_thiscall actrie_t_replace_all_occurances_len(const struct actrie_t
 ///         strlen(pattern[i]) != strlen(replacement[i]))
 ///         !!! It is caller's responsobility to ensure that c_string buffer will not overflow if
 ///         length growths
-static inline size_t actrie_thiscall actrie_t_replace_all_occurances(const struct actrie_t* this_,
-                                                                     char* c_string) {
+static inline size_t actrie_thiscall actrie_t_replace_all_occurances(const struct actrie_t* this_, char* c_string) {
     return actrie_t_replace_all_occurances_len(this_, c_string, strlen(c_string));
 }
 

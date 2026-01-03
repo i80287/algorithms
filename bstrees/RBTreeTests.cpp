@@ -18,8 +18,7 @@ namespace {
 using rbtree::RBTree;
 
 template <std::integral T, std::size_t N, std::size_t M>
-constexpr bool non_intersecting_sets(const std::array<T, N> &s1,
-                                     const std::array<T, M> &s2) noexcept {
+constexpr bool non_intersecting_sets(const std::array<T, N> &s1, const std::array<T, M> &s2) noexcept {
     std::array<T, N> s1_arr(s1);
     std::array<T, M> s2_arr(s2);
     std::ranges::sort(s1_arr);
@@ -204,29 +203,26 @@ template <std::ranges::random_access_range Range1, std::ranges::random_access_ra
 void test_on_sub_ranges(const Range1 &range, const Range2 &not_in_range) {
     for (std::size_t drop_size = 0; drop_size < std::size(range); drop_size++) {
         for (std::size_t take_size = 0; take_size <= std::size(range) - drop_size; take_size++) {
-            test_on_range(range | std::views::drop(drop_size) | std::views::take(take_size),
-                          not_in_range);
+            test_on_range(range | std::views::drop(drop_size) | std::views::take(take_size), not_in_range);
         }
     }
 }
 
 void test_rbtree_on_ranges() {
     constexpr std::array nums = {
-        1,       2,         -3,     4,      0,        -4,       35,         -45,
-        20,      23,        22,     21,     -15,      -28,      56,         57,
-        44,      69,        72,     101,    118,      114,      -114,       -118,
-        -101,    13,        -13,    12,     -12,      32,       23,         12,
-        54,      34,        5645,   2,      34,       234,      23,         4234,
-        4234,    34,        3253,   6546,   567,      5,        736,        462476,
-        4574327, 245762456, 623456, 4256,   52623456, 2454,     1264367436, 743256342,
-        4673345, 34256,     674324, 47643,  2347824,  2178,     12387,      -12387,
-        8123,    67284,     -2348,  12738,  93284,    -1238,    238743,     -1'000'000'000,
-        5,       736,       462476, 462475, 462474,   462473,   462472,     462471,
-        12,      13,        14,     1515,   161616,   17171717, 0,          0,
+        1,          2,         -3,      4,       0,         -4,     35,      -45,      20,
+        23,         22,        21,      -15,     -28,       56,     57,      44,       69,
+        72,         101,       118,     114,     -114,      -118,   -101,    13,       -13,
+        12,         -12,       32,      23,      12,        54,     34,      5645,     2,
+        34,         234,       23,      4234,    4234,      34,     3253,    6546,     567,
+        5,          736,       462476,  4574327, 245762456, 623456, 4256,    52623456, 2454,
+        1264367436, 743256342, 4673345, 34256,   674324,    47643,  2347824, 2178,     12387,
+        -12387,     8123,      67284,   -2348,   12738,     93284,  -1238,   238743,   -1'000'000'000,
+        5,          736,       462476,  462475,  462474,    462473, 462472,  462471,   12,
+        13,         14,        1515,    161616,  17171717,  0,      0,
     };
     constexpr std::array not_in_nums = {
-        -100, -50, -10,  10,    100,     200,           300,
-        400,  500, 1000, 20000, 4023087, 2'091'371'239, 2'111'222'333,
+        -100, -50, -10, 10, 100, 200, 300, 400, 500, 1000, 20000, 4023087, 2'091'371'239, 2'111'222'333,
     };
 
     static_assert(non_intersecting_sets(nums, not_in_nums));
@@ -236,33 +232,15 @@ void test_rbtree_on_ranges() {
     using namespace std::string_view_literals;
 
     constexpr std::array string_views = {
-        "asd"sv,           "3284"sv,
-        "f7823h7yf3"sv,    "23f87g2quf"sv,
-        "w2uv9f3w"sv,      "v23fvn4ev"sv,
-        "vf324v3hv34v"sv,  "23bvuywvb"sv,
-        "whbuwbhjv"sv,     "f2q3gfyu2bv"sv,
-        "cqw3gbhbve"sv,    "q3wnj"sv,
-        "dawbcnac"sv,      "acdjawbcawc"sv,
-        "awjcbacn"sv,      "awjcbanc"sv,
-        "awkcjakcsn"sv,    "whfjancaw"sv,
-        "cq39fc98hcnac"sv, "acdnbnzxm"sv,
-        "dawjcna"sv,       "cawbcawmcnvehvb"sv,
-        "vjabevjhnbnsc"sv, "cawjcjawc"sv,
-        "asd"sv,           "3284"sv,
-        "f7823h7yf3"sv,    "23f87g2quf"sv,
-        "w2uv9f3w"sv,      "v23fvn4ev"sv,
-        "vf324v3hv34v"sv,  "23bvuywvb"sv,
-        "whbuwbhjv"sv,     "f2q3gfyu2bv"sv,
-        "cqw3gbhbve"sv,    "q3wnj"sv,
-        "dawbcnac"sv,      "acdjawbcawc"sv,
-        "awjcbacn"sv,      "awjcbanc"sv,
-        "awkcjakcsn"sv,    "whfjancaw"sv,
-        "cq39fc98hcnac"sv, "acdnbnzxm"sv,
-        "dawjcna"sv,       "cawbcawmcnvehvb"sv,
-        "vjabevjhnbnsc"sv, "cawjcjawc"sv,
-        "28378234231"sv,   "4928342348"sv,
-        "234823478234"sv,  "53745834543"sv,
-        "234893248234"sv,  "324823748"sv,
+        "asd"sv,           "3284"sv,          "f7823h7yf3"sv,   "23f87g2quf"sv,      "w2uv9f3w"sv,      "v23fvn4ev"sv,
+        "vf324v3hv34v"sv,  "23bvuywvb"sv,     "whbuwbhjv"sv,    "f2q3gfyu2bv"sv,     "cqw3gbhbve"sv,    "q3wnj"sv,
+        "dawbcnac"sv,      "acdjawbcawc"sv,   "awjcbacn"sv,     "awjcbanc"sv,        "awkcjakcsn"sv,    "whfjancaw"sv,
+        "cq39fc98hcnac"sv, "acdnbnzxm"sv,     "dawjcna"sv,      "cawbcawmcnvehvb"sv, "vjabevjhnbnsc"sv, "cawjcjawc"sv,
+        "asd"sv,           "3284"sv,          "f7823h7yf3"sv,   "23f87g2quf"sv,      "w2uv9f3w"sv,      "v23fvn4ev"sv,
+        "vf324v3hv34v"sv,  "23bvuywvb"sv,     "whbuwbhjv"sv,    "f2q3gfyu2bv"sv,     "cqw3gbhbve"sv,    "q3wnj"sv,
+        "dawbcnac"sv,      "acdjawbcawc"sv,   "awjcbacn"sv,     "awjcbanc"sv,        "awkcjakcsn"sv,    "whfjancaw"sv,
+        "cq39fc98hcnac"sv, "acdnbnzxm"sv,     "dawjcna"sv,      "cawbcawmcnvehvb"sv, "vjabevjhnbnsc"sv, "cawjcjawc"sv,
+        "28378234231"sv,   "4928342348"sv,    "234823478234"sv, "53745834543"sv,     "234893248234"sv,  "324823748"sv,
         "4358983459345"sv, "9345834583458"sv,
     };
     constexpr std::array not_in_string_views = {

@@ -18,8 +18,7 @@ using std::size_t;
 #endif
 
 template <size_t ReplacementCost = 1, size_t DeletionCost = 1, size_t InsertionCost = 1>
-[[nodiscard]] CONSTEXPR_VECTOR_CXX_20 size_t levenshtein_distance(std::string_view s1,
-                                                                  std::string_view s2) {
+[[nodiscard]] CONSTEXPR_VECTOR_CXX_20 size_t levenshtein_distance(std::string_view s1, std::string_view s2) {
     if (s1.size() < s2.size()) {
         s1.swap(s2);
     }
@@ -34,14 +33,13 @@ template <size_t ReplacementCost = 1, size_t DeletionCost = 1, size_t InsertionC
         dp2[0] = i;
         for (size_t j = 1; j <= s2.size(); j++) {
             const bool replace_char = s1[i - 1] != s2[j - 1];
-            const size_t total_cost_with_replacement =
-                dp1[j - 1] + size_t{replace_char} * ReplacementCost;
+            const size_t total_cost_with_replacement = dp1[j - 1] + size_t{replace_char} * ReplacementCost;
 
             const size_t total_cost_with_deletion = dp1[j] + DeletionCost;
             const size_t total_cost_with_insertion = dp2[j - 1] + InsertionCost;
 
-            dp2[j] = std::min(total_cost_with_replacement,
-                              std::min(total_cost_with_deletion, total_cost_with_insertion));
+            dp2[j] =
+                std::min(total_cost_with_replacement, std::min(total_cost_with_deletion, total_cost_with_insertion));
         }
         dp1.swap(dp2);
     }

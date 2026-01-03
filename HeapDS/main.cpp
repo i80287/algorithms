@@ -16,10 +16,10 @@ template <typename T, typename Comparator = std::less<T>>
     }
 #endif
 class Heap {
-    static constexpr bool kUseByValue =
-        std::is_standard_layout_v<T> && std::is_trivially_copyable_v<T> &&
-        std::is_trivially_copy_constructible_v<T> && std::is_trivially_copy_assignable_v<T> &&
-        std::is_nothrow_copy_assignable_v<T> && std::is_nothrow_copy_constructible_v<T>;
+    static constexpr bool kUseByValue = std::is_standard_layout_v<T> && std::is_trivially_copyable_v<T> &&
+                                        std::is_trivially_copy_constructible_v<T> &&
+                                        std::is_trivially_copy_assignable_v<T> &&
+                                        std::is_nothrow_copy_assignable_v<T> && std::is_nothrow_copy_constructible_v<T>;
 
 public:
     constexpr Heap() noexcept(noexcept(std::vector<T>{})) : heap_elements_{}, comp_{} {}
@@ -95,8 +95,7 @@ public:
             heap_elements_[0] = std::move(heap_elements_.back());
             heap_elements_.pop_back();
             for (size_t parent_index = 0, son_index = 1, len = size(); son_index < len;) {
-                if (son_index + 1 < len &&
-                    !Compare(heap_elements_[son_index], heap_elements_[son_index + 1])) {
+                if (son_index + 1 < len && !Compare(heap_elements_[son_index], heap_elements_[son_index + 1])) {
                     son_index++;
                 }
                 if (Compare(heap_elements_[parent_index], heap_elements_[son_index])) {
@@ -134,8 +133,7 @@ protected:
         if constexpr (kUseByValue) {
             size_t parent_index = index;
             const T sifting_elem = heap_elements_[index];
-            if (son_index + 1 != size() &&
-                !Compare(heap_elements_[son_index], heap_elements_[son_index + 1])) {
+            if (son_index + 1 != size() && !Compare(heap_elements_[son_index], heap_elements_[son_index + 1])) {
                 son_index++;
             }
 
@@ -149,8 +147,7 @@ protected:
                     return;
                 }
 
-                if (son_index + 1 != len &&
-                    !Compare(heap_elements_[son_index], heap_elements_[son_index + 1])) {
+                if (son_index + 1 != len && !Compare(heap_elements_[son_index], heap_elements_[son_index + 1])) {
                     son_index++;
                 }
             }

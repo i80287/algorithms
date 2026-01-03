@@ -55,26 +55,23 @@ using ConstRefMatrix64x64 = std::span<const std::uint64_t, 64>;
 namespace bitmatrix_detail {
 
 template <class T>
-inline constexpr bool kIsMatrix8x8 =
-    std::is_same_v<T, ArrayMatrix8x8> || std::is_same_v<T, CStyleMatrix8x8>
+inline constexpr bool kIsMatrix8x8 = std::is_same_v<T, ArrayMatrix8x8> || std::is_same_v<T, CStyleMatrix8x8>
 #ifdef BITMATRIX_HAS_SPAN
-    || std::is_same_v<T, RefMatrix8x8> || std::is_same_v<T, ConstRefMatrix8x8>
+                                     || std::is_same_v<T, RefMatrix8x8> || std::is_same_v<T, ConstRefMatrix8x8>
 #endif
     ;
 
 template <class T>
-inline constexpr bool kIsMatrix32x32 =
-    std::is_same_v<T, ArrayMatrix32x32> || std::is_same_v<T, CStyleMatrix32x32>
+inline constexpr bool kIsMatrix32x32 = std::is_same_v<T, ArrayMatrix32x32> || std::is_same_v<T, CStyleMatrix32x32>
 #ifdef BITMATRIX_HAS_SPAN
-    || std::is_same_v<T, RefMatrix32x32> || std::is_same_v<T, ConstRefMatrix32x32>
+                                       || std::is_same_v<T, RefMatrix32x32> || std::is_same_v<T, ConstRefMatrix32x32>
 #endif
     ;
 
 template <class T>
-inline constexpr bool kIsMatrix64x64 =
-    std::is_same_v<T, ArrayMatrix64x64> || std::is_same_v<T, CStyleMatrix64x64>
+inline constexpr bool kIsMatrix64x64 = std::is_same_v<T, ArrayMatrix64x64> || std::is_same_v<T, CStyleMatrix64x64>
 #ifdef BITMATRIX_HAS_SPAN
-    || std::is_same_v<T, RefMatrix64x64> || std::is_same_v<T, ConstRefMatrix64x64>
+                                       || std::is_same_v<T, RefMatrix64x64> || std::is_same_v<T, ConstRefMatrix64x64>
 #endif
     ;
 
@@ -309,20 +306,16 @@ namespace bitmatrix_detail {
 
 struct square_bitmatrix_helper {
 private:
-    static constexpr bool kCanUseUInt64 =
-        sizeof(std::bitset<64 + 1>) == sizeof(std::bitset<64 + 64>);
-    static constexpr bool kCanUseUInt32 =
-        !kCanUseUInt64 && sizeof(std::bitset<32 + 1>) == sizeof(std::bitset<32 + 32>);
+    static constexpr bool kCanUseUInt64 = sizeof(std::bitset<64 + 1>) == sizeof(std::bitset<64 + 64>);
+    static constexpr bool kCanUseUInt32 = !kCanUseUInt64 && sizeof(std::bitset<32 + 1>) == sizeof(std::bitset<32 + 32>);
     static constexpr bool kUseUInt8 = !kCanUseUInt64 && !kCanUseUInt32;
-    static_assert(!kUseUInt8 || sizeof(std::bitset<8 + 1>) == sizeof(std::bitset<8 + 8>),
-                  "Unsupported platform");
+    static_assert(!kUseUInt8 || sizeof(std::bitset<8 + 1>) == sizeof(std::bitset<8 + 8>), "Unsupported platform");
 
 public:
     template <std::size_t N>
-    using word_type = std::conditional_t<
-        (N > 32) && kCanUseUInt64,
-        std::uint64_t,
-        std::conditional_t<(N > 8) && kCanUseUInt32, std::uint32_t, std::uint8_t>>;
+    using word_type = std::conditional_t<(N > 32) && kCanUseUInt64,
+                                         std::uint64_t,
+                                         std::conditional_t<(N > 8) && kCanUseUInt32, std::uint32_t, std::uint8_t>>;
 };
 
 #if CONFIG_HAS_AT_LEAST_CXX_20
@@ -344,8 +337,7 @@ concept Transposable8 = Size == 8 && requires(WordType (&m)[8]) {
 
 }  // namespace bitmatrix_detail
 
-template <std::size_t N,
-          class word_type = typename bitmatrix_detail::square_bitmatrix_helper::word_type<N>>
+template <std::size_t N, class word_type = typename bitmatrix_detail::square_bitmatrix_helper::word_type<N>>
 #if CONFIG_HAS_AT_LEAST_CXX_20
     requires(N > 0)
 #endif
@@ -812,8 +804,7 @@ public:
         }
 #endif
     constexpr void for_each_set_bit(F fn) const noexcept(is_noexcept_coords_fn<F>()) {
-        static_assert(std::is_invocable_v<F, size_type, size_type>,
-                      "Function should accept 2 indices");
+        static_assert(std::is_invocable_v<F, size_type, size_type>, "Function should accept 2 indices");
 
         const_iterator iter = begin();
         const_iterator iter_end = end();
@@ -834,8 +825,8 @@ public:
     }
 
     template <class CharType>
-    friend std::basic_ostream<CharType>& operator<<(
-        std::basic_ostream<CharType>& os ATTRIBUTE_LIFETIME_BOUND, const square_bitmatrix& matrix) {
+    friend std::basic_ostream<CharType>& operator<<(std::basic_ostream<CharType>& os ATTRIBUTE_LIFETIME_BOUND,
+                                                    const square_bitmatrix& matrix) {
         const_iterator row_iter = matrix.cbegin();
         const_iterator last_row_iter = matrix.cend();
         static_assert(square_bitmatrix{}.size() > 0);

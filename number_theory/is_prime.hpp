@@ -35,8 +35,7 @@ namespace detail {
  * some integer t, with 0 <= t < r.
  **********************************************************************************************/
 template <bool DoBasicChecks = true>
-[[nodiscard]] I128_CONSTEXPR bool is_strong_prp(const uint64_t n,
-                                                const uint64_t a) noexcept(!DoBasicChecks) {
+[[nodiscard]] I128_CONSTEXPR bool is_strong_prp(const uint64_t n, const uint64_t a) noexcept(!DoBasicChecks) {
     if constexpr (DoBasicChecks) {
         if (unlikely(a < 2)) {
             throw std::invalid_argument{"is_strong_prp requires 'a' greater than or equal to 2"};
@@ -97,8 +96,7 @@ template <bool DoBasicChecks = true>
 
 ATTRIBUTE_CONST
 [[nodiscard]]
-I128_CONSTEXPR bool is_strong_prp_without_basic_checks(const uint64_t n,
-                                                       const uint64_t a) noexcept {
+I128_CONSTEXPR bool is_strong_prp_without_basic_checks(const uint64_t n, const uint64_t a) noexcept {
     return detail::is_strong_prp<false>(n, a);
 }
 
@@ -140,9 +138,8 @@ template <bool DoBasicChecks = true>
         // NOLINTNEXTLINE(bugprone-implicit-widening-of-multiplication-result)
         const int128_t rhs = int128_t{int64_t{2} * int64_t{q}} * int128_t{d};
         if (unlikely(math_functions::gcd(n, rhs) != 1)) {
-            throw std::invalid_argument{
-                CONFIG_CURRENT_FUNCTION_NAME +
-                std::string{" requires gcd(n, 2 * q * (p * p - 4 * q)) == 1"}};
+            throw std::invalid_argument{CONFIG_CURRENT_FUNCTION_NAME +
+                                        std::string{" requires gcd(n, 2 * q * (p * p - 4 * q)) == 1"}};
         }
     }
 
@@ -216,8 +213,7 @@ template <bool DoBasicChecks = true>
             CONFIG_ASSUME_STATEMENT(vh_vh < n);
             const uint128_t tmp_qh_2 = 2 * uint128_t{qh};
             CONFIG_ASSUME_STATEMENT(tmp_qh_2 <= 2 * uint128_t{n - 1});
-            const uint64_t qh_2 = tmp_qh_2 < n ? static_cast<uint64_t>(tmp_qh_2)
-                                               : static_cast<uint64_t>(tmp_qh_2 - n);
+            const uint64_t qh_2 = tmp_qh_2 < n ? static_cast<uint64_t>(tmp_qh_2) : static_cast<uint64_t>(tmp_qh_2 - n);
             CONFIG_ASSUME_STATEMENT(qh_2 < n);
             CONFIG_ASSUME_STATEMENT(qh_2 == (uint128_t{qh} * 2) % n);
             const uint64_t tmp_vh = vh_vh - qh_2;
@@ -254,8 +250,7 @@ template <bool DoBasicChecks = true>
             CONFIG_ASSUME_STATEMENT(vl_vl < n);
             const uint128_t tmp_ql_2 = 2 * uint128_t{ql};
             CONFIG_ASSUME_STATEMENT(tmp_ql_2 <= 2 * uint128_t{n - 1});
-            const uint64_t ql_2 = tmp_ql_2 < n ? static_cast<uint64_t>(tmp_ql_2)
-                                               : static_cast<uint64_t>(tmp_ql_2 - n);
+            const uint64_t ql_2 = tmp_ql_2 < n ? static_cast<uint64_t>(tmp_ql_2) : static_cast<uint64_t>(tmp_ql_2 - n);
             CONFIG_ASSUME_STATEMENT(ql_2 < n);
             CONFIG_ASSUME_STATEMENT(ql_2 == (uint128_t{ql} * 2) % n);
             const uint64_t tmp_vl = vl_vl - ql_2;
@@ -316,8 +311,7 @@ template <bool DoBasicChecks = true>
         CONFIG_ASSUME_STATEMENT(vl_vl < n);
         const uint128_t tmp_ql_2 = 2 * uint128_t{ql};
         CONFIG_ASSUME_STATEMENT(tmp_ql_2 <= 2 * uint128_t{n - 1});
-        const uint64_t ql_2 =
-            tmp_ql_2 < n ? static_cast<uint64_t>(tmp_ql_2) : static_cast<uint64_t>(tmp_ql_2 - n);
+        const uint64_t ql_2 = tmp_ql_2 < n ? static_cast<uint64_t>(tmp_ql_2) : static_cast<uint64_t>(tmp_ql_2 - n);
         CONFIG_ASSUME_STATEMENT(ql_2 < n);
         CONFIG_ASSUME_STATEMENT(ql_2 == (uint128_t{ql} * 2) % n);
         tmp_vl = vl_vl - ql_2;
@@ -475,8 +469,8 @@ template <class T>
 
     do {
         CONFIG_ASSUME_STATEMENT(i <= max_i);
-        if (n % i == 0 || n % (i + 4) == 0 || n % (i + 6) == 0 || n % (i + 10) == 0 ||
-            n % (i + 12) == 0 || n % (i + 16) == 0 || n % (i + 22) == 0 || n % (i + 24) == 0) {
+        if (n % i == 0 || n % (i + 4) == 0 || n % (i + 6) == 0 || n % (i + 10) == 0 || n % (i + 12) == 0 ||
+            n % (i + 16) == 0 || n % (i + 22) == 0 || n % (i + 24) == 0) {
             return false;
         }
         i += kIsPrimeSqrtLoopStep;
@@ -504,9 +498,8 @@ template <class T>
     if (unlikely(n < 7 * 7)) {
         return n != 1;
     }
-    if ((n % 7) == 0 || (n % 11) == 0 || (n % 13) == 0 || (n % 17) == 0 || (n % 19) == 0 ||
-        (n % 23) == 0 || (n % 29) == 0 || (n % 31) == 0 || (n % 37) == 0 || (n % 41) == 0 ||
-        (n % 43) == 0 || (n % 47) == 0) {
+    if ((n % 7) == 0 || (n % 11) == 0 || (n % 13) == 0 || (n % 17) == 0 || (n % 19) == 0 || (n % 23) == 0 ||
+        (n % 29) == 0 || (n % 31) == 0 || (n % 37) == 0 || (n % 41) == 0 || (n % 43) == 0 || (n % 47) == 0) {
         return false;
     }
     // NOLINTNEXTLINE(bugprone-implicit-widening-of-multiplication-result)
@@ -548,9 +541,8 @@ template <class T>
     if (n < 7 * 7) {
         return n != 1;
     }
-    if ((n % 7) == 0 || (n % 11) == 0 || (n % 13) == 0 || (n % 17) == 0 || (n % 19) == 0 ||
-        (n % 23) == 0 || (n % 29) == 0 || (n % 31) == 0 || (n % 37) == 0 || (n % 41) == 0 ||
-        (n % 43) == 0 || (n % 47) == 0) {
+    if ((n % 7) == 0 || (n % 11) == 0 || (n % 13) == 0 || (n % 17) == 0 || (n % 19) == 0 || (n % 23) == 0 ||
+        (n % 29) == 0 || (n % 31) == 0 || (n % 37) == 0 || (n % 41) == 0 || (n % 43) == 0 || (n % 47) == 0) {
         return false;
     }
     // NOLINTNEXTLINE(bugprone-implicit-widening-of-multiplication-result)

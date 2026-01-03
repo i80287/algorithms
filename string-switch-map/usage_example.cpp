@@ -11,8 +11,8 @@ namespace {
 // NOLINTBEGIN(cppcoreguidelines-avoid-c-arrays, hicpp-avoid-c-arrays, modernize-avoid-c-arrays)
 
 void StringSwitchExample() {
-    static constexpr auto sw = StringMatch<"abc", "def", "ghij", "foo", "bar", "baz", "qux",
-                                           "abacaba", "ring", "ideal", "GLn(F)">();
+    static constexpr auto sw =
+        StringMatch<"abc", "def", "ghij", "foo", "bar", "baz", "qux", "abacaba", "ring", "ideal", "GLn(F)">();
     static_assert(sw("abc") == 0);
     static_assert(sw("def") == 1);
     static_assert(sw("ghij") == 2);
