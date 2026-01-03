@@ -44,7 +44,7 @@ template <typename T>
     } else if constexpr (sizeof(T) == 16) {
         return kIsSigned ? kMaxStringLengthI128 : kMaxStringLengthU128;
     } else {
-        static_assert(false, "Integral type is expected");
+        static_assert(sizeof(T) == 0, "Integral type is expected");
         return 0;
     }
 }
