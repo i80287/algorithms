@@ -1,21 +1,22 @@
 #pragma once
 
-#include <ranges>
-
 #include "config_macros.hpp"
-#include "string_traits.hpp"
+
+#if !CONFIG_HAS_CONCEPTS
 
 #if !CONFIG_HAS_AT_LEAST_CXX_20
 #error "Compiler with c++20 support is required"
-#endif
-
-#if !CONFIG_COMPILER_SUPPORTS_CONCEPTS
+#elif !CONFIG_COMPILER_SUPPORTS_CONCEPTS
 #error "Compiler with concepts support is required"
-#endif
-
-#if !CONFIG_HAS_CONCEPTS
+#else
 #error "<concepts> header is required"
 #endif
+
+#else
+
+#include <ranges>
+
+#include "string_traits.hpp"
 
 namespace misc {
 
@@ -41,10 +42,12 @@ template <misc::CharOrStringLike Sep, std::ranges::forward_range Container>
                                                                           const Container &strings);
 
 template <std::ranges::forward_range Container>
-[[nodiscard]] ATTRIBUTE_ALWAYS_INLINE inline auto join_strings_collection(const Container &strings);
+[[nodiscard]] inline auto join_strings_collection(const Container &strings);
 
 }  // namespace misc
 
 #define JOIN_STRINGS_INCLUDING_IMPLEMENTATION
 #include "join_strings.ipp"
 #undef JOIN_STRINGS_INCLUDING_IMPLEMENTATION
+
+#endif
