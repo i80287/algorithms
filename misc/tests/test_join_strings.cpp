@@ -126,7 +126,6 @@ private:
     }
 
     static void test_with_filesystem_path() {
-#ifdef JOIN_STRINGS_SUPPORTS_FILESYSTEM_PATH
 
         assert(misc::join_strings(STR_LITERAL(CharType, "path "),
                                   std::filesystem::path{"/dev/null"},
@@ -137,17 +136,13 @@ private:
                                   std::filesystem::path{"C:/Windows"},
                                   STR_LITERAL(CharType, " may exist")) ==
                STR_LITERAL(CharType, "path C:/Windows may exist"));
-
-#endif
     }
 };
 
 void test_basic_joins() {
     JoinStringsTestSuite<char>::run();
     JoinStringsTestSuite<wchar_t>::run();
-#if CONFIG_HAS_AT_LEAST_CXX_20 && defined(__cpp_char8_t) && __cpp_char8_t >= 201811L
     JoinStringsTestSuite<char8_t>::run();
-#endif
     JoinStringsTestSuite<char16_t>::run();
     JoinStringsTestSuite<char32_t>::run();
 }
@@ -161,8 +156,6 @@ enum struct Condition : bool {
     kNo = false,
     kYes = true,
 };
-
-#ifdef JOIN_STRINGS_SUPPORTS_CUSTOM_TO_STRING
 
 namespace some {
 
@@ -228,11 +221,9 @@ void test_custom_enum_to_string() {
     assert(misc::join_strings<wchar_t>(some::SomeEnum1::kSomeValue1) == to_basic_string<wchar_t>(some::SomeEnum1::kSomeValue1));
     assert(misc::join_strings<wchar_t>(some::SomeEnum1::kSomeValue2) == to_basic_string<wchar_t>(some::SomeEnum1::kSomeValue2));
 
-#if CONFIG_HAS_AT_LEAST_CXX_20 && defined(__cpp_char8_t) && __cpp_char8_t >= 201811L
     assert(misc::join_strings<char8_t>(some::SomeEnum1{}) == to_basic_string<char8_t>(some::SomeEnum1{}));
     assert(misc::join_strings<char8_t>(some::SomeEnum1::kSomeValue1) == to_basic_string<char8_t>(some::SomeEnum1::kSomeValue1));
     assert(misc::join_strings<char8_t>(some::SomeEnum1::kSomeValue2) == to_basic_string<char8_t>(some::SomeEnum1::kSomeValue2));
-#endif
 
     assert(misc::join_strings<char16_t>(some::SomeEnum1{}) == to_basic_string<char16_t>(some::SomeEnum1{}));
     assert(misc::join_strings<char16_t>(some::SomeEnum1::kSomeValue1) == to_basic_string<char16_t>(some::SomeEnum1::kSomeValue1));
@@ -245,8 +236,6 @@ void test_custom_enum_to_string() {
     // clang-format on
 }
 
-#endif
-
 void test_enums() {
     assert(misc::join_strings(E1::kValue1) ==
            std::to_string(unsigned{static_cast<std::underlying_type_t<E1>>(E1::kValue1)}));
@@ -257,9 +246,7 @@ void test_enums() {
     assert(misc::join_strings<wchar_t>(E1::kValue2) ==
            std::to_wstring(unsigned{static_cast<std::underlying_type_t<E1>>(E1::kValue2)}));
 
-#ifdef JOIN_STRINGS_SUPPORTS_CUSTOM_TO_STRING
     test_custom_enum_to_string();
-#endif
 }
 
 void test_pointers() {
@@ -288,8 +275,6 @@ void test_pointers() {
 
     // clang-format on
 }
-
-#ifdef JOIN_STRINGS_SUPPORTS_CUSTOM_OSTRINGSTREAM
 
 class OStringStreamWriteable final {
 public:
@@ -326,8 +311,6 @@ void test_custom_ostringstream() {
     OStringStreamWritingTestSuite<char>::run();
 }
 
-#endif
-
 #ifndef __MINGW32__
 
 template <class CharType>
@@ -345,9 +328,7 @@ public:
 void test_int128() {
     Int128TestSuite<char>::run();
     Int128TestSuite<wchar_t>::run();
-#if CONFIG_HAS_AT_LEAST_CXX_20 && defined(__cpp_char8_t) && __cpp_char8_t >= 201811L
     Int128TestSuite<char8_t>::run();
-#endif
     Int128TestSuite<char16_t>::run();
     Int128TestSuite<char32_t>::run();
 }
@@ -360,18 +341,14 @@ void test_join_strings() {
     join_strings_test::test_basic_joins();
     join_strings_test::test_enums();
     join_strings_test::test_pointers();
-#ifdef JOIN_STRINGS_SUPPORTS_CUSTOM_OSTRINGSTREAM
     join_strings_test::test_custom_ostringstream();
-#endif
 #ifndef __MINGW32__
     join_strings_test::test_int128();
 #endif
 }
 
-#ifdef JOIN_STRINGS_SUPPORTS_JOIN_STRINGS_COLLECTION
-
 template <class CharType>
-class JoinStringsCollectionTestSuit final {
+class JoinStringsRangeTestSuit final {
 public:
     static void run() {
         test_empty_collection();
@@ -392,10 +369,10 @@ private:
         test_tools::log_tests_started();
 
         const std::vector<std::basic_string_view<CharType>> empty_vec{};
-        assert(misc::join_strings_collection(kCharSep, empty_vec).empty());
-        assert(misc::join_strings_collection(kEmptySep, empty_vec).empty());
-        assert(misc::join_strings_collection(empty_vec).empty());
-        assert(misc::join_strings_collection(kNonEmptySep, empty_vec).empty());
+        assert(misc::join_strings_range(kCharSep, empty_vec).empty());
+        assert(misc::join_strings_range(kEmptySep, empty_vec).empty());
+        assert(misc::join_strings_range(empty_vec).empty());
+        assert(misc::join_strings_range(kNonEmptySep, empty_vec).empty());
     }
 
     static void test_1_element_vec() {
@@ -404,10 +381,10 @@ private:
         const std::vector<std::basic_string_view<CharType>> vec_1_elem{
             STR_LITERAL(CharType, "abcdefghijklmnopqrstuvwxyz"),
         };
-        assert(misc::join_strings_collection(kCharSep, vec_1_elem) == vec_1_elem.front());
-        assert(misc::join_strings_collection(kEmptySep, vec_1_elem) == vec_1_elem.front());
-        assert(misc::join_strings_collection(vec_1_elem) == vec_1_elem.front());
-        assert(misc::join_strings_collection(kNonEmptySep, vec_1_elem) == vec_1_elem.front());
+        assert(misc::join_strings_range(kCharSep, vec_1_elem) == vec_1_elem.front());
+        assert(misc::join_strings_range(kEmptySep, vec_1_elem) == vec_1_elem.front());
+        assert(misc::join_strings_range(vec_1_elem) == vec_1_elem.front());
+        assert(misc::join_strings_range(kNonEmptySep, vec_1_elem) == vec_1_elem.front());
     }
 
     static void test_1_element_set() {
@@ -416,10 +393,10 @@ private:
         const std::set<std::basic_string<CharType>> set_1_elem{
             STR_LITERAL(CharType, "abcdefghijklmnopqrstuvwxyz"),
         };
-        assert(misc::join_strings_collection(kCharSep, set_1_elem) == *set_1_elem.begin());
-        assert(misc::join_strings_collection(kEmptySep, set_1_elem) == *set_1_elem.begin());
-        assert(misc::join_strings_collection(set_1_elem) == *set_1_elem.begin());
-        assert(misc::join_strings_collection(std::basic_string<CharType>{kNonEmptySep},
+        assert(misc::join_strings_range(kCharSep, set_1_elem) == *set_1_elem.begin());
+        assert(misc::join_strings_range(kEmptySep, set_1_elem) == *set_1_elem.begin());
+        assert(misc::join_strings_range(set_1_elem) == *set_1_elem.begin());
+        assert(misc::join_strings_range(std::basic_string<CharType>{kNonEmptySep},
                                              set_1_elem) == *set_1_elem.begin());
     }
 
@@ -432,22 +409,22 @@ private:
             STR_LITERAL(CharType, "ghi"),
         };
 
-        assert(misc::join_strings_collection(kCharSep, arr_3_elems) ==
+        assert(misc::join_strings_range(kCharSep, arr_3_elems) ==
                std::basic_string<CharType>{arr_3_elems[0]} + kCharSep +
                    std::basic_string<CharType>{arr_3_elems[1]} + kCharSep +
                    std::basic_string<CharType>{arr_3_elems[2]});
-        assert(misc::join_strings_collection(std::basic_string_view<CharType>{kEmptySep},
+        assert(misc::join_strings_range(std::basic_string_view<CharType>{kEmptySep},
                                              arr_3_elems) ==
                std::basic_string<CharType>{arr_3_elems[0]} +
                    std::basic_string<CharType>{kEmptySep} +
                    std::basic_string<CharType>{arr_3_elems[1]} +
                    std::basic_string<CharType>{kEmptySep} +
                    std::basic_string<CharType>{arr_3_elems[2]});
-        assert(misc::join_strings_collection(arr_3_elems) ==
+        assert(misc::join_strings_range(arr_3_elems) ==
                std::basic_string<CharType>{arr_3_elems[0]} +
                    std::basic_string<CharType>{arr_3_elems[1]} +
                    std::basic_string<CharType>{arr_3_elems[2]});
-        assert(misc::join_strings_collection(kNonEmptySep, arr_3_elems) ==
+        assert(misc::join_strings_range(kNonEmptySep, arr_3_elems) ==
                std::basic_string<CharType>{arr_3_elems[0]} +
                    std::basic_string<CharType>{kNonEmptySep} +
                    std::basic_string<CharType>{arr_3_elems[1]} +
@@ -461,24 +438,17 @@ private:
         const std::list<std::basic_string_view<CharType>> list_with_empty_strings{
             kEmptySep, kEmptySep, kEmptySep, kEmptySep, kEmptySep,
         };
-        assert(misc::join_strings_collection(kEmptySep, list_with_empty_strings).empty());
+        assert(misc::join_strings_range(kEmptySep, list_with_empty_strings).empty());
     }
 };
 
-void test_join_strings_collection() {
-    JoinStringsCollectionTestSuit<char>::run();
-    JoinStringsCollectionTestSuit<wchar_t>::run();
-#if CONFIG_HAS_AT_LEAST_CXX_20 && defined(__cpp_char8_t) && __cpp_char8_t >= 201811L
-    JoinStringsCollectionTestSuit<char8_t>::run();
-#endif
-    JoinStringsCollectionTestSuit<char16_t>::run();
-    JoinStringsCollectionTestSuit<char32_t>::run();
+void test_join_strings_range() {
+    JoinStringsRangeTestSuit<char>::run();
+    JoinStringsRangeTestSuit<wchar_t>::run();
+    JoinStringsRangeTestSuit<char8_t>::run();
+    JoinStringsRangeTestSuit<char16_t>::run();
+    JoinStringsRangeTestSuit<char32_t>::run();
 }
-
-#endif
-
-#if defined(JOIN_STRINGS_SUPPORTS_CUSTOM_TO_STRING) && \
-    defined(JOIN_STRINGS_SUPPORTS_CUSTOM_OSTRINGSTREAM)
 
 #define W_TO_STRING_RETURN "AbCdEfGhIjKlMnOpQrStUvWxYz~!@#$%^*()_+"
 
@@ -509,8 +479,6 @@ public:
     }
 };
 
-#endif
-
 template <class CharType>
 class StringConversionsTestSuite final {
 public:
@@ -532,22 +500,17 @@ private:
     }
 
     static void test_conversions_with_to_string() {
-#if defined(JOIN_STRINGS_SUPPORTS_CUSTOM_TO_STRING) && \
-    defined(JOIN_STRINGS_SUPPORTS_CUSTOM_OSTRINGSTREAM)
         const auto res = misc::join_strings<CharType>(0, dummy::W{}, X{}, Y{}, nullptr);
         assert(res == STR_LITERAL(CharType,
                                   "0" W_TO_STRING_RETURN X_TO_STRING_RETURN Y_OSTREAM_REPRESENTATION
                                   "null"));
-#endif
     }
 };
 
 void test_conversions() {
     StringConversionsTestSuite<char>::run();
     StringConversionsTestSuite<wchar_t>::run();
-#if CONFIG_HAS_AT_LEAST_CXX_20 && defined(__cpp_char8_t) && __cpp_char8_t >= 201811L
     StringConversionsTestSuite<char8_t>::run();
-#endif
     StringConversionsTestSuite<char16_t>::run();
     StringConversionsTestSuite<char32_t>::run();
 }
@@ -556,8 +519,6 @@ void test_conversions() {
 
 int main() {
     test_join_strings();
-#ifdef JOIN_STRINGS_SUPPORTS_JOIN_STRINGS_COLLECTION
-    test_join_strings_collection();
-#endif
+    test_join_strings_range();
     test_conversions();
 }

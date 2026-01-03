@@ -2,30 +2,21 @@
 
 #include "config_macros.hpp"
 
-#if CONFIG_HAS_AT_LEAST_CXX_17 && defined(__cpp_lib_filesystem) && \
-    __cpp_lib_filesystem >= 201703L && CONFIG_HAS_INCLUDE(<filesystem>)
+#if !CONFIG_HAS_CONCEPTS
 
-#define JOIN_STRINGS_SUPPORTS_FILESYSTEM_PATH
-
+#if !CONFIG_HAS_AT_LEAST_CXX_20
+#error "Compiler with c++20 support is required"
+#elif !CONFIG_COMPILER_SUPPORTS_CONCEPTS
+#error "Compiler with concepts support is required"
+#else
+#error "<concepts> header is required"
 #endif
 
-#if CONFIG_HAS_CONCEPTS
-
-#define JOIN_STRINGS_SUPPORTS_CUSTOM_TO_STRING
-#define JOIN_STRINGS_SUPPORTS_CUSTOM_OSTRINGSTREAM
-
-#endif
-
-#if CONFIG_HAS_CONCEPTS && defined(__cpp_lib_ranges) && __cpp_lib_ranges >= 201911L && \
-    CONFIG_HAS_INCLUDE(<ranges>)
-
-#define JOIN_STRINGS_SUPPORTS_JOIN_STRINGS_COLLECTION
+#else
 
 #include <ranges>
 
 #include "string_traits.hpp"
-
-#endif
 
 namespace misc {
 
@@ -43,21 +34,20 @@ namespace misc {
 /// @return joined args as a string of type std::basic_string<CharType>
 ///         where CharType is deducted from the @a Args... or HintCharType
 ///         if @a Args... is pack of types without associated char type
-template <class HintCharType = char, class... Args>
+template <misc::Char HintCharType = char, class... Args>
 [[nodiscard]] ATTRIBUTE_ALWAYS_INLINE inline auto join_strings(const Args &...args);
 
-#ifdef JOIN_STRINGS_SUPPORTS_JOIN_STRINGS_COLLECTION
-
 template <misc::CharOrStringLike Sep, std::ranges::forward_range Container>
-[[nodiscard]] inline auto join_strings_collection(const Sep &sep, const Container &strings);
+[[nodiscard]] ATTRIBUTE_ALWAYS_INLINE inline auto join_strings_range(const Sep &sep,
+                                                                     const Container &strings);
 
 template <std::ranges::forward_range Container>
-[[nodiscard]] inline auto join_strings_collection(const Container &strings);
-
-#endif
+[[nodiscard]] inline auto join_strings_range(const Container &strings);
 
 }  // namespace misc
 
 #define JOIN_STRINGS_INCLUDING_IMPLEMENTATION
 #include "join_strings.ipp"
 #undef JOIN_STRINGS_INCLUDING_IMPLEMENTATION
+
+#endif

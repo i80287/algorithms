@@ -19,7 +19,11 @@
 #include <vector>
 
 #include "../misc/config_macros.hpp"
+
+#if CONFIG_HAS_AT_LEAST_CXX_20 && CONFIG_HAS_INCLUDE("../misc/join_strings.hpp")
+#define HAS_JOIN_STRINGS
 #include "../misc/join_strings.hpp"
+#endif
 #include "fft.hpp"
 #if CONFIG_HAS_INCLUDE("integers_128_bit.hpp")
 #include "integers_128_bit.hpp"
@@ -2439,8 +2443,24 @@ private:
     [[noreturn]] static void throw_on_invalid_dec_str(const char* const file_location,
                                                       const char* const function_name,
                                                       const std::string_view str) {
-        throw std::invalid_argument{misc::join_strings(
-            "Can't convert string '", str, "' to longint at ", file_location, ' ', function_name)};
+#ifdef HAS_JOIN_STRINGS
+#undef HAS_JOIN_STRINGS
+        const std::string msg = misc::join_strings(
+            "Can't convert string '", str, "' to longint at ", file_location, ' ', function_name);
+#else
+        std::ignore = file_location;
+        std::ignore = function_name;
+
+        static constexpr std::string_view kPrefix = "Can't convert string '";
+        static constexpr std::string_view kSuffix = "' to longint";
+
+        std::string msg;
+        msg.reserve(kPrefix.size() + str.size() + kSuffix.size());
+        msg.append(kPrefix);
+        msg.append(str);
+        msg.append(kSuffix);
+#endif
+        throw std::invalid_argument{msg};
     }
 
     ATTRIBUTE_SIZED_ACCESS(read_only, 2, 3)
