@@ -422,7 +422,7 @@ void test_factorizer() {
     }
 }
 
-#if defined(INTEGERS_128_BIT_HPP)
+#if defined(HAS_INT128_TYPEDEF)
 
 // NOLINTBEGIN(performance-avoid-endl)
 
@@ -574,7 +574,7 @@ template <class IntType>
 
 // NOLINTEND(performance-avoid-endl)
 
-#endif  // INTEGERS_128_BIT_HPP
+#endif  // HAS_INT128_TYPEDEF
 
 void test_extended_euclid_algorithm() {
     constexpr uint64_t a = std::numeric_limits<uint64_t>::max();
@@ -586,7 +586,7 @@ void test_extended_euclid_algorithm() {
     static_assert(gcd_value == std::gcd(a, b));
     static_assert(u_value * a + v_value * b == gcd_value);
 
-#if defined(INTEGERS_128_BIT_HPP)
+#if defined(HAS_INT128_TYPEDEF)
     assert(multi_thread_test_extended_euclid_algorithm<std::int32_t>());
     assert(multi_thread_test_extended_euclid_algorithm<std::uint32_t>());
     assert(multi_thread_test_extended_euclid_algorithm<std::int64_t>());
@@ -888,7 +888,7 @@ void test_general_asserts() noexcept {
 #define LOG10_ASSERT_THAT(expr) assert(expr)
 #endif
 
-#if defined(INTEGERS_128_BIT_HPP)
+#if defined(HAS_INT128_TYPEDEF)
 #ifdef HAS_I128_CONSTEXPR
 #define I128_ASSERT_THAT(expr) ASSERT_THAT(expr)
 #else
@@ -2162,7 +2162,7 @@ void test_general_asserts() noexcept {
     ASSERT_THAT(next_even(0ULL) == 2);
     ASSERT_THAT(next_even(1ULL) == 2);
     ASSERT_THAT(next_even(2ULL) == 4);
-#ifdef INTEGERS_128_BIT_HPP
+#ifdef HAS_INT128_TYPEDEF
     I128_ASSERT_THAT(next_even(uint128_t{0}) == 2);
     I128_ASSERT_THAT(next_even(uint128_t{1}) == 2);
     I128_ASSERT_THAT(next_even(uint128_t{2}) == 4);
@@ -2170,7 +2170,7 @@ void test_general_asserts() noexcept {
 
     constexpr auto kMaxU32 = std::numeric_limits<uint32_t>::max();
     constexpr auto kMaxU64 = std::numeric_limits<uint64_t>::max();
-#ifdef INTEGERS_128_BIT_HPP
+#ifdef HAS_INT128_TYPEDEF
     constexpr auto kMaxU128 = static_cast<uint128_t>(-1);
 #endif
 
@@ -2182,7 +2182,7 @@ void test_general_asserts() noexcept {
     ASSERT_THAT(next_even(kMaxU64 - 2) == kMaxU64 - 1);
     ASSERT_THAT(next_even(kMaxU64 - 1) == 0);
     ASSERT_THAT(next_even(kMaxU64 - 0) == 0);
-#ifdef INTEGERS_128_BIT_HPP
+#ifdef HAS_INT128_TYPEDEF
     I128_ASSERT_THAT(next_even(kMaxU128 - 3) == kMaxU128 - 1);
     I128_ASSERT_THAT(next_even(kMaxU128 - 2) == kMaxU128 - 1);
     I128_ASSERT_THAT(next_even(kMaxU128 - 1) == 0);
@@ -2198,7 +2198,7 @@ void test_general_asserts() noexcept {
     ASSERT_THAT(next_odd(0ULL) == 1);
     ASSERT_THAT(next_odd(1ULL) == 3);
     ASSERT_THAT(next_odd(2ULL) == 3);
-#ifdef INTEGERS_128_BIT_HPP
+#ifdef HAS_INT128_TYPEDEF
     I128_ASSERT_THAT(next_odd(uint128_t{0}) == 1);
     I128_ASSERT_THAT(next_odd(uint128_t{1}) == 3);
     I128_ASSERT_THAT(next_odd(uint128_t{2}) == 3);

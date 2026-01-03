@@ -92,7 +92,7 @@ ATTRIBUTE_CONST constexpr uint64_t nth_fibonacci_num(const uint32_t n) noexcept 
 ///     fibonacci_num(93) == 1293530146158671551  <- overflow
 inline constexpr uint32_t kMaxFibNonOverflowU64 = 92;
 
-#if defined(INTEGERS_128_BIT_HPP)
+#if defined(HAS_INT128_TYPEDEF)
 
 /// @brief Helper namespace in order not to pollute math_functions namespace
 namespace detail {
@@ -178,7 +178,7 @@ I128_CONSTEXPR uint128_t nth_fibonacci_num_u128(const uint32_t n) noexcept {
 ///                               overflow
 inline constexpr uint32_t kMaxFibNonOverflowU128 = 185;
 
-#endif  // INTEGERS_128_BIT_HPP
+#endif  // HAS_INT128_TYPEDEF
 
 // NOLINTEND(cppcoreguidelines-avoid-c-arrays, hicpp-avoid-c-arrays, modernize-avoid-c-arrays)
 

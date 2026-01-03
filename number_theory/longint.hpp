@@ -524,7 +524,7 @@ public:
         this->allocate_default_capacity_64();
         this->assign_i64_unchecked(n);
     }
-#if defined(INTEGERS_128_BIT_HPP)
+#if defined(HAS_INT128_TYPEDEF)
     /* implicit */ longint(const uint128_t n) {
         this->allocate_default_capacity_128();
         this->assign_u128_unchecked(n);
@@ -577,7 +577,7 @@ public:
         this->assign_i64_unchecked(n);
         return *this;
     }
-#if defined(INTEGERS_128_BIT_HPP)
+#if defined(HAS_INT128_TYPEDEF)
     longint& operator=(const uint128_t n) ATTRIBUTE_LIFETIME_BOUND {
         this->ensure_default_capacity_op_asgn_128();
         this->assign_u128_unchecked(n);
@@ -1001,7 +1001,7 @@ public:
             }
         }
     }
-#if defined(INTEGERS_128_BIT_HPP)
+#if defined(HAS_INT128_TYPEDEF)
     [[nodiscard]] ATTRIBUTE_PURE I128_CONSTEXPR bool operator==(const uint128_t n) const noexcept {
         if ((config::is_constant_evaluated() || config::is_gcc_constant_p(n)) && n == 0) {
             return is_zero();
@@ -1135,7 +1135,7 @@ public:
     [[nodiscard]] ATTRIBUTE_PURE constexpr bool operator!=(uint64_t n) const noexcept {
         return !(*this == n);
     }
-#if defined(INTEGERS_128_BIT_HPP)
+#if defined(HAS_INT128_TYPEDEF)
     [[nodiscard]] ATTRIBUTE_PURE I128_CONSTEXPR bool operator!=(uint128_t n) const noexcept {
         return !(*this == n);
     }
@@ -1413,7 +1413,7 @@ public:
         return to_uint<std::uint64_t>();
     }
 
-#if defined(INTEGERS_128_BIT_HPP)
+#if defined(HAS_INT128_TYPEDEF)
     ATTRIBUTE_ALWAYS_INLINE
     ATTRIBUTE_PURE
     [[nodiscard]] constexpr bool fits_in_uint128() const noexcept {
@@ -2892,7 +2892,7 @@ private:
         this->assign_u64_unchecked(math_functions::uabs(n));
         size_ *= sgn;
     }
-#if defined(INTEGERS_128_BIT_HPP)
+#if defined(HAS_INT128_TYPEDEF)
     void allocate_default_capacity_128() {
         nums_ = allocate_uninitialized(kDefaultLINumsCapacity128);
         capacity_ = kDefaultLINumsCapacity128;

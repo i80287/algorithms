@@ -483,7 +483,7 @@ inline std::basic_string<CharType> ToStringOneArg(const T &arg) {
     } else
 #endif
         if constexpr (std::is_scalar_v<T>
-#ifdef INTEGERS_128_BIT_HPP
+#ifdef HAS_INT128_TYPEDEF
                       || std::is_same_v<T, int128_t> || std::is_same_v<T, uint128_t>
 #endif
         ) {
