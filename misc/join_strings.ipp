@@ -787,7 +787,7 @@ template <misc::Char T, std::ranges::forward_range Container>
     const size_t total_size = join_strings_detail::StringsTotalSize(strings);
     std::basic_string<T> result(total_size, '\0');
     T *write_ptr = result.data();
-    for (const auto &elem : strings) {
+    for (const std::basic_string_view<T> elem : strings) {
         std::char_traits<T>::copy(write_ptr, elem.data(), elem.size());
         write_ptr += elem.size();
     }
@@ -801,7 +801,7 @@ template <misc::Char T, std::ranges::forward_range Container>
     const size_t total_size = join_strings_detail::StringsTotalSizeWithCharSep(strings);
     std::basic_string<T> result(total_size, '\0');
     T *write_ptr = result.data();
-    for (const auto &elem : strings) {
+    for (const std::basic_string_view<T> elem : strings) {
         std::char_traits<T>::copy(write_ptr, elem.data(), elem.size());
         write_ptr += elem.size();
         *write_ptr = sep;
@@ -832,7 +832,7 @@ template <misc::Char T, std::ranges::forward_range Container>
 
     T *write_ptr = result.data();
     {
-        const auto &elem = *iter;
+        const std::basic_string_view<T> elem = *iter;
         std::char_traits<T>::copy(write_ptr, elem.data(), elem.size());
         write_ptr += elem.size();
     }
@@ -842,7 +842,7 @@ template <misc::Char T, std::ranges::forward_range Container>
         CONFIG_ASSUME_STATEMENT(sep_size >= 2);
         std::char_traits<T>::copy(write_ptr, sep.data(), sep_size);
         write_ptr += sep_size;
-        const auto &elem = *iter;
+        const std::basic_string_view<T> elem = *iter;
         std::char_traits<T>::copy(write_ptr, elem.data(), elem.size());
         write_ptr += elem.size();
     }
