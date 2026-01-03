@@ -49,8 +49,7 @@ template <size_t PatternsSize>
         return false;
     }
 
-    const OccurancesContainer found_occurances =
-        t.CollectAllSubstringsFromText<OccurancesContainer>(text);
+    const OccurancesContainer found_occurances = t.CollectAllSubstringsFromText<OccurancesContainer>(text);
     return found_occurances == expected_occurances;
 }
 
@@ -60,9 +59,8 @@ void test0() {
     };
     constexpr std::string_view text = "ababcdacafaasbfasbabcc";
     const OccurancesContainer expected_occurances = {
-        {"a", 0},  {"ab", 0},    {"ba", 1},  {"a", 2},   {"ab", 2},
-        {"a", 6},  {"a", 8},     {"a", 10},  {"aa", 10}, {"a", 11},
-        {"a", 15}, {"fasb", 14}, {"ba", 17}, {"a", 18},  {"ab", 18},
+        {"a", 0},   {"ab", 0}, {"ba", 1}, {"a", 2},     {"ab", 2},  {"a", 6},  {"a", 8},   {"a", 10},
+        {"aa", 10}, {"a", 11}, {"a", 15}, {"fasb", 14}, {"ba", 17}, {"a", 18}, {"ab", 18},
     };
 
     assert(test_actrie(patterns, text, expected_occurances));
@@ -93,15 +91,14 @@ void test2() {
         "acabaababcbabbacacbbcbcababbcbcbacabcabacbcababacababcbabccaababacabcbabcbacbabcabcbbababa"
         "caababababcbbcbcbcbcbcbababcbabcabccbbcbcbcabaabacabbacbabca";
     const OccurancesContainer expected_occurances = {
-        {"aba", 0},      {"aba", 11},     {"cabaaba", 10},  {"aba", 14},     {"aba", 37},
-        {"cabaaba", 36}, {"aba", 40},     {"aba", 46},      {"cabaaba", 45}, {"aba", 49},
-        {"baca", 50},    {"abacaba", 49}, {"aba", 53},      {"cabaaba", 52}, {"aba", 56},
-        {"aba", 68},     {"aba", 80},     {"baca", 81},     {"baca", 89},    {"aba", 92},
-        {"cabaaba", 91}, {"aba", 95},     {"baca", 103},    {"aba", 113},    {"baca", 121},
-        {"aba", 127},    {"aba", 133},    {"aba", 135},     {"baca", 136},   {"abacaba", 135},
-        {"aba", 139},    {"aba", 150},    {"aba", 152},     {"baca", 153},   {"aba", 175},
-        {"aba", 177},    {"baca", 178},   {"aba", 182},     {"aba", 184},    {"aba", 186},
-        {"aba", 203},    {"aba", 223},    {"cabaaba", 222}, {"aba", 226},    {"baca", 227},
+        {"aba", 0},       {"aba", 11},     {"cabaaba", 10}, {"aba", 14},   {"aba", 37},   {"cabaaba", 36},
+        {"aba", 40},      {"aba", 46},     {"cabaaba", 45}, {"aba", 49},   {"baca", 50},  {"abacaba", 49},
+        {"aba", 53},      {"cabaaba", 52}, {"aba", 56},     {"aba", 68},   {"aba", 80},   {"baca", 81},
+        {"baca", 89},     {"aba", 92},     {"cabaaba", 91}, {"aba", 95},   {"baca", 103}, {"aba", 113},
+        {"baca", 121},    {"aba", 127},    {"aba", 133},    {"aba", 135},  {"baca", 136}, {"abacaba", 135},
+        {"aba", 139},     {"aba", 150},    {"aba", 152},    {"baca", 153}, {"aba", 175},  {"aba", 177},
+        {"baca", 178},    {"aba", 182},    {"aba", 184},    {"aba", 186},  {"aba", 203},  {"aba", 223},
+        {"cabaaba", 222}, {"aba", 226},    {"baca", 227},
     };
 
     assert(test_actrie(patterns, text, expected_occurances));
@@ -112,11 +109,10 @@ void test2() {
 namespace replacing_actrie_tests {
 
 template <bool IsCaseInsensetive = true, size_t PatternsSize>
-[[nodiscard]] bool test_replacing_actrie(
-    const std::string_view (&patterns_with_replacements)[PatternsSize][2],
-    std::string& input_text,
-    const std::string_view expected,
-    const bool replace_all_occurances) {
+[[nodiscard]] bool test_replacing_actrie(const std::string_view (&patterns_with_replacements)[PatternsSize][2],
+                                         std::string& input_text,
+                                         const std::string_view expected,
+                                         const bool replace_all_occurances) {
     using BuilderType = actrie::ReplacingACTrieBuilder<
         /* AlphabetStart = */ '-',
         /* AlphabetEnd = */ '}',
@@ -436,11 +432,9 @@ void test10() {
     constexpr std::string_view expected_after_one_replacement = "Qjkzabcabcghiabc";
     constexpr std::string_view expected_after_all_replacements = "Qjkzdefdefjkzdef";
     std::string input_text_copy(input_text);
-    assert(test_replacing_actrie(patterns_with_replacements, input_text_copy,
-                                 expected_after_one_replacement,
+    assert(test_replacing_actrie(patterns_with_replacements, input_text_copy, expected_after_one_replacement,
                                  /*replace_all_occurances=*/false));
-    assert(test_replacing_actrie(patterns_with_replacements, input_text,
-                                 expected_after_all_replacements,
+    assert(test_replacing_actrie(patterns_with_replacements, input_text, expected_after_all_replacements,
                                  /*replace_all_occurances=*/true));
 }
 

@@ -64,13 +64,12 @@ void test2() {
     const auto start = std::chrono::high_resolution_clock::now();
     const std::vector<std::string_view> res = search_lib::Search(text, query, result_size);
     const auto end = std::chrono::high_resolution_clock::now();
-    [[maybe_unused]] const auto duration =
-        std::chrono::duration_cast<std::chrono::nanoseconds>(end - start);
+    [[maybe_unused]] const auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start);
 
     constexpr bool kPrintResults = false;
     if constexpr (kPrintResults) {
-        std::cout << "Test 2\nText length: " << text.size() << "\nFound " << res.size()
-                  << " lines in " << duration.count() << " ns :\n\n";
+        std::cout << "Test 2\nText length: " << text.size() << "\nFound " << res.size() << " lines in "
+                  << duration.count() << " ns :\n\n";
         for (const std::string_view line : res) {
             std::cout << line << '\n';
         }

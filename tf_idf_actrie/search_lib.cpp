@@ -26,19 +26,18 @@ using ACTrie = typename ACTrieBuilder::ACTrieType;
 
 template <char QueryWordsDelimiter = ' '>
 [[nodiscard]] ACTrie ParseQuery(const string_view query) {
-    const size_t query_words_count = std::accumulate(
-        query.begin(), query.end(), query.empty() ? size_t{0} : size_t{1},
-        [](size_t current_count, char c) constexpr noexcept -> size_t {
-            return current_count + (c == QueryWordsDelimiter ? size_t{1} : size_t{0});
-        });
+    const size_t query_words_count =
+        std::accumulate(query.begin(), query.end(), query.empty() ? size_t{0} : size_t{1},
+                        [](size_t current_count, char c) constexpr noexcept -> size_t {
+                            return current_count + (c == QueryWordsDelimiter ? size_t{1} : size_t{0});
+                        });
 
     auto act_builder = ACTrieBuilder::WithCapacity(query_words_count);
 
     size_t prev_delim_index = static_cast<size_t>(-1);
     for (size_t i = 0; i < query.size(); i++) {
         if (query[i] == QueryWordsDelimiter) {
-            const string_view slice(query.data() + (prev_delim_index + 1),
-                                    i - (prev_delim_index + 1));
+            const string_view slice(query.data() + (prev_delim_index + 1), i - (prev_delim_index + 1));
             if (!slice.empty()) {
                 act_builder.AddPattern(slice);
             }
@@ -47,8 +46,7 @@ template <char QueryWordsDelimiter = ' '>
         }
     }
 
-    const string_view slice(query.data() + (prev_delim_index + 1),
-                            query.size() - (prev_delim_index + 1));
+    const string_view slice(query.data() + (prev_delim_index + 1), query.size() - (prev_delim_index + 1));
     if (!slice.empty()) {
         act_builder.AddPattern(slice);
     }
@@ -59,9 +57,7 @@ template <char QueryWordsDelimiter = ' '>
 }  // namespace
 
 template <bool IsExactWordsMatching>
-vector<string_view> Search(const string_view text,
-                           const string_view query,
-                           const size_t max_result_size) {
+vector<string_view> Search(const string_view text, const string_view query, const size_t max_result_size) {
     const ACTrie act = ParseQuery(query);
     const size_t query_words_count = act.PatternsSize();
 
@@ -80,16 +76,15 @@ vector<string_view> Search(const string_view text,
                                                  /* CountEmptyLines = */ false>(
             text,
             [&query_words_on_lines](size_t line_number, size_t query_word_index) constexpr {
-                const bool new_line = query_words_on_lines.empty() ||
-                                      query_words_on_lines.back().LineNumber != line_number;
+                const bool new_line =
+                    query_words_on_lines.empty() || query_words_on_lines.back().LineNumber != line_number;
                 if (new_line) {
                     query_words_on_lines.emplace_back().LineNumber = line_number;
                 }
                 ++query_words_on_lines.back().QueryWordsIndexes[query_word_index];
             },
             [&query_words_on_lines](const size_t line_number, const size_t words_on_current_line,
-                                    const size_t line_start_index,
-                                    const size_t line_end_index) constexpr noexcept {
+                                    const size_t line_start_index, const size_t line_end_index) constexpr noexcept {
                 if (unlikely(query_words_on_lines.empty())) {
                     return;
                 }
@@ -108,16 +103,14 @@ vector<string_view> Search(const string_view text,
     vector<double> query_words_inv_idf_log(query_words_count);
     const double total_lines_log = std::log(static_cast<double>(total_lines));
     for (size_t query_word_index = 0; query_word_index < query_words_count; ++query_word_index) {
-        const size_t count = std::accumulate(
-            query_words_on_lines.begin(), query_words_on_lines.end(), size_t{0},
-            [query_word_index](const size_t current_count, const LineInfo& line_info) noexcept {
-                return current_count +
-                       size_t{line_info.QueryWordsIndexes.contains(query_word_index)};
-            });
+        const size_t count =
+            std::accumulate(query_words_on_lines.begin(), query_words_on_lines.end(), size_t{0},
+                            [query_word_index](const size_t current_count, const LineInfo& line_info) noexcept {
+                                return current_count + size_t{line_info.QueryWordsIndexes.contains(query_word_index)};
+                            });
 
         // log(total_lines / count);
-        const double word_idf_log =
-            count > 0 ? total_lines_log - std::log(static_cast<double>(count)) : 0;
+        const double word_idf_log = count > 0 ? total_lines_log - std::log(static_cast<double>(count)) : 0;
         query_words_inv_idf_log[query_word_index] = word_idf_log;
     }
 
@@ -140,11 +133,10 @@ vector<string_view> Search(const string_view text,
         line_index++;
     }
 
-    std::stable_sort(
-        lines_score.begin(), lines_score.end(),
-        [](const LineScoreWithIndex& p1, const LineScoreWithIndex& p2) constexpr noexcept {
-            return p1.Score > p2.Score;
-        });
+    std::stable_sort(lines_score.begin(), lines_score.end(),
+                     [](const LineScoreWithIndex& p1, const LineScoreWithIndex& p2) constexpr noexcept {
+                         return p1.Score > p2.Score;
+                     });
 
     const size_t result_size = std::min(lines_score.size(), max_result_size);
     vector<string_view> result_lines(result_size);
@@ -152,18 +144,13 @@ vector<string_view> Search(const string_view text,
         const size_t line_index = lines_score[result_index].LineIndex;
         const size_t line_start_index = query_words_on_lines[line_index].LineStartIndex;
         const size_t line_end_index = query_words_on_lines[line_index].LineEndIndex;
-        result_lines[result_index] =
-            text.substr(line_start_index, line_end_index - line_start_index);
+        result_lines[result_index] = text.substr(line_start_index, line_end_index - line_start_index);
     }
 
     return result_lines;
 }
 
-template vector<string_view> Search<true>(string_view text,
-                                          string_view query,
-                                          size_t max_result_size);
-template vector<string_view> Search<false>(string_view text,
-                                           string_view query,
-                                           size_t max_result_size);
+template vector<string_view> Search<true>(string_view text, string_view query, size_t max_result_size);
+template vector<string_view> Search<false>(string_view text, string_view query, size_t max_result_size);
 
 }  // namespace search_lib

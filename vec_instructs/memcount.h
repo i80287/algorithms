@@ -20,14 +20,11 @@ EXTERN_WITH_C_LINKAGE_BEGIN
 
 #define MEMCOUNT_ATTRIBUTES                                            \
     ATTRIBUTE_PURE ATTRIBUTE_NOTHROW ATTRIBUTE_NODISCARD_WITH_MESSAGE( \
-        "return value of the memcount should not be ommited")          \
-        ATTRIBUTE_SIZED_ACCESS(read_only, 1, 3)
+        "return value of the memcount should not be ommited") ATTRIBUTE_SIZED_ACCESS(read_only, 1, 3)
 
 ATTRIBUTE_TARGET("popcnt,avx,avx2")
 MEMCOUNT_ATTRIBUTES
-static inline size_t memcount_avx(const uint8_t* const src,
-                                  const uint8_t chr,
-                                  size_t size) CONFIG_NOEXCEPT_FUNCTION {
+static inline size_t memcount_avx(const uint8_t* const src, const uint8_t chr, size_t size) CONFIG_NOEXCEPT_FUNCTION {
 #if defined(__cplusplus)
 #if defined(__clang__)
 #pragma clang diagnostic push
@@ -40,8 +37,7 @@ static inline size_t memcount_avx(const uint8_t* const src,
 #endif
 
     const uint8_t* not_aligned_address = src;
-    const __m256i* aligned_32_address =
-        (const __m256i*)(((uintptr_t)not_aligned_address + 31) & ~(uintptr_t)31);
+    const __m256i* aligned_32_address = (const __m256i*)(((uintptr_t)not_aligned_address + 31) & ~(uintptr_t)31);
 
     uintptr_t mem_offset = (uintptr_t)aligned_32_address - (uintptr_t)not_aligned_address;
     if (unlikely(mem_offset > size)) {
@@ -50,23 +46,20 @@ static inline size_t memcount_avx(const uint8_t* const src,
     size -= mem_offset;
 
     size_t eq_count = 0;
-    for (const uint32_t cmp_chr_u32 = (uint32_t)(unsigned int)(chr); mem_offset--;
-         ++not_aligned_address) {
+    for (const uint32_t cmp_chr_u32 = (uint32_t)(unsigned int)(chr); mem_offset--; ++not_aligned_address) {
         eq_count += *not_aligned_address == cmp_chr_u32;
     }
 
     mem_offset = size % 32;
     size_t steps = size / 32;
 
-    for (const __m256i chr_vector = _mm256_set1_epi8((char)chr); steps > 0;
-         --steps, ++aligned_32_address) {
-        eq_count += (uint32_t)_popcnt32(
-            (uint32_t)_mm256_movemask_epi8(_mm256_cmpeq_epi8(chr_vector, *aligned_32_address)));
+    for (const __m256i chr_vector = _mm256_set1_epi8((char)chr); steps > 0; --steps, ++aligned_32_address) {
+        eq_count +=
+            (uint32_t)_popcnt32((uint32_t)_mm256_movemask_epi8(_mm256_cmpeq_epi8(chr_vector, *aligned_32_address)));
     }
 
     not_aligned_address = (const uint8_t*)aligned_32_address;
-    for (const uint32_t cmp_chr_u32 = (uint32_t)(unsigned int)(chr); mem_offset--;
-         ++not_aligned_address) {
+    for (const uint32_t cmp_chr_u32 = (uint32_t)(unsigned int)(chr); mem_offset--; ++not_aligned_address) {
         eq_count += *not_aligned_address == cmp_chr_u32;
     }
 
@@ -106,8 +99,7 @@ __attribute__((no_sanitize_address, no_sanitize_thread, no_sanitize_undefined))
 #endif
 static inline size_t (*resolve_memcount(void))(const uint8_t*, uint8_t, size_t) {
     __builtin_cpu_init();
-    return __builtin_cpu_supports("avx2") && __builtin_cpu_supports("popcnt") ? &memcount_avx
-                                                                              : &memcount_default;
+    return __builtin_cpu_supports("avx2") && __builtin_cpu_supports("popcnt") ? &memcount_avx : &memcount_default;
 }
 
 #ifdef __linux__
@@ -138,8 +130,7 @@ size_t (*memcount)(const uint8_t* src, uint8_t chr, size_t size) = NULL;
 // clang-format on
 
 ATTRIBUTE_NOTHROW
-__attribute__((constructor)) static inline void memcount_initializer(void)
-    CONFIG_NOEXCEPT_FUNCTION {
+__attribute__((constructor)) static inline void memcount_initializer(void) CONFIG_NOEXCEPT_FUNCTION {
     memcount = resolve_memcount();
 }
 
@@ -151,9 +142,7 @@ __attribute__((constructor)) static inline void memcount_initializer(void)
 
 MEMCOUNT_ATTRIBUTES
 ATTRIBUTE_ALWAYS_INLINE
-static inline size_t memcount(const uint8_t* const src,
-                              const uint8_t chr,
-                              const size_t size) CONFIG_NOEXCEPT_FUNCTION {
+static inline size_t memcount(const uint8_t* const src, const uint8_t chr, const size_t size) CONFIG_NOEXCEPT_FUNCTION {
     return memcount_default(src, chr, size);
 }
 

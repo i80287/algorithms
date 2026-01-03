@@ -16,9 +16,7 @@ namespace string_quick_sort {
 namespace {
 
 template <class Iterator, class CompareFn>
-constexpr Iterator move_strings_to_left(Iterator begin,
-                                        Iterator end,
-                                        CompareFn compare_func) noexcept {
+constexpr Iterator move_strings_to_left(Iterator begin, Iterator end, CompareFn compare_func) noexcept {
     auto insertion_pos_iter = std::find_if_not(begin, end, compare_func);
     if (insertion_pos_iter == end) {
         return insertion_pos_iter;
@@ -91,33 +89,28 @@ constexpr PartitionResult<Iterator> partition(Iterator begin,
         return static_cast<UCharType>(s[common_prefix_length]) < pivot_cmp_char;
     });
 
-    Iterator first_greater =
-        move_strings_to_left(begin, end, [=](const StringType& s) constexpr noexcept {
-            return static_cast<UCharType>(s[common_prefix_length]) == pivot_cmp_char;
-        });
+    Iterator first_greater = move_strings_to_left(begin, end, [=](const StringType& s) constexpr noexcept {
+        return static_cast<UCharType>(s[common_prefix_length]) == pivot_cmp_char;
+    });
 
     return {begin, first_greater};
 }
 
 template <class Iterator>
-constexpr void string_quick_sort_impl(Iterator begin,
-                                      Iterator end,
-                                      const std::size_t common_prefix_length) noexcept {
+constexpr void string_quick_sort_impl(Iterator begin, Iterator end, const std::size_t common_prefix_length) noexcept {
     if (std::distance(begin, end) <= 1) {
         return;
     }
 
-    begin = move_strings_to_left(begin, end,
-                                 [=](const IteratorStringType<Iterator>& s) constexpr noexcept {
-                                     return s.size() == common_prefix_length;
-                                 });
+    begin = move_strings_to_left(begin, end, [=](const IteratorStringType<Iterator>& s) constexpr noexcept {
+        return s.size() == common_prefix_length;
+    });
     if (std::distance(begin, end) <= 1) {
         return;
     }
 
     const auto pivot_iter = select_pivot_string(begin, end);
-    const auto [first_equal, first_greater] =
-        partition(begin, end, pivot_iter, common_prefix_length);
+    const auto [first_equal, first_greater] = partition(begin, end, pivot_iter, common_prefix_length);
     string_quick_sort_impl(begin, first_equal, common_prefix_length);
     string_quick_sort_impl(first_equal, first_greater, common_prefix_length + 1);
     string_quick_sort_impl(first_greater, end, common_prefix_length);

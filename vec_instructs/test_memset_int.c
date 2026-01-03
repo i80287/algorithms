@@ -18,9 +18,8 @@ int main(void) {
         int32_t* const arr = &buffer[offset];
         for (size_t i = 0; i <= arr_len; i++) {
             const uint8_t kMagicByte = 251;
-            const int32_t kMagicInt32 =
-                (int32_t)((((uint32_t)kMagicByte) << 24) | (((uint32_t)kMagicByte) << 16) |
-                          (((uint32_t)kMagicByte) << 8) | (((uint32_t)kMagicByte) << 0));
+            const int32_t kMagicInt32 = (int32_t)((((uint32_t)kMagicByte) << 24) | (((uint32_t)kMagicByte) << 16) |
+                                                  (((uint32_t)kMagicByte) << 8) | (((uint32_t)kMagicByte) << 0));
 
             memset(arr, kMagicByte, arr_len * sizeof(int32_t));
             memset_int(arr, k, i);

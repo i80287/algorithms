@@ -126,8 +126,7 @@ int main() {
                 uint64_t p_m1 = bin_pow(uint64_t(prime_number), uint64_t(prime_power - 1));
 
                 uint64_t k_divs_sum =
-                    divs_sum[current_k] *
-                    ((p_m1 * prime_number * prime_number - 1) / (prime_number - 1));
+                    divs_sum[current_k] * ((p_m1 * prime_number * prime_number - 1) / (prime_number - 1));
                 sum3 += k_divs_sum;
                 divs_sum[k] = k_divs_sum;
 
@@ -135,8 +134,7 @@ int main() {
                 sum2 += k_divs_count;
                 divs_count[k] = k_divs_count;
 
-                uint32_t k_euler_func =
-                    uint32_t(euler_func[current_k] * (p_m1 * (prime_number - 1)));
+                uint32_t k_euler_func = uint32_t(euler_func[current_k] * (p_m1 * (prime_number - 1)));
                 sum4 += k_euler_func;
                 euler_func[k] = k_euler_func;
                 break;

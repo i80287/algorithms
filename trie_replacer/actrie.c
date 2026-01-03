@@ -19,8 +19,7 @@
 #endif
 
 #if defined(__GNUC__)
-#pragma GCC diagnostic ignored \
-    "-Wpedantic"  // MISSING_SENTIEL and DEFAULT_VECTOR_CAPACITY are not int
+#pragma GCC diagnostic ignored "-Wpedantic"  // MISSING_SENTIEL and DEFAULT_VECTOR_CAPACITY are not int
 #endif
 
 enum actrie_constants_internal {
@@ -65,9 +64,7 @@ static inline void actrie_thiscall string_t_ctor1(struct string_t* this_, const 
     this_->size = size;
 }
 
-static inline void actrie_thiscall string_t_ctor2(struct string_t* this_,
-                                                  const char* c_str,
-                                                  size_t size) {
+static inline void actrie_thiscall string_t_ctor2(struct string_t* this_, const char* c_str, size_t size) {
     this_->size = 0;
     if (c_str == NULL) {
         this_->c_str = NULL;
@@ -93,13 +90,10 @@ static inline void actrie_thiscall string_t_dtor(struct string_t* this_) {
     }
 }
 
-static inline void actrie_thiscall vector_actrie_node_t_ctor1(struct vector_actrie_node_t* this_,
-                                                              size_t initial_size) {
-    size_t capacity = ((size_t)DEFAULT_VECTOR_CAPACITY >= initial_size)
-                          ? (size_t)DEFAULT_VECTOR_CAPACITY
-                          : initial_size;
-    struct actrie_node_t* data = this_->data =
-        (struct actrie_node_t*)malloc(capacity * sizeof(struct actrie_node_t));
+static inline void actrie_thiscall vector_actrie_node_t_ctor1(struct vector_actrie_node_t* this_, size_t initial_size) {
+    size_t capacity =
+        ((size_t)DEFAULT_VECTOR_CAPACITY >= initial_size) ? (size_t)DEFAULT_VECTOR_CAPACITY : initial_size;
+    struct actrie_node_t* data = this_->data = (struct actrie_node_t*)malloc(capacity * sizeof(struct actrie_node_t));
     if (data == NULL) {
         out_of_memory_handler();
         return;
@@ -122,14 +116,12 @@ static inline void actrie_thiscall vector_actrie_node_t_dtor(struct vector_actri
     }
 }
 
-static void actrie_thiscall vector_actrie_node_t_reserve(struct vector_actrie_node_t* this_,
-                                                         size_t new_capacity) {
+static void actrie_thiscall vector_actrie_node_t_reserve(struct vector_actrie_node_t* this_, size_t new_capacity) {
     if (this_->capacity >= new_capacity) {
         return;
     }
 
-    struct actrie_node_t* new_data =
-        (struct actrie_node_t*)malloc(new_capacity * sizeof(struct actrie_node_t));
+    struct actrie_node_t* new_data = (struct actrie_node_t*)malloc(new_capacity * sizeof(struct actrie_node_t));
     if (new_data == NULL) {
         out_of_memory_handler();
         return;
@@ -147,8 +139,7 @@ vector_actrie_node_t_emplace_back_with_resize(struct vector_actrie_node_t* this_
     size_t capacity = this_->capacity;
     static_assert(DEFAULT_VECTOR_CAPACITY > 0);
     capacity *= 2;  // Must not be 0, because capacity >= DEFAULT_VECTOR_CAPACITY > 0
-    struct actrie_node_t* new_data =
-        (struct actrie_node_t*)malloc(sizeof(struct actrie_node_t) * capacity);
+    struct actrie_node_t* new_data = (struct actrie_node_t*)malloc(sizeof(struct actrie_node_t) * capacity);
     if (new_data == NULL) {
         out_of_memory_handler();
         return;
@@ -163,8 +154,7 @@ vector_actrie_node_t_emplace_back_with_resize(struct vector_actrie_node_t* this_
     this_->capacity = capacity;
 }
 
-static inline void actrie_thiscall
-vector_actrie_node_t_emplace_back(struct vector_actrie_node_t* this_) {
+static inline void actrie_thiscall vector_actrie_node_t_emplace_back(struct vector_actrie_node_t* this_) {
     size_t size = this_->size;
     size_t capacity = this_->capacity;
     if (size < capacity) {
@@ -196,8 +186,7 @@ static inline void actrie_thiscall vector_uint32_t_dtor(struct vector_uint32_t* 
     }
 }
 
-static inline void actrie_thiscall vector_uint32_t_reserve(struct vector_uint32_t* this_,
-                                                           size_t new_capacity) {
+static inline void actrie_thiscall vector_uint32_t_reserve(struct vector_uint32_t* this_, size_t new_capacity) {
     if (this_->capacity >= new_capacity) {
         return;
     }
@@ -214,8 +203,8 @@ static inline void actrie_thiscall vector_uint32_t_reserve(struct vector_uint32_
     this_->capacity = new_capacity;
 }
 
-static void actrie_thiscall actrie_noinline
-vector_uint32_t_emplace_back1_with_resize(struct vector_uint32_t* this_, uint32_t arg0) {
+static void actrie_thiscall actrie_noinline vector_uint32_t_emplace_back1_with_resize(struct vector_uint32_t* this_,
+                                                                                      uint32_t arg0) {
     size_t size = this_->size;
     size_t capacity = this_->capacity;
 
@@ -237,8 +226,7 @@ vector_uint32_t_emplace_back1_with_resize(struct vector_uint32_t* this_, uint32_
     this_->capacity = capacity;
 }
 
-static inline void actrie_thiscall vector_uint32_t_emplace_back1(struct vector_uint32_t* this_,
-                                                                 uint32_t arg0) {
+static inline void actrie_thiscall vector_uint32_t_emplace_back1(struct vector_uint32_t* this_, uint32_t arg0) {
     size_t size = this_->size;
     size_t capacity = this_->capacity;
     if (size < capacity) {
@@ -275,8 +263,7 @@ static inline void actrie_thiscall vector_string_t_dtor(struct vector_string_t* 
     this_->size = this_->capacity = 0;
 }
 
-static inline void actrie_thiscall vector_string_t_reserve(struct vector_string_t* this_,
-                                                           size_t new_capacity) {
+static inline void actrie_thiscall vector_string_t_reserve(struct vector_string_t* this_, size_t new_capacity) {
     if (this_->capacity >= new_capacity) {
         return;
     }
@@ -293,8 +280,9 @@ static inline void actrie_thiscall vector_string_t_reserve(struct vector_string_
     this_->capacity = new_capacity;
 }
 
-static void actrie_thiscall actrie_noinline vector_string_t_emplace_back2_with_resize(
-    struct vector_string_t* this_, const char* arg0, size_t arg1) {
+static void actrie_thiscall actrie_noinline vector_string_t_emplace_back2_with_resize(struct vector_string_t* this_,
+                                                                                      const char* arg0,
+                                                                                      size_t arg1) {
     size_t size = this_->size;
     size_t capacity = this_->capacity;
 
@@ -340,10 +328,8 @@ struct vector_replacement_info_t {
     size_t capacity;
 };
 
-static inline void actrie_thiscall
-vector_replacement_info_t_ctor(struct vector_replacement_info_t* this_) {
-    this_->data = (struct replacement_info_t*)malloc(DEFAULT_VECTOR_CAPACITY *
-                                                     sizeof(struct replacement_info_t));
+static inline void actrie_thiscall vector_replacement_info_t_ctor(struct vector_replacement_info_t* this_) {
+    this_->data = (struct replacement_info_t*)malloc(DEFAULT_VECTOR_CAPACITY * sizeof(struct replacement_info_t));
     this_->size = 0;
     this_->capacity = DEFAULT_VECTOR_CAPACITY;
     if (this_->data == NULL) {
@@ -352,8 +338,7 @@ vector_replacement_info_t_ctor(struct vector_replacement_info_t* this_) {
     }
 }
 
-static inline void actrie_thiscall
-vector_replacement_info_t_dtor(struct vector_replacement_info_t* this_) {
+static inline void actrie_thiscall vector_replacement_info_t_dtor(struct vector_replacement_info_t* this_) {
     struct replacement_info_t* data = this_->data;
     if (data != NULL) {
         free(data);
@@ -388,8 +373,9 @@ static void actrie_thiscall actrie_noinline vector_replacement_info_t_emplace_ba
     this_->capacity = capacity;
 }
 
-static inline void actrie_thiscall vector_replacement_info_t_emplace_back2(
-    struct vector_replacement_info_t* this_, uint32_t word_l_index_in_text, uint32_t word_index) {
+static inline void actrie_thiscall vector_replacement_info_t_emplace_back2(struct vector_replacement_info_t* this_,
+                                                                           uint32_t word_l_index_in_text,
+                                                                           uint32_t word_index) {
     size_t size = this_->size;
     if (size < this_->capacity) {
         (this_->data + size)->word_l_index_in_text = word_l_index_in_text;
@@ -454,35 +440,21 @@ static_assert(constexpr_to_lower('~') == '~');
 static_assert(constexpr_to_lower('{') == '{');
 static_assert(constexpr_to_lower('}') == '}');
 
-static_assert(constexpr_char_to_edge_index(constexpr_to_upper('A')) ==
-              constexpr_char_to_edge_index('A'));
-static_assert(constexpr_char_to_edge_index(constexpr_to_upper('Z')) ==
-              constexpr_char_to_edge_index('Z'));
-static_assert(constexpr_char_to_edge_index(constexpr_to_upper('a')) ==
-              constexpr_char_to_edge_index('A'));
-static_assert(constexpr_char_to_edge_index(constexpr_to_upper('z')) ==
-              constexpr_char_to_edge_index('Z'));
-static_assert(constexpr_char_to_edge_index(constexpr_to_upper('~')) ==
-              constexpr_char_to_edge_index('~'));
-static_assert(constexpr_char_to_edge_index(constexpr_to_upper('{')) ==
-              constexpr_char_to_edge_index('{'));
-static_assert(constexpr_char_to_edge_index(constexpr_to_upper('}')) ==
-              constexpr_char_to_edge_index('}'));
+static_assert(constexpr_char_to_edge_index(constexpr_to_upper('A')) == constexpr_char_to_edge_index('A'));
+static_assert(constexpr_char_to_edge_index(constexpr_to_upper('Z')) == constexpr_char_to_edge_index('Z'));
+static_assert(constexpr_char_to_edge_index(constexpr_to_upper('a')) == constexpr_char_to_edge_index('A'));
+static_assert(constexpr_char_to_edge_index(constexpr_to_upper('z')) == constexpr_char_to_edge_index('Z'));
+static_assert(constexpr_char_to_edge_index(constexpr_to_upper('~')) == constexpr_char_to_edge_index('~'));
+static_assert(constexpr_char_to_edge_index(constexpr_to_upper('{')) == constexpr_char_to_edge_index('{'));
+static_assert(constexpr_char_to_edge_index(constexpr_to_upper('}')) == constexpr_char_to_edge_index('}'));
 
-static_assert(constexpr_char_to_edge_index(constexpr_to_lower('A')) ==
-              constexpr_char_to_edge_index('a'));
-static_assert(constexpr_char_to_edge_index(constexpr_to_lower('Z')) ==
-              constexpr_char_to_edge_index('z'));
-static_assert(constexpr_char_to_edge_index(constexpr_to_lower('a')) ==
-              constexpr_char_to_edge_index('a'));
-static_assert(constexpr_char_to_edge_index(constexpr_to_lower('z')) ==
-              constexpr_char_to_edge_index('z'));
-static_assert(constexpr_char_to_edge_index(constexpr_to_lower('~')) ==
-              constexpr_char_to_edge_index('~'));
-static_assert(constexpr_char_to_edge_index(constexpr_to_lower('{')) ==
-              constexpr_char_to_edge_index('{'));
-static_assert(constexpr_char_to_edge_index(constexpr_to_lower('}')) ==
-              constexpr_char_to_edge_index('}'));
+static_assert(constexpr_char_to_edge_index(constexpr_to_lower('A')) == constexpr_char_to_edge_index('a'));
+static_assert(constexpr_char_to_edge_index(constexpr_to_lower('Z')) == constexpr_char_to_edge_index('z'));
+static_assert(constexpr_char_to_edge_index(constexpr_to_lower('a')) == constexpr_char_to_edge_index('a'));
+static_assert(constexpr_char_to_edge_index(constexpr_to_lower('z')) == constexpr_char_to_edge_index('z'));
+static_assert(constexpr_char_to_edge_index(constexpr_to_lower('~')) == constexpr_char_to_edge_index('~'));
+static_assert(constexpr_char_to_edge_index(constexpr_to_lower('{')) == constexpr_char_to_edge_index('{'));
+static_assert(constexpr_char_to_edge_index(constexpr_to_lower('}')) == constexpr_char_to_edge_index('}'));
 
 #undef constexpr_char_to_edge_index
 #undef constexpr_to_lower
@@ -524,15 +496,11 @@ void actrie_thiscall actrie_t_dtor(struct actrie_t* this_) {
 
 void actrie_thiscall actrie_t_reserve_patterns(struct actrie_t* this_, size_t patterns_capacity) {
     vector_uint32_t_reserve(&this_->words_lengths, this_->words_lengths.size + patterns_capacity);
-    vector_string_t_reserve(&this_->words_replacement,
-                            this_->words_replacement.size + patterns_capacity);
+    vector_string_t_reserve(&this_->words_replacement, this_->words_replacement.size + patterns_capacity);
 }
 
-void actrie_thiscall actrie_t_add_pattern_len(struct actrie_t* this_,
-                                              const char* pattern,
-                                              size_t pattern_size,
-                                              const char* replacer,
-                                              size_t replacer_size) {
+void actrie_thiscall actrie_t_add_pattern_len(
+    struct actrie_t* this_, const char* pattern, size_t pattern_size, const char* replacer, size_t replacer_size) {
     uint32_t current_node_index = ROOT_INDEX;
     const char* pattern_iter = pattern;
     const char* const pattern_end = pattern + pattern_size;
@@ -544,8 +512,7 @@ void actrie_thiscall actrie_t_add_pattern_len(struct actrie_t* this_,
             continue;
         }
 
-        uint32_t next_node_index =
-            this_->nodes.data[current_node_index].edges[char_to_edge_index(c)];
+        uint32_t next_node_index = this_->nodes.data[current_node_index].edges[char_to_edge_index(c)];
         if (next_node_index != NULL_NODE_INDEX) {
             current_node_index = next_node_index;
         } else {
@@ -628,15 +595,13 @@ static inline void actrie_thiscall actrie_t_check_computed_links(struct actrie_t
         }
 
         uint32_t suffix_link_index = iter->suffix_link;
-        actrie_assert(suffix_link_index >= FAKE_PREROOT_INDEX &&
-                      suffix_link_index < max_node_index_excl);
+        actrie_assert(suffix_link_index >= FAKE_PREROOT_INDEX && suffix_link_index < max_node_index_excl);
 
         uint32_t compressed_suffix_link_index = iter->compressed_suffix_link;
         actrie_assert(compressed_suffix_link_index >= FAKE_PREROOT_INDEX &&
                       compressed_suffix_link_index < max_node_index_excl);
 
-        actrie_assert(!actrie_node_t_is_terminal(iter) ||
-                      (iter->word_index < max_word_end_index_excl));
+        actrie_assert(!actrie_node_t_is_terminal(iter) || (iter->word_index < max_word_end_index_excl));
     }
 
     this_->are_links_computed = true;
@@ -706,13 +671,11 @@ void actrie_thiscall actrie_t_compute_links(struct actrie_t* this_) {
                 struct actrie_node_t* child = &m_nodes[child_index];
                 child->suffix_link = child_link_v_index;
 
-                actrie_assert(m_nodes[child_link_v_index].compressed_suffix_link !=
-                              NULL_NODE_INDEX);
+                actrie_assert(m_nodes[child_link_v_index].compressed_suffix_link != NULL_NODE_INDEX);
 
                 // comp(v) = link(v) if (link(v) is terminal or root) else comp(link(v))
                 child->compressed_suffix_link =
-                    ((!actrie_node_t_is_terminal(&m_nodes[child_link_v_index])) &
-                     (child_link_v_index != ROOT_INDEX))
+                    ((!actrie_node_t_is_terminal(&m_nodes[child_link_v_index])) & (child_link_v_index != ROOT_INDEX))
                         ? m_nodes[child_link_v_index].compressed_suffix_link
                         : child_link_v_index;
 
@@ -730,9 +693,7 @@ void actrie_thiscall actrie_t_compute_links(struct actrie_t* this_) {
 #endif
 }
 
-void actrie_thiscall actrie_t_run_text(const struct actrie_t* this_,
-                                       const char* text,
-                                       FindCallback find_callback) {
+void actrie_thiscall actrie_t_run_text(const struct actrie_t* this_, const char* text, FindCallback find_callback) {
     actrie_assert(find_callback != NULL);
 #if defined(__DEBUG__)
     actrie_assert(this_->are_links_computed);
@@ -744,8 +705,7 @@ void actrie_thiscall actrie_t_run_text(const struct actrie_t* this_,
     uint32_t current_node_index = ROOT_INDEX;
     size_t i = 0;
     char c;
-    for (const char* text_iter = text;
-         (c = IS_FIND_IGNORECASE_MODE_ON ? to_lower(*text_iter) : *text_iter) != '\0';
+    for (const char* text_iter = text; (c = IS_FIND_IGNORECASE_MODE_ON ? to_lower(*text_iter) : *text_iter) != '\0';
          ++i, ++text_iter) {
         if (!is_in_alphabet(c)) {
             current_node_index = ROOT_INDEX;
@@ -763,8 +723,7 @@ void actrie_thiscall actrie_t_run_text(const struct actrie_t* this_,
         }
 
         // Jump up through compressed suffix links
-        for (uint32_t tmp_node_index = current_node->compressed_suffix_link;
-             tmp_node_index != ROOT_INDEX;
+        for (uint32_t tmp_node_index = current_node->compressed_suffix_link; tmp_node_index != ROOT_INDEX;
              tmp_node_index = m_nodes[tmp_node_index].compressed_suffix_link) {
             actrie_assert(tmp_node_index != NULL_NODE_INDEX);
             actrie_assert(actrie_node_t_is_terminal(&m_nodes[tmp_node_index]));
@@ -790,8 +749,7 @@ size_t actrie_thiscall actrie_t_replace_first_occurance_len(const struct actrie_
     uint32_t current_node_index = ROOT_INDEX;
     const struct actrie_node_t* m_nodes = this_->nodes.data;
     char c;
-    for (const char* iter = c_string;
-         (c = IS_FIND_IGNORECASE_MODE_ON ? to_lower(*iter) : *iter) != '\0'; ++iter) {
+    for (const char* iter = c_string; (c = IS_FIND_IGNORECASE_MODE_ON ? to_lower(*iter) : *iter) != '\0'; ++iter) {
         if (!is_in_alphabet(c)) {
             current_node_index = ROOT_INDEX;
             continue;
@@ -824,15 +782,13 @@ size_t actrie_thiscall actrie_t_replace_first_occurance_len(const struct actrie_
             if (replacement_length != word_length) {
                 // In both cases: replacement_length > word_length || replacement_length <
                 // word_length code is the same
-                memmove(c_string + l + replacement_length,
-                        c_string + r_index_in_current_substring + 1,
+                memmove(c_string + l + replacement_length, c_string + r_index_in_current_substring + 1,
                         length - 1 - r_index_in_current_substring);
                 length += (replacement_length - word_length);
                 c_string[length] = '\0';
             }
 
-            memcpy(c_string + l, this_->words_replacement.data[word_index].c_str,
-                   replacement_length);
+            memcpy(c_string + l, this_->words_replacement.data[word_index].c_str, replacement_length);
             break;
         }
     }
@@ -874,11 +830,9 @@ size_t actrie_thiscall actrie_t_replace_all_occurances_len(const struct actrie_t
         size_t compressed_suffix_link = current_node->compressed_suffix_link;
 
         if (current_node_is_terminal | (compressed_suffix_link != ROOT_INDEX)) {
-            actrie_assert(current_node_is_terminal ||
-                          actrie_node_t_is_terminal(&m_nodes[compressed_suffix_link]));
-            uint32_t word_index = current_node_is_terminal
-                                      ? current_node->word_index
-                                      : m_nodes[compressed_suffix_link].word_index;
+            actrie_assert(current_node_is_terminal || actrie_node_t_is_terminal(&m_nodes[compressed_suffix_link]));
+            uint32_t word_index =
+                current_node_is_terminal ? current_node->word_index : m_nodes[compressed_suffix_link].word_index;
 
             actrie_assert(word_index < this_->words_lengths.size);
             uint32_t r_index_in_current_substring = (uint32_t)(iter - current_c_string);
@@ -889,15 +843,13 @@ size_t actrie_thiscall actrie_t_replace_all_occurances_len(const struct actrie_t
 
             if ((queue.size == 0) & (word_length == replacement_length)) {
                 char* dst_address = current_c_string + l_index_in_current_substring;
-                actrie_assert(c_string <= dst_address &&
-                              dst_address + word_length <= c_string + length);
+                actrie_assert(c_string <= dst_address && dst_address + word_length <= c_string + length);
                 memcpy(dst_address, m_words_replacement[word_index].c_str, word_length);
 #if defined(__DEBUG__)
                 total_copied += word_length;
 #endif
             } else {
-                uint32_t word_l_index_in_text =
-                    (uint32_t)(current_c_string + l_index_in_current_substring - c_string);
+                uint32_t word_l_index_in_text = (uint32_t)(current_c_string + l_index_in_current_substring - c_string);
                 vector_replacement_info_t_emplace_back2(&queue, word_l_index_in_text, word_index);
                 new_length += (replacement_length - word_length);
             }
@@ -908,8 +860,8 @@ size_t actrie_thiscall actrie_t_replace_all_occurances_len(const struct actrie_t
     }
 
     size_t right_offset = 0;
-    for (const struct replacement_info_t *iter_end = queue.data - 1, *iter = iter_end + queue.size;
-         iter != iter_end; --iter) {
+    for (const struct replacement_info_t *iter_end = queue.data - 1, *iter = iter_end + queue.size; iter != iter_end;
+         --iter) {
         uint32_t word_index = iter->word_index;
         uint32_t word_l_index_in_text = iter->word_l_index_in_text;
         uint32_t word_length = m_words_lengths[word_index];
@@ -921,11 +873,9 @@ size_t actrie_thiscall actrie_t_replace_all_occurances_len(const struct actrie_t
         if (dst_address != src_address) {
             // If pattern length != replacement length, worth checking
             actrie_assert((c_string <= dst_address) &
-                          (dst_address + moved_part_length <=
-                           c_string + (new_length >= length ? new_length : length)));
+                          (dst_address + moved_part_length <= c_string + (new_length >= length ? new_length : length)));
             actrie_assert((c_string <= src_address) &
-                          (src_address + moved_part_length <=
-                           c_string + (new_length >= length ? new_length : length)));
+                          (src_address + moved_part_length <= c_string + (new_length >= length ? new_length : length)));
             memmove(dst_address, src_address, moved_part_length);
         }
 
@@ -933,8 +883,7 @@ size_t actrie_thiscall actrie_t_replace_all_occurances_len(const struct actrie_t
         dst_address -= replacement_length;
 
         actrie_assert((c_string <= dst_address) &
-                      (dst_address + replacement_length <=
-                       c_string + (new_length >= length ? new_length : length)));
+                      (dst_address + replacement_length <= c_string + (new_length >= length ? new_length : length)));
         memcpy(dst_address, m_words_replacement[word_index].c_str, replacement_length);
 
         length = word_l_index_in_text;

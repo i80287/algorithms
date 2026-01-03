@@ -49,8 +49,7 @@ int main() {
     assert(geometry::VectorMult(vec24, vec40) == 8);
 
     geometry::Line l(p0, p2);
-    std::cout << "Line " << l << " has params " << l.GetA() << ' ' << l.GetB() << ' ' << l.GetC()
-              << '\n';
+    std::cout << "Line " << l << " has params " << l.GetA() << ' ' << l.GetB() << ' ' << l.GetC() << '\n';
 
     geometry::IShape* clone_ptr = p0.Clone();
     assert(clone_ptr != nullptr);

@@ -26,8 +26,8 @@ template <class F>
     requires std::is_invocable_r_v<int32_t, F, int32_t>
 #endif
 [[nodiscard]]
-constexpr LoopDetectResult loop_detection_Gosper(F f, const int32_t x0) noexcept(
-    std::is_nothrow_invocable_v<F, int32_t>) {
+constexpr LoopDetectResult loop_detection_Gosper(F f,
+                                                 const int32_t x0) noexcept(std::is_nothrow_invocable_v<F, int32_t>) {
     /**
      * See Hackers Delight 5-5.
      */

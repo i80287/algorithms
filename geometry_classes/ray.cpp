@@ -106,12 +106,11 @@ bool Ray::CrossesSegment(const Segment& segment) const noexcept {
             std::swap(start2_y, end2_y);
         }
 
-        return start2_x * det <= det_x && det_x <= end2_x * det && start2_y * det <= det_y &&
-               det_y <= end2_y * det;
+        return start2_x * det <= det_x && det_x <= end2_x * det && start2_y * det <= det_y && det_y <= end2_y * det;
     }
 
-    return segment.ContainsPoint(start_) || segment.ContainsPoint(end_) ||
-           ContainsPoint(segment.GetStart()) || ContainsPoint(segment.GetEnd());
+    return segment.ContainsPoint(start_) || segment.ContainsPoint(end_) || ContainsPoint(segment.GetStart()) ||
+           ContainsPoint(segment.GetEnd());
 }
 
 Ray* Ray::Clone() const {

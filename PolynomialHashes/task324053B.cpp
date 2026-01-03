@@ -35,8 +35,7 @@ int main() {
         bool is_prefix_a_period = true;
         uint64_t current_prefix_hash = str_prefix_hashes[i];
         for (size_t j = i; j <= str_length - i; j += i) {
-            uint64_t segment_hash =
-                (str_prefix_hashes[j + i] - (str_prefix_hashes[j] * pows[i]) % Mod + Mod) % Mod;
+            uint64_t segment_hash = (str_prefix_hashes[j + i] - (str_prefix_hashes[j] * pows[i]) % Mod + Mod) % Mod;
             if (current_prefix_hash != segment_hash) {
                 is_prefix_a_period = false;
                 break;

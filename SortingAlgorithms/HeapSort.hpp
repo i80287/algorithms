@@ -207,16 +207,14 @@ static inline void Heapify(Iterator begin, size_t length, Comparator comparator)
                 break;
             }
 
-            if (son_index + 1 < length &&
-                comparator(*(begin + son_index), *(begin + son_index + 1))) {
+            if (son_index + 1 < length && comparator(*(begin + son_index), *(begin + son_index + 1))) {
                 ++son_index;
             }
         }
     }
 }
 
-template <class Iterator,
-          class Comparator = std::less<typename std::iterator_traits<Iterator>::value_type>>
+template <class Iterator, class Comparator = std::less<typename std::iterator_traits<Iterator>::value_type>>
 void heap_sort(Iterator begin, Iterator end, Comparator comparator = Comparator()) {
     size_t length = static_cast<size_t>(end - begin);
     if (length <= 1) {

@@ -69,14 +69,12 @@ public:
 
     CONSTEXPR_VECTOR uint32_t& operator[](size_type number) {
         // see https://en.cppreference.com/w/cpp/language/constexpr
-        return CheckNumber(number) ? elems_[number - 1]
-                                   : throw std::out_of_range(__PRETTY_FUNCTION__);
+        return CheckNumber(number) ? elems_[number - 1] : throw std::out_of_range(__PRETTY_FUNCTION__);
     }
 
     CONSTEXPR_VECTOR uint32_t operator[](size_type number) const {
         // see https://en.cppreference.com/w/cpp/language/constexpr
-        return CheckNumber(number) ? elems_[number - 1]
-                                   : throw std::out_of_range(__PRETTY_FUNCTION__);
+        return CheckNumber(number) ? elems_[number - 1] : throw std::out_of_range(__PRETTY_FUNCTION__);
     }
 
     std::string to_string() const {

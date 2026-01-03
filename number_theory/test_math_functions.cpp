@@ -94,21 +94,15 @@ void test_isqrt() noexcept {
     }
 
     constexpr std::array<std::pair<uint64_t, uint128_t>, 10> root_with_square = {{
-        {uint64_t{std::numeric_limits<uint8_t>::max()},
-         uint128_t{std::numeric_limits<uint16_t>::max()}},
-        {uint64_t{std::numeric_limits<uint16_t>::max()},
-         uint128_t{std::numeric_limits<uint32_t>::max()}},
-        {uint64_t{std::numeric_limits<uint32_t>::max()},
-         uint128_t{std::numeric_limits<uint64_t>::max()}},
+        {uint64_t{std::numeric_limits<uint8_t>::max()}, uint128_t{std::numeric_limits<uint16_t>::max()}},
+        {uint64_t{std::numeric_limits<uint16_t>::max()}, uint128_t{std::numeric_limits<uint32_t>::max()}},
+        {uint64_t{std::numeric_limits<uint32_t>::max()}, uint128_t{std::numeric_limits<uint64_t>::max()}},
         {uint64_t{8347849ULL}, uint128_t{8347849ULL} * 8347849ULL},
         {uint64_t{23896778463ULL}, uint128_t{23896778463ULL} * 23896778463ULL},
-        {uint64_t{26900711288786ULL},
-         uint128_t{72364826784263874ULL} * 10'000'000'000ULL + 2'638'723'478},
-        {uint64_t{3748237487274238478ULL},
-         uint128_t{3748237487274238478ULL} * 3748237487274238478ULL},
+        {uint64_t{26900711288786ULL}, uint128_t{72364826784263874ULL} * 10'000'000'000ULL + 2'638'723'478},
+        {uint64_t{3748237487274238478ULL}, uint128_t{3748237487274238478ULL} * 3748237487274238478ULL},
         {uint64_t{9472294799293ULL}, uint128_t{8972436876473126137ULL} * 10'000'000ULL + 7'236'478},
-        {uint64_t{18015752134763552034ULL},
-         (uint128_t{17594829943123320651ULL} << 64U) | 2622055845271657274ULL},
+        {uint64_t{18015752134763552034ULL}, (uint128_t{17594829943123320651ULL} << 64U) | 2622055845271657274ULL},
         {std::numeric_limits<uint64_t>::max(), static_cast<uint128_t>(-1)},
     }};
     for (const auto& [root, square] : root_with_square) {
@@ -219,23 +213,17 @@ const mpfr_rnd_t kRoundMode = mpfr_get_default_rounding_mode();
 template <class FloatType>
 SumSinCos<FloatType> call_sum_of_sines_and_cosines(mpfr_t alpha, mpfr_t beta, uint32_t n) noexcept {
     if constexpr (std::is_same_v<FloatType, float>) {
-        return sum_of_sines_and_cosines(mpfr_get_flt(alpha, kRoundMode),
-                                        mpfr_get_flt(beta, kRoundMode), n);
+        return sum_of_sines_and_cosines(mpfr_get_flt(alpha, kRoundMode), mpfr_get_flt(beta, kRoundMode), n);
     } else if constexpr (std::is_same_v<FloatType, double>) {
-        return sum_of_sines_and_cosines(mpfr_get_d(alpha, kRoundMode), mpfr_get_d(beta, kRoundMode),
-                                        n);
+        return sum_of_sines_and_cosines(mpfr_get_d(alpha, kRoundMode), mpfr_get_d(beta, kRoundMode), n);
     } else {
-        return sum_of_sines_and_cosines(mpfr_get_ld(alpha, kRoundMode),
-                                        mpfr_get_ld(beta, kRoundMode), n);
+        return sum_of_sines_and_cosines(mpfr_get_ld(alpha, kRoundMode), mpfr_get_ld(beta, kRoundMode), n);
     }
 }
 
 template <class FloatType>
-std::pair<bool, bool> check_sums_correctness(mpfr_t c_sines_sum,
-                                             FloatType sines_sum,
-                                             mpfr_t c_cosines_sum,
-                                             FloatType cosines_sum,
-                                             FloatType eps) noexcept {
+std::pair<bool, bool> check_sums_correctness(
+    mpfr_t c_sines_sum, FloatType sines_sum, mpfr_t c_cosines_sum, FloatType cosines_sum, FloatType eps) noexcept {
     auto cmp_lambda = [](mpfr_t c_sum, FloatType sum, FloatType lambda_eps) noexcept {
         if constexpr (std::is_same_v<FloatType, float> || std::is_same_v<FloatType, double>) {
             mpfr_sub_d(c_sum, c_sum, static_cast<double>(sum), kRoundMode);
@@ -294,13 +282,11 @@ void test_sin_cos_sum_generic() noexcept {
         for (int32_t alpha_power = -k; alpha_power <= k; alpha_power++) {
             mpfr_set_d(beta, angle_start, kRoundMode);
             for (int32_t beta_power = -k; beta_power <= k; beta_power++) {
-                const auto [sines_sum, cosines_sum] =
-                    call_sum_of_sines_and_cosines<FloatType>(alpha, beta, n);
+                const auto [sines_sum, cosines_sum] = call_sum_of_sines_and_cosines<FloatType>(alpha, beta, n);
 #if CONFIG_HAS_AT_LEAST_CXX_20
-                static_assert(
-                    std::is_same_v<std::remove_cvref_t<decltype(sines_sum)>, FloatType> &&
-                        std::is_same_v<std::remove_cvref_t<decltype(cosines_sum)>, FloatType>,
-                    "sum_of_sines_and_cosines return type error");
+                static_assert(std::is_same_v<std::remove_cvref_t<decltype(sines_sum)>, FloatType> &&
+                                  std::is_same_v<std::remove_cvref_t<decltype(cosines_sum)>, FloatType>,
+                              "sum_of_sines_and_cosines return type error");
 #endif
 
                 mpfr_set_zero(c_sines_sum, 0);
@@ -312,8 +298,8 @@ void test_sin_cos_sum_generic() noexcept {
                     mpfr_add(c_cosines_sum, c_cosines_sum, angle_cos, kRoundMode);
                     mpfr_add(angle, angle, beta, kRoundMode);
                 }
-                const auto [sin_sum_correct, cos_sum_correct] = check_sums_correctness(
-                    c_sines_sum, sines_sum, c_cosines_sum, cosines_sum, kSumEps);
+                const auto [sin_sum_correct, cos_sum_correct] =
+                    check_sums_correctness(c_sines_sum, sines_sum, c_cosines_sum, cosines_sum, kSumEps);
                 assert(sin_sum_correct);
                 assert(cos_sum_correct);
 
@@ -368,18 +354,16 @@ void test_prime_bitarrays() {
     const std::vector primes_as_bvector = math_functions::dynamic_primes_sieve(N);
     const std::bitset<N + 1>& primes_bset = math_functions::fixed_primes_sieve<N>();
     constexpr std::array primes = {
-        2U,   3U,   5U,   7U,    11U,  13U,  17U,  19U,  23U,  29U,  31U,  37U,  41U,  43U,  47U,
-        53U,  59U,  61U,  67U,   71U,  73U,  79U,  83U,  89U,  97U,  101U, 103U, 107U, 109U, 113U,
-        127U, 131U, 137U, 139U,  149U, 151U, 157U, 163U, 167U, 173U, 179U, 181U, 191U, 193U, 197U,
-        199U, 211U, 223U, 227U,  229U, 233U, 239U, 241U, 251U, 257U, 263U, 269U, 271U, 277U, 281U,
-        283U, 293U, 307U, 311U,  313U, 317U, 331U, 337U, 347U, 349U, 353U, 359U, 367U, 373U, 379U,
-        383U, 389U, 397U, 401U,  409U, 419U, 421U, 431U, 433U, 439U, 443U, 449U, 457U, 461U, 463U,
-        467U, 479U, 487U, 491U,  499U, 503U, 509U, 521U, 523U, 541U, 547U, 557U, 563U, 569U, 571U,
-        577U, 587U, 593U, 599U,  601U, 607U, 613U, 617U, 619U, 631U, 641U, 643U, 647U, 653U, 659U,
-        661U, 673U, 677U, 683U,  691U, 701U, 709U, 719U, 727U, 733U, 739U, 743U, 751U, 757U, 761U,
-        769U, 773U, 787U, 797U,  809U, 811U, 821U, 823U, 827U, 829U, 839U, 853U, 857U, 859U, 863U,
-        877U, 881U, 883U, 887U,  907U, 911U, 919U, 929U, 937U, 941U, 947U, 953U, 967U, 971U, 977U,
-        983U, 991U, 997U, 1009U,
+        2U,   3U,   5U,   7U,   11U,  13U,  17U,  19U,  23U,  29U,  31U,  37U,  41U,  43U,  47U,  53U,   59U,
+        61U,  67U,  71U,  73U,  79U,  83U,  89U,  97U,  101U, 103U, 107U, 109U, 113U, 127U, 131U, 137U,  139U,
+        149U, 151U, 157U, 163U, 167U, 173U, 179U, 181U, 191U, 193U, 197U, 199U, 211U, 223U, 227U, 229U,  233U,
+        239U, 241U, 251U, 257U, 263U, 269U, 271U, 277U, 281U, 283U, 293U, 307U, 311U, 313U, 317U, 331U,  337U,
+        347U, 349U, 353U, 359U, 367U, 373U, 379U, 383U, 389U, 397U, 401U, 409U, 419U, 421U, 431U, 433U,  439U,
+        443U, 449U, 457U, 461U, 463U, 467U, 479U, 487U, 491U, 499U, 503U, 509U, 521U, 523U, 541U, 547U,  557U,
+        563U, 569U, 571U, 577U, 587U, 593U, 599U, 601U, 607U, 613U, 617U, 619U, 631U, 641U, 643U, 647U,  653U,
+        659U, 661U, 673U, 677U, 683U, 691U, 701U, 709U, 719U, 727U, 733U, 739U, 743U, 751U, 757U, 761U,  769U,
+        773U, 787U, 797U, 809U, 811U, 821U, 823U, 827U, 829U, 839U, 853U, 857U, 859U, 863U, 877U, 881U,  883U,
+        887U, 907U, 911U, 919U, 929U, 937U, 941U, 947U, 953U, 967U, 971U, 977U, 983U, 991U, 997U, 1009U,
     };
     static_assert(primes.back() >= N, "Test implementation error: add mode prime numbers");
 #if CONFIG_HAS_AT_LEAST_CXX_20
@@ -415,10 +399,9 @@ void test_factorizer() {
         assert(pfs.size() == fact.number_of_unique_prime_factors(i));
         auto pfs_v = prime_factors_as_vector(i);
         assert(pfs.size() == pfs_v.size());
-        assert(std::equal(
-            pfs.begin(), pfs.end(), pfs_v.begin(), [](auto pf1, auto pf2) constexpr noexcept {
-                return pf1.factor == pf2.factor && pf1.factor_power == pf2.factor_power;
-            }));
+        assert(std::equal(pfs.begin(), pfs.end(), pfs_v.begin(), [](auto pf1, auto pf2) constexpr noexcept {
+            return pf1.factor == pf2.factor && pf1.factor_power == pf2.factor_power;
+        }));
     }
 }
 
@@ -427,9 +410,7 @@ void test_factorizer() {
 // NOLINTBEGIN(performance-avoid-endl)
 
 template <class IntType>
-[[nodiscard]] bool test_extended_euclid_algorithm_a_b(std::size_t thread_id,
-                                                      IntType a,
-                                                      IntType b) noexcept {
+[[nodiscard]] bool test_extended_euclid_algorithm_a_b(std::size_t thread_id, IntType a, IntType b) noexcept {
     const auto [u, v, a_b_gcd] = math_functions::extended_euclid_algorithm(a, b);
     using HighIntType = std::conditional_t<sizeof(IntType) == sizeof(uint32_t), int64_t, int128_t>;
     const HighIntType hi_a = a;
@@ -456,8 +437,8 @@ template <class IntType>
         return false;
     }
 
-    const bool valid_u_range = (b == 0 && u == ::math_functions::sign(a)) ^
-                               (::math_functions::uabs(u) <= ::math_functions::uabs(b));
+    const bool valid_u_range =
+        (b == 0 && u == ::math_functions::sign(a)) ^ (::math_functions::uabs(u) <= ::math_functions::uabs(b));
     if (unlikely(!valid_u_range)) {
         std::cerr << "In thread " << thread_id
                   << " not b == 0 && u == sign(a) xor -|b| <= u && u <= |b| when "
@@ -478,8 +459,8 @@ template <class IntType>
         return false;
     }
 
-    const bool valid_v_range = (a == 0 && v == ::math_functions::sign(b)) ^
-                               (::math_functions::uabs(v) <= ::math_functions::uabs(a));
+    const bool valid_v_range =
+        (a == 0 && v == ::math_functions::sign(b)) ^ (::math_functions::uabs(v) <= ::math_functions::uabs(a));
     if (unlikely(!valid_v_range)) {
         std::cerr << "In thread " << thread_id
                   << " not a == 0 && v == sign(b) xor -|a| <= v && v <= |a| when "
@@ -548,10 +529,8 @@ template <class IntType>
             const std::size_t seed = thread_id * 3'829'234'734UL + 27'273'489;
             std::cout << "Thread " << thread_id << " started, seed = " << seed << std::endl;
 
-            static_assert(sizeof(IntType) == sizeof(std::uint32_t) ||
-                          sizeof(IntType) == sizeof(std::uint64_t));
-            using rnt_t = std::conditional_t<sizeof(IntType) == sizeof(std::uint32_t), std::mt19937,
-                                             std::mt19937_64>;
+            static_assert(sizeof(IntType) == sizeof(std::uint32_t) || sizeof(IntType) == sizeof(std::uint64_t));
+            using rnt_t = std::conditional_t<sizeof(IntType) == sizeof(std::uint32_t), std::mt19937, std::mt19937_64>;
             rnt_t mrs_rnd(static_cast<typename rnt_t::result_type>(seed));
 
             for (size_t test_iter = kTestsPerThread; test_iter != 0; --test_iter) {
@@ -641,8 +620,7 @@ void test_solve_binary_congruence_modulo_m() {
             continue;
         }
 
-        const auto k = std::uniform_int_distribution<uint32_t>(
-            0, std::numeric_limits<uint16_t>::max())(rnd_32);
+        const auto k = std::uniform_int_distribution<uint32_t>(0, std::numeric_limits<uint16_t>::max())(rnd_32);
         const uint32_t c = static_cast<uint32_t>(rnd_32());
         const auto x = solve_binary_congruence_modulo_m(k, c, m);
         const auto [r, s] = math_functions::extract_pow2(m);
@@ -653,8 +631,7 @@ void test_solve_binary_congruence_modulo_m() {
         } else {
             assert(x < m);
             // (2^{k} * x) % m
-            const uint64_t prod_of_2k_x =
-                (uint64_t{bin_pow_mod(uint32_t{2}, k, m)} * uint64_t{x}) % m;
+            const uint64_t prod_of_2k_x = (uint64_t{bin_pow_mod(uint32_t{2}, k, m)} * uint64_t{x}) % m;
             assert(prod_of_2k_x == c % m);
         }
 
@@ -666,10 +643,9 @@ void test_inv_mod_m() {
     log_tests_started();
 
     constexpr std::array<uint32_t, 64> first_prime_nums = {
-        2,   3,   5,   7,   11,  13,  17,  19,  23,  29,  31,  37,  41,  43,  47,  53,
-        59,  61,  67,  71,  73,  79,  83,  89,  97,  101, 103, 107, 109, 113, 127, 131,
-        137, 139, 157, 149, 151, 163, 167, 173, 179, 181, 191, 193, 197, 199, 211, 223,
-        227, 229, 233, 239, 241, 257, 251, 263, 269, 271, 277, 281, 283, 293, 307, 311,
+        2,   3,   5,   7,   11,  13,  17,  19,  23,  29,  31,  37,  41,  43,  47,  53,  59,  61,  67,  71,  73,  79,
+        83,  89,  97,  101, 103, 107, 109, 113, 127, 131, 137, 139, 157, 149, 151, 163, 167, 173, 179, 181, 191, 193,
+        197, 199, 211, 223, 227, 229, 233, 239, 241, 257, 251, 263, 269, 271, 277, 281, 283, 293, 307, 311,
     };
 
     for (const uint32_t m : first_prime_nums) {
@@ -702,9 +678,8 @@ void test_inv_mod_m() {
         auto n_pfs = math_functions::prime_factors_as_vector(m);
         for (uint32_t a = 1; a < m; a++) {
             const bool are_coprime = std::gcd(a, m) == 1;
-            assert(are_coprime ==
-                   std::all_of(n_pfs.begin(), n_pfs.end(),
-                               [a](auto pf) constexpr noexcept { return a % pf.factor != 0; }));
+            assert(are_coprime == std::all_of(n_pfs.begin(), n_pfs.end(),
+                                              [a](auto pf) constexpr noexcept { return a % pf.factor != 0; }));
             const uint32_t a_inv = math_functions::inv_mod_m(a, m);
             if (!are_coprime) {
                 assert(a_inv == math_functions::kNoCongruenceSolution);
@@ -858,10 +833,8 @@ void test_solve_factorial_congruence() noexcept {
     assert(solve_factorial_congruence(6, 12) == 2);
     assert(solve_factorial_congruence(0xffffffffU, 2) == 4294967263U);
 
-    static_assert(1ULL * 2 * 3 * 4 * 5 * 6 * 7 * 8 * 9 * 10 * 11 * 12 <=
-                  std::numeric_limits<uint32_t>::max());
-    static_assert(1ULL * 2 * 3 * 4 * 5 * 6 * 7 * 8 * 9 * 10 * 11 * 12 * 13 >
-                  std::numeric_limits<uint32_t>::max());
+    static_assert(1ULL * 2 * 3 * 4 * 5 * 6 * 7 * 8 * 9 * 10 * 11 * 12 <= std::numeric_limits<uint32_t>::max());
+    static_assert(1ULL * 2 * 3 * 4 * 5 * 6 * 7 * 8 * 9 * 10 * 11 * 12 * 13 > std::numeric_limits<uint32_t>::max());
 
     uint32_t n_fact = 1;
     for (uint32_t n = 1; n <= 12; n++) {
@@ -903,16 +876,13 @@ void test_general_asserts() noexcept {
     // NOLINTEND(cppcoreguidelines-macro-usage)
 
     ASSERT_THAT(bin_pow_mod(uint32_t{7}, uint32_t{483}, uint32_t{1000000007U}) == 263145387U);
-    ASSERT_THAT(bin_pow_mod(uint32_t{289}, std::numeric_limits<uint32_t>::max(),
-                            uint32_t{2146514599U}) == 1349294778U);
-    ASSERT_THAT(bin_pow_mod(uint32_t{2146526839U}, uint32_t{578423432U}, uint32_t{2147483629U}) ==
-                281853233U);
+    ASSERT_THAT(bin_pow_mod(uint32_t{289}, std::numeric_limits<uint32_t>::max(), uint32_t{2146514599U}) == 1349294778U);
+    ASSERT_THAT(bin_pow_mod(uint32_t{2146526839U}, uint32_t{578423432U}, uint32_t{2147483629U}) == 281853233U);
 
     I128_ASSERT_THAT(bin_pow_mod(uint64_t{7}, uint64_t{483}, uint64_t{1000000007U}) == 263145387U);
     I128_ASSERT_THAT(bin_pow_mod(uint64_t{289}, uint64_t{std::numeric_limits<uint32_t>::max()},
                                  uint64_t{2146514599U}) == 1349294778U);
-    I128_ASSERT_THAT(bin_pow_mod(uint64_t{2146526839U}, uint64_t{578423432U},
-                                 uint64_t{2147483629U}) == 281853233U);
+    I128_ASSERT_THAT(bin_pow_mod(uint64_t{2146526839U}, uint64_t{578423432U}, uint64_t{2147483629U}) == 281853233U);
     I128_ASSERT_THAT(bin_pow_mod(uint64_t{119999999927ULL}, uint64_t{18446744073709515329ULL},
                                  uint64_t{100000000000000003ULL}) == 85847679703545452ULL);
     I128_ASSERT_THAT(bin_pow_mod(uint64_t{72057594037927843ULL}, uint64_t{18446744073709515329ULL},
@@ -920,12 +890,12 @@ void test_general_asserts() noexcept {
     I128_ASSERT_THAT(bin_pow_mod(uint64_t{999999999999999487ULL}, uint64_t{18446744073709551557ULL},
                                  uint64_t{1000000000000000009ULL}) == 802735487082721113ULL);
 
-    I128_ASSERT_THAT(bin_pow_mod(uint64_t{2}, uint64_t{18446744073709551427ULL} - 1,
-                                 uint64_t{18446744073709551427ULL}) == 1);
-    I128_ASSERT_THAT(bin_pow_mod(uint64_t{3}, uint64_t{18446744073709551427ULL} - 1,
-                                 uint64_t{18446744073709551427ULL}) == 1);
-    I128_ASSERT_THAT(bin_pow_mod(uint64_t{1238873}, uint64_t{18446744073709551427ULL} - 1,
-                                 uint64_t{18446744073709551427ULL}) == 1);
+    I128_ASSERT_THAT(
+        bin_pow_mod(uint64_t{2}, uint64_t{18446744073709551427ULL} - 1, uint64_t{18446744073709551427ULL}) == 1);
+    I128_ASSERT_THAT(
+        bin_pow_mod(uint64_t{3}, uint64_t{18446744073709551427ULL} - 1, uint64_t{18446744073709551427ULL}) == 1);
+    I128_ASSERT_THAT(
+        bin_pow_mod(uint64_t{1238873}, uint64_t{18446744073709551427ULL} - 1, uint64_t{18446744073709551427ULL}) == 1);
 
 #if CONFIG_HAS_AT_LEAST_CXX_20
     ASSERT_THAT(isqrt(0U) == 0);
@@ -989,27 +959,20 @@ void test_general_asserts() noexcept {
     I128_ASSERT_THAT(isqrt(uint128_t{1} << 58U) == uint64_t{1} << 29U);
     I128_ASSERT_THAT(isqrt(uint128_t{1} << 60U) == uint64_t{1} << 30U);
     I128_ASSERT_THAT(isqrt(uint128_t{1} << 62U) == uint64_t{1} << 31U);
-    I128_ASSERT_THAT(isqrt(uint128_t{std::numeric_limits<uint64_t>::max()}) ==
-                     (uint64_t{1} << 32U) - 1);
+    I128_ASSERT_THAT(isqrt(uint128_t{std::numeric_limits<uint64_t>::max()}) == (uint64_t{1} << 32U) - 1);
     I128_ASSERT_THAT(isqrt(uint128_t{1} << 126U) == uint64_t{1} << 63U);
     I128_ASSERT_THAT(isqrt(static_cast<uint128_t>(-1)) == (uint128_t{1} << 64U) - 1);
     I128_ASSERT_THAT(isqrt(uint128_t{1000000007} * 1000000007) == 1000000007);
-    I128_ASSERT_THAT(isqrt(uint128_t{1000000000000000003ULL} * 1000000000000000003ULL) ==
-                     1000000000000000003ULL);
-    I128_ASSERT_THAT(isqrt(uint128_t{1000000000000000009ULL} * 1000000000000000009ULL) ==
-                     1000000000000000009ULL);
-    I128_ASSERT_THAT(isqrt(uint128_t{18446744073709551521ULL} * 18446744073709551521ULL) ==
-                     18446744073709551521ULL);
-    I128_ASSERT_THAT(isqrt(uint128_t{18446744073709551533ULL} * 18446744073709551533ULL) ==
-                     18446744073709551533ULL);
-    I128_ASSERT_THAT(isqrt(uint128_t{18446744073709551557ULL} * 18446744073709551557ULL) ==
-                     18446744073709551557ULL);
+    I128_ASSERT_THAT(isqrt(uint128_t{1000000000000000003ULL} * 1000000000000000003ULL) == 1000000000000000003ULL);
+    I128_ASSERT_THAT(isqrt(uint128_t{1000000000000000009ULL} * 1000000000000000009ULL) == 1000000000000000009ULL);
+    I128_ASSERT_THAT(isqrt(uint128_t{18446744073709551521ULL} * 18446744073709551521ULL) == 18446744073709551521ULL);
+    I128_ASSERT_THAT(isqrt(uint128_t{18446744073709551533ULL} * 18446744073709551533ULL) == 18446744073709551533ULL);
+    I128_ASSERT_THAT(isqrt(uint128_t{18446744073709551557ULL} * 18446744073709551557ULL) == 18446744073709551557ULL);
     I128_ASSERT_THAT(isqrt(uint128_t{18446744073709551557ULL} * 18446744073709551557ULL + 1) ==
                      18446744073709551557ULL);
     I128_ASSERT_THAT(isqrt(uint128_t{18446744073709551558ULL} * 18446744073709551558ULL - 1) ==
                      18446744073709551557ULL);
-    I128_ASSERT_THAT(isqrt(uint128_t{18446744073709551558ULL} * 18446744073709551558ULL) ==
-                     18446744073709551558ULL);
+    I128_ASSERT_THAT(isqrt(uint128_t{18446744073709551558ULL} * 18446744073709551558ULL) == 18446744073709551558ULL);
 
     ASSERT_THAT(icbrt(uint32_t{0}) == 0);
     ASSERT_THAT(icbrt(uint32_t{1}) == 1);
@@ -1140,54 +1103,32 @@ void test_general_asserts() noexcept {
     ASSERT_THAT(bit_reverse(uint8_t{0b01010101}) == 0b10101010);
     ASSERT_THAT(bit_reverse(uint8_t{0b11111111}) == 0b11111111);
 
-    ASSERT_THAT(bit_reverse(0b00000000'00000000'00000000'00000000U) ==
-                0b00000000'00000000'00000000'00000000U);
-    ASSERT_THAT(bit_reverse(0b00000000'00000000'00000000'00000001U) ==
-                0b10000000'00000000'00000000'00000000U);
-    ASSERT_THAT(bit_reverse(0b10000000'00000000'00000000'00000000U) ==
-                0b00000000'00000000'00000000'00000001U);
-    ASSERT_THAT(bit_reverse(0b00000000'11111111'00000000'00000000U) ==
-                0b00000000'00000000'11111111'00000000U);
-    ASSERT_THAT(bit_reverse(0b00000000'00000000'11111111'00000000U) ==
-                0b00000000'11111111'00000000'00000000U);
-    ASSERT_THAT(bit_reverse(0b10101010'10101010'10101010'10101010U) ==
-                0b01010101'01010101'01010101'01010101U);
-    ASSERT_THAT(bit_reverse(0b11111111'00000000'11111111'00000000U) ==
-                0b00000000'11111111'00000000'11111111U);
+    ASSERT_THAT(bit_reverse(0b00000000'00000000'00000000'00000000U) == 0b00000000'00000000'00000000'00000000U);
+    ASSERT_THAT(bit_reverse(0b00000000'00000000'00000000'00000001U) == 0b10000000'00000000'00000000'00000000U);
+    ASSERT_THAT(bit_reverse(0b10000000'00000000'00000000'00000000U) == 0b00000000'00000000'00000000'00000001U);
+    ASSERT_THAT(bit_reverse(0b00000000'11111111'00000000'00000000U) == 0b00000000'00000000'11111111'00000000U);
+    ASSERT_THAT(bit_reverse(0b00000000'00000000'11111111'00000000U) == 0b00000000'11111111'00000000'00000000U);
+    ASSERT_THAT(bit_reverse(0b10101010'10101010'10101010'10101010U) == 0b01010101'01010101'01010101'01010101U);
+    ASSERT_THAT(bit_reverse(0b11111111'00000000'11111111'00000000U) == 0b00000000'11111111'00000000'11111111U);
 
-    ASSERT_THAT(
-        bit_reverse(uint64_t{
-            0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00000000ULL}) ==
-        0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00000000ULL);
-    ASSERT_THAT(
-        bit_reverse(uint64_t{
-            0b10000001'00000000'10000001'00000000'10000001'00000000'10000001'00000000ULL}) ==
-        0b00000000'10000001'00000000'10000001'00000000'10000001'00000000'10000001ULL);
-    ASSERT_THAT(
-        bit_reverse(uint64_t{
-            0b00001111'00000000'11110000'00000000'10101010'00000000'00000000'00000000ULL}) ==
-        0b00000000'00000000'00000000'01010101'00000000'00001111'00000000'11110000ULL);
-    ASSERT_THAT(
-        bit_reverse(uint64_t{
-            0b00000000'00000000'00000000'10101010'10101010'00000000'00000000'00000000ULL}) ==
-        0b00000000'00000000'00000000'01010101'01010101'00000000'00000000'00000000ULL);
-    ASSERT_THAT(
-        bit_reverse(uint64_t{
-            0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00000000ULL}) ==
-        0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00000000ULL);
-    ASSERT_THAT(
-        bit_reverse(uint64_t{
-            0b11111111'00000000'11111111'00000000'11111111'00000000'11111111'00000000ULL}) ==
-        0b00000000'11111111'00000000'11111111'00000000'11111111'00000000'11111111ULL);
-    ASSERT_THAT(
-        bit_reverse(uint64_t{
-            0b11111111'11111111'11111111'11111111'00000000'00000000'00000000'00000000ULL}) ==
-        0b00000000'00000000'00000000'00000000'11111111'11111111'11111111'11111111ULL);
+    ASSERT_THAT(bit_reverse(uint64_t{0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00000000ULL}) ==
+                0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00000000ULL);
+    ASSERT_THAT(bit_reverse(uint64_t{0b10000001'00000000'10000001'00000000'10000001'00000000'10000001'00000000ULL}) ==
+                0b00000000'10000001'00000000'10000001'00000000'10000001'00000000'10000001ULL);
+    ASSERT_THAT(bit_reverse(uint64_t{0b00001111'00000000'11110000'00000000'10101010'00000000'00000000'00000000ULL}) ==
+                0b00000000'00000000'00000000'01010101'00000000'00001111'00000000'11110000ULL);
+    ASSERT_THAT(bit_reverse(uint64_t{0b00000000'00000000'00000000'10101010'10101010'00000000'00000000'00000000ULL}) ==
+                0b00000000'00000000'00000000'01010101'01010101'00000000'00000000'00000000ULL);
+    ASSERT_THAT(bit_reverse(uint64_t{0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00000000ULL}) ==
+                0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00000000ULL);
+    ASSERT_THAT(bit_reverse(uint64_t{0b11111111'00000000'11111111'00000000'11111111'00000000'11111111'00000000ULL}) ==
+                0b00000000'11111111'00000000'11111111'00000000'11111111'00000000'11111111ULL);
+    ASSERT_THAT(bit_reverse(uint64_t{0b11111111'11111111'11111111'11111111'00000000'00000000'00000000'00000000ULL}) ==
+                0b00000000'00000000'00000000'00000000'11111111'11111111'11111111'11111111ULL);
 
     I128_ASSERT_THAT(bit_reverse(uint128_t{0}) == 0);
     I128_ASSERT_THAT(bit_reverse(uint128_t{~uint64_t{0}} << 64U) == ~uint64_t{0});
-    I128_ASSERT_THAT(bit_reverse((uint128_t{~uint64_t{0}} << 64U) | 1U) ==
-                     ((uint128_t{1} << 127U) | ~uint64_t{0}));
+    I128_ASSERT_THAT(bit_reverse((uint128_t{~uint64_t{0}} << 64U) | 1U) == ((uint128_t{1} << 127U) | ~uint64_t{0}));
     I128_ASSERT_THAT(bit_reverse(~uint128_t{0}) == ~uint128_t{0});
 
 #if CONFIG_HAS_AT_LEAST_CXX_20
@@ -1198,8 +1139,7 @@ void test_general_asserts() noexcept {
     ASSERT_THAT(int(detail::pop_count_32_software(4U)) == std::popcount(4U));
     ASSERT_THAT(int(detail::pop_count_32_software(0x4788743U)) == std::popcount(0x4788743U));
     ASSERT_THAT(int(detail::pop_count_32_software(0x2D425B23U)) == std::popcount(0x2D425B23U));
-    ASSERT_THAT(int(detail::pop_count_32_software(0xFFFFFFFFU - 1)) ==
-                std::popcount(0xFFFFFFFFU - 1));
+    ASSERT_THAT(int(detail::pop_count_32_software(0xFFFFFFFFU - 1)) == std::popcount(0xFFFFFFFFU - 1));
     ASSERT_THAT(int(detail::pop_count_32_software(0xFFFFFFFFU)) == std::popcount(0xFFFFFFFFU));
 #endif
 
@@ -1209,14 +1149,11 @@ void test_general_asserts() noexcept {
     ASSERT_THAT(int(detail::pop_count_64_software(uint64_t{2})) == std::popcount(uint64_t{2}));
     ASSERT_THAT(int(detail::pop_count_64_software(uint64_t{3})) == std::popcount(uint64_t{3}));
     ASSERT_THAT(int(detail::pop_count_64_software(uint64_t{4})) == std::popcount(uint64_t{4}));
-    ASSERT_THAT(int(detail::pop_count_64_software(uint64_t{0x4788743U})) ==
-                std::popcount(uint64_t{0x4788743U}));
-    ASSERT_THAT(int(detail::pop_count_64_software(uint64_t{0x2D425B23U})) ==
-                std::popcount(uint64_t{0x2D425B23U}));
+    ASSERT_THAT(int(detail::pop_count_64_software(uint64_t{0x4788743U})) == std::popcount(uint64_t{0x4788743U}));
+    ASSERT_THAT(int(detail::pop_count_64_software(uint64_t{0x2D425B23U})) == std::popcount(uint64_t{0x2D425B23U}));
     ASSERT_THAT(int(detail::pop_count_64_software(uint64_t{0xFFFFFFFFU - 1})) ==
                 std::popcount(uint64_t{0xFFFFFFFFU - 1}));
-    ASSERT_THAT(int(detail::pop_count_64_software(uint64_t{0xFFFFFFFFU})) ==
-                std::popcount(uint64_t{0xFFFFFFFFU}));
+    ASSERT_THAT(int(detail::pop_count_64_software(uint64_t{0xFFFFFFFFU})) == std::popcount(uint64_t{0xFFFFFFFFU}));
     ASSERT_THAT(int(detail::pop_count_64_software(uint64_t{0x5873485893484ULL})) ==
                 std::popcount(uint64_t{0x5873485893484ULL}));
     ASSERT_THAT(int(detail::pop_count_64_software(uint64_t{0x85923489853245ULL})) ==
@@ -1230,17 +1167,15 @@ void test_general_asserts() noexcept {
     ASSERT_THAT(std::popcount(1U) - std::popcount(0U) == diff_popcount(1, 0));
     ASSERT_THAT(std::popcount(0U) - std::popcount(1U) == diff_popcount(0, 1));
     ASSERT_THAT(std::popcount(0xABCDEFU) - std::popcount(4U) == diff_popcount(0xABCDEF, 4));
-    ASSERT_THAT(std::popcount(uint32_t{std::numeric_limits<uint16_t>::max()}) -
-                    std::popcount(314U) ==
+    ASSERT_THAT(std::popcount(uint32_t{std::numeric_limits<uint16_t>::max()}) - std::popcount(314U) ==
                 diff_popcount(uint32_t{std::numeric_limits<uint16_t>::max()}, 314));
     ASSERT_THAT(std::popcount(std::numeric_limits<uint32_t>::max()) - std::popcount(0U) ==
                 diff_popcount(std::numeric_limits<uint32_t>::max(), 0U));
     ASSERT_THAT(std::popcount(0U) - std::popcount(std::numeric_limits<uint32_t>::max()) ==
                 diff_popcount(0U, std::numeric_limits<uint32_t>::max()));
-    ASSERT_THAT(
-        std::popcount(std::numeric_limits<uint32_t>::max()) -
-            std::popcount(std::numeric_limits<uint32_t>::max()) ==
-        diff_popcount(std::numeric_limits<uint32_t>::max(), std::numeric_limits<uint32_t>::max()));
+    ASSERT_THAT(std::popcount(std::numeric_limits<uint32_t>::max()) -
+                    std::popcount(std::numeric_limits<uint32_t>::max()) ==
+                diff_popcount(std::numeric_limits<uint32_t>::max(), std::numeric_limits<uint32_t>::max()));
 #endif
 
     I128_ASSERT_THAT(sign(int128_t{0}) == 0);
@@ -1336,44 +1271,34 @@ void test_general_asserts() noexcept {
     I128_ASSERT_THAT(math_functions::uabs(int128_t{-4}) == 4);
     I128_ASSERT_THAT(math_functions::uabs(int128_t{4}) == 4);
     I128_ASSERT_THAT(math_functions::uabs(uint128_t{4}) == 4);
-    I128_ASSERT_THAT(math_functions::uabs(-int128_t{18446744073709551615ULL}) ==
-                     18446744073709551615ULL);
-    I128_ASSERT_THAT(math_functions::uabs(int128_t{18446744073709551615ULL}) ==
-                     18446744073709551615ULL);
-    I128_ASSERT_THAT(math_functions::uabs(uint128_t{18446744073709551615ULL}) ==
-                     18446744073709551615ULL);
-    I128_ASSERT_THAT(math_functions::uabs(-static_cast<int128_t>(uint128_t{1} << 126U)) ==
-                     uint128_t{1} << 126U);
-    I128_ASSERT_THAT(math_functions::uabs(static_cast<int128_t>(uint128_t{1} << 126U)) ==
-                     uint128_t{1} << 126U);
+    I128_ASSERT_THAT(math_functions::uabs(-int128_t{18446744073709551615ULL}) == 18446744073709551615ULL);
+    I128_ASSERT_THAT(math_functions::uabs(int128_t{18446744073709551615ULL}) == 18446744073709551615ULL);
+    I128_ASSERT_THAT(math_functions::uabs(uint128_t{18446744073709551615ULL}) == 18446744073709551615ULL);
+    I128_ASSERT_THAT(math_functions::uabs(-static_cast<int128_t>(uint128_t{1} << 126U)) == uint128_t{1} << 126U);
+    I128_ASSERT_THAT(math_functions::uabs(static_cast<int128_t>(uint128_t{1} << 126U)) == uint128_t{1} << 126U);
     I128_ASSERT_THAT(math_functions::uabs(uint128_t{1} << 126U) == uint128_t{1} << 126U);
     I128_ASSERT_THAT(math_functions::uabs(static_cast<int128_t>(-((uint128_t{1} << 127U) - 1))) ==
                      (uint128_t{1} << 127U) - 1);
     I128_ASSERT_THAT(math_functions::uabs(static_cast<int128_t>((uint128_t{1} << 127U) - 1)) ==
                      (uint128_t{1} << 127U) - 1);
-    I128_ASSERT_THAT(math_functions::uabs((uint128_t{1} << 127U) - 1) ==
-                     (uint128_t{1} << 127U) - 1);
-    I128_ASSERT_THAT(math_functions::uabs(static_cast<int128_t>(-(uint128_t{1} << 127U))) ==
-                     uint128_t{1} << 127U);
+    I128_ASSERT_THAT(math_functions::uabs((uint128_t{1} << 127U) - 1) == (uint128_t{1} << 127U) - 1);
+    I128_ASSERT_THAT(math_functions::uabs(static_cast<int128_t>(-(uint128_t{1} << 127U))) == uint128_t{1} << 127U);
     I128_ASSERT_THAT(math_functions::uabs(-(uint128_t{1} << 127U)) == uint128_t{1} << 127U);
 
 #if CONFIG_HAS_AT_LEAST_CXX_20
     ASSERT_THAT(sign(std::popcount(0U) - std::popcount(0U)) == sign(compare_popcount(0, 0)));
     ASSERT_THAT(sign(std::popcount(1U) - std::popcount(0U)) == sign(compare_popcount(1, 0)));
     ASSERT_THAT(sign(std::popcount(0U) - std::popcount(1U)) == sign(compare_popcount(0, 1)));
-    ASSERT_THAT(sign(std::popcount(0xABCDEFU) - std::popcount(4U)) ==
-                compare_popcount(0xABCDEF, 4));
-    ASSERT_THAT(
-        sign(std::popcount(uint32_t{std::numeric_limits<uint16_t>::max()}) - std::popcount(314U)) ==
-        sign(compare_popcount(uint32_t{std::numeric_limits<uint16_t>::max()}, 314U)));
+    ASSERT_THAT(sign(std::popcount(0xABCDEFU) - std::popcount(4U)) == compare_popcount(0xABCDEF, 4));
+    ASSERT_THAT(sign(std::popcount(uint32_t{std::numeric_limits<uint16_t>::max()}) - std::popcount(314U)) ==
+                sign(compare_popcount(uint32_t{std::numeric_limits<uint16_t>::max()}, 314U)));
     ASSERT_THAT(sign(std::popcount(std::numeric_limits<uint32_t>::max()) - std::popcount(0U)) ==
                 sign(compare_popcount(std::numeric_limits<uint32_t>::max(), 0U)));
     ASSERT_THAT(sign(std::popcount(0U) - std::popcount(std::numeric_limits<uint32_t>::max())) ==
                 sign(compare_popcount(0U, std::numeric_limits<uint32_t>::max())));
     ASSERT_THAT(sign(std::popcount(std::numeric_limits<uint32_t>::max()) -
                      std::popcount(std::numeric_limits<uint32_t>::max())) ==
-                sign(compare_popcount(std::numeric_limits<uint32_t>::max(),
-                                      std::numeric_limits<uint32_t>::max())));
+                sign(compare_popcount(std::numeric_limits<uint32_t>::max(), std::numeric_limits<uint32_t>::max())));
 #endif
 
     ASSERT_THAT(detail::lz_count_32_software(0U) == 32);
@@ -1567,10 +1492,8 @@ void test_general_asserts() noexcept {
     ASSERT_THAT(nearest_greater_equal_power_of_two(uint64_t{0x80000000U}) == 0x80000000U);
     ASSERT_THAT(nearest_greater_equal_power_of_two(uint64_t{0x80000001U}) == 0x100000000ULL);
     ASSERT_THAT(nearest_greater_equal_power_of_two(uint64_t{0xFFFFFFFFU}) == 0x100000000ULL);
-    ASSERT_THAT(nearest_greater_equal_power_of_two(uint64_t{0x7FFFFFFFFFFFFFFFULL}) ==
-                0x8000000000000000ULL);
-    ASSERT_THAT(nearest_greater_equal_power_of_two(uint64_t{0x8000000000000000ULL}) ==
-                0x8000000000000000ULL);
+    ASSERT_THAT(nearest_greater_equal_power_of_two(uint64_t{0x7FFFFFFFFFFFFFFFULL}) == 0x8000000000000000ULL);
+    ASSERT_THAT(nearest_greater_equal_power_of_two(uint64_t{0x8000000000000000ULL}) == 0x8000000000000000ULL);
     ASSERT_THAT(nearest_greater_equal_power_of_two(uint64_t{1} << 0U) == uint64_t{1} << 0U);
     ASSERT_THAT(nearest_greater_equal_power_of_two(uint64_t{1} << 1U) == uint64_t{1} << 1U);
     ASSERT_THAT(nearest_greater_equal_power_of_two(uint64_t{1} << 2U) == uint64_t{1} << 2U);
@@ -1967,50 +1890,42 @@ void test_general_asserts() noexcept {
     I128_ASSERT_THAT(math_functions::gcd(uint128_t{0}, uint128_t{112378432}) == 112378432);
     I128_ASSERT_THAT(math_functions::gcd(uint128_t{112378432}, uint128_t{0}) == 112378432);
     I128_ASSERT_THAT(math_functions::gcd(uint128_t{429384832}, uint128_t{324884}) == 4);
-    I128_ASSERT_THAT(math_functions::gcd(uint128_t{18446744073709551521ULL},
-                                         uint128_t{18446744073709551533ULL}) == 1);
-    I128_ASSERT_THAT(
-        math_functions::gcd(uint128_t{18446744073709551521ULL} * 18446744073709551521ULL,
-                            uint128_t{18446744073709551521ULL}) == 18446744073709551521ULL);
+    I128_ASSERT_THAT(math_functions::gcd(uint128_t{18446744073709551521ULL}, uint128_t{18446744073709551533ULL}) == 1);
+    I128_ASSERT_THAT(math_functions::gcd(uint128_t{18446744073709551521ULL} * 18446744073709551521ULL,
+                                         uint128_t{18446744073709551521ULL}) == 18446744073709551521ULL);
     I128_ASSERT_THAT(math_functions::gcd(uint128_t{23999993441ULL} * 23999993377ULL,
                                          uint128_t{23999992931ULL} * 23999539633ULL) == 1);
     I128_ASSERT_THAT(math_functions::gcd(uint128_t{2146514599U} * 2146514603U * 2146514611U,
-                                         uint128_t{2146514611U} * 2146514621U * 2146514647U) ==
-                     2146514611ULL);
+                                         uint128_t{2146514611U} * 2146514621U * 2146514647U) == 2146514611ULL);
     I128_ASSERT_THAT(math_functions::gcd(uint128_t{2146514599U} * 2146514603U * 2146514611U * 2,
                                          uint128_t{2146514599U} * 2146514603U * 2146514611U * 3) ==
                      uint128_t{2146514599U} * 2146514603U * 2146514611U);
     I128_ASSERT_THAT(math_functions::gcd(uint128_t{100000000000000003ULL} * 1000000000000000003ULL,
-                                         uint128_t{1000000000000000003ULL} *
-                                             1000000000000000009ULL) == 1000000000000000003ULL);
-    I128_ASSERT_THAT(math_functions::gcd(uint128_t{3} * 2 * 5 * 7 * 11 * 13 * 17 * 19,
-                                         uint128_t{18446744073709551557ULL} * 3) == 3);
+                                         uint128_t{1000000000000000003ULL} * 1000000000000000009ULL) ==
+                     1000000000000000003ULL);
+    I128_ASSERT_THAT(
+        math_functions::gcd(uint128_t{3} * 2 * 5 * 7 * 11 * 13 * 17 * 19, uint128_t{18446744073709551557ULL} * 3) == 3);
     I128_ASSERT_THAT(math_functions::gcd(uint128_t{1000000000000000009ULL},
-                                         uint128_t{1000000000000000009ULL} *
-                                             1000000000000000009ULL) == 1000000000000000009ULL);
-    I128_ASSERT_THAT(math_functions::gcd(uint128_t{0}, uint128_t{1000000000000000009ULL} *
-                                                           1000000000000000009ULL) ==
+                                         uint128_t{1000000000000000009ULL} * 1000000000000000009ULL) ==
+                     1000000000000000009ULL);
+    I128_ASSERT_THAT(math_functions::gcd(uint128_t{0}, uint128_t{1000000000000000009ULL} * 1000000000000000009ULL) ==
                      uint128_t{1000000000000000009ULL} * 1000000000000000009ULL);
-    I128_ASSERT_THAT(math_functions::gcd(uint128_t{18446744073709551557ULL}, uint128_t{0}) ==
-                     18446744073709551557ULL);
+    I128_ASSERT_THAT(math_functions::gcd(uint128_t{18446744073709551557ULL}, uint128_t{0}) == 18446744073709551557ULL);
 
     I128_ASSERT_THAT(math_functions::gcd(uint64_t{2}, int128_t{4}) == 2);
     I128_ASSERT_THAT(math_functions::gcd(uint64_t{2}, int128_t{-4}) == 2);
     I128_ASSERT_THAT(math_functions::gcd(uint64_t{3}, int128_t{7}) == 1);
     I128_ASSERT_THAT(math_functions::gcd(uint64_t{3}, int128_t{-7}) == 1);
     I128_ASSERT_THAT(math_functions::gcd(uint64_t{3}, int128_t{18446744073709551557ULL} * 3) == 3);
-    I128_ASSERT_THAT(math_functions::gcd(uint64_t{3}, int128_t{18446744073709551557ULL} * (-3)) ==
-                     3);
-    I128_ASSERT_THAT(math_functions::gcd(uint64_t{3} * 2 * 5 * 7 * 11 * 13 * 17 * 19,
-                                         int128_t{18446744073709551557ULL} * 3) == 3);
+    I128_ASSERT_THAT(math_functions::gcd(uint64_t{3}, int128_t{18446744073709551557ULL} * (-3)) == 3);
+    I128_ASSERT_THAT(
+        math_functions::gcd(uint64_t{3} * 2 * 5 * 7 * 11 * 13 * 17 * 19, int128_t{18446744073709551557ULL} * 3) == 3);
     I128_ASSERT_THAT(math_functions::gcd(uint64_t{1000000000000000009ULL},
                                          int128_t{1000000000000000009LL} * 1000000000000000009LL) ==
                      1000000000000000009ULL);
-    I128_ASSERT_THAT(
-        math_functions::gcd(uint64_t{0}, int128_t{1000000000000000009LL} * 1000000000000000009LL) ==
-        uint128_t{1000000000000000009LL} * 1000000000000000009ULL);
-    I128_ASSERT_THAT(math_functions::gcd(uint64_t{18446744073709551557ULL}, int128_t{0}) ==
-                     18446744073709551557ULL);
+    I128_ASSERT_THAT(math_functions::gcd(uint64_t{0}, int128_t{1000000000000000009LL} * 1000000000000000009LL) ==
+                     uint128_t{1000000000000000009LL} * 1000000000000000009ULL);
+    I128_ASSERT_THAT(math_functions::gcd(uint64_t{18446744073709551557ULL}, int128_t{0}) == 18446744073709551557ULL);
 
     // clang-format off
 
@@ -2138,20 +2053,16 @@ void test_general_asserts() noexcept {
     ASSERT_THAT((math_functions::powers_sum_u64<0>(100) == 100U));
     ASSERT_THAT((math_functions::powers_sum_u64<1>(100) == 100U * (100U + 1) / 2));
     ASSERT_THAT((math_functions::powers_sum_u64<2>(100) == 100U * (100U + 1) * (2 * 100U + 1) / 6));
-    ASSERT_THAT(
-        (math_functions::powers_sum_u64<3>(100) == 100U * 100U * (100U + 1) * (100U + 1) / 4));
+    ASSERT_THAT((math_functions::powers_sum_u64<3>(100) == 100U * 100U * (100U + 1) * (100U + 1) / 4));
 
     I128_ASSERT_THAT((math_functions::powers_sum_u128<0>(100) == 100U));
     I128_ASSERT_THAT((math_functions::powers_sum_u128<1>(100) == 100U * (100U + 1) / 2));
-    I128_ASSERT_THAT(
-        (math_functions::powers_sum_u128<2>(100) == 100U * (100U + 1) * (2 * 100U + 1) / 6));
-    I128_ASSERT_THAT(
-        (math_functions::powers_sum_u128<3>(100) == 100U * 100U * (100U + 1) * (100U + 1) / 4));
+    I128_ASSERT_THAT((math_functions::powers_sum_u128<2>(100) == 100U * (100U + 1) * (2 * 100U + 1) / 6));
+    I128_ASSERT_THAT((math_functions::powers_sum_u128<3>(100) == 100U * 100U * (100U + 1) * (100U + 1) / 4));
 
     constexpr auto kN = static_cast<uint32_t>(3e9);
     constexpr auto kN128 = static_cast<uint128_t>(kN);
-    I128_ASSERT_THAT(
-        (math_functions::powers_sum_u128<3>(kN) == kN128 * kN128 * (kN128 + 1) * (kN128 + 1) / 4));
+    I128_ASSERT_THAT((math_functions::powers_sum_u128<3>(kN) == kN128 * kN128 * (kN128 + 1) * (kN128 + 1) / 4));
 
     ASSERT_THAT(next_even(0U) == 2);
     ASSERT_THAT(next_even(1U) == 2);
@@ -3766,192 +3677,154 @@ void test_weighted_min() {
     test_weighted_min_case({5, 4, 3, 2, 1}, 1);
     test_weighted_min_case(
         {
-            3499211612, 581869302,  3890346734, 3586334585, 545404204,  4161255391, 3922919429,
-            949333985,  2715962298, 1323567403, 418932835,  2350294565, 1196140740, 809094426,
-            2348838239, 4264392720, 4112460519, 4279768804, 4144164697, 4156218106, 676943009,
-            3117454609, 4168664243, 4213834039, 4111000746, 471852626,  2084672536, 3427838553,
-            3437178460, 1275731771, 609397212,  20544909,   1811450929, 483031418,  3933054126,
-            2747762695, 3402504553, 3772830893, 4120988587, 2163214728, 2816384844, 3427077306,
-            153380495,  1551745920, 3646982597, 910208076,  4011470445, 2926416934, 2915145307,
-            1712568902, 3254469058, 3181055693, 3191729660, 2039073006, 1684602222, 1812852786,
-            2815256116, 746745227,  735241234,  1296707006, 3032444839, 3424291161, 136721026,
-            1359573808, 1189375152, 3747053250, 198304612,  640439652,  417177801,  4269491673,
-            3536724425, 3530047642, 2984266209, 537655879,  1361931891, 3280281326, 4081172609,
-            2107063880, 147944788,  2850164008, 1884392678, 540721923,  1638781099, 902841100,
-            3287869586, 219972873,  3415357582, 156513983,  802611720,  1755486969, 2103522059,
-            1967048444, 1913778154, 2094092595, 2775893247, 3410096536, 3046698742, 3955127111,
-            3241354600, 3468319344, 1185518681, 3031277329, 2919300778, 12105075,   2813624502,
-            3052449900, 698412071,  2765791248, 511091141,  1958646067, 2140457296, 3323948758,
-            4122068897, 2464257528, 1461945556, 3765644424, 2513705832, 3471087299, 961264978,
-            76338300,   3226667454, 3527224675, 1095625157, 3525484323, 2173068963, 4037587209,
-            3002511655, 1772389185, 3826400342, 1817480335, 4120125281, 2495189930, 2350272820,
-            678852156,  595387438,  3271610651, 641212874,  988512770,  1105989508, 3477783405,
-            3610853094, 4245667946, 1092133642, 1427854500, 3497326703, 1287767370, 1045931779,
-            58150106,   3991156885, 933029415,  1503168825, 3897101788, 844370145,  3644141418,
-            1078396938, 4101769245, 2645891717, 3345340191, 2032760103, 4241106803, 1510366103,
-            290319951,  3568381791, 3408475658, 2513690134, 2553373352, 2361044915, 3147346559,
-            3939316793, 2986002498, 1227669233, 2919803768, 3252150224, 1685003584, 3237241796,
-            2411870849, 1634002467, 893645500,  2438775379, 2265043167, 325791709,  1736062366,
-            231714000,  1515103006, 2279758133, 2546159170, 3346497776, 1530490810, 4011545318,
-            4144499009, 557942923,  663307952,  2443079012, 1696117849, 2016017442, 1663423246,
-            51119001,   3122246755, 1447930741, 1668894615,
+            3499211612, 581869302,  3890346734, 3586334585, 545404204,  4161255391, 3922919429, 949333985,  2715962298,
+            1323567403, 418932835,  2350294565, 1196140740, 809094426,  2348838239, 4264392720, 4112460519, 4279768804,
+            4144164697, 4156218106, 676943009,  3117454609, 4168664243, 4213834039, 4111000746, 471852626,  2084672536,
+            3427838553, 3437178460, 1275731771, 609397212,  20544909,   1811450929, 483031418,  3933054126, 2747762695,
+            3402504553, 3772830893, 4120988587, 2163214728, 2816384844, 3427077306, 153380495,  1551745920, 3646982597,
+            910208076,  4011470445, 2926416934, 2915145307, 1712568902, 3254469058, 3181055693, 3191729660, 2039073006,
+            1684602222, 1812852786, 2815256116, 746745227,  735241234,  1296707006, 3032444839, 3424291161, 136721026,
+            1359573808, 1189375152, 3747053250, 198304612,  640439652,  417177801,  4269491673, 3536724425, 3530047642,
+            2984266209, 537655879,  1361931891, 3280281326, 4081172609, 2107063880, 147944788,  2850164008, 1884392678,
+            540721923,  1638781099, 902841100,  3287869586, 219972873,  3415357582, 156513983,  802611720,  1755486969,
+            2103522059, 1967048444, 1913778154, 2094092595, 2775893247, 3410096536, 3046698742, 3955127111, 3241354600,
+            3468319344, 1185518681, 3031277329, 2919300778, 12105075,   2813624502, 3052449900, 698412071,  2765791248,
+            511091141,  1958646067, 2140457296, 3323948758, 4122068897, 2464257528, 1461945556, 3765644424, 2513705832,
+            3471087299, 961264978,  76338300,   3226667454, 3527224675, 1095625157, 3525484323, 2173068963, 4037587209,
+            3002511655, 1772389185, 3826400342, 1817480335, 4120125281, 2495189930, 2350272820, 678852156,  595387438,
+            3271610651, 641212874,  988512770,  1105989508, 3477783405, 3610853094, 4245667946, 1092133642, 1427854500,
+            3497326703, 1287767370, 1045931779, 58150106,   3991156885, 933029415,  1503168825, 3897101788, 844370145,
+            3644141418, 1078396938, 4101769245, 2645891717, 3345340191, 2032760103, 4241106803, 1510366103, 290319951,
+            3568381791, 3408475658, 2513690134, 2553373352, 2361044915, 3147346559, 3939316793, 2986002498, 1227669233,
+            2919803768, 3252150224, 1685003584, 3237241796, 2411870849, 1634002467, 893645500,  2438775379, 2265043167,
+            325791709,  1736062366, 231714000,  1515103006, 2279758133, 2546159170, 3346497776, 1530490810, 4011545318,
+            4144499009, 557942923,  663307952,  2443079012, 1696117849, 2016017442, 1663423246, 51119001,   3122246755,
+            1447930741, 1668894615,
         },
         98);
     test_weighted_min_case(
         {
-            985960778,  2860674143, 2968742429, 2594641170, 3050160906, 1696058985, 3122376166,
-            2182044559, 2094860131, 3813024814, 800699405,  530565855,  4033017831, 2932007873,
-            286351694,  1262478340, 957474756,  1675384708, 4125210577, 3025675706, 2070911595,
-            2492594739, 4101999706, 509483035,  1056501017, 2205558691, 3984832071, 3458516866,
-            993374347,  1005154904, 2961173510, 2254879989, 388337156,  4199061715, 1374215613,
-            2779100868, 1585196674, 2326601676, 2543518909, 1253161009, 1101452479, 4026085828,
-            2444973131, 1559335522, 1567131291, 837011729,  2834214485, 3118342083, 2571080135,
-            3213328226, 3531873439, 1856831665, 1310580097, 2442529957, 3046681832, 3271690434,
-            3134764498, 3267335484, 630943181,  639509449,  3405734440, 1835539045, 2468594140,
-            850053284,  2684650624, 3522616351, 167140491,  3277906793, 3628563340, 3974577599,
-            827947059,  2276025901, 1903598325, 115033735,  3364130392, 2846096347, 1714976408,
-            3592268746, 1079812253, 2835837984, 497820880,  3072730676, 983366057,  3086900695,
-            745691392,  3536460441, 2349084751, 3851548162, 2337109115, 3534080360, 4111766338,
-            2646667457, 743711972,  832159134,  133280532,  3997118892, 2690535057, 646521452,
-            1023706758, 2329543377, 1668315947, 104158626,  554828811,  3100133738, 3705606252,
-            1354648466, 2411997247, 2288011834, 1627662859, 1716592181, 3642635840, 1158238372,
-            3815614483, 3483036216, 2543862353, 2972982015, 128026573,  646663579,  1898712001,
-            235037311,  1186238169, 1194650207, 778150010,  129405274,  814687594,  3412656806,
-            652378048,  969364358,  4250068332, 1268986887, 2005890049, 53103056,   2233089521,
-            1464237069, 1491599729, 3876670640, 1492117846, 1371136301, 211399389,  3216043338,
-            2215938377, 3649522078, 585770438,  1580256687, 3306553132, 1284491359, 1027219513,
-            3917626406, 1184591233, 2985140924, 3124870166, 2089108909, 2382641111, 759907791,
-            1651535410, 1196217750, 1416222464, 4158197116, 808607844,  102999428,  2588628451,
-            1635689902, 3910486019, 3882050518, 3305854945, 2102411944, 3810033807, 2756991256,
-            278790782,  2185169182, 4259320572, 3510109028, 2088155844, 2271923173, 748780304,
-            2044695239, 3750116655, 1910836364, 429225931,  708171834,  121868046,  2092095304,
-            381622095,  1721736905, 4133026139, 638460672,  516429888,  2801902516, 1618441419,
-            1814936805, 938188480,  2537518490, 3479155686, 303590527,  368884417,  2536232817,
-            4203933800, 2504593040, 956800143,  1805633868,
+            985960778,  2860674143, 2968742429, 2594641170, 3050160906, 1696058985, 3122376166, 2182044559, 2094860131,
+            3813024814, 800699405,  530565855,  4033017831, 2932007873, 286351694,  1262478340, 957474756,  1675384708,
+            4125210577, 3025675706, 2070911595, 2492594739, 4101999706, 509483035,  1056501017, 2205558691, 3984832071,
+            3458516866, 993374347,  1005154904, 2961173510, 2254879989, 388337156,  4199061715, 1374215613, 2779100868,
+            1585196674, 2326601676, 2543518909, 1253161009, 1101452479, 4026085828, 2444973131, 1559335522, 1567131291,
+            837011729,  2834214485, 3118342083, 2571080135, 3213328226, 3531873439, 1856831665, 1310580097, 2442529957,
+            3046681832, 3271690434, 3134764498, 3267335484, 630943181,  639509449,  3405734440, 1835539045, 2468594140,
+            850053284,  2684650624, 3522616351, 167140491,  3277906793, 3628563340, 3974577599, 827947059,  2276025901,
+            1903598325, 115033735,  3364130392, 2846096347, 1714976408, 3592268746, 1079812253, 2835837984, 497820880,
+            3072730676, 983366057,  3086900695, 745691392,  3536460441, 2349084751, 3851548162, 2337109115, 3534080360,
+            4111766338, 2646667457, 743711972,  832159134,  133280532,  3997118892, 2690535057, 646521452,  1023706758,
+            2329543377, 1668315947, 104158626,  554828811,  3100133738, 3705606252, 1354648466, 2411997247, 2288011834,
+            1627662859, 1716592181, 3642635840, 1158238372, 3815614483, 3483036216, 2543862353, 2972982015, 128026573,
+            646663579,  1898712001, 235037311,  1186238169, 1194650207, 778150010,  129405274,  814687594,  3412656806,
+            652378048,  969364358,  4250068332, 1268986887, 2005890049, 53103056,   2233089521, 1464237069, 1491599729,
+            3876670640, 1492117846, 1371136301, 211399389,  3216043338, 2215938377, 3649522078, 585770438,  1580256687,
+            3306553132, 1284491359, 1027219513, 3917626406, 1184591233, 2985140924, 3124870166, 2089108909, 2382641111,
+            759907791,  1651535410, 1196217750, 1416222464, 4158197116, 808607844,  102999428,  2588628451, 1635689902,
+            3910486019, 3882050518, 3305854945, 2102411944, 3810033807, 2756991256, 278790782,  2185169182, 4259320572,
+            3510109028, 2088155844, 2271923173, 748780304,  2044695239, 3750116655, 1910836364, 429225931,  708171834,
+            121868046,  2092095304, 381622095,  1721736905, 4133026139, 638460672,  516429888,  2801902516, 1618441419,
+            1814936805, 938188480,  2537518490, 3479155686, 303590527,  368884417,  2536232817, 4203933800, 2504593040,
+            956800143,  1805633868,
         },
         90);
     test_weighted_min_case(
         {
-            2198438985, 2698226636, 1968950470, 3315576946, 431429275,  671069548,  3819086165,
-            2626023107, 2400866928, 1293181152, 742335012,  1303628936, 1069455802, 3136464212,
-            559870608,  1939049197, 1645891156, 512698940,  4193197177, 4225218128, 3699758192,
-            3246245406, 1853870250, 2730159865, 2104201649, 3122320074, 981166580,  68354129,
-            572726716,  3696106829, 1336207750, 1930546613, 2029720412, 2636162218, 3865237919,
-            3780437118, 170842145,  2864042351, 1961591048, 595314277,  3186265701, 3306563953,
-            2643727482, 2569952601, 2890998654, 2887077875, 1593400555, 4191162562, 4266346982,
-            3692726186, 510989497,  792710458,  1973707153, 1485600190, 2065601451, 691529571,
-            4115746598, 672524964,  1376658681, 3062610121, 3671134895, 3103445730, 1187470072,
-            3741842869, 2621281472, 1345985168, 2005098775, 1295728899, 1552615950, 1427371637,
-            2324291105, 2791379451, 733673891,  3897507786, 3318494682, 2262747389, 3511281556,
-            2331636631, 3650039274, 527308565,  1478464269, 2709761083, 3612653589, 3996969744,
-            2866897468, 1894233895, 2515599365, 1604073355, 44034912,   652977540,  3150921166,
-            433419443,  1191398399, 93103485,   1237949188, 757522497,  1848128832, 2742632524,
-            221348416,  3035518529, 1180347579, 2738387411, 2342967856, 527838565,  3086650998,
-            391287595,  4149513012, 1743492517, 1738734840, 1187423038, 2259959790, 1813480057,
-            926057651,  66467867,   3522468017, 1983811204, 3206798407, 3657074583, 3278890216,
-            2455270391, 4060076374, 2717476378, 3302021426, 1284712450, 3296104179, 3228549559,
-            3348390349, 3536531104, 3773403126, 3557866222, 352335128,  1034511494, 1422355958,
-            3550983429, 972358605,  1868989705, 1576749113, 1266867208, 2263617637, 2871713105,
-            3600587925, 1507774735, 1997468526, 2802994620, 3900393299, 384979660,  3144123175,
-            3638471436, 3641023835, 67491570,   603500481,  1219502220, 1840861867, 3801372968,
-            172883917,  2294240793, 1251141238, 2845964134, 1300830768, 2206351191, 1161746546,
-            3948567717, 565054765,  1327876099, 197083479,  865284907,  1904538794, 3130051700,
-            3509608189, 3371107568, 2511734607, 2170372470, 818665103,  2597229755, 4279813875,
-            565043806,  2848032329, 4161811179, 238116018,  2474844821, 3312758816, 2428833949,
-            4169958513, 3157499672, 2034042263, 2039063941, 649680578,  1936540734, 2774218050,
-            2420282375, 4246671605, 2760606335, 741115352,  4229692006, 2442446935, 2432448267,
-            1507624674, 4014954826, 172462598,  2798804471, 1478496492, 4158011907, 3578425637,
-            2774058699, 3467322652, 1242946269, 3042225433, 4126609958, 1959884083, 100919636,
-            4207475824, 2890301089, 1655883188, 620377993,  974373117,  3000729911, 1573593495,
-            4082478003, 728493092,  4049868276, 3721543483, 1581267090, 210405669,  3770015983,
-            2566039977, 123531824,  3138814883, 766181839,  2868358630, 3604139352, 101030176,
-            2911320197, 3621003675, 2725396167, 4216783581, 3209235287, 3428420150, 1423404721,
-            2026421510, 3331165437, 1906444927, 1738506295, 1658622337, 4037546934, 62758658,
-            282215480,  2454127656, 762175613,  1864784716, 2560513854, 1764751983, 2499637040,
-            1696950220, 1172385008, 4099218094, 236157041,  1521161736, 3144072206, 1012305352,
-            2948845598, 3642900924, 872432072,  2660189822, 2342292884, 2587157749, 3316289558,
-            1092845974, 1346977252, 1835438873, 1073442789, 453044250,  1966546511, 2671788533,
-            503967775,  164271669,  4146288346, 3479082420, 1754934937, 118226603,  1362849777,
-            2094921149, 3841100871, 3726630165, 2513176589, 3845873146, 1928637450, 3300578133,
-            1637309271, 4273189893, 841408673,  780687312,  3068408162, 3723788458, 3186381597,
-            680650751,  3443513395, 2097607606, 624135354,  178440730,  1916204003, 2089319372,
-            917290619,  4220365102, 2248490289, 1781382199, 4262160900, 503058278,  898015522,
-            456784347,  2666132000, 1229430938, 3892502875, 3382423168, 2225727059, 3945769469,
-            1305585395, 365541118,  969113939,  1275376623, 590166712,  677877049,  2852115798,
-            11096246,   347837303,  1892692355, 4081285522, 1082772706, 966807766,  3410184102,
-            3357104964, 572024428,  4212523929, 4026366629, 2571474160, 2939217316, 3227415384,
-            1417864419, 1792685702, 2525083979, 1192614550, 1140731683, 2360860537, 1262733984,
-            169923995,  2384991095, 954107734,  3437158942, 697320146,  2069070346, 3170055388,
-            3152579461, 12804847,   3140289084, 3909085161, 2415860469, 3067368095, 3025045103,
-            4085925520, 2572792253, 2848513251, 3218032082, 3755474655, 3911797686, 2809561970,
-            1198924467, 2370141101, 3958440341, 920580168,  4064150086, 1970638698, 4101561404,
-            1291020707, 2382134586, 3411254050, 800537068,  2303787400, 3316529912, 522162461,
-            280502638,  1040387771, 1417344415, 4056556051, 3920407747, 1357252829, 3512741141,
-            2017705677, 1817013305, 804414100,  3589638714, 4031940838, 2568142328, 2323893758,
-            4017126129, 487667137,  1958493171, 3854387515, 1458820727, 2412821961, 1877541167,
-            3309883082,
+            2198438985, 2698226636, 1968950470, 3315576946, 431429275,  671069548,  3819086165, 2626023107, 2400866928,
+            1293181152, 742335012,  1303628936, 1069455802, 3136464212, 559870608,  1939049197, 1645891156, 512698940,
+            4193197177, 4225218128, 3699758192, 3246245406, 1853870250, 2730159865, 2104201649, 3122320074, 981166580,
+            68354129,   572726716,  3696106829, 1336207750, 1930546613, 2029720412, 2636162218, 3865237919, 3780437118,
+            170842145,  2864042351, 1961591048, 595314277,  3186265701, 3306563953, 2643727482, 2569952601, 2890998654,
+            2887077875, 1593400555, 4191162562, 4266346982, 3692726186, 510989497,  792710458,  1973707153, 1485600190,
+            2065601451, 691529571,  4115746598, 672524964,  1376658681, 3062610121, 3671134895, 3103445730, 1187470072,
+            3741842869, 2621281472, 1345985168, 2005098775, 1295728899, 1552615950, 1427371637, 2324291105, 2791379451,
+            733673891,  3897507786, 3318494682, 2262747389, 3511281556, 2331636631, 3650039274, 527308565,  1478464269,
+            2709761083, 3612653589, 3996969744, 2866897468, 1894233895, 2515599365, 1604073355, 44034912,   652977540,
+            3150921166, 433419443,  1191398399, 93103485,   1237949188, 757522497,  1848128832, 2742632524, 221348416,
+            3035518529, 1180347579, 2738387411, 2342967856, 527838565,  3086650998, 391287595,  4149513012, 1743492517,
+            1738734840, 1187423038, 2259959790, 1813480057, 926057651,  66467867,   3522468017, 1983811204, 3206798407,
+            3657074583, 3278890216, 2455270391, 4060076374, 2717476378, 3302021426, 1284712450, 3296104179, 3228549559,
+            3348390349, 3536531104, 3773403126, 3557866222, 352335128,  1034511494, 1422355958, 3550983429, 972358605,
+            1868989705, 1576749113, 1266867208, 2263617637, 2871713105, 3600587925, 1507774735, 1997468526, 2802994620,
+            3900393299, 384979660,  3144123175, 3638471436, 3641023835, 67491570,   603500481,  1219502220, 1840861867,
+            3801372968, 172883917,  2294240793, 1251141238, 2845964134, 1300830768, 2206351191, 1161746546, 3948567717,
+            565054765,  1327876099, 197083479,  865284907,  1904538794, 3130051700, 3509608189, 3371107568, 2511734607,
+            2170372470, 818665103,  2597229755, 4279813875, 565043806,  2848032329, 4161811179, 238116018,  2474844821,
+            3312758816, 2428833949, 4169958513, 3157499672, 2034042263, 2039063941, 649680578,  1936540734, 2774218050,
+            2420282375, 4246671605, 2760606335, 741115352,  4229692006, 2442446935, 2432448267, 1507624674, 4014954826,
+            172462598,  2798804471, 1478496492, 4158011907, 3578425637, 2774058699, 3467322652, 1242946269, 3042225433,
+            4126609958, 1959884083, 100919636,  4207475824, 2890301089, 1655883188, 620377993,  974373117,  3000729911,
+            1573593495, 4082478003, 728493092,  4049868276, 3721543483, 1581267090, 210405669,  3770015983, 2566039977,
+            123531824,  3138814883, 766181839,  2868358630, 3604139352, 101030176,  2911320197, 3621003675, 2725396167,
+            4216783581, 3209235287, 3428420150, 1423404721, 2026421510, 3331165437, 1906444927, 1738506295, 1658622337,
+            4037546934, 62758658,   282215480,  2454127656, 762175613,  1864784716, 2560513854, 1764751983, 2499637040,
+            1696950220, 1172385008, 4099218094, 236157041,  1521161736, 3144072206, 1012305352, 2948845598, 3642900924,
+            872432072,  2660189822, 2342292884, 2587157749, 3316289558, 1092845974, 1346977252, 1835438873, 1073442789,
+            453044250,  1966546511, 2671788533, 503967775,  164271669,  4146288346, 3479082420, 1754934937, 118226603,
+            1362849777, 2094921149, 3841100871, 3726630165, 2513176589, 3845873146, 1928637450, 3300578133, 1637309271,
+            4273189893, 841408673,  780687312,  3068408162, 3723788458, 3186381597, 680650751,  3443513395, 2097607606,
+            624135354,  178440730,  1916204003, 2089319372, 917290619,  4220365102, 2248490289, 1781382199, 4262160900,
+            503058278,  898015522,  456784347,  2666132000, 1229430938, 3892502875, 3382423168, 2225727059, 3945769469,
+            1305585395, 365541118,  969113939,  1275376623, 590166712,  677877049,  2852115798, 11096246,   347837303,
+            1892692355, 4081285522, 1082772706, 966807766,  3410184102, 3357104964, 572024428,  4212523929, 4026366629,
+            2571474160, 2939217316, 3227415384, 1417864419, 1792685702, 2525083979, 1192614550, 1140731683, 2360860537,
+            1262733984, 169923995,  2384991095, 954107734,  3437158942, 697320146,  2069070346, 3170055388, 3152579461,
+            12804847,   3140289084, 3909085161, 2415860469, 3067368095, 3025045103, 4085925520, 2572792253, 2848513251,
+            3218032082, 3755474655, 3911797686, 2809561970, 1198924467, 2370141101, 3958440341, 920580168,  4064150086,
+            1970638698, 4101561404, 1291020707, 2382134586, 3411254050, 800537068,  2303787400, 3316529912, 522162461,
+            280502638,  1040387771, 1417344415, 4056556051, 3920407747, 1357252829, 3512741141, 2017705677, 1817013305,
+            804414100,  3589638714, 4031940838, 2568142328, 2323893758, 4017126129, 487667137,  1958493171, 3854387515,
+            1458820727, 2412821961, 1877541167, 3309883082,
         },
         201);
     test_weighted_min_case(
         {
-            947064119,  2463473553, 1357960775, 3290572628, 2055223605, 904611658,  3310714130,
-            3094821715, 4036786951, 4234658425, 2295055999, 2882748084, 1988829139, 1175927272,
-            3395829442, 2864897917, 1684171291, 2341017676, 1372347005, 1618354246, 1871625234,
-            2493479328, 2785009713, 4211998089, 2549570156, 2079457421, 1520300726, 2509540033,
-            2321725416, 402379550,  687707643,  313538677,  1534073743, 1891764817, 938427779,
-            778289328,  672019428,  3082532227, 1135121852, 4219884929, 2345588223, 3630728351,
-            3144560123, 1974093771, 212457889,  1228122095, 2787861615, 3661564807, 1829513425,
-            4030546139, 460921948,  3578746698, 853326091,  546697133,  1129729515, 2034359903,
-            3322354990, 2995232049, 517302473,  4135387251, 1526440386, 978428423,  2548803006,
-            3467195111, 1266014376, 3721207119, 1687731515, 1525865115, 3308967567, 1223477057,
-            1065550786, 2785943281, 215151296,  917353139,  2660145980, 97525125,   3751687123,
-            2970458123, 3098344161, 323703063,  3915020632, 2365441842, 1480229350, 274677396,
-            2871267867, 1406180404, 2360820853, 974065880,  2661062989, 2712380412, 376855563,
-            1979707277, 613026410,  96957959,   2887827583, 937958203,  3160515197, 1099338925,
-            4184413080, 1251133231, 4118092204, 3952282721, 3650692691, 3762410885, 3793396036,
-            2523016444, 2586709795, 4209510543, 3558843077, 758666971,  1143913321, 1807376325,
-            514573285,  2968944465, 1727839008, 3302163890, 4241621238, 4205539121, 2150505144,
-            2425284607, 2469392405, 381450548,  426153632,  1902575637, 724754293,  1087386454,
-            2379653075, 3994356063, 615721295,  665602084,  2704617846, 3555476104, 2716274853,
-            204320755,  2530031056, 3694326968, 4077637074, 1339388696, 1654876915, 3792303189,
-            3820101065, 2245078296, 2412457046, 1862554895, 2299541843, 376910710,  4155736862,
-            535327173,  1131307213, 2702553973, 2024074808, 1911180440, 2021545457, 4117127967,
-            581706849,  3801421243, 953951874,  888723980,  683410143,  1199410171, 4212758383,
-            2870607789, 3208805492, 585187180,  4154047050, 4019506773, 1839741093, 2570149320,
-            694307633,  2443945161, 1753173027, 2758314914, 1624550078, 1656759730, 2043455526,
-            1526411629, 469788492,  4279411810, 3219828347, 2387017878, 1773045882, 2812209416,
-            844080004,  3185535469, 3390085243, 1006249574, 1270373140, 435096366,  1856177700,
-            2681867539, 3542313457, 2889161658, 236345377,  941867968,  3915055750, 3697279435,
-            2348206425, 3120712108, 662742826,  3687773207, 1806281654, 2852579935, 3178390464,
-            156787741,  3925905752, 1409765060, 822899573,  1531010145, 3316184810, 3524156801,
-            3957304585, 2610117718, 4032320257, 1175226157, 3412415284, 3720717688, 3449209445,
-            188030566,  3913756853, 3729048572, 3372920924, 3744983428, 3757512600, 1299620994,
-            442228868,  942078154,  3405276314, 2152813959, 260900849,  170712998,  3038609486,
-            2433030535, 958683772,  3146705394, 817891942,  2912674091, 1414322490, 2029766898,
-            1930060429, 1564519595, 3538967872, 1497897325, 1849069210, 1217409924, 2188048326,
-            4220806131, 1801415580, 168420499,  542539945,  2900460540, 572821308,  2598917121,
-            160899876,  4130302504, 1986510967, 2283719748, 4287957384, 801525063,  2474324718,
-            4099396619, 2489831153, 4258657014, 1979851312, 3363689778, 2292922490, 1555343951,
-            674249807,  105052069,  2334008542, 3561838536, 2655524681, 678625507,  388597217,
-            3775808634, 4117223444, 3477484430, 2381484536, 4083994813, 4218606161, 1767150873,
-            3730371373, 1804674850, 2182662111, 1433426463, 4136460195, 2255303744, 2261283108,
-            1297775852, 221991570,  940090914,  35213111,   4212071344, 1825481599, 3875060466,
-            2967654476, 3945157914, 1101548522, 1556484954, 4259794425, 3920238661, 2794992786,
-            2042279931, 4071435559, 4183875156, 4051818214, 2929313615, 1153916099, 3070181984,
-            556895225,  1368187501, 3642137283, 4065052736, 1928994759, 3115940252, 981190195,
-            919553044,  2264933424, 448508889,  4050756467, 1611212400, 2269945412, 1510686865,
-            870492320,  3268872237, 2288717877, 3515597231, 2526603475, 2494890555, 1250519811,
-            2178242306, 2656365274, 1187050286, 1312527878, 2599956382, 2259502126, 2709353730,
-            3968953185, 1626775623, 2717130741, 1489729986, 580019294,  2671393865, 3724828959,
-            2978808725, 288891719,  3953746073, 3228010256, 2671789993, 3973108949, 4233489947,
-            188725487,  1769923839, 3107869668, 745456721,  2925588696, 1739708663, 4080708110,
-            2361062252, 612296046,  952419774,  3716624962, 1664349889, 304418999,  3862971924,
-            2642697924, 3525472098, 3311873261, 1602920940, 3135489949, 654313227,  3827474756,
-            3314494162, 2932376072, 1795617831, 3398424874, 138451278,  2531174825, 4218806170,
-            115753329,  2369353692, 2375350422, 1965864670, 689448408,  1508746061, 1339592348,
-            2941716006, 3038638842, 2551449145, 358699304,  2092893096, 3462181775, 1875672339,
-            261293573,  4026018009, 3318634571, 4140835783, 636444917,  2582911950, 440702711,
-            4121492823,
+            947064119,  2463473553, 1357960775, 3290572628, 2055223605, 904611658,  3310714130, 3094821715, 4036786951,
+            4234658425, 2295055999, 2882748084, 1988829139, 1175927272, 3395829442, 2864897917, 1684171291, 2341017676,
+            1372347005, 1618354246, 1871625234, 2493479328, 2785009713, 4211998089, 2549570156, 2079457421, 1520300726,
+            2509540033, 2321725416, 402379550,  687707643,  313538677,  1534073743, 1891764817, 938427779,  778289328,
+            672019428,  3082532227, 1135121852, 4219884929, 2345588223, 3630728351, 3144560123, 1974093771, 212457889,
+            1228122095, 2787861615, 3661564807, 1829513425, 4030546139, 460921948,  3578746698, 853326091,  546697133,
+            1129729515, 2034359903, 3322354990, 2995232049, 517302473,  4135387251, 1526440386, 978428423,  2548803006,
+            3467195111, 1266014376, 3721207119, 1687731515, 1525865115, 3308967567, 1223477057, 1065550786, 2785943281,
+            215151296,  917353139,  2660145980, 97525125,   3751687123, 2970458123, 3098344161, 323703063,  3915020632,
+            2365441842, 1480229350, 274677396,  2871267867, 1406180404, 2360820853, 974065880,  2661062989, 2712380412,
+            376855563,  1979707277, 613026410,  96957959,   2887827583, 937958203,  3160515197, 1099338925, 4184413080,
+            1251133231, 4118092204, 3952282721, 3650692691, 3762410885, 3793396036, 2523016444, 2586709795, 4209510543,
+            3558843077, 758666971,  1143913321, 1807376325, 514573285,  2968944465, 1727839008, 3302163890, 4241621238,
+            4205539121, 2150505144, 2425284607, 2469392405, 381450548,  426153632,  1902575637, 724754293,  1087386454,
+            2379653075, 3994356063, 615721295,  665602084,  2704617846, 3555476104, 2716274853, 204320755,  2530031056,
+            3694326968, 4077637074, 1339388696, 1654876915, 3792303189, 3820101065, 2245078296, 2412457046, 1862554895,
+            2299541843, 376910710,  4155736862, 535327173,  1131307213, 2702553973, 2024074808, 1911180440, 2021545457,
+            4117127967, 581706849,  3801421243, 953951874,  888723980,  683410143,  1199410171, 4212758383, 2870607789,
+            3208805492, 585187180,  4154047050, 4019506773, 1839741093, 2570149320, 694307633,  2443945161, 1753173027,
+            2758314914, 1624550078, 1656759730, 2043455526, 1526411629, 469788492,  4279411810, 3219828347, 2387017878,
+            1773045882, 2812209416, 844080004,  3185535469, 3390085243, 1006249574, 1270373140, 435096366,  1856177700,
+            2681867539, 3542313457, 2889161658, 236345377,  941867968,  3915055750, 3697279435, 2348206425, 3120712108,
+            662742826,  3687773207, 1806281654, 2852579935, 3178390464, 156787741,  3925905752, 1409765060, 822899573,
+            1531010145, 3316184810, 3524156801, 3957304585, 2610117718, 4032320257, 1175226157, 3412415284, 3720717688,
+            3449209445, 188030566,  3913756853, 3729048572, 3372920924, 3744983428, 3757512600, 1299620994, 442228868,
+            942078154,  3405276314, 2152813959, 260900849,  170712998,  3038609486, 2433030535, 958683772,  3146705394,
+            817891942,  2912674091, 1414322490, 2029766898, 1930060429, 1564519595, 3538967872, 1497897325, 1849069210,
+            1217409924, 2188048326, 4220806131, 1801415580, 168420499,  542539945,  2900460540, 572821308,  2598917121,
+            160899876,  4130302504, 1986510967, 2283719748, 4287957384, 801525063,  2474324718, 4099396619, 2489831153,
+            4258657014, 1979851312, 3363689778, 2292922490, 1555343951, 674249807,  105052069,  2334008542, 3561838536,
+            2655524681, 678625507,  388597217,  3775808634, 4117223444, 3477484430, 2381484536, 4083994813, 4218606161,
+            1767150873, 3730371373, 1804674850, 2182662111, 1433426463, 4136460195, 2255303744, 2261283108, 1297775852,
+            221991570,  940090914,  35213111,   4212071344, 1825481599, 3875060466, 2967654476, 3945157914, 1101548522,
+            1556484954, 4259794425, 3920238661, 2794992786, 2042279931, 4071435559, 4183875156, 4051818214, 2929313615,
+            1153916099, 3070181984, 556895225,  1368187501, 3642137283, 4065052736, 1928994759, 3115940252, 981190195,
+            919553044,  2264933424, 448508889,  4050756467, 1611212400, 2269945412, 1510686865, 870492320,  3268872237,
+            2288717877, 3515597231, 2526603475, 2494890555, 1250519811, 2178242306, 2656365274, 1187050286, 1312527878,
+            2599956382, 2259502126, 2709353730, 3968953185, 1626775623, 2717130741, 1489729986, 580019294,  2671393865,
+            3724828959, 2978808725, 288891719,  3953746073, 3228010256, 2671789993, 3973108949, 4233489947, 188725487,
+            1769923839, 3107869668, 745456721,  2925588696, 1739708663, 4080708110, 2361062252, 612296046,  952419774,
+            3716624962, 1664349889, 304418999,  3862971924, 2642697924, 3525472098, 3311873261, 1602920940, 3135489949,
+            654313227,  3827474756, 3314494162, 2932376072, 1795617831, 3398424874, 138451278,  2531174825, 4218806170,
+            115753329,  2369353692, 2375350422, 1965864670, 689448408,  1508746061, 1339592348, 2941716006, 3038638842,
+            2551449145, 358699304,  2092893096, 3462181775, 1875672339, 261293573,  4026018009, 3318634571, 4140835783,
+            636444917,  2582911950, 440702711,  4121492823,
         },
         207);
 }

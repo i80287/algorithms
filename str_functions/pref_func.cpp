@@ -37,8 +37,8 @@ void find_pref_func(const string_view text, const string_view substr) {
     for (size_t i = 0; it != end; ++it, ++i) {
         if (*it == substr.size()) {
             const size_t start_index = i + 1 - substr.size();
-            cout << "Substring " << text.substr(start_index, substr.size()) << " from "
-                 << start_index << " to " << i << '\n';
+            cout << "Substring " << text.substr(start_index, substr.size()) << " from " << start_index << " to " << i
+                 << '\n';
         }
     }
 }

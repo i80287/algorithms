@@ -19,8 +19,7 @@ inline constexpr bool kIsNothrowComparable =
 
 template <class Iterator, class Comparator>
 inline constexpr bool kIsNoexceptSortable =
-    noexcept(
-        std::is_nothrow_move_assignable_v<typename std::iterator_traits<Iterator>::value_type>) &&
+    noexcept(std::is_nothrow_move_assignable_v<typename std::iterator_traits<Iterator>::value_type>) &&
     kIsNothrowComparable<Iterator, Comparator> &&
     std::is_nothrow_swappable_v<typename std::iterator_traits<Iterator>::value_type>;
 
@@ -196,8 +195,8 @@ struct QuickSortNiebloid final {
     }
 
     template <std::ranges::bidirectional_range Range, class Comparator = std::ranges::less>
-    constexpr void operator()(Range&& range, Comparator comp = {}) const noexcept(
-        noexcept(quick_sort(std::ranges::begin(range), std::ranges::end(range), std::move(comp)))) {
+    constexpr void operator()(Range&& range, Comparator comp = {}) const
+        noexcept(noexcept(quick_sort(std::ranges::begin(range), std::ranges::end(range), std::move(comp)))) {
         quick_sort(std::ranges::begin(range), std::ranges::end(range), std::move(comp));
     }
 };

@@ -9,12 +9,11 @@
 
 #include "config_macros.hpp"
 
-#if defined(__cpp_lib_source_location) && __cpp_lib_source_location >= 201907L && \
-    CONFIG_HAS_INCLUDE(<source_location>)
+#if defined(__cpp_lib_source_location) && __cpp_lib_source_location >= 201907L && CONFIG_HAS_INCLUDE(<source_location>)
 
-#if !CONFIG_COMPILER_IS_MSVC ||                                                                   \
-    (CONFIG_MSVC_AT_LEAST(19, 39) && (!defined(_USE_DETAILED_FUNCTION_NAME_IN_SOURCE_LOCATION) || \
-                                      _USE_DETAILED_FUNCTION_NAME_IN_SOURCE_LOCATION))
+#if !CONFIG_COMPILER_IS_MSVC ||      \
+    (CONFIG_MSVC_AT_LEAST(19, 39) && \
+     (!defined(_USE_DETAILED_FUNCTION_NAME_IN_SOURCE_LOCATION) || _USE_DETAILED_FUNCTION_NAME_IN_SOURCE_LOCATION))
 #define MISC_GET_TYPENAME_USE_SOURCE_LOCATION_FUNCTION_NAME
 #include <source_location>
 #endif
@@ -81,8 +80,8 @@ using std::string_view;
             }
             case ',':
             case ';': {
-                if (opened_square_brackets == 0 && opened_round_brackets == 0 &&
-                    opened_curly_brackets == 0 && opened_triangle_brackets == 0) {
+                if (opened_square_brackets == 0 && opened_round_brackets == 0 && opened_curly_brackets == 0 &&
+                    opened_triangle_brackets == 0) {
                     return i;
                 }
                 break;
@@ -201,8 +200,7 @@ template <class T>
     ::misc::detail::constexpr_assert(prefix_start_pos != string_view::npos);
     size_t value_start_pos = prefix_start_pos + prefix.size();
     ::misc::detail::constexpr_assert(value_start_pos < function_name.size());
-    const size_t value_end_pos =
-        value_start_pos + get_typename_end_pos_impl(function_name.substr(value_start_pos));
+    const size_t value_end_pos = value_start_pos + get_typename_end_pos_impl(function_name.substr(value_start_pos));
     ::misc::detail::constexpr_assert(value_start_pos < value_end_pos);
     ::misc::detail::constexpr_assert(value_end_pos < function_name.size());
     string_view full_name = function_name.substr(value_start_pos, value_end_pos - value_start_pos);
@@ -230,10 +228,8 @@ template <auto EnumValue, class EnumType>
     constexpr string_view kTemplateBeginning = "<";
     constexpr string_view kResolutionOperator = "::";
 
-    const string_view possible_namespace_location =
-        type_name.substr(0, type_name.find(kTemplateBeginning));
-    const size_t resolution_operator_begin_pos =
-        possible_namespace_location.rfind(kResolutionOperator);
+    const string_view possible_namespace_location = type_name.substr(0, type_name.find(kTemplateBeginning));
+    const size_t resolution_operator_begin_pos = possible_namespace_location.rfind(kResolutionOperator);
     if (resolution_operator_begin_pos == string_view::npos) {
         return type_name;
     }
@@ -254,15 +250,13 @@ constexpr std::string_view get_enum_value_name() {
     using EnumType = decltype(EnumValue);
     static_assert(std::is_enum_v<EnumType>, "Value of the enum is expected");
 
-    constexpr std::string_view kEnumValueName =
-        ::misc::detail::get_enum_value_name_impl<EnumValue, EnumType>();
+    constexpr std::string_view kEnumValueName = ::misc::detail::get_enum_value_name_impl<EnumValue, EnumType>();
     return kEnumValueName;
 }
 
 template <class T>
 constexpr std::string_view get_unqualified_typename() {
-    constexpr std::string_view kTypename =
-        ::misc::detail::unqualify_typename(::misc::get_qualified_typename<T>());
+    constexpr std::string_view kTypename = ::misc::detail::unqualify_typename(::misc::get_qualified_typename<T>());
     return kTypename;
 }
 

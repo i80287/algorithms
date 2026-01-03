@@ -72,8 +72,7 @@ inline constexpr bool is_c_str_arr_v = misc::is_c_str_arr<T>::value;
 
 template <class T>
 inline constexpr bool is_string_like_v =
-    misc::is_basic_string_v<T> || misc::is_basic_string_view_v<T> || misc::is_c_str_v<T> ||
-    misc::is_c_str_arr_v<T>;
+    misc::is_basic_string_v<T> || misc::is_basic_string_view_v<T> || misc::is_c_str_v<T> || misc::is_c_str_arr_v<T>;
 
 #if CONFIG_COMPILER_SUPPORTS_CONCEPTS
 

@@ -132,8 +132,7 @@ constexpr IteratorRange<RangeIterator> Range(int64_t start, int64_t end, int64_t
 
 template <class Container1, class Container2>
 auto Zip(const Container1& c1, const Container2& c2) {
-    return IteratorRange(ZipIterator(std::begin(c1), std::begin(c2)),
-                         ZipIterator(std::end(c1), std::end(c2)));
+    return IteratorRange(ZipIterator(std::begin(c1), std::begin(c2)), ZipIterator(std::end(c1), std::end(c2)));
 }
 
 template <class Container>

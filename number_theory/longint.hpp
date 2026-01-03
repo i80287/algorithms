@@ -43,17 +43,14 @@
         CONFIG_ASSUME_STATEMENT(expr); \
     } while (false)
 
-#define CONCAT_STR_STR_INT2(str_literal_1, str_literal_2, int_literal) \
-    str_literal_1 str_literal_2 #int_literal
+#define CONCAT_STR_STR_INT2(str_literal_1, str_literal_2, int_literal) str_literal_1 str_literal_2 #int_literal
 #define CONCAT_STR_STR_INT1(str_literal_1, str_literal_2, int_literal) \
     CONCAT_STR_STR_INT2(str_literal_1, str_literal_2, int_literal)
-#define LONGINT_FILE_LOCATION() \
-    CONCAT_STR_STR_INT1(__FILE__, ":", __LINE__), CONFIG_CURRENT_FUNCTION_NAME
+#define LONGINT_FILE_LOCATION() CONCAT_STR_STR_INT1(__FILE__, ":", __LINE__), CONFIG_CURRENT_FUNCTION_NAME
 
-#if CONFIG_HAS_AT_LEAST_CXX_20 && !defined(_GLIBCXX_DEBUG) && !defined(_GLIBCXX_ASSERTIONS) && \
-    ((CONFIG_COMPILER_ID != CONFIG_CLANG_COMPILER_ID &&                                        \
-      CONFIG_COMPILER_ID != CONFIG_CLANG_CL_COMPILER_ID) ||                                    \
-     CONFIG_CLANG_AT_LEAST(15, 0)) &&                                                          \
+#if CONFIG_HAS_AT_LEAST_CXX_20 && !defined(_GLIBCXX_DEBUG) && !defined(_GLIBCXX_ASSERTIONS) &&                \
+    ((CONFIG_COMPILER_ID != CONFIG_CLANG_COMPILER_ID && CONFIG_COMPILER_ID != CONFIG_CLANG_CL_COMPILER_ID) || \
+     CONFIG_CLANG_AT_LEAST(15, 0)) &&                                                                         \
     (CONFIG_COMPILER_ID != CONFIG_GCC_COMPILER_ID || CONFIG_GNUC_AT_LEAST(12, 0))
 #define CONSTEXPR_VECTOR constexpr
 #else
@@ -65,8 +62,7 @@
 // cppcoreguidelines-avoid-magic-numbers)
 // clang-format on
 
-#if CONFIG_COMPILER_ID == CONFIG_GCC_COMPILER_ID ||   \
-    CONFIG_COMPILER_ID == CONFIG_CLANG_COMPILER_ID || \
+#if CONFIG_COMPILER_ID == CONFIG_GCC_COMPILER_ID || CONFIG_COMPILER_ID == CONFIG_CLANG_COMPILER_ID || \
     CONFIG_COMPILER_ID == CONFIG_CLANG_CL_COMPILER_ID
 
 #define HAS_CUSTOM_LONGINT_ALLOCATOR
@@ -80,8 +76,7 @@ private:
     static constexpr std::size_t kPageMemoryOffsetInBytes = sizeof(void*);
 
     struct alignas(64) SmallPage {
-        static constexpr std::size_t kCapacity =
-            32 * sizeof(std::uint32_t) - kPageMemoryOffsetInBytes;
+        static constexpr std::size_t kCapacity = 32 * sizeof(std::uint32_t) - kPageMemoryOffsetInBytes;
 
         std::byte memory[kCapacity];
         SmallPage* next;
@@ -91,8 +86,7 @@ private:
     static_assert(sizeof(SmallPage) == sizeof(SmallPage::memory) + kPageMemoryOffsetInBytes, "");
 
     struct alignas(64) MiddlePage {
-        static constexpr std::size_t kCapacity =
-            256 * sizeof(std::uint32_t) - kPageMemoryOffsetInBytes;
+        static constexpr std::size_t kCapacity = 256 * sizeof(std::uint32_t) - kPageMemoryOffsetInBytes;
 
         std::byte memory[kCapacity];
         MiddlePage* next;
@@ -183,18 +177,16 @@ private:
             "[MALLOC]:\n"
             "    total bytes allocated: %zd\n"
             "    malloc calls - free calls: %d\n",
-            CONFIG_CURRENT_FUNCTION_NAME, total_small_pages_used, max_small_pages_used,
-            current_small_pages_used, total_middle_pages_used, max_middle_pages_used,
-            current_middle_pages_used, bytes_allocated, malloc_free_count);
+            CONFIG_CURRENT_FUNCTION_NAME, total_small_pages_used, max_small_pages_used, current_small_pages_used,
+            total_middle_pages_used, max_middle_pages_used, current_middle_pages_used, bytes_allocated,
+            malloc_free_count);
     }
 #endif
 
     template <class PageType, std::size_t TotalPages>
-    ATTRIBUTE_ALWAYS_INLINE static bool IsPage(const std::byte* memory,
-                                               const PageType (&pages_array)[TotalPages]) {
+    ATTRIBUTE_ALWAYS_INLINE static bool IsPage(const std::byte* memory, const PageType (&pages_array)[TotalPages]) {
         const auto mem_addr = reinterpret_cast<std::uintptr_t>(memory);
-        const auto first_page_addr =
-            reinterpret_cast<std::uintptr_t>(std::addressof(pages_array[0]));
+        const auto first_page_addr = reinterpret_cast<std::uintptr_t>(std::addressof(pages_array[0]));
         return mem_addr - first_page_addr < TotalPages * sizeof(PageType);
     }
 
@@ -265,15 +257,13 @@ inline void Deallocate(void* const memory) noexcept {
 #endif
 
 #if CONFIG_GNUC_AT_LEAST(2, 96)
-#if IS_INLINE_LONGINT_ALLOCATE || defined(__clang__) || defined(__MINGW32__) || \
-    !CONFIG_GNUC_AT_LEAST(10, 0)
+#if IS_INLINE_LONGINT_ALLOCATE || defined(__clang__) || defined(__MINGW32__) || !CONFIG_GNUC_AT_LEAST(10, 0)
 [[gnu::malloc]]
 #else
 [[gnu::malloc, gnu::malloc(::longint_allocator::Deallocate, 1)]]
 #endif
 #endif
-ATTRIBUTE_RETURNS_NONNULL ATTRIBUTE_ALLOC_SIZE(1) INLINE_LONGINT_ALLOCATE
-    void* Allocate(const std::size_t size) {
+ATTRIBUTE_RETURNS_NONNULL ATTRIBUTE_ALLOC_SIZE(1) INLINE_LONGINT_ALLOCATE void* Allocate(const std::size_t size) {
     if (size <= inner_impl::SmallPage::kCapacity && inner_impl::free_small_pages_head != nullptr) {
         inner_impl::SmallPage* p = inner_impl::free_small_pages_head;
 #ifdef DEBUG_LI_ALLOC_PRINTING
@@ -287,8 +277,7 @@ ATTRIBUTE_RETURNS_NONNULL ATTRIBUTE_ALLOC_SIZE(1) INLINE_LONGINT_ALLOCATE
         return static_cast<void*>(std::addressof(p->memory[0]));
     }
 
-    if (size <= inner_impl::MiddlePage::kCapacity &&
-        inner_impl::free_middle_pages_head != nullptr) {
+    if (size <= inner_impl::MiddlePage::kCapacity && inner_impl::free_middle_pages_head != nullptr) {
         inner_impl::MiddlePage* p = inner_impl::free_middle_pages_head;
 #ifdef DEBUG_LI_ALLOC_PRINTING
         inner_impl::current_middle_pages_used++;
@@ -329,10 +318,8 @@ class longint final {
     //  longint::divmod(uint32_t) (where it is used), CE will occured
     //  because of the 'not defined declared inline function' divmod_impl
 
-    template <bool DoDivide,
-              class LongIntType = std::conditional_t<DoDivide, longint, const longint>>
-    [[nodiscard]] static constexpr int64_t divmod_impl(LongIntType& lhs,
-                                                       const uint32_t n) noexcept {
+    template <bool DoDivide, class LongIntType = std::conditional_t<DoDivide, longint, const longint>>
+    [[nodiscard]] static constexpr int64_t divmod_impl(LongIntType& lhs, const uint32_t n) noexcept {
         static_assert(sizeof(digit_t) == sizeof(uint32_t));
 
         const bool is_lhs_negative = lhs.is_negative();
@@ -340,8 +327,7 @@ class longint final {
         double_digit_t carry = 0;
         using IterType = std::conditional_t<DoDivide, digit_t, const digit_t>*;
         IterType const nums_iter_rend = lhs.nums_ - 1;
-        for (IterType nums_riter = nums_iter_rend + lhs.usize(); nums_riter != nums_iter_rend;
-             --nums_riter) {
+        for (IterType nums_riter = nums_iter_rend + lhs.usize(); nums_riter != nums_iter_rend; --nums_riter) {
             const double_digit_t cur = (carry << kDigitBits) | double_digit_t{*nums_riter};
             const double_digit_t q = cur / n;
             const double_digit_t r = cur % n;
@@ -451,15 +437,13 @@ public:
     static constexpr std::size_t kDefaultLINumsCapacity128 = 4;
 
     static constexpr std::uint32_t kStrConvBase = 1'000'000'000;
-    static constexpr std::uint32_t kStrConvBaseDigits =
-        math_functions::base_b_len(kStrConvBase - 1);
+    static constexpr std::uint32_t kStrConvBaseDigits = math_functions::base_b_len(kStrConvBase - 1);
     static constexpr std::uint32_t kDigitBits = sizeof(digit_t) * CHAR_BIT;
     static_assert(sizeof(digit_t) < sizeof(double_digit_t));
     static constexpr double_digit_t kNumsBase = double_digit_t{1} << kDigitBits;
 
     static constexpr std::size_t kFFTPrecisionBorder = 1u << 18;
-    static constexpr auto kFFTFloatRoundError =
-        std::numeric_limits<typename fft::complex::value_type>::round_error();
+    static constexpr auto kFFTFloatRoundError = std::numeric_limits<typename fft::complex::value_type>::round_error();
 
     static constexpr uint32_t kDecimalBase = kStrConvBase;
     static constexpr uint32_t kFFTDecimalBase = 1'000;
@@ -479,8 +463,7 @@ public:
         return *this = longint{other};
     }
 
-    constexpr longint(longint&& other) noexcept
-        : nums_(other.nums_), size_(other.size_), capacity_(other.capacity_) {
+    constexpr longint(longint&& other) noexcept : nums_(other.nums_), size_(other.size_), capacity_(other.capacity_) {
         other.nums_ = nullptr;
         other.size_ = 0;
         other.capacity_ = 0;
@@ -710,8 +693,7 @@ public:
     }
     ATTRIBUTE_ALWAYS_INLINE
     ATTRIBUTE_PURE
-    [[nodiscard]] constexpr const_reverse_iterator rbegin() const noexcept
-        ATTRIBUTE_LIFETIME_BOUND {
+    [[nodiscard]] constexpr const_reverse_iterator rbegin() const noexcept ATTRIBUTE_LIFETIME_BOUND {
         return std::make_reverse_iterator(end());
     }
     ATTRIBUTE_ALWAYS_INLINE
@@ -721,8 +703,7 @@ public:
     }
     ATTRIBUTE_ALWAYS_INLINE
     ATTRIBUTE_PURE
-    [[nodiscard]] constexpr const_reverse_iterator crbegin() const noexcept
-        ATTRIBUTE_LIFETIME_BOUND {
+    [[nodiscard]] constexpr const_reverse_iterator crbegin() const noexcept ATTRIBUTE_LIFETIME_BOUND {
         return rbegin();
     }
     ATTRIBUTE_ALWAYS_INLINE
@@ -785,15 +766,12 @@ public:
         } else {
             const auto [n, need_high_precision] = LongIntFFT::compute_fft_product_params(prod_size);
             // Allocate n complex numbers for p1 and n complex numbers for p2
-            const std::unique_ptr<fft::complex, struct ComplexDeleter> p1(
-                allocate_complex_array_for_unique_ptr(2 * n));
-            LongIntFFT::convert_longint_nums_to_fft_poly(nums_ptr, nums_size, p1.get(), n,
-                                                         need_high_precision);
+            const std::unique_ptr<fft::complex, struct ComplexDeleter> p1(allocate_complex_array_for_unique_ptr(2 * n));
+            LongIntFFT::convert_longint_nums_to_fft_poly(nums_ptr, nums_size, p1.get(), n, need_high_precision);
             other.reserveUninitializedWithoutCopy(prod_size);
             fft::complex* p2 = p1.get() + n;
             fft::forward_backward_fft(p1.get(), p2, n);
-            LongIntFFT::convert_fft_poly_to_longint_nums(need_high_precision, p2, other.nums_,
-                                                         prod_size);
+            LongIntFFT::convert_fft_poly_to_longint_nums(need_high_precision, p2, other.nums_, prod_size);
         }
 
         other.size_ = static_cast<ssize_type>(prod_size);
@@ -837,10 +815,8 @@ public:
         } else {
             const auto [n, need_high_precision] = LongIntFFT::compute_fft_product_params(prod_size);
             // Allocate n complex numbers for p1 and n complex numbers for p2
-            const std::unique_ptr<fft::complex, struct ComplexDeleter> p1(
-                allocate_complex_array_for_unique_ptr(2 * n));
-            LongIntFFT::convert_longint_nums_to_fft_poly(m_ptr, m, k_ptr, k, p1.get(), n,
-                                                         need_high_precision);
+            const std::unique_ptr<fft::complex, struct ComplexDeleter> p1(allocate_complex_array_for_unique_ptr(2 * n));
+            LongIntFFT::convert_longint_nums_to_fft_poly(m_ptr, m, k_ptr, k, p1.get(), n, need_high_precision);
             reserveUninitializedWithoutCopy(prod_size);
             fft::complex* const p2 = p1.get() + n;
             fft::forward_backward_fft(p1.get(), p2, n);
@@ -883,8 +859,7 @@ public:
         const size_type other_usize = other.usize();
 
         static_assert(max_size() + 1 > max_size());
-        const size_type this_usize =
-            set_size_at_least(std::max(usize(), other_usize) + (find_sum ? 1u : 0u));
+        const size_type this_usize = set_size_at_least(std::max(usize(), other_usize) + (find_sum ? 1u : 0u));
 
         LONGINT_ASSERT_ASSUME(this_usize >= other_usize);
         if (find_sum) {
@@ -1092,8 +1067,7 @@ public:
         const digit_t* r_other_nums = other.nums_ - 1 + usize_value;
         for (; r_nums != r_end; r_nums--, r_other_nums--) {
             if (*r_nums != *r_other_nums) {
-                return static_cast<int64_t>(*r_nums) * sign() <=>
-                       static_cast<int64_t>(*r_other_nums) * other.sign();
+                return static_cast<int64_t>(*r_nums) * sign() <=> static_cast<int64_t>(*r_other_nums) * other.sign();
             }
         }
 
@@ -1181,8 +1155,7 @@ public:
         double_digit_t carry = 0;
         const double_digit_t b_0 = n;
         const size_type usize_value = usize();
-        for (digit_t *nums_it = nums_, *nums_it_end = nums_it + usize_value; nums_it != nums_it_end;
-             ++nums_it) {
+        for (digit_t *nums_it = nums_, *nums_it_end = nums_it + usize_value; nums_it != nums_it_end; ++nums_it) {
             const double_digit_t res = *nums_it * b_0 + carry;
             *nums_it = static_cast<digit_t>(res);
             carry = res >> kDigitBits;
@@ -1232,8 +1205,7 @@ public:
     /// @return *this mod n
     ATTRIBUTE_NODISCARD_WITH_MESSAGE("use `/=` if you don't need the result of the `divmod`")
     ATTRIBUTE_ALWAYS_INLINE constexpr int64_t divmod(const uint32_t n) noexcept {
-        if ((config::is_constant_evaluated() || config::is_gcc_constant_p(n)) &&
-            (n & (n - 1)) == 0) {
+        if ((config::is_constant_evaluated() || config::is_gcc_constant_p(n)) && (n & (n - 1)) == 0) {
             if (n <= 1) {
                 /* Quite return when dividing by zero, i.e. n = 0. */
                 return 0;
@@ -1258,8 +1230,7 @@ public:
     ATTRIBUTE_ALWAYS_INLINE
     ATTRIBUTE_PURE
     [[nodiscard]] constexpr int64_t mod(const uint32_t n) const noexcept {
-        if ((config::is_constant_evaluated() || config::is_gcc_constant_p(n)) &&
-            (n & (n - 1)) == 0) {
+        if ((config::is_constant_evaluated() || config::is_gcc_constant_p(n)) && (n & (n - 1)) == 0) {
             if (n <= 1) {
                 /* Quite return when dividing by zero, i.e. n = 0. */
                 return 0;
@@ -1299,8 +1270,7 @@ public:
             for (; nums_iter != nums_iter_last; ++nums_iter) {
                 const digit_t current_digit = nums_iter[0];
                 const digit_t next_digit = nums_iter[1];
-                *nums_iter = static_cast<digit_t>(
-                    (current_digit | double_digit_t{next_digit} << kDigitBits) >> shift);
+                *nums_iter = static_cast<digit_t>((current_digit | double_digit_t{next_digit} << kDigitBits) >> shift);
             }
             *nums_iter_last >>= shift;
         }
@@ -1341,8 +1311,7 @@ public:
             for (digit_t* nums_iter = nums_iter_end - 1; nums_iter > nums_iter_begin; nums_iter--) {
                 const digit_t prev_digit = *(nums_iter - 1);
                 const digit_t current_digit = *nums_iter;
-                const double_digit_t two_digits =
-                    (double_digit_t{current_digit} << kDigitBits) | prev_digit;
+                const double_digit_t two_digits = (double_digit_t{current_digit} << kDigitBits) | prev_digit;
                 *nums_iter = static_cast<digit_t>(two_digits >> (kDigitBits - shift));
             }
             *nums_iter_begin = (*nums_iter_begin) << shift;
@@ -1371,8 +1340,7 @@ public:
             static_assert(sizeof(T) % sizeof(digit_t) == 0);
             return size_value <= sizeof(T) / sizeof(digit_t);
         } else {
-            return size_value == 0 ||
-                   (size_value == 1 && nums_[0] <= std::numeric_limits<T>::max());
+            return size_value == 0 || (size_value == 1 && nums_[0] <= std::numeric_limits<T>::max());
         }
     }
 
@@ -1483,8 +1451,7 @@ public:
 #endif
 
         const Decimal result = [&]() {
-            const size_type n =
-                check_size(math_functions::nearest_greater_equal_power_of_two(usize_value));
+            const size_type n = check_size(math_functions::nearest_greater_equal_power_of_two(usize_value));
             ensure_bin_base_pows_capacity(math_functions::log2_floor(n));
             std::vector<digit_t> knums(n);
             std::copy_n(nums_, usize_value, knums.data());
@@ -1494,8 +1461,7 @@ public:
         assert(result.digits_.size() >= 3);
         const typename Decimal::dec_size_type full_blocks = result.digits_.size() - 1;
         typename Decimal::dec_digit_t last_a_i = result.digits_[full_blocks];
-        const std::size_t string_size =
-            full_blocks * kStrConvBaseDigits + math_functions::base_10_len(last_a_i);
+        const std::size_t string_size = full_blocks * kStrConvBaseDigits + math_functions::base_10_len(last_a_i);
         ans.resize(ans.size() + string_size);
         // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
         auto* ptr = reinterpret_cast<unsigned char*>(std::addressof(ans[ans.size() - 1]));
@@ -1589,8 +1555,7 @@ public:
             const dec_size_type m = std::min(digits_.size(), other.digits_.size());
             dec_digit_t* p = digits_.data();
             for (dec_size_type i = 0; i < m; i++) {
-                const double_dec_digit_t res =
-                    double_dec_digit_t{p[i]} + double_dec_digit_t{other.digits_[i]} + carry;
+                const double_dec_digit_t res = double_dec_digit_t{p[i]} + double_dec_digit_t{other.digits_[i]} + carry;
                 p[i] = static_cast<dec_digit_t>(res % kDecimalBase);
                 carry = res / kDecimalBase;
             }
@@ -1699,15 +1664,13 @@ public:
                     return static_cast<uint64_t>(digits_[1]) * kDecimalBase + digits_[0] == n;
                 }
                 case 3: {
-                    constexpr uint64_t kDecimalBase2 =
-                        static_cast<uint64_t>(kDecimalBase) * kDecimalBase;
+                    constexpr uint64_t kDecimalBase2 = static_cast<uint64_t>(kDecimalBase) * kDecimalBase;
                     const uint64_t hi = digits_[2];
                     if (hi > 18) {
                         return false;
                     }
 
-                    const uint64_t low_mid_m =
-                        static_cast<uint64_t>(digits_[1]) * kDecimalBase + digits_[0];
+                    const uint64_t low_mid_m = static_cast<uint64_t>(digits_[1]) * kDecimalBase + digits_[0];
                     if (hi == 18) {
                         return n >= 18 * kDecimalBase2 && n - 18 * kDecimalBase2 == low_mid_m;
                     }
@@ -1754,8 +1717,7 @@ public:
             static void square_and_store_to(const dec_digit_t digits[],
                                             const dec_size_type digits_size,
                                             Decimal& product_result) {
-                DecNaive::multiply_and_store_to(digits, digits_size, digits, digits_size,
-                                                product_result);
+                DecNaive::multiply_and_store_to(digits, digits_size, digits, digits_size, product_result);
             }
             ATTRIBUTE_SIZED_ACCESS(read_only, 1, 2)
             ATTRIBUTE_SIZED_ACCESS(read_only, 3, 4)
@@ -1768,8 +1730,7 @@ public:
                 LONGINT_ASSERT_ASSUME(m_size <= k_size);
                 const dec_size_type new_size = m_size + k_size;
                 std::vector<dec_digit_t> ans(new_size);
-                DecNaive::multiply_and_store_to_impl(m_digits, m_size, k_digits, k_size,
-                                                     ans.data());
+                DecNaive::multiply_and_store_to_impl(m_digits, m_size, k_digits, k_size, ans.data());
                 product_result.digits_ = std::move(ans);
             }
 
@@ -1789,8 +1750,7 @@ public:
                     double_dec_digit_t carry = 0;
                     for (dec_size_type i = 0; i < k_size; i++) {
                         const double_dec_digit_t a_i = k_digits[i];
-                        const double_dec_digit_t res =
-                            a_i * b_j + double_dec_digit_t{ans_store_ptr[i]} + carry;
+                        const double_dec_digit_t res = a_i * b_j + double_dec_digit_t{ans_store_ptr[i]} + carry;
                         ans_store_ptr[i] = static_cast<dec_digit_t>(res % kDecimalBase);
                         carry = res / kDecimalBase;
                     }
@@ -1852,9 +1812,7 @@ public:
             }
 
             static constexpr std::size_t kComplexNumsPerOneDecNum = 3;
-            static_assert(math_functions::bin_pow(kFFTDecimalBase, kComplexNumsPerOneDecNum) ==
-                              kDecimalBase,
-                          "");
+            static_assert(math_functions::bin_pow(kFFTDecimalBase, kComplexNumsPerOneDecNum) == kDecimalBase, "");
             static constexpr dec_size_type kMaxDecFFTSize =
                 std::numeric_limits<dec_size_type>::max() / kComplexNumsPerOneDecNum / 2;
 
@@ -1862,8 +1820,7 @@ public:
                 LONGINT_ASSERT_ASSUME(product_size_ <= kMaxDecFFTSize);
                 product_result.digits_.resize(product_size_);
                 fft::forward_backward_fft(lhs_poly(), rhs_poly(), poly_size());
-                convert_fft_poly_to_decimal_digits(rhs_poly(), product_result.digits_.data(),
-                                                   product_size_);
+                convert_fft_poly_to_decimal_digits(rhs_poly(), product_result.digits_.data(), product_size_);
             }
 
             ATTRIBUTE_ALWAYS_INLINE
@@ -1882,11 +1839,10 @@ public:
             static constexpr dec_size_type polys_size(const dec_size_type size_value) noexcept {
                 LONGINT_ASSERT_ASSUME(size_value <= kMaxDecFFTSize);
                 static_assert(3 * kMaxDecFFTSize > kMaxDecFFTSize);
-                static_assert(
-                    3 * kMaxDecFFTSize <
-                    math_functions::nearest_greater_equal_power_of_two(3 * kMaxDecFFTSize));
-                static_assert(math_functions::nearest_greater_equal_power_of_two(
-                                  3 * kMaxDecFFTSize) <= std::numeric_limits<dec_size_type>::max());
+                static_assert(3 * kMaxDecFFTSize <
+                              math_functions::nearest_greater_equal_power_of_two(3 * kMaxDecFFTSize));
+                static_assert(math_functions::nearest_greater_equal_power_of_two(3 * kMaxDecFFTSize) <=
+                              std::numeric_limits<dec_size_type>::max());
                 return math_functions::nearest_greater_equal_power_of_two(3 * size_value);
             }
 
@@ -1896,8 +1852,7 @@ public:
             static fft::complex* allocate_polynomials(const dec_size_type size_value) {
                 // Allocate n for the first polynomial
                 //  and n for the second one
-                return static_cast<fft::complex*>(
-                    ::operator new(size_value * 2 * sizeof(fft::complex)));
+                return static_cast<fft::complex*>(::operator new(size_value * 2 * sizeof(fft::complex)));
             }
 
             ATTRIBUTE_ALWAYS_INLINE
@@ -2038,10 +1993,9 @@ public:
             ATTRIBUTE_ACCESS(read_only, 1)
             ATTRIBUTE_SIZED_ACCESS(write_only, 2, 3)
             ATTRIBUTE_NONNULL_ALL_ARGS
-            static void convert_fft_poly_to_decimal_digits(
-                const fft::complex* RESTRICT_QUALIFIER poly,
-                dec_digit_t* RESTRICT_QUALIFIER digits,
-                const dec_size_type digits_size) noexcept {
+            static void convert_fft_poly_to_decimal_digits(const fft::complex* RESTRICT_QUALIFIER poly,
+                                                           dec_digit_t* RESTRICT_QUALIFIER digits,
+                                                           const dec_size_type digits_size) noexcept {
                 LONGINT_ASSERT_ASSUME(digits_size > 0);
 
                 static_assert(sizeof(dec_digit_t) == sizeof(uint32_t));
@@ -2051,8 +2005,7 @@ public:
                     double_dec_digit_t res = carry;
                     res += static_cast<double_dec_digit_t>(poly->real() + kFFTFloatRoundError);
                     poly++;
-                    res += static_cast<double_dec_digit_t>(poly->real() + kFFTFloatRoundError) *
-                           kFFTDecimalBase;
+                    res += static_cast<double_dec_digit_t>(poly->real() + kFFTFloatRoundError) * kFFTDecimalBase;
                     poly++;
                     res += static_cast<double_dec_digit_t>(poly->real() + kFFTFloatRoundError) *
                            (kFFTDecimalBase * kFFTDecimalBase);
@@ -2180,11 +2133,9 @@ private:
         ATTRIBUTE_NODISCARD_WITH_MESSAGE("impl error in fft longint product")
         ATTRIBUTE_ALWAYS_INLINE
         ATTRIBUTE_CONST
-        static constexpr FFTParams compute_fft_product_params(
-            const size_type product_size) noexcept {
+        static constexpr FFTParams compute_fft_product_params(const size_type product_size) noexcept {
             static_assert(max_size() * 2 > max_size());
-            static_assert(2 * math_functions::nearest_greater_equal_power_of_two(max_size()) >=
-                          2 * max_size());
+            static_assert(2 * math_functions::nearest_greater_equal_power_of_two(max_size()) >= 2 * max_size());
             poly_size_type n = 2 * math_functions::nearest_greater_equal_power_of_two(product_size);
             const bool need_high_precision = n > kFFTPrecisionBorder;
             if (need_high_precision) {
@@ -2428,8 +2379,8 @@ private:
     }
 
     template <typename P>
-    [[nodiscard]] static bool all_of(const std::string_view str, P pred) noexcept(
-        std::is_nothrow_invocable_r_v<bool, P, char>) {
+    [[nodiscard]] static bool all_of(const std::string_view str,
+                                     P pred) noexcept(std::is_nothrow_invocable_r_v<bool, P, char>) {
         static_assert(std::is_invocable_r_v<bool, P, char>);
         bool ret = true;
         for (const char c : str) {
@@ -2445,8 +2396,8 @@ private:
                                                       const std::string_view str) {
 #ifdef HAS_JOIN_STRINGS
 #undef HAS_JOIN_STRINGS
-        const std::string msg = misc::join_strings(
-            "Can't convert string '", str, "' to longint at ", file_location, ' ', function_name);
+        const std::string msg =
+            misc::join_strings("Can't convert string '", str, "' to longint at ", file_location, ' ', function_name);
 #else
         std::ignore = file_location;
         std::ignore = function_name;
@@ -2559,15 +2510,13 @@ private:
         LONGINT_ASSERT_ASSUME(un_size > vn_size);
         for (size_type j = un_size - vn_size - 1; static_cast<ssize_type>(j) >= 0; j--) {
             // Compute estimate qhat of q[j].
-            const double_digit_t cur =
-                (double_digit_t{un[j + vn_size]} << kDigitBits) | un[j + vn_size - 1];
+            const double_digit_t cur = (double_digit_t{un[j + vn_size]} << kDigitBits) | un[j + vn_size - 1];
             const digit_t last_vn = vn[vn_size - 1];
             LONGINT_ASSERT_ASSUME(last_vn >= digit_t{1} << (kDigitBits - 1));
             double_digit_t qhat = cur / last_vn;
             double_digit_t rhat = cur % last_vn;
             LONGINT_ASSERT_ASSUME(qhat * last_vn + rhat == cur);
-            while (qhat >= kNumsBase ||
-                   qhat * vn[vn_size - 2] > kNumsBase * rhat + un[j + vn_size - 2]) {
+            while (qhat >= kNumsBase || qhat * vn[vn_size - 2] > kNumsBase * rhat + un[j + vn_size - 2]) {
                 qhat--;
                 rhat += last_vn;
                 LONGINT_ASSERT_ASSUME(qhat * last_vn + rhat == cur);
@@ -2639,15 +2588,11 @@ private:
     ATTRIBUTE_SIZED_ACCESS(read_only, 2, 3)
     ATTRIBUTE_NONNULL_ALL_ARGS
     ATTRIBUTE_ALWAYS_INLINE
-    static constexpr void divmod_normalize_vn(digit_t vn[],
-                                              const digit_t v[],
-                                              size_type n,
-                                              std::uint32_t s) noexcept {
+    static constexpr void divmod_normalize_vn(digit_t vn[], const digit_t v[], size_type n, std::uint32_t s) noexcept {
         LONGINT_ASSERT_ASSUME(n > 1);
         LONGINT_ASSERT_ASSUME(s < 32);
         for (size_type i = n - 1; i > 0; i--) {
-            vn[i] =
-                (v[i] << s) | static_cast<digit_t>(double_digit_t{v[i - 1]} >> (kDigitBits - s));
+            vn[i] = (v[i] << s) | static_cast<digit_t>(double_digit_t{v[i - 1]} >> (kDigitBits - s));
         }
         vn[0] = v[0] << s;
     }
@@ -2666,8 +2611,7 @@ private:
         LONGINT_ASSERT_ASSUME(m + 1 == m_plus_one);
         un[m] = static_cast<digit_t>(double_digit_t{u[m - 1]} >> (kDigitBits - s));
         for (size_type i = m - 1; i > 0; i--) {
-            un[i] =
-                (u[i] << s) | static_cast<digit_t>(double_digit_t{u[i - 1]} >> (kDigitBits - s));
+            un[i] = (u[i] << s) | static_cast<digit_t>(double_digit_t{u[i - 1]} >> (kDigitBits - s));
         }
         un[0] = u[0] << s;
     }
@@ -2685,8 +2629,7 @@ private:
         LONGINT_ASSERT_ASSUME(s < 32);
         LONGINT_ASSERT_ASSUME(n + 1 == n_plus_one);
         for (size_type i = 0; i < n; i++) {
-            rem[i] =
-                (un[i] >> s) | static_cast<digit_t>(double_digit_t{un[i + 1]} << (kDigitBits - s));
+            rem[i] = (un[i] >> s) | static_cast<digit_t>(double_digit_t{un[i + 1]} << (kDigitBits - s));
         }
     }
 
@@ -2696,8 +2639,7 @@ private:
     }
 
     ATTRIBUTE_ALWAYS_INLINE
-    constexpr void set_ssize_from_size_and_sign(const size_type size,
-                                                const ssize_type sign) noexcept {
+    constexpr void set_ssize_from_size_and_sign(const size_type size, const ssize_type sign) noexcept {
         static_assert(sizeof(ssize_type) == sizeof(size_type));
         LONGINT_ASSERT_ASSUME(size <= max_size());
         size_ = static_cast<ssize_type>(sign >= 0 ? size : -size);
@@ -2729,8 +2671,7 @@ private:
         return pows;
     }
 
-    static inline std::vector<Decimal> conv_bin_base_pows =
-        longint::create_initial_conv_bin_base_pows();
+    static inline std::vector<Decimal> conv_bin_base_pows = longint::create_initial_conv_bin_base_pows();
 
     friend struct longint_detail::longint_static_storage;
 
@@ -2747,8 +2688,7 @@ private:
         const size_type m_size = conv_base_pow.usize();
         const digit_t* const m_ptr = conv_base_pow.nums_;
         assert(0 < m_size && m_size <= conv_len / 2);
-        convert_dec_base_mult_add_impl(conv_digits, conv_len, m_ptr, m_size, mult_add_buffer,
-                                       fft_poly_buffer);
+        convert_dec_base_mult_add_impl(conv_digits, conv_len, m_ptr, m_size, mult_add_buffer, fft_poly_buffer);
     }
 
     ATTRIBUTE_SIZED_ACCESS(read_write, 1, 2)
@@ -2771,24 +2711,21 @@ private:
         const size_type prod_size = m_size + half_conv_len;
         std::fill_n(mult_add_buffer, conv_len, digit_t{0});
         if (half_conv_len <= 32) {
-            LongIntNaive::multiply_and_store_to(m_ptr, m_size, num_hi, half_conv_len,
-                                                mult_add_buffer);
+            LongIntNaive::multiply_and_store_to(m_ptr, m_size, num_hi, half_conv_len, mult_add_buffer);
         } else {
             const auto [n, need_high_precision] = LongIntFFT::compute_fft_product_params(prod_size);
             fft::complex* const p1 = fft_poly_buffer;
-            LongIntFFT::convert_longint_nums_to_fft_poly(m_ptr, m_size, num_hi, half_conv_len, p1,
-                                                         n, need_high_precision);
+            LongIntFFT::convert_longint_nums_to_fft_poly(m_ptr, m_size, num_hi, half_conv_len, p1, n,
+                                                         need_high_precision);
             fft::complex* const p2 = p1 + n;
             fft::forward_backward_fft(p1, p2, n);
-            LongIntFFT::convert_fft_poly_to_longint_nums(need_high_precision, p2, mult_add_buffer,
-                                                         prod_size);
+            LongIntFFT::convert_fft_poly_to_longint_nums(need_high_precision, p2, mult_add_buffer, prod_size);
         }
 
         // Now mult_add_buffer == num_hi * CONV_BASE^half_len
         double_digit_t carry = 0;
         for (size_type i = half_conv_len; i > 0; i--, conv_digits++, mult_add_buffer++) {
-            const double_digit_t res =
-                double_digit_t{*conv_digits} + double_digit_t{*mult_add_buffer} + carry;
+            const double_digit_t res = double_digit_t{*conv_digits} + double_digit_t{*mult_add_buffer} + carry;
             *conv_digits = static_cast<digit_t>(res);
             carry = res >> kDigitBits;
         }
@@ -3087,8 +3024,7 @@ private:
     static digit_t* allocate_uninitialized(const size_type nums) {
 #if defined(HAS_CUSTOM_LONGINT_ALLOCATOR)
         if constexpr (kUseCustomLongIntAllocator) {
-            return static_cast<digit_t*>(
-                ::longint_allocator::Allocate(std::size_t{nums} * sizeof(digit_t)));
+            return static_cast<digit_t*>(::longint_allocator::Allocate(std::size_t{nums} * sizeof(digit_t)));
         } else
 #endif
         {
@@ -3096,8 +3032,7 @@ private:
         }
     }
 
-    static void deallocate(digit_t* const nums,
-                           [[maybe_unused]] const size_type nums_capacity) noexcept {
+    static void deallocate(digit_t* const nums, [[maybe_unused]] const size_type nums_capacity) noexcept {
 #if defined(HAS_CUSTOM_LONGINT_ALLOCATOR)
         if constexpr (kUseCustomLongIntAllocator) {
             ::longint_allocator::Deallocate(static_cast<void*>(nums));
@@ -3114,8 +3049,7 @@ private:
         }
     };
 
-    ATTRIBUTE_ALWAYS_INLINE static fft::complex* allocate_complex_array_for_unique_ptr(
-        std::size_t size) {
+    ATTRIBUTE_ALWAYS_INLINE static fft::complex* allocate_complex_array_for_unique_ptr(std::size_t size) {
         const auto size_bytes = size * sizeof(fft::complex);
         return static_cast<fft::complex*>(::operator new(size_bytes));
     }
@@ -3144,21 +3078,18 @@ private:
                                               const std::size_t max_size_value) {
         static constexpr std::size_t kMessageSize = 1024;
         std::array<char, kMessageSize> message{};
-        const int bytes_written =
-            std::snprintf(message.data(), message.size(),
-                          "%s: size error at %s: new size (which is %zu) > max size (which is %zu)",
-                          file_location, function_name, new_size_value, max_size_value);
+        const int bytes_written = std::snprintf(
+            message.data(), message.size(), "%s: size error at %s: new size (which is %zu) > max size (which is %zu)",
+            file_location, function_name, new_size_value, max_size_value);
 
         if (unlikely(bytes_written < 0)) {
             constexpr std::string_view kFallbackMessage = "size error at ";
-            std::char_traits<char>::copy(message.data(), kFallbackMessage.data(),
-                                         kFallbackMessage.size());
+            std::char_traits<char>::copy(message.data(), kFallbackMessage.data(), kFallbackMessage.size());
             const auto fn_name_size = std::char_traits<char>::length(function_name);
             static_assert(kFallbackMessage.size() < kMessageSize);
-            const auto fn_name_copy_size =
-                std::min(fn_name_size, message.size() - 1 - kFallbackMessage.size());
-            std::char_traits<char>::copy(std::addressof(message[kFallbackMessage.size()]),
-                                         function_name, fn_name_copy_size);
+            const auto fn_name_copy_size = std::min(fn_name_size, message.size() - 1 - kFallbackMessage.size());
+            std::char_traits<char>::copy(std::addressof(message[kFallbackMessage.size()]), function_name,
+                                         fn_name_copy_size);
             message[kFallbackMessage.size() + fn_name_copy_size] = '\0';
         }
 
@@ -3170,15 +3101,13 @@ private:
                                                                const char* const function_name) {
         static constexpr std::size_t kMessageSize = 1024;
         std::array<char, kMessageSize> message{};
-        const int bytes_written = std::snprintf(
-            message.data(), message.size(),
-            "%s: checked cast longint to integral type failed at %s", file_location, function_name);
+        const int bytes_written =
+            std::snprintf(message.data(), message.size(), "%s: checked cast longint to integral type failed at %s",
+                          file_location, function_name);
         if (unlikely(bytes_written < 0)) {
-            constexpr std::string_view kFallbackMessage =
-                "checked cast longint to integral type failed";
+            constexpr std::string_view kFallbackMessage = "checked cast longint to integral type failed";
             static_assert(kFallbackMessage.size() <= kMessageSize);
-            std::char_traits<char>::copy(message.data(), kFallbackMessage.data(),
-                                         kFallbackMessage.size());
+            std::char_traits<char>::copy(message.data(), kFallbackMessage.data(), kFallbackMessage.size());
             message[kFallbackMessage.size()] = '\0';
         }
 
@@ -3253,18 +3182,16 @@ inline void longint::set_dec_str_impl(const unsigned char* const str, const std:
         return;
     }
 
-    const std::size_t str_conv_digits_size =
-        (digits_count + kStrConvBaseDigits - 1) / kStrConvBaseDigits;
-    const size_type aligned_str_conv_digits_size = check_size(
-        math_functions::nearest_greater_equal_power_of_two(uint64_t{str_conv_digits_size}));
+    const std::size_t str_conv_digits_size = (digits_count + kStrConvBaseDigits - 1) / kStrConvBaseDigits;
+    const size_type aligned_str_conv_digits_size =
+        check_size(math_functions::nearest_greater_equal_power_of_two(uint64_t{str_conv_digits_size}));
     LONGINT_ASSERT_ASSUME(str_conv_digits_size <= aligned_str_conv_digits_size);
     reserveUninitializedWithoutCopy(aligned_str_conv_digits_size);
     digit_t* str_conv_digits = nums_;
 
     {
         digit_t* str_conv_digits_iter = str_conv_digits + str_conv_digits_size;
-        std::fill_n(str_conv_digits_iter, aligned_str_conv_digits_size - str_conv_digits_size,
-                    digit_t{0});
+        std::fill_n(str_conv_digits_iter, aligned_str_conv_digits_size - str_conv_digits_size, digit_t{0});
         if (std::size_t offset = digits_count % kStrConvBaseDigits) {
             digit_t current = 0;
             do {
@@ -3310,10 +3237,8 @@ inline void longint::set_dec_str_impl(const unsigned char* const str, const std:
     const std::size_t max_fft_poly_length = 2 * m;
     static_assert(sizeof(fft::complex) % sizeof(digit_t) == 0);
     const std::size_t allocated_nums_and_poly_size =
-        std::size_t{aligned_str_conv_digits_size} +
-        max_fft_poly_length * (sizeof(fft::complex) / sizeof(digit_t));
-    digit_t* const mult_add_buffer =
-        std::allocator<digit_t>{}.allocate(allocated_nums_and_poly_size);
+        std::size_t{aligned_str_conv_digits_size} + max_fft_poly_length * (sizeof(fft::complex) / sizeof(digit_t));
+    digit_t* const mult_add_buffer = std::allocator<digit_t>{}.allocate(allocated_nums_and_poly_size);
 
 #if CONFIG_COMPILER_ID == CONFIG_GCC_COMPILER_ID
 #pragma GCC diagnostic push
@@ -3326,23 +3251,20 @@ inline void longint::set_dec_str_impl(const unsigned char* const str, const std:
 #endif
     // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
     assert(reinterpret_cast<std::uintptr_t>(mult_add_buffer) % alignof(fft::complex) == 0);
-    auto* const fft_poly_buffer =
-        reinterpret_cast<fft::complex*>(mult_add_buffer + aligned_str_conv_digits_size);
+    auto* const fft_poly_buffer = reinterpret_cast<fft::complex*>(mult_add_buffer + aligned_str_conv_digits_size);
     // NOLINTPREVLINE(cppcoreguidelines-pro-type-reinterpret-cast)
 
 #if CONFIG_COMPILER_ID == CONFIG_GCC_COMPILER_ID
 #pragma GCC diagnostic pop
 #endif
 
-    const longint* conv_dec_base_pows_iter =
-        longint_detail::longint_static_storage::conv_dec_base_pows.data();
+    const longint* conv_dec_base_pows_iter = longint_detail::longint_static_storage::conv_dec_base_pows.data();
     static_assert(max_size() * 2 > max_size());
-    for (size_type conv_len = 2; conv_len <= aligned_str_conv_digits_size;
-         conv_len *= 2, ++conv_dec_base_pows_iter) {
+    for (size_type conv_len = 2; conv_len <= aligned_str_conv_digits_size; conv_len *= 2, ++conv_dec_base_pows_iter) {
         LONGINT_ASSERT_ASSUME(math_functions::is_power_of_two(conv_len));
         for (size_type pos = 0; pos < aligned_str_conv_digits_size; pos += conv_len) {
-            convert_dec_base_mult_add(str_conv_digits + pos, conv_len, *conv_dec_base_pows_iter,
-                                      mult_add_buffer, fft_poly_buffer);
+            convert_dec_base_mult_add(str_conv_digits + pos, conv_len, *conv_dec_base_pows_iter, mult_add_buffer,
+                                      fft_poly_buffer);
         }
     }
     std::allocator<digit_t>{}.deallocate(mult_add_buffer, allocated_nums_and_poly_size);

@@ -48,8 +48,8 @@ constexpr bool verify() {
     constexpr auto kMaxSizeFn = [](const TestCase& test) constexpr noexcept {
         return std::max(test.s1.size(), test.s2.size());
     };
-    constexpr size_t kMaxSize = kMaxSizeFn(
-        std::ranges::max(tests, [&](const TestCase& t1, const TestCase& t2) constexpr noexcept {
+    constexpr size_t kMaxSize =
+        kMaxSizeFn(std::ranges::max(tests, [&](const TestCase& t1, const TestCase& t2) constexpr noexcept {
             return kMaxSizeFn(t1) < kMaxSizeFn(t2);
         }));
     constexpr size_t kBufferSize = kMaxSize + 1;

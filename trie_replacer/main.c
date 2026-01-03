@@ -15,8 +15,7 @@ void run_test(const char* (*patterns_with_replacements)[2],
 
     actrie_t_reserve_patterns(&t, size);
     for (size_t i = 0; i < size; i++) {
-        actrie_t_add_pattern(&t, patterns_with_replacements[i][0],
-                             patterns_with_replacements[i][1]);
+        actrie_t_add_pattern(&t, patterns_with_replacements[i][0], patterns_with_replacements[i][1]);
     }
 
     bool result = true;

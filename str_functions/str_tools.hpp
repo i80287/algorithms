@@ -46,8 +46,7 @@ CONSTEXPR_CXX_20 bool is_permutation_of_impl(const char* lhs_ptr,
 
 ATTRIBUTE_NODISCARD
 ATTRIBUTE_SIZED_ACCESS(read_only, 1, 2)
-ATTRIBUTE_PURE constexpr uint16_t unique_chars_count_impl(const char* str_ptr,
-                                                          const size_t str_size) noexcept {
+ATTRIBUTE_PURE constexpr uint16_t unique_chars_count_impl(const char* str_ptr, const size_t str_size) noexcept {
     constexpr size_t kMapSize = size_t{std::numeric_limits<uint8_t>::max()} + 1;
     using MapType = std::array<bool, kMapSize>;
 
@@ -101,10 +100,8 @@ inline std::string sorted_unique_chars_of_impl(const char* const str_ptr, const 
 ATTRIBUTE_ALWAYS_INLINE
 ATTRIBUTE_PURE
 [[nodiscard]]
-CONSTEXPR_CXX_20 bool is_permutation_of(const std::string_view lhs,
-                                        const std::string_view rhs) noexcept {
-    return str_tools::detail::is_permutation_of_impl(lhs.data(), lhs.size(), rhs.data(),
-                                                     rhs.size());
+CONSTEXPR_CXX_20 bool is_permutation_of(const std::string_view lhs, const std::string_view rhs) noexcept {
+    return str_tools::detail::is_permutation_of_impl(lhs.data(), lhs.size(), rhs.data(), rhs.size());
 }
 
 ATTRIBUTE_ALWAYS_INLINE

@@ -10,20 +10,16 @@
 namespace misc::string_detail {
 
 template <class T, class CharType>
-struct same_char_types
-    : std::conditional_t<misc::is_char_v<T>, std::is_same<T, CharType>, std::true_type> {};
+struct same_char_types : std::conditional_t<misc::is_char_v<T>, std::is_same<T, CharType>, std::true_type> {};
 
 template <class StrCharType, class CharType>
-struct same_char_types<std::basic_string<StrCharType>, CharType>
-    : std::is_same<StrCharType, CharType> {};
+struct same_char_types<std::basic_string<StrCharType>, CharType> : std::is_same<StrCharType, CharType> {};
 
 template <class StrCharType, class CharType>
-struct same_char_types<std::basic_string_view<StrCharType>, CharType>
-    : std::is_same<StrCharType, CharType> {};
+struct same_char_types<std::basic_string_view<StrCharType>, CharType> : std::is_same<StrCharType, CharType> {};
 
 template <class StrCharType, class CharType, size_t N>
-struct same_char_types<StrCharType[N], CharType>
-    : std::is_same<std::remove_cv_t<StrCharType>, CharType> {};
+struct same_char_types<StrCharType[N], CharType> : std::is_same<std::remove_cv_t<StrCharType>, CharType> {};
 
 template <class StrCharType, class CharType>
 struct same_char_types<StrCharType *, CharType>
@@ -55,8 +51,7 @@ struct char_selector final {
 
 template <class FirstType, class... Types>
 struct determine_char_type<FirstType, Types...> {
-    using selector = std::
-        conditional_t<is_char_v<FirstType>, char_selector<FirstType>, recursion_selector<Types...>>;
+    using selector = std::conditional_t<is_char_v<FirstType>, char_selector<FirstType>, recursion_selector<Types...>>;
 
     using type = typename selector::type;
 };
@@ -72,14 +67,12 @@ struct determine_char_type<std::basic_string<CharType>, Types...> {
 };
 
 template <class CharType, size_t N, class... Types>
-struct determine_char_type<const CharType[N], Types...>
-    : std::enable_if_t<is_char_v<CharType>, dummy_base> {
+struct determine_char_type<const CharType[N], Types...> : std::enable_if_t<is_char_v<CharType>, dummy_base> {
     using type = CharType;
 };
 
 template <class CharType, size_t N, class... Types>
-struct determine_char_type<CharType[N], Types...>
-    : std::enable_if_t<is_char_v<CharType>, dummy_base> {
+struct determine_char_type<CharType[N], Types...> : std::enable_if_t<is_char_v<CharType>, dummy_base> {
     using type = CharType;
 };
 
