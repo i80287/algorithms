@@ -348,7 +348,7 @@ void test_join_strings() {
 }
 
 template <class CharType>
-class JoinStringsCollectionTestSuit final {
+class JoinStringsRangeTestSuit final {
 public:
     static void run() {
         test_empty_collection();
@@ -369,10 +369,10 @@ private:
         test_tools::log_tests_started();
 
         const std::vector<std::basic_string_view<CharType>> empty_vec{};
-        assert(misc::join_strings_collection(kCharSep, empty_vec).empty());
-        assert(misc::join_strings_collection(kEmptySep, empty_vec).empty());
-        assert(misc::join_strings_collection(empty_vec).empty());
-        assert(misc::join_strings_collection(kNonEmptySep, empty_vec).empty());
+        assert(misc::join_strings_range(kCharSep, empty_vec).empty());
+        assert(misc::join_strings_range(kEmptySep, empty_vec).empty());
+        assert(misc::join_strings_range(empty_vec).empty());
+        assert(misc::join_strings_range(kNonEmptySep, empty_vec).empty());
     }
 
     static void test_1_element_vec() {
@@ -381,10 +381,10 @@ private:
         const std::vector<std::basic_string_view<CharType>> vec_1_elem{
             STR_LITERAL(CharType, "abcdefghijklmnopqrstuvwxyz"),
         };
-        assert(misc::join_strings_collection(kCharSep, vec_1_elem) == vec_1_elem.front());
-        assert(misc::join_strings_collection(kEmptySep, vec_1_elem) == vec_1_elem.front());
-        assert(misc::join_strings_collection(vec_1_elem) == vec_1_elem.front());
-        assert(misc::join_strings_collection(kNonEmptySep, vec_1_elem) == vec_1_elem.front());
+        assert(misc::join_strings_range(kCharSep, vec_1_elem) == vec_1_elem.front());
+        assert(misc::join_strings_range(kEmptySep, vec_1_elem) == vec_1_elem.front());
+        assert(misc::join_strings_range(vec_1_elem) == vec_1_elem.front());
+        assert(misc::join_strings_range(kNonEmptySep, vec_1_elem) == vec_1_elem.front());
     }
 
     static void test_1_element_set() {
@@ -393,10 +393,10 @@ private:
         const std::set<std::basic_string<CharType>> set_1_elem{
             STR_LITERAL(CharType, "abcdefghijklmnopqrstuvwxyz"),
         };
-        assert(misc::join_strings_collection(kCharSep, set_1_elem) == *set_1_elem.begin());
-        assert(misc::join_strings_collection(kEmptySep, set_1_elem) == *set_1_elem.begin());
-        assert(misc::join_strings_collection(set_1_elem) == *set_1_elem.begin());
-        assert(misc::join_strings_collection(std::basic_string<CharType>{kNonEmptySep},
+        assert(misc::join_strings_range(kCharSep, set_1_elem) == *set_1_elem.begin());
+        assert(misc::join_strings_range(kEmptySep, set_1_elem) == *set_1_elem.begin());
+        assert(misc::join_strings_range(set_1_elem) == *set_1_elem.begin());
+        assert(misc::join_strings_range(std::basic_string<CharType>{kNonEmptySep},
                                              set_1_elem) == *set_1_elem.begin());
     }
 
@@ -409,22 +409,22 @@ private:
             STR_LITERAL(CharType, "ghi"),
         };
 
-        assert(misc::join_strings_collection(kCharSep, arr_3_elems) ==
+        assert(misc::join_strings_range(kCharSep, arr_3_elems) ==
                std::basic_string<CharType>{arr_3_elems[0]} + kCharSep +
                    std::basic_string<CharType>{arr_3_elems[1]} + kCharSep +
                    std::basic_string<CharType>{arr_3_elems[2]});
-        assert(misc::join_strings_collection(std::basic_string_view<CharType>{kEmptySep},
+        assert(misc::join_strings_range(std::basic_string_view<CharType>{kEmptySep},
                                              arr_3_elems) ==
                std::basic_string<CharType>{arr_3_elems[0]} +
                    std::basic_string<CharType>{kEmptySep} +
                    std::basic_string<CharType>{arr_3_elems[1]} +
                    std::basic_string<CharType>{kEmptySep} +
                    std::basic_string<CharType>{arr_3_elems[2]});
-        assert(misc::join_strings_collection(arr_3_elems) ==
+        assert(misc::join_strings_range(arr_3_elems) ==
                std::basic_string<CharType>{arr_3_elems[0]} +
                    std::basic_string<CharType>{arr_3_elems[1]} +
                    std::basic_string<CharType>{arr_3_elems[2]});
-        assert(misc::join_strings_collection(kNonEmptySep, arr_3_elems) ==
+        assert(misc::join_strings_range(kNonEmptySep, arr_3_elems) ==
                std::basic_string<CharType>{arr_3_elems[0]} +
                    std::basic_string<CharType>{kNonEmptySep} +
                    std::basic_string<CharType>{arr_3_elems[1]} +
@@ -438,16 +438,16 @@ private:
         const std::list<std::basic_string_view<CharType>> list_with_empty_strings{
             kEmptySep, kEmptySep, kEmptySep, kEmptySep, kEmptySep,
         };
-        assert(misc::join_strings_collection(kEmptySep, list_with_empty_strings).empty());
+        assert(misc::join_strings_range(kEmptySep, list_with_empty_strings).empty());
     }
 };
 
-void test_join_strings_collection() {
-    JoinStringsCollectionTestSuit<char>::run();
-    JoinStringsCollectionTestSuit<wchar_t>::run();
-    JoinStringsCollectionTestSuit<char8_t>::run();
-    JoinStringsCollectionTestSuit<char16_t>::run();
-    JoinStringsCollectionTestSuit<char32_t>::run();
+void test_join_strings_range() {
+    JoinStringsRangeTestSuit<char>::run();
+    JoinStringsRangeTestSuit<wchar_t>::run();
+    JoinStringsRangeTestSuit<char8_t>::run();
+    JoinStringsRangeTestSuit<char16_t>::run();
+    JoinStringsRangeTestSuit<char32_t>::run();
 }
 
 #define W_TO_STRING_RETURN "AbCdEfGhIjKlMnOpQrStUvWxYz~!@#$%^*()_+"
@@ -519,6 +519,6 @@ void test_conversions() {
 
 int main() {
     test_join_strings();
-    test_join_strings_collection();
+    test_join_strings_range();
     test_conversions();
 }

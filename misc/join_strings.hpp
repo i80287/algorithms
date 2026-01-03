@@ -38,11 +38,11 @@ template <misc::Char HintCharType = char, class... Args>
 [[nodiscard]] ATTRIBUTE_ALWAYS_INLINE inline auto join_strings(const Args &...args);
 
 template <misc::CharOrStringLike Sep, std::ranges::forward_range Container>
-[[nodiscard]] ATTRIBUTE_ALWAYS_INLINE inline auto join_strings_collection(const Sep &sep,
-                                                                          const Container &strings);
+[[nodiscard]] ATTRIBUTE_ALWAYS_INLINE inline auto join_strings_range(const Sep &sep,
+                                                                     const Container &strings);
 
 template <std::ranges::forward_range Container>
-[[nodiscard]] inline auto join_strings_collection(const Container &strings);
+[[nodiscard]] inline auto join_strings_range(const Container &strings);
 
 }  // namespace misc
 

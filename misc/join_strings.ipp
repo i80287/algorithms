@@ -705,7 +705,7 @@ using string_char_t = typename string_char_selector<StringType>::type;
 
 [[noreturn]] ATTRIBUTE_COLD inline void ThrowOnStringsTotalSizeOverflow() {
     constexpr const char kMessage[] =
-        "join_strings_collection(): total strings length exceeded max size_t value";
+        "join_strings_range(): total strings length exceeded max size_t value";
     throw std::length_error{kMessage};
 }
 
@@ -783,7 +783,7 @@ template <misc::Char T, std::ranges::forward_range Container>
 }
 
 template <misc::Char T, std::ranges::forward_range Container>
-[[nodiscard]] std::basic_string<T> JoinStringsCollectionWithEmptySep(const Container &strings) {
+[[nodiscard]] std::basic_string<T> JoinStringsRangeWithEmptySep(const Container &strings) {
     const size_t total_size = join_strings_detail::StringsTotalSize(strings);
     std::basic_string<T> result(total_size, '\0');
     T *write_ptr = result.data();
@@ -796,8 +796,7 @@ template <misc::Char T, std::ranges::forward_range Container>
 }
 
 template <misc::Char T, std::ranges::forward_range Container>
-[[nodiscard]] std::basic_string<T> JoinStringsCollectionByChar(const T sep,
-                                                               const Container &strings) {
+[[nodiscard]] std::basic_string<T> JoinStringsRangeByChar(const T sep, const Container &strings) {
     const size_t total_size = join_strings_detail::StringsTotalSizeWithCharSep(strings);
     std::basic_string<T> result(total_size, '\0');
     T *write_ptr = result.data();
@@ -816,7 +815,7 @@ template <misc::Char T, std::ranges::forward_range Container>
 
 // clang-format off
 template <misc::Char T, std::ranges::forward_range Container>
-[[nodiscard]] std::basic_string<T> JoinStringsCollectionBySvAtLeast2(
+[[nodiscard]] std::basic_string<T> JoinStringsRangeBySvAtLeast2(
     const std::basic_string_view<T> sep,
     const Container &strings
 ) {
@@ -851,18 +850,17 @@ template <misc::Char T, std::ranges::forward_range Container>
 }
 
 template <misc::Char T, std::ranges::forward_range Container>
-[[nodiscard]] std::basic_string<T> JoinStringsCollectionBySv(const std::basic_string_view<T> sep,
-                                                             const Container &strings) {
+[[nodiscard]] std::basic_string<T> JoinStringsRangeBySv(const std::basic_string_view<T> sep,
+                                                        const Container &strings) {
     switch (sep.size()) {
         case 0: {
-            return join_strings_detail::JoinStringsCollectionWithEmptySep<T, Container>(strings);
+            return join_strings_detail::JoinStringsRangeWithEmptySep<T, Container>(strings);
         }
         case 1: {
-            return join_strings_detail::JoinStringsCollectionByChar<T, Container>(sep.front(),
-                                                                                  strings);
+            return join_strings_detail::JoinStringsRangeByChar<T, Container>(sep.front(), strings);
         }
         default: {
-            return join_strings_detail::JoinStringsCollectionBySvAtLeast2<T>(sep, strings);
+            return join_strings_detail::JoinStringsRangeBySvAtLeast2<T>(sep, strings);
         }
     }
 }
@@ -870,7 +868,7 @@ template <misc::Char T, std::ranges::forward_range Container>
 }  // namespace join_strings_detail
 
 template <misc::CharOrStringLike Sep, std::ranges::forward_range Container>
-inline auto join_strings_collection(const Sep &sep, const Container &strings) {
+inline auto join_strings_range(const Sep &sep, const Container &strings) {
     using StringType = std::ranges::range_value_t<Container>;
 
     static_assert(misc::is_basic_string_v<StringType> || misc::is_basic_string_view_v<StringType>,
@@ -882,31 +880,31 @@ inline auto join_strings_collection(const Sep &sep, const Container &strings) {
     if constexpr (misc::is_char_v<Sep>) {
         static_assert(std::is_same_v<Sep, CharType>,
                       "char type of the separator and char type of the strings should be the same");
-        return join_strings_detail::JoinStringsCollectionByChar<CharType, Container>(sep, strings);
+        return join_strings_detail::JoinStringsRangeByChar<CharType, Container>(sep, strings);
     } else {
         using SepCharType = join_strings_detail::string_char_t<Sep>;
 
         static_assert(std::is_same_v<SepCharType, CharType>,
                       "char type of the separator and char type of the strings should be the same");
 
-        return join_strings_detail::JoinStringsCollectionBySv<CharType, Container>(
+        return join_strings_detail::JoinStringsRangeBySv<CharType, Container>(
             std::basic_string_view<CharType>{sep}, strings);
     }
 }
 
 template <std::ranges::forward_range Container>
-inline auto join_strings_collection(const Container &strings) {
+inline auto join_strings_range(const Container &strings) {
     using StringType = std::ranges::range_value_t<Container>;
 
     static_assert(misc::is_basic_string_v<StringType> || misc::is_basic_string_view_v<StringType>,
-                  "join_strings_collection accepts only a range of std::basic_string or "
+                  "join_strings_range accepts only a range of std::basic_string or "
                   "std::basic_string_view");
 
     using CharType = typename StringType::value_type;
     static_assert(misc::is_char_v<CharType>,
-                  "join_strings_collection expects a range of strings (with correct char type)");
+                  "join_strings_range expects a range of strings (with correct char type)");
 
-    return join_strings_detail::JoinStringsCollectionWithEmptySep<CharType, Container>(strings);
+    return join_strings_detail::JoinStringsRangeWithEmptySep<CharType, Container>(strings);
 }
 
 }  // namespace misc
