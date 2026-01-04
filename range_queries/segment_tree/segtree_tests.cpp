@@ -158,8 +158,8 @@ void Test(const std::array<value_t, n>& values,
 
 template <typename value_t>
 void RunTestsForType() {
-    constexpr uint32_t n = 65536;
-    constexpr uint32_t q = 32768;
+    constexpr uint32_t n = 60'000;
+    constexpr uint32_t q = 25'000;
     static std::array<value_t, n> values{};
     static std::array<value_t, q / 2> update_values{};
     static std::array<uint32_t, q> l_int{};
