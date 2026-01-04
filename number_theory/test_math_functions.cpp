@@ -772,7 +772,7 @@ void test_powers_sum() noexcept {
 
     constexpr size_t kMaxM = 6;
     for (size_t m = 0; m <= kMaxM; m++) {
-        const auto max_n = [m]() noexcept -> uint32_t {
+        const auto max_n = [=]() noexcept -> uint32_t {
             switch (m) {
                 static_assert(kMaxM == 6);
                 case 6: {
