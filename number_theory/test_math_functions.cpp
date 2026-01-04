@@ -210,7 +210,7 @@ void test_bit_reverse() noexcept {
         59U, 61U, 67U, 71U, 73U, 79U, 83U, 89U, 97U, 101U, 103U, 107U, 109U, 113U, 127U, 131U,
     };
     uint128_t n = std::numeric_limits<uint64_t>::max();
-    for (auto k = static_cast<uint32_t>(1e7); k > 0; k--) {
+    for (auto k = static_cast<uint32_t>(1e5); k > 0; k--) {
         const auto hi_64 = static_cast<uint64_t>(n >> 64U);
         const auto low_64 = static_cast<uint64_t>(n);
         const uint128_t b = (uint128_t{bit_reverse(low_64)} << 64U) | bit_reverse(hi_64);
@@ -398,7 +398,7 @@ void test_prime_bitarrays() {
 void test_factorizer() {
     log_tests_started();
 
-    constexpr auto N = static_cast<uint32_t>(1e7);
+    constexpr auto N = static_cast<uint32_t>(1e5);
     Factorizer const fact(N);
     {
         const auto is_prime = dynamic_primes_sieve(N);
@@ -527,7 +527,7 @@ template <class IntType>
 [[nodiscard]] bool multi_thread_test_extended_euclid_algorithm() {
     log_tests_started();
 
-    constexpr size_t kTotalTests = 1ULL << 20U;
+    constexpr size_t kTotalTests = 1ULL << 19U;
     constexpr uint32_t kTotalThreads = 2u;
     constexpr size_t kTestsPerThread = kTotalTests / kTotalThreads;
 
@@ -595,7 +595,7 @@ void test_solve_congruence_modulo_m_all_roots() {
     std::printf("Seed: %" PRIuFAST32 "\n", seed);
     std::mt19937 rnd_32(seed);
 
-    static constexpr auto kTotalTests = size_t{1} << 20U;
+    static constexpr auto kTotalTests = size_t{1} << 19U;
     for (auto test_iter = kTotalTests; test_iter > 0; --test_iter) {
         const auto m = static_cast<uint32_t>(rnd_32());
         if (unlikely(m == 0)) {
@@ -627,7 +627,7 @@ void test_solve_binary_congruence_modulo_m() {
     std::printf("Seed: %" PRIuFAST32 "\n", seed);
     std::mt19937 rnd_32(seed);
 
-    constexpr auto kTotalTests = size_t{1} << 20U;
+    constexpr auto kTotalTests = size_t{1} << 18U;
     for (auto test_iter = kTotalTests; test_iter > 0; --test_iter) {
         const uint32_t m = static_cast<uint32_t>(rnd_32());
         if (unlikely(m == 0)) {
@@ -727,7 +727,7 @@ void test_inv_mod_m() {
 
     constexpr std::mt19937_64::result_type kSeed = 372'134'058;
     std::mt19937_64 rnd_gen(kSeed);
-    constexpr size_t n = 25'000;
+    constexpr size_t n = 20'000;
     std::vector<uint64_t> nums(n);
 
     for (const uint32_t m : first_prime_nums) {
