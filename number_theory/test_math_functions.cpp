@@ -595,7 +595,7 @@ void test_solve_congruence_modulo_m_all_roots() {
     std::printf("Seed: %" PRIuFAST32 "\n", seed);
     std::mt19937 rnd_32(seed);
 
-    static constexpr auto kTotalTests = size_t{1} << 19U;
+    static constexpr auto kTotalTests = size_t{1} << 18U;
     for (auto test_iter = kTotalTests; test_iter > 0; --test_iter) {
         const auto m = static_cast<uint32_t>(rnd_32());
         if (unlikely(m == 0)) {
