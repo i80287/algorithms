@@ -2146,6 +2146,8 @@ private:
 template <uint32_t N>
 using PrimesSet = std::bitset<size_t{N} + 1>;
 
+// clang-format off
+
 /// @brief Find all prime numbers in [2; N]
 /// @tparam N exclusive upper bound
 /// @return bitset, such that bitset[n] == true \iff n is prime
@@ -2153,8 +2155,8 @@ template <uint32_t N>
 #if PRIMES_SIEVE_INITIALIZED_IN_COMPILE_TIME
 ATTRIBUTE_CONST
 #endif
-    [[nodiscard]] CONSTEXPR_FIXED_PRIMES_SIEVE const PrimesSet<N>&
-    fixed_primes_sieve() noexcept {
+[[nodiscard]] CONSTEXPR_FIXED_PRIMES_SIEVE const PrimesSet<N>& fixed_primes_sieve() noexcept {
+    // clang-format on
     static CONSTEXPR_BITSET_OPS const PrimesSet<N> primes_bs = []() CONSTEXPR_BITSET_OPS noexcept -> PrimesSet<N> {
         PrimesSet<N> primes{};
         primes.set();
