@@ -6,6 +6,8 @@
 #include <cassert>
 #include <limits>
 
+#include "test_tools.hpp"
+
 // clang-format off
 #include "../ints_fmt.hpp"
 // clang-format on
@@ -16,6 +18,7 @@ template <class IntType>
 class FormatterTestSuite final {
 public:
     static void run() {
+        test_tools::log_tests_started();
         test_ranges();
     }
 
@@ -23,7 +26,8 @@ private:
     static void test_ranges() {
         using limits = std::numeric_limits<IntType>;
 
-        static constexpr auto kRange = limits::max() > 2500 ? limits::max() : static_cast<IntType>(2500);
+        static_assert(limits::max() > 0, "");
+        static constexpr auto kRange = limits::max() < 2500 ? limits::max() / 2 : static_cast<IntType>(2500);
 
         for (IntType value = limits::min(); value <= limits::min() + kRange; value++) {
             check_fmt(value);
