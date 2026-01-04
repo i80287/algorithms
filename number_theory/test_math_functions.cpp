@@ -536,7 +536,7 @@ template <class IntType>
     std::atomic_flag any_failed = ATOMIC_FLAG_INIT;
     for (uint32_t i = 0; i < kTotalThreads; ++i) {
         threads.emplace_back([thread_id = i, &any_failed
-#if defined(_MSC_VER) && !defined(__clang__)
+#if CONFIG_COMPILER_IS_MSVC
                               ,
                               kTestsPerThread
 #endif
@@ -772,9 +772,11 @@ void test_powers_sum() noexcept {
 
     constexpr size_t kMaxM = 6;
     for (size_t m = 0; m <= kMaxM; m++) {
-        const auto max_n = [=]() noexcept -> uint32_t {
+        const auto max_n = [m]() noexcept -> uint32_t {
             switch (m) {
+#if !CONFIG_COMPILER_IS_MSVC
                 static_assert(kMaxM == 6);
+#endif
                 case 6: {
                     return 564;
                 }
