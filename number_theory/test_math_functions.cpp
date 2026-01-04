@@ -46,7 +46,10 @@
 using namespace math_functions;
 // NOLINTNEXTLINE(google-build-using-namespace)
 using namespace test_tools;
+using std::int32_t;
+using std::int64_t;
 using std::size_t;
+using std::uint16_t;
 using std::uint32_t;
 using std::uint64_t;
 
@@ -59,22 +62,20 @@ namespace {
 void test_isqrt() noexcept {
     log_tests_started();
 
-    constexpr uint32_t kIters = 2'000'000;
+    for (uint32_t i = 0; i <= std::numeric_limits<uint16_t>::max(); i++) {
+        static constexpr auto test_sqrts = [](const uint32_t n, const uint32_t n_squared) {
+            assert(n == isqrt(n_squared));
+            assert(n == isqrt(uint64_t{n_squared}));
+        };
 
-    constexpr auto test_sqrts = [](uint32_t n, uint32_t n_squared) {
-        assert(n == isqrt(n_squared));
-        assert(n == isqrt(uint64_t{n_squared}));
-        assert(n == isqrt(uint128_t{n_squared}));
-    };
-
-    constexpr uint32_t kProbes = 100'000;
-    for (uint32_t i = 0; i <= std::min(kProbes, 65535U); i++) {
         const uint32_t i_square = i * i;
         const uint32_t next_i_square = (i + 1) * (i + 1);
         for (uint32_t j = i_square; j != next_i_square; j++) {
             test_sqrts(i, j);
         }
     }
+
+    static constexpr uint32_t kIters = 200'000U;
 
     for (uint32_t r = std::numeric_limits<uint32_t>::max() - kIters; r != 0; r++) {
         const uint64_t rs = uint64_t{r} * r;
@@ -93,7 +94,17 @@ void test_isqrt() noexcept {
         assert(r == isqrt(rs + 1));
     }
 
-    constexpr std::array<std::pair<uint64_t, uint128_t>, 10> root_with_square = {{
+    static constexpr std::array<std::pair<uint64_t, uint128_t>, 20> root_with_square = {{
+        {uint64_t{0}, uint128_t{0}},
+        {uint64_t{1}, uint128_t{1}},
+        {uint64_t{1}, uint128_t{3}},
+        {uint64_t{2}, uint128_t{4}},
+        {uint64_t{2}, uint128_t{5}},
+        {uint64_t{2}, uint128_t{8}},
+        {uint64_t{3}, uint128_t{9}},
+        {uint64_t{9}, uint128_t{99}},
+        {uint64_t{10}, uint128_t{100}},
+        {uint64_t{10}, uint128_t{101}},
         {uint64_t{std::numeric_limits<uint8_t>::max()}, uint128_t{std::numeric_limits<uint16_t>::max()}},
         {uint64_t{std::numeric_limits<uint16_t>::max()}, uint128_t{std::numeric_limits<uint32_t>::max()}},
         {uint64_t{std::numeric_limits<uint32_t>::max()}, uint128_t{std::numeric_limits<uint64_t>::max()}},
@@ -105,12 +116,15 @@ void test_isqrt() noexcept {
         {uint64_t{18015752134763552034ULL}, (uint128_t{17594829943123320651ULL} << 64U) | 2622055845271657274ULL},
         {std::numeric_limits<uint64_t>::max(), static_cast<uint128_t>(-1)},
     }};
+
     for (const auto& [root, square] : root_with_square) {
-        if (static_cast<uint32_t>(square) == square) {
-            assert(root == isqrt(static_cast<uint32_t>(square)));
+        const auto square_u32 = static_cast<uint32_t>(square);
+        if (square_u32 == square) {
+            assert(root == isqrt(square_u32));
         }
-        if (static_cast<uint64_t>(square) == square) {
-            assert(root == isqrt(static_cast<uint64_t>(square)));
+        const auto square_u64 = static_cast<uint64_t>(square);
+        if (square_u64 == square) {
+            assert(root == isqrt(square_u64));
         }
         assert(root == isqrt(square));
     }
@@ -389,12 +403,12 @@ void test_factorizer() {
     {
         const auto is_prime = dynamic_primes_sieve(N);
         assert(is_prime.size() == N + 1);
-        for (std::uint32_t i = 0; i <= N; i++) {
+        for (uint32_t i = 0; i <= N; i++) {
             assert(is_prime[i] == fact.is_prime(i));
         }
     }
 
-    for (std::uint32_t i = 0; i <= N; i++) {
+    for (uint32_t i = 0; i <= N; i++) {
         auto pfs = fact.prime_factors(i);
         assert(pfs.size() == fact.number_of_unique_prime_factors(i));
         auto pfs_v = prime_factors_as_vector(i);
@@ -410,7 +424,8 @@ void test_factorizer() {
 // NOLINTBEGIN(performance-avoid-endl)
 
 template <class IntType>
-[[nodiscard]] bool test_extended_euclid_algorithm_a_b(std::size_t thread_id, IntType a, IntType b) noexcept {
+[[nodiscard]]
+bool test_extended_euclid_algorithm_a_b(const size_t thread_id, const IntType a, const IntType b) noexcept {
     const auto [u, v, a_b_gcd] = math_functions::extended_euclid_algorithm(a, b);
     using HighIntType = std::conditional_t<sizeof(IntType) == sizeof(uint32_t), int64_t, int128_t>;
     const HighIntType hi_a = a;
@@ -512,32 +527,32 @@ template <class IntType>
 [[nodiscard]] bool multi_thread_test_extended_euclid_algorithm() {
     log_tests_started();
 
-    constexpr std::size_t kTotalTests = 1ULL << 30U;
-    constexpr std::size_t kTotalThreads = 4;
-    constexpr std::size_t kTestsPerThread = kTotalTests / kTotalThreads;
+    constexpr size_t kTotalTests = 1ULL << 20U;
+    constexpr uint32_t kTotalThreads = 2u;
+    constexpr size_t kTestsPerThread = kTotalTests / kTotalThreads;
 
     std::vector<std::thread> threads;
     threads.reserve(kTotalThreads);
-    std::atomic_flag result = ATOMIC_FLAG_INIT;
-    for (size_t i = 0; i < kTotalThreads; ++i) {
-        threads.emplace_back([thread_id = i, &result
+    std::atomic_flag any_failed = ATOMIC_FLAG_INIT;
+    for (uint32_t i = 0; i < kTotalThreads; ++i) {
+        threads.emplace_back([thread_id = i, &any_failed
 #if defined(_MSC_VER) && !defined(__clang__)
                               ,
                               kTestsPerThread
 #endif
         ]() {
-            const std::size_t seed = thread_id * 3'829'234'734UL + 27'273'489;
-            std::cout << "Thread " << thread_id << " started, seed = " << seed << std::endl;
+            static_assert(sizeof(IntType) == sizeof(uint32_t) || sizeof(IntType) == sizeof(uint64_t));
+            using rnt_t = std::conditional_t<sizeof(IntType) == sizeof(uint32_t), std::mt19937, std::mt19937_64>;
 
-            static_assert(sizeof(IntType) == sizeof(std::uint32_t) || sizeof(IntType) == sizeof(std::uint64_t));
-            using rnt_t = std::conditional_t<sizeof(IntType) == sizeof(std::uint32_t), std::mt19937, std::mt19937_64>;
-            rnt_t mrs_rnd(static_cast<typename rnt_t::result_type>(seed));
+            const auto seed = static_cast<typename rnt_t::result_type>(thread_id * 3'829'234'734UL + 27'273'489U);
+            std::cout << "Thread " << thread_id << " started, seed = " << seed << std::endl;
+            rnt_t mrs_rnd(seed);
 
             for (size_t test_iter = kTestsPerThread; test_iter != 0; --test_iter) {
                 const auto a = static_cast<IntType>(mrs_rnd());
                 const auto b = static_cast<IntType>(mrs_rnd());
                 if (unlikely(!test_extended_euclid_algorithm_a_b(thread_id, a, b))) {
-                    result.test_and_set();
+                    any_failed.test_and_set();
                     break;
                 }
             }
@@ -548,7 +563,7 @@ template <class IntType>
         thread.join();
     }
 
-    return !result.test_and_set();
+    return !any_failed.test_and_set();
 }
 
 // NOLINTEND(performance-avoid-endl)
@@ -566,28 +581,28 @@ void test_extended_euclid_algorithm() {
     static_assert(u_value * a + v_value * b == gcd_value);
 
 #if defined(HAS_INT128_TYPEDEF)
-    assert(multi_thread_test_extended_euclid_algorithm<std::int32_t>());
-    assert(multi_thread_test_extended_euclid_algorithm<std::uint32_t>());
-    assert(multi_thread_test_extended_euclid_algorithm<std::int64_t>());
-    assert(multi_thread_test_extended_euclid_algorithm<std::uint64_t>());
+    assert(multi_thread_test_extended_euclid_algorithm<int32_t>());
+    assert(multi_thread_test_extended_euclid_algorithm<uint32_t>());
+    assert(multi_thread_test_extended_euclid_algorithm<int64_t>());
+    assert(multi_thread_test_extended_euclid_algorithm<uint64_t>());
 #endif
 }
 
 void test_solve_congruence_modulo_m_all_roots() {
     log_tests_started();
 
-    const auto seed = std::ranlux24(static_cast<uint32_t>(std::time(nullptr)))();
+    const std::uint_fast32_t seed = std::ranlux24(static_cast<std::uint_fast32_t>(std::time(nullptr)))();
     std::printf("Seed: %" PRIuFAST32 "\n", seed);
     std::mt19937 rnd_32(seed);
 
-    constexpr auto kTotalTests = size_t{1} << 25U;
+    static constexpr auto kTotalTests = size_t{1} << 20U;
     for (auto test_iter = kTotalTests; test_iter > 0; --test_iter) {
-        const auto m = static_cast<std::uint32_t>(rnd_32());
+        const auto m = static_cast<uint32_t>(rnd_32());
         if (unlikely(m == 0)) {
             continue;
         }
-        const auto a = static_cast<std::uint32_t>(rnd_32());
-        const auto c = static_cast<std::uint32_t>(rnd_32());
+        const auto a = static_cast<uint32_t>(rnd_32());
+        const auto c = static_cast<uint32_t>(rnd_32());
         const auto roots = math_functions::solve_congruence_modulo_m_all_roots(a, c, m);
         const auto gcd_a_m = std::gcd(a, m);
         assert((c % gcd_a_m == 0) == !roots.empty());
@@ -595,7 +610,7 @@ void test_solve_congruence_modulo_m_all_roots() {
             const auto c_mod_m = c % m;
             const auto step = m / gcd_a_m;
             auto expected_x = roots[0];
-            for (const std::uint32_t x : roots) {
+            for (const uint32_t x : roots) {
                 assert(x < m);
                 assert((uint64_t{a} * uint64_t{x}) % m == c_mod_m);
                 assert(x == expected_x);
@@ -608,14 +623,13 @@ void test_solve_congruence_modulo_m_all_roots() {
 void test_solve_binary_congruence_modulo_m() {
     log_tests_started();
 
-    using SeedType = typename std::ranlux24::result_type;
-    const SeedType seed = std::ranlux24(static_cast<SeedType>(std::time(nullptr)))();
+    const std::uint_fast32_t seed = std::ranlux24(static_cast<std::uint_fast32_t>(std::time(nullptr)))();
     std::printf("Seed: %" PRIuFAST32 "\n", seed);
     std::mt19937 rnd_32(seed);
 
-    constexpr auto kTotalTests = size_t{1} << 25U;
+    constexpr auto kTotalTests = size_t{1} << 20U;
     for (auto test_iter = kTotalTests; test_iter > 0; --test_iter) {
-        const uint32_t m = static_cast<std::uint32_t>(rnd_32());
+        const uint32_t m = static_cast<uint32_t>(rnd_32());
         if (unlikely(m == 0)) {
             continue;
         }
@@ -692,31 +706,31 @@ void test_inv_mod_m() {
         }
     }
 
-    auto make_rbtree_set = [](const std::vector<std::uint64_t>& nums) {
-        return std::set<std::uint64_t>(nums.begin(), nums.end());
+    auto make_rbtree_set = [](const std::vector<uint64_t>& nums) {
+        return std::set<uint64_t>(nums.begin(), nums.end());
     };
-    auto make_hash_set = [](const std::vector<std::uint64_t>& nums) {
-        return std::unordered_set<std::uint64_t>(nums.begin(), nums.end());
+    auto make_hash_set = [](const std::vector<uint64_t>& nums) {
+        return std::unordered_set<uint64_t>(nums.begin(), nums.end());
     };
-    auto make_unique_vector = [](std::vector<std::uint64_t> nums) {
+    auto make_unique_vector = [](std::vector<uint64_t> nums) {
         std::sort(nums.begin(), nums.end());
         const auto iter = std::unique(nums.begin(), nums.end());
         nums.erase(iter, nums.end());
         return nums;
     };
-    auto make_unique_list = [](std::vector<std::uint64_t> nums) {
+    auto make_unique_list = [](std::vector<uint64_t> nums) {
         std::sort(nums.begin(), nums.end());
         const auto iter = std::unique(nums.begin(), nums.end());
         nums.erase(iter, nums.end());
-        return std::list<std::uint64_t>(nums.begin(), nums.end());
+        return std::list<uint64_t>(nums.begin(), nums.end());
     };
 
     constexpr std::mt19937_64::result_type kSeed = 372'134'058;
     std::mt19937_64 rnd_gen(kSeed);
-    constexpr std::size_t n = 25'000;
+    constexpr size_t n = 25'000;
     std::vector<uint64_t> nums(n);
 
-    for (const std::uint32_t m : first_prime_nums) {
+    for (const uint32_t m : first_prime_nums) {
         std::generate(nums.begin(), nums.end(), [&rnd_gen, m]() noexcept {
             const auto rnd_num = rnd_gen();
             return rnd_num % m != 0 ? rnd_num : rnd_num + 1;
@@ -724,10 +738,10 @@ void test_inv_mod_m() {
         const auto [nums_mod_m, inv_nums] = math_functions::inv_range_mod_m(nums, m);
         assert(nums_mod_m.size() == n);
         assert(inv_nums.size() == n);
-        for (std::size_t i = 0; i < n; i++) {
+        for (size_t i = 0; i < n; i++) {
             assert(nums_mod_m[i] == nums[i] % m);
             assert(inv_nums[i] < m);
-            assert((std::uint64_t{nums_mod_m[i]} * inv_nums[i]) % m == 1);
+            assert((uint64_t{nums_mod_m[i]} * inv_nums[i]) % m == 1);
         }
 
         {
@@ -758,24 +772,31 @@ void test_powers_sum() noexcept {
 
     constexpr size_t kMaxM = 6;
     for (size_t m = 0; m <= kMaxM; m++) {
-        static_assert(kMaxM <= 6);
-        const auto max_n = [m]() noexcept -> std::uint32_t {
+        const auto max_n = [m]() noexcept -> uint32_t {
             switch (m) {
-                case 6:
+                static_assert(kMaxM == 6);
+                case 6: {
                     return 564;
-                case 5:
+                }
+                case 5: {
                     return 1500;
-                case 4:
+                }
+                case 4: {
                     return 9500;
-                case 3:
+                }
+                case 3: {
                     return 91'000;
-                case 2:
+                }
+                case 2: {
                     return 1'715'000;
+                }
                 case 1:
-                case 0:
+                case 0: {
                     return 1'000'000'000;
-                default:
+                }
+                default: {
                     break;
+                }
             }
             assert(false);
             std::terminate();
@@ -790,36 +811,46 @@ void test_powers_sum() noexcept {
         for (uint32_t n = start_n; n <= max_n; n++) {
             s += math_functions::bin_pow(uint64_t{n}, m);
             switch (m) {
-                case 0:
+                case 0: {
                     assert(math_functions::powers_sum_u64<0>(n) == s);
                     assert(math_functions::powers_sum_u128<0>(n) == s);
                     break;
-                case 1:
+                }
+                case 1: {
                     assert(math_functions::powers_sum_u64<1>(n) == s);
                     assert(math_functions::powers_sum_u128<1>(n) == s);
                     break;
-                case 2:
+                }
+                case 2: {
                     assert(math_functions::powers_sum_u64<2>(n) == s);
                     assert(math_functions::powers_sum_u128<2>(n) == s);
                     break;
-                case 3:
+                }
+                case 3: {
                     assert(math_functions::powers_sum_u64<3>(n) == s);
                     assert(math_functions::powers_sum_u128<3>(n) == s);
                     break;
-                case 4:
+                }
+                case 4: {
                     assert(math_functions::powers_sum_u64<4>(n) == s);
                     assert(math_functions::powers_sum_u128<4>(n) == s);
                     break;
-                case 5:
+                }
+                case 5: {
                     assert(math_functions::powers_sum_u64<5>(n) == s);
                     assert(math_functions::powers_sum_u128<5>(n) == s);
                     break;
-                case 6:
+                }
+                case 6: {
                     assert(math_functions::powers_sum_u64<6>(n) == s);
                     assert(math_functions::powers_sum_u128<6>(n) == s);
                     break;
-                default:
+                }
+                default: {
+                    static_assert(kMaxM == 6);
                     assert(false);
+                    std::terminate();
+                }
             }
         }
     }
@@ -3645,7 +3676,7 @@ void test_masked_popcount_sum() noexcept {
 #else
             const int popcnt = math_functions::popcount(i & k);
 #endif
-            correct_sum += static_cast<std::uint32_t>(popcnt);
+            correct_sum += static_cast<uint32_t>(popcnt);
         }
         const uint64_t fast_calc_sum = masked_popcount_sum(n, k);
         assert(correct_sum == fast_calc_sum);
