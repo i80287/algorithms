@@ -415,24 +415,33 @@ void GMPCheckJacobiU64() {
     mpz_class n1;
     mpz_class n2;
 
-    uint64_t i = 0;
-    mpz_class_assign_uint64(n1, i);
-    for (; i <= uint64_t{kLen}; ++i, ++n1) {
-        uint64_t j = 0;
+    static constexpr uint32_t kMinBoundaryValue = 0;
+    static constexpr uint64_t kMaxBoundaryValue = std::numeric_limits<uint64_t>::max();
+
+    const auto test_for_i = [&](const uint64_t i) {
+        uint64_t j = kMinBoundaryValue;
         mpz_class_assign_uint64(n2, j);
-        for (; j <= uint64_t{kLen}; ++j, ++n2) {
+        for (; j <= kMinBoundaryValue + uint64_t{kLen}; ++j, ++n2) {
             CheckJacobi(i, j, n1, n2);
         }
+
+        j = kMaxBoundaryValue;
+        mpz_class_assign_uint64(n2, j);
+        for (; j >= kMaxBoundaryValue - uint64_t{kLen}; --j, --n2) {
+            CheckJacobi(i, j, n1, n2);
+        }
+    };
+
+    uint64_t i = kMinBoundaryValue;
+    mpz_class_assign_uint64(n1, i);
+    for (; i <= kMinBoundaryValue + uint64_t{kLen}; ++i, ++n1) {
+        test_for_i(i);
     }
 
-    i = std::numeric_limits<int64_t>::max();
+    i = kMaxBoundaryValue;
     mpz_class_assign_uint64(n1, i);
-    for (; i >= std::numeric_limits<int64_t>::max() - uint64_t{kLen}; --i, --n1) {
-        uint64_t j = std::numeric_limits<int64_t>::max();
-        mpz_class_assign_uint64(n2, j);
-        for (; j >= std::numeric_limits<int64_t>::max() - uint64_t{kLen}; --j, --n2) {
-            CheckJacobi(i, j, n1, n2);
-        }
+    for (; i >= kMaxBoundaryValue - uint64_t{kLen}; --i, --n1) {
+        test_for_i(i);
     }
 }
 
@@ -481,38 +490,38 @@ void GMPCheckJacobiU64I64() {
     mpz_class n1;
     mpz_class n2;
 
-    int64_t i = std::numeric_limits<int64_t>::min();
-    mpz_class_assign_int64(n1, i);
-    for (; i <= std::numeric_limits<int64_t>::min() + int64_t{kLen}; ++i, ++n1) {
-        n2 = 0U;
-        for (uint64_t j = 0; j <= uint64_t{kLen}; ++j, ++n2) {
+    const auto test_for_i = [&](const int64_t i) {
+        static constexpr uint32_t kMinBoundaryValue = 0;
+        static constexpr uint64_t kMaxBoundaryValue = std::numeric_limits<uint64_t>::max();
+
+        uint64_t j = kMinBoundaryValue;
+        mpz_class_assign_uint64(n2, j);
+        for (; j <= kMinBoundaryValue + uint64_t{kLen}; ++j, ++n2) {
             CheckJacobi(i, j, n1, n2);
             CheckJacobi(j, i, n2, n1);
         }
 
-        uint64_t j = std::numeric_limits<uint64_t>::max();
+        j = kMaxBoundaryValue;
         mpz_class_assign_uint64(n2, j);
-        for (; j >= std::numeric_limits<uint64_t>::max() - uint64_t{kLen}; --j, --n2) {
+        for (; j >= kMaxBoundaryValue - uint64_t{kLen}; --j, --n2) {
             CheckJacobi(i, j, n1, n2);
             CheckJacobi(j, i, n2, n1);
         }
+    };
+
+    static constexpr int64_t kMinBoundaryValue = std::numeric_limits<int64_t>::min();
+    static constexpr int64_t kMaxBoundaryValue = std::numeric_limits<int64_t>::max();
+
+    int64_t i = kMinBoundaryValue;
+    mpz_class_assign_int64(n1, i);
+    for (; i <= kMinBoundaryValue + int64_t{kLen}; ++i, ++n1) {
+        test_for_i(i);
     }
 
-    i = std::numeric_limits<int64_t>::max();
+    i = kMaxBoundaryValue;
     mpz_class_assign_int64(n1, i);
-    for (; i >= std::numeric_limits<int64_t>::max() - int64_t{kLen}; --i, --n1) {
-        n2 = 0U;
-        for (uint64_t j = 0; j <= uint64_t{kLen}; ++j, ++n2) {
-            CheckJacobi(i, j, n1, n2);
-            CheckJacobi(j, i, n2, n1);
-        }
-
-        uint64_t j = std::numeric_limits<int64_t>::max();
-        mpz_class_assign_uint64(n2, j);
-        for (; j >= std::numeric_limits<int64_t>::max() - uint64_t{kLen}; --j, --n2) {
-            CheckJacobi(i, j, n1, n2);
-            CheckJacobi(j, i, n2, n1);
-        }
+    for (; i >= kMaxBoundaryValue - int64_t{kLen}; --i, --n1) {
+        test_for_i(i);
     }
 }
 
