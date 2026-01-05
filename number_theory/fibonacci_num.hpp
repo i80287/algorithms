@@ -17,8 +17,7 @@ namespace detail {
 
 template <typename T>
 ATTRIBUTE_ACCESS(read_write, 1)
-ATTRIBUTE_ACCESS(read_only, 2)
-constexpr void matrix_mul(T (&m1)[2][2], const T (&m2)[2][2]) noexcept {
+ATTRIBUTE_ACCESS(read_only, 2) constexpr void matrix_mul(T (&m1)[2][2], const T (&m2)[2][2]) noexcept {
 #ifdef HAS_INT128_TYPEDEF
     static_assert(int128_traits::is_arithmetic_v<T>);
 #else
