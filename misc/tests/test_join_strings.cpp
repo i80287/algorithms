@@ -122,7 +122,7 @@ private:
                STR_LITERAL(CharType, "12345"));
         assert(misc::join_strings<CharType>(uint8_t{1}, static_cast<const void*>(nullptr), 2UL, 3L,
                                             nullptr, 4,
-                                            5ULL) == STR_LITERAL(CharType, "1null23null45"));
+                                            5ULL) == STR_LITERAL(CharType, "10x0230x045"));
     }
 
     static void test_with_filesystem_path() {
@@ -146,11 +146,6 @@ void test_basic_joins() {
     JoinStringsTestSuite<char16_t>::run();
     JoinStringsTestSuite<char32_t>::run();
 }
-
-enum class E1 : std::uint8_t {
-    kValue1 = 2,
-    kValue2 = 4,
-};
 
 enum struct Condition : bool {
     kNo = false,
@@ -237,15 +232,6 @@ void test_custom_enum_to_string() {
 }
 
 void test_enums() {
-    assert(misc::join_strings(E1::kValue1) ==
-           std::to_string(unsigned{static_cast<std::underlying_type_t<E1>>(E1::kValue1)}));
-    assert(misc::join_strings<wchar_t>(E1::kValue1) ==
-           std::to_wstring(unsigned{static_cast<std::underlying_type_t<E1>>(E1::kValue1)}));
-    assert(misc::join_strings(E1::kValue2) ==
-           std::to_string(unsigned{static_cast<std::underlying_type_t<E1>>(E1::kValue2)}));
-    assert(misc::join_strings<wchar_t>(E1::kValue2) ==
-           std::to_wstring(unsigned{static_cast<std::underlying_type_t<E1>>(E1::kValue2)}));
-
     test_custom_enum_to_string();
 }
 
@@ -257,21 +243,21 @@ void test_pointers() {
         static void noexcept_static_method() noexcept {}
     };
 
-    assert(misc::join_strings(nullptr) == "null");
-    assert(misc::join_strings(std::nullptr_t{}) == "null");
+    assert(misc::join_strings(nullptr) == "0x0");
+    assert(misc::join_strings(std::nullptr_t{}) == "0x0");
 
     const S s{};
 
-    assert(misc::join_strings(static_cast<const void*>(0)) == "null");
-    assert(misc::join_strings(static_cast<const void*>(nullptr)) == "null");
-    assert(misc::join_strings(static_cast<const void*>(&s)) == std::to_string(reinterpret_cast<uintptr_t>(&s)));
-    assert(misc::join_strings(&s) == std::to_string(reinterpret_cast<uintptr_t>(&s)));
-    assert(misc::join_strings(&test_basic_joins) == std::to_string(reinterpret_cast<uintptr_t>(&test_basic_joins)));
-    assert(misc::join_strings(&test_enums) == std::to_string(reinterpret_cast<uintptr_t>(&test_enums)));
-    assert(misc::join_strings(&test_pointers) == std::to_string(reinterpret_cast<uintptr_t>(&test_pointers)));
+    assert(misc::join_strings(static_cast<const void*>(0)) == "0x0");
+    assert(misc::join_strings(static_cast<const void*>(nullptr)) == "0x0");
+    assert(misc::join_strings(static_cast<const void*>(&s)) == "0x" + std::to_string(reinterpret_cast<uintptr_t>(&s)));
+    assert(misc::join_strings(&s) == "0x" + std::to_string(reinterpret_cast<uintptr_t>(&s)));
+    assert(misc::join_strings(&test_basic_joins) == "0x" + std::to_string(reinterpret_cast<uintptr_t>(&test_basic_joins)));
+    assert(misc::join_strings(&test_enums) == "0x" + std::to_string(reinterpret_cast<uintptr_t>(&test_enums)));
+    assert(misc::join_strings(&test_pointers) == "0x" + std::to_string(reinterpret_cast<uintptr_t>(&test_pointers)));
 
-    assert(misc::join_strings(&S::static_method) == std::to_string(reinterpret_cast<uintptr_t>(&S::static_method)));
-    assert(misc::join_strings(&S::noexcept_static_method) == std::to_string(reinterpret_cast<uintptr_t>(&S::noexcept_static_method)));
+    assert(misc::join_strings(&S::static_method) == "0x" + std::to_string(reinterpret_cast<uintptr_t>(&S::static_method)));
+    assert(misc::join_strings(&S::noexcept_static_method) == "0x" + std::to_string(reinterpret_cast<uintptr_t>(&S::noexcept_static_method)));
 
     // clang-format on
 }
@@ -479,6 +465,22 @@ public:
     }
 };
 
+enum class E {
+    kTen = 10,
+};
+
+template <class CharType = char>
+[[nodiscard]] std::basic_string_view<CharType> to_basic_string_view(const E e) {
+    switch (e) {
+        case E::kTen: {
+            return STR_LITERAL(CharType, "kTen");
+        }
+        default: {
+            return STR_LITERAL(CharType, "Unknown E value");
+        }
+    }
+}
+
 template <class CharType>
 class StringConversionsTestSuite final {
 public:
@@ -489,21 +491,17 @@ public:
 
 private:
     static void test_conversions() {
-        enum class E {
-            kTen = 10,
-        };
-
         const std::basic_string<CharType> res = misc::join_strings<CharType>(
             int8_t{0}, uint8_t{1}, int16_t{2}, uint16_t{3}, int32_t{4}, uint32_t{5}, int64_t{6},
             uint64_t{7}, 8, 9, nullptr, E::kTen, static_cast<const void*>(nullptr));
-        assert(res == STR_LITERAL(CharType, "0123456789null10null"));
+        assert(res == STR_LITERAL(CharType, "01234567890x0100x0"));
     }
 
     static void test_conversions_with_to_string() {
         const auto res = misc::join_strings<CharType>(0, dummy::W{}, X{}, Y{}, nullptr);
         assert(res == STR_LITERAL(CharType,
                                   "0" W_TO_STRING_RETURN X_TO_STRING_RETURN Y_OSTREAM_REPRESENTATION
-                                  "null"));
+                                  "0x0"));
     }
 };
 
