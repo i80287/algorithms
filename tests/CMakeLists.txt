@@ -4,6 +4,25 @@ project(tests VERSION 0.1.0 LANGUAGES C CXX)
 
 include(CMakeTestsUtils.cmake)
 
+function(add_test_target_impl target_name compile_only)
+    if(LINK_THREADS_LIBRARY_MANUALLY)
+        target_link_libraries(${target_name} PUBLIC Threads::Threads)
+    endif()
+
+    if(LINK_COMPILER_RT_BUILTINS_MANUALLY)
+        target_link_libraries(${target_name} PUBLIC clang_rt.builtins-x86_64)
+    endif()
+
+    if(USING_MINGW_GCC AND NOT WIN32)
+        target_link_options(${target_name} PUBLIC -static -static-libgcc -static-libstdc++)
+    endif()
+
+    if(NOT compile_only)
+        add_test(NAME ${target_name} COMMAND $<TARGET_FILE:${target_name}>)
+        set_tests_properties(${target_name} PROPERTIES TIMEOUT 700)
+    endif()
+endfunction()
+
 set(TEST_COMPILE_DEFINITIONS
     ${TEST_COMPILE_DEFINITIONS}
     ENABLE_LONGINT_DEBUG_ASSERTS=1)
@@ -103,20 +122,13 @@ list(APPEND TestOptionalDependencies "")
 list(APPEND TestIsCProject False)
 list(APPEND TestCompileOnly False)
 
-set(mingw_gcc_or_clang USING_MINGW_GCC OR CMAKE_CXX_COMPILER_ID STREQUAL "Clang" OR CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang")
-if((NOT mingw_gcc_or_clang) OR (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER 10.0.0))
-    # gcc mingw w64 10.0.0 supports C++20 but doesn't have std::bit_cast, same with clang
-    # gcc:   https://gcc.gnu.org/projects/cxx-status.html
-    # clang: https://clang.llvm.org/cxx_status.html
-    list(APPEND TestFilenames "test_hungarian_algo.cpp")
-    list(APPEND TestDirectories "graphs HungarianAlgorithm")
-    list(APPEND TestLangVersions "20 23 26")
-    list(APPEND TestDependencies "")
-    list(APPEND TestOptionalDependencies "")
-    list(APPEND TestIsCProject False)
-    list(APPEND TestCompileOnly False)
-endif()
-unset(mingw_gcc_or_clang)
+list(APPEND TestFilenames "test_hungarian_algo.cpp")
+list(APPEND TestDirectories "graphs HungarianAlgorithm")
+list(APPEND TestLangVersions "20 23 26")
+list(APPEND TestDependencies "")
+list(APPEND TestOptionalDependencies "")
+list(APPEND TestIsCProject False)
+list(APPEND TestCompileOnly False)
 
 list(APPEND TestFilenames "test_actrie.cpp")
 list(APPEND TestDirectories "tf_idf_actrie")
@@ -203,7 +215,7 @@ unset(CAN_COMPILE_CONSTEXPR_STRING_MAP)
 
 if (GENERATOR_SUPPORTS_MODULES AND COMPILER_SUPPORTS_MODULES)
     add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/../bstrees ${CMAKE_CURRENT_BINARY_DIR}/bstrees)
-    add_test(NAME rbtree_tests COMMAND $<TARGET_FILE:rbtree_tests>)
+    add_test_target_impl(rbtree_tests false)
 endif()
 
 list(APPEND TestFilenames "test_dsu.cpp")
@@ -364,18 +376,6 @@ function(
         endforeach()
     endif()
 
-    if(LINK_THREADS_LIBRARY_MANUALLY)
-        target_link_libraries(${target} PUBLIC Threads::Threads)
-    endif()
-
-    if(LINK_COMPILER_RT_BUILTINS_MANUALLY)
-        target_link_libraries(${target} PUBLIC clang_rt.builtins-x86_64)
-    endif()
-
-    if(USING_MINGW_GCC AND NOT WIN32)
-        target_link_options(${target} PUBLIC -static -static-libgcc -static-libstdc++)
-    endif()
-
     target_compile_definitions(${target} PUBLIC ${TEST_COMPILE_DEFINITIONS})
     if(is_c_project)
         target_compile_options(${target} PUBLIC ${TEST_C_COMPILE_OPTIONS})
@@ -391,9 +391,8 @@ function(
             CXX_EXTENSIONS OFF
             CXX_STANDARD_REQUIRED ON)
     endif()
-    if(NOT compile_only)
-        add_test(NAME ${target} COMMAND $<TARGET_FILE:${target}>)
-    endif()
+
+    add_test_target_impl(${target} ${compile_only})
 endfunction(add_test_target)
 
 foreach(target_filenames
