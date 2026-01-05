@@ -16,7 +16,7 @@ for force_disable_checks in ON OFF; do
         -S .. \
         -B .
     cmake --build . --parallel
-    env CTEST_OUTPUT_ON_FAILURE=1 ctest
+    env CTEST_OUTPUT_ON_FAILURE=1 ctest --progress --verbose
 
     leave_test
 done

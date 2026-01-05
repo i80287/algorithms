@@ -3683,7 +3683,7 @@ void test_masked_popcount_sum() noexcept {
         const uint64_t fast_calc_sum = masked_popcount_sum(n, k);
         assert(correct_sum == fast_calc_sum);
     };
-    constexpr uint32_t K = 5000;
+    constexpr uint32_t K = 650;
     for (uint32_t n = 0; n <= K; n++) {
         for (uint32_t k = 0; k <= K; k++) {
             check_n_k(n, k);

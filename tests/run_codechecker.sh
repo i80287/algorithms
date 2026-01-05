@@ -8,7 +8,12 @@ cd ./$build_dir || exit 1
 
 OLDIFS=$IFS
 IFS=','
-for cc_and_cxx in clang,clang++ gcc-13,g++-13 gcc-14,g++-14 i686-w64-mingw32-gcc-posix,i686-w64-mingw32-g++-posix x86_64-w64-mingw32-gcc-posix,x86_64-w64-mingw32-g++-posix; do
+for cc_and_cxx in \
+    clang-18,clang++-18 clang-19,clang++-19 clang-20,clang++-20 \
+    gcc-13,g++-13 gcc-14,g++-14 \
+    i686-w64-mingw32-gcc-posix,i686-w64-mingw32-g++-posix \
+    x86_64-w64-mingw32-gcc-posix,x86_64-w64-mingw32-g++-posix \
+; do
     set -- $cc_and_cxx
     c_compiler=$1
     cxx_compiler=$2
@@ -22,16 +27,12 @@ for cc_and_cxx in clang,clang++ gcc-13,g++-13 gcc-14,g++-14 i686-w64-mingw32-gcc
         -D CMAKE_BUILD_TYPE=RelWithDebInfo \
         -D CMAKE_C_COMPILER="$1" \
         -D CMAKE_CXX_COMPILER="$2" \
+        -D UTILS_FLAGS_FORCE_DISABLE_RUNTIME_CHECKS=OFF \
         -D CMAKE_EXPORT_COMPILE_COMMANDS=1 \
         -S .. \
         -B "$cmake_build_dir"
     exported_compile_commands="./$cmake_build_dir/compile_commands.json"
     if [ -e "$exported_compile_commands" ]; then
-        # if [[ "$OSTYPE" == "darwin"* ]]; then
-        #     cpu_count=$(sysctl -n hw.logicalcpu)
-        # else
-        #     cpu_count=$(nproc)
-        # fi
         cmake --build "$cmake_build_dir" --parallel
         report_file="./report_$c_compiler"
         parsed_report_file="./parsed_report_$c_compiler"
