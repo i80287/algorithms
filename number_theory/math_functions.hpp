@@ -239,7 +239,7 @@ constexpr uint32_t isqrt_u32(uint32_t n) noexcept {
      *  https://godbolt.org/z/7jK8xcjjf
      */
 
-#if defined(__GNUG__) || defined(__clang__) || CONFIG_HAS_AT_LEAST_CXX_20
+#if CONFIG_COMPILER_IS_GCC_OR_ANY_CLANG || CONFIG_HAS_AT_LEAST_CXX_20
     if (config::is_constant_evaluated() || config::is_gcc_constant_p(n)) {
 #endif
         uint32_t y = 0;
@@ -257,7 +257,7 @@ constexpr uint32_t isqrt_u32(uint32_t n) noexcept {
         }
 
         return y;
-#if defined(__GNUG__) || defined(__clang__) || CONFIG_HAS_AT_LEAST_CXX_20
+#if CONFIG_COMPILER_IS_GCC_OR_ANY_CLANG || CONFIG_HAS_AT_LEAST_CXX_20
     } else {
         return static_cast<uint32_t>(std::sqrt(static_cast<double>(n)));
     }
@@ -270,30 +270,29 @@ constexpr uint32_t isqrt_u64(const uint64_t n) noexcept {
     /**
      * In the runtime `sqrtl` is used (but not for the msvc prior to the c++20).
      */
-#if defined(__GNUG__) || defined(__clang__) || CONFIG_HAS_AT_LEAST_CXX_20
+#if CONFIG_COMPILER_IS_GCC_OR_ANY_CLANG || CONFIG_HAS_AT_LEAST_CXX_20
     if (config::is_constant_evaluated() || config::is_gcc_constant_p(n) || sizeof(long double) < 16) {
 #endif
         /**
          * See Hackers Delight Chapter 11.
          */
         constexpr uint32_t kMaxUInt32 = std::numeric_limits<uint32_t>::max();
-        uint64_t l = 1;
-        uint64_t r = std::min((n >> 5U) + 8U, uint64_t{kMaxUInt32});
+        uint64_t l = n > kMaxUInt32 ? std::numeric_limits<uint16_t>::max() : 0U;
+        uint64_t r = std::min(std::max(l, (n >> 5U) + 8U), uint64_t{kMaxUInt32});
         do {
-            CONFIG_ASSUME_STATEMENT(l <= r);
+            CONFIG_ASSUME_STATEMENT(l < r);
             CONFIG_ASSUME_STATEMENT(r <= kMaxUInt32);
-            const uint64_t m = (l + r) / 2;
+            const uint64_t m = (l + r + 1) / 2;
             CONFIG_ASSUME_STATEMENT(m <= kMaxUInt32);
             if (n >= m * m) {
-                l = m + 1;
+                l = m;
             } else {
                 r = m - 1;
             }
-        } while (r >= l);
-        const uint64_t ret = l - 1;
-        CONFIG_ASSUME_STATEMENT(ret <= kMaxUInt32);
-        return static_cast<uint32_t>(ret);
-#if defined(__GNUG__) || defined(__clang__) || CONFIG_HAS_AT_LEAST_CXX_20
+        } while (r > l);
+        CONFIG_ASSUME_STATEMENT(l <= kMaxUInt32);
+        return static_cast<uint32_t>(l);
+#if CONFIG_COMPILER_IS_GCC_OR_ANY_CLANG || CONFIG_HAS_AT_LEAST_CXX_20
     }
 
     return static_cast<uint32_t>(std::sqrt(static_cast<long double>(n)));
@@ -306,11 +305,12 @@ constexpr uint32_t isqrt_u64(const uint64_t n) noexcept {
 ATTRIBUTE_CONST
 [[nodiscard]]
 I128_CONSTEXPR uint64_t isqrt_u128(const uint128_t n) noexcept(detail::is_trivial_arithmetic_v<uint128_t>) {
-    uint64_t l = 0;
+    uint64_t l = n > std::numeric_limits<uint64_t>::max() ? std::numeric_limits<uint32_t>::max() : 0U;
     const uint128_t r_approx = (n >> 6U) + 16U;
     uint64_t r = r_approx > std::numeric_limits<uint64_t>::max() ? std::numeric_limits<uint64_t>::max()
-                                                                 : static_cast<uint64_t>(r_approx);
+                                                                 : std::max(static_cast<uint64_t>(r_approx), l);
     do {
+        CONFIG_ASSUME_STATEMENT(l < r);
         // m = (l + r + 1) / 2
         const uint64_t m = (l / 2) + (r / 2) + ((r % 2) | (l % 2));
         if (n >= uint128_t{m} * m) {
@@ -660,7 +660,7 @@ constexpr uint32_t icbrt(const uint32_t n) noexcept {
     CONFIG_ASSUME_STATEMENT(ret <= 1625U);
     CONFIG_ASSUME_STATEMENT(ret * ret * ret <= n);
 
-#if defined(__GNUG__) && !defined(__clang__) && CONFIG_HAS_AT_LEAST_CXX_17
+#if CONFIG_COMPILER_IS_GCC && CONFIG_HAS_AT_LEAST_CXX_17
     // Clang ignores this assumption because it contains potential side effects (fpu register
     // flags), while GCC has made almost all math functions constexpr long before the C++26
     CONFIG_ASSUME_STATEMENT(ret == static_cast<uint32_t>(std::cbrt(static_cast<long double>(n))));
@@ -1475,7 +1475,7 @@ constexpr uint32_t base_b_len(const T value, const uint8_t base = 10) {
     THROW_IF_NOT(math_functions::is_correct_base_b_len_base(base));
 
     if constexpr (math_functions::is_signed_v<T>) {
-        const uint32_t is_negative = uint32_t{value < 0};
+        const uint32_t is_negative{value < 0};
         return is_negative + math_functions::detail::base_b_len_impl(math_functions::uabs(value), base);
     } else {
         return math_functions::detail::base_b_len_impl(value, base);
@@ -1495,15 +1495,16 @@ constexpr uint32_t log2_floor(const UIntType n) noexcept {
     math_functions::detail::check_math_unsigned_int_type<UIntType>();
 
     const uint32_t log2_value = [n]() {
+        const uint32_t shift{sizeof(n) * CHAR_BIT - 1};
 #if defined(HAS_INT128_TYPEDEF)
         if constexpr (std::is_same_v<UIntType, uint128_t>) {
             const auto hi = static_cast<uint64_t>(n >> 64U);
-            return hi != 0 ? (127 - static_cast<uint32_t>(math_functions::countl_zero(hi)))
+            return hi != 0 ? (shift - static_cast<uint32_t>(math_functions::countl_zero(hi)))
                            : (math_functions::log2_floor(static_cast<uint64_t>(n)));
         } else
 #endif
         {
-            return uint32_t{sizeof(n) * CHAR_BIT - 1} - static_cast<uint32_t>(math_functions::countl_zero(n));
+            return shift - static_cast<uint32_t>(math_functions::countl_zero(n));
         }
     }();
 
@@ -1686,18 +1687,20 @@ struct SumSinCos {
 
 /// @brief Function returns pair of 2 sums:
 ///         (
-///           sin(alpha) +
+///             sin(alpha) +
 ///           + sin(alpha + beta) +
 ///           + sin(alpha + 2 beta) +
 ///           + sin(alpha + 3 beta) +
-///           + ... + sin(alpha + (n - 1) beta)
+///           + ... +
+///           + sin(alpha + (n - 1) beta)
 ///         ),
 ///         (
-///           cos(alpha) +
+///             cos(alpha) +
 ///           + cos(alpha + beta) +
 ///           + cos(alpha + 2 beta) +
 ///           + cos(alpha + 3 beta) +
-///           + ... + cos(alpha + (n - 1) beta)
+///           + ... +
+///           + cos(alpha + (n - 1) beta)
 ///         ).
 ///        For n = 0 function returns (0, 0).
 ///        Proof of the formula can found on
@@ -2132,19 +2135,18 @@ private:
 #define CONSTEXPR_BITSET_OPS constexpr
 #if defined(__cpp_constexpr) && __cpp_constexpr >= 202211L
 #define CONSTEXPR_FIXED_PRIMES_SIEVE constexpr
-#define CONSTEXPR_PRIMES_SIEVE       constexpr
 #else
 #define CONSTEXPR_FIXED_PRIMES_SIEVE inline
-#define CONSTEXPR_PRIMES_SIEVE       constinit
 #endif
 #else
 #define CONSTEXPR_BITSET_OPS
 #define CONSTEXPR_FIXED_PRIMES_SIEVE inline
-#define CONSTEXPR_PRIMES_SIEVE
 #endif
 
 template <uint32_t N>
 using PrimesSet = std::bitset<size_t{N} + 1>;
+
+// clang-format off
 
 /// @brief Find all prime numbers in [2; N]
 /// @tparam N exclusive upper bound
@@ -2153,13 +2155,13 @@ template <uint32_t N>
 #if PRIMES_SIEVE_INITIALIZED_IN_COMPILE_TIME
 ATTRIBUTE_CONST
 #endif
-    [[nodiscard]]
-    CONSTEXPR_FIXED_PRIMES_SIEVE const PrimesSet<N>& fixed_primes_sieve() noexcept {
-    static CONSTEXPR_PRIMES_SIEVE const PrimesSet<N> primes_bs = []() CONSTEXPR_BITSET_OPS noexcept -> PrimesSet<N> {
+[[nodiscard]] CONSTEXPR_FIXED_PRIMES_SIEVE const PrimesSet<N>& fixed_primes_sieve() noexcept {
+    // clang-format on
+    static CONSTEXPR_BITSET_OPS const PrimesSet<N> primes_bs = []() CONSTEXPR_BITSET_OPS noexcept -> PrimesSet<N> {
         PrimesSet<N> primes{};
         primes.set();
         primes[0] = false;
-        if CONSTEXPR_BITSET_OPS (primes.size() > 1) {
+        if constexpr (N >= 1) {
             primes[1] = false;
             constexpr uint32_t root = math_functions::isqrt(N);
             if constexpr (constexpr uint32_t i = 2; i <= root) {
@@ -2184,7 +2186,6 @@ ATTRIBUTE_CONST
     return primes_bs;
 }
 
-#undef CONSTEXPR_PRIMES_SIEVE
 #undef CONSTEXPR_FIXED_PRIMES_SIEVE
 #undef CONSTEXPR_BITSET_OPS
 #undef PRIMES_SIEVE_INITIALIZED_IN_COMPILE_TIME
@@ -2259,18 +2260,17 @@ inline constexpr auto kNoCongruenceSolution = std::numeric_limits<uint32_t>::max
 namespace detail {
 
 struct HelperRetType {
-    uint32_t x0 = kNoCongruenceSolution;  // first solution of congruence
-    uint32_t d = 0;                       // gcd(a, m)
-    uint32_t m_ = 0;                      // m / d
+    uint32_t x0;  // first solution of congruence
+    uint32_t d;   // gcd(a, m)
+    uint32_t m_;  // m / d
 };
 
 ATTRIBUTE_CONST
-ATTRIBUTE_ALWAYS_INLINE
 [[nodiscard]]
 constexpr HelperRetType congruence_helper(const uint32_t a, const uint32_t c, const uint32_t m) noexcept {
     const uint32_t d = std::gcd(a, m);
     if (m == 0 || c % d != 0) {
-        return {};
+        return {kNoCongruenceSolution, 0, 0};
     }
 
     CONFIG_ASSUME_STATEMENT(a == 0 || a >= d);
@@ -2329,13 +2329,14 @@ constexpr uint32_t congruence_arg(const T x, ATTRIBUTE_MAYBE_UNUSED const uint32
             return static_cast<uint32_t>(x);
         }
     } else {
-        if constexpr (sizeof(x) > sizeof(uint32_t)) {
-            const auto x_mod_m = x % m;
-            return static_cast<uint32_t>(x_mod_m >= 0 ? x_mod_m : x_mod_m + m);
-        } else {
-            const auto x_mod_m = static_cast<int64_t>(x) % m;
-            return static_cast<uint32_t>(x_mod_m >= 0 ? x_mod_m : x_mod_m + m);
-        }
+        const auto x_mod_m = [x, m]() constexpr noexcept {
+            if constexpr (sizeof(x) > sizeof(uint32_t)) {
+                return x % m;
+            } else {
+                return static_cast<int64_t>(x) % m;
+            }
+        }();
+        return static_cast<uint32_t>(x_mod_m >= 0 ? x_mod_m : x_mod_m + m);
     }
 }
 
