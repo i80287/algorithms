@@ -2,6 +2,8 @@
 #include <iostream>
 #include <vector>
 
+namespace {
+
 using std::vector;
 
 constexpr uint32_t INITIAL_TIME = 0;
@@ -24,13 +26,13 @@ void fill_tree(const vector<uint32_t>& nums,
     }
 }
 
-uint32_t get_value_and_its_time(const vector<uint32_t>& tree,
-                                const vector<uint32_t>& times_tree,
-                                uint32_t& value,
-                                size_t node_index,
-                                size_t l,
-                                size_t r,
-                                size_t index) {
+[[nodiscard]] uint32_t get_value_and_its_time(const vector<uint32_t>& tree,
+                                              const vector<uint32_t>& times_tree,
+                                              uint32_t& value,
+                                              size_t node_index,
+                                              size_t l,
+                                              size_t r,
+                                              size_t index) {
     if (l == r) {
         value = tree[node_index];
         return times_tree[node_index];
@@ -84,6 +86,8 @@ void update_tree(vector<uint32_t>& tree,
     update_tree(tree, times_tree, time, 2 * node_index + 1, tree_l, middle, q_l, middle, value);
     update_tree(tree, times_tree, time, 2 * node_index + 2, middle + 1, tree_r, middle + 1, q_r, value);
 }
+
+}  // namespace
 
 int main() {
     std::ios::sync_with_stdio(false);

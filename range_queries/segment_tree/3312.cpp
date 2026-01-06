@@ -2,6 +2,8 @@
 #include <iostream>
 #include <vector>
 
+namespace {
+
 using std::vector;
 
 void fill_tree(const vector<uint32_t>& nums,
@@ -36,14 +38,14 @@ void fill_tree(const vector<uint32_t>& nums,
     }
 }
 
-uint32_t find_and_count_max(const vector<uint32_t>& max_tree,
-                            const vector<uint32_t>& counts_tree,
-                            size_t i,
-                            size_t tree_l,
-                            size_t tree_r,
-                            size_t q_l,
-                            size_t q_r,
-                            uint32_t& max_count) {
+[[nodiscard]] uint32_t find_and_count_max(const vector<uint32_t>& max_tree,
+                                          const vector<uint32_t>& counts_tree,
+                                          size_t i,
+                                          size_t tree_l,
+                                          size_t tree_r,
+                                          size_t q_l,
+                                          size_t q_r,
+                                          uint32_t& max_count) {
     if (tree_l == q_l && tree_r == q_r) {
         max_count = counts_tree[i];
         return max_tree[i];
@@ -75,6 +77,8 @@ uint32_t find_and_count_max(const vector<uint32_t>& max_tree,
     max_count = left_max_count + right_max_count;
     return left_max;
 }
+
+}  // namespace
 
 int main() {
     std::ios::sync_with_stdio(false);

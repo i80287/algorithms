@@ -7,20 +7,22 @@
 /// @brief seealso https://e-maxx.ru/algo/matching_edmonds
 namespace EdmondsMatchingAlgorithm {
 
+namespace {
+
 using vertex_t = size_t;
 using graph_t = std::vector<std::vector<vertex_t>>;
 
-inline constexpr vertex_t MAX_GRAPH_SIZE = 128;
+constexpr vertex_t MAX_GRAPH_SIZE = 128;
 
-inline constexpr vertex_t NO_VERTEX = static_cast<vertex_t>(-1);
+constexpr vertex_t NO_VERTEX = static_cast<vertex_t>(-1);
 
 // Parent tree for odd vertexes
-static vertex_t parent[MAX_GRAPH_SIZE] = {};
+vertex_t parent[MAX_GRAPH_SIZE] = {};
 
 // blossom_cycle_base[i] is a vertex number that is base of the blossom for the vertex i
-static vertex_t blossom_cycle_base[MAX_GRAPH_SIZE] = {};
+vertex_t blossom_cycle_base[MAX_GRAPH_SIZE] = {};
 
-static inline vertex_t find_lca(const std::vector<vertex_t>& matches, vertex_t vertex1, vertex_t vertex2) {
+[[nodiscard]] vertex_t find_lca(const std::vector<vertex_t>& matches, vertex_t vertex1, vertex_t vertex2) {
     static bool used_in_cycle[MAX_GRAPH_SIZE];
     memset(used_in_cycle, 0, sizeof(used_in_cycle));
 
@@ -49,11 +51,11 @@ static inline vertex_t find_lca(const std::vector<vertex_t>& matches, vertex_t v
     }
 }
 
-static inline void mark_path_in_cycle(const std::vector<vertex_t>& matches,
-                                      bool current_blossom_cycle_vertexes[],
-                                      vertex_t v,
-                                      vertex_t lca_base,
-                                      vertex_t child) {
+void mark_path_in_cycle(const std::vector<vertex_t>& matches,
+                        bool current_blossom_cycle_vertexes[],
+                        vertex_t v,
+                        vertex_t lca_base,
+                        vertex_t child) {
     while (blossom_cycle_base[v] != lca_base) {
         assert(matches[v] != NO_VERTEX);
         current_blossom_cycle_vertexes[blossom_cycle_base[v]] = true;
@@ -65,10 +67,10 @@ static inline void mark_path_in_cycle(const std::vector<vertex_t>& matches,
     }
 }
 
-static vertex_t find_increasing_path(const graph_t& graph,
-                                     const std::vector<vertex_t>& matches,
-                                     vertex_t n,
-                                     vertex_t root) {
+[[nodiscard]] vertex_t find_increasing_path(const graph_t& graph,
+                                            const std::vector<vertex_t>& matches,
+                                            vertex_t n,
+                                            vertex_t root) {
     for (vertex_t i = 0; i < n; i++) {
         blossom_cycle_base[i] = i;
     }
@@ -140,7 +142,7 @@ static vertex_t find_increasing_path(const graph_t& graph,
     return NO_VERTEX;
 }
 
-std::vector<vertex_t> RunEdmondsMatchingAlgorithm(const graph_t& graph) {
+[[nodiscard]] std::vector<vertex_t> RunEdmondsMatchingAlgorithm(const graph_t& graph) {
     vertex_t n = static_cast<vertex_t>(graph.size());
     assert(n <= MAX_GRAPH_SIZE);
 
@@ -188,21 +190,27 @@ void print_matches(const std::vector<vertex_t>& matches) {
     }
 }
 
+}  // namespace
+
 }  // namespace EdmondsMatchingAlgorithm
 
 int main() {
     using namespace EdmondsMatchingAlgorithm;
 
     {
-        graph_t graph{{1, 2, 3, 4}, {0, 2, 5}, {0, 1}, {0, 5}, {0, 5}, {1, 3, 4}, {7}, {6}};
-
+        const graph_t graph{
+            {1, 2, 3, 4}, {0, 2, 5}, {0, 1}, {0, 5}, {0, 5}, {1, 3, 4}, {7}, {6},
+        };
         std::vector<vertex_t> matches = RunEdmondsMatchingAlgorithm(graph);
         print_matches(matches);
     }
 
     {
-        graph_t graph{{1}, {0, 2}, {1}};
-
+        const graph_t graph{
+            {1},
+            {0, 2},
+            {1},
+        };
         std::vector<vertex_t> matches = RunEdmondsMatchingAlgorithm(graph);
         print_matches(matches);
     }

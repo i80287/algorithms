@@ -2,6 +2,8 @@
 #include <iostream>
 #include <vector>
 
+namespace {
+
 using std::vector;
 
 void fill_tree(const vector<uint32_t>& nums, vector<uint32_t>& tree, size_t i, size_t l, size_t r) {
@@ -17,7 +19,8 @@ void fill_tree(const vector<uint32_t>& nums, vector<uint32_t>& tree, size_t i, s
     }
 }
 
-uint32_t count_zeros(const vector<uint32_t>& tree, size_t i, size_t tree_l, size_t tree_r, size_t q_l, size_t q_r) {
+[[nodiscard]] uint32_t count_zeros(
+    const vector<uint32_t>& tree, size_t i, size_t tree_l, size_t tree_r, size_t q_l, size_t q_r) {
     if (tree_l == q_l && tree_r == q_r) {
         return tree[i];
     }
@@ -34,6 +37,8 @@ uint32_t count_zeros(const vector<uint32_t>& tree, size_t i, size_t tree_l, size
     uint32_t right_zeros_count = count_zeros(tree, 2 * i + 2, middle + 1, tree_r, middle + 1, q_r);
     return left_zeros_count + right_zeros_count;
 }
+
+}  // namespace
 
 int main() {
     std::ios::sync_with_stdio(false);

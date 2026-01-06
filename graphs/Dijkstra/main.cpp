@@ -20,7 +20,7 @@ public:
         vertex_t vertex;
     };
 
-    static constexpr heap from_graph(size_t graph_size, vertex_t start_vertex) {
+    [[nodiscard]] static constexpr heap from_graph(size_t graph_size, vertex_t start_vertex) {
         std::vector<node_t> heap_nodes;
         heap_nodes.reserve(graph_size);
         heap_nodes.resize(1);
@@ -29,23 +29,23 @@ public:
         return heap(std::move(heap_nodes));
     }
 
-    constexpr void reserve(size_t size) {
+    [[nodiscard]] constexpr void reserve(size_t size) {
         heap_nodes_.reserve(size);
     }
 
-    constexpr size_t size() const noexcept {
+    [[nodiscard]] constexpr size_t size() const noexcept {
         return heap_nodes_.size();
     }
 
-    constexpr bool empty() const noexcept {
+    [[nodiscard]] constexpr bool empty() const noexcept {
         return heap_nodes_.empty();
     }
 
-    constexpr node_t& top() noexcept {
+    [[nodiscard]] constexpr node_t& top() noexcept {
         return heap_nodes_.front();
     }
 
-    constexpr const node_t& top() const noexcept {
+    [[nodiscard]] constexpr const node_t& top() const noexcept {
         return heap_nodes_.front();
     }
 
@@ -128,11 +128,11 @@ private:
         }
     }
 
-    static constexpr size_t parentIndex(size_t node_index) noexcept {
+    [[nodiscard]] static constexpr size_t parentIndex(size_t node_index) noexcept {
         return (node_index - 1) / 2;
     }
 
-    static constexpr size_t leftSonIndex(size_t node_index) noexcept {
+    [[nodiscard]] static constexpr size_t leftSonIndex(size_t node_index) noexcept {
         return node_index * 2 | 1;
     }
 
@@ -220,12 +220,12 @@ static void find_shr_pths_lowdensity(const graph_t& g,
     } while (!not_visited.empty());
 }
 
-static uint32_t log2_floor(size_t n) noexcept {
+[[nodiscard]] static uint32_t log2_floor(size_t n) noexcept {
     return 63 ^ uint32_t(__builtin_clzll(n | 1));
 }
 
 template <size_t C = 2>
-std::pair<vector<weight_t>, vector<vertex_t>> shortest_paths(const graph_t& g, uint32_t from) {
+[[nodiscard]] std::pair<vector<weight_t>, vector<vertex_t>> shortest_paths(const graph_t& g, uint32_t from) {
     const size_t n = g.size();
     size_t edges = 0;
     for (const auto& neighbours : g) {

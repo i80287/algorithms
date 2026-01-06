@@ -8,7 +8,7 @@
 using graph_t = std::vector<std::vector<uint32_t>>;
 using vertex_t = uint32_t;
 
-std::vector<uint32_t> GetDistancesFromVertex(const graph_t& graph, vertex_t start_vertex) {
+[[nodiscard]] inline std::vector<uint32_t> GetDistancesFromVertex(const graph_t& graph, const vertex_t start_vertex) {
     std::vector<bool> visited(graph.size());
     std::vector<uint32_t> distances(graph.size());
     // distances[start_vertex] = 0;
@@ -34,7 +34,7 @@ std::vector<uint32_t> GetDistancesFromVertex(const graph_t& graph, vertex_t star
     return distances;
 }
 
-uint32_t GetTreeDiameter(const graph_t& tree) {
+[[nodiscard]] inline uint32_t GetTreeDiameter(const graph_t& tree) {
     constexpr vertex_t start_vertex = 1;
     std::vector<uint32_t> distances = GetDistancesFromVertex(tree, start_vertex);
     assert(distances.size() == tree.size() && distances[start_vertex] == 0);

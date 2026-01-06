@@ -17,11 +17,9 @@ int main() {
         prefsums[i] = prefsums[i - 1] + a;
     }
 
-    while (q--) {
+    while (q-- > 0) {
         uint32_t l = 0, r = 0;
         std::cin >> l >> r;
         std::cout << prefsums[r] - prefsums[l - 1] << '\n';
     }
-
-    std::cout.flush();
 }
