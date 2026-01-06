@@ -16,7 +16,7 @@
 #include "math_functions.hpp"
 
 using math_functions::kronecker_symbol;
-using math_functions::nth_fibonacci_num;
+using math_functions::nth_fibonacci_num_u64;
 
 #if CONFIG_HAS_INCLUDE(<gmpxx.h>) && !defined(__APPLE__)
 #include <gmp.h>
@@ -239,10 +239,12 @@ void CheckJacobiBasic() {
         }
 
         if (p <= math_functions::kMaxFibNonOverflowU64) {
-            if constexpr (nth_fibonacci_num(1) == 1 && nth_fibonacci_num(2) == 1) {
-                assert(nth_fibonacci_num(p) % p == j_5_p_mod_p);
+            static_assert(nth_fibonacci_num_u64(1) == 1, "");
+            if constexpr (nth_fibonacci_num_u64(2) == 1) {
+                assert(nth_fibonacci_num_u64(p) % p == j_5_p_mod_p);
             } else {
-                assert(nth_fibonacci_num(p - 1) % p == j_5_p_mod_p);
+                static_assert(nth_fibonacci_num_u64(0) == 1);
+                assert(nth_fibonacci_num_u64(p - 1) % p == j_5_p_mod_p);
             }
         }
 
