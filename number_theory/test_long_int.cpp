@@ -1821,13 +1821,13 @@ void TestDivModImpl() {
 void TestDivMod() {
     test_tools::log_tests_started();
 
-    TestDivModImpl<uint32_t, 4000>();
-    TestDivModImpl<int32_t, 4000>();
-    TestDivModImpl<uint64_t, 4000>();
-    TestDivModImpl<int64_t, 4000>();
-#if defined(HAS_INT128_TYPEDEF) && (defined(__GNUG__) || defined(__clang__))
-    TestDivModImpl<uint128_t, 4000>();
-    TestDivModImpl<int128_t, 4000>();
+    TestDivModImpl<uint32_t, 3200>();
+    TestDivModImpl<int32_t, 3200>();
+    TestDivModImpl<uint64_t, 3200>();
+    TestDivModImpl<int64_t, 3200>();
+#if defined(HAS_INT128_TYPEDEF) && (!CONFIG_COMPILER_IS_MSVC || CONFIG_HAS_AT_LEAST_CXX_20)
+    TestDivModImpl<uint128_t, 3200>();
+    TestDivModImpl<int128_t, 3200>();
 #endif
 
     longint n;

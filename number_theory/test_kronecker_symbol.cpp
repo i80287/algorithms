@@ -4,8 +4,10 @@
 #include <cstdint>
 #include <cstdio>
 #include <cstdlib>
+#include <iostream>
 #include <limits>
 #include <numeric>
+#include <sstream>
 
 #include "../misc/config_macros.hpp"
 #include "../misc/tests/test_tools.hpp"
@@ -131,7 +133,7 @@ void CheckJacobi(uint32_t a, uint32_t n, int32_t real_jacobi) noexcept {
 }
 
 template <uint16_t kLen>
-void CheckJacobiBasic() noexcept {
+void CheckJacobiBasic() {
     test_tools::log_tests_started();
 
     for (uint32_t n = 1; n <= 30; n++) {
@@ -262,68 +264,70 @@ void CheckJacobiBasic() noexcept {
 
 #if defined(HAS_GMPXX_DURING_TESTING)
 
-void CheckJacobi(int32_t i, int32_t j, const mpz_class& n1, const mpz_class& n2) noexcept {
+template <typename T1, typename T2>
+[[noreturn]] void ThrowOnInvalidKroneckerSymbolValue(const T1 i,
+                                                     const T2 j,
+                                                     const int32_t func_jac,
+                                                     const int real_jac) {
+    const std::string msg = [&]() {
+        std::ostringstream out;
+        out << "Error at kronecker_symbol(" << i << ", " << j << "): returned J = " << func_jac
+            << ", correct J = " << real_jac;
+        return std::move(out).str();
+    }();
+    std::cerr << msg << std::endl;
+    throw std::runtime_error{msg};
+}
+
+template <typename T1, typename T2>
+void CheckJacobiImpl(const T1 i, const T2 j, const mpz_class& n1, const mpz_class& n2) {
     const int32_t func_jac = kronecker_symbol(i, j);
     const int real_jac = mpz_jacobi(n1.get_mpz_t(), n2.get_mpz_t());
-    if (func_jac != real_jac) {
-        std::printf("Error at (%" PRId32 ", %" PRId32 "): given J = %d, correct J = %d\n", i, j, func_jac, real_jac);
+    if (unlikely(func_jac != real_jac)) {
+        ThrowOnInvalidKroneckerSymbolValue(i, j, func_jac, real_jac);
     }
 }
 
-void CheckJacobi(int64_t i, int64_t j, const mpz_class& n1, const mpz_class& n2) noexcept {
-    const int32_t func_jac = kronecker_symbol(i, j);
-    const int real_jac = mpz_jacobi(n1.get_mpz_t(), n2.get_mpz_t());
-    if (func_jac != real_jac) {
-        std::printf("Error at (%" PRId64 ", %" PRId64 "): given J = %d, correct J = %d\n", i, j, func_jac, real_jac);
-    }
+void CheckJacobi(int32_t i, int32_t j, const mpz_class& n1, const mpz_class& n2) {
+    CheckJacobiImpl(i, j, n1, n2);
 }
 
-void CheckJacobi(uint32_t i, uint32_t j, const mpz_class& n1, const mpz_class& n2) noexcept {
-    const int32_t func_jac = kronecker_symbol(i, j);
-    const int real_jac = mpz_jacobi(n1.get_mpz_t(), n2.get_mpz_t());
-    if (func_jac != real_jac) {
-        std::printf("Error at (%" PRIu32 ", %" PRIu32 "): given J = %d, correct J = %d\n", i, j, func_jac, real_jac);
-    }
+void CheckJacobi(int64_t i, int64_t j, const mpz_class& n1, const mpz_class& n2) {
+    CheckJacobiImpl(i, j, n1, n2);
 }
 
-void CheckJacobi(uint64_t i, uint64_t j, const mpz_class& n1, const mpz_class& n2) noexcept {
-    const int32_t func_jac = kronecker_symbol(i, j);
-    const int real_jac = mpz_jacobi(n1.get_mpz_t(), n2.get_mpz_t());
-    if (func_jac != real_jac) {
-        std::printf("Error at (%" PRIu64 ", %" PRIu64 "): given J = %d, correct J = %d\n", i, j, func_jac, real_jac);
-    }
+void CheckJacobi(uint32_t i, uint32_t j, const mpz_class& n1, const mpz_class& n2) {
+    CheckJacobiImpl(i, j, n1, n2);
 }
 
-void CheckJacobi(uint32_t i, int32_t j, const mpz_class& n1, const mpz_class& n2) noexcept {
-    const int32_t func_jac = kronecker_symbol(i, j);
-    const int real_jac = mpz_jacobi(n1.get_mpz_t(), n2.get_mpz_t());
-    if (func_jac != real_jac) {
-        std::printf("Error at (%" PRIu32 ", %" PRId32 "): given J = %d, correct J = %d\n", i, j, func_jac, real_jac);
-    }
+void CheckJacobi(uint64_t i, uint64_t j, const mpz_class& n1, const mpz_class& n2) {
+    CheckJacobiImpl(i, j, n1, n2);
 }
 
-void CheckJacobi(int32_t i, uint32_t j, const mpz_class& n1, const mpz_class& n2) noexcept {
-    const int32_t func_jac = kronecker_symbol(i, j);
-    const int real_jac = mpz_jacobi(n1.get_mpz_t(), n2.get_mpz_t());
-    if (func_jac != real_jac) {
-        std::printf("Error at (%" PRId32 ", %" PRIu32 "): given J = %d, correct J = %d\n", i, j, func_jac, real_jac);
-    }
+void CheckJacobi(uint32_t i, int32_t j, const mpz_class& n1, const mpz_class& n2) {
+    CheckJacobiImpl(i, j, n1, n2);
 }
 
-void CheckJacobi(uint64_t i, int64_t j, const mpz_class& n1, const mpz_class& n2) noexcept {
-    const int32_t func_jac = kronecker_symbol(i, j);
-    const int real_jac = mpz_jacobi(n1.get_mpz_t(), n2.get_mpz_t());
-    if (func_jac != real_jac) {
-        std::printf("Error at (%" PRIu64 ", %" PRId64 "): given J = %d, correct J = %d\n", i, j, func_jac, real_jac);
-    }
+void CheckJacobi(int32_t i, uint32_t j, const mpz_class& n1, const mpz_class& n2) {
+    CheckJacobiImpl(i, j, n1, n2);
 }
 
-void CheckJacobi(int64_t i, uint64_t j, const mpz_class& n1, const mpz_class& n2) noexcept {
-    const int32_t func_jac = kronecker_symbol(i, j);
-    const int real_jac = mpz_jacobi(n1.get_mpz_t(), n2.get_mpz_t());
-    if (func_jac != real_jac) {
-        std::printf("Error at (%" PRId64 ", %" PRIu64 "): given J = %d, correct J = %d\n", i, j, func_jac, real_jac);
-    }
+void CheckJacobi(uint64_t i, int64_t j, const mpz_class& n1, const mpz_class& n2) {
+    CheckJacobiImpl(i, j, n1, n2);
+}
+
+void CheckJacobi(int64_t i, uint64_t j, const mpz_class& n1, const mpz_class& n2) {
+    CheckJacobiImpl(i, j, n1, n2);
+}
+
+void mpz_class_assign_uint64(mpz_class& n, const uint64_t value) {
+    static_assert(sizeof(unsigned long) >= sizeof(uint64_t));
+    n = static_cast<unsigned long>(value);
+}
+
+void mpz_class_assign_int64(mpz_class& n, const int64_t value) {
+    static_assert(sizeof(long) >= sizeof(int64_t));
+    n = static_cast<long>(value);
 }
 
 template <uint16_t kLen>
@@ -359,22 +363,22 @@ void GMPCheckJacobiI64() {
     mpz_class n1;
     mpz_class n2;
 
-    n1.set_str("-9223372036854775808", 10);
-    for (int64_t i = std::numeric_limits<int64_t>::min(); i <= std::numeric_limits<int64_t>::min() + int64_t{kLen};
-         ++i, ++n1) {
-        n2.set_str("-9223372036854775808", 10);
-        for (int64_t j = std::numeric_limits<int64_t>::min(); j <= std::numeric_limits<int64_t>::min() + int64_t{kLen};
-             ++j, ++n2) {
+    int64_t i = std::numeric_limits<int64_t>::min();
+    mpz_class_assign_int64(n1, i);
+    for (; i <= std::numeric_limits<int64_t>::min() + int64_t{kLen}; ++i, ++n1) {
+        int64_t j = std::numeric_limits<int64_t>::min();
+        mpz_class_assign_int64(n2, j);
+        for (; j <= std::numeric_limits<int64_t>::min() + int64_t{kLen}; ++j, ++n2) {
             CheckJacobi(i, j, n1, n2);
         }
     }
 
-    n1.set_str("9223372036854775807", 10);
-    for (int64_t i = std::numeric_limits<int64_t>::max(); i >= std::numeric_limits<int64_t>::max() - int64_t{kLen};
-         --i, --n1) {
-        n2.set_str("9223372036854775807", 10);
-        for (int64_t j = std::numeric_limits<int64_t>::max(); j >= std::numeric_limits<int64_t>::max() - int64_t{kLen};
-             --j, --n2) {
+    i = std::numeric_limits<int64_t>::max();
+    mpz_class_assign_int64(n1, i);
+    for (; i >= std::numeric_limits<int64_t>::max() - int64_t{kLen}; --i, --n1) {
+        int64_t j = std::numeric_limits<int64_t>::max();
+        mpz_class_assign_int64(n2, j);
+        for (; j >= std::numeric_limits<int64_t>::max() - int64_t{kLen}; --j, --n2) {
             CheckJacobi(i, j, n1, n2);
         }
     }
@@ -411,22 +415,33 @@ void GMPCheckJacobiU64() {
     mpz_class n1;
     mpz_class n2;
 
-    n1 = 0U;
-    for (uint64_t i = 0; i <= uint64_t{kLen}; ++i, ++n1) {
-        n2 = 0U;
-        for (uint64_t j = 0; j <= uint64_t{kLen}; ++j, ++n2) {
+    static constexpr uint32_t kMinBoundaryValue = 0;
+    static constexpr uint64_t kMaxBoundaryValue = std::numeric_limits<uint64_t>::max();
+
+    const auto test_for_i = [&](const uint64_t i) {
+        uint64_t j = kMinBoundaryValue;
+        mpz_class_assign_uint64(n2, j);
+        for (; j <= kMinBoundaryValue + uint64_t{kLen}; ++j, ++n2) {
             CheckJacobi(i, j, n1, n2);
         }
+
+        j = kMaxBoundaryValue;
+        mpz_class_assign_uint64(n2, j);
+        for (; j >= kMaxBoundaryValue - uint64_t{kLen}; --j, --n2) {
+            CheckJacobi(i, j, n1, n2);
+        }
+    };
+
+    uint64_t i = kMinBoundaryValue;
+    mpz_class_assign_uint64(n1, i);
+    for (; i <= kMinBoundaryValue + uint64_t{kLen}; ++i, ++n1) {
+        test_for_i(i);
     }
 
-    n1.set_str("18446744073709551615", 10);
-    for (uint64_t i = std::numeric_limits<int64_t>::max(); i >= std::numeric_limits<int64_t>::max() - uint64_t{kLen};
-         --i, --n1) {
-        n2.set_str("18446744073709551615", 10);
-        for (uint64_t j = std::numeric_limits<int64_t>::max();
-             j >= std::numeric_limits<int64_t>::max() - uint64_t{kLen}; --j, --n2) {
-            CheckJacobi(i, j, n1, n2);
-        }
+    i = kMaxBoundaryValue;
+    mpz_class_assign_uint64(n1, i);
+    for (; i >= kMaxBoundaryValue - uint64_t{kLen}; --i, --n1) {
+        test_for_i(i);
     }
 }
 
@@ -475,38 +490,38 @@ void GMPCheckJacobiU64I64() {
     mpz_class n1;
     mpz_class n2;
 
-    n1.set_str("-9223372036854775808", 10);
-    for (int64_t i = std::numeric_limits<int64_t>::min(); i <= std::numeric_limits<int64_t>::min() + int64_t{kLen};
-         ++i, ++n1) {
-        n2 = 0U;
-        for (uint64_t j = 0; j <= uint64_t{kLen}; ++j, ++n2) {
+    const auto test_for_i = [&](const int64_t i) {
+        static constexpr uint32_t kMinBoundaryValue = 0;
+        static constexpr uint64_t kMaxBoundaryValue = std::numeric_limits<uint64_t>::max();
+
+        uint64_t j = kMinBoundaryValue;
+        mpz_class_assign_uint64(n2, j);
+        for (; j <= kMinBoundaryValue + uint64_t{kLen}; ++j, ++n2) {
             CheckJacobi(i, j, n1, n2);
             CheckJacobi(j, i, n2, n1);
         }
 
-        n2.set_str("18446744073709551615", 10);
-        for (uint64_t j = std::numeric_limits<int64_t>::max();
-             j >= std::numeric_limits<int64_t>::max() - uint64_t{kLen}; --j, --n2) {
+        j = kMaxBoundaryValue;
+        mpz_class_assign_uint64(n2, j);
+        for (; j >= kMaxBoundaryValue - uint64_t{kLen}; --j, --n2) {
             CheckJacobi(i, j, n1, n2);
             CheckJacobi(j, i, n2, n1);
         }
+    };
+
+    static constexpr int64_t kMinBoundaryValue = std::numeric_limits<int64_t>::min();
+    static constexpr int64_t kMaxBoundaryValue = std::numeric_limits<int64_t>::max();
+
+    int64_t i = kMinBoundaryValue;
+    mpz_class_assign_int64(n1, i);
+    for (; i <= kMinBoundaryValue + int64_t{kLen}; ++i, ++n1) {
+        test_for_i(i);
     }
 
-    n1.set_str("9223372036854775807", 10);
-    for (int64_t i = std::numeric_limits<int64_t>::max(); i >= std::numeric_limits<int64_t>::max() - int64_t{kLen};
-         --i, --n1) {
-        n2 = 0U;
-        for (uint64_t j = 0; j <= uint64_t{kLen}; ++j, ++n2) {
-            CheckJacobi(i, j, n1, n2);
-            CheckJacobi(j, i, n2, n1);
-        }
-
-        n2.set_str("18446744073709551615", 10);
-        for (uint64_t j = std::numeric_limits<int64_t>::max();
-             j >= std::numeric_limits<int64_t>::max() - uint64_t{kLen}; --j, --n2) {
-            CheckJacobi(i, j, n1, n2);
-            CheckJacobi(j, i, n2, n1);
-        }
+    i = kMaxBoundaryValue;
+    mpz_class_assign_int64(n1, i);
+    for (; i >= kMaxBoundaryValue - int64_t{kLen}; --i, --n1) {
+        test_for_i(i);
     }
 }
 

@@ -240,7 +240,7 @@ constexpr uint32_t isqrt_u32(uint32_t n) noexcept {
      */
 
 #if CONFIG_COMPILER_IS_GCC_OR_ANY_CLANG || CONFIG_HAS_AT_LEAST_CXX_20
-    if (config::is_constant_evaluated() || config::is_gcc_constant_p(n)) {
+    if (config::is_constant_evaluated()) {
 #endif
         uint32_t y = 0;
 
@@ -271,7 +271,7 @@ constexpr uint32_t isqrt_u64(const uint64_t n) noexcept {
      * In the runtime `sqrtl` is used (but not for the msvc prior to the c++20).
      */
 #if CONFIG_COMPILER_IS_GCC_OR_ANY_CLANG || CONFIG_HAS_AT_LEAST_CXX_20
-    if (config::is_constant_evaluated() || config::is_gcc_constant_p(n) || sizeof(long double) < 16) {
+    if (config::is_constant_evaluated() || sizeof(long double) < 16) {
 #endif
         /**
          * See Hackers Delight Chapter 11.
