@@ -278,9 +278,10 @@ constexpr uint32_t isqrt_u64(const uint64_t n) noexcept {
          */
         constexpr uint32_t kMaxUInt32 = std::numeric_limits<uint32_t>::max();
         uint64_t l = n > kMaxUInt32 ? std::numeric_limits<uint16_t>::max() : 0U;
-        uint64_t r = std::min(std::max(l, (n >> 5U) + 8U), uint64_t{kMaxUInt32});
+        const uint64_t r_approx = (n >> 5U) + 8U;
+        uint64_t r = std::min(r_approx, uint64_t{kMaxUInt32});
+        CONFIG_ASSUME_STATEMENT(l < r);
         do {
-            CONFIG_ASSUME_STATEMENT(l < r);
             CONFIG_ASSUME_STATEMENT(r <= kMaxUInt32);
             const uint64_t m = (l + r + 1) / 2;
             CONFIG_ASSUME_STATEMENT(m <= kMaxUInt32);
@@ -308,9 +309,9 @@ I128_CONSTEXPR uint64_t isqrt_u128(const uint128_t n) noexcept(detail::is_trivia
     uint64_t l = n > std::numeric_limits<uint64_t>::max() ? std::numeric_limits<uint32_t>::max() : 0U;
     const uint128_t r_approx = (n >> 6U) + 16U;
     uint64_t r = r_approx > std::numeric_limits<uint64_t>::max() ? std::numeric_limits<uint64_t>::max()
-                                                                 : std::max(static_cast<uint64_t>(r_approx), l);
+                                                                 : static_cast<uint64_t>(r_approx);
+    CONFIG_ASSUME_STATEMENT(l < r);
     do {
-        CONFIG_ASSUME_STATEMENT(l < r);
         // m = (l + r + 1) / 2
         const uint64_t m = (l / 2) + (r / 2) + ((r % 2) | (l % 2));
         if (n >= uint128_t{m} * m) {
