@@ -238,9 +238,9 @@ void test_enums() {
             const int ret =
                 std::snprintf(buffer.data(), buffer.size(), "%#" PRIxPTR, reinterpret_cast<std::uintptr_t>(ptr));
             assert(ret > 0);
-            const std::size_t size{static_cast<unsigned>(ret)};
-            assert(size <= kBufferCapacity);
-            return size;
+            const std::size_t printed_size{static_cast<unsigned>(ret)};
+            assert(printed_size <= kBufferCapacity);
+            return printed_size;
         } else {
             static constexpr std::string_view kNullPtrStr = "0x0";
             static_assert(kNullPtrStr.size() <= kBufferCapacity);
