@@ -31,7 +31,7 @@ template <typename T>
     return math_functions::bin_pow(n, p);
 }
 
-[[nodiscard]] constexpr size_t tree_size(const uint32_t n) noexcept {
+[[nodiscard]] ATTRIBUTE_CONST constexpr size_t tree_size(const uint32_t n) noexcept {
     return size_t{1ull} << (1 + math_functions::log2_ceil(n | 1));
 }
 
