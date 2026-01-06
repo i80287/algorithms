@@ -230,15 +230,28 @@ void test_enums() {
 }
 
 [[nodiscard]] std::string ptr_to_hex_str(const void* const ptr) {
-    std::array<char, 60> buffer{};
-    const int ret = std::snprintf(buffer.data(), buffer.size(), "%#" PRIxPTR, reinterpret_cast<std::uintptr_t>(ptr));
-    assert(ret > 0);
-    return std::string(buffer.data(), std::size_t{static_cast<unsigned>(ret)});
+    static constexpr std::size_t kBufferCapacity = std::string_view{"0x"}.size() + sizeof(void*) * CHAR_BIT / 4;
+
+    std::array<char, kBufferCapacity> buffer{};
+    const std::size_t size = [&]() {
+        if (ptr != nullptr) {
+            const int ret =
+                std::snprintf(buffer.data(), buffer.size(), "%#" PRIxPTR, reinterpret_cast<std::uintptr_t>(ptr));
+            assert(ret > 0);
+            const std::size_t size{static_cast<unsigned>(ret)};
+            assert(size <= kBufferCapacity);
+            return size;
+        } else {
+            static constexpr std::string_view kNullPtrStr = "0x0";
+            static_assert(kNullPtrStr.size() <= kBufferCapacity);
+            std::char_traits<char>::copy(buffer.data(), kNullPtrStr.data(), kNullPtrStr.size());
+            return kNullPtrStr.size();
+        }
+    }();
+    return std::string(buffer.data(), size);
 }
 
 void test_pointers() {
-    // clang-format off
-
     struct S {
         static void static_method() {}
         static void noexcept_static_method() noexcept {}
@@ -252,15 +265,17 @@ void test_pointers() {
     assert(misc::join_strings(static_cast<const void*>(0)) == ptr_to_hex_str(nullptr));
     assert(misc::join_strings(static_cast<const void*>(nullptr)) == ptr_to_hex_str(nullptr));
     assert(misc::join_strings(static_cast<const void*>(&s)) == ptr_to_hex_str(static_cast<const void*>(&s)));
-    assert(misc::join_strings(&s) == ptr_to_hex_str(static_cast<const void*>(&s)));
-    assert(misc::join_strings(&test_basic_joins) == ptr_to_hex_str(std::bit_cast<const void*>(&test_basic_joins)));
-    assert(misc::join_strings(&test_enums) == ptr_to_hex_str(std::bit_cast<const void*>(&test_enums)));
-    assert(misc::join_strings(&test_pointers) == ptr_to_hex_str(std::bit_cast<const void*>(&test_pointers)));
+    assert(misc::join_strings(std::bit_cast<const void*>(&test_basic_joins)) ==
+           ptr_to_hex_str(std::bit_cast<const void*>(&test_basic_joins)));
+    assert(misc::join_strings(std::bit_cast<const void*>(&test_enums)) ==
+           ptr_to_hex_str(std::bit_cast<const void*>(&test_enums)));
+    assert(misc::join_strings(std::bit_cast<const void*>(&test_pointers)) ==
+           ptr_to_hex_str(std::bit_cast<const void*>(&test_pointers)));
 
-    assert(misc::join_strings(&S::static_method) == ptr_to_hex_str(std::bit_cast<const void*>(&S::static_method)));
-    assert(misc::join_strings(&S::noexcept_static_method) == ptr_to_hex_str(std::bit_cast<const void*>(&S::noexcept_static_method)));
-
-    // clang-format on
+    assert(misc::join_strings(std::bit_cast<const void*>(&S::static_method)) ==
+           ptr_to_hex_str(std::bit_cast<const void*>(&S::static_method)));
+    assert(misc::join_strings(std::bit_cast<const void*>(&S::noexcept_static_method)) ==
+           ptr_to_hex_str(std::bit_cast<const void*>(&S::noexcept_static_method)));
 }
 
 class OStringStreamWriteable final {
@@ -484,7 +499,7 @@ private:
         const std::basic_string<CharType> res = misc::join_strings<CharType>(
             int8_t{0}, uint8_t{1}, int16_t{2}, uint16_t{3}, int32_t{4}, uint32_t{5}, int64_t{6}, uint64_t{7}, 8, 9,
             nullptr, E::kTen, static_cast<const void*>(nullptr));
-        assert(res == STR_LITERAL(CharType, "01234567890x0100x0"));
+        assert(res == STR_LITERAL(CharType, "01234567890x0kTen0x0"));
     }
 
     static void test_conversions_with_to_string() {
