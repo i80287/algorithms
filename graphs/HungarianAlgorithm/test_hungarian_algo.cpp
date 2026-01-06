@@ -88,9 +88,8 @@ int TestHungarianAlgorithm() {
 
     for (std::size_t k = 0; k < total_tests; k++) {
         const std::uint32_t ans = hungarian_algo::min_assignment(input[k]);
-        std::cout << "Test " << (k + 1) << ((ans == output[k]) ? "" : " not")
-                  << " passed\nAlgorithm answer: " << ans << "\nCorrect answer: " << output[k]
-                  << '\n';
+        std::cout << "Test " << (k + 1) << ((ans == output[k]) ? "" : " not") << " passed\nAlgorithm answer: " << ans
+                  << "\nCorrect answer: " << output[k] << '\n';
         if (ans != output[k]) {
             return 1;
         }

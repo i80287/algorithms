@@ -47,8 +47,7 @@ int main() {
     assert(misc::get_qualified_typename<ns1::C>() == "ns1::C");
     assert(misc::get_qualified_typename<ns1::S>() == "ns1::S");
     assert(misc::get_qualified_typename<ns1::ns2::C1::C2::C3>() == "ns1::ns2::C1::C2::C3");
-    assert(std::string{misc::get_qualified_typename<ns1::ns2::C1::C2::C3>()} ==
-           "ns1::ns2::C1::C2::C3");
+    assert(std::string{misc::get_qualified_typename<ns1::ns2::C1::C2::C3>()} == "ns1::ns2::C1::C2::C3");
     assert(misc::get_enum_value_name<E::kValue1>() == "kValue1");
     assert(misc::get_enum_value_name<ns1::ns2::E1::kE>() == "kE");
     assert(misc::get_enum_value_name<ns1::E2::kE>() == "kE");

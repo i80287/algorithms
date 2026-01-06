@@ -41,36 +41,42 @@ public:
 
     // O(1)
     constexpr dsu_base(dsu_base&& other) noexcept
-        : nodes_(other.nodes_),
-          nodes_count_(other.nodes_count_),
-          sets_count_(other.sets_count_) {
-        other.nodes_       = nullptr;
+        : nodes_(other.nodes_), nodes_count_(other.nodes_count_), sets_count_(other.sets_count_) {
+        other.nodes_ = nullptr;
         other.nodes_count_ = 0;
-        other.sets_count_  = 0;
+        other.sets_count_ = 0;
     }
 
     // O(1)
     dsu_base& operator=(dsu_base&& other) noexcept {
-        auto nodes         = other.nodes_;
-        auto nodes_count   = other.nodes_count_;
-        auto sets_count    = other.sets_count_;
-        other.nodes_       = nullptr;
+        auto nodes = other.nodes_;
+        auto nodes_count = other.nodes_count_;
+        auto sets_count = other.sets_count_;
+        other.nodes_ = nullptr;
         other.nodes_count_ = 0;
-        other.sets_count_  = 0;
+        other.sets_count_ = 0;
         this->~dsu_base();
-        nodes_       = nodes;
+        nodes_ = nodes;
         nodes_count_ = nodes_count;
-        sets_count_  = sets_count;
+        sets_count_ = sets_count;
         return *this;
     }
 
-    constexpr const node_t* getNodes() const noexcept { return nodes_; }
+    constexpr const node_t* getNodes() const noexcept {
+        return nodes_;
+    }
 
-    constexpr node_t* getNodes() noexcept { return nodes_; }
+    constexpr node_t* getNodes() noexcept {
+        return nodes_;
+    }
 
-    constexpr size_t size() const noexcept { return nodes_count_; }
+    constexpr size_t size() const noexcept {
+        return nodes_count_;
+    }
 
-    constexpr size_t sets() const noexcept { return sets_count_; }
+    constexpr size_t sets() const noexcept {
+        return sets_count_;
+    }
 
     ~dsu_base() {
         operator delete(nodes_);
@@ -89,9 +95,9 @@ protected:
 
         // Now 'current_node' points to the root
         while (node != current_node) {
-            node_t* next  = node->parent_;
+            node_t* next = node->parent_;
             node->parent_ = current_node;
-            node          = next;
+            node = next;
         }
 
         return current_node;
@@ -107,7 +113,7 @@ protected:
 /// @brief See also https://www.youtube.com/watch?v=KFcpDTpoixo
 class dsu_t : public dsu_impl::dsu_base<dsu_impl::dsu_node_t> {
     using node_t = dsu_impl::dsu_node_t;
-    using base   = dsu_impl::dsu_base<node_t>;
+    using base = dsu_impl::dsu_base<node_t>;
 
 public:
     dsu_t() = delete;
@@ -123,15 +129,15 @@ public:
 
         for (size_t i = 0; i < other.nodes_count_; ++i) {
             const node_t* other_i_node_parent = other.nodes_[i].parent_;
-            size_t parent_offset =
-                static_cast<size_t>(other_i_node_parent - other.nodes_);
-            this_first_node[i].parent_ =
-                other_i_node_parent ? this_first_node + parent_offset : nullptr;
+            size_t parent_offset = static_cast<size_t>(other_i_node_parent - other.nodes_);
+            this_first_node[i].parent_ = other_i_node_parent ? this_first_node + parent_offset : nullptr;
             this_first_node[i].rank_ = other.nodes_[i].rank_;
         }
     }
 
-    dsu_t& operator=(const dsu_t& other) { return *this = dsu_t(other); }
+    dsu_t& operator=(const dsu_t& other) {
+        return *this = dsu_t(other);
+    }
 
     constexpr dsu_t(dsu_t&& other) noexcept : base(std::move(other)) {}
 

@@ -1,11 +1,11 @@
 #pragma once
 
-#include <vector>
-#include <utility>
 #include <cstdint>
+#include <utility>
+#include <vector>
 
-using std::vector;
 using std::pair;
+using std::vector;
 using vertex_t = int64_t;
 using weight_t = int64_t;
 

@@ -1,6 +1,6 @@
-#include <vector>
-#include <iostream>
 #include <cstdint>
+#include <iostream>
+#include <vector>
 
 using std::vector;
 
@@ -27,13 +27,14 @@ uint64_t find_sum(const vector<uint64_t>& tree, size_t i, size_t tree_l, size_t 
     }
 
     size_t middle = (tree_l + tree_r) / 2;
-    return find_sum(tree, 2 * i + 1, tree_l, middle, q_l, std::min(q_r, middle)) + find_sum(tree, 2 * i + 2, middle + 1, tree_r, std::max(q_l, middle + 1), q_r);
+    return find_sum(tree, 2 * i + 1, tree_l, middle, q_l, std::min(q_r, middle)) +
+           find_sum(tree, 2 * i + 2, middle + 1, tree_r, std::max(q_l, middle + 1), q_r);
 }
 
 int main() {
     std::ios::sync_with_stdio(false);
     std::cin.tie(nullptr);
-    
+
     uint32_t n = 0;
     std::cin >> n;
     vector<uint32_t> nums(n);

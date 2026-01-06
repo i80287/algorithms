@@ -1,8 +1,8 @@
 #include <cassert>
-#include <vector>
 #include <cstdint>
 #include <cstring>
 #include <iostream>
+#include <vector>
 
 /// @brief seealso https://e-maxx.ru/algo/matching_edmonds
 namespace EdmondsMatchingAlgorithm {
@@ -49,7 +49,11 @@ static inline vertex_t find_lca(const std::vector<vertex_t>& matches, vertex_t v
     }
 }
 
-static inline void mark_path_in_cycle(const std::vector<vertex_t>& matches, bool current_blossom_cycle_vertexes[], vertex_t v, vertex_t lca_base, vertex_t child) {
+static inline void mark_path_in_cycle(const std::vector<vertex_t>& matches,
+                                      bool current_blossom_cycle_vertexes[],
+                                      vertex_t v,
+                                      vertex_t lca_base,
+                                      vertex_t child) {
     while (blossom_cycle_base[v] != lca_base) {
         assert(matches[v] != NO_VERTEX);
         current_blossom_cycle_vertexes[blossom_cycle_base[v]] = true;
@@ -61,8 +65,13 @@ static inline void mark_path_in_cycle(const std::vector<vertex_t>& matches, bool
     }
 }
 
-static vertex_t find_increasing_path(const graph_t& graph, const std::vector<vertex_t>& matches, vertex_t n, vertex_t root) {
-    for (vertex_t i = 0; i < n; i++) { blossom_cycle_base[i] = i; }
+static vertex_t find_increasing_path(const graph_t& graph,
+                                     const std::vector<vertex_t>& matches,
+                                     vertex_t n,
+                                     vertex_t root) {
+    for (vertex_t i = 0; i < n; i++) {
+        blossom_cycle_base[i] = i;
+    }
     std::memset(parent, static_cast<int>(NO_VERTEX), sizeof(parent));
 
     constexpr size_t QUEUE_MAX_SIZE = MAX_GRAPH_SIZE + MAX_GRAPH_SIZE;
@@ -113,8 +122,7 @@ static vertex_t find_increasing_path(const graph_t& graph, const std::vector<ver
                         }
                     }
                 }
-            }
-            else if (parent[to] == NO_VERTEX) {
+            } else if (parent[to] == NO_VERTEX) {
                 parent[to] = v;
                 if (matches[to] == NO_VERTEX) {
                     return to;
@@ -174,40 +182,26 @@ void print_matches(const std::vector<vertex_t>& matches) {
         vertex_t v = matches[u];
         if (v != NO_VERTEX) {
             std::cout << u << " -> " << v << '\n';
-        }
-        else {
+        } else {
             std::cout << u << " -> no match\n";
         }
     }
 }
 
-} // namespace EdmondsMatchingAlgorithm
+}  // namespace EdmondsMatchingAlgorithm
 
 int main() {
     using namespace EdmondsMatchingAlgorithm;
 
     {
-        graph_t graph {
-            { 1, 2, 3, 4 },
-            { 0, 2, 5 },
-            { 0, 1 },
-            { 0, 5 },
-            { 0, 5 },
-            { 1, 3, 4 },
-            { 7 },
-            { 6 }
-        };
+        graph_t graph{{1, 2, 3, 4}, {0, 2, 5}, {0, 1}, {0, 5}, {0, 5}, {1, 3, 4}, {7}, {6}};
 
         std::vector<vertex_t> matches = RunEdmondsMatchingAlgorithm(graph);
         print_matches(matches);
     }
 
     {
-        graph_t graph {
-            { 1 },
-            { 0, 2 },
-            { 1 }
-        };
+        graph_t graph{{1}, {0, 2}, {1}};
 
         std::vector<vertex_t> matches = RunEdmondsMatchingAlgorithm(graph);
         print_matches(matches);

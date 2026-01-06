@@ -33,12 +33,8 @@ GENERATE_ENUM_TO_INTEGER(CStyleEnum)
 
 #ifdef GENERATE_ENUM_TO_STRING_FOR_ENUM_MEMBERS
 
-GENERATE_ENUM_TO_STRING_FOR_ENUM_MEMBERS(CStyleEnum,
-                                         CStyleEnum::zero,
-                                         CStyleEnum::one,
-                                         CStyleEnum::two,
-                                         CStyleEnum::four,
-                                         CStyleEnum::eight)
+GENERATE_ENUM_TO_STRING_FOR_ENUM_MEMBERS(
+    CStyleEnum, CStyleEnum::zero, CStyleEnum::one, CStyleEnum::two, CStyleEnum::four, CStyleEnum::eight)
 
 #endif
 
@@ -58,12 +54,8 @@ GENERATE_ENUM_TO_INTEGER(EnumClass1)
 
 #ifdef GENERATE_ENUM_TO_STRING_FOR_ENUM_MEMBERS
 
-GENERATE_ENUM_TO_STRING_FOR_ENUM_MEMBERS(EnumClass1,
-                                         EnumClass1::zero,
-                                         EnumClass1::one,
-                                         EnumClass1::two,
-                                         EnumClass1::four,
-                                         EnumClass1::eight)
+GENERATE_ENUM_TO_STRING_FOR_ENUM_MEMBERS(
+    EnumClass1, EnumClass1::zero, EnumClass1::one, EnumClass1::two, EnumClass1::four, EnumClass1::eight)
 
 #endif
 
@@ -81,12 +73,8 @@ GENERATE_ENUM_TO_INTEGER(EnumClass2)
 
 #ifdef GENERATE_ENUM_TO_STRING_FOR_ENUM_MEMBERS
 
-GENERATE_ENUM_TO_STRING_FOR_ENUM_MEMBERS(EnumClass2,
-                                         EnumClass2::zero,
-                                         EnumClass2::one,
-                                         EnumClass2::two,
-                                         EnumClass2::four,
-                                         EnumClass2::eight)
+GENERATE_ENUM_TO_STRING_FOR_ENUM_MEMBERS(
+    EnumClass2, EnumClass2::zero, EnumClass2::one, EnumClass2::two, EnumClass2::four, EnumClass2::eight)
 
 #endif
 
@@ -94,76 +82,65 @@ GENERATE_ENUM_FLAG_BIT_OPERATIONS(EnumClass2)
 
 GENERATE_ENUM_PLUS_MINUS_OPERATIONS(EnumClass2)
 
-#define GENERATE_ENUM_FLAG_BIT_OPERATIONS_ASSERTS(enum_type)                           \
-    static_assert((enum_type::zero | enum_type::one) == enum_type::one, "");           \
-    static_assert((enum_type::zero | enum_type::two) == enum_type::two, "");           \
-    static_assert((enum_type::zero | enum_type::four) == enum_type::four, "");         \
-    static_assert((enum_type::zero | enum_type::eight) == enum_type::eight, "");       \
-                                                                                       \
-    static_assert((enum_type::one | enum_type::zero) == enum_type::one, "");           \
-    static_assert((enum_type::two | enum_type::zero) == enum_type::two, "");           \
-    static_assert((enum_type::four | enum_type::zero) == enum_type::four, "");         \
-    static_assert((enum_type::eight | enum_type::zero) == enum_type::eight, "");       \
-                                                                                       \
-    static_assert((enum_type::one | enum_type::one) == enum_type::one, "");            \
-    static_assert((enum_type::two | enum_type::two) == enum_type::two, "");            \
-    static_assert((enum_type::four | enum_type::four) == enum_type::four, "");         \
-    static_assert((enum_type::eight | enum_type::eight) == enum_type::eight, "");      \
-                                                                                       \
-    static_assert(static_cast<int>(enum_type::one | enum_type::two | enum_type::four | \
-                                   enum_type::eight) == 15,                            \
-                  "");                                                                 \
-                                                                                       \
-    static_assert((enum_type::zero & enum_type::one) == enum_type::zero, "");          \
-    static_assert((enum_type::zero & enum_type::two) == enum_type::zero, "");          \
-    static_assert((enum_type::zero & enum_type::four) == enum_type::zero, "");         \
-    static_assert((enum_type::zero & enum_type::eight) == enum_type::zero, "");        \
-                                                                                       \
-    static_assert((enum_type::one & enum_type::zero) == enum_type::zero, "");          \
-    static_assert((enum_type::two & enum_type::zero) == enum_type::zero, "");          \
-    static_assert((enum_type::four & enum_type::zero) == enum_type::zero, "");         \
-    static_assert((enum_type::eight & enum_type::zero) == enum_type::zero, "");        \
-                                                                                       \
-    static_assert((enum_type::one & enum_type::one) == enum_type::one, "");            \
-    static_assert((enum_type::two & enum_type::two) == enum_type::two, "");            \
-    static_assert((enum_type::four & enum_type::four) == enum_type::four, "");         \
-    static_assert((enum_type::eight & enum_type::eight) == enum_type::eight, "");      \
-                                                                                       \
-    static_assert(static_cast<int>(enum_type::one & enum_type::two & enum_type::four & \
-                                   enum_type::eight) == 0,                             \
-                  "");                                                                 \
-                                                                                       \
-    static_assert((enum_type::zero ^ enum_type::one) == enum_type::one, "");           \
-    static_assert((enum_type::zero ^ enum_type::two) == enum_type::two, "");           \
-    static_assert((enum_type::zero ^ enum_type::four) == enum_type::four, "");         \
-    static_assert((enum_type::zero ^ enum_type::eight) == enum_type::eight, "");       \
-                                                                                       \
-    static_assert((enum_type::one ^ enum_type::zero) == enum_type::one, "");           \
-    static_assert((enum_type::two ^ enum_type::zero) == enum_type::two, "");           \
-    static_assert((enum_type::four ^ enum_type::zero) == enum_type::four, "");         \
-    static_assert((enum_type::eight ^ enum_type::zero) == enum_type::eight, "");       \
-                                                                                       \
-    static_assert((enum_type::one ^ enum_type::one) == enum_type::zero, "");           \
-    static_assert((enum_type::two ^ enum_type::two) == enum_type::zero, "");           \
-    static_assert((enum_type::four ^ enum_type::four) == enum_type::zero, "");         \
-    static_assert((enum_type::eight ^ enum_type::eight) == enum_type::zero, "");       \
-                                                                                       \
-    static_assert(static_cast<int>(enum_type::one ^ enum_type::two ^ enum_type::four ^ \
-                                   enum_type::eight) == 15,                            \
-                  "");                                                                 \
+#define GENERATE_ENUM_FLAG_BIT_OPERATIONS_ASSERTS(enum_type)                                                         \
+    static_assert((enum_type::zero | enum_type::one) == enum_type::one, "");                                         \
+    static_assert((enum_type::zero | enum_type::two) == enum_type::two, "");                                         \
+    static_assert((enum_type::zero | enum_type::four) == enum_type::four, "");                                       \
+    static_assert((enum_type::zero | enum_type::eight) == enum_type::eight, "");                                     \
+                                                                                                                     \
+    static_assert((enum_type::one | enum_type::zero) == enum_type::one, "");                                         \
+    static_assert((enum_type::two | enum_type::zero) == enum_type::two, "");                                         \
+    static_assert((enum_type::four | enum_type::zero) == enum_type::four, "");                                       \
+    static_assert((enum_type::eight | enum_type::zero) == enum_type::eight, "");                                     \
+                                                                                                                     \
+    static_assert((enum_type::one | enum_type::one) == enum_type::one, "");                                          \
+    static_assert((enum_type::two | enum_type::two) == enum_type::two, "");                                          \
+    static_assert((enum_type::four | enum_type::four) == enum_type::four, "");                                       \
+    static_assert((enum_type::eight | enum_type::eight) == enum_type::eight, "");                                    \
+                                                                                                                     \
+    static_assert(static_cast<int>(enum_type::one | enum_type::two | enum_type::four | enum_type::eight) == 15, ""); \
+                                                                                                                     \
+    static_assert((enum_type::zero & enum_type::one) == enum_type::zero, "");                                        \
+    static_assert((enum_type::zero & enum_type::two) == enum_type::zero, "");                                        \
+    static_assert((enum_type::zero & enum_type::four) == enum_type::zero, "");                                       \
+    static_assert((enum_type::zero & enum_type::eight) == enum_type::zero, "");                                      \
+                                                                                                                     \
+    static_assert((enum_type::one & enum_type::zero) == enum_type::zero, "");                                        \
+    static_assert((enum_type::two & enum_type::zero) == enum_type::zero, "");                                        \
+    static_assert((enum_type::four & enum_type::zero) == enum_type::zero, "");                                       \
+    static_assert((enum_type::eight & enum_type::zero) == enum_type::zero, "");                                      \
+                                                                                                                     \
+    static_assert((enum_type::one & enum_type::one) == enum_type::one, "");                                          \
+    static_assert((enum_type::two & enum_type::two) == enum_type::two, "");                                          \
+    static_assert((enum_type::four & enum_type::four) == enum_type::four, "");                                       \
+    static_assert((enum_type::eight & enum_type::eight) == enum_type::eight, "");                                    \
+                                                                                                                     \
+    static_assert(static_cast<int>(enum_type::one & enum_type::two & enum_type::four & enum_type::eight) == 0, "");  \
+                                                                                                                     \
+    static_assert((enum_type::zero ^ enum_type::one) == enum_type::one, "");                                         \
+    static_assert((enum_type::zero ^ enum_type::two) == enum_type::two, "");                                         \
+    static_assert((enum_type::zero ^ enum_type::four) == enum_type::four, "");                                       \
+    static_assert((enum_type::zero ^ enum_type::eight) == enum_type::eight, "");                                     \
+                                                                                                                     \
+    static_assert((enum_type::one ^ enum_type::zero) == enum_type::one, "");                                         \
+    static_assert((enum_type::two ^ enum_type::zero) == enum_type::two, "");                                         \
+    static_assert((enum_type::four ^ enum_type::zero) == enum_type::four, "");                                       \
+    static_assert((enum_type::eight ^ enum_type::zero) == enum_type::eight, "");                                     \
+                                                                                                                     \
+    static_assert((enum_type::one ^ enum_type::one) == enum_type::zero, "");                                         \
+    static_assert((enum_type::two ^ enum_type::two) == enum_type::zero, "");                                         \
+    static_assert((enum_type::four ^ enum_type::four) == enum_type::zero, "");                                       \
+    static_assert((enum_type::eight ^ enum_type::eight) == enum_type::zero, "");                                     \
+                                                                                                                     \
+    static_assert(static_cast<int>(enum_type::one ^ enum_type::two ^ enum_type::four ^ enum_type::eight) == 15, ""); \
     static_assert(true, "")
 
-#define GENERATE_ENUM_TO_INTEGER_ASSERTS_IMPL(enum_type, int_type)                                 \
-    static_assert(to_integer<int_type>(enum_type::zero) == static_cast<int_type>(enum_type::zero), \
-                  "");                                                                             \
-    static_assert(to_integer<int_type>(enum_type::one) == static_cast<int_type>(enum_type::one),   \
-                  "");                                                                             \
-    static_assert(to_integer<int_type>(enum_type::two) == static_cast<int_type>(enum_type::two),   \
-                  "");                                                                             \
-    static_assert(to_integer<int_type>(enum_type::four) == static_cast<int_type>(enum_type::four), \
-                  "");                                                                             \
-    static_assert(                                                                                 \
-        to_integer<int_type>(enum_type::eight) == static_cast<int_type>(enum_type::eight), "")
+#define GENERATE_ENUM_TO_INTEGER_ASSERTS_IMPL(enum_type, int_type)                                      \
+    static_assert(to_integer<int_type>(enum_type::zero) == static_cast<int_type>(enum_type::zero), ""); \
+    static_assert(to_integer<int_type>(enum_type::one) == static_cast<int_type>(enum_type::one), "");   \
+    static_assert(to_integer<int_type>(enum_type::two) == static_cast<int_type>(enum_type::two), "");   \
+    static_assert(to_integer<int_type>(enum_type::four) == static_cast<int_type>(enum_type::four), ""); \
+    static_assert(to_integer<int_type>(enum_type::eight) == static_cast<int_type>(enum_type::eight), "")
 
 #define GENERATE_ENUM_TO_INTEGER_ASSERTS(enum_type)                   \
     GENERATE_ENUM_TO_INTEGER_ASSERTS_IMPL(enum_type, char);           \

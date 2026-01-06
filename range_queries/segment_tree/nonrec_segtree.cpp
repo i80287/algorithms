@@ -61,8 +61,7 @@ public:
 
 #if __cplusplus >= 202002L
     template <std::size_t Extent>
-    constexpr explicit SegmentTree(std::span<const value_t, Extent> data)
-        : SegmentTree(data.data(), data.size()) {}
+    constexpr explicit SegmentTree(std::span<const value_t, Extent> data) : SegmentTree(data.data(), data.size()) {}
 #endif
 
 #if __cplusplus >= 202002L
@@ -73,7 +72,7 @@ public:
         // Node with index 0 is not used, number of used nodes = 2 * n - 1
         tree_ = std::allocator<value_t>().allocate(tree_size());
 
-        value_t* copy_end            = std::copy(data, data + data_size, tree_ + n_);
+        value_t* copy_end = std::copy(data, data + data_size, tree_ + n_);
         std::size_t tree_unused_size = n_ - data_size;
         if constexpr (get_op == GetOperation::kSum) {
             std::fill_n(copy_end, tree_unused_size, value_t{0});

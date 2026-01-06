@@ -1,7 +1,7 @@
 #pragma once
 #include <cstdint>
-#include <vector>
 #include <utility>
+#include <vector>
 
 using std::vector;
 
@@ -21,7 +21,7 @@ vector<vector<weight_t>> min_dists_floyd_warshall(const vector<vector<weight_t>>
                 dist[i][j] = std::min(dist[i][j], dist[i][k] + dist[k][j]);
             }
         }
-    } 
+    }
 
     return dist;
 }

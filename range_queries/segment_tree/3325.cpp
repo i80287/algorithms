@@ -1,6 +1,6 @@
-#include <vector>
 #include <cstdint>
 #include <iostream>
+#include <vector>
 
 using std::vector;
 
@@ -17,7 +17,8 @@ void fill_tree(const vector<uint32_t>& nums, vector<uint32_t>& tree, size_t node
     }
 }
 
-uint32_t count_zeros(const vector<uint32_t>& tree, size_t node_index, size_t tree_l, size_t tree_r, size_t q_l, size_t q_r) {
+uint32_t count_zeros(
+    const vector<uint32_t>& tree, size_t node_index, size_t tree_l, size_t tree_r, size_t q_l, size_t q_r) {
     if (tree_l == q_l && tree_r == q_r) {
         return tree[node_index];
     }
@@ -32,8 +33,8 @@ uint32_t count_zeros(const vector<uint32_t>& tree, size_t node_index, size_t tre
     }
 
     // q_l <= middle < q_r
-    return count_zeros(tree, node_index * 2 + 1, tree_l, middle, q_l, middle)
-        + count_zeros(tree, node_index * 2 + 2, middle + 1, tree_r, middle + 1, q_r);
+    return count_zeros(tree, node_index * 2 + 1, tree_l, middle, q_l, middle) +
+           count_zeros(tree, node_index * 2 + 2, middle + 1, tree_r, middle + 1, q_r);
 }
 
 void update_tree(vector<uint32_t>& tree, size_t node_index, size_t tree_l, size_t tree_r, size_t index, bool is_zero) {
