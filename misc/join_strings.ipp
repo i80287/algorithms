@@ -317,8 +317,8 @@ private:
         const std::to_chars_result ret =
             std::to_chars(write_ptr, write_ptr + capacity, std::bit_cast<std::uintptr_t>(ptr), 16);
         const std::ptrdiff_t total_size = ret.ptr - storage.data();
-        CONFIG_ASSUME_STATEMENT(kMinFmtSize <= total_size);
-        CONFIG_ASSUME_STATEMENT(total_size <= kMaxCapacity);
+        CONFIG_ASSUME_STATEMENT(static_cast<std::ptrdiff_t>(kMinFmtSize) <= total_size);
+        CONFIG_ASSUME_STATEMENT(total_size <= static_cast<std::ptrdiff_t>(kMaxCapacity));
         return static_cast<size_type>(total_size);
     }
 
