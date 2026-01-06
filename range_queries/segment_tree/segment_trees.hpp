@@ -31,7 +31,7 @@ template <typename T>
     return math_functions::bin_pow(n, p);
 }
 
-[[nodiscard]] constexpr size_t tree_size(const uint32_t n) noexcept {
+[[nodiscard]] ATTRIBUTE_CONST constexpr size_t tree_size(const uint32_t n) noexcept {
     return size_t{1ull} << (1 + math_functions::log2_ceil(n | 1));
 }
 
@@ -54,8 +54,7 @@ public:
     explicit MinMaxSegTreeAdd(const std::initializer_list<value_t> data)
         : MinMaxSegTreeAdd(std::data(data), static_cast<uint32_t>(std::size(data))) {}
 
-    explicit MinMaxSegTreeAdd(const value_t* const data, const uint32_t n)
-        : nodes_(tree_size(n)), n_(n) {
+    explicit MinMaxSegTreeAdd(const value_t* const data, const uint32_t n) : nodes_(tree_size(n)), n_(n) {
         assert(data != nullptr);
         assert(n > 0);
         this->BuildRecImpl(data, 0, 0, n - 1);
@@ -99,11 +98,9 @@ private:
         this->BuildRecImpl(data, right_node_index, node_m + 1, node_r);
         assert(right_node_index < nodes_.size());
         if constexpr (get_op == GetOperation::max) {
-            nodes_[node_index].value =
-                std::max(nodes_[left_node_index].value, nodes_[right_node_index].value);
+            nodes_[node_index].value = std::max(nodes_[left_node_index].value, nodes_[right_node_index].value);
         } else {
-            nodes_[node_index].value =
-                std::min(nodes_[left_node_index].value, nodes_[right_node_index].value);
+            nodes_[node_index].value = std::min(nodes_[left_node_index].value, nodes_[right_node_index].value);
         }
     }
 
@@ -128,11 +125,11 @@ private:
         const Node& left_node = nodes_[left_node_index];
         const Node& right_node = nodes_[right_node_index];
         if constexpr (get_op == GetOperation::max) {
-            nodes_[node_index].value = std::max(left_node.value + left_node.promise,
-                                                right_node.value + right_node.promise);
+            nodes_[node_index].value =
+                std::max(left_node.value + left_node.promise, right_node.value + right_node.promise);
         } else {
-            nodes_[node_index].value = std::min(left_node.value + left_node.promise,
-                                                right_node.value + right_node.promise);
+            nodes_[node_index].value =
+                std::min(left_node.value + left_node.promise, right_node.value + right_node.promise);
         }
     }
 
@@ -176,10 +173,8 @@ private:
         }
 
         // query_l <= node_middle < query_r
-        const value_t left_result =
-            this->GetRecImpl(left_son, node_l, node_middle, query_l, node_middle);
-        const value_t right_result =
-            this->GetRecImpl(right_son, node_middle + 1, node_r, node_middle + 1, query_r);
+        const value_t left_result = this->GetRecImpl(left_son, node_l, node_middle, query_l, node_middle);
+        const value_t right_result = this->GetRecImpl(right_son, node_middle + 1, node_r, node_middle + 1, query_r);
         if constexpr (get_op == GetOperation::max) {
             return std::max(left_result, right_result);
         } else {
@@ -213,8 +208,7 @@ public:
     explicit MinMaxSegTreeMult(const std::initializer_list<value_t> data)
         : MinMaxSegTreeMult(std::data(data), static_cast<uint32_t>(std::size(data))) {}
 
-    explicit MinMaxSegTreeMult(const value_t* const data, const uint32_t n)
-        : nodes_(tree_size(n)), n_(n) {
+    explicit MinMaxSegTreeMult(const value_t* const data, const uint32_t n) : nodes_(tree_size(n)), n_(n) {
         static_assert(!std::is_integral_v<value_t>,
                       "Warning: min / max segment tree with "
                       "multiplication on update should not be used with "
@@ -271,9 +265,7 @@ private:
         nodes_[node_index].max_value = std::max(left_node.max_value, right_node.max_value);
     }
 
-    void UpdateRecImpl(const size_t node_index,
-                       const uint32_t node_l,
-                       const uint32_t node_r) noexcept {
+    void UpdateRecImpl(const size_t node_index, const uint32_t node_l, const uint32_t node_r) noexcept {
         assert(node_index < nodes_.size());
         if (query_l_ <= node_l && node_r <= query_r_) {
             nodes_[node_index].promise *= value_;
@@ -295,15 +287,11 @@ private:
         const value_t left_node_promise = left_node.promise;
         const value_t right_node_promise = right_node.promise;
         nodes_[node_index].min_value =
-            std::min((left_node_promise >= 0 ? left_node.min_value : left_node.max_value) *
-                         left_node_promise,
-                     (right_node_promise >= 0 ? right_node.min_value : right_node.max_value) *
-                         right_node_promise);
+            std::min((left_node_promise >= 0 ? left_node.min_value : left_node.max_value) * left_node_promise,
+                     (right_node_promise >= 0 ? right_node.min_value : right_node.max_value) * right_node_promise);
         nodes_[node_index].max_value =
-            std::max((left_node_promise >= 0 ? left_node.max_value : left_node.min_value) *
-                         left_node_promise,
-                     (right_node_promise >= 0 ? right_node.max_value : right_node.min_value) *
-                         right_node_promise);
+            std::max((left_node_promise >= 0 ? left_node.max_value : left_node.min_value) * left_node_promise,
+                     (right_node_promise >= 0 ? right_node.max_value : right_node.min_value) * right_node_promise);
     }
 
     void PushImpl(const size_t node_index) noexcept {
@@ -359,10 +347,8 @@ private:
         }
 
         // query_l <= node_middle < query_r
-        const value_t left_result =
-            this->GetRecImpl(left_son, node_l, node_middle, query_l, node_middle);
-        const value_t right_result =
-            this->GetRecImpl(right_son, node_middle + 1, node_r, node_middle + 1, query_r);
+        const value_t left_result = this->GetRecImpl(left_son, node_l, node_middle, query_l, node_middle);
+        const value_t right_result = this->GetRecImpl(right_son, node_middle + 1, node_r, node_middle + 1, query_r);
         if constexpr (get_op == GetOperation::max) {
             return std::max(left_result, right_result);
         } else {
@@ -397,8 +383,7 @@ public:
     explicit MinMaxSegTreeSetEqual(const std::initializer_list<value_t> data)
         : MinMaxSegTreeSetEqual(std::data(data), static_cast<uint32_t>(std::size(data))) {}
 
-    explicit MinMaxSegTreeSetEqual(const value_t* const data, const uint32_t n)
-        : nodes_(tree_size(n)), n_(n) {
+    explicit MinMaxSegTreeSetEqual(const value_t* const data, const uint32_t n) : nodes_(tree_size(n)), n_(n) {
         assert(data != nullptr);
         assert(n > 0);
         this->BuildRecImpl(data, 0, 0, n - 1);
@@ -448,9 +433,7 @@ private:
         }
     }
 
-    void UpdateRecImpl(const size_t node_index,
-                       const uint32_t node_l,
-                       const uint32_t node_r) noexcept {
+    void UpdateRecImpl(const size_t node_index, const uint32_t node_l, const uint32_t node_r) noexcept {
         if (query_l_ <= node_l && node_r <= query_r_) {
             nodes_[node_index].promise = value_;
             nodes_[node_index].has_promise = true;
@@ -469,15 +452,13 @@ private:
         this->UpdateRecImpl(right_node, node_m + 1, node_r);
 
         if constexpr (get_op == GetOperation::max) {
-            nodes_[node_index].value = std::max(
-                nodes_[left_node].has_promise ? nodes_[left_node].promise : nodes_[left_node].value,
-                nodes_[right_node].has_promise ? nodes_[right_node].promise
-                                               : nodes_[right_node].value);
+            nodes_[node_index].value =
+                std::max(nodes_[left_node].has_promise ? nodes_[left_node].promise : nodes_[left_node].value,
+                         nodes_[right_node].has_promise ? nodes_[right_node].promise : nodes_[right_node].value);
         } else {
-            nodes_[node_index].value = std::min(
-                nodes_[left_node].has_promise ? nodes_[left_node].promise : nodes_[left_node].value,
-                nodes_[right_node].has_promise ? nodes_[right_node].promise
-                                               : nodes_[right_node].value);
+            nodes_[node_index].value =
+                std::min(nodes_[left_node].has_promise ? nodes_[left_node].promise : nodes_[left_node].value,
+                         nodes_[right_node].has_promise ? nodes_[right_node].promise : nodes_[right_node].value);
         }
     }
 
@@ -505,8 +486,7 @@ private:
                                      const uint32_t query_r) noexcept {
         assert(node_index < nodes_.size());
         if (query_l == node_l && node_r == query_r) {
-            return nodes_[node_index].has_promise ? nodes_[node_index].promise
-                                                  : nodes_[node_index].value;
+            return nodes_[node_index].has_promise ? nodes_[node_index].promise : nodes_[node_index].value;
         }
 
         const uint32_t node_middle = (node_l + node_r) / 2;
@@ -522,10 +502,8 @@ private:
         }
 
         // query_l <= node_middle < query_r
-        const value_t left_result =
-            this->GetRecImpl(left_son, node_l, node_middle, query_l, node_middle);
-        const value_t right_result =
-            this->GetRecImpl(right_son, node_middle + 1, node_r, node_middle + 1, query_r);
+        const value_t left_result = this->GetRecImpl(left_son, node_l, node_middle, query_l, node_middle);
+        const value_t right_result = this->GetRecImpl(right_son, node_middle + 1, node_r, node_middle + 1, query_r);
         if constexpr (get_op == GetOperation::max) {
             return std::max(left_result, right_result);
         } else {
@@ -557,8 +535,7 @@ public:
     explicit SumSegTreeSetEqual(const std::initializer_list<value_t> data)
         : SumSegTreeSetEqual(std::data(data), static_cast<uint32_t>(std::size(data))) {}
 
-    explicit SumSegTreeSetEqual(const value_t* const data, const uint32_t n)
-        : nodes_(tree_size(n)), n_(n) {
+    explicit SumSegTreeSetEqual(const value_t* const data, const uint32_t n) : nodes_(tree_size(n)), n_(n) {
         assert(data != nullptr);
         assert(n > 0);
         this->BuildRecImpl(data, 0, 0, n - 1);
@@ -603,9 +580,7 @@ private:
         nodes_[node_index].value = nodes_[left_son].value + nodes_[right_son].value;
     }
 
-    void UpdateRecImpl(const size_t node_index,
-                       const uint32_t node_l,
-                       const uint32_t node_r) noexcept {
+    void UpdateRecImpl(const size_t node_index, const uint32_t node_l, const uint32_t node_r) noexcept {
         assert(node_index < nodes_.size() && node_l <= node_r && node_r < n_);
         if (query_l_ <= node_l && node_r <= query_r_) {
             nodes_[node_index].promise = value_;
@@ -627,11 +602,9 @@ private:
         const Node& left_node = nodes_[left_node_index];
         const Node& right_node = nodes_[right_node_index];
         const value_t left_value =
-            left_node.has_promise ? (left_node.promise * static_cast<value_t>(node_m - node_l + 1))
-                                  : left_node.value;
+            left_node.has_promise ? (left_node.promise * static_cast<value_t>(node_m - node_l + 1)) : left_node.value;
         const value_t right_value =
-            right_node.has_promise ? (right_node.promise * static_cast<value_t>(node_r - node_m))
-                                   : right_node.value;
+            right_node.has_promise ? (right_node.promise * static_cast<value_t>(node_r - node_m)) : right_node.value;
         nodes_[node_index].value = left_value + right_value;
     }
 
@@ -662,8 +635,7 @@ private:
         assert(node_index < nodes_.size());
         if (query_l == node_l && node_r == query_r) {
             const Node& node = nodes_[node_index];
-            return node.has_promise ? (node.promise * static_cast<value_t>(node_r - node_l + 1))
-                                    : node.value;
+            return node.has_promise ? (node.promise * static_cast<value_t>(node_r - node_l + 1)) : node.value;
         }
 
         const uint32_t node_middle = (node_l + node_r) / 2;
@@ -679,10 +651,8 @@ private:
         }
 
         // query_l <= node_middle < query_r
-        const value_t left_result =
-            this->GetRecImpl(left_son, node_l, node_middle, query_l, node_middle);
-        const value_t right_result =
-            this->GetRecImpl(right_son, node_middle + 1, node_r, node_middle + 1, query_r);
+        const value_t left_result = this->GetRecImpl(left_son, node_l, node_middle, query_l, node_middle);
+        const value_t right_result = this->GetRecImpl(right_son, node_middle + 1, node_r, node_middle + 1, query_r);
         return left_result + right_result;
     }
 
@@ -710,8 +680,7 @@ public:
     explicit ProdSegTreeSetEqual(const std::initializer_list<value_t> data)
         : ProdSegTreeSetEqual(std::data(data), static_cast<uint32_t>(std::size(data))) {}
 
-    explicit ProdSegTreeSetEqual(const value_t* const data, const uint32_t n)
-        : nodes_(tree_size(n)), n_(n) {
+    explicit ProdSegTreeSetEqual(const value_t* const data, const uint32_t n) : nodes_(tree_size(n)), n_(n) {
         assert(data != nullptr);
         assert(n > 0);
         this->BuildRecImpl(data, 0, 0, n - 1);
@@ -758,9 +727,7 @@ private:
         bool has_cached_promise_x_count = false;
     };
 
-    void UpdateRecImpl(const size_t node_index,
-                       const uint32_t node_l,
-                       const uint32_t node_r) noexcept {
+    void UpdateRecImpl(const size_t node_index, const uint32_t node_l, const uint32_t node_r) noexcept {
         assert(node_index < nodes_.size() && node_l <= node_r && node_r < n_);
         if (query_l_ <= node_l && node_r <= query_r_) {
             Node& node = nodes_[node_index];
@@ -789,8 +756,7 @@ private:
         const value_t left_value = [&]() {
             if (left_node.has_promise) {
                 if (!left_node.has_cached_promise_x_count) {
-                    left_node.cached_promise_x_count =
-                        bin_pow(left_node.promise, node_m - node_l + 1);
+                    left_node.cached_promise_x_count = bin_pow(left_node.promise, node_m - node_l + 1);
                     left_node.has_cached_promise_x_count = true;
                 }
                 return left_node.cached_promise_x_count;
@@ -801,8 +767,7 @@ private:
         const value_t right_value = [&]() {
             if (right_node.has_promise) {
                 if (!right_node.has_cached_promise_x_count) {
-                    right_node.cached_promise_x_count =
-                        bin_pow(right_node.promise, node_r - node_m);
+                    right_node.cached_promise_x_count = bin_pow(right_node.promise, node_r - node_m);
                     right_node.has_cached_promise_x_count = true;
                 }
                 return right_node.cached_promise_x_count;
@@ -826,8 +791,8 @@ private:
         Node& left_node = nodes_[left_node_index];
         Node& right_node = nodes_[right_node_index];
         const value_t this_promise = node.promise;
-        node.value = node.has_cached_promise_x_count ? node.cached_promise_x_count
-                                                     : bin_pow(this_promise, node_r - node_l + 1);
+        node.value =
+            node.has_cached_promise_x_count ? node.cached_promise_x_count : bin_pow(this_promise, node_r - node_l + 1);
         node.has_promise = false;
         node.has_cached_promise_x_count = false;
         left_node.promise = this_promise;
@@ -870,10 +835,8 @@ private:
         }
 
         // query_l <= node_middle < query_r
-        const value_t left_result =
-            this->GetRecImpl(left_son, node_l, node_middle, query_l, node_middle);
-        const value_t right_result =
-            this->GetRecImpl(right_son, node_middle + 1, node_r, node_middle + 1, query_r);
+        const value_t left_result = this->GetRecImpl(left_son, node_l, node_middle, query_l, node_middle);
+        const value_t right_result = this->GetRecImpl(right_son, node_middle + 1, node_r, node_middle + 1, query_r);
         return left_result * right_result;
     }
 
@@ -901,8 +864,7 @@ public:
     explicit SumSegTreeMult(const std::initializer_list<value_t> data)
         : SumSegTreeMult(std::data(data), static_cast<uint32_t>(std::size(data))) {}
 
-    explicit SumSegTreeMult(const value_t* const data, const uint32_t n)
-        : nodes_(tree_size(n)), n_(n) {
+    explicit SumSegTreeMult(const value_t* const data, const uint32_t n) : nodes_(tree_size(n)), n_(n) {
         assert(data != nullptr);
         assert(n > 0);
         this->BuildRecImpl(data, 0, 0, n - 1);
@@ -948,9 +910,7 @@ private:
         nodes_[node_index].value = nodes_[left_son].value + nodes_[right_son].value;
     }
 
-    void UpdateRecImpl(const size_t node_index,
-                       const uint32_t node_l,
-                       const uint32_t node_r) noexcept {
+    void UpdateRecImpl(const size_t node_index, const uint32_t node_l, const uint32_t node_r) noexcept {
         assert(node_index < nodes_.size() && node_l <= node_r && node_r < n_);
         if (query_l_ <= node_l && node_r <= query_r_) {
             nodes_[node_index].promise *= value_;
@@ -968,8 +928,8 @@ private:
         this->UpdateRecImpl(left_node, node_l, node_m);
         this->UpdateRecImpl(right_node, node_m + 1, node_r);
         assert(right_node < nodes_.size());
-        nodes_[node_index].value = nodes_[left_node].value * nodes_[left_node].promise +
-                                   nodes_[right_node].value * nodes_[right_node].promise;
+        nodes_[node_index].value =
+            nodes_[left_node].value * nodes_[left_node].promise + nodes_[right_node].value * nodes_[right_node].promise;
     }
 
     void PushImpl(const size_t node_index) noexcept {
@@ -1011,10 +971,8 @@ private:
         }
 
         // query_l <= node_middle < query_r
-        const value_t left_result =
-            this->GetRecImpl(left_son, node_l, node_middle, query_l, node_middle);
-        const value_t right_result =
-            this->GetRecImpl(right_son, node_middle + 1, node_r, node_middle + 1, query_r);
+        const value_t left_result = this->GetRecImpl(left_son, node_l, node_middle, query_l, node_middle);
+        const value_t right_result = this->GetRecImpl(right_son, node_middle + 1, node_r, node_middle + 1, query_r);
         return left_result + right_result;
     }
 
@@ -1042,8 +1000,7 @@ public:
     explicit SumSegTreeAdd(const std::initializer_list<value_t> data)
         : SumSegTreeAdd(std::data(data), static_cast<uint32_t>(std::size(data))) {}
 
-    explicit SumSegTreeAdd(const value_t* const data, const uint32_t n)
-        : nodes_(tree_size(n)), n_(n) {
+    explicit SumSegTreeAdd(const value_t* const data, const uint32_t n) : nodes_(tree_size(n)), n_(n) {
         assert(data != nullptr);
         assert(n > 0);
         this->BuildRecImpl(data, 0, 0, n - 1);
@@ -1089,9 +1046,7 @@ private:
         nodes_[node_index].value = nodes_[left_son].value + nodes_[right_son].value;
     }
 
-    void UpdateRecImpl(const size_t node_index,
-                       const uint32_t node_l,
-                       const uint32_t node_r) noexcept {
+    void UpdateRecImpl(const size_t node_index, const uint32_t node_l, const uint32_t node_r) noexcept {
         assert(node_index < nodes_.size() && node_l <= node_r && node_r < n_);
         if (query_l_ <= node_l && node_r <= query_r_) {
             nodes_[node_index].promise += value_;
@@ -1111,9 +1066,8 @@ private:
         assert(right_node_index < nodes_.size());
         const Node& left_node = nodes_[left_node_index];
         const Node& right_node = nodes_[right_node_index];
-        nodes_[node_index].value =
-            left_node.value + left_node.promise * static_cast<value_t>(node_m - node_l + 1) +
-            right_node.value + right_node.promise * static_cast<value_t>(node_r - node_m);
+        nodes_[node_index].value = left_node.value + left_node.promise * static_cast<value_t>(node_m - node_l + 1) +
+                                   right_node.value + right_node.promise * static_cast<value_t>(node_r - node_m);
     }
 
     void PushImpl(const size_t node_index, const uint32_t node_l, const uint32_t node_r) noexcept {
@@ -1155,10 +1109,8 @@ private:
         }
 
         // query_l <= node_middle < query_r
-        const value_t left_result =
-            this->GetRecImpl(left_son, node_l, node_middle, query_l, node_middle);
-        const value_t right_result =
-            this->GetRecImpl(right_son, node_middle + 1, node_r, node_middle + 1, query_r);
+        const value_t left_result = this->GetRecImpl(left_son, node_l, node_middle, query_l, node_middle);
+        const value_t right_result = this->GetRecImpl(right_son, node_middle + 1, node_r, node_middle + 1, query_r);
         return left_result + right_result;
     }
 
@@ -1186,8 +1138,7 @@ public:
     explicit ProdSegTreeMult(const std::initializer_list<value_t> data)
         : ProdSegTreeMult(std::data(data), static_cast<uint32_t>(std::size(data))) {}
 
-    explicit ProdSegTreeMult(const value_t* const data, const uint32_t n)
-        : nodes_(tree_size(n)), n_(n) {
+    explicit ProdSegTreeMult(const value_t* const data, const uint32_t n) : nodes_(tree_size(n)), n_(n) {
         assert(data != nullptr);
         assert(n > 0);
         this->BuildRecImpl(data, 0, 0, n - 1);
@@ -1236,9 +1187,7 @@ private:
         node.value = nodes_[left_son].value * nodes_[right_son].value;
     }
 
-    void UpdateRecImpl(const size_t node_index,
-                       const uint32_t node_l,
-                       const uint32_t node_r) noexcept {
+    void UpdateRecImpl(const size_t node_index, const uint32_t node_l, const uint32_t node_r) noexcept {
         assert(node_index < nodes_.size() && node_l <= node_r && node_r < n_);
         if (query_l_ <= node_l && node_r <= query_r_) {
             Node& node = nodes_[node_index];
@@ -1268,8 +1217,8 @@ private:
             right_node.cached_promise_x_count = bin_pow(right_node.promise, node_r - node_m);
             right_node.has_cached_promise_x_count = true;
         }
-        nodes_[node_index].value = left_node.value * left_node.cached_promise_x_count *
-                                   right_node.value * right_node.cached_promise_x_count;
+        nodes_[node_index].value =
+            left_node.value * left_node.cached_promise_x_count * right_node.value * right_node.cached_promise_x_count;
     }
 
     void PushImpl(const size_t node_index, const uint32_t node_l, const uint32_t node_r) noexcept {
@@ -1283,8 +1232,8 @@ private:
             return;
         }
 
-        node.value *= node.has_cached_promise_x_count ? node.cached_promise_x_count
-                                                      : bin_pow(this_promise, node_r - node_l + 1);
+        node.value *=
+            node.has_cached_promise_x_count ? node.cached_promise_x_count : bin_pow(this_promise, node_r - node_l + 1);
         node.promise = kNoPromise;
         node.cached_promise_x_count = kNoPromise * 1;
         node.has_cached_promise_x_count = true;
@@ -1325,10 +1274,8 @@ private:
         }
 
         // query_l <= node_middle < query_r
-        const value_t left_result =
-            this->GetRecImpl(left_son, node_l, node_middle, query_l, node_middle);
-        const value_t right_result =
-            this->GetRecImpl(right_son, node_middle + 1, node_r, node_middle + 1, query_r);
+        const value_t left_result = this->GetRecImpl(left_son, node_l, node_middle, query_l, node_middle);
+        const value_t right_result = this->GetRecImpl(right_son, node_middle + 1, node_r, node_middle + 1, query_r);
         return left_result * right_result;
     }
 

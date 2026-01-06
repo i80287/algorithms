@@ -1,27 +1,34 @@
 #include <cstdint>
-#include <vector>
 #include <iostream>
+#include <vector>
+
+namespace {
 
 using std::vector;
 
-void fill_tree(const vector<uint32_t>& nums, vector<uint32_t>& max_tree, vector<uint32_t>& counts_tree, size_t i, size_t l, size_t r) {
+void fill_tree(const vector<uint32_t>& nums,
+               vector<uint32_t>& max_tree,
+               vector<uint32_t>& counts_tree,
+               size_t i,
+               size_t l,
+               size_t r) {
     if (l != r) {
         size_t middle = (l + r) / 2;
         size_t left_son_index = 2 * i + 1;
         size_t right_son_index = 2 * i + 2;
         fill_tree(nums, max_tree, counts_tree, left_son_index, l, middle);
         fill_tree(nums, max_tree, counts_tree, right_son_index, middle + 1, r);
-        
+
         uint32_t left_max = max_tree[left_son_index];
         uint32_t right_max = max_tree[right_son_index];
 
         if (left_max > right_max) {
             max_tree[i] = left_max;
             counts_tree[i] = counts_tree[left_son_index];
-        } else if (left_max != right_max) { // left_max < right_max
+        } else if (left_max != right_max) {  // left_max < right_max
             max_tree[i] = right_max;
             counts_tree[i] = counts_tree[right_son_index];
-        } else { // left_max == right_max
+        } else {  // left_max == right_max
             max_tree[i] = left_max;
             counts_tree[i] = counts_tree[left_son_index] + counts_tree[right_son_index];
         }
@@ -31,15 +38,14 @@ void fill_tree(const vector<uint32_t>& nums, vector<uint32_t>& max_tree, vector<
     }
 }
 
-uint32_t find_and_count_max(
-    const vector<uint32_t>& max_tree,
-    const vector<uint32_t>& counts_tree,
-    size_t i,
-    size_t tree_l,
-    size_t tree_r,
-    size_t q_l,
-    size_t q_r,
-    uint32_t& max_count) {
+[[nodiscard]] uint32_t find_and_count_max(const vector<uint32_t>& max_tree,
+                                          const vector<uint32_t>& counts_tree,
+                                          size_t i,
+                                          size_t tree_l,
+                                          size_t tree_r,
+                                          size_t q_l,
+                                          size_t q_r,
+                                          uint32_t& max_count) {
     if (tree_l == q_l && tree_r == q_r) {
         max_count = counts_tree[i];
         return max_tree[i];
@@ -54,9 +60,11 @@ uint32_t find_and_count_max(
 
     // q_l <= middle < q_r
     uint32_t left_max_count = 0;
-    uint32_t left_max = find_and_count_max(max_tree, counts_tree, 2 * i + 1, tree_l, middle, q_l, middle, left_max_count);
+    uint32_t left_max =
+        find_and_count_max(max_tree, counts_tree, 2 * i + 1, tree_l, middle, q_l, middle, left_max_count);
     uint32_t right_max_count = 0;
-    uint32_t right_max = find_and_count_max(max_tree, counts_tree, 2 * i + 2, middle + 1, tree_r, middle + 1, q_r, right_max_count);
+    uint32_t right_max =
+        find_and_count_max(max_tree, counts_tree, 2 * i + 2, middle + 1, tree_r, middle + 1, q_r, right_max_count);
     if (left_max > right_max) {
         max_count = left_max_count;
         return left_max;
@@ -69,6 +77,8 @@ uint32_t find_and_count_max(
     max_count = left_max_count + right_max_count;
     return left_max;
 }
+
+}  // namespace
 
 int main() {
     std::ios::sync_with_stdio(false);

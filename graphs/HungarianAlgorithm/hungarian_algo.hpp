@@ -24,16 +24,16 @@ template <class MatrixIterator>
 using MatrixValueType = MatrixRowValueType<typename std::iter_value_t<MatrixIterator>>;
 
 template <class Iterator>
-concept MatrixRowIterator = std::random_access_iterator<Iterator> &&
-                            std::is_arithmetic_v<typename std::iter_value_t<Iterator>>;
+concept MatrixRowIterator =
+    std::random_access_iterator<Iterator> && std::is_arithmetic_v<typename std::iter_value_t<Iterator>>;
 
 template <class Container>
-concept MatrixRow = std::ranges::random_access_range<Container> &&
-                    MatrixRowIterator<typename std::ranges::iterator_t<Container>>;
+concept MatrixRow =
+    std::ranges::random_access_range<Container> && MatrixRowIterator<typename std::ranges::iterator_t<Container>>;
 
 template <class Iterator>
-concept MatrixIterator = std::random_access_iterator<Iterator> &&
-                         MatrixRow<typename std::iterator_traits<Iterator>::value_type>;
+concept MatrixIterator =
+    std::random_access_iterator<Iterator> && MatrixRow<typename std::iterator_traits<Iterator>::value_type>;
 
 template <class T>
 class MinAssignmentGraph final {
@@ -67,24 +67,20 @@ private:
     template <class Iterator>
     [[nodiscard]] static MinAssignmentGraph from_matrix(Iterator original_matrix_iter_begin,
                                                         Iterator original_matrix_iter_end) {
-        const auto n = static_cast<std::size_t>(
-            std::distance(original_matrix_iter_begin, original_matrix_iter_end));
+        const auto n = static_cast<std::size_t>(std::distance(original_matrix_iter_begin, original_matrix_iter_end));
 
         const size_t matrix_size = align_size(sizeof(T*) * n + sizeof(T) * n * n);
-        const size_t bipartite_graph_matrix_size =
-            align_size(sizeof(bool*) * n + sizeof(bool) * n * n);
+        const size_t bipartite_graph_matrix_size = align_size(sizeof(bool*) * n + sizeof(bool) * n * n);
         const size_t first_part_matches_size = align_size(sizeof(vertex_t) * n);
         const size_t second_part_matches_size = align_size(sizeof(vertex_t) * n);
         const size_t neighbours_size = align_size(sizeof(vertex_t*) * n + sizeof(vertex_t) * n * n);
         const size_t neighbours_count_size = align_size(sizeof(size_t) * n);
         const size_t first_part_visited_size = align_size(sizeof(bool) * n);
         const size_t second_part_visited_size = align_size(sizeof(bool) * n);
-        const size_t algorithm_memory_size = matrix_size + bipartite_graph_matrix_size +
-                                             first_part_matches_size + second_part_matches_size +
-                                             neighbours_size + neighbours_count_size +
+        const size_t algorithm_memory_size = matrix_size + bipartite_graph_matrix_size + first_part_matches_size +
+                                             second_part_matches_size + neighbours_size + neighbours_count_size +
                                              first_part_visited_size + second_part_visited_size;
-        std::byte* current_free_memory_ptr =
-            static_cast<std::byte*>(operator new(algorithm_memory_size));
+        std::byte* current_free_memory_ptr = static_cast<std::byte*>(operator new(algorithm_memory_size));
         std::fill_n(current_free_memory_ptr, algorithm_memory_size, std::byte{0});
         [[maybe_unused]] const auto* const allocated_memory_begin = current_free_memory_ptr;
 
@@ -92,31 +88,24 @@ private:
         T* matrix_data_start = std::launder(std::bit_cast<T*>(matrix + n));
         current_free_memory_ptr += matrix_size;
 
-        bool** const bipartite_graph_matrix =
-            std::launder(std::bit_cast<bool**>(current_free_memory_ptr));
-        bool* bipartite_graph_matrix_data_start =
-            std::launder(std::bit_cast<bool*>(bipartite_graph_matrix + n));
+        bool** const bipartite_graph_matrix = std::launder(std::bit_cast<bool**>(current_free_memory_ptr));
+        bool* bipartite_graph_matrix_data_start = std::launder(std::bit_cast<bool*>(bipartite_graph_matrix + n));
         current_free_memory_ptr += bipartite_graph_matrix_size;
 
-        vertex_t* const first_part_matches =
-            std::launder(std::bit_cast<vertex_t*>(current_free_memory_ptr));
+        vertex_t* const first_part_matches = std::launder(std::bit_cast<vertex_t*>(current_free_memory_ptr));
         current_free_memory_ptr += first_part_matches_size;
 
-        vertex_t* const second_part_matches =
-            std::launder(std::bit_cast<vertex_t*>(current_free_memory_ptr));
+        vertex_t* const second_part_matches = std::launder(std::bit_cast<vertex_t*>(current_free_memory_ptr));
         current_free_memory_ptr += second_part_matches_size;
 
-        vertex_t** const neighbours =
-            std::launder(std::bit_cast<vertex_t**>(current_free_memory_ptr));
+        vertex_t** const neighbours = std::launder(std::bit_cast<vertex_t**>(current_free_memory_ptr));
         vertex_t* neighbours_data_start = std::launder(std::bit_cast<vertex_t*>(neighbours + n));
         current_free_memory_ptr += neighbours_size;
 
-        std::size_t* const neighbours_count =
-            std::launder(std::bit_cast<std::size_t*>(current_free_memory_ptr));
+        std::size_t* const neighbours_count = std::launder(std::bit_cast<std::size_t*>(current_free_memory_ptr));
         current_free_memory_ptr += neighbours_count_size;
 
-        bool* const first_part_visited =
-            std::launder(std::bit_cast<bool*>(current_free_memory_ptr));
+        bool* const first_part_visited = std::launder(std::bit_cast<bool*>(current_free_memory_ptr));
         current_free_memory_ptr += first_part_visited_size;
 
         bool* second_part_visited = std::launder(std::bit_cast<bool*>(current_free_memory_ptr));
@@ -131,9 +120,8 @@ private:
 
         copy_matrix_with_subtraction(original_matrix_iter_begin, n, matrix);
 
-        return MinAssignmentGraph(first_part_matches, second_part_matches, first_part_visited,
-                                  second_part_visited, neighbours, neighbours_count,
-                                  bipartite_graph_matrix, matrix, n);
+        return MinAssignmentGraph(first_part_matches, second_part_matches, first_part_visited, second_part_visited,
+                                  neighbours, neighbours_count, bipartite_graph_matrix, matrix, n);
     }
 
     [[nodiscard]] constexpr bool next_iter() noexcept {
@@ -227,8 +215,7 @@ private:
         assert(std::bit_cast<std::uintptr_t>(bipartite_graph_matrix_[0]) ==
                std::bit_cast<std::uintptr_t>(bipartite_graph_matrix_ + size_));
         std::fill_n(bipartite_graph_matrix_[0], matrix_size, false);
-        assert(std::bit_cast<std::uintptr_t>(neighbours_[0]) ==
-               std::bit_cast<std::uintptr_t>(neighbours_ + size_));
+        assert(std::bit_cast<std::uintptr_t>(neighbours_[0]) == std::bit_cast<std::uintptr_t>(neighbours_ + size_));
         std::fill_n(neighbours_[0], matrix_size, vertex_t{0});
 
         for (vertex_t i = 0; i < size_; i++) {
@@ -260,8 +247,7 @@ private:
 
             const std::size_t* i_neighbours = neighbours_[i];
             const std::size_t i_neighbours_count = neighbours_count_[i];
-            for (std::size_t neighbour_index = 0; neighbour_index < i_neighbours_count;
-                 ++neighbour_index) {
+            for (std::size_t neighbour_index = 0; neighbour_index < i_neighbours_count; ++neighbour_index) {
                 const std::size_t j = i_neighbours[neighbour_index];
                 assert(bipartite_graph_matrix_[i][j]);
                 if (second_part_matches_[j] == kNoMatch) {
@@ -417,8 +403,7 @@ private:
 template <hungarian_algo::detail::MatrixIterator Iterator>
 [[nodiscard]] auto min_assignment(Iterator matrix_iter_begin, Iterator matrix_iter_end) {
     using T = typename hungarian_algo::detail::MatrixValueType<Iterator>;
-    return hungarian_algo::detail::MinAssignmentGraph<T>::min_assignment(matrix_iter_begin,
-                                                                         matrix_iter_end);
+    return hungarian_algo::detail::MinAssignmentGraph<T>::min_assignment(matrix_iter_begin, matrix_iter_end);
 }
 
 template <std::ranges::random_access_range TMatrix>

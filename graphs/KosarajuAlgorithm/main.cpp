@@ -5,16 +5,17 @@
 
 namespace kosaraju_algorithm {
 
+namespace {
+
 using std::vector;
 
 // Min vertex is 0, max is g.size() - 1
 using vertex_t = std::size_t;
-using graph_t  = vector<vector<vertex_t>>;
+using graph_t = vector<vector<vertex_t>>;
 
 namespace impl {
 
-static void fill_stack_dfs(const graph_t& g, vector<uint8_t>& visited,
-                           vector<vertex_t>& order_stack, vertex_t v) noexcept {
+void fill_stack_dfs(const graph_t& g, vector<uint8_t>& visited, vector<vertex_t>& order_stack, vertex_t v) noexcept {
     visited[v] = true;
     for (vertex_t u : g[v]) {
         if (!visited[u]) {
@@ -25,8 +26,10 @@ static void fill_stack_dfs(const graph_t& g, vector<uint8_t>& visited,
     order_stack.push_back(v);
 }
 
-static void form_component_dfs(const graph_t& tr_g, vector<uint8_t>& visited,
-                               vector<vertex_t>& component, vertex_t v) noexcept {
+void form_component_dfs(const graph_t& tr_g,
+                        vector<uint8_t>& visited,
+                        vector<vertex_t>& component,
+                        vertex_t v) noexcept {
     visited[v] = true;
     assert(component.capacity() >= tr_g.size());
     component.push_back(v);
@@ -40,8 +43,7 @@ static void form_component_dfs(const graph_t& tr_g, vector<uint8_t>& visited,
 }  // namespace impl
 
 template <bool ShrinkComponents = false>
-graph_t strongly_connected_components(const graph_t& g) {
-    graph_t components;
+[[nodiscard]] graph_t strongly_connected_components(const graph_t& g) {
     const auto n = g.size();
 
     vector<std::uint8_t> visited(n, false);
@@ -66,13 +68,13 @@ graph_t strongly_connected_components(const graph_t& g) {
         }
     }
 
+    graph_t components;
     for (auto iter = order_stack.crbegin(), end = order_stack.crend(); iter != end; ++iter) {
         vertex_t v = *iter;
         if (!visited[v]) {
             impl::form_component_dfs(transposed_g, visited, current_component, v);
             // Use O(E) memory instead of O(V^2)
-            std::vector<vertex_t>& new_component =
-                components.emplace_back(current_component.size());
+            std::vector<vertex_t>& new_component = components.emplace_back(current_component.size());
             std::copy(current_component.cbegin(), current_component.cend(), new_component.begin());
             current_component.clear();
         }
@@ -80,6 +82,8 @@ graph_t strongly_connected_components(const graph_t& g) {
 
     return components;
 }
+
+}  // namespace
 
 }  // namespace kosaraju_algorithm
 
@@ -101,7 +105,7 @@ int main() {
     using component_t = std::vector<vertex_t>;
 
     graph_t g = {{1, 2}, {2}, {0}, {4}, {5}, {3}, {}};
-    auto components               = strongly_connected_components(g);
+    auto components = strongly_connected_components(g);
     assert(components.size() == 3);
     for (auto& c : components) {
         std::sort(c.begin(), c.end());

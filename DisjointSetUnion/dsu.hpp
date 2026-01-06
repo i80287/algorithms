@@ -252,13 +252,15 @@ public:
 
     // O(log*(n))
     [[nodiscard]] CONSTEXPR_VECTOR bool equal(const size_type node_x_index, const size_type node_y_index) noexcept {
-        assert(node_x_index < size() && node_y_index < size());
+        assert(node_x_index < size());
+        assert(node_y_index < size());
         return base::are_nodes_equal(node_x_index, node_y_index);
     }
 
     // O(log*(n))
     CONSTEXPR_VECTOR void unite(const size_type node_x_index, const size_type node_y_index) noexcept {
-        assert(node_x_index < size() && node_y_index < size());
+        assert(node_x_index < size());
+        assert(node_y_index < size());
         node_t* node_x_root_ptr = base::find_root(node_x_index);
         node_t* node_y_root_ptr = base::find_root(node_y_index);
         if (node_x_root_ptr == node_y_root_ptr) {
@@ -337,13 +339,15 @@ public:
 
     // O(log*(n))
     [[nodiscard]] CONSTEXPR_VECTOR bool equal(const size_type node_x_index, const size_type node_y_index) noexcept {
-        assert(node_x_index < size() && node_y_index < size());
+        assert(node_x_index < size());
+        assert(node_y_index < size());
         return base::are_nodes_equal(node_x_index, node_y_index);
     }
 
     // O(log*(n))
     CONSTEXPR_VECTOR void unite(const size_type node_x_index, const size_type node_y_index) noexcept {
-        assert(node_x_index < size() && node_y_index < size());
+        assert(node_x_index < size());
+        assert(node_y_index < size());
         node_t* node_x_root_ptr = base::find_root(node_x_index);
         node_t* node_y_root_ptr = base::find_root(node_y_index);
         if (node_x_root_ptr == node_y_root_ptr) {

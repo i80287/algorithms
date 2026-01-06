@@ -1,7 +1,7 @@
-#include <iostream>
 #include <cstdint>
-#include <vector>
 #include <deque>
+#include <iostream>
+#include <vector>
 
 using std::vector;
 
@@ -16,7 +16,7 @@ uint32_t find_distance(vector<vector<uint32_t>> const& graph, uint32_t start, ui
         uint32_t v = queue.front();
         queue.pop_front();
         uint32_t distance_to_v = distances[v];
-        
+
         for (uint32_t child : graph[v]) {
             if (distances[child] == UINT32_MAX) {
                 distances[child] = distance_to_v + 1;
@@ -29,16 +29,7 @@ uint32_t find_distance(vector<vector<uint32_t>> const& graph, uint32_t start, ui
 }
 
 int main() {
-    vector<vector<uint32_t>> graph = {
-        {1, 2, 3},
-        {0, 2, 3},
-        {0, 1, 4, 6},
-        {0, 1, 5},
-        {2},
-        {3, 7},
-        {2, 7},
-        {5, 6}
-    };
+    vector<vector<uint32_t>> graph = {{1, 2, 3}, {0, 2, 3}, {0, 1, 4, 6}, {0, 1, 5}, {2}, {3, 7}, {2, 7}, {5, 6}};
 
     std::cout << find_distance(graph, 1, 7);
 }

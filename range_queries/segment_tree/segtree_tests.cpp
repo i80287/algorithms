@@ -106,12 +106,7 @@ void FillData(std::array<value_t, n>& values,
     }
 }
 
-template <UpdateOperation update_op,
-          GetOperation get_op,
-          typename value_t,
-          bool AllowFuzzyEquality,
-          size_t n,
-          size_t q>
+template <UpdateOperation update_op, GetOperation get_op, typename value_t, bool AllowFuzzyEquality, size_t n, size_t q>
 void Test(const std::array<value_t, n>& values,
           const std::array<value_t, q / 2>& update_values,
           const std::array<uint32_t, q>& l_int,

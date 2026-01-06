@@ -1,5 +1,5 @@
-#include <cstdint>
 #include <cstddef>
+#include <cstdint>
 #include <iostream>
 #include <vector>
 
@@ -11,18 +11,15 @@ int main() {
     std::cin >> n >> q;
     std::vector<uint64_t> prefsums(n + 1);
     prefsums[0] = 0;
-    for (size_t i = 1; i <= n; ++i)
-    {
+    for (size_t i = 1; i <= n; ++i) {
         uint32_t a = 0;
         std::cin >> a;
         prefsums[i] = prefsums[i - 1] + a;
     }
 
-    while (q--) {
+    while (q-- > 0) {
         uint32_t l = 0, r = 0;
         std::cin >> l >> r;
         std::cout << prefsums[r] - prefsums[l - 1] << '\n';
     }
-
-    std::cout.flush();
 }

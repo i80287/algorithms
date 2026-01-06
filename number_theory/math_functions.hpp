@@ -1511,6 +1511,7 @@ constexpr uint32_t log2_floor(const UIntType n) noexcept {
 
     if (n != 0) {
         CONFIG_ASSUME_STATEMENT(log2_value < n);
+        CONFIG_ASSUME_STATEMENT((UIntType{1} << log2_value) <= n);
     } else {
         CONFIG_ASSUME_STATEMENT(log2_value == static_cast<uint32_t>(-1));
     }

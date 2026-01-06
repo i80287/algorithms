@@ -1,5 +1,5 @@
-#include <iostream>
 #include <cstdint>
+#include <iostream>
 #include <vector>
 
 using std::vector;
@@ -14,7 +14,7 @@ int main(void) {
     ++m;
 
     vector<vector<int64_t>> dp(n, vector<int64_t>(m, 0));
-    for (size_t i = 1; i != n; ++i) {
+    for (size_t i = 1; i < n; ++i) {
         for (size_t j = 1; j != m; ++j) {
             int a;
             std::cin >> a;
@@ -24,11 +24,9 @@ int main(void) {
 
     size_t q = 0;
     std::cin >> q;
-    for (size_t i = 0; i != q; ++i) {
+    for (size_t i = 0; i < q; ++i) {
         size_t lx = 0, ly = 0, rx = 0, ry = 0;
         std::cin >> lx >> ly >> rx >> ry;
         std::cout << dp[rx][ry] - dp[lx - 1][ry] - dp[rx][ly - 1] + dp[lx - 1][ly - 1] << '\n';
     }
-
-    std::cout.flush();
 }

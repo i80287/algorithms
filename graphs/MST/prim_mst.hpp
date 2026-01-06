@@ -1,20 +1,26 @@
 #pragma once
 
-#include <algorithm>
+#include <cassert>
+#include <cstddef>
 #include <cstdint>
 #include <limits>
 #include <set>
+#include <utility>
 #include <vector>
 
 using std::vector;
-using vertex_t = int64_t;
-using weight_t = int64_t;
-using graph_t  = vector<vector<vertex_t>>;
+using vertex_t = std::int64_t;
+using weight_t = std::int64_t;
+using graph_t = vector<vector<vertex_t>>;
 
-vector<vertex_t> prim_mst(const graph_t& g, const vector<vector<weight_t>>& weights) {
-    const size_t n = g.size();
-    vector<uint8_t> in_queue(n, true);
+[[nodiscard]] inline vector<vertex_t> prim_mst(const graph_t& g, const vector<vector<weight_t>>& weights) {
+    const std::size_t n = g.size();
     vector<vertex_t> prnt(n, vertex_t(-1));
+
+    if (n == 0) {
+        return prnt;
+    }
+
     vector<weight_t> key(n, std::numeric_limits<weight_t>::max());
     key[0] = 0;
     std::set<std::pair<weight_t, vertex_t>> q;
@@ -22,15 +28,16 @@ vector<vertex_t> prim_mst(const graph_t& g, const vector<vector<weight_t>>& weig
         auto [_, inserted] = q.insert({key[v], v});
     }
 
+    vector<uint8_t> in_queue(n, true);
     do {
         auto min_iter = q.begin();
-        vertex_t v    = min_iter->second;
+        vertex_t v = min_iter->second;
         assert(min_iter->first == key[v]);
         q.extract(min_iter);
         in_queue[v] = false;
         for (vertex_t u : g[v]) {
             if (in_queue[u] && key[u] > weights[v][u]) {
-                prnt[u]   = v;
+                prnt[u] = v;
                 auto node = q.extract({key[u], u});
                 assert(!node.empty());
                 assert(node.value().first == key[u]);

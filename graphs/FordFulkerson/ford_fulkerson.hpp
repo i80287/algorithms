@@ -18,15 +18,15 @@ weight_t ford_fulkerson(const vector<vector<weight_t>>& capacity) {
     vector<vertex_t> parent(n);
     for (;;) {
         std::fill(parent.begin(), parent.end(), vertex_t(-1));
-        size_t h  = 0;
-        size_t t  = 0;
-        q[t++]    = 0;
+        size_t h = 0;
+        size_t t = 0;
+        q[t++] = 0;
         parent[0] = 0;
         while (h < t) {
             vertex_t u = q[h++];
             for (vertex_t v = 0; v < n; v++) {
                 if (parent[v] == vertex_t(-1) && flow[u][v] < capacity[u][v]) {
-                    q[t++]    = v;
+                    q[t++] = v;
                     parent[v] = u;
                 }
             }
@@ -39,8 +39,8 @@ weight_t ford_fulkerson(const vector<vector<weight_t>>& capacity) {
         weight_t curflow = std::numeric_limits<weight_t>::max();
         for (vertex_t v = n - 1; v > 0;) {
             vertex_t p = parent[v];
-            curflow    = std::min(curflow, capacity[p][v] - flow[p][v]);
-            v          = p;
+            curflow = std::min(curflow, capacity[p][v] - flow[p][v]);
+            v = p;
         }
         for (vertex_t v = n - 1; v != 0;) {
             vertex_t p = parent[v];

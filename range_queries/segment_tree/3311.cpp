@@ -1,6 +1,8 @@
 #include <cstdint>
-#include <vector>
 #include <iostream>
+#include <vector>
+
+namespace {
 
 using std::vector;
 
@@ -20,7 +22,13 @@ void fill_tree(const vector<uint32_t>& nums, vector<size_t>& indexes_tree, size_
     }
 }
 
-size_t find_left_max_index(const vector<uint32_t>& nums, const vector<size_t>& indexes_tree, size_t i, size_t tree_l, size_t tree_r, size_t q_l, size_t q_r) {
+[[nodiscard]] size_t find_left_max_index(const vector<uint32_t>& nums,
+                                         const vector<size_t>& indexes_tree,
+                                         size_t i,
+                                         size_t tree_l,
+                                         size_t tree_r,
+                                         size_t q_l,
+                                         size_t q_r) {
     if (tree_l == q_l && tree_r == q_r) {
         return indexes_tree[i];
     }
@@ -40,6 +48,8 @@ size_t find_left_max_index(const vector<uint32_t>& nums, const vector<size_t>& i
     size_t right_max_index = find_left_max_index(nums, indexes_tree, 2 * i + 2, middle + 1, tree_r, middle + 1, q_r);
     return nums[left_max_index] >= nums[right_max_index] ? left_max_index : right_max_index;
 }
+
+}  // namespace
 
 int main() {
     std::ios::sync_with_stdio(false);

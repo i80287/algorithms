@@ -19,8 +19,8 @@
 namespace {
 
 void test_string_match() {
-    static constexpr auto sw = StringMatch<"abc", "def", "ghij", "foo", "bar", "baz", "qux",
-                                           "abacaba", "ring", "ideal", "GLn(F)">();
+    static constexpr auto sw =
+        StringMatch<"abc", "def", "ghij", "foo", "bar", "baz", "qux", "abacaba", "ring", "ideal", "GLn(F)">();
     static_assert(sw("abc") == 0);
     static_assert(sw("def") == 1);
     static_assert(sw("ghij") == 2);
@@ -92,9 +92,8 @@ void test_str_to_enum() {
         kNone,
     };
     using enum SomeEnum;
-    static constexpr auto map =
-        StringMap<StringMapKeys<"text1", "text2", "text3", "text4", "Text1", "Text3">,
-                  StringMapValues{kText1, kText2, kText3, kText4, kText1, kText3}, kNone>();
+    static constexpr auto map = StringMap<StringMapKeys<"text1", "text2", "text3", "text4", "Text1", "Text3">,
+                                          StringMapValues{kText1, kText2, kText3, kText4, kText1, kText3}, kNone>();
 
     static_assert(map("text1") == kText1);
     static_assert(map("text2") == kText2);
@@ -123,15 +122,13 @@ void test_str_to_user_type() {
         std::array<int, 2> field1{};
         int field2{};
 
-        constexpr MyTrivialType(int arg1, int arg2, int arg3) noexcept
-            : field1{arg1, arg2}, field2(arg3) {}
+        constexpr MyTrivialType(int arg1, int arg2, int arg3) noexcept : field1{arg1, arg2}, field2(arg3) {}
         constexpr bool operator==(const MyTrivialType&) const noexcept = default;
     };
 
     static constexpr auto map =
         StringMap<StringMapKeys<kMyConstants[0], kMyConstants[1], kMyConstants[2]>,
-                  StringMapValues{MyTrivialType(1, 2, 3), MyTrivialType(4, 5, 6),
-                                  MyTrivialType(7, 8, 9)},
+                  StringMapValues{MyTrivialType(1, 2, 3), MyTrivialType(4, 5, 6), MyTrivialType(7, 8, 9)},
                   MyTrivialType(0, 0, 0)>();
 
     static_assert(map(kMyConstants[0]) == MyTrivialType(1, 2, 3));
@@ -232,24 +229,22 @@ constexpr uint64_t operator-(const timespec& t2, const timespec& t1) noexcept {
 void run_bench() {
     constexpr auto kMeasureLimit = 10000U;
 
-    static constexpr auto sw = StringMatch<
-        kStrings[0], kStrings[1], kStrings[2], kStrings[3], kStrings[4], kStrings[5], kStrings[6],
-        kStrings[7], kStrings[8], kStrings[9], kStrings[10], kStrings[11], kStrings[12],
-        kStrings[13], kStrings[14], kStrings[15], kStrings[16], kStrings[17], kStrings[18],
-        kStrings[19], kStrings[20], kStrings[21], kStrings[22], kStrings[23], kStrings[24],
-        kStrings[25], kStrings[26], kStrings[27], kStrings[28], kStrings[29], kStrings[30],
-        kStrings[31], kStrings[32], kStrings[33], kStrings[34], kStrings[35], kStrings[36],
-        kStrings[37], kStrings[38], kStrings[39], kStrings[40], kStrings[41], kStrings[42],
-        kStrings[43], kStrings[44], kStrings[45], kStrings[46], kStrings[47], kStrings[48],
-        kStrings[49], kStrings[50], kStrings[51], kStrings[52], kStrings[53], kStrings[54],
-        kStrings[55], kStrings[56], kStrings[57], kStrings[58], kStrings[59]>();
+    static constexpr auto sw =
+        StringMatch<kStrings[0], kStrings[1], kStrings[2], kStrings[3], kStrings[4], kStrings[5], kStrings[6],
+                    kStrings[7], kStrings[8], kStrings[9], kStrings[10], kStrings[11], kStrings[12], kStrings[13],
+                    kStrings[14], kStrings[15], kStrings[16], kStrings[17], kStrings[18], kStrings[19], kStrings[20],
+                    kStrings[21], kStrings[22], kStrings[23], kStrings[24], kStrings[25], kStrings[26], kStrings[27],
+                    kStrings[28], kStrings[29], kStrings[30], kStrings[31], kStrings[32], kStrings[33], kStrings[34],
+                    kStrings[35], kStrings[36], kStrings[37], kStrings[38], kStrings[39], kStrings[40], kStrings[41],
+                    kStrings[42], kStrings[43], kStrings[44], kStrings[45], kStrings[46], kStrings[47], kStrings[48],
+                    kStrings[49], kStrings[50], kStrings[51], kStrings[52], kStrings[53], kStrings[54], kStrings[55],
+                    kStrings[56], kStrings[57], kStrings[58], kStrings[59]>();
 
     std::array<std::size_t, kMeasureLimit> indexes{};
     {
         constexpr std::uint32_t kSeed = 0x2383284;
         std::mt19937 rnd{kSeed};
-        std::generate_n(indexes.begin(), kMeasureLimit,
-                        [&]() noexcept { return rnd() % std::size(kStrings); });
+        std::generate_n(indexes.begin(), kMeasureLimit, [&]() noexcept { return rnd() % std::size(kStrings); });
     }
 
     for (const std::size_t ind : indexes) {

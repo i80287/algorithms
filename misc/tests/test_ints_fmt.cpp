@@ -45,7 +45,8 @@ private:
     }
 
     static void check_fmt(const IntType value) {
-        using ExtT = std::conditional_t<sizeof(IntType) < sizeof(int), std::conditional_t<std::is_signed_v<IntType>, int, unsigned>, IntType>;
+        using ExtT = std::conditional_t<sizeof(IntType) < sizeof(int),
+                                        std::conditional_t<std::is_signed_v<IntType>, int, unsigned>, IntType>;
         assert(ints_fmt::Formatter<IntType>{value}.as_string_view() == std::to_string(ExtT{value}));
     }
 };

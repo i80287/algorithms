@@ -1,20 +1,20 @@
-#include <vector>
 #include <cstdint>
 #include <iostream>
+#include <vector>
+
+namespace {
 
 using std::vector;
 
 constexpr uint32_t INITIAL_TIME = 0;
 constexpr uint32_t START_TIME = 1;
 
-void fill_tree(
-    const vector<uint32_t>& nums,
-    vector<uint32_t>& tree,
-    vector<uint32_t>& times_tree,
-    size_t node_index,
-    size_t l,
-    size_t r
-) {
+void fill_tree(const vector<uint32_t>& nums,
+               vector<uint32_t>& tree,
+               vector<uint32_t>& times_tree,
+               size_t node_index,
+               size_t l,
+               size_t r) {
     if (l < r) {
         size_t middle = (l + r) / 2;
         fill_tree(nums, tree, times_tree, node_index * 2 + 1, l, middle);
@@ -26,15 +26,13 @@ void fill_tree(
     }
 }
 
-uint32_t get_value_and_its_time(
-    const vector<uint32_t>& tree,
-    const vector<uint32_t>& times_tree,
-    uint32_t& value,
-    size_t node_index,
-    size_t l,
-    size_t r,
-    size_t index
-) {
+[[nodiscard]] uint32_t get_value_and_its_time(const vector<uint32_t>& tree,
+                                              const vector<uint32_t>& times_tree,
+                                              uint32_t& value,
+                                              size_t node_index,
+                                              size_t l,
+                                              size_t r,
+                                              size_t index) {
     if (l == r) {
         value = tree[node_index];
         return times_tree[node_index];
@@ -45,9 +43,9 @@ uint32_t get_value_and_its_time(
     uint32_t next_value = 0;
     uint32_t next_value_time =
         index <= middle
-        ? get_value_and_its_time(tree, times_tree, next_value, node_index * 2 + 1, l, middle, index)
-        : get_value_and_its_time(tree, times_tree, next_value, node_index * 2 + 2, middle + 1, r, index);
-    
+            ? get_value_and_its_time(tree, times_tree, next_value, node_index * 2 + 1, l, middle, index)
+            : get_value_and_its_time(tree, times_tree, next_value, node_index * 2 + 2, middle + 1, r, index);
+
     uint32_t this_value_time = times_tree[node_index];
     uint32_t this_value = tree[node_index];
     if (this_value_time > next_value_time) {
@@ -59,17 +57,15 @@ uint32_t get_value_and_its_time(
     return next_value_time;
 }
 
-void update_tree(
-    vector<uint32_t>& tree,
-    vector<uint32_t>& times_tree,
-    uint32_t time,
-    size_t node_index,
-    size_t tree_l,
-    size_t tree_r,
-    size_t q_l,
-    size_t q_r,
-    uint32_t value
-) {
+void update_tree(vector<uint32_t>& tree,
+                 vector<uint32_t>& times_tree,
+                 uint32_t time,
+                 size_t node_index,
+                 size_t tree_l,
+                 size_t tree_r,
+                 size_t q_l,
+                 size_t q_r,
+                 uint32_t value) {
     if (q_l == tree_l && q_r == tree_r) {
         tree[node_index] = value;
         times_tree[node_index] = time;
@@ -90,6 +86,8 @@ void update_tree(
     update_tree(tree, times_tree, time, 2 * node_index + 1, tree_l, middle, q_l, middle, value);
     update_tree(tree, times_tree, time, 2 * node_index + 2, middle + 1, tree_r, middle + 1, q_r, value);
 }
+
+}  // namespace
 
 int main() {
     std::ios::sync_with_stdio(false);

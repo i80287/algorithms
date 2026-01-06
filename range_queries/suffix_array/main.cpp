@@ -1,13 +1,15 @@
+#include <algorithm>
 #include <cassert>
+#include <climits>
 #include <cstdint>
+#include <cstring>
+#include <iostream>
 #include <string>
 #include <vector>
-#include <iostream>
-#include <cstring>
 
+using std::cin, std::cout;
 using std::string;
 using std::vector;
-using std::cin, std::cout;
 
 #if __cplusplus >= 202002L
 #include <bit>
@@ -36,9 +38,9 @@ struct SuffixArray {
 
     SuffixArray(const std::string& s) : p(s.size()), c(s.size()) {
         /**
-         * 
+         *
          * Example on the first iteration, k = 0, len = 1 << k = 1
-         * 
+         *
          * 7: "#abacaba"
          * 6: "a#abacab"
          * 4: "aba#abac"
@@ -47,9 +49,9 @@ struct SuffixArray {
          * 5: "ba#abaca"
          * 1: "bacaba#a"
          * 3: "caba#aba"
-         * 
+         *
          * p: { 7, 6, 4, 2, 0, 5, 1, 3 }
-         * 
+         *
          * c is applied to the original string
          * c: { 1, 2, 1, 3, 1, 2, 1, 0 }
          */
@@ -88,7 +90,7 @@ struct SuffixArray {
             // Stable sort p by left part
             cnt.assign(n, 0);
             for (size_t i = 0; i < n; i++) {
-                cnt[c_prev[i]]++;          /// <=> cnt[c_prev[p_prev[i]]]++;
+                cnt[c_prev[i]]++;  /// <=> cnt[c_prev[p_prev[i]]]++;
             }
             for (size_t i = 1; i < n; i++) {
                 cnt[i] += cnt[i - 1];
@@ -109,7 +111,9 @@ struct SuffixArray {
         }
 
         assert(c[n - 1] == 0);
-        for (size_t i = 0; i < n; i++) { assert(p[c[i]] == i); }
+        for (size_t i = 0; i < n; i++) {
+            assert(p[c[i]] == i);
+        }
     }
 };
 
@@ -120,8 +124,7 @@ struct SparseTable {
 
     constexpr SparseTable() noexcept = default;
 
-    SparseTable(const vector<value_t>& data)
-        : SparseTable(data.data(), data.size()) {}
+    SparseTable(const vector<value_t>& data) : SparseTable(data.data(), data.size()) {}
 
     SparseTable(const value_t* data, size_t n) {
         const size_t row_len = log2_floored(n) + 1;
@@ -232,7 +235,7 @@ int main() {
      * p[5]: ba#abaca
      * p[6]: bacaba#
      * p[7]: caba#aba
-    */
+     */
     LCP lcp(s);
     assert(lcp(0, 2) == 0);
     assert(lcp(2, 3) == 3);
