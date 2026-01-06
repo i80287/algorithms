@@ -262,7 +262,7 @@ template <class T>
     } else if constexpr (std::is_error_condition_enum_v<T>) {
         return std::make_error_condition(arg).message();
     } else {
-        static_assert(false,
+        static_assert(sizeof(T) < 0,
                       "Can't format enum value to string in join_strings() (no suitable converting function found)");
         return std::string_view{};
     }
@@ -401,7 +401,7 @@ inline auto ValueToStringLike(const T &arg) {
     } else if constexpr (WriteableViaBasicOStringStream<T, char>) {
         return ToStringOneArgViaOStringStream<char>(arg);
     } else {
-        static_assert(false, "Can't convert argument in the join_strings() to string");
+        static_assert(sizeof(T) < 0, "Can't convert argument in the join_strings() to string");
         return std::string_view{};
     }
 }
