@@ -280,7 +280,6 @@ constexpr uint32_t isqrt_u64(const uint64_t n) noexcept {
         uint64_t l = 1;
         uint64_t r = std::min((n >> 5U) + 8U, uint64_t{kMaxUInt32});
         do {
-            CONFIG_ASSUME_STATEMENT(l < r);
             CONFIG_ASSUME_STATEMENT(r <= kMaxUInt32);
             const uint64_t m = (l + r) / 2;
             CONFIG_ASSUME_STATEMENT(m <= kMaxUInt32);
