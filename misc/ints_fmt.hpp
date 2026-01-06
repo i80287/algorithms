@@ -133,6 +133,8 @@ private:
     }
 
 public:
+    using value_type = typename storage_type::value_type;
+
     explicit constexpr Formatter(const T number) noexcept : storage_(), fill_result_(fill_buffer(number, storage_)) {}
 
     ATTRIBUTE_PURE [[nodiscard]] static constexpr std::size_t buffer_capacity() noexcept {
