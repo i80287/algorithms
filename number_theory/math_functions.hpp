@@ -283,7 +283,7 @@ constexpr uint32_t isqrt_u64(const uint64_t n) noexcept {
         CONFIG_ASSUME_STATEMENT(l < r);
         do {
             CONFIG_ASSUME_STATEMENT(r <= kMaxUInt32);
-            const uint64_t m = (l + 1 + r) / 2;
+            const uint64_t m = (l + r + 1) / 2;
             CONFIG_ASSUME_STATEMENT(m <= kMaxUInt32);
             if (n >= m * m) {
                 l = m;
