@@ -277,21 +277,22 @@ constexpr uint32_t isqrt_u64(const uint64_t n) noexcept {
          * See Hackers Delight Chapter 11.
          */
         constexpr uint32_t kMaxUInt32 = std::numeric_limits<uint32_t>::max();
-        uint64_t l = n > kMaxUInt32 ? std::numeric_limits<uint16_t>::max() : 0U;
-        uint64_t r = std::min(std::max(l, (n >> 5U) + 8U), uint64_t{kMaxUInt32});
+        uint64_t l = 1;
+        uint64_t r = std::min((n >> 5U) + 8U, uint64_t{kMaxUInt32});
         do {
             CONFIG_ASSUME_STATEMENT(l < r);
             CONFIG_ASSUME_STATEMENT(r <= kMaxUInt32);
-            const uint64_t m = (l + r + 1) / 2;
+            const uint64_t m = (l + r) / 2;
             CONFIG_ASSUME_STATEMENT(m <= kMaxUInt32);
             if (n >= m * m) {
-                l = m;
+                l = m + 1;
             } else {
                 r = m - 1;
             }
-        } while (r > l);
-        CONFIG_ASSUME_STATEMENT(l <= kMaxUInt32);
-        return static_cast<uint32_t>(l);
+        } while (r >= l);
+        const uint64_t ret = l - 1;
+        CONFIG_ASSUME_STATEMENT(ret <= kMaxUInt32);
+        return static_cast<uint32_t>(ret);
 #if CONFIG_COMPILER_IS_GCC_OR_ANY_CLANG || CONFIG_HAS_AT_LEAST_CXX_20
     }
 
@@ -305,12 +306,11 @@ constexpr uint32_t isqrt_u64(const uint64_t n) noexcept {
 ATTRIBUTE_CONST
 [[nodiscard]]
 I128_CONSTEXPR uint64_t isqrt_u128(const uint128_t n) noexcept(detail::is_trivial_arithmetic_v<uint128_t>) {
-    uint64_t l = n > std::numeric_limits<uint64_t>::max() ? std::numeric_limits<uint32_t>::max() : 0U;
+    uint64_t l = 0;
     const uint128_t r_approx = (n >> 6U) + 16U;
     uint64_t r = r_approx > std::numeric_limits<uint64_t>::max() ? std::numeric_limits<uint64_t>::max()
-                                                                 : std::max(static_cast<uint64_t>(r_approx), l);
+                                                                 : static_cast<uint64_t>(r_approx);
     do {
-        CONFIG_ASSUME_STATEMENT(l < r);
         // m = (l + r + 1) / 2
         const uint64_t m = (l / 2) + (r / 2) + ((r % 2) | (l % 2));
         if (n >= uint128_t{m} * m) {
