@@ -19,7 +19,7 @@ function(add_test_target_impl target_name compile_only)
 
     if(NOT compile_only)
         add_test(NAME ${target_name} COMMAND $<TARGET_FILE:${target_name}>)
-        set_tests_properties(${target_name} PROPERTIES TIMEOUT 700)
+        set_tests_properties(${target_name} PROPERTIES TIMEOUT 600)
     endif()
 endfunction()
 
