@@ -77,7 +77,7 @@ typedef std::_Signed128 int128_t;
  * operations.
  */
 #if (CONFIG_HAS_AT_LEAST_CXX_17 && CONFIG_COMPILER_IS_GCC_OR_ANY_CLANG) || \
-    (CONFIG_HAS_AT_LEAST_CXX_20 && defined(_MSC_VER))
+    (CONFIG_HAS_AT_LEAST_CXX_20 && CONFIG_COMPILER_IS_MSVC)
 #define HAS_I128_CONSTEXPR
 #endif
 
