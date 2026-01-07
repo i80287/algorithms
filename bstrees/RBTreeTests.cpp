@@ -163,8 +163,8 @@ void test_on_range(const Range1 &nums, const Range2 &not_in_nums) {
         RBTree<T> t2 = std::move(t1);
         compare(t2, checker);
         RBTree<T> &t1_ref = t1 = std::move(t2);
-        const RBTree<T>* const t1_ref_addr = std::addressof(t1_ref)
-        const RBTree<T>* const t1_addr = std::addressof(t1)
+        const RBTree<T>* const t1_ref_addr = std::addressof(t1_ref);
+        const RBTree<T>* const t1_addr = std::addressof(t1);
         assert(t1_ref_addr == t1_addr);
         compare(t1, checker);
         t2.clear();
