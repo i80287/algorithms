@@ -98,7 +98,10 @@ using std::string_view;
 }
 
 constexpr void constexpr_assert(const bool value) noexcept {
-    static_cast<void>(0 / static_cast<int>(value));
+#ifdef __clang_analyzer__
+    [[clang::suppress]]  // core.DivideZero
+#endif
+    static_cast<void>(0 / static_cast<int>(value));  // NOLINT(clang-analyzer-core.DivideZero)
 }
 
 [[nodiscard]] constexpr string_view extract_typename_impl(const string_view function_name) {
