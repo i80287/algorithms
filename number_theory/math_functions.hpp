@@ -1650,9 +1650,11 @@ template <class UIntType>
 ATTRIBUTE_CONST [[nodiscard]]
 constexpr ExtractPow2Result<UIntType> extract_pow2(const UIntType n) noexcept {
     math_functions::detail::check_math_unsigned_int_type<UIntType>();
-
     const auto power = static_cast<uint32_t>(math_functions::countr_zero(n));
-    const UIntType odd_part = n != 0 ? (n >> power) : 0;
+#ifdef __clang_analyzer__
+    [[clang::suppress]]  // core.BitwiseShift
+#endif
+    const UIntType odd_part = n != 0 ? (n >> power) : 0;  // NOLINT(clang-analyzer-core.BitwiseShift)
     return {odd_part, power};
 }
 
@@ -2086,6 +2088,7 @@ private:
 
         while (n >= 3) {
             const uint32_t least_pf = least_prime_factor[n];
+            assert(least_pf >= 2);
             CONFIG_ASSUME_STATEMENT(least_pf >= 2);
             unique_pfs_count += least_pf != last_pf;
             n /= least_pf;
@@ -2563,7 +2566,7 @@ constexpr uint32_t solve_binary_congruence_modulo_m(const uint32_t k, const uint
 
     const auto [r, s] = math_functions::extract_pow2(m);
     CONFIG_ASSUME_STATEMENT(r >= 1);
-    const auto min_k_s = std::min(k, uint32_t{s});
+    const auto min_k_s = std::min(k, s);
     CONFIG_ASSUME_STATEMENT(min_k_s < 32);
     // gcd(2^k, m)
     const auto gcd_2k_m = uint32_t{1} << min_k_s;
@@ -2573,9 +2576,7 @@ constexpr uint32_t solve_binary_congruence_modulo_m(const uint32_t k, const uint
 
     const auto c_ = c >> min_k_s;
     const auto m_ = m >> min_k_s;
-#ifdef __clang_analyzer__
-    [[clang::suppress]]
-#endif
+    CONFIG_ASSUME_STATEMENT(m_ > 0);  // for clang static analyzer
     const auto c_mod_m_ = c_ % m_;
     if (min_k_s == k) {
         return c_mod_m_;

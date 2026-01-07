@@ -21,6 +21,7 @@ int main(void) {
             const int32_t kMagicInt32 = (int32_t)((((uint32_t)kMagicByte) << 24) | (((uint32_t)kMagicByte) << 16) |
                                                   (((uint32_t)kMagicByte) << 8) | (((uint32_t)kMagicByte) << 0));
 
+            // NOLINTNEXTLINE(clang-analyzer-security.insecureAPI.DeprecatedOrUnsafeBufferHandling)
             memset(arr, kMagicByte, arr_len * sizeof(int32_t));
             memset_int(arr, k, i);
             for (size_t j = 0; j < i; j++) {

@@ -273,6 +273,8 @@ constexpr std::int32_t kronecker_symbol_si_ui(Sint a, Uint n) noexcept {
             }
         }
 
+        CONFIG_ASSUME_STATEMENT(a_u % 2 == 1);
+
         // step 4
         r = n;
         n = a_u;
