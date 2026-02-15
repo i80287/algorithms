@@ -499,37 +499,65 @@ constexpr void WriteStringToBuffer(CharType* const buffer, size_t /*buffer_size*
     join_strings_detail::WriteStringsInplace<CharType>(buffer, args...);
 }
 
-template <misc::Char CharType, typename T>
-[[nodiscard]] inline std::basic_string<CharType> OneStrLikeArgToString(const T &arg) {
-    if constexpr (std::is_same_v<typename T::value_type, CharType>) {
-        return std::basic_string<CharType>{std::basic_string_view<CharType>(arg)};
-    } else {
-        const std::string_view ascii_buffer_view = arg.as_string_view();
-        return std::basic_string<CharType>(ascii_buffer_view.data(),
-                                           ascii_buffer_view.data() + ascii_buffer_view.size());
-    }
+template <misc::Char CharType, typename... Args>
+    requires(sizeof...(Args) >= 2)
+[[nodiscard]] inline std::basic_string<CharType> JoinStringsImpl(const Args &...args) {
+    const size_t size = CalculateStringArgsSize(args...);
+    std::basic_string<CharType> result(size, CharType{});
+    join_strings_detail::WriteStringToBuffer<CharType>(result.data(), result.size(), args...);
+    return result;
 }
 
 template <misc::Char CharType, typename... Args>
-[[nodiscard]] inline std::basic_string<CharType> JoinStringsImpl(const Args &...args) {
-    if constexpr (sizeof...(args) >= 2) {
-        const size_t size = CalculateStringArgsSize(args...);
-        std::basic_string<CharType> result(size, CharType{});
-        join_strings_detail::WriteStringToBuffer<CharType>(result.data(), result.size(), args...);
-        return result;
-    } else {
-        return join_strings_detail::OneStrLikeArgToString<CharType>(args...);
-    }
+    requires(sizeof...(Args) >= 2)
+[[nodiscard]] inline std::basic_string<CharType> JoinStringsImpl(std::basic_string<CharType> &&result,
+                                                                 const Args &...args) {
+    const size_t size = CalculateStringArgsSize(std::basic_string_view<CharType>(result), args...);
+    const size_t initial_size = result.size();
+    CONFIG_ASSUME_STATEMENT(initial_size <= size);
+    result.resize(size);
+    join_strings_detail::WriteStringToBuffer<CharType>(result.data() + initial_size, result.size(), args...);
+    return std::move(result);
 }
 
 template <misc::Char CharType, size_t I, class T, class... Args>
-[[nodiscard]]
-inline std::basic_string<CharType> JoinStringsConvArgsToStrViewImpl(const T &value, const Args &...args) {
+    requires(sizeof...(Args) >= 1)
+[[nodiscard]] inline std::basic_string<CharType> JoinStringsConvArgsToStrViewImpl(T &&value, Args &&...args) {
     if constexpr (I == 1 + sizeof...(args)) {
-        return join_strings_detail::JoinStringsImpl<CharType>(value, args...);
+        return join_strings_detail::JoinStringsImpl<CharType>(std::forward<T>(value), args...);
+    } else if constexpr (std::is_same_v<std::remove_cvref_t<T>, std::basic_string<CharType>>) {
+        return join_strings_detail::JoinStringsConvArgsToStrViewImpl<CharType, I + 1>(std::forward<Args>(args)...,
+                                                                                      std::forward<T>(value));
     } else {
         const auto arg_as_str_like = ValueToGenericStringLike<CharType>(value);
-        return join_strings_detail::JoinStringsConvArgsToStrViewImpl<CharType, I + 1>(args..., arg_as_str_like);
+        return join_strings_detail::JoinStringsConvArgsToStrViewImpl<CharType, I + 1>(std::forward<Args>(args)...,
+                                                                                      arg_as_str_like);
+    }
+}
+
+template <misc::Char CharType, class T>
+[[nodiscard]] inline std::basic_string<CharType> NonStringValueToString(const T &value) {
+    using generic_string_like_type = decltype(ValueToGenericStringLike<CharType>(std::declval<const T &>()));
+
+    if constexpr (std::is_same_v<generic_string_like_type, std::basic_string<CharType>>) {
+        return ValueToGenericStringLike<CharType>(value);
+    } else {
+        generic_string_like_type str_like = ValueToGenericStringLike<CharType>(value);
+        if constexpr (std::is_same_v<typename generic_string_like_type::value_type, CharType>) {
+            return std::basic_string<CharType>{std::basic_string_view<CharType>(str_like)};
+        } else {
+            const std::string_view ascii_buf = str_like.as_string_view();
+            return std::basic_string<CharType>(ascii_buf.data(), ascii_buf.data() + ascii_buf.size());
+        }
+    }
+}
+
+template <misc::Char CharType, class T>
+[[nodiscard]] inline std::basic_string<CharType> ValueToString(T &&value) {
+    if constexpr (std::is_same_v<std::remove_cvref_t<T>, std::basic_string<CharType>>) {
+        return std::forward<T>(value);
+    } else {
+        return NonStringValueToString<CharType>(value);
     }
 }
 
@@ -538,14 +566,13 @@ inline std::basic_string<CharType> JoinStringsConvArgsToStrViewImpl(const T &val
 // clang-format off
 
 template <misc::Char HintCharType, class... Args>
-inline auto join_strings(const Args&... args) {
+inline auto join_strings(Args&&... args) {
     static_assert(sizeof...(args) >= 1, "Empty input is explicitly prohibited");
 
-    using DeducedCharType = misc::string_detail::determine_char_t<Args...>;
-
+    using DeducedCharType = misc::string_detail::determine_char_t<std::remove_cvref_t<Args>...>;
     using CharType = std::conditional_t<misc::is_char_v<DeducedCharType>, DeducedCharType, HintCharType>;
 
-    constexpr bool kAllCharTypesAreSame = std::conjunction_v<misc::string_detail::same_char_types<Args, CharType>...>;
+    constexpr bool kAllCharTypesAreSame = std::conjunction_v<misc::string_detail::same_char_types<std::remove_cvref_t<Args>, CharType>...>;
     static_assert(
         kAllCharTypesAreSame,
         "Hint:\n"
@@ -553,7 +580,11 @@ inline auto join_strings(const Args&... args) {
         "    For example, both std::string and std::wstring might have been passed to the join_strings\n");
 
     if constexpr (kAllCharTypesAreSame) {
-        return join_strings_detail::JoinStringsConvArgsToStrViewImpl<CharType, 0>(args...);
+        if constexpr (sizeof...(args) == 1) {
+            return join_strings_detail::ValueToString<CharType>(std::forward<Args>(args)...);
+        } else {
+            return join_strings_detail::JoinStringsConvArgsToStrViewImpl<CharType, 0>(std::forward<Args>(args)...);
+        }
     } else {
         // Do not make more unreadable CEs when kAllCharTypesAreSame == false, static assertion has already failed
         return std::basic_string<CharType>{};

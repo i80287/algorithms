@@ -35,7 +35,7 @@ namespace misc {
 ///         where CharType is deducted from the @a Args... or HintCharType
 ///         if @a Args... is pack of types without associated char type
 template <misc::Char HintCharType = char, class... Args>
-[[nodiscard]] inline auto join_strings(const Args &...args);
+[[nodiscard]] inline auto join_strings(Args &&...args);
 
 template <misc::CharOrStringLike Sep, std::ranges::forward_range Container>
 [[nodiscard]] ATTRIBUTE_ALWAYS_INLINE inline auto join_strings_range(const Sep &sep, const Container &strings);
