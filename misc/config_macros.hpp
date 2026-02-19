@@ -643,6 +643,15 @@
 #define ATTRIBUTE_NONNULL_ALL_ARGS
 #endif
 
+#if CONFIG_COMPILER_IS_GCC_OR_ANY_CLANG && CONFIG_HELPER_HAS_CPP_STYLE_ATTRIBUTE(gnu::nonnull_if_nonzero)
+#define ATTRIBUTE_NONNULL_IF_NONZERO(ptr_arg_index, size_arg_index) \
+    [[gnu::nonnull_if_nonzero(ptr_arg_index, size_arg_index)]]
+#elif CONFIG_GNUC_AT_LEAST(15, 1) && CONFIG_HAS_GCC_ATTRIBUTE(nonnull_if_nonzero)
+#define ATTRIBUTE_NONNULL_IF_NONZERO(ptr_arg_index, size_arg_index) \
+    __attribute__((nonnull_if_nonzero(ptr_arg_index, size_arg_index)))
+#define ATTRIBUTE_NONNULL_IF_NONZERO(ptr_arg_index, size_arg_index)
+#endif
+
 #if CONFIG_COMPILER_IS_GCC_OR_ANY_CLANG && CONFIG_HELPER_HAS_CPP_STYLE_ATTRIBUTE(gnu::returns_nonnull)
 #define ATTRIBUTE_RETURNS_NONNULL [[gnu::returns_nonnull]]
 #elif (CONFIG_GNUC_AT_LEAST(4, 9) || CONFIG_CLANG_AT_LEAST(3, 5)) && CONFIG_HAS_GCC_ATTRIBUTE(returns_nonnull)
