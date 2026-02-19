@@ -209,7 +209,7 @@ constexpr void transpose8(const SrcMatrixType& src, DstMatrixType& dst) noexcept
 }
 
 /// @brief Transposes 8x8 matrix @a src inplace
-/// @tparam AgainstMinorDiagonal 
+/// @tparam AgainstMinorDiagonal
 /// @param src source 8x8 matrix
 /// @note see @c transpose8(const uint8_t[8], uint8_t[8]) for the explanation of @a AgainstMinorDiagonal
 template <bool AgainstMinorDiagonal = false, class MatrixType>
