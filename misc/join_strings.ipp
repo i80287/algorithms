@@ -505,9 +505,9 @@ template <misc::Char CharType, typename... Args>
     const size_t size = CalculateStringArgsSize(args...);
 #if CONFIG_HAS_AT_LEAST_CXX_23
     std::basic_string<CharType> result;
-    result.resize_and_overwrite(size, [&args...](CharType *const data, const size_t size) {
-        join_strings_detail::WriteStringToBuffer<CharType>(data, size, args...);
-        return size;
+    result.resize_and_overwrite(size, [&args...](CharType *const res_data, const size_t res_size) {
+        join_strings_detail::WriteStringToBuffer<CharType>(res_data, res_size, args...);
+        return res_size;
     });
 #else
     std::basic_string<CharType> result(size, CharType{});
@@ -524,9 +524,9 @@ template <misc::Char CharType, typename... Args>
     const size_t initial_size = result.size();
     CONFIG_ASSUME_STATEMENT(initial_size <= size);
 #if CONFIG_HAS_AT_LEAST_CXX_23
-    result.resize_and_overwrite(size, [&initial_size, &args...](CharType *const data, const size_t size) {
-        join_strings_detail::WriteStringToBuffer<CharType>(data + initial_size, size - initial_size, args...);
-        return size;
+    result.resize_and_overwrite(size, [&initial_size, &args...](CharType *const res_data, const size_t res_size) {
+        join_strings_detail::WriteStringToBuffer<CharType>(res_data + initial_size, res_size - initial_size, args...);
+        return res_size;
     });
 #else
     result.resize(size);
