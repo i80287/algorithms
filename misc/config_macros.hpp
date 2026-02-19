@@ -649,6 +649,7 @@
 #elif CONFIG_GNUC_AT_LEAST(15, 1) && CONFIG_HAS_GCC_ATTRIBUTE(nonnull_if_nonzero)
 #define ATTRIBUTE_NONNULL_IF_NONZERO(ptr_arg_index, size_arg_index) \
     __attribute__((nonnull_if_nonzero(ptr_arg_index, size_arg_index)))
+#else
 #define ATTRIBUTE_NONNULL_IF_NONZERO(ptr_arg_index, size_arg_index)
 #endif
 
