@@ -503,8 +503,16 @@ template <misc::Char CharType, typename... Args>
     requires(sizeof...(Args) >= 2)
 [[nodiscard]] inline std::basic_string<CharType> JoinStringsImpl(const Args &...args) {
     const size_t size = CalculateStringArgsSize(args...);
+#if CONFIG_HAS_AT_LEAST_CXX_23
+    std::basic_string<CharType> result;
+    result.resize_and_overwrite(size, [&args...](CharType *const data, const size_t size) {
+        join_strings_detail::WriteStringToBuffer<CharType>(data, size, args...);
+        return size;
+    });
+#else
     std::basic_string<CharType> result(size, CharType{});
     join_strings_detail::WriteStringToBuffer<CharType>(result.data(), result.size(), args...);
+#endif
     return result;
 }
 
@@ -515,8 +523,16 @@ template <misc::Char CharType, typename... Args>
     const size_t size = CalculateStringArgsSize(std::basic_string_view<CharType>(result), args...);
     const size_t initial_size = result.size();
     CONFIG_ASSUME_STATEMENT(initial_size <= size);
+#if CONFIG_HAS_AT_LEAST_CXX_23
+    result.resize_and_overwrite(size, [&initial_size, &args...](CharType *const data, const size_t size) {
+        join_strings_detail::WriteStringToBuffer<CharType>(data + initial_size, size - initial_size, args...);
+        return size;
+    });
+#else
     result.resize(size);
-    join_strings_detail::WriteStringToBuffer<CharType>(result.data() + initial_size, result.size(), args...);
+    join_strings_detail::WriteStringToBuffer<CharType>(result.data() + initial_size, result.size() - initial_size,
+                                                       args...);
+#endif
     return std::move(result);
 }
 
