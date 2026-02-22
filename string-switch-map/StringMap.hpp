@@ -714,7 +714,7 @@ public:
     template <std::integral CharType>
     [[nodiscard]]
     ATTRIBUTE_PURE
-    ATTRIBUTE_ALWAYS_INLINE    
+    ATTRIBUTE_ALWAYS_INLINE
     constexpr MappedType operator()(const std::basic_string<CharType>& str) const noexcept(kNoexceptCall) {
         // clang-format on
         return (*this)(str.data(), str.size());
@@ -757,19 +757,19 @@ public:
 
 private:
     // clang-format off
-    template <std::integral CharType, std::size_t Index, CompileTimeStringLiteral CompString, CompileTimeStringLiteral... CompStrings>
+    template <std::integral CharType, std::size_t Index, CompileTimeStringLiteral Str, CompileTimeStringLiteral... Strs>
     [[nodiscard]]
     ATTRIBUTE_PURE
     ATTRIBUTE_ALWAYS_INLINE
     ATTRIBUTE_SIZED_ACCESS(read_only, 1, 2)
-    static constexpr MappedType op_call_impl(const CharType* str, std::size_t size) noexcept(kNoexceptCall) {
+    static constexpr MappedType op_call_impl(const CharType* str, const std::size_t size) noexcept(kNoexceptCall) {
         // clang-format on
         // NOLINTBEGIN(llvm-else-after-return)
-        if (CompString == std::basic_string_view<CharType>(str, size)) {
+        if (Str == std::basic_string_view<CharType>(str, size)) {
             static_assert(Index < std::size(MappedValues));
             return MappedValues[Index];
-        } else if constexpr (sizeof...(CompStrings) >= 1) {
-            return StringMapImplFewStrings::op_call_impl<CharType, Index + 1, CompStrings...>(str, size);
+        } else if constexpr (sizeof...(Strs) >= 1) {
+            return StringMapImplFewStrings::op_call_impl<CharType, Index + 1, Strs...>(str, size);
         } else {
             return kDefaultValue;
         }

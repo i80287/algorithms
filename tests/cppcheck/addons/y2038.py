@@ -214,10 +214,10 @@ id_Y2038 = {
 def parse_dump_config(config_name):
     """
     Parse Y2038-related flags from cppcheck dump file configuration name.
-    
-    This function analyzes the cppcheck dump file configuration name (which contains 
+
+    This function analyzes the cppcheck dump file configuration name (which contains
     preprocessor definitions extracted by cppcheck from project files like compile_commands.json)
-    to extract Y2038-related definitions. It looks for _TIME_BITS, _USE_TIME_BITS64, and 
+    to extract Y2038-related definitions. It looks for _TIME_BITS, _USE_TIME_BITS64, and
     _FILE_OFFSET_BITS definitions and validates their values.
 
     Args:

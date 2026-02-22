@@ -61,9 +61,9 @@ INTTYPES_H_DEFINES = ['%s%d' % (n, v) for n, v in itertools.product(
         ['PRId', 'PRIi', 'PRIo', 'PRIu', 'PRIx', 'PRIX', 'SCNd',
          'SCNi', 'SCNo', 'SCNu', 'SCNx', 'PRIdLEAST', 'PRIiLEAST',
          'PRIoLEAST', 'PRIuLEAST', 'PRIxLEAST', 'PRIXLEAST',
-         'SCNdLEAST', 'SCNiLEAST', 'SCNoLEAST', 'SCNuLEAST', 
-         'SCNxLEAST', 'PRIdFAST', 'PRIiFAST', 'PRIoFAST', 'PRIuFAST', 
-         'PRIxFAST', 'PRIXFAST', 'SCNdFAST', 'SCNiFAST', 'SCNoFAST', 
+         'SCNdLEAST', 'SCNiLEAST', 'SCNoLEAST', 'SCNuLEAST',
+         'SCNxLEAST', 'PRIdFAST', 'PRIiFAST', 'PRIoFAST', 'PRIuFAST',
+         'PRIxFAST', 'PRIXFAST', 'SCNdFAST', 'SCNiFAST', 'SCNoFAST',
          'SCNuFAST', 'SCNxFAST', ],
         [8, 16, 32, 64])]
 typeBits = {
@@ -242,9 +242,9 @@ C99_STDLIB_IDENTIFIERS = {
     # B.7 Format conversion of integer types
     'inttypes.h': [
         'PRIdMAX', 'PRIiMAX', 'PRIoMAX', 'PRIuMAX', 'PRIxMAX', 'PRIXMAX',
-        'SCNdMAX', 'SCNiMAX', 'SCNoMAX', 'SCNuMAX', 'SCNxMAX', 'PRIdPTR', 
-        'PRIiPTR', 'PRIoPTR', 'PRIuPTR', 'PRIxPTR', 'PRIXPTR', 'SCNdPTR', 
-        'SCNiPTR', 'SCNoPTR', 'SCNuPTR', 'SCNxPTR', 
+        'SCNdMAX', 'SCNiMAX', 'SCNoMAX', 'SCNuMAX', 'SCNxMAX', 'PRIdPTR',
+        'PRIiPTR', 'PRIoPTR', 'PRIuPTR', 'PRIxPTR', 'PRIXPTR', 'SCNdPTR',
+        'SCNiPTR', 'SCNoPTR', 'SCNuPTR', 'SCNxPTR',
         'imaxdiv_t', 'imaxabs', 'imaxdiv', 'strtoimax',
         'strtoumax', 'wcstoimax', 'wcstoumax',
     ] + INTTYPES_H_DEFINES,
@@ -343,7 +343,7 @@ C99_STDLIB_IDENTIFIERS = {
         'vfwprintf', 'vfwscanf', 'vswprintf', 'vswscanf', 'vwprintf',
         'vwscanf', 'wprintf', 'wscanf', 'fgetwc', 'fgetws', 'fputwc', 'fputws',
         'fwide', 'getwc', 'getwchar', 'putwc', 'putwchar', 'ungetwc', 'wcstod',
-        'wcstof', 'wcstold', 'wcstol', 'wcstoll', 'wcstoul', 'wcstoull', 'wcscpy', 
+        'wcstof', 'wcstold', 'wcstol', 'wcstoll', 'wcstoul', 'wcstoull', 'wcscpy',
         'wcsncpy', 'wmemcpy', 'wmemmove', 'wcscat', 'wcsncat', 'wcscmp', 'wcscoll',
         'wcsncmp', 'wcsxfrm', 'wmemcmp', 'wcschr', 'wcscspn', 'wcspbrk',
         'wcsrchr', 'wcsspn', 'wcsstr', 'wcstok', 'wmemchr', 'wcslen',
@@ -397,26 +397,26 @@ C11_STDLIB_IDENTIFIERS = {
     'stdarg.h': C99_STDLIB_IDENTIFIERS['stdarg.h'],
     # B.16 Atomics
     'stdatomic.h': ['ATOMIC_BOOL_LOCK_FREE', 'ATOMIC_CHAR_LOCK_FREE',
-        'ATOMIC_CHAR16_T_LOCK_FREE', 'ATOMIC_CHAR32_T_LOCK_FREE', 'ATOMIC_WCHAR_T_LOCK_FREE', 
-        'ATOMIC_SHORT_LOCK_FREE', 'ATOMIC_INT_LOCK_FREE', 'ATOMIC_LONG_LOCK_FREE', 
-        'ATOMIC_LLONG_LOCK_FREE', 'ATOMIC_POINTER_LOCK_FREE', 'ATOMIC_FLAG_INIT', 
-        'memory_order', 'atomic_flag', 'memory_order_relaxed', 'memory_order_consume', 
+        'ATOMIC_CHAR16_T_LOCK_FREE', 'ATOMIC_CHAR32_T_LOCK_FREE', 'ATOMIC_WCHAR_T_LOCK_FREE',
+        'ATOMIC_SHORT_LOCK_FREE', 'ATOMIC_INT_LOCK_FREE', 'ATOMIC_LONG_LOCK_FREE',
+        'ATOMIC_LLONG_LOCK_FREE', 'ATOMIC_POINTER_LOCK_FREE', 'ATOMIC_FLAG_INIT',
+        'memory_order', 'atomic_flag', 'memory_order_relaxed', 'memory_order_consume',
         'memory_order_acquire', 'memory_order_release', 'memory_order_acq_rel', 'memory_order_seq_cst',
-        'atomic_bool', 'atomic_char', 'atomic_schar', 'atomic_uchar', 'atomic_short', 'atomic_ushort', 
-        'atomic_int', 'atomic_uint', 'atomic_long', 'atomic_ulong', 'atomic_llong', 'atomic_ullong', 
+        'atomic_bool', 'atomic_char', 'atomic_schar', 'atomic_uchar', 'atomic_short', 'atomic_ushort',
+        'atomic_int', 'atomic_uint', 'atomic_long', 'atomic_ulong', 'atomic_llong', 'atomic_ullong',
         'atomic_char16_t', 'atomic_char32_t', 'atomic_wchar_t', 'atomic_int_least8_t',
-        'atomic_uint_least8_t', 'atomic_int_least16_t', 'atomic_uint_least16_t', 
-        'atomic_int_least32_t', 'atomic_uint_least32_t', 'atomic_int_least64_t', 
-        'atomic_uint_least64_t', 'atomic_int_fast8_t', 'atomic_uint_fast8_t', 
-        'atomic_int_fast16_t', 'atomic_uint_fast16_t', 'atomic_int_fast32_t', 
-        'atomic_uint_fast32_t', 'atomic_int_fast64_t', 'atomic_uint_fast64_t', 
-        'atomic_intptr_t', 'atomic_uintptr_t', 'atomic_size_t', 'atomic_ptrdiff_t', 
+        'atomic_uint_least8_t', 'atomic_int_least16_t', 'atomic_uint_least16_t',
+        'atomic_int_least32_t', 'atomic_uint_least32_t', 'atomic_int_least64_t',
+        'atomic_uint_least64_t', 'atomic_int_fast8_t', 'atomic_uint_fast8_t',
+        'atomic_int_fast16_t', 'atomic_uint_fast16_t', 'atomic_int_fast32_t',
+        'atomic_uint_fast32_t', 'atomic_int_fast64_t', 'atomic_uint_fast64_t',
+        'atomic_intptr_t', 'atomic_uintptr_t', 'atomic_size_t', 'atomic_ptrdiff_t',
         'atomic_intmax_t', 'atomic_uintmax_t', 'ATOMIC_VAR_INIT', 'type kill_dependency',
-        'atomic_thread_fence', 'atomic_signal_fence', 'atomic_is_lock_free', 
+        'atomic_thread_fence', 'atomic_signal_fence', 'atomic_is_lock_free',
         'atomic_store', 'atomic_store_explicit', 'atomic_load', 'atomic_load_explicit',
         'atomic_exchange', 'atomic_exchange_explicit', 'atomic_compare_exchange_strong',
         'atomic_compare_exchange_strong_explicit', 'atomic_compare_exchange_weak',
-        'atomic_compare_exchange_weak_explicit', 'atomic_fetch_key', 'atomic_fetch_key_explicit', 
+        'atomic_compare_exchange_weak_explicit', 'atomic_fetch_key', 'atomic_fetch_key_explicit',
         'atomic_flag_test_and_set', 'atomic_flag_test_and_set_explicit',
         'atomic_flag_clear', 'atomic_flag_clear_explicit', ],
     # B.17 Boolean type and values
@@ -428,28 +428,28 @@ C11_STDLIB_IDENTIFIERS = {
     'stdint.h': C99_STDLIB_IDENTIFIERS['stdint.h']+
         ['__STDC_WANT_LIB_EXT1__', 'RSIZE_MAX'],
     # B.20 Input/output
-    'stdio.h': C99_STDLIB_IDENTIFIERS['stdio.h'] + 
+    'stdio.h': C99_STDLIB_IDENTIFIERS['stdio.h'] +
         ['__STDC_WANT_LIB_EXT1__', 'L_tmpnam_s', 'TMP_MAX_S', 'errno_t', 'rsize_t',
         'tmpfile_s', 'tmpnam_s', 'fopen_s', 'freopen_s', 'fprintf_s', 'fscanf_s',
         'printf_s','scanf_s','snprintf_s','sprintf_s','sscanf_s','vfprintf_s',
         'vfscanf_s', 'vsprintf_s', 'vsscanf_s', 'gets_s'
         ],
     # B.21 General utilities
-    'stdlib.h': C99_STDLIB_IDENTIFIERS['stdlib.h'] + 
+    'stdlib.h': C99_STDLIB_IDENTIFIERS['stdlib.h'] +
     ['constraint_handler_t', 'set_constraint_handler_s', 'abort_handler_s',
      'ignore_handler_s', 'getenv_s', 'bsearch_s', 'qsort_s', 'wctomb_s',
      'mbstowcs_s', 'wcstombs_s'],
     # B.22 Noretrun
     'stdnoreturn.h': ['noreturn'],
     # B.23 String handling
-    'string.h': C99_STDLIB_IDENTIFIERS['string.h'] + 
+    'string.h': C99_STDLIB_IDENTIFIERS['string.h'] +
     ['memcpy_s', 'memmoce_s', 'strcpy_s', 'strncpy_s','strcat_s',
      'strtok_s', 'memset_s', 'strerror_s', 'strerrorlen_s', 'strnlen_s'],
     # B.24 Type-generic math
     'tgmath.h': C99_STDLIB_IDENTIFIERS['tgmath.h'],
     # B.25 Threads
     'threads.h': ['thread_local', 'ONCE_FLAG_INIT', 'TSS_DTOR_ITERATIONS',
-        'cnd_t', 'thrd_t', 'tss_t', 'mtx_t', 'tss_dtor_t', 'thrd_start_t', 
+        'cnd_t', 'thrd_t', 'tss_t', 'mtx_t', 'tss_dtor_t', 'thrd_start_t',
         'once_flag', 'mtx_plain', 'mtx_recursive', 'mtx_timed', 'thrd_timedout',
         'thrd_success', 'thrd_busy', 'thrd_error', 'thrd_nomem', 'call_once',
         'cnd_broadcast', 'cnd_destroy','cnd_init', 'cnd_signal', 'cnd_timedwait',
@@ -467,11 +467,11 @@ C11_STDLIB_IDENTIFIERS = {
         ],
     # B.28 Extended multibyte/wide character utilities
     'wchar.h': C99_STDLIB_IDENTIFIERS["wchar.h"]+[
-        'fwprintf_s', 'fwscanf_s', 'snwprintf_s', 'swprintf_s', 'swscanf_s', 
-        'vfwprintf_s', 'vfwscanf_s', 'vsnwprintf_s', 'vswprintf_s', 'vswscanf_s', 
-        'vwprintf_s', 'vwscanf_s', 'wprintf_s', 'wscanf_s', 'wcscpy_s', 'wcsncpy_s', 
-        'wmemcpy_s', 'wmemmove_s', 'wcscat_s', 'wcsncat_s', 'wcstok_s', 'wcsnlen_s', 
-        'wcrtomb_s', 'mbsrtowcs_s', 'wcsrtombs_s', 
+        'fwprintf_s', 'fwscanf_s', 'snwprintf_s', 'swprintf_s', 'swscanf_s',
+        'vfwprintf_s', 'vfwscanf_s', 'vsnwprintf_s', 'vswprintf_s', 'vswscanf_s',
+        'vwprintf_s', 'vwscanf_s', 'wprintf_s', 'wscanf_s', 'wcscpy_s', 'wcsncpy_s',
+        'wmemcpy_s', 'wmemmove_s', 'wcscat_s', 'wcsncat_s', 'wcstok_s', 'wcsnlen_s',
+        'wcrtomb_s', 'mbsrtowcs_s', 'wcsrtombs_s',
     ],
     # B.29 Wide character classification and mapping utilities
     'wctype.h': C99_STDLIB_IDENTIFIERS['wctype.h'],

@@ -174,6 +174,12 @@ function(configure_gcc_or_clang_gcc_options)
                 -Wflex-array-member-not-at-end
             )
         endif()
+        if(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 15.1.0)
+            set(LOCAL_FN_TEST_CXX_COMPILE_OPTIONS
+                ${LOCAL_FN_TEST_CXX_COMPILE_OPTIONS}
+                -Wtrailing-whitespace
+            )
+        endif()
     endif()
     if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
         set(LOCAL_FN_TEST_CXX_COMPILE_OPTIONS
@@ -290,6 +296,14 @@ function(configure_gcc_or_clang_gcc_options)
                 -Wshift-bool
                 -Wnrvo
                 -Wunique-object-duplication)
+        endif()
+        if(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 22.0.0)
+            set(LOCAL_FN_TEST_CXX_COMPILE_OPTIONS
+                ${LOCAL_FN_TEST_CXX_COMPILE_OPTIONS}
+                -Wlifetime-safety
+                -Wlifetime-safety-noescape
+                -Wlifetime-safety-suggestions
+            )
         endif()
         if(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 22.0.0)
             set(LOCAL_FN_TEST_CXX_COMPILE_OPTIONS
