@@ -164,5 +164,5 @@ int main() {
         merge_sort_time / kTotalTests,
         quick_sort_time / kTotalTests,
         shell_sort_time / kTotalTests);
-    // clang-format on    
+    // clang-format on
 }
