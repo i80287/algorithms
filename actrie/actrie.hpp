@@ -33,26 +33,31 @@ struct FoundOccurance {
 inline constexpr Symbol kDefaultAlphabetStart = 'A';
 inline constexpr Symbol kDefaultAlphabetEnd = 'z';
 
+enum class Case : bool {
+    Sensetive,
+    Insensetive,
+};
+
 template <Symbol AlphabetStart = kDefaultAlphabetStart,
           Symbol AlphabetEnd = kDefaultAlphabetEnd,
-          bool IsCaseInsensetive = false,
+          Case CaseOption = Case::Sensetive,
           typename TrieMappedType = NoMappedType>
 class ACTrie;
 
 template <Symbol AlphabetStart = kDefaultAlphabetStart,
           Symbol AlphabetEnd = kDefaultAlphabetEnd,
-          bool IsCaseInsensetive = false>
+          Case CaseOption = Case::Sensetive>
 class ReplacingACTrie;
 
 template <Symbol AlphabetStart = kDefaultAlphabetStart,
           Symbol AlphabetEnd = kDefaultAlphabetEnd,
-          bool IsCaseInsensetive = false,
+          Case CaseOption = Case::Sensetive,
           typename TrieMappedType = NoMappedType>
 class ACTrieBuilder;
 
 template <Symbol AlphabetStart = kDefaultAlphabetStart,
           Symbol AlphabetEnd = kDefaultAlphabetEnd,
-          bool IsCaseInsensetive = false>
+          Case CaseOption = Case::Sensetive>
 class ReplacingACTrieBuilder;
 
 namespace detail {
@@ -83,10 +88,10 @@ protected:
 
 }  // namespace detail
 
-template <Symbol AlphabetStart, Symbol AlphabetEnd, bool IsCaseInsensetive, typename TrieMappedType>
+template <Symbol AlphabetStart, Symbol AlphabetEnd, Case CaseOption, typename TrieMappedType>
 class [[nodiscard]] ACTrie : protected detail::BasicACTrie {
 public:
-    friend class ACTrieBuilder<AlphabetStart, AlphabetEnd, IsCaseInsensetive, TrieMappedType>;
+    friend class ACTrieBuilder<AlphabetStart, AlphabetEnd, CaseOption, TrieMappedType>;
 
 private:
     struct PatternDataWithValue {
@@ -97,7 +102,7 @@ private:
 protected:
     static constexpr Symbol kAlphabetStart = AlphabetStart;
     static constexpr Symbol kAlphabetEnd = AlphabetEnd;
-    static constexpr Symbol kIsCaseInsensetive = IsCaseInsensetive;
+    static constexpr Case kCaseOption = CaseOption;
 
     static_assert('\0' < kAlphabetStart && kAlphabetStart < kAlphabetEnd &&
                       kAlphabetEnd <= std::numeric_limits<char>::max(),
@@ -360,7 +365,7 @@ protected:
     [[nodiscard]]
     ATTRIBUTE_CONST static constexpr size_type SymbolToIndex(const Symbol symbol) noexcept {
         std::uint32_t symbol_as_int = SymbolToUInt(symbol);
-        if constexpr (kIsCaseInsensetive) {
+        if constexpr (CaseOption == Case::Insensetive) {
             // We don't use std::tolower because we know that all
             //  chars are < 128. What's more important, std::tolower makes
             //  text finding run almost 1.5x times slower because of
@@ -399,15 +404,15 @@ protected:
     PatternsDataStorage patterns_data_;
 };
 
-template <Symbol AlphabetStart, Symbol AlphabetEnd, bool IsCaseInsensetive>
-class [[nodiscard]] ReplacingACTrie final : private ACTrie<AlphabetStart, AlphabetEnd, IsCaseInsensetive, std::string> {
+template <Symbol AlphabetStart, Symbol AlphabetEnd, Case CaseOption>
+class [[nodiscard]] ReplacingACTrie final : private ACTrie<AlphabetStart, AlphabetEnd, CaseOption, std::string> {
 private:
-    using Base = ACTrie<AlphabetStart, AlphabetEnd, IsCaseInsensetive, std::string>;
+    using Base = ACTrie<AlphabetStart, AlphabetEnd, CaseOption, std::string>;
     using typename Base::MappedType;
     using typename Base::Node;
     using typename Base::PatternData;
     using typename Base::PatternsDataStorage;
-    friend class ReplacingACTrieBuilder<AlphabetStart, AlphabetEnd, IsCaseInsensetive>;
+    friend class ReplacingACTrieBuilder<AlphabetStart, AlphabetEnd, CaseOption>;
 
 public:
     using typename Base::size_type;
@@ -614,10 +619,10 @@ private:
 
 // cppcheck-suppress-begin [duplInheritedMember]
 
-template <Symbol AlphabetStart, Symbol AlphabetEnd, bool IsCaseInsensetive, typename MappedType>
+template <Symbol AlphabetStart, Symbol AlphabetEnd, Case CaseOption, typename MappedType>
 class [[nodiscard]] ACTrieBuilder {
 public:
-    using ACTrieType = ACTrie<AlphabetStart, AlphabetEnd, IsCaseInsensetive, MappedType>;
+    using ACTrieType = ACTrie<AlphabetStart, AlphabetEnd, CaseOption, MappedType>;
     using size_type = typename ACTrieType::size_type;
     using StoredNodeIndex = typename ACTrieType::StoredNodeIndex;
     using StoredPatternSize = typename ACTrieType::StoredPatternSize;
@@ -630,7 +635,7 @@ protected:
     static constexpr auto kAlphabetStart = ACTrieType::kAlphabetStart;
     static constexpr auto kAlphabetEnd = ACTrieType::kAlphabetEnd;
     static constexpr auto kAlphabetLength = ACTrieType::kAlphabetLength;
-    static constexpr auto kIsCaseInsensetive = ACTrieType::kIsCaseInsensetive;
+    static constexpr auto kCaseOption = ACTrieType::kCaseOption;
     static constexpr auto kNullNodeIndex = ACTrieType::kNullNodeIndex;
     static constexpr auto kFakePrerootNodeIndex = ACTrieType::kFakePrerootNodeIndex;
     static constexpr auto kRootNodeIndex = ACTrieType::kRootNodeIndex;
@@ -789,15 +794,15 @@ protected:
     PatternsDataStorage patterns_data_;
 };
 
-template <Symbol AlphabetStart, Symbol AlphabetEnd, bool IsCaseInsensetive>
+template <Symbol AlphabetStart, Symbol AlphabetEnd, Case CaseOption>
 class [[nodiscard]] ReplacingACTrieBuilder final
-    : private ACTrieBuilder<AlphabetStart, AlphabetEnd, IsCaseInsensetive, std::string> {
+    : private ACTrieBuilder<AlphabetStart, AlphabetEnd, CaseOption, std::string> {
 private:
-    using Base = ACTrieBuilder<AlphabetStart, AlphabetEnd, IsCaseInsensetive, std::string>;
+    using Base = ACTrieBuilder<AlphabetStart, AlphabetEnd, CaseOption, std::string>;
     using typename Base::Node;
 
 public:
-    using ACTrieType = ReplacingACTrie<AlphabetStart, AlphabetEnd, IsCaseInsensetive>;
+    using ACTrieType = ReplacingACTrie<AlphabetStart, AlphabetEnd, CaseOption>;
     using typename Base::size_type;
     using typename Base::StoredNodeIndex;
     using typename Base::StoredPatternSize;

@@ -76,8 +76,8 @@ void test1() {
     constexpr std::string_view text =
         "ABCDEFGHABCDEFGADCVABCDEBACBCBABDBEBCBABABBCDEBCBABDEBCABDBCBACABCDBEBACBCDEWBCBABCDE";
     const OccurancesContainer expected_occurances = {
-        {"ABC", 0, 0},  {"CDE", 2, 0},  {"CDEF", 2, 2}, {"ABC", 8, 0},  {"CDE", 10, 0}, {"CDEF", 10, 2}, {"ABC", 19, 0},
-        {"CDE", 21, 0}, {"CDE", 43, 0}, {"ABC", 63, 0}, {"CDE", 73, 0}, {"ABC", 80, 0}, {"CDE", 82, 0},
+        {"ABC", 0, 0},  {"CDE", 2, 1},  {"CDEF", 2, 2}, {"ABC", 8, 0},  {"CDE", 10, 1}, {"CDEF", 10, 2}, {"ABC", 19, 0},
+        {"CDE", 21, 1}, {"CDE", 43, 1}, {"ABC", 63, 0}, {"CDE", 73, 1}, {"ABC", 80, 0}, {"CDE", 82, 1},
     };
 
     assert(test_actrie(patterns, text, expected_occurances));
@@ -110,15 +110,14 @@ void test2() {
 
 namespace replacing {
 
-template <bool IsCaseInsensetive = true, size_t PatternsCount>
+template <Case CaseOption = Case::Insensetive, size_t PatternsCount>
 [[nodiscard]] bool test_replacing_actrie(const std::string_view (&patterns_with_replacements)[PatternsCount][2],
                                          std::string& input_text,
                                          const std::string_view expected,
                                          const bool replace_all_occurances) {
     using BuilderType = actrie::ReplacingACTrieBuilder<
         /* AlphabetStart = */ '-',
-        /* AlphabetEnd = */ '}',
-        /* IsCaseInsensetive = */ IsCaseInsensetive>;
+        /* AlphabetEnd = */ '}', CaseOption>;
     auto builder = BuilderType::WithCapacity(PatternsCount);
     for (const auto& [pattern, replacement] : patterns_with_replacements) {
         if (!builder.AddPatternWithReplacement(pattern, std::string{replacement})) {
