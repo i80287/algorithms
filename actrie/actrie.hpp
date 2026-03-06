@@ -66,7 +66,7 @@ protected:
     using StoredPatternSize = std::uint32_t;
 
     struct BasicPatternData {
-        StoredPatternIndex size;
+        StoredPatternSize size;
     };
 
     static constexpr StoredNodeIndex kNullNodeIndex = 0;
@@ -776,7 +776,11 @@ private:
         const StoredPatternIndex pattern_index = static_cast<StoredPatternIndex>(patterns_data.size());
         assert(current_node_index < nodes.size());
         nodes[current_node_index].pattern_index = pattern_index;
+#if CONFIG_COMPILER_IS_ANY_CLANG && !CONFIG_CLANG_AT_LEAST(16, 0)
+        patterns_data.push_back(PatternData{static_cast<StoredPatternSize>(pattern_size), std::forward<Args>(args)...});
+#else
         patterns_data.emplace_back(static_cast<StoredPatternSize>(pattern_size), std::forward<Args>(args)...);
+#endif
         return true;
     }
 

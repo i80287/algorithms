@@ -61,7 +61,7 @@ void test0() {
     const OccurancesContainer expected_occurances = {
         {"a", 0, 0},  {"ab", 0, 1},    {"ba", 1, 2},  {"a", 2, 0},   {"ab", 2, 1},
         {"a", 6, 0},  {"a", 8, 0},     {"a", 10, 0},  {"aa", 10, 3}, {"a", 11, 0},
-        {"a", 15, 0}, {"fasb", 14, 5}, {"ba", 17, 2}, {"a", 18, 0},  {"ab", 18, 0},
+        {"a", 15, 0}, {"fasb", 14, 5}, {"ba", 17, 2}, {"a", 18, 0},  {"ab", 18, 1},
     };
 
     assert(test_actrie(patterns, text, expected_occurances));
