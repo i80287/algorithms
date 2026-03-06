@@ -93,10 +93,12 @@ class [[nodiscard]] ACTrie : protected detail::BasicACTrie {
 public:
     friend class ACTrieBuilder<AlphabetStart, AlphabetEnd, CaseOption, TrieMappedType>;
 
+    using MappedType = TrieMappedType;
+
 private:
     struct PatternDataWithValue {
         StoredPatternIndex size;
-        TrieMappedType value;
+        MappedType value;
     };
 
 protected:
@@ -108,8 +110,6 @@ protected:
                       kAlphabetEnd <= std::numeric_limits<char>::max(),
                   "Invalid alphabet boundaries");
     static constexpr Symbol kAlphabetLength = kAlphabetEnd - kAlphabetStart + 1;
-
-    using MappedType = TrieMappedType;
 
     using PatternData =
         std::conditional_t<std::is_same_v<MappedType, NoMappedType>, BasicPatternData, PatternDataWithValue>;
@@ -146,9 +146,19 @@ protected:
     };
 
 public:
+    [[nodiscard]] MappedType& GetPatternData(const StoredPatternIndex idx) noexcept ATTRIBUTE_LIFETIME_BOUND {
+        return patterns_data_[idx].value;
+    }
+
+    [[nodiscard]]
+    const MappedType& GetPatternData(const StoredPatternIndex idx) const noexcept ATTRIBUTE_LIFETIME_BOUND {
+        return patterns_data_[idx].value;
+    }
+
     [[nodiscard]] constexpr bool ContainsPattern(const std::string_view pattern) const noexcept {
         return ContainsPatternImpl(pattern.begin(), pattern.end(), nodes_);
     }
+
     template <typename FindCallback>
         requires requires(FindCallback func,
                           std::string_view found_word,
@@ -422,6 +432,7 @@ public:
     using Base::ContainsPattern;
     using Base::FindAllSubstringsInText;
     using Base::FindAllSubstringsInTextAndCountLines;
+    using Base::GetPatternData;
     using Base::PatternsCount;
 
     static constexpr size_type kAllOccurrences = std::numeric_limits<size_type>::max();
