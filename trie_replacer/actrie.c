@@ -736,9 +736,9 @@ void actrie_thiscall actrie_t_run_text(const struct actrie_t* this_, const char*
     }
 }
 
-size_t actrie_thiscall actrie_t_replace_first_occurance_len(const struct actrie_t* this_,
-                                                            char* c_string,
-                                                            size_t length) {
+size_t actrie_thiscall actrie_t_replace_first_occurrence_len(const struct actrie_t* this_,
+                                                             char* c_string,
+                                                             size_t length) {
 #if defined(__DEBUG__)
     actrie_assert(this_->are_links_computed);
 #endif
@@ -796,9 +796,9 @@ size_t actrie_thiscall actrie_t_replace_first_occurance_len(const struct actrie_
     return length;
 }
 
-size_t actrie_thiscall actrie_t_replace_all_occurances_len(const struct actrie_t* this_,
-                                                           char* c_string,
-                                                           size_t length) {
+size_t actrie_thiscall actrie_t_replace_all_occurrences_len(const struct actrie_t* this_,
+                                                            char* c_string,
+                                                            size_t length) {
 #if defined(__DEBUG__)
     actrie_assert(this_->are_links_computed);
     size_t total_copied = 0;
@@ -896,7 +896,7 @@ size_t actrie_thiscall actrie_t_replace_all_occurances_len(const struct actrie_t
     vector_replacement_info_t_dtor(&queue);
 
 #if defined(__DEBUG__)
-    // Check for O(length + sum( |replacement_length - occurance_length| for each pattern occurance)
+    // Check for O(length + sum( |replacement_length - occurrence_length| for each pattern occurrence)
     // ) complexity
     actrie_assert(total_copied <= new_length);
 #endif

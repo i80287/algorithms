@@ -24,7 +24,7 @@ struct NoMappedType {};
 
 using StoredPatternIndex = std::uint32_t;
 
-struct FoundOccurance {
+struct FoundOccurrence {
     std::string_view found_word;
     size_t start_index_in_original_text;
     StoredPatternIndex pattern_index;
@@ -178,9 +178,9 @@ public:
                 assert(pattern_index < patterns_data_.size());
 
                 const size_type pattern_size = patterns_data_[pattern_index].size;
-                const size_type occurance_start_index = i + 1 - pattern_size;
+                const size_type occurrence_start_index = i + 1 - pattern_size;
 
-                find_callback(text.substr(occurance_start_index, pattern_size), occurance_start_index,
+                find_callback(text.substr(occurrence_start_index, pattern_size), occurrence_start_index,
                               static_cast<StoredPatternIndex>(pattern_index));
             }
 
@@ -194,15 +194,15 @@ public:
                 assert(pattern_index < patterns_data_.size());
 
                 const size_type pattern_size = patterns_data_[pattern_index].size;
-                const size_type occurance_start_index = i + 1 - pattern_size;
+                const size_type occurrence_start_index = i + 1 - pattern_size;
 
-                find_callback(text.substr(occurance_start_index, pattern_size), occurance_start_index,
+                find_callback(text.substr(occurrence_start_index, pattern_size), occurrence_start_index,
                               static_cast<StoredPatternIndex>(pattern_index));
             }
         }
     }
 
-    template <std::ranges::range Container = std::vector<FoundOccurance>>
+    template <std::ranges::range Container = std::vector<FoundOccurrence>>
     [[nodiscard]] constexpr Container CollectAllSubstringsFromText(
         const std::string_view text ATTRIBUTE_LIFETIME_BOUND) const {
         Container c;
@@ -424,20 +424,20 @@ public:
     using Base::FindAllSubstringsInTextAndCountLines;
     using Base::PatternsCount;
 
-    static constexpr size_type kAllOccurances = std::numeric_limits<size_type>::max();
+    static constexpr size_type kAllOccurrences = std::numeric_limits<size_type>::max();
 
-    size_type ReplaceAllOccurances(std::string& text) const {
-        return ReplaceAtMostKOccurances(text, kAllOccurances);
+    size_type ReplaceAllOccurrences(std::string& text) const {
+        return ReplaceAtMostKOccurrences(text, kAllOccurrences);
     }
 
-    size_type ReplaceAtMostKOccurances(std::string& text, const size_type max_replacements) const {
-        size_type replaced_occurances = 0;
+    size_type ReplaceAtMostKOccurrences(std::string& text, const size_type max_replacements) const {
+        size_type replaced_occurrences = 0;
         switch (max_replacements) {
             case 1:
-                replaced_occurances += ReplaceFirstOccurance(text) ? size_type{1} : size_type{0};
+                replaced_occurrences += ReplaceFirstOccurrence(text) ? size_type{1} : size_type{0};
                 [[fallthrough]];
             case 0:
-                return replaced_occurances;
+                return replaced_occurrences;
             default:
                 break;
         }
@@ -484,7 +484,7 @@ public:
             const bool replace_inplace = planned_replacements.empty() && pattern_length == replacement.size();
             if (replace_inplace) {
                 std::char_traits<char>::copy(text.data() + l_index_including, replacement.data(), pattern_length);
-                replaced_occurances++;
+                replaced_occurrences++;
             } else {
                 planned_replacements.push_back(ReplacementInfo{
                     .l_index_in_text = l_index_including,
@@ -493,8 +493,8 @@ public:
                 new_length += (replacement.size() - pattern_length);
             }
 
-            assert(replaced_occurances + planned_replacements.size() <= max_replacements);
-            if (replaced_occurances + planned_replacements.size() == max_replacements) {
+            assert(replaced_occurrences + planned_replacements.size() <= max_replacements);
+            if (replaced_occurrences + planned_replacements.size() == max_replacements) {
                 break;
             }
 
@@ -503,7 +503,7 @@ public:
 
         if (text.size() == new_length) {
             assert(planned_replacements.empty());
-            return replaced_occurances;
+            return replaced_occurrences;
         }
 
         size_type right_boundary = text.size();
@@ -512,7 +512,7 @@ public:
             text.resize(new_length);
         }
 
-        assert(replaced_occurances + planned_replacements.size() <= max_replacements);
+        assert(replaced_occurrences + planned_replacements.size() <= max_replacements);
         const auto reverse = [](const ReplacementInfoVector& vec ATTRIBUTE_LIFETIME_BOUND) noexcept {
             using Iterator = typename ReplacementInfoVector::const_reverse_iterator;
             struct RevStruct final {
@@ -550,7 +550,7 @@ public:
             dst_address -= replacement_length;
 
             std::char_traits<char>::copy(dst_address, replacement.data(), replacement_length);
-            replaced_occurances++;
+            replaced_occurrences++;
 
             right_boundary = l_index_in_text;
             right_offset += moved_part_length + replacement_length;
@@ -560,10 +560,10 @@ public:
             text.resize(new_length);
         }
 
-        return replaced_occurances;
+        return replaced_occurrences;
     }
 
-    constexpr bool ReplaceFirstOccurance(std::string& text) const {
+    constexpr bool ReplaceFirstOccurrence(std::string& text) const {
         StoredNodeIndex current_node_index = Base::kRootNodeIndex;
         for (auto iter = text.begin(), end = text.end(); iter != end; ++iter) {
             const size_type symbol_index = Base::CharToIndex(*iter);
@@ -586,7 +586,7 @@ public:
             const StoredPatternIndex pattern_index = current_node_is_terminal
                                                          ? current_node.pattern_index
                                                          : this->nodes_[compressed_suffix_link].pattern_index;
-            ReplaceOccuranceWithResize(text, iter, pattern_index, this->patterns_data_);
+            ReplaceOccurrenceWithResize(text, iter, pattern_index, this->patterns_data_);
             return true;
         }
 
@@ -596,11 +596,11 @@ public:
 private:
     explicit constexpr ReplacingACTrie(Base&& other) noexcept : Base(std::move(other)) {}
 
-    static constexpr void ReplaceOccuranceWithResize(std::string& text,
-                                                     const std::string::iterator occurance_last_position_iter,
-                                                     const StoredPatternIndex pattern_index,
-                                                     const PatternsDataStorage& patterns_data) {
-        const size_type r_index_including = static_cast<size_type>(occurance_last_position_iter - text.begin());
+    static constexpr void ReplaceOccurrenceWithResize(std::string& text,
+                                                      const std::string::iterator occurrence_last_position_iter,
+                                                      const StoredPatternIndex pattern_index,
+                                                      const PatternsDataStorage& patterns_data) {
+        const size_type r_index_including = static_cast<size_type>(occurrence_last_position_iter - text.begin());
         assert(pattern_index < patterns_data.size());
         const StoredPatternSize pattern_size = patterns_data[pattern_index].size;
         const size_type l_index_including = r_index_including + 1 - pattern_size;

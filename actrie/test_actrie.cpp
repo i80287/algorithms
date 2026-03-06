@@ -19,12 +19,12 @@ namespace {
 
 using std::size_t;
 
-using OccurancesContainer = std::vector<std::tuple<std::string_view, size_t, StoredPatternIndex>>;
+using OccurrencesContainer = std::vector<std::tuple<std::string_view, size_t, StoredPatternIndex>>;
 
 template <size_t PatternsCount>
 [[nodiscard]] bool test_actrie(const std::string_view (&patterns)[PatternsCount],
                                std::string_view text,
-                               const OccurancesContainer& expected_occurances) {
+                               const OccurrencesContainer& expected_occurrences) {
     actrie::ACTrieBuilder builder;
     for (std::string_view pattern : patterns) {
         if (!builder.AddPattern(pattern)) {
@@ -49,8 +49,8 @@ template <size_t PatternsCount>
         return false;
     }
 
-    const OccurancesContainer found_occurances = t.CollectAllSubstringsFromText<OccurancesContainer>(text);
-    return found_occurances == expected_occurances;
+    const OccurrencesContainer found_occurrences = t.CollectAllSubstringsFromText<OccurrencesContainer>(text);
+    return found_occurrences == expected_occurrences;
 }
 
 void test0() {
@@ -58,13 +58,13 @@ void test0() {
         "a", "ab", "ba", "aa", "bb", "fasb",
     };
     constexpr std::string_view text = "ababcdacafaasbfasbabcc";
-    const OccurancesContainer expected_occurances = {
+    const OccurrencesContainer expected_occurrences = {
         {"a", 0, 0},  {"ab", 0, 1},    {"ba", 1, 2},  {"a", 2, 0},   {"ab", 2, 1},
         {"a", 6, 0},  {"a", 8, 0},     {"a", 10, 0},  {"aa", 10, 3}, {"a", 11, 0},
         {"a", 15, 0}, {"fasb", 14, 5}, {"ba", 17, 2}, {"a", 18, 0},  {"ab", 18, 1},
     };
 
-    assert(test_actrie(patterns, text, expected_occurances));
+    assert(test_actrie(patterns, text, expected_occurrences));
 }
 
 void test1() {
@@ -75,12 +75,12 @@ void test1() {
     };
     constexpr std::string_view text =
         "ABCDEFGHABCDEFGADCVABCDEBACBCBABDBEBCBABABBCDEBCBABDEBCABDBCBACABCDBEBACBCDEWBCBABCDE";
-    const OccurancesContainer expected_occurances = {
+    const OccurrencesContainer expected_occurrences = {
         {"ABC", 0, 0},  {"CDE", 2, 1},  {"CDEF", 2, 2}, {"ABC", 8, 0},  {"CDE", 10, 1}, {"CDEF", 10, 2}, {"ABC", 19, 0},
         {"CDE", 21, 1}, {"CDE", 43, 1}, {"ABC", 63, 0}, {"CDE", 73, 1}, {"ABC", 80, 0}, {"CDE", 82, 1},
     };
 
-    assert(test_actrie(patterns, text, expected_occurances));
+    assert(test_actrie(patterns, text, expected_occurrences));
 }
 
 void test2() {
@@ -91,7 +91,7 @@ void test2() {
         "ababcbbacbcabaabaacbacbbacbbabcbabcbcabaabaabcabaabacabaabacbabbbacbabacbabbacbcabacabcbcb"
         "acabaababcbabbacacbbcbcababbcbcbacabcabacbcababacababcbabccaababacabcbabcbacbabcabcbbababa"
         "caababababcbbcbcbcbcbcbababcbabcabccbbcbcbcabaabacabbacbabca";
-    const OccurancesContainer expected_occurances = {
+    const OccurrencesContainer expected_occurrences = {
         {"aba", 0, 0},      {"aba", 11, 0},     {"cabaaba", 10, 4},  {"aba", 14, 0},     {"aba", 37, 0},
         {"cabaaba", 36, 4}, {"aba", 40, 0},     {"aba", 46, 0},      {"cabaaba", 45, 4}, {"aba", 49, 0},
         {"baca", 50, 1},    {"abacaba", 49, 2}, {"aba", 53, 0},      {"cabaaba", 52, 4}, {"aba", 56, 0},
@@ -103,7 +103,7 @@ void test2() {
         {"aba", 203, 0},    {"aba", 223, 0},    {"cabaaba", 222, 4}, {"aba", 226, 0},    {"baca", 227, 1},
     };
 
-    assert(test_actrie(patterns, text, expected_occurances));
+    assert(test_actrie(patterns, text, expected_occurrences));
 }
 
 }  // namespace
@@ -114,7 +114,7 @@ template <Case CaseOption = Case::Insensitive, size_t PatternsCount>
 [[nodiscard]] bool test_replacing_actrie(const std::string_view (&patterns_with_replacements)[PatternsCount][2],
                                          std::string& input_text,
                                          const std::string_view expected,
-                                         const bool replace_all_occurances) {
+                                         const bool replace_all_occurrences) {
     using BuilderType = actrie::ReplacingACTrieBuilder<
         /* AlphabetStart = */ '-',
         /* AlphabetEnd = */ '}', CaseOption>;
@@ -142,10 +142,10 @@ template <Case CaseOption = Case::Insensitive, size_t PatternsCount>
         return false;
     }
 
-    if (replace_all_occurances) {
-        t.ReplaceAllOccurances(input_text);
+    if (replace_all_occurrences) {
+        t.ReplaceAllOccurrences(input_text);
     } else {
-        t.ReplaceFirstOccurance(input_text);
+        t.ReplaceFirstOccurrence(input_text);
     }
     return input_text == expected;
 }
@@ -417,10 +417,10 @@ void test9() {
     constexpr std::string_view expected = "Abghciashjdhwdjahwdjhabdabanabwc";
     std::string input_text_copy(input_text);
     assert(test_replacing_actrie(patterns_with_replacements, input_text_copy, expected,
-                                 /*replace_all_occurances=*/false));
+                                 /*replace_all_occurrences=*/false));
     assert(input_text_copy == input_text);
     assert(test_replacing_actrie(patterns_with_replacements, input_text_copy, expected,
-                                 /*replace_all_occurances=*/true));
+                                 /*replace_all_occurrences=*/true));
     assert(input_text_copy == input_text);
 }
 
@@ -434,9 +434,9 @@ void test10() {
     constexpr std::string_view expected_after_all_replacements = "Qjkzdefdefjkzdef";
     std::string input_text_copy(input_text);
     assert(test_replacing_actrie(patterns_with_replacements, input_text_copy, expected_after_one_replacement,
-                                 /*replace_all_occurances=*/false));
+                                 /*replace_all_occurrences=*/false));
     assert(test_replacing_actrie(patterns_with_replacements, input_text, expected_after_all_replacements,
-                                 /*replace_all_occurances=*/true));
+                                 /*replace_all_occurrences=*/true));
 }
 
 }  // namespace replacing
