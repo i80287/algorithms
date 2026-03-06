@@ -34,30 +34,30 @@ inline constexpr Symbol kDefaultAlphabetStart = 'A';
 inline constexpr Symbol kDefaultAlphabetEnd = 'z';
 
 enum class Case : bool {
-    Sensetive,
-    Insensetive,
+    Sensitive,
+    Insensitive,
 };
 
 template <Symbol AlphabetStart = kDefaultAlphabetStart,
           Symbol AlphabetEnd = kDefaultAlphabetEnd,
-          Case CaseOption = Case::Sensetive,
+          Case CaseOption = Case::Sensitive,
           typename TrieMappedType = NoMappedType>
 class ACTrie;
 
 template <Symbol AlphabetStart = kDefaultAlphabetStart,
           Symbol AlphabetEnd = kDefaultAlphabetEnd,
-          Case CaseOption = Case::Sensetive>
+          Case CaseOption = Case::Sensitive>
 class ReplacingACTrie;
 
 template <Symbol AlphabetStart = kDefaultAlphabetStart,
           Symbol AlphabetEnd = kDefaultAlphabetEnd,
-          Case CaseOption = Case::Sensetive,
+          Case CaseOption = Case::Sensitive,
           typename TrieMappedType = NoMappedType>
 class ACTrieBuilder;
 
 template <Symbol AlphabetStart = kDefaultAlphabetStart,
           Symbol AlphabetEnd = kDefaultAlphabetEnd,
-          Case CaseOption = Case::Sensetive>
+          Case CaseOption = Case::Sensitive>
 class ReplacingACTrieBuilder;
 
 namespace detail {
@@ -365,7 +365,7 @@ protected:
     [[nodiscard]]
     ATTRIBUTE_CONST static constexpr size_type SymbolToIndex(const Symbol symbol) noexcept {
         std::uint32_t symbol_as_int = SymbolToUInt(symbol);
-        if constexpr (CaseOption == Case::Insensetive) {
+        if constexpr (CaseOption == Case::Insensitive) {
             // We don't use std::tolower because we know that all
             //  chars are < 128. What's more important, std::tolower makes
             //  text finding run almost 1.5x times slower because of

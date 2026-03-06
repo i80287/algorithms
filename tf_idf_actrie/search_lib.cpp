@@ -21,7 +21,7 @@ using std::vector;
 
 namespace {
 
-using ACTrieBuilder = actrie::ACTrieBuilder<'a', 'z', actrie::Case::Insensetive>;
+using ACTrieBuilder = actrie::ACTrieBuilder<'a', 'z', actrie::Case::Insensitive>;
 using ACTrie = typename ACTrieBuilder::ACTrieType;
 
 template <char QueryWordsDelimiter = ' '>

@@ -110,7 +110,7 @@ void test2() {
 
 namespace replacing {
 
-template <Case CaseOption = Case::Insensetive, size_t PatternsCount>
+template <Case CaseOption = Case::Insensitive, size_t PatternsCount>
 [[nodiscard]] bool test_replacing_actrie(const std::string_view (&patterns_with_replacements)[PatternsCount][2],
                                          std::string& input_text,
                                          const std::string_view expected,
