@@ -8,7 +8,7 @@ void run_test(const char* (*patterns_with_replacements)[2],
               char input_text[],
               size_t input_text_size,
               const char expected[],
-              bool replace_all_occurances,
+              bool replace_all_occurrences,
               uint32_t test_number) {
     struct actrie_t t;
     actrie_t_ctor(&t);
@@ -34,10 +34,10 @@ void run_test(const char* (*patterns_with_replacements)[2],
     }
 
     input_text[input_text_size] = '\0';
-    if (replace_all_occurances) {
-        actrie_t_replace_all_occurances(&t, input_text);
+    if (replace_all_occurrences) {
+        actrie_t_replace_all_occurrences(&t, input_text);
     } else {
-        actrie_t_replace_first_occurance(&t, input_text);
+        actrie_t_replace_first_occurrence(&t, input_text);
     }
     result &= (strcmp(input_text, expected) == 0);
 

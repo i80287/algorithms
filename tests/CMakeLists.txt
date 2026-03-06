@@ -131,7 +131,7 @@ list(APPEND TestIsCProject False)
 list(APPEND TestCompileOnly False)
 
 list(APPEND TestFilenames "test_actrie.cpp")
-list(APPEND TestDirectories "tf_idf_actrie")
+list(APPEND TestDirectories "actrie")
 list(APPEND TestLangVersions "20 23 26")
 list(APPEND TestDependencies "")
 list(APPEND TestOptionalDependencies "")

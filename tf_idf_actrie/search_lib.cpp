@@ -11,7 +11,7 @@
 #include <utility>
 #include <vector>
 
-#include "actrie.hpp"
+#include "../actrie/actrie.hpp"
 
 namespace search_lib {
 
@@ -21,7 +21,7 @@ using std::vector;
 
 namespace {
 
-using ACTrieBuilder = actrie::ACTrieBuilder<'a', 'z', /*IsCaseInsensetive = */ true>;
+using ACTrieBuilder = actrie::ACTrieBuilder<'a', 'z', actrie::Case::Insensitive>;
 using ACTrie = typename ACTrieBuilder::ACTrieType;
 
 template <char QueryWordsDelimiter = ' '>
@@ -59,7 +59,7 @@ template <char QueryWordsDelimiter = ' '>
 template <bool IsExactWordsMatching>
 vector<string_view> Search(const string_view text, const string_view query, const size_t max_result_size) {
     const ACTrie act = ParseQuery(query);
-    const size_t query_words_count = act.PatternsSize();
+    const size_t query_words_count = act.PatternsCount();
 
     struct LineInfo {
         size_t LineNumber = 0;

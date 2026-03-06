@@ -6,25 +6,25 @@
 #include <vector>
 
 #ifdef NDEBUG
-#error("Can't test properly with NDEBUG macro defined (macro won't be undefined manually)")
+#error ("Can't test properly with NDEBUG macro defined (macro won't be undefined manually)")
 #endif
 
 #include <cassert>
 
 #include "actrie.hpp"
 
-namespace {
+namespace actrie::tests {
 
-namespace actrie_tests {
+namespace {
 
 using std::size_t;
 
-using OccurancesContainer = std::vector<std::pair<std::string_view, size_t>>;
+using OccurrencesContainer = std::vector<std::tuple<std::string_view, size_t, StoredPatternIndex>>;
 
-template <size_t PatternsSize>
-[[nodiscard]] bool test_actrie(const std::string_view (&patterns)[PatternsSize],
+template <size_t PatternsCount>
+[[nodiscard]] bool test_actrie(const std::string_view (&patterns)[PatternsCount],
                                std::string_view text,
-                               const OccurancesContainer& expected_occurances) {
+                               const OccurrencesContainer& expected_occurrences) {
     actrie::ACTrieBuilder builder;
     for (std::string_view pattern : patterns) {
         if (!builder.AddPattern(pattern)) {
@@ -36,7 +36,7 @@ template <size_t PatternsSize>
             return false;
         }
     }
-    if (builder.PatternsSize() != PatternsSize) {
+    if (builder.PatternsCount() != PatternsCount) {
         return false;
     }
     const actrie::ACTrie t = std::move(builder).Build();
@@ -45,12 +45,12 @@ template <size_t PatternsSize>
             return false;
         }
     }
-    if (t.PatternsSize() != PatternsSize) {
+    if (t.PatternsCount() != PatternsCount) {
         return false;
     }
 
-    const OccurancesContainer found_occurances = t.CollectAllSubstringsFromText<OccurancesContainer>(text);
-    return found_occurances == expected_occurances;
+    const OccurrencesContainer found_occurrences = t.CollectAllSubstringsFromText<OccurrencesContainer>(text);
+    return found_occurrences == expected_occurrences;
 }
 
 void test0() {
@@ -58,12 +58,13 @@ void test0() {
         "a", "ab", "ba", "aa", "bb", "fasb",
     };
     constexpr std::string_view text = "ababcdacafaasbfasbabcc";
-    const OccurancesContainer expected_occurances = {
-        {"a", 0},   {"ab", 0}, {"ba", 1}, {"a", 2},     {"ab", 2},  {"a", 6},  {"a", 8},   {"a", 10},
-        {"aa", 10}, {"a", 11}, {"a", 15}, {"fasb", 14}, {"ba", 17}, {"a", 18}, {"ab", 18},
+    const OccurrencesContainer expected_occurrences = {
+        {"a", 0, 0},  {"ab", 0, 1},    {"ba", 1, 2},  {"a", 2, 0},   {"ab", 2, 1},
+        {"a", 6, 0},  {"a", 8, 0},     {"a", 10, 0},  {"aa", 10, 3}, {"a", 11, 0},
+        {"a", 15, 0}, {"fasb", 14, 5}, {"ba", 17, 2}, {"a", 18, 0},  {"ab", 18, 1},
     };
 
-    assert(test_actrie(patterns, text, expected_occurances));
+    assert(test_actrie(patterns, text, expected_occurrences));
 }
 
 void test1() {
@@ -74,12 +75,12 @@ void test1() {
     };
     constexpr std::string_view text =
         "ABCDEFGHABCDEFGADCVABCDEBACBCBABDBEBCBABABBCDEBCBABDEBCABDBCBACABCDBEBACBCDEWBCBABCDE";
-    const OccurancesContainer expected_occurances = {
-        {"ABC", 0},  {"CDE", 2},  {"CDEF", 2}, {"ABC", 8},  {"CDE", 10}, {"CDEF", 10}, {"ABC", 19},
-        {"CDE", 21}, {"CDE", 43}, {"ABC", 63}, {"CDE", 73}, {"ABC", 80}, {"CDE", 82},
+    const OccurrencesContainer expected_occurrences = {
+        {"ABC", 0, 0},  {"CDE", 2, 1},  {"CDEF", 2, 2}, {"ABC", 8, 0},  {"CDE", 10, 1}, {"CDEF", 10, 2}, {"ABC", 19, 0},
+        {"CDE", 21, 1}, {"CDE", 43, 1}, {"ABC", 63, 0}, {"CDE", 73, 1}, {"ABC", 80, 0}, {"CDE", 82, 1},
     };
 
-    assert(test_actrie(patterns, text, expected_occurances));
+    assert(test_actrie(patterns, text, expected_occurrences));
 }
 
 void test2() {
@@ -90,34 +91,34 @@ void test2() {
         "ababcbbacbcabaabaacbacbbacbbabcbabcbcabaabaabcabaabacabaabacbabbbacbabacbabbacbcabacabcbcb"
         "acabaababcbabbacacbbcbcababbcbcbacabcabacbcababacababcbabccaababacabcbabcbacbabcabcbbababa"
         "caababababcbbcbcbcbcbcbababcbabcabccbbcbcbcabaabacabbacbabca";
-    const OccurancesContainer expected_occurances = {
-        {"aba", 0},       {"aba", 11},     {"cabaaba", 10}, {"aba", 14},   {"aba", 37},   {"cabaaba", 36},
-        {"aba", 40},      {"aba", 46},     {"cabaaba", 45}, {"aba", 49},   {"baca", 50},  {"abacaba", 49},
-        {"aba", 53},      {"cabaaba", 52}, {"aba", 56},     {"aba", 68},   {"aba", 80},   {"baca", 81},
-        {"baca", 89},     {"aba", 92},     {"cabaaba", 91}, {"aba", 95},   {"baca", 103}, {"aba", 113},
-        {"baca", 121},    {"aba", 127},    {"aba", 133},    {"aba", 135},  {"baca", 136}, {"abacaba", 135},
-        {"aba", 139},     {"aba", 150},    {"aba", 152},    {"baca", 153}, {"aba", 175},  {"aba", 177},
-        {"baca", 178},    {"aba", 182},    {"aba", 184},    {"aba", 186},  {"aba", 203},  {"aba", 223},
-        {"cabaaba", 222}, {"aba", 226},    {"baca", 227},
+    const OccurrencesContainer expected_occurrences = {
+        {"aba", 0, 0},      {"aba", 11, 0},     {"cabaaba", 10, 4},  {"aba", 14, 0},     {"aba", 37, 0},
+        {"cabaaba", 36, 4}, {"aba", 40, 0},     {"aba", 46, 0},      {"cabaaba", 45, 4}, {"aba", 49, 0},
+        {"baca", 50, 1},    {"abacaba", 49, 2}, {"aba", 53, 0},      {"cabaaba", 52, 4}, {"aba", 56, 0},
+        {"aba", 68, 0},     {"aba", 80, 0},     {"baca", 81, 1},     {"baca", 89, 1},    {"aba", 92, 0},
+        {"cabaaba", 91, 4}, {"aba", 95, 0},     {"baca", 103, 1},    {"aba", 113, 0},    {"baca", 121, 1},
+        {"aba", 127, 0},    {"aba", 133, 0},    {"aba", 135, 0},     {"baca", 136, 1},   {"abacaba", 135, 2},
+        {"aba", 139, 0},    {"aba", 150, 0},    {"aba", 152, 0},     {"baca", 153, 1},   {"aba", 175, 0},
+        {"aba", 177, 0},    {"baca", 178, 1},   {"aba", 182, 0},     {"aba", 184, 0},    {"aba", 186, 0},
+        {"aba", 203, 0},    {"aba", 223, 0},    {"cabaaba", 222, 4}, {"aba", 226, 0},    {"baca", 227, 1},
     };
 
-    assert(test_actrie(patterns, text, expected_occurances));
+    assert(test_actrie(patterns, text, expected_occurrences));
 }
 
-}  // namespace actrie_tests
+}  // namespace
 
-namespace replacing_actrie_tests {
+namespace replacing {
 
-template <bool IsCaseInsensetive = true, size_t PatternsSize>
-[[nodiscard]] bool test_replacing_actrie(const std::string_view (&patterns_with_replacements)[PatternsSize][2],
+template <Case CaseOption = Case::Insensitive, size_t PatternsCount>
+[[nodiscard]] bool test_replacing_actrie(const std::string_view (&patterns_with_replacements)[PatternsCount][2],
                                          std::string& input_text,
                                          const std::string_view expected,
-                                         const bool replace_all_occurances) {
+                                         const bool replace_all_occurrences) {
     using BuilderType = actrie::ReplacingACTrieBuilder<
         /* AlphabetStart = */ '-',
-        /* AlphabetEnd = */ '}',
-        /* IsCaseInsensetive = */ IsCaseInsensetive>;
-    auto builder = BuilderType::WithCapacity(PatternsSize);
+        /* AlphabetEnd = */ '}', CaseOption>;
+    auto builder = BuilderType::WithCapacity(PatternsCount);
     for (const auto& [pattern, replacement] : patterns_with_replacements) {
         if (!builder.AddPatternWithReplacement(pattern, std::string{replacement})) {
             return false;
@@ -128,7 +129,7 @@ template <bool IsCaseInsensetive = true, size_t PatternsSize>
             return false;
         }
     }
-    if (builder.PatternsSize() != PatternsSize) {
+    if (builder.PatternsCount() != PatternsCount) {
         return false;
     }
     const actrie::ReplacingACTrie t = std::move(builder).Build();
@@ -137,14 +138,14 @@ template <bool IsCaseInsensetive = true, size_t PatternsSize>
             return false;
         }
     }
-    if (t.PatternsSize() != PatternsSize) {
+    if (t.PatternsCount() != PatternsCount) {
         return false;
     }
 
-    if (replace_all_occurances) {
-        t.ReplaceAllOccurances(input_text);
+    if (replace_all_occurrences) {
+        t.ReplaceAllOccurrences(input_text);
     } else {
-        t.ReplaceFirstOccurance(input_text);
+        t.ReplaceFirstOccurrence(input_text);
     }
     return input_text == expected;
 }
@@ -416,10 +417,10 @@ void test9() {
     constexpr std::string_view expected = "Abghciashjdhwdjahwdjhabdabanabwc";
     std::string input_text_copy(input_text);
     assert(test_replacing_actrie(patterns_with_replacements, input_text_copy, expected,
-                                 /*replace_all_occurances=*/false));
+                                 /*replace_all_occurrences=*/false));
     assert(input_text_copy == input_text);
     assert(test_replacing_actrie(patterns_with_replacements, input_text_copy, expected,
-                                 /*replace_all_occurances=*/true));
+                                 /*replace_all_occurrences=*/true));
     assert(input_text_copy == input_text);
 }
 
@@ -433,29 +434,29 @@ void test10() {
     constexpr std::string_view expected_after_all_replacements = "Qjkzdefdefjkzdef";
     std::string input_text_copy(input_text);
     assert(test_replacing_actrie(patterns_with_replacements, input_text_copy, expected_after_one_replacement,
-                                 /*replace_all_occurances=*/false));
+                                 /*replace_all_occurrences=*/false));
     assert(test_replacing_actrie(patterns_with_replacements, input_text, expected_after_all_replacements,
-                                 /*replace_all_occurances=*/true));
+                                 /*replace_all_occurrences=*/true));
 }
 
-}  // namespace replacing_actrie_tests
+}  // namespace replacing
 
-}  // namespace
+}  // namespace actrie::tests
 
 int main() {
-    actrie_tests::test0();
-    actrie_tests::test1();
-    actrie_tests::test2();
-    replacing_actrie_tests::test0();
-    replacing_actrie_tests::test1();
-    replacing_actrie_tests::test2();
-    replacing_actrie_tests::test3();
-    replacing_actrie_tests::test4();
-    replacing_actrie_tests::test5();
-    replacing_actrie_tests::test6();
-    replacing_actrie_tests::test7();
-    replacing_actrie_tests::test8();
-    replacing_actrie_tests::test9();
-    replacing_actrie_tests::test10();
+    actrie::tests::test0();
+    actrie::tests::test1();
+    actrie::tests::test2();
+    actrie::tests::replacing::test0();
+    actrie::tests::replacing::test1();
+    actrie::tests::replacing::test2();
+    actrie::tests::replacing::test3();
+    actrie::tests::replacing::test4();
+    actrie::tests::replacing::test5();
+    actrie::tests::replacing::test6();
+    actrie::tests::replacing::test7();
+    actrie::tests::replacing::test8();
+    actrie::tests::replacing::test9();
+    actrie::tests::replacing::test10();
     return 0;
 }
